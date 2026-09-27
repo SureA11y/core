@@ -52,7 +52,7 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when present. |
 | `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one. |
 | `results[].properties.severity` / `.confidence` | `checksResults[i].severity` / `.confidence` — informational, not part of SARIF's own schema. |
-| `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings`. Entries for other standards (EN 301 549) and for Understanding documents get no tag. |
+| `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings`. Understanding-document entries get no tag. Each EN 301 549 clause gets an `en301549-<clause>` tag, e.g. `en301549-9.1.1.1`: clause numbers are the same in every version that has them, so the tag carries no version. |
 
 ## Locations
 

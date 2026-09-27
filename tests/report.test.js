@@ -254,6 +254,30 @@ function makeComposite(overrides = {}) {
   };
 }
 
+test('renderHtmlReport: the WCAG rollup names the EN 301 549 clause once per clause', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [
+    makeComposite({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', requirement: '1.1.1', level: 'A' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.1.1' },
+          { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.1.1' }
+        ]
+      }
+    })
+  ];
+  const report = renderHtmlReport(result);
+
+  assert.strictEqual(report.match(/EN 301 549 9\.1\.1\.1/g).length, 1);
+});
+
+test('renderHtmlReport: a rollup row with no EN 301 549 clause gets no EN label', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [makeComposite({})];
+  assert.doesNotMatch(renderHtmlReport(result), /EN 301 549/);
+});
+
 test('renderHtmlReport: the WCAG rollup groups composites under their conformance level', () => {
   const result = makeScanResult([]);
   result.rulesResults = [

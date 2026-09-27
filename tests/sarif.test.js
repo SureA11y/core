@@ -302,7 +302,7 @@ test('renderSarifReport: a malformed normative mapping is skipped, the valid one
   assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-4.1.2']);
 });
 
-test('renderSarifReport: only WCAG Success Criteria become wcag- tags', () => {
+test('renderSarifReport: only WCAG Success Criteria become wcag- tags; EN 301 549 clauses get their own', () => {
   // The shape manual-review carries: a criterion, its Understanding document,
   // and the matching EN 301 549 clause, all with a `requirement` of their own.
   const result = makeScanResult([
@@ -318,7 +318,34 @@ test('renderSarifReport: only WCAG Success Criteria become wcag- tags', () => {
   ]);
 
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
-  assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-2.1.1']);
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'automatic',
+    'wcag-2.1.1',
+    'en301549-9.2.1.1'
+  ]);
+});
+
+test('renderSarifReport: a clause in two EN 301 549 versions is tagged once', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', requirement: '1.4.3', conformanceLevel: 'AA' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.4.3' },
+          { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3' }
+        ]
+      }
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'automatic',
+    'wcag-1.4.3',
+    'en301549-9.1.4.3'
+  ]);
 });
 
 test('renderSarifReport: manual-review is tagged with its WCAG criteria only', () => {

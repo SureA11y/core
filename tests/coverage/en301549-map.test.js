@@ -16,10 +16,13 @@ const assert = require('node:assert/strict');
 const {
   EN301549_VERSIONS,
   EN301549_CLAUSES,
-  en301549ClausesForSc
+  en301549ClausesForSc,
+  en301549MappingsForScs,
+  withEn301549Mappings
 } = require('../../src/coverage/en301549-map');
 const { FACETS } = require('../../src/coverage/wcag-facets');
 const { introducedInVersion, removedInVersion } = require('../../src/coverage/wcag-version-map');
+const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
 const VERSION_ORDER = ['2.0', '2.1', '2.2'];
 
@@ -104,4 +107,64 @@ test('en301549ClausesForSc: AAA criteria and non-criteria get no clause', () => 
 
 test('en301549ClausesForSc: surrounding whitespace does not change the answer', () => {
   assert.deepEqual(en301549ClausesForSc(' 2.5.8 '), en301549ClausesForSc('2.5.8'));
+});
+
+// --- attaching clauses to normativeMappings ---------------------------------
+
+const enOf = (mappings) => mappings.filter((m) => m.standard === 'EN 301 549');
+
+test('withEn301549Mappings: appends one entry per version after the rule\'s own mappings', () => {
+  const own = [{ standard: 'WCAG', requirement: '1.4.3', conformanceLevel: 'AA' }];
+  assert.deepEqual(withEn301549Mappings(own), [
+    own[0],
+    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.4.3', title: 'Contrast (minimum)' },
+    { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3', title: 'Contrast (minimum)' }
+  ]);
+});
+
+test('withEn301549Mappings: follows WCAG criteria only, not Understanding or other standards', () => {
+  const own = [
+    { standard: 'WCAG', type: 'Understanding', requirement: '2.1.1' },
+    { standard: 'ARIA', requirement: '1.4.3' }
+  ];
+  assert.deepEqual(withEn301549Mappings(own), own);
+});
+
+test('withEn301549Mappings: an entry the rule already declares is not repeated', () => {
+  const declared = { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1', title: 'Keyboard' };
+  const out = withEn301549Mappings([{ standard: 'WCAG', requirement: '2.1.1' }, declared]);
+  assert.deepEqual(
+    enOf(out).map((m) => m.version),
+    ['V3.2.1', 'V4.1.1']
+  );
+});
+
+test('withEn301549Mappings: a missing or non-array list yields an empty list', () => {
+  for (const v of [null, undefined, 'x', {}]) assert.deepEqual(withEn301549Mappings(v), []);
+});
+
+test('en301549MappingsForScs: AAA criteria contribute nothing', () => {
+  assert.deepEqual(en301549MappingsForScs(['1.4.6', '2.4.9']), []);
+});
+
+test('a scan attaches EN 301 549 clauses to atomic and composite results', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>';
+  const result = runa11yCoreOnHtml(html, {});
+
+  const atomic = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
+  assert.deepEqual(
+    enOf(atomic.meta.normativeMappings).map((m) => `${m.version} ${m.requirement}`),
+    ['V3.2.1 9.1.1.1', 'V4.1.1 9.1.1.1']
+  );
+
+  const composite = (sc) => result.rulesResults.find((r) => r.ruleId.startsWith(`wcag-${sc}-`));
+  const versions = (sc) => enOf(composite(sc).meta.normativeMappings).map((m) => m.version);
+  assert.deepEqual(versions('1.1.1'), ['V3.2.1', 'V4.1.1']);
+  assert.deepEqual(versions('2.5.8'), ['V4.1.1']);
+  assert.deepEqual(versions('4.1.1'), ['V3.2.1']);
+  assert.deepEqual(versions('1.4.6'), []);
+
+  // The WCAG entry stays first: consumers that read [0] still get the criterion.
+  assert.equal(composite('1.1.1').meta.normativeMappings[0].standard, 'WCAG');
 });

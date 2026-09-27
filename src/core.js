@@ -74,6 +74,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -130,6 +142,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -185,6 +209,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -278,6 +314,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -333,6 +381,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -388,6 +448,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -443,6 +515,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -507,6 +591,30 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "critical",
@@ -575,6 +683,30 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -630,6 +762,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -685,6 +829,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -740,6 +896,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -795,6 +963,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -850,6 +1030,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -906,6 +1098,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -961,6 +1165,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1054,6 +1270,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1109,6 +1337,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1163,6 +1403,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.5",
         "title": "Identify Input Purpose",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.5",
+        "title": "Identify input purpose"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.5",
+        "title": "Identify input purpose"
       }
     ],
     "defaultSeverity": "moderate",
@@ -1217,6 +1469,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.12",
         "title": "Text Spacing",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing"
       }
     ],
     "defaultSeverity": "moderate",
@@ -1275,6 +1539,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1333,6 +1609,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1387,6 +1675,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.1",
         "title": "Bypass Blocks",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.1",
+        "title": "Bypass blocks"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.1",
+        "title": "Bypass blocks"
       }
     ],
     "defaultSeverity": "moderate",
@@ -1442,6 +1742,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -1497,6 +1809,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -1553,6 +1877,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -1620,6 +1956,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.6",
         "title": "Contrast (Enhanced)",
         "conformanceLevel": "AAA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -1737,6 +2085,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.3",
         "title": "Contrast (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -1793,6 +2153,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "serious",
@@ -1849,6 +2221,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "serious",
@@ -1903,6 +2287,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.4",
         "title": "Orientation",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.4",
+        "title": "Orientation"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.4",
+        "title": "Orientation"
       }
     ],
     "defaultSeverity": "serious",
@@ -1958,6 +2354,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -2012,6 +2420,18 @@ const CHECK_DEFS = [
         "requirement": "2.2.2",
         "title": "Pause, Stop, Hide",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide"
       }
     ],
     "defaultSeverity": "serious",
@@ -2068,6 +2488,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -2123,6 +2555,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -2178,6 +2622,12 @@ const CHECK_DEFS = [
         "requirement": "4.1.1",
         "title": "Parsing",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.1",
+        "title": "Parsing"
       }
     ],
     "defaultSeverity": "moderate",
@@ -2233,6 +2683,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -2288,6 +2750,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -2343,6 +2817,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -2513,6 +2999,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.6",
         "title": "Headings and Labels",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
       }
     ],
     "defaultSeverity": "minor",
@@ -2586,6 +3084,42 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -2648,6 +3182,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -2702,6 +3248,18 @@ const CHECK_DEFS = [
         "requirement": "3.3.2",
         "title": "Labels or Instructions",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
       }
     ],
     "defaultSeverity": "moderate",
@@ -2796,6 +3354,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.6",
         "title": "Headings and Labels",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
       }
     ],
     "defaultSeverity": "minor",
@@ -2851,6 +3421,18 @@ const CHECK_DEFS = [
         "requirement": "3.1.1",
         "title": "Language of Page",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
       }
     ],
     "defaultSeverity": "serious",
@@ -2906,6 +3488,18 @@ const CHECK_DEFS = [
         "requirement": "3.1.1",
         "title": "Language of Page",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
       }
     ],
     "defaultSeverity": "serious",
@@ -2962,6 +3556,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -3072,6 +3678,18 @@ const CHECK_DEFS = [
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -3128,6 +3746,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -3184,6 +3814,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -3277,6 +3919,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -3332,6 +3986,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -3387,6 +4053,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -3442,6 +4120,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -3497,6 +4187,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -3552,6 +4254,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -3606,6 +4320,18 @@ const CHECK_DEFS = [
         "requirement": "2.5.3",
         "title": "Label in Name",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.5.3",
+        "title": "Label in name"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.5.3",
+        "title": "Label in name"
       }
     ],
     "defaultSeverity": "serious",
@@ -4044,6 +4770,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.1",
         "title": "Use of Color",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.1",
+        "title": "Use of colour"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.1",
+        "title": "Use of colour"
       }
     ],
     "defaultSeverity": "serious",
@@ -4100,6 +4838,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -4155,6 +4905,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.4",
         "title": "Link Purpose (In Context)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)"
       }
     ],
     "defaultSeverity": "minor",
@@ -4210,6 +4972,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -4266,6 +5040,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -4321,6 +5107,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -4399,24 +5197,6 @@ const CHECK_DEFS = [
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible"
       },
       {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus Order"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus Visible"
-      },
-      {
         "standard": "WCAG",
         "version": "2.2",
         "type": "Understanding",
@@ -4439,6 +5219,42 @@ const CHECK_DEFS = [
         "requirement": "2.4.7",
         "title": "Understanding Focus Visible",
         "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.3",
+        "title": "Focus Order"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.3",
+        "title": "Focus order"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "moderate",
@@ -4488,6 +5304,18 @@ const CHECK_DEFS = [
         "requirement": "1.2.1",
         "title": "Audio-only and Video-only (Prerecorded)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.2.1",
+        "title": "Audio-only and video-only (pre-recorded)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.2.1",
+        "title": "Audio-only and video-only (pre-recorded)"
       }
     ],
     "defaultSeverity": "moderate",
@@ -4544,6 +5372,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -4664,6 +5504,18 @@ const CHECK_DEFS = [
         "requirement": "2.2.1",
         "title": "Timing Adjustable",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.1",
+        "title": "Timing adjustable"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.1",
+        "title": "Timing adjustable"
       }
     ],
     "defaultSeverity": "serious",
@@ -4755,6 +5607,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.4",
         "title": "Resize Text",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text"
       }
     ],
     "defaultSeverity": "serious",
@@ -4810,6 +5674,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -4864,6 +5740,18 @@ const CHECK_DEFS = [
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -4918,6 +5806,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -4972,6 +5872,18 @@ const CHECK_DEFS = [
         "requirement": "1.4.2",
         "title": "Audio Control",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.2",
+        "title": "Audio control"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.2",
+        "title": "Audio control"
       }
     ],
     "defaultSeverity": "moderate",
@@ -5027,6 +5939,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -5082,6 +6006,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -5138,6 +6074,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -5192,6 +6140,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "minor",
@@ -5285,6 +6245,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.2",
         "title": "Page Titled",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
       }
     ],
     "defaultSeverity": "minor",
@@ -5340,6 +6312,18 @@ const CHECK_DEFS = [
         "requirement": "2.4.2",
         "title": "Page Titled",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
       }
     ],
     "defaultSeverity": "serious",
@@ -5396,6 +6380,12 @@ const CHECK_DEFS = [
         "requirement": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.8",
+        "title": "Accessible authentication (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -5490,6 +6480,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -5545,6 +6547,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -5639,6 +6653,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -5741,6 +6767,18 @@ const CHECK_DEFS = [
         "requirement": "2.1.3",
         "title": "Keyboard (No Exception)",
         "conformanceLevel": "AAA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -5800,6 +6838,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -5855,6 +6905,18 @@ const CHECK_DEFS = [
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "serious",
@@ -5949,6 +7011,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6005,6 +7079,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6060,6 +7146,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6116,6 +7214,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -6172,6 +7282,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -6227,6 +7349,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -6283,6 +7417,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6413,6 +7559,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "minor",
@@ -6468,6 +7626,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -6523,6 +7693,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -6581,6 +7763,12 @@ const CHECK_DEFS = [
         "requirement": "2.5.8",
         "title": "Target Size (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.5.8",
+        "title": "Target size (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -6635,6 +7823,18 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -6691,6 +7891,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6746,6 +7958,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6802,6 +8026,18 @@ const CHECK_DEFS = [
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -6857,6 +8093,18 @@ const CHECK_DEFS = [
         "requirement": "3.1.2",
         "title": "Language of Parts",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.2",
+        "title": "Language of parts"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.2",
+        "title": "Language of parts"
       }
     ],
     "defaultSeverity": "moderate",
@@ -6912,6 +8160,18 @@ const CHECK_DEFS = [
         "requirement": "1.2.2",
         "title": "Captions (Prerecorded)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.2.2",
+        "title": "Captions (pre-recorded)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.2.2",
+        "title": "Subtitles (pre-recorded)"
       }
     ],
     "defaultSeverity": "moderate",
@@ -6967,6 +8227,18 @@ const CHECK_DEFS = [
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -7032,7 +8304,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.1.1",
+          "title": "Non-text content"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.1.1",
+          "title": "Non-text content"
+        }
+      ]
     }
   },
   {
@@ -7046,7 +8332,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.2.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.2.1",
+          "title": "Audio-only and video-only (pre-recorded)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.2.1",
+          "title": "Audio-only and video-only (pre-recorded)"
+        }
+      ]
     }
   },
   {
@@ -7060,7 +8360,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.2.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.2.2",
+          "title": "Captions (pre-recorded)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.2.2",
+          "title": "Subtitles (pre-recorded)"
+        }
+      ]
     }
   },
   {
@@ -7087,7 +8401,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.3.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.1",
+          "title": "Info and relationships"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.1",
+          "title": "Info and relationships"
+        }
+      ]
     }
   },
   {
@@ -7101,7 +8429,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.1",
+          "title": "Use of colour"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.1",
+          "title": "Use of colour"
+        }
+      ]
     }
   },
   {
@@ -7115,7 +8457,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.2",
+          "title": "Audio control"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.2",
+          "title": "Audio control"
+        }
+      ]
     }
   },
   {
@@ -7130,7 +8486,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.3"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.3",
+          "title": "Contrast (minimum)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.3",
+          "title": "Contrast (minimum)"
+        }
+      ]
     }
   },
   {
@@ -7145,7 +8515,8 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.6"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -7163,7 +8534,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.1.1",
+          "title": "Keyboard"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.1.1",
+          "title": "Keyboard"
+        }
+      ]
     }
   },
   {
@@ -7177,7 +8562,8 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.1.3"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -7191,7 +8577,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.2.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.2.2",
+          "title": "Pause, stop, hide"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.2.2",
+          "title": "Pause, stop, hide"
+        }
+      ]
     }
   },
   {
@@ -7205,7 +8605,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.1",
+          "title": "Bypass blocks"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.1",
+          "title": "Bypass blocks"
+        }
+      ]
     }
   },
   {
@@ -7220,7 +8634,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.2",
+          "title": "Page titled"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.2",
+          "title": "Page titled"
+        }
+      ]
     }
   },
   {
@@ -7234,7 +8662,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.3"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.3",
+          "title": "Focus Order"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.3",
+          "title": "Focus order"
+        }
+      ]
     }
   },
   {
@@ -7248,7 +8690,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.4"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.4",
+          "title": "Link purpose (in context)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.4",
+          "title": "Link purpose (in context)"
+        }
+      ]
     }
   },
   {
@@ -7263,7 +8719,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.6"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.6",
+          "title": "Headings and labels"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.6",
+          "title": "Headings and labels"
+        }
+      ]
     }
   },
   {
@@ -7280,7 +8750,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.7"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.7",
+          "title": "Focus visible"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.7",
+          "title": "Focus visible"
+        }
+      ]
     }
   },
   {
@@ -7294,7 +8778,8 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.4.9"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -7308,7 +8793,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.5.3"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.5.3",
+          "title": "Label in name"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.5.3",
+          "title": "Label in name"
+        }
+      ]
     }
   },
   {
@@ -7322,7 +8821,15 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.5.8"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.5.8",
+          "title": "Target size (minimum)"
+        }
+      ]
     }
   },
   {
@@ -7337,7 +8844,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "3.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.1.1",
+          "title": "Language of page"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.1.1",
+          "title": "Language of page"
+        }
+      ]
     }
   },
   {
@@ -7351,7 +8872,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "3.1.2"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.1.2",
+          "title": "Language of parts"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.1.2",
+          "title": "Language of parts"
+        }
+      ]
     }
   },
   {
@@ -7365,7 +8900,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.3.4"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.4",
+          "title": "Orientation"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.4",
+          "title": "Orientation"
+        }
+      ]
     }
   },
   {
@@ -7379,7 +8928,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.3.5"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.5",
+          "title": "Identify input purpose"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.5",
+          "title": "Identify input purpose"
+        }
+      ]
     }
   },
   {
@@ -7393,7 +8956,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.12"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.12",
+          "title": "Text spacing"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.12",
+          "title": "Text spacing"
+        }
+      ]
     }
   },
   {
@@ -7407,7 +8984,8 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.2.4"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -7421,7 +8999,8 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "3.2.5"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -7435,7 +9014,15 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "4.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.1",
+          "title": "Parsing"
+        }
+      ]
     }
   },
   {
@@ -7472,7 +9059,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "4.1.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        }
+      ]
     }
   },
   {
@@ -7498,7 +9099,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "4.1.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        }
+      ]
     }
   },
   {
@@ -7512,7 +9127,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "1.4.4"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.4",
+          "title": "Resize text"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.4",
+          "title": "Resize text"
+        }
+      ]
     }
   },
   {
@@ -7526,7 +9155,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "2.2.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.2.1",
+          "title": "Timing adjustable"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.2.1",
+          "title": "Timing adjustable"
+        }
+      ]
     }
   },
   {
@@ -7541,7 +9184,21 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "3.3.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.3.2",
+          "title": "Labels or instructions"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.2",
+          "title": "Labels or instructions"
+        }
+      ]
     }
   },
   {
@@ -7555,7 +9212,15 @@ const COMPOSITE_RULES = [
       "wcagSc": [
         "3.3.8"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.8",
+          "title": "Accessible authentication (minimum)"
+        }
+      ]
     }
   }
 ];
@@ -19390,6 +21055,15 @@ const rollupCompositeResults = (function rollupCompositeResults(
         if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
         return m;
       });
+      // EN 301 549 clauses for those criteria, precomputed at build time into
+      // meta.en301549 (scripts/build-core.js), since this function is inlined
+      // and cannot load the table itself.
+      if (Array.isArray(metaIn.en301549)) {
+        for (const m of metaIn.en301549) {
+          if (m && typeof m === 'object' && !Array.isArray(m))
+            normativeMappingsFromMeta.push({ ...m });
+        }
+      }
 
       const checksIds = Array.isArray(entry.checksIds)
         ? entry.checksIds
@@ -20472,6 +22146,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -20528,6 +22214,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -20583,6 +22281,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -20676,6 +22386,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -20731,6 +22453,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -20786,6 +22520,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -20841,6 +22587,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -20905,6 +22663,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "critical",
@@ -20973,6 +22755,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21028,6 +22834,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21083,6 +22901,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21138,6 +22968,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21193,6 +23035,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21248,6 +23102,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21304,6 +23170,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21359,6 +23237,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21452,6 +23342,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21507,6 +23409,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21561,6 +23475,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.5",
         "title": "Identify Input Purpose",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.5",
+        "title": "Identify input purpose"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.5",
+        "title": "Identify input purpose"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21615,6 +23541,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.12",
         "title": "Text Spacing",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21673,6 +23611,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21731,6 +23681,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -21785,6 +23747,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.1",
         "title": "Bypass Blocks",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.1",
+        "title": "Bypass blocks"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.1",
+        "title": "Bypass blocks"
       }
     ],
     "defaultSeverity": "moderate",
@@ -21840,6 +23814,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -21895,6 +23881,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -21951,6 +23949,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -22018,6 +24028,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.6",
         "title": "Contrast (Enhanced)",
         "conformanceLevel": "AAA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -22135,6 +24157,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.3",
         "title": "Contrast (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.3",
+        "title": "Contrast (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -22191,6 +24225,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "serious",
@@ -22247,6 +24293,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "serious",
@@ -22301,6 +24359,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.4",
         "title": "Orientation",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.4",
+        "title": "Orientation"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.4",
+        "title": "Orientation"
       }
     ],
     "defaultSeverity": "serious",
@@ -22356,6 +24426,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -22410,6 +24492,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.2.2",
         "title": "Pause, Stop, Hide",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide"
       }
     ],
     "defaultSeverity": "serious",
@@ -22466,6 +24560,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -22521,6 +24627,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -22576,6 +24694,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.1",
         "title": "Parsing",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.1",
+        "title": "Parsing"
       }
     ],
     "defaultSeverity": "moderate",
@@ -22631,6 +24755,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -22686,6 +24822,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -22741,6 +24889,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -22911,6 +25071,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.6",
         "title": "Headings and Labels",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
       }
     ],
     "defaultSeverity": "minor",
@@ -22984,6 +25156,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -23046,6 +25254,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -23100,6 +25320,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.3.2",
         "title": "Labels or Instructions",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions"
       }
     ],
     "defaultSeverity": "moderate",
@@ -23194,6 +25426,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.6",
         "title": "Headings and Labels",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.6",
+        "title": "Headings and labels"
       }
     ],
     "defaultSeverity": "minor",
@@ -23249,6 +25493,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.1.1",
         "title": "Language of Page",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
       }
     ],
     "defaultSeverity": "serious",
@@ -23304,6 +25560,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.1.1",
         "title": "Language of Page",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.1",
+        "title": "Language of page"
       }
     ],
     "defaultSeverity": "serious",
@@ -23360,6 +25628,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -23470,6 +25750,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -23526,6 +25818,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -23582,6 +25886,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "moderate",
@@ -23675,6 +25991,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -23730,6 +26058,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -23785,6 +26125,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -23840,6 +26192,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -23895,6 +26259,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -23950,6 +26326,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -24004,6 +26392,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.5.3",
         "title": "Label in Name",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.5.3",
+        "title": "Label in name"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.5.3",
+        "title": "Label in name"
       }
     ],
     "defaultSeverity": "serious",
@@ -24442,6 +26842,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.1",
         "title": "Use of Color",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.1",
+        "title": "Use of colour"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.1",
+        "title": "Use of colour"
       }
     ],
     "defaultSeverity": "serious",
@@ -24498,6 +26910,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -24553,6 +26977,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.4",
         "title": "Link Purpose (In Context)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)"
       }
     ],
     "defaultSeverity": "minor",
@@ -24608,6 +27044,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -24664,6 +27112,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -24719,6 +27179,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -24797,24 +27269,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible"
       },
       {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus Order"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus Visible"
-      },
-      {
         "standard": "WCAG",
         "version": "2.2",
         "type": "Understanding",
@@ -24837,6 +27291,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.7",
         "title": "Understanding Focus Visible",
         "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.3",
+        "title": "Focus Order"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.3",
+        "title": "Focus order"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible"
       }
     ],
     "defaultSeverity": "moderate",
@@ -24886,6 +27376,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.2.1",
         "title": "Audio-only and Video-only (Prerecorded)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.2.1",
+        "title": "Audio-only and video-only (pre-recorded)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.2.1",
+        "title": "Audio-only and video-only (pre-recorded)"
       }
     ],
     "defaultSeverity": "moderate",
@@ -24942,6 +27444,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -25062,6 +27576,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.2.1",
         "title": "Timing Adjustable",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.1",
+        "title": "Timing adjustable"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.1",
+        "title": "Timing adjustable"
       }
     ],
     "defaultSeverity": "serious",
@@ -25153,6 +27679,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.4",
         "title": "Resize Text",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.4",
+        "title": "Resize text"
       }
     ],
     "defaultSeverity": "serious",
@@ -25208,6 +27746,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -25262,6 +27812,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -25316,6 +27878,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -25370,6 +27944,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.4.2",
         "title": "Audio Control",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.2",
+        "title": "Audio control"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.2",
+        "title": "Audio control"
       }
     ],
     "defaultSeverity": "moderate",
@@ -25425,6 +28011,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -25480,6 +28078,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -25536,6 +28146,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -25590,6 +28212,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "minor",
@@ -25683,6 +28317,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.2",
         "title": "Page Titled",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
       }
     ],
     "defaultSeverity": "minor",
@@ -25738,6 +28384,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.2",
         "title": "Page Titled",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.2",
+        "title": "Page titled"
       }
     ],
     "defaultSeverity": "serious",
@@ -25794,6 +28452,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.8",
+        "title": "Accessible authentication (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -25888,6 +28552,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -25943,6 +28619,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -26037,6 +28725,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -26139,6 +28839,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.1.3",
         "title": "Keyboard (No Exception)",
         "conformanceLevel": "AAA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "moderate",
@@ -26198,6 +28910,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -26253,6 +28977,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.1.1",
         "title": "Keyboard",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard"
       }
     ],
     "defaultSeverity": "serious",
@@ -26347,6 +29083,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -26403,6 +29151,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -26458,6 +29218,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -26514,6 +29286,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -26570,6 +29354,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -26625,6 +29421,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "minor",
@@ -26681,6 +29489,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -26811,6 +29631,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "minor",
@@ -26866,6 +29698,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -26921,6 +29765,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "moderate",
@@ -26979,6 +29835,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.5.8",
         "title": "Target Size (Minimum)",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.5.8",
+        "title": "Target size (minimum)"
       }
     ],
     "defaultSeverity": "serious",
@@ -27033,6 +29895,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Info and Relationships",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships"
       }
     ],
     "defaultSeverity": "serious",
@@ -27089,6 +29963,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -27144,6 +30030,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -27200,6 +30098,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value"
       }
     ],
     "defaultSeverity": "serious",
@@ -27255,6 +30165,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.1.2",
         "title": "Language of Parts",
         "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.1.2",
+        "title": "Language of parts"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.1.2",
+        "title": "Language of parts"
       }
     ],
     "defaultSeverity": "moderate",
@@ -27310,6 +30232,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.2.2",
         "title": "Captions (Prerecorded)",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.2.2",
+        "title": "Captions (pre-recorded)"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.2.2",
+        "title": "Subtitles (pre-recorded)"
       }
     ],
     "defaultSeverity": "moderate",
@@ -27365,6 +30299,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.1",
         "title": "Non-text Content",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.1.1",
+        "title": "Non-text content"
       }
     ],
     "defaultSeverity": "serious",
@@ -27430,7 +30376,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.1.1",
+          "title": "Non-text content"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.1.1",
+          "title": "Non-text content"
+        }
+      ]
     }
   },
   {
@@ -27444,7 +30404,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.2.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.2.1",
+          "title": "Audio-only and video-only (pre-recorded)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.2.1",
+          "title": "Audio-only and video-only (pre-recorded)"
+        }
+      ]
     }
   },
   {
@@ -27458,7 +30432,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.2.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.2.2",
+          "title": "Captions (pre-recorded)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.2.2",
+          "title": "Subtitles (pre-recorded)"
+        }
+      ]
     }
   },
   {
@@ -27485,7 +30473,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.3.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.1",
+          "title": "Info and relationships"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.1",
+          "title": "Info and relationships"
+        }
+      ]
     }
   },
   {
@@ -27499,7 +30501,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.1",
+          "title": "Use of colour"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.1",
+          "title": "Use of colour"
+        }
+      ]
     }
   },
   {
@@ -27513,7 +30529,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.2",
+          "title": "Audio control"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.2",
+          "title": "Audio control"
+        }
+      ]
     }
   },
   {
@@ -27528,7 +30558,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.3"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.3",
+          "title": "Contrast (minimum)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.3",
+          "title": "Contrast (minimum)"
+        }
+      ]
     }
   },
   {
@@ -27543,7 +30587,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.6"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -27561,7 +30606,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.1.1",
+          "title": "Keyboard"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.1.1",
+          "title": "Keyboard"
+        }
+      ]
     }
   },
   {
@@ -27575,7 +30634,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.1.3"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -27589,7 +30649,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.2.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.2.2",
+          "title": "Pause, stop, hide"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.2.2",
+          "title": "Pause, stop, hide"
+        }
+      ]
     }
   },
   {
@@ -27603,7 +30677,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.1",
+          "title": "Bypass blocks"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.1",
+          "title": "Bypass blocks"
+        }
+      ]
     }
   },
   {
@@ -27618,7 +30706,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.2",
+          "title": "Page titled"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.2",
+          "title": "Page titled"
+        }
+      ]
     }
   },
   {
@@ -27632,7 +30734,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.3"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.3",
+          "title": "Focus Order"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.3",
+          "title": "Focus order"
+        }
+      ]
     }
   },
   {
@@ -27646,7 +30762,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.4"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.4",
+          "title": "Link purpose (in context)"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.4",
+          "title": "Link purpose (in context)"
+        }
+      ]
     }
   },
   {
@@ -27661,7 +30791,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.6"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.6",
+          "title": "Headings and labels"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.6",
+          "title": "Headings and labels"
+        }
+      ]
     }
   },
   {
@@ -27678,7 +30822,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.7"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.4.7",
+          "title": "Focus visible"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.7",
+          "title": "Focus visible"
+        }
+      ]
     }
   },
   {
@@ -27692,7 +30850,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.4.9"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -27706,7 +30865,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.5.3"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.5.3",
+          "title": "Label in name"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.5.3",
+          "title": "Label in name"
+        }
+      ]
     }
   },
   {
@@ -27720,7 +30893,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.5.8"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.5.8",
+          "title": "Target size (minimum)"
+        }
+      ]
     }
   },
   {
@@ -27735,7 +30916,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "3.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.1.1",
+          "title": "Language of page"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.1.1",
+          "title": "Language of page"
+        }
+      ]
     }
   },
   {
@@ -27749,7 +30944,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "3.1.2"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.1.2",
+          "title": "Language of parts"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.1.2",
+          "title": "Language of parts"
+        }
+      ]
     }
   },
   {
@@ -27763,7 +30972,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.3.4"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.4",
+          "title": "Orientation"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.4",
+          "title": "Orientation"
+        }
+      ]
     }
   },
   {
@@ -27777,7 +31000,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.3.5"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.3.5",
+          "title": "Identify input purpose"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.3.5",
+          "title": "Identify input purpose"
+        }
+      ]
     }
   },
   {
@@ -27791,7 +31028,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.12"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.12",
+          "title": "Text spacing"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.12",
+          "title": "Text spacing"
+        }
+      ]
     }
   },
   {
@@ -27805,7 +31056,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.2.4"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -27819,7 +31071,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "3.2.5"
       ],
-      "level": "AAA"
+      "level": "AAA",
+      "en301549": []
     }
   },
   {
@@ -27833,7 +31086,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "4.1.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.1",
+          "title": "Parsing"
+        }
+      ]
     }
   },
   {
@@ -27870,7 +31131,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "4.1.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        }
+      ]
     }
   },
   {
@@ -27896,7 +31171,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "4.1.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.2",
+          "title": "Name, role, value"
+        }
+      ]
     }
   },
   {
@@ -27910,7 +31199,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "1.4.4"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.4",
+          "title": "Resize text"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.4",
+          "title": "Resize text"
+        }
+      ]
     }
   },
   {
@@ -27924,7 +31227,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "2.2.1"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.2.2.1",
+          "title": "Timing adjustable"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.2.1",
+          "title": "Timing adjustable"
+        }
+      ]
     }
   },
   {
@@ -27939,7 +31256,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "3.3.2"
       ],
-      "level": "A"
+      "level": "A",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.3.2",
+          "title": "Labels or instructions"
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.2",
+          "title": "Labels or instructions"
+        }
+      ]
     }
   },
   {
@@ -27953,7 +31284,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "wcagSc": [
         "3.3.8"
       ],
-      "level": "AA"
+      "level": "AA",
+      "en301549": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.8",
+          "title": "Accessible authentication (minimum)"
+        }
+      ]
     }
   }
 ];
@@ -64088,6 +67427,15 @@ const rollupCompositeResults = (function rollupCompositeResults(
         if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
         return m;
       });
+      // EN 301 549 clauses for those criteria, precomputed at build time into
+      // meta.en301549 (scripts/build-core.js), since this function is inlined
+      // and cannot load the table itself.
+      if (Array.isArray(metaIn.en301549)) {
+        for (const m of metaIn.en301549) {
+          if (m && typeof m === 'object' && !Array.isArray(m))
+            normativeMappingsFromMeta.push({ ...m });
+        }
+      }
 
       const checksIds = Array.isArray(entry.checksIds)
         ? entry.checksIds

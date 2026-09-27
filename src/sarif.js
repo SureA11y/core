@@ -68,11 +68,20 @@ function isWcagCriterion(m) {
   return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
 }
 
-function wcagTags(check) {
+// EN 301 549 numbers a clause the same way in every version that has it, so
+// the tag carries the clause alone and two versions collapse into one tag.
+function isEn301549Clause(m) {
+  return !!(m && m.requirement && m.standard === 'EN 301 549');
+}
+
+function ruleTags(check) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
   for (const m of mappings) {
     if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
+  }
+  for (const m of mappings) {
+    if (isEn301549Clause(m)) tags.add(`en301549-${m.requirement}`);
   }
   return Array.from(tags);
 }
@@ -87,7 +96,7 @@ function buildRule(check) {
     // worst-case, rule-level default is "warning"; automatic rules can
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
-    properties: { tags: wcagTags(check) }
+    properties: { tags: ruleTags(check) }
   };
 }
 

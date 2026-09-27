@@ -61,6 +61,19 @@ you need the exact precedence.
 Omit `tags` entirely (the default) and every rule at every level runs, with no composite
 suppression.
 
+## EN 301 549
+
+Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. Every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion:
+
+| Version | Built on | Differs from the other in |
+|---|---|---|
+| V3.2.1 (2021-03) | WCAG 2.1 A and AA, 50 criteria | Includes 9.4.1.1 Parsing |
+| V4.1.1 (2026-09) | WCAG 2.2 A and AA, 55 criteria | Adds 2.4.11, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8; 9.4.1.1 is void |
+
+AAA criteria have no clause in either version. The table lives in `src/coverage/en301549-map.js`, taken from the ETSI text; rules never declare these entries themselves, the build derives them from each rule's WCAG mapping. A rule added through `engineOptions.customRules` keeps exactly the mappings it declares.
+
+This is a correspondence between two published documents, not a conformance claim: a clause on a result says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
+
 ## What this engine cannot tell you
 
 No automated tool — this one included — can certify full WCAG conformance. That's not a limitation specific to surea11y; it's inherent to WCAG itself; a meaningful fraction of Success Criteria require human judgment (is this alt text *accurate*, not just *present*; is this error message *understandable*) or dynamic testing this engine's static-DOM-scan architecture cannot do at all (keyboard-trap detection, real layout/reflow at zoom). See [`LIMITATIONS.md`](./LIMITATIONS.md) for the full, explicit list of what's out of scope and why.

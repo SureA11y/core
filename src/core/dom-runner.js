@@ -184,6 +184,15 @@ function rollupCompositeResults(
         if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
         return m;
       });
+      // EN 301 549 clauses for those criteria, precomputed at build time into
+      // meta.en301549 (scripts/build-core.js), since this function is inlined
+      // and cannot load the table itself.
+      if (Array.isArray(metaIn.en301549)) {
+        for (const m of metaIn.en301549) {
+          if (m && typeof m === 'object' && !Array.isArray(m))
+            normativeMappingsFromMeta.push({ ...m });
+        }
+      }
 
       const checksIds = Array.isArray(entry.checksIds)
         ? entry.checksIds

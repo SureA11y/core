@@ -161,4 +161,42 @@ function en301549ClausesForSc(sc) {
   return out;
 }
 
-module.exports = { EN301549_VERSIONS, EN301549_CLAUSES, en301549ClausesForSc };
+// The EN 301 549 entries for a list of WCAG criteria, shaped as
+// `normativeMappings` entries, in criterion order and oldest version first.
+function en301549MappingsForScs(scs) {
+  const out = [];
+  for (const sc of Array.isArray(scs) ? scs : []) {
+    for (const c of en301549ClausesForSc(sc)) {
+      out.push({ standard: 'EN 301 549', version: c.version, requirement: c.clause, title: c.title });
+    }
+  }
+  return out;
+}
+
+// A rule's `normativeMappings` with the EN 301 549 clause for each of its WCAG
+// Success Criteria appended. An entry the rule already declares is not
+// repeated. Only WCAG criteria are followed: an Understanding-document entry,
+// or one for another standard, shares a `requirement` with a criterion without
+// being one.
+function withEn301549Mappings(normativeMappings) {
+  const list = Array.isArray(normativeMappings) ? normativeMappings : [];
+  const scs = list
+    .filter((m) => m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type)
+    .map((m) => String(m.requirement).trim());
+  const key = (m) => `${m.standard}|${m.version}|${m.requirement}`;
+  const seen = new Set(list.filter(Boolean).map(key));
+  const added = en301549MappingsForScs(scs).filter((m) => {
+    if (seen.has(key(m))) return false;
+    seen.add(key(m));
+    return true;
+  });
+  return list.concat(added);
+}
+
+module.exports = {
+  EN301549_VERSIONS,
+  EN301549_CLAUSES,
+  en301549ClausesForSc,
+  en301549MappingsForScs,
+  withEn301549Mappings
+};

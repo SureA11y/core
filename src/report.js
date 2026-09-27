@@ -197,9 +197,20 @@ function renderWcagRollup(rulesResults) {
           const checksIds = (rule.data && rule.data.details && rule.data.details.checksIds) || [];
           const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
           const scLabel = mapping ? `WCAG ${esc(mapping.requirement)}` : 'WCAG (unmapped)';
+          // Clause numbers match across EN 301 549 versions, so one label each.
+          const enClauses = Array.from(
+            new Set(
+              ((rule.meta && rule.meta.normativeMappings) || [])
+                .filter((m) => m && m.standard === 'EN 301 549' && m.requirement)
+                .map((m) => m.requirement)
+            )
+          );
+          const enLabel = enClauses.length
+            ? `<br><span class="note">EN 301 549 ${enClauses.map(esc).join(', ')}</span>`
+            : '';
           const metricsLabel = `${metrics.passCount || 0} pass / ${metrics.failCount || 0} fail / ${metrics.cantTellCount || 0} needs review / ${metrics.notApplicableCount || 0} n/a`;
           return `<tr>
-            <td class="sc-cell">${scLabel}</td>
+            <td class="sc-cell">${scLabel}${enLabel}</td>
             <td>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}</td>

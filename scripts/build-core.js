@@ -42,6 +42,7 @@ const { runCore, rollupCompositeResults } = require('../src/core/dom-runner');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
+const { en301549MappingsForScs, withEn301549Mappings } = require('../src/coverage/en301549-map');
 const {
   UNCERTAINTY_CODE_VALUES,
   isUncertaintyCode,
@@ -119,7 +120,7 @@ function loadCompositeRulesCatalog() {
       checksIds,
       meta:
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
-          ? entry.meta
+          ? { ...entry.meta, en301549: en301549MappingsForScs(entry.meta.wcagSc) }
           : null
     };
   });
@@ -258,6 +259,10 @@ function loadRuleModules() {
       typeof applicabilityFn === 'function' ? applicabilityFn.toString() : null;
 
     const normalizedMeta = normalizeRuleMeta(ruleId, id, meta, ENGINE_TAG);
+    // EN 301 549 restates each WCAG criterion as a chapter 9 clause; derived
+    // here from the table rather than declared per rule, so a rule only ever
+    // states its WCAG mapping.
+    normalizedMeta.normativeMappings = withEn301549Mappings(normalizedMeta.normativeMappings);
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
 
