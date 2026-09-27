@@ -505,6 +505,7 @@ contributing to it:
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
 | `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
+| `docs/JUNIT.md` | JUnit XML report for the test dashboards of GitLab, Azure DevOps, Jenkins and CircleCI. |
 | `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
 | `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
@@ -565,6 +566,7 @@ src/
   baseline.js              # Baseline entry point (@surea11y/core/baseline)
   report.js                # HTML report entry point (@surea11y/core/report)
   sarif.js                 # SARIF entry point (@surea11y/core/sarif)
+  junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
 
   checks/

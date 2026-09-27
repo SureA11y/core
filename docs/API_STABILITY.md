@@ -23,6 +23,7 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/baseline` | `src/baseline.js` | `buildBaselineEntries()`, `matchBaseline()` |
 | `@surea11y/core/report` | `src/report.js` | `renderHtmlReport()` |
 | `@surea11y/core/sarif` | `src/sarif.js` | `renderSarifReport()` |
+| `@surea11y/core/junit` | `src/junit.js` | `renderJunitReport()` |
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |
 
