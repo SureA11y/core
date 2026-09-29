@@ -11,6 +11,8 @@
  * scorecard + searchable/filterable/paginated table, dark-mode CSS.
  */
 
+const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
+
 // Uses the dataviz skill's validated status palette, mapped 1:1 onto this
 // engine's own 4 outcomes.
 const STATUS = {
@@ -144,7 +146,7 @@ function getCardOutcome(ruleResult) {
   return hasCantTell ? 'cantTell' : ruleResult.outcome;
 }
 
-// Same test as src/sarif.js: other standards (EN 301 549) and WCAG's
+// Same test as src/sarif.js: other standards (EN 301 549, say) and WCAG's
 // non-normative documents (`type: 'Understanding'`) share `requirement`
 // with a Success Criterion, and chipping them as "WCAG" mislabels or repeats it.
 function isWcagCriterion(m) {
@@ -298,17 +300,22 @@ function renderWcagRollup(rulesResults, ui, langAttr = '') {
           const scLabel = mapping
             ? `WCAG ${esc(mapping.requirement)}`
             : esc(ui.tr('report_rollup_unmapped'));
-          // Clause numbers match across EN 301 549 versions, so one label each.
-          const enClauses = Array.from(
-            new Set(
-              ((rule.meta && rule.meta.normativeMappings) || [])
-                .filter((m) => m && m.standard === 'EN 301 549' && m.requirement)
-                .map((m) => m.requirement)
-            )
-          );
-          const enLabel = enClauses.length
-            ? `<br><span class="note">EN 301 549 ${enClauses.map(esc).join(', ')}</span>`
-            : '';
+          // One line per registered standard the row carries, in registry
+          // order. A requirement numbered the same in two versions (as EN 301
+          // 549 clauses are) is listed once.
+          const ruleMappings = (rule.meta && rule.meta.normativeMappings) || [];
+          const enLabel = NORMATIVE_STANDARDS.map((standard) => {
+            const requirements = Array.from(
+              new Set(
+                ruleMappings
+                  .filter((m) => standardOfEntry(m) === standard)
+                  .map((m) => m.requirement)
+              )
+            );
+            return requirements.length
+              ? `<br><span class="note">${esc(standard.standard)} ${requirements.map(esc).join(', ')}</span>`
+              : '';
+          }).join('');
           const metricsLabel = ui.tr('report_rollup_breakdown', {
             pass: ui.num(metrics.passCount),
             fail: ui.num(metrics.failCount),

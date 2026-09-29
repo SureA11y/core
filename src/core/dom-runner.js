@@ -11,12 +11,13 @@
  *   resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
  *   normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
  *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
- *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules).
+ *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
+ *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
-   resolveContextRoots, normalizeRuleMeta */
+   resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -184,11 +185,12 @@ function rollupCompositeResults(
         if (lvl === 'A' || lvl === 'AA' || lvl === 'AAA') m.level = lvl;
         return m;
       });
-      // EN 301 549 clauses for those criteria, precomputed at build time into
-      // meta.en301549 (scripts/build-core.js), since this function is inlined
-      // and cannot load the table itself.
-      if (Array.isArray(metaIn.en301549)) {
-        for (const m of metaIn.en301549) {
+      // Other standards' entries for those criteria, precomputed at build time
+      // into meta.standardMappings (scripts/build-core.js, from the registry in
+      // src/coverage/standards.js), since this function is inlined and cannot
+      // load the tables itself.
+      if (Array.isArray(metaIn.standardMappings)) {
+        for (const m of metaIn.standardMappings) {
           if (m && typeof m === 'object' && !Array.isArray(m))
             normativeMappingsFromMeta.push({ ...m });
         }
@@ -560,6 +562,7 @@ function runCore(
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];
+  const customRuleIds = new Set();
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
     : [];
@@ -629,6 +632,7 @@ function runCore(
       extraImpls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
     }
 
+    for (const id of extraDefsById.keys()) customRuleIds.add(id);
     if (extraDefsById.size) {
       effectiveCheckDefs = CHECK_DEFS.filter((d) => !extraDefsById.has(d.ruleId)).concat(
         Array.from(extraDefsById.values())
@@ -706,6 +710,20 @@ function runCore(
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
             : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+      );
+    } catch {}
+  }
+
+  // engineOptions.mappings: which standards besides WCAG a result's
+  // normativeMappings name. The catalog carries every one of them; a scan
+  // result carries only those asked for, or implied by the applied profile.
+  const mappingSelection = resolveMappingSelection(engineOptionsResolved, appliedProfile);
+  if (mappingSelection.unknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.mappings: ignoring ' +
+          mappingSelection.unknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such standard or version.'
       );
     } catch {}
   }
@@ -903,6 +921,16 @@ function runCore(
     SCHEMA_VERSION
   );
 
+  // A custom rule keeps exactly the mappings it declares; every other result
+  // drops the standards this run did not ask for.
+  for (const r of checksResults.concat(rulesResults)) {
+    if (!r || !r.meta || customRuleIds.has(r.ruleId)) continue;
+    r.meta.normativeMappings = filterNormativeMappings(
+      r.meta.normativeMappings,
+      mappingSelection.tokens
+    );
+  }
+
   // Optional perf counters passthrough (only when enabled). Deterministic.
   let perfStats = null;
   try {
@@ -930,7 +958,8 @@ function runCore(
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
-      ...(appliedProfile ? { profile: appliedProfile } : {})
+      ...(appliedProfile ? { profile: appliedProfile } : {}),
+      ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,
     title,

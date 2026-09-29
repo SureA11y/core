@@ -17,8 +17,7 @@ const {
   EN301549_VERSIONS,
   EN301549_CLAUSES,
   en301549ClausesForSc,
-  en301549MappingsForScs,
-  withEn301549Mappings
+  en301549MappingsForScs
 } = require('../../src/coverage/en301549-map');
 const { FACETS } = require('../../src/coverage/wcag-facets');
 const { introducedInVersion, removedInVersion } = require('../../src/coverage/wcag-version-map');
@@ -113,44 +112,21 @@ test('en301549ClausesForSc: surrounding whitespace does not change the answer', 
 
 const enOf = (mappings) => mappings.filter((m) => m.standard === 'EN 301 549');
 
-test('withEn301549Mappings: appends one entry per version after the rule\'s own mappings', () => {
-  const own = [{ standard: 'WCAG', requirement: '1.4.3', conformanceLevel: 'AA' }];
-  assert.deepEqual(withEn301549Mappings(own), [
-    own[0],
-    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.4.3', title: 'Contrast (minimum)' },
-    { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3', title: 'Contrast (minimum)' }
+test('en301549MappingsForScs: one entry per version, naming the criterion it restates', () => {
+  assert.deepEqual(en301549MappingsForScs(['1.4.3']), [
+    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.4.3', title: 'Contrast (minimum)', wcagSc: ['1.4.3'] },
+    { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3', title: 'Contrast (minimum)', wcagSc: ['1.4.3'] }
   ]);
-});
-
-test('withEn301549Mappings: follows WCAG criteria only, not Understanding or other standards', () => {
-  const own = [
-    { standard: 'WCAG', type: 'Understanding', requirement: '2.1.1' },
-    { standard: 'ARIA', requirement: '1.4.3' }
-  ];
-  assert.deepEqual(withEn301549Mappings(own), own);
-});
-
-test('withEn301549Mappings: an entry the rule already declares is not repeated', () => {
-  const declared = { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1', title: 'Keyboard' };
-  const out = withEn301549Mappings([{ standard: 'WCAG', requirement: '2.1.1' }, declared]);
-  assert.deepEqual(
-    enOf(out).map((m) => m.version),
-    ['V3.2.1', 'V4.1.1']
-  );
-});
-
-test('withEn301549Mappings: a missing or non-array list yields an empty list', () => {
-  for (const v of [null, undefined, 'x', {}]) assert.deepEqual(withEn301549Mappings(v), []);
 });
 
 test('en301549MappingsForScs: AAA criteria contribute nothing', () => {
   assert.deepEqual(en301549MappingsForScs(['1.4.6', '2.4.9']), []);
 });
 
-test('a scan attaches EN 301 549 clauses to atomic and composite results', () => {
+test('a scan that asks for them attaches EN 301 549 clauses to atomic and composite results', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>';
-  const result = runa11yCoreOnHtml(html, {});
+  const result = runa11yCoreOnHtml(html, { engineOptions: { mappings: ['en301549'] } });
 
   const atomic = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
   assert.deepEqual(
@@ -167,6 +143,12 @@ test('a scan attaches EN 301 549 clauses to atomic and composite results', () =>
 
   // The WCAG entry stays first: consumers that read [0] still get the criterion.
   assert.equal(composite('1.1.1').meta.normativeMappings[0].standard, 'WCAG');
+
+  // Without asking, a result names WCAG only.
+  const plain = runa11yCoreOnHtml(html, {});
+  for (const r of plain.checksResults.concat(plain.rulesResults)) {
+    assert.deepEqual(enOf(r.meta.normativeMappings), [], r.ruleId);
+  }
 });
 
 // --- the public entry point ----------------------------------------------------
@@ -190,7 +172,7 @@ test('composite entries in the rules catalog carry their EN 301 549 clauses', ()
   const core = require('../../src/index.js');
   const composite = core.getRulesCatalog().find((c) => c.id === 'wcag-1.1.1-non-text-content');
   assert.deepEqual(
-    composite.meta.en301549.map((m) => `${m.version} ${m.requirement}`),
+    enOf(composite.meta.standardMappings).map((m) => `${m.version} ${m.requirement}`),
     ['V3.2.1 9.1.1.1', 'V4.1.1 9.1.1.1']
   );
 });

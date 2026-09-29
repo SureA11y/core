@@ -26,6 +26,7 @@
 
 const path = require('path');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { standardOfEntry } = require('./coverage/standards.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -60,18 +61,12 @@ function buildRemainingBaselineMap(baselineEntries) {
   return remaining;
 }
 
-// `normativeMappings` also carries other standards (EN 301 549 clauses) and
+// `normativeMappings` also carries other standards (EN 301 549 clauses, say) and
 // WCAG's own non-normative documents (`type: 'Understanding'`), each with a
 // `requirement` of its own. Only a WCAG Success Criterion earns a `wcag-` tag;
 // an entry naming no standard is treated as WCAG, the engine's default.
 function isWcagCriterion(m) {
   return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
-}
-
-// EN 301 549 numbers a clause the same way in every version that has it, so
-// the tag carries the clause alone and two versions collapse into one tag.
-function isEn301549Clause(m) {
-  return !!(m && m.requirement && m.standard === 'EN 301 549');
 }
 
 function ruleTags(check) {
@@ -80,8 +75,13 @@ function ruleTags(check) {
   for (const m of mappings) {
     if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
   }
+  // Each registered standard's entry gets a tag prefixed with its key
+  // (src/coverage/standards.js). The tag carries no version: EN 301 549 numbers
+  // a clause the same way in every version that has it, so two versions
+  // collapse into one tag.
   for (const m of mappings) {
-    if (isEn301549Clause(m)) tags.add(`en301549-${m.requirement}`);
+    const standard = standardOfEntry(m);
+    if (standard) tags.add(`${standard.key}-${m.requirement}`);
   }
   return Array.from(tags);
 }

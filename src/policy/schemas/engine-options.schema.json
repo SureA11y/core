@@ -55,6 +55,13 @@
       "type": "string",
       "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1' or 'section508' (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly or engineOptions selects the rules instead. Excludes apply on top of it."
     },
+    "mappings": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Standards besides WCAG whose entries a result's meta.normativeMappings carries: 'en301549' for every version, or 'en301549:V3.2.1' / 'en301549:V4.1.1' for one (case-insensitive; an array or a comma-separated string). Default: none, so a result names WCAG only. An EN 301 549 profile adds the version it targets. Unknown names and versions are ignored with a console warning."
+    },
     "policyContract": {
       "oneOf": [
         { "type": "string", "minLength": 1 },

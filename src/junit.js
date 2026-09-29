@@ -31,6 +31,7 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 
 const OTHER_SUITE = 'Other checks';
 
@@ -217,7 +218,7 @@ function renderJunitReport(result, options = {}) {
     if (sc && !composites.has(sc.requirement)) composites.set(sc.requirement, composite);
   }
 
-  const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, en }
+  const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
   const checks = ((result && result.checksResults) || []).filter((c) => c && c.ruleId);
   for (const check of checks) {
     const entry = classify(check, remaining, opts);
@@ -229,14 +230,20 @@ function renderJunitReport(result, options = {}) {
       ? [...new Set(criteria.map((m) => String(m.requirement)))]
       : [OTHER_SUITE];
     for (const key of keys) {
-      if (!suites.has(key)) suites.set(key, { entries: [], level: null, en: new Set() });
+      if (!suites.has(key)) suites.set(key, { entries: [], level: null, standards: new Map() });
       const suite = suites.get(key);
       suite.entries.push(entry);
       const own = criteria.find((m) => String(m.requirement) === key);
       if (own && !suite.level) suite.level = own.conformanceLevel || own.level || null;
+      // Another standard's entry goes under the criteria it corresponds to
+      // (its `wcagSc`); one without that field belongs to every criterion of
+      // its rule.
       for (const m of mappings) {
-        if (m && m.standard === 'EN 301 549' && m.requirement === `9.${key}`)
-          suite.en.add(m.requirement);
+        const standard = standardOfEntry(m);
+        if (!standard) continue;
+        if (Array.isArray(m.wcagSc) && !m.wcagSc.map(String).includes(key)) continue;
+        if (!suite.standards.has(standard.key)) suite.standards.set(standard.key, new Set());
+        suite.standards.get(standard.key).add(String(m.requirement));
       }
     }
   }
@@ -277,7 +284,11 @@ function renderJunitReport(result, options = {}) {
     const properties = [
       ...(key === OTHER_SUITE ? [] : [['wcagCriterion', key]]),
       ...(suite.level ? [['wcagLevel', suite.level]] : []),
-      ...[...suite.en].sort().map((clause) => ['en301549', clause]),
+      ...NORMATIVE_STANDARDS.flatMap((standard) =>
+        [...(suite.standards.get(standard.key) || [])]
+          .sort((a, b) => compareCriteria(a, b) || a.localeCompare(b))
+          .map((requirement) => [standard.key, requirement])
+      ),
       ...(composite && composite.outcome ? [['criterionOutcome', composite.outcome]] : []),
       ...runProperties
     ];

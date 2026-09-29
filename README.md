@@ -429,9 +429,12 @@ the WCAG Level A and AA rules of the version they build on, and the result
 records the one used in `engine.profile`. A profile only chooses which rules
 run; it does not certify conformance.
 
-Every WCAG criterion in a result is also mapped to the EN 301 549 clause that
-restates it (1.4.3 to 9.1.4.3, for example), for both V3.2.1 and V4.1.1, and
-the SARIF, JUnit and HTML reports carry those clauses. See
+An EN 301 549 profile also maps every WCAG criterion in the result to the
+clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
+the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
+without the profile, or for both versions, pass
+`mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
+WCAG only. See
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
 [`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
 

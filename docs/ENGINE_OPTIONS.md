@@ -112,6 +112,25 @@ Precedence: anything that *includes* rules selects them instead of the profile �
 
 A profile only chooses which rules run. It says nothing about whether passing them meets the standard it is named after: most Success Criteria need human judgement no automated rule covers (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
+An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed; see the next section.
+
+### Other standards (`mappings`)
+
+Every result's `meta.normativeMappings` names the WCAG Success Criteria it tests. `engineOptions.mappings` adds the requirement of another standard that corresponds to each one. By default it adds none: a clause of a standard you do not audit against is noise in every SARIF tag, JUnit property and report.
+
+| Value | Adds |
+|---|---|
+| `'en301549'` | The EN 301 549 chapter 9 clause for each criterion, in every version that has it (V3.2.1 and V4.1.1) |
+| `'en301549:V3.2.1'`, `'en301549:V4.1.1'` | The same, for that version only |
+
+```js
+runDomRulesInPage(url, null, { mappings: ['en301549:V3.2.1'] }, null);
+```
+
+It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
+
+It changes only what a result names, never which rules run or their outcomes. The rule catalog (`getChecksCatalog()`, `getRulesCatalog()`) and the `@surea11y/core/en301549` table are reference data and always carry every standard. A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
+
 ### Via `engineOptions` (no `runOnly`)
 
 Same filtering, expressed as comma-separated strings (or arrays) nested in `engineOptions`:
@@ -133,6 +152,7 @@ const engineOptions = {
   locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
   wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
   profile: 'en301549-v4.1.1',      // optional — a named conformance target, see "Conformance profiles" above
+  mappings: ['en301549'],          // optional — standards besides WCAG to name on each result, see "Other standards" above
   messages: { de: { /* key: text */ } },  // optional caller-supplied dictionaries; win over built-in ones
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
@@ -180,6 +200,7 @@ const engineOptions = {
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value is ignored and the default applies. |
 | `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'` or `'section508'`. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
+| `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: `'en301549'`, `'en301549:V3.2.1'` or `'en301549:V4.1.1'`, as an array or comma-separated string. Default none, so results name WCAG only; an EN 301 549 profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |
