@@ -180,7 +180,7 @@ function runInPage(ctx) {
     return normalizeWs(parts.join(' '));
   }
 
-  function evaluate(el, controlType) {
+  function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
     if (ariaLabel) return { ok: true, method: 'aria-label' };
 
@@ -209,7 +209,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const res = evaluate(el, 'combobox');
+    const res = evaluate(el);
     if (res.ok) continue;
 
     const eligInfo = getEligibilityInfo

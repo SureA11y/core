@@ -387,8 +387,8 @@ function initCoverageCounters() {
   return out;
 }
 
-function incrementCoverageCounters(counters, signals, ruleId) {
-  // ruleId unused for now, but kept for potential "coveredBy" expansions later
+function incrementCoverageCounters(counters, signals, _ruleId) {
+  // _ruleId unused for now, but kept for potential "coveredBy" expansions later
   if (!counters || !signals) return;
 
   // raw tags

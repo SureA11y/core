@@ -38740,8 +38740,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getTextAlternativeInfo
         : null;
 
-    const trim = (v) => (v == null ? '' : String(v)).trim();
-
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     let textAltInfo = null;
     if (getTextAlternativeInfo) {
@@ -38916,7 +38914,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return normalizeWs(parts.join(' '));
   }
 
-  function evaluate(el, controlType) {
+  function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
     if (ariaLabel) return { ok: true, method: 'aria-label' };
 
@@ -38945,7 +38943,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const res = evaluate(el, 'combobox');
+    const res = evaluate(el);
     if (res.ok) continue;
 
     const eligInfo = getEligibilityInfo
