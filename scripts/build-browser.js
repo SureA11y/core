@@ -240,7 +240,6 @@ function main() {
   const bundle = minifyBundle(generateBrowserBundle(coreSource), 'the browser bundle');
 
   fs.writeFileSync(OUTPUT_FILE, `${BANNER}\n${bundle}`, 'utf8');
-  // eslint-disable-next-line no-console
   console.log(
     `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`
   );
@@ -253,7 +252,6 @@ function main() {
       `the ${locale} locale file`
     );
     fs.writeFileSync(localeFileFor(locale), `${LOCALE_BANNER(locale)}\n${source}`, 'utf8');
-    // eslint-disable-next-line no-console
     console.log(
       `[build-browser] wrote ${path.relative(ROOT_DIR, localeFileFor(locale))} (${(source.length / 1024).toFixed(0)} KB)`
     );
@@ -263,7 +261,6 @@ function main() {
   // matches these by glob, so it would keep shipping.
   for (const stale of staleLocaleFiles(wanted)) {
     fs.unlinkSync(path.join(ROOT_DIR, stale));
-    // eslint-disable-next-line no-console
     console.log(`[build-browser] removed ${stale} (no longer a locale)`);
   }
 }

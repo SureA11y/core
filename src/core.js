@@ -46788,7 +46788,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const parts = [];
     let n;
-    // eslint-disable-next-line no-cond-assign
     while ((n = walker.nextNode())) {
       try {
         const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
