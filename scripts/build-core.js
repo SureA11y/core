@@ -42,7 +42,11 @@ const { runCore, rollupCompositeResults } = require('../src/core/dom-runner');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
-const { en301549MappingsForScs, withEn301549Mappings } = require('../src/coverage/en301549-map');
+const {
+  standardMappingsFor,
+  withStandardMappings,
+  standardsData
+} = require('../src/coverage/standards');
 const {
   UNCERTAINTY_CODE_VALUES,
   isUncertaintyCode,
@@ -66,6 +70,43 @@ const {
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
+
+// Emitted into the generated core from the registry (src/coverage/standards.js):
+// the standards engineOptions.mappings can switch on, and the conformance
+// profiles they bring. See resolveMappingSelection and CONFORMANCE_PROFILES there.
+const STANDARDS_DATA = standardsData();
+const NORMATIVE_MAPPING_STANDARDS = Object.fromEntries(
+  STANDARDS_DATA.map((s) => [s.key, { standard: s.standard, versions: s.versions }])
+);
+const WCAG_PROFILE_NAMES = ['wcag22-aa', 'section508'];
+const STANDARD_PROFILES = Object.fromEntries(
+  STANDARDS_DATA.flatMap((s) =>
+    Object.entries(s.profiles).map(([name, p]) => [
+      name,
+      { tags: p.tags, mappings: [s.key + ':' + p.version] }
+    ])
+  )
+);
+for (const s of STANDARDS_DATA) {
+  if (!/^[a-z0-9-]+$/.test(s.key)) {
+    throw new Error(
+      `[build-core] standard key "${s.key}" must be lowercase letters, digits or '-'`
+    );
+  }
+}
+{
+  const keys = STANDARDS_DATA.map((s) => s.key);
+  const profiles = WCAG_PROFILE_NAMES.concat(
+    STANDARDS_DATA.flatMap((s) => Object.keys(s.profiles))
+  );
+  for (const [what, names] of [
+    ['standard key', keys],
+    ['profile', profiles]
+  ]) {
+    const dup = names.find((n, i) => names.indexOf(n) !== i);
+    if (dup) throw new Error(`[build-core] ${what} "${dup}" is defined twice`);
+  }
+}
 
 const ROOT_DIR = path.join(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
@@ -120,7 +161,10 @@ function loadCompositeRulesCatalog() {
       checksIds,
       meta:
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
-          ? { ...entry.meta, en301549: en301549MappingsForScs(entry.meta.wcagSc) }
+          ? {
+              ...entry.meta,
+              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc })
+            }
           : null
     };
   });
@@ -259,10 +303,13 @@ function loadRuleModules() {
       typeof applicabilityFn === 'function' ? applicabilityFn.toString() : null;
 
     const normalizedMeta = normalizeRuleMeta(ruleId, id, meta, ENGINE_TAG);
-    // EN 301 549 restates each WCAG criterion as a chapter 9 clause; derived
-    // here from the table rather than declared per rule, so a rule only ever
-    // states its WCAG mapping.
-    normalizedMeta.normativeMappings = withEn301549Mappings(normalizedMeta.normativeMappings);
+    // Other standards' entries (src/coverage/standards.js) are derived here
+    // rather than declared per rule, so a rule only ever states its WCAG
+    // mapping.
+    normalizedMeta.normativeMappings = withStandardMappings(
+      normalizedMeta.normativeMappings,
+      ruleId
+    );
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
 
@@ -745,22 +792,112 @@ function normalizeRunOnly(runOnly) {
  * tags the usual way, so a profile needs no version of its own.
  *
  * - wcag22-aa: WCAG 2.2 Level A and AA.
- * - en301549-v4.1.1: EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA.
- * - en301549-v3.2.1: EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA.
  * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
+ * - plus the profiles a registered standard brings (src/coverage/standards.js),
+ *   such as en301549-v4.1.1 and en301549-v3.2.1.
  *
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.
  */
 const CONFORMANCE_PROFILES = {
   'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'en301549-v4.1.1': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'en301549-v3.2.1': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-  'section508': ['wcag2a', 'wcag2aa']
+  'section508': ['wcag2a', 'wcag2aa'],
+  ...${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.tags])))}
 };
 
 function normalizeProfileName(v) {
   return typeof v === 'string' ? v.trim().toLowerCase() : '';
+}
+
+/**
+ * Standards engineOptions.mappings can add to a result's normativeMappings
+ * next to WCAG, keyed by the name a caller writes, with the \`standard\` their
+ * entries carry and the versions the engine has a table for. A result carries
+ * only the WCAG entries unless one is asked for: a clause of a standard the
+ * caller does not audit against is noise in every report.
+ */
+const NORMATIVE_MAPPING_STANDARDS = ${jsStringify(NORMATIVE_MAPPING_STANDARDS)};
+
+// A profile a standard brings switches that standard's mappings on, for the
+// version it targets, so asking for the target is enough.
+const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
+
+/**
+ * Resolve engineOptions.mappings (an array or comma-separated string of
+ * "name" or "name:version", names and versions matched case-insensitively)
+ * plus whatever the applied profile implies.
+ *
+ * Returns { tokens, unknown }: tokens are the canonical selections in table
+ * order ("en301549" for every version, or "en301549:V3.2.1" for one), with a
+ * version dropped when its whole standard is also selected; unknown lists
+ * what the caller wrote that names no standard or version the engine has.
+ */
+function resolveMappingSelection(engineOptions, appliedProfile) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const requested = parseCommaList(eo.mappings, { lower: false });
+  if (appliedProfile && Object.prototype.hasOwnProperty.call(PROFILE_MAPPINGS, appliedProfile)) {
+    requested.push(...PROFILE_MAPPINGS[appliedProfile]);
+  }
+
+  const whole = new Set();
+  const versions = Object.create(null);
+  const unknown = [];
+  for (const token of requested) {
+    const sep = token.indexOf(':');
+    const name = (sep < 0 ? token : token.slice(0, sep)).trim().toLowerCase();
+    const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, name)
+      ? NORMATIVE_MAPPING_STANDARDS[name]
+      : null;
+    if (!std) {
+      unknown.push(token);
+      continue;
+    }
+    if (sep < 0) {
+      whole.add(name);
+      continue;
+    }
+    const wanted = token.slice(sep + 1).trim().toLowerCase();
+    const version = std.versions.find((v) => v.toLowerCase() === wanted);
+    if (!version) {
+      unknown.push(token);
+      continue;
+    }
+    (versions[name] = versions[name] || new Set()).add(version);
+  }
+
+  const tokens = [];
+  for (const name of Object.keys(NORMATIVE_MAPPING_STANDARDS)) {
+    if (whole.has(name)) tokens.push(name);
+    else if (versions[name]) {
+      for (const v of NORMATIVE_MAPPING_STANDARDS[name].versions) {
+        if (versions[name].has(v)) tokens.push(name + ':' + v);
+      }
+    }
+  }
+  return { tokens, unknown };
+}
+
+// A normativeMappings list with the entries of every optional standard the
+// selection does not ask for removed. WCAG entries, and entries for any
+// standard the engine does not add itself, always stay.
+function filterNormativeMappings(list, tokens) {
+  if (!Array.isArray(list)) return list;
+  const keep = Object.create(null);
+  for (const token of tokens) {
+    const sep = token.indexOf(':');
+    const name = sep < 0 ? token : token.slice(0, sep);
+    const std = NORMATIVE_MAPPING_STANDARDS[name];
+    if (!std) continue;
+    keep[std.standard] = keep[std.standard] || new Set();
+    for (const v of sep < 0 ? std.versions : [token.slice(sep + 1)]) keep[std.standard].add(v);
+  }
+  const optional = new Set(
+    Object.keys(NORMATIVE_MAPPING_STANDARDS).map((k) => NORMATIVE_MAPPING_STANDARDS[k].standard)
+  );
+  return list.filter((m) => {
+    if (!m || typeof m !== 'object' || !optional.has(m.standard)) return true;
+    return !!(keep[m.standard] && keep[m.standard].has(m.version));
+  });
 }
 
 // A profile supplies the include tags of a selection that includes nothing

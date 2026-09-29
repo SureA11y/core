@@ -65,14 +65,16 @@ suppression.
 
 ## EN 301 549
 
-Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. Every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion:
+Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. When a scan asks for them, every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion. A scan asks with `engineOptions.mappings: ['en301549']` (both versions) or `['en301549:V3.2.1']` (one), or by targeting an EN 301 549 profile, which adds the version it names; by default results name WCAG only (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)):
 
 | Version | Built on | Differs from the other in |
 |---|---|---|
 | V3.2.1 (2021-03) | WCAG 2.1 A and AA, 50 criteria | Includes 9.4.1.1 Parsing |
 | V4.1.1 (2026-09) | WCAG 2.2 A and AA, 55 criteria | Adds 2.4.11, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8; 9.4.1.1 is void |
 
-AAA criteria have no clause in either version. The table lives in `src/coverage/en301549-map.js`, taken from the ETSI text; rules never declare these entries themselves, the build derives them from each rule's WCAG mapping. A rule added through `engineOptions.customRules` keeps exactly the mappings it declares. Composite entries returned by `getRulesCatalog()` carry the same entries as `meta.en301549`, so the clauses a criterion maps to can be read without running a scan.
+Each clause entry also names the criterion it restates, as `wcagSc: ["1.4.3"]`, so a view grouped by criterion (JUnit's suites, the HTML report's rollup) puts it under the right one even on a rule mapped to several.
+
+AAA criteria have no clause in either version. The table lives in `src/coverage/en301549-map.js`, taken from the ETSI text; rules never declare these entries themselves, the build derives them from each rule's WCAG mapping. A rule added through `engineOptions.customRules` keeps exactly the mappings it declares. The catalogs carry the clauses whatever a scan asks for: `getChecksCatalog()` in each entry's `normativeMappings`, and composite entries returned by `getRulesCatalog()` as `meta.standardMappings`, so the clauses a criterion maps to can be read without running a scan.
 
 The table is public as `@surea11y/core/en301549`, for tools that need the reverse view, such as which criteria a version requires that a scan did not cover:
 
@@ -84,6 +86,15 @@ en301549ClausesForSc('2.5.8');            // [{ version: 'V4.1.1', clause: '9.2.
 ```
 
 This is a correspondence between two published documents, not a conformance claim: a clause on a result says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
+
+## Adding another standard
+
+EN 301 549 is the first entry in a registry, `src/coverage/standards.js`, and nothing else in the engine names it. Every other standard goes the same way:
+
+1. Put its table in `src/coverage/<name>-map.js`, taken from the published text, with a function that returns a rule's entries given the rule's id and WCAG criteria. Each entry is `{ standard, version, requirement, title, wcagSc }`, where `wcagSc` lists the WCAG criteria that requirement corresponds to. A standard that restates WCAG one criterion at a time, as EN 301 549 does, derives its entries from the criteria; one organised differently can look the rule up by id.
+2. Add an entry to `NORMATIVE_STANDARDS`: its `key` (what `engineOptions.mappings` accepts, and the SARIF tag prefix and JUnit property name), its `standard` (the name its entries carry and the report shows), its `versions`, any conformance profiles it brings, and that function.
+
+The build then adds its entries to every rule and composite, `engineOptions.mappings` accepts its key and versions, its profiles select rules and switch its entries on, and SARIF, JUnit and the HTML report show them. `tests/coverage/standards.test.js` holds every registered standard to that contract. What stays per standard is its own table, its tests, and a public export if tools need the reverse view (as `@surea11y/core/en301549` does).
 
 ## What this engine cannot tell you
 

@@ -268,6 +268,30 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
   ]);
 });
 
+test("renderJunitReport: another standard's entry goes under the criteria it names in wcagSc", () => {
+  const en = (requirement, sc) => ({
+    standard: 'EN 301 549',
+    version: 'V4.1.1',
+    requirement,
+    wcagSc: [sc]
+  });
+  const result = makeScanResult([
+    check('two-criteria', 'fail', [
+      wcag('1.3.1'),
+      wcag('4.1.2'),
+      en('9.1.3.1', '1.3.1'),
+      en('9.4.1.2', '4.1.2')
+    ])
+  ]);
+  const doc = parse(renderJunitReport(result));
+  const enOfSuite = (name) =>
+    Array.from(suiteNamed(doc, name).getElementsByTagName('property'))
+      .filter((p) => attr(p, 'name') === 'en301549')
+      .map((p) => attr(p, 'value'));
+  assert.deepStrictEqual(enOfSuite('WCAG 1.3.1'), ['9.1.3.1']);
+  assert.deepStrictEqual(enOfSuite('WCAG 4.1.2'), ['9.4.1.2']);
+});
+
 test('renderJunitReport: timestamp appears only when the result carries one', () => {
   const result = makeScanResult([check('a', 'pass', [wcag('1.1.1')])]);
   assert.strictEqual(suites(parse(renderJunitReport(result)))[0].hasAttribute('timestamp'), false);
