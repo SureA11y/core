@@ -93,7 +93,9 @@ function hasAnyRunOnlyKeys(ro) {
  * - includeMode affects only the combination between includeRuleIds and includeTags.
  * - includeTags are ANY-match (intersection within tags is not supported).
  * - excludes always subtract after includes.
- * - an opt-in rule is selected only when an include names its tag or its id.
+ * - an opt-in rule is selected only when an include names its tag or its id,
+ *   or engineOptions.optInRules unlocks its tag ('all' unlocks every one);
+ *   the rest of the selection then applies as for any rule.
  */
 function referenceSelectedRuleIds(core, engineOptions, runOnly) {
   const defs = Array.isArray(core.CHECK_DEFS) ? core.CHECK_DEFS : [];
@@ -129,6 +131,12 @@ function referenceSelectedRuleIds(core, engineOptions, runOnly) {
     excludeTags = parseCommaString(tags && tags.exclude, { lower: true });
   }
 
+  const eoAll = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const unlockList = parseCommaString(eoAll.optInRules, { lower: true });
+  const unlocked = unlockList.includes('all')
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => unlockList.includes(t));
+
   function matches(def) {
     const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
     const hasIdInclude = includeRuleIds.length > 0;
@@ -136,7 +144,7 @@ function referenceSelectedRuleIds(core, engineOptions, runOnly) {
 
     if (isOptIn(def)) {
       const askedByTag = defTags.some(
-        (t) => OPT_IN_RULE_TAGS.includes(t) && includeTags.includes(t)
+        (t) => OPT_IN_RULE_TAGS.includes(t) && (includeTags.includes(t) || unlocked.includes(t))
       );
       const askedById = includeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, ENGINE_TAG));
       if (!askedByTag && !askedById) return false;
@@ -241,6 +249,42 @@ test('rule selection: default (no runOnly, no engineOptions) => every check but 
   assert.ok(optIn.length > 0, 'expected at least one opt-in rule');
   assert.equal(got.length, core.CHECK_DEFS.length - optIn.length);
   for (const id of optIn) assert.ok(!got.includes(id), `${id} is opt-in`);
+});
+
+test('rule selection: optInRules "all" with no other filter => every check', () => {
+  assertSelection(core, 'optInRules all', { optInRules: 'all' }, undefined);
+  const got = gotSelectedRuleIds(core, undefined, { optInRules: 'all' });
+  assert.deepEqual(
+    got,
+    core.CHECK_DEFS.map((d) => d.ruleId)
+  );
+});
+
+test('rule selection: optInRules only lifts the opt-in gate; the rest of the selection still decides', () => {
+  const optInId = core.CHECK_DEFS.find(isOptIn).ruleId;
+  const plainId = core.CHECK_DEFS.find((d) => !isOptIn(d)).ruleId;
+  const unlocks = ['all', 'rgaa', 'RGAA', ['rgaa'], 'all, nope', 'nope', '', false, null];
+  const selections = [
+    [{}, undefined],
+    [{ tags: { include: 'wcag2a, wcag2aa' } }, undefined],
+    [{ tags: { include: 'forms' } }, undefined],
+    [{ tags: { exclude: 'rgaa' } }, undefined],
+    [{ rules: { include: `${optInId}, ${plainId}` } }, undefined],
+    [{ rules: { exclude: optInId } }, undefined],
+    [{}, { tags: ['forms'] }],
+    [{}, { excludeTags: ['wcag2a'] }],
+    [{}, { includeRuleIds: [plainId] }]
+  ];
+  for (const optInRules of unlocks) {
+    for (const [eo, runOnly] of selections) {
+      assertSelection(
+        core,
+        `optInRules=${JSON.stringify(optInRules)}`,
+        { ...eo, optInRules },
+        runOnly
+      );
+    }
+  }
 });
 
 test('rule selection: engineOptions.checks.include supports comma list + spaces + duplicates + empty tokens', () => {

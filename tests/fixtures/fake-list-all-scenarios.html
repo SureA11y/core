@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>fake-list — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>fake-list</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>fkl_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Text laid out as a list (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: bullet lines split by br</div>
+    <p id="fkl_case_01">• Apples<br>• Pears<br>• Plums</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: numbered paragraphs</div>
+    <p id="fkl_case_02">1. Preheat the oven.</p>
+    <p>2. Mix the flour and butter.</p>
+    <p>3. Bake for 20 minutes.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FLAGGED: dash lines in a table cell</div>
+    <table><tr><td id="fkl_case_03">- Wi-Fi<br>- Parking</td></tr></table>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: a real list</div>
+    <ul id="fkl_case_04"><li>Apples</li><li>Pears</li></ul>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: numbers that do not follow on</div>
+    <p id="fkl_case_05">1. Mix<br>3. Bake</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: different bullets</div>
+    <p id="fkl_case_06">• Apples<br>- Pears</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: preformatted text</div>
+    <pre id="fkl_case_07">- one
+    - two</pre>
+  </div>
+</body>
+</html>

@@ -584,6 +584,20 @@ test('renderHtmlReport: a result without a target or profile gets no chips for t
   const report = renderHtmlReport(makeScanResult([]));
   assert.doesNotMatch(report, /<\/b>target</);
   assert.doesNotMatch(report, /<\/b>profile</);
+  assert.doesNotMatch(report, /<\/b>opt-in rules</);
+});
+
+test('renderHtmlReport: the meta bar names the opt-in rules a run added, in the report locale', () => {
+  const result = makeScanResult([]);
+  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['rgaa'] };
+  assert.match(renderHtmlReport(result), /<b>rgaa<\/b>opt-in rules/);
+  const fr = {
+    ...result,
+    engine: { ...result.engine, locale: { requested: 'fr', resolved: 'fr', reason: 'ok' } }
+  };
+  assert.match(renderHtmlReport(fr), /<b>rgaa<\/b>règles optionnelles/);
+  result.engine.optInRules = [];
+  assert.doesNotMatch(renderHtmlReport(result), /opt-in rules/);
 });
 
 test('renderHtmlReport: cards cap a long selector and summary, the table keeps them whole', () => {

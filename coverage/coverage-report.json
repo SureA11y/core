@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 137,
+    "totalRules": 149,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -1540,6 +1540,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/dir-attribute-valid.js",
+      "ruleId": "dir-attribute-valid",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "dir attributes are ltr or rtl",
+      "tags": [
+        "rgaa",
+        "language",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/dlitem-parent-valid.js",
       "ruleId": "dlitem-parent-valid",
       "wcagScNormative": [
@@ -1757,6 +1780,29 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/figure-caption-structure.js",
+      "ruleId": "figure-caption-structure",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Images with a caption use the figure structure RGAA describes",
+      "tags": [
+        "rgaa",
+        "images",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/form-control-programmatic-label-present.js",
@@ -2334,6 +2380,29 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/layout-table-no-data-markup.js",
+      "ruleId": "layout-table-no-data-markup",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Layout tables use no data table markup",
+      "tags": [
+        "rgaa",
+        "tables",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/link-in-text-block.js",
@@ -3509,6 +3578,30 @@
       }
     },
     {
+      "file": "src/checks/automatic/svg-hidden-no-alternative.js",
+      "ruleId": "svg-hidden-no-alternative",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Hidden decorative SVGs carry no text alternative",
+      "tags": [
+        "rgaa",
+        "images",
+        "svg",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/svg-image-text-alternative-present.js",
       "ruleId": "svg-image-text-alternative-present",
       "wcagScNormative": [
@@ -4059,6 +4152,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/video-captions-track-kind.js",
+      "ruleId": "video-captions-track-kind",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Video caption tracks use kind=\"captions\"",
+      "tags": [
+        "rgaa",
+        "media",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/video-poster-text-alternative-present.js",
       "ruleId": "video-poster-text-alternative-present",
       "wcagScNormative": [
@@ -4352,6 +4468,29 @@
       }
     },
     {
+      "file": "src/checks/manual/complex-table-summary-manual.js",
+      "ruleId": "complex-table-summary",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Complex data tables have a summary",
+      "tags": [
+        "rgaa",
+        "tables",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
       "ruleId": "css-focus-indicator-suppressed",
       "wcagScNormative": [
@@ -4540,6 +4679,52 @@
         "best-practice",
         "tables",
         "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/fake-list-manual.js",
+      "ruleId": "fake-list",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Text laid out as a list uses list markup",
+      "tags": [
+        "rgaa",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/field-group-legend-manual.js",
+      "ruleId": "field-group-legend",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Groups of form fields have a legend",
+      "tags": [
+        "rgaa",
+        "forms",
         "atomic",
         "manual"
       ],
@@ -4805,6 +4990,29 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/manual/image-alt-long-manual.js",
+      "ruleId": "image-alt-long",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Text alternatives of images are short",
+      "tags": [
+        "rgaa",
+        "images",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/manual/image-redundant-alt-manual.js",
@@ -5267,6 +5475,29 @@
       "coverage": {}
     },
     {
+      "file": "src/checks/manual/letters-spaced-with-spaces-manual.js",
+      "ruleId": "letters-spaced-with-spaces",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Letters of a word are not spaced out with spaces",
+      "tags": [
+        "rgaa",
+        "presentation",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/manual/link-name-quality-manual.js",
       "ruleId": "link-name-quality",
       "wcagScNormative": [
@@ -5533,6 +5764,29 @@
       }
     },
     {
+      "file": "src/checks/manual/office-document-link-manual.js",
+      "ruleId": "office-document-link",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Downloadable office documents are accessible or have an accessible version",
+      "tags": [
+        "rgaa",
+        "links",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/manual/p-as-heading-manual.js",
       "ruleId": "p-as-heading",
       "wcagScNormative": [
@@ -5717,6 +5971,29 @@
         "best-practice",
         "aria",
         "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/radio-group-present-manual.js",
+      "ruleId": "radio-group-present",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Radio buttons sharing a name are grouped",
+      "tags": [
+        "rgaa",
+        "forms",
         "atomic",
         "manual"
       ],

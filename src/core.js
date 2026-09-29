@@ -2397,6 +2397,54 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "complex-table-summary",
+    "title": "Complex data tables have a summary",
+    "description": "Flags a data table whose headers are not all in the first row or column, and that has no aria-describedby or summary, for a person to check that a summary is available.",
+    "i18n": {
+      "titleKey": "complexTableSummary_title",
+      "descriptionKey": "complexTableSummary_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.1.1",
+        "title": "Pour chaque tableau de données complexe, un résumé est-il disponible ?",
+        "criterion": "5.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "contrast-computable",
     "title": "Color contrast is computable for rendered text",
     "description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -3226,6 +3274,54 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "dir-attribute-valid",
+    "title": "dir attributes are ltr or rtl",
+    "description": "Checks that every dir attribute is ltr or rtl, the two values RGAA accepts.",
+    "i18n": {
+      "titleKey": "dirAttributeValid_title",
+      "descriptionKey": "dirAttributeValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "language",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.10.2",
+        "title": "Dans chaque page web, chaque changement du sens de lecture (attribut dir) vérifie-t-il ces conditions ?",
+        "criterion": "8.10",
+        "wcagSc": [
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "dlitem-parent-valid",
     "title": "Description-list items must be inside a description list",
     "description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
@@ -3783,6 +3879,162 @@ const CHECK_DEFS = [
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "fake-list",
+    "title": "Text laid out as a list uses list markup",
+    "description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
+    "i18n": {
+      "titleKey": "fakeList_title",
+      "descriptionKey": "fakeList_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "field-group-legend",
+    "title": "Groups of form fields have a legend",
+    "description": "Flags a <fieldset> or role=\"group\" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.",
+    "i18n": {
+      "titleKey": "fieldGroupLegend_title",
+      "descriptionKey": "fieldGroupLegend_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.6.1",
+        "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
+        "criterion": "11.6",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "figure-caption-structure",
+    "title": "Images with a caption use the figure structure RGAA describes",
+    "description": "Checks that a <figure> holding an image and a <figcaption> has role=\"figure\" or \"group\" and an aria-label matching the caption.",
+    "i18n": {
+      "titleKey": "figureCaptionStructure_title",
+      "descriptionKey": "figureCaptionStructure_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.9.1",
+        "title": "Chaque image pourvue d’une légende (balise <img>, <input> avec l’attribut type=\"image\" ou possédant un attribut WAI-ARIA role=\"img\" associée à une légende adjacente), vérifie-t-elle, si nécessaire, ces conditions ?",
+        "criterion": "1.9",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -4937,6 +5189,55 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "image-alt-long",
+    "title": "Text alternatives of images are short",
+    "description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
+    "i18n": {
+      "titleKey": "imageAltLong_title",
+      "descriptionKey": "imageAltLong_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.9",
+        "title": "Pour chaque image porteuse d’information et ayant une alternative textuelle, l’alternative textuelle est-elle courte et concise (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -6107,6 +6408,103 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "layout-table-no-data-markup",
+    "title": "Layout tables use no data table markup",
+    "description": "Checks that a table marked as layout (role=\"presentation\" or \"none\") has no caption, header cells, summary, or scope, headers or axis attributes.",
+    "i18n": {
+      "titleKey": "layoutTableNoDataMarkup_title",
+      "descriptionKey": "layoutTableNoDataMarkup_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.8.1",
+        "title": "Chaque tableau de mise en forme (balise <table>) vérifie-t-il ces conditions ?",
+        "criterion": "5.8",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "letters-spaced-with-spaces",
+    "title": "Letters of a word are not spaced out with spaces",
+    "description": "Flags text where four or more single letters in a row are separated by spaces, for a person to confirm whether a word is spaced out that way.",
+    "i18n": {
+      "titleKey": "lettersSpacedWithSpaces_title",
+      "descriptionKey": "lettersSpacedWithSpaces_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "presentation",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.3",
+        "title": "Dans chaque page web, l’utilisation des espaces vérifie-t-elle ces conditions ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -7877,6 +8275,60 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "office-document-link",
+    "title": "Downloadable office documents are accessible or have an accessible version",
+    "description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
+    "i18n": {
+      "titleKey": "officeDocumentLink_title",
+      "descriptionKey": "officeDocumentLink_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "links",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.3.1",
+        "title": "Dans chaque page web, chaque fonctionnalité de téléchargement d’un document bureautique vérifie-t-elle une de ces conditions ?",
+        "criterion": "13.3",
+        "wcagSc": [
+          "1.1.1",
+          "1.3.1",
+          "1.3.2",
+          "2.4.1",
+          "2.4.3",
+          "3.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "optgroup-label-present",
     "title": "Option groups have a label",
     "description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
@@ -8645,6 +9097,55 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "radio-group-present",
+    "title": "Radio buttons sharing a name are grouped",
+    "description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
+    "i18n": {
+      "titleKey": "radioGroupPresent_title",
+      "descriptionKey": "radioGroupPresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.5.1",
+        "title": "Les champs de même nature vérifient-ils l’une de ces conditions, si nécessaire ?",
+        "criterion": "11.5",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
     "description": "Checks that content under <body> is contained within a landmark region.",
@@ -9393,6 +9894,66 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "svg-hidden-no-alternative",
+    "title": "Hidden decorative SVGs carry no text alternative",
+    "description": "Checks that an <svg> with aria-hidden=\"true\" has no aria-label, aria-labelledby, title attribute, or non-empty <title> or <desc>.",
+    "i18n": {
+      "titleKey": "svgHiddenNoAlternative_title",
+      "descriptionKey": "svgHiddenNoAlternative_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "svg",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.2.4",
+        "title": "Chaque image vectorielle (balise <svg>) de décoration, sans légende, vérifie-t-elle ces conditions ?",
+        "criterion": "1.2",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -10621,6 +11182,54 @@ const CHECK_DEFS = [
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "video-captions-track-kind",
+    "title": "Video caption tracks use kind=\"captions\"",
+    "description": "Checks that a <video> with text tracks has at least one <track kind=\"captions\">, not only subtitles.",
+    "i18n": {
+      "titleKey": "videoCaptionsTrackKind_title",
+      "descriptionKey": "videoCaptionsTrackKind_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "media",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.3.2",
+        "title": "Pour chaque média temporel synchronisé pré-enregistré possédant des sous-titres synchronisés diffusés via une balise <track>, la balise <track> possède-t-elle un attribut kind=\"captions\" ?",
+        "criterion": "4.3",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -12764,6 +13373,7 @@ const COMPOSITE_RULES = [
       "object-text-alternative-present",
       "role-img-text-alternative-present",
       "server-side-image-map-absent",
+      "svg-hidden-no-alternative",
       "svg-text-alternative-present"
     ],
     "meta": {
@@ -12865,7 +13475,8 @@ const COMPOSITE_RULES = [
     "id": "rgaa-4.1.2-1.2",
     "checksIds": [
       "img-alt-present",
-      "presentation-role-conflict"
+      "presentation-role-conflict",
+      "svg-hidden-no-alternative"
     ],
     "meta": {
       "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d’assistance ?",
@@ -12889,6 +13500,17 @@ const COMPOSITE_RULES = [
             "1.1.1",
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.4",
+          "title": "Chaque image vectorielle (balise <svg>) de décoration, sans légende, vérifie-t-elle ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -12899,6 +13521,7 @@ const COMPOSITE_RULES = [
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "embed-text-alternative-quality",
+      "image-alt-long",
       "image-redundant-alt",
       "img-alt-quality",
       "input-image-alt-decorative",
@@ -12990,6 +13613,48 @@ const COMPOSITE_RULES = [
           "requirement": "1.3.7",
           "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
           "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.9",
+          "title": "Pour chaque image porteuse d’information et ayant une alternative textuelle, l’alternative textuelle est-elle courte et concise (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.9",
+    "checksIds": [
+      "figure-caption-structure"
+    ],
+    "meta": {
+      "title": "Chaque légende d’image est-elle, si nécessaire, correctement reliée à l’image correspondante ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.9.1",
+          "title": "Chaque image pourvue d’une légende (balise <img>, <input> avec l’attribut type=\"image\" ou possédant un attribut WAI-ARIA role=\"img\" associée à une légende adjacente), vérifie-t-elle, si nécessaire, ces conditions ?",
+          "criterion": "1.9",
           "wcagSc": [
             "1.1.1",
             "4.1.2"
@@ -13176,7 +13841,8 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-4.3",
     "checksIds": [
-      "video-caption"
+      "video-caption",
+      "video-captions-track-kind"
     ],
     "meta": {
       "title": "Chaque média temporel synchronisé pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?",
@@ -13195,6 +13861,16 @@ const COMPOSITE_RULES = [
           "version": "4.1.2",
           "requirement": "4.3.1",
           "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.2",
+          "title": "Pour chaque média temporel synchronisé pré-enregistré possédant des sous-titres synchronisés diffusés via une balise <track>, la balise <track> possède-t-elle un attribut kind=\"captions\" ?",
           "criterion": "4.3",
           "wcagSc": [
             "1.2.2"
@@ -13228,6 +13904,36 @@ const COMPOSITE_RULES = [
           "criterion": "4.10",
           "wcagSc": [
             "1.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.1",
+    "checksIds": [
+      "complex-table-summary"
+    ],
+    "meta": {
+      "title": "Chaque tableau de données complexe a-t-il un résumé ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.1.1",
+          "title": "Pour chaque tableau de données complexe, un résumé est-il disponible ?",
+          "criterion": "5.1",
+          "wcagSc": [
+            "1.3.1"
           ]
         }
       ]
@@ -13337,6 +14043,36 @@ const COMPOSITE_RULES = [
           "requirement": "5.7.4",
           "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
           "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.8",
+    "checksIds": [
+      "layout-table-no-data-markup"
+    ],
+    "meta": {
+      "title": "Chaque tableau de mise en forme ne doit pas utiliser d’éléments propres aux tableaux de données. Cette règle est-elle respectée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.8.1",
+          "title": "Chaque tableau de mise en forme (balise <table>) vérifie-t-il ces conditions ?",
+          "criterion": "5.8",
           "wcagSc": [
             "1.3.1"
           ]
@@ -13793,6 +14529,36 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "rgaa-4.1.2-8.10",
+    "checksIds": [
+      "dir-attribute-valid"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, les changements du sens de lecture sont-ils signalés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.10",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.10.2",
+          "title": "Dans chaque page web, chaque changement du sens de lecture (attribut dir) vérifie-t-il ces conditions ?",
+          "criterion": "8.10",
+          "wcagSc": [
+            "1.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-9.1",
     "checksIds": [
       "empty-heading",
@@ -13893,6 +14659,7 @@ const COMPOSITE_RULES = [
       "aria-required-parent",
       "definition-list-children-valid",
       "dlitem-parent-valid",
+      "fake-list",
       "list-children-valid",
       "listitem-parent-valid"
     ],
@@ -13944,6 +14711,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-10.1",
     "checksIds": [
+      "letters-spaced-with-spaces",
       "presentational-attributes-absent",
       "presentational-elements-absent"
     ],
@@ -13975,6 +14743,17 @@ const COMPOSITE_RULES = [
           "version": "4.1.2",
           "requirement": "10.1.2",
           "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.3",
+          "title": "Dans chaque page web, l’utilisation des espaces vérifie-t-elle ces conditions ?",
           "criterion": "10.1",
           "wcagSc": [
             "1.3.1",
@@ -14279,9 +15058,41 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "rgaa-4.1.2-11.5",
+    "checksIds": [
+      "radio-group-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, les champs de même nature sont-ils regroupés, si nécessaire ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.5",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.5.1",
+          "title": "Les champs de même nature vérifient-ils l’une de ces conditions, si nécessaire ?",
+          "criterion": "11.5",
+          "wcagSc": [
+            "1.3.1",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-11.6",
     "checksIds": [
-      "aria-role-name-present"
+      "aria-role-name-present",
+      "field-group-legend"
     ],
     "meta": {
       "title": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
@@ -14595,6 +15406,42 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "rgaa-4.1.2-13.3",
+    "checksIds": [
+      "office-document-link"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque document bureautique en téléchargement possède-t-il, si nécessaire, une version accessible (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.3.1",
+          "title": "Dans chaque page web, chaque fonctionnalité de téléchargement d’un document bureautique vérifie-t-elle une de ces conditions ?",
+          "criterion": "13.3",
+          "wcagSc": [
+            "1.1.1",
+            "1.3.1",
+            "1.3.2",
+            "2.4.1",
+            "2.4.3",
+            "3.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-13.8",
     "checksIds": [
       "deprecated-elements-not-used"
@@ -14699,6 +15546,7 @@ const RULE_IMPLS = {
   "canvas-text-alternative-present": { run: require("./checks/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/canvas-text-alternative-present.js").applicability || null },
   "canvas-text-alternative-quality": { run: require("./checks/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/canvas-text-alternative-quality-manual.js").applicability || null },
   "combobox-name-present": { run: require("./checks/automatic/combobox-name-present.js").runInPage, applicability: require("./checks/automatic/combobox-name-present.js").applicability || null },
+  "complex-table-summary": { run: require("./checks/manual/complex-table-summary-manual.js").runInPage, applicability: require("./checks/manual/complex-table-summary-manual.js").applicability || null },
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
   "contrast-minimum": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
@@ -14708,6 +15556,7 @@ const RULE_IMPLS = {
   "definition-list-children-valid": { run: require("./checks/automatic/definition-list-children-valid.js").runInPage, applicability: require("./checks/automatic/definition-list-children-valid.js").applicability || null },
   "deprecated-elements-not-used": { run: require("./checks/automatic/deprecated-elements-not-used.js").runInPage, applicability: require("./checks/automatic/deprecated-elements-not-used.js").applicability || null },
   "dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
+  "dir-attribute-valid": { run: require("./checks/automatic/dir-attribute-valid.js").runInPage, applicability: require("./checks/automatic/dir-attribute-valid.js").applicability || null },
   "dlitem-parent-valid": { run: require("./checks/automatic/dlitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/dlitem-parent-valid.js").applicability || null },
   "doctype-present": { run: require("./checks/automatic/doctype-present.js").runInPage, applicability: require("./checks/automatic/doctype-present.js").applicability || null },
   "duplicate-id": { run: require("./checks/automatic/duplicate-id.js").runInPage, applicability: require("./checks/automatic/duplicate-id.js").applicability || null },
@@ -14716,6 +15565,9 @@ const RULE_IMPLS = {
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
   "empty-heading": { run: require("./checks/manual/empty-heading-manual.js").runInPage, applicability: require("./checks/manual/empty-heading-manual.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
+  "fake-list": { run: require("./checks/manual/fake-list-manual.js").runInPage, applicability: require("./checks/manual/fake-list-manual.js").applicability || null },
+  "field-group-legend": { run: require("./checks/manual/field-group-legend-manual.js").runInPage, applicability: require("./checks/manual/field-group-legend-manual.js").applicability || null },
+  "figure-caption-structure": { run: require("./checks/automatic/figure-caption-structure.js").runInPage, applicability: require("./checks/automatic/figure-caption-structure.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
   "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
   "form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
@@ -14730,6 +15582,7 @@ const RULE_IMPLS = {
   "iframe-focusable-content": { run: require("./checks/automatic/iframe-focusable-content.js").runInPage, applicability: require("./checks/automatic/iframe-focusable-content.js").applicability || null },
   "iframe-name-present": { run: require("./checks/automatic/iframe-name-present.js").runInPage, applicability: require("./checks/automatic/iframe-name-present.js").applicability || null },
   "iframe-title-unique": { run: require("./checks/automatic/iframe-title-unique.js").runInPage, applicability: require("./checks/automatic/iframe-title-unique.js").applicability || null },
+  "image-alt-long": { run: require("./checks/manual/image-alt-long-manual.js").runInPage, applicability: require("./checks/manual/image-alt-long-manual.js").applicability || null },
   "image-redundant-alt": { run: require("./checks/manual/image-redundant-alt-manual.js").runInPage, applicability: require("./checks/manual/image-redundant-alt-manual.js").applicability || null },
   "img-alt-decorative": { run: require("./checks/manual/img-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/img-alt-decorative-manual.js").applicability || null },
   "img-alt-present": { run: require("./checks/automatic/img-alt-present.js").runInPage, applicability: require("./checks/automatic/img-alt-present.js").applicability || null },
@@ -14749,6 +15602,8 @@ const RULE_IMPLS = {
   "landmark-no-duplicate-main": { run: require("./checks/manual/landmark-no-duplicate-main-manual.js").runInPage, applicability: require("./checks/manual/landmark-no-duplicate-main-manual.js").applicability || null },
   "landmark-one-main": { run: require("./checks/manual/landmark-one-main-manual.js").runInPage, applicability: require("./checks/manual/landmark-one-main-manual.js").applicability || null },
   "landmark-unique": { run: require("./checks/manual/landmark-unique-manual.js").runInPage, applicability: require("./checks/manual/landmark-unique-manual.js").applicability || null },
+  "layout-table-no-data-markup": { run: require("./checks/automatic/layout-table-no-data-markup.js").runInPage, applicability: require("./checks/automatic/layout-table-no-data-markup.js").applicability || null },
+  "letters-spaced-with-spaces": { run: require("./checks/manual/letters-spaced-with-spaces-manual.js").runInPage, applicability: require("./checks/manual/letters-spaced-with-spaces-manual.js").applicability || null },
   "link-in-text-block": { run: require("./checks/automatic/link-in-text-block.js").runInPage, applicability: require("./checks/automatic/link-in-text-block.js").applicability || null },
   "link-name-present": { run: require("./checks/automatic/link-name-present.js").runInPage, applicability: require("./checks/automatic/link-name-present.js").applicability || null },
   "link-name-quality": { run: require("./checks/manual/link-name-quality-manual.js").runInPage, applicability: require("./checks/manual/link-name-quality-manual.js").applicability || null },
@@ -14768,6 +15623,7 @@ const RULE_IMPLS = {
   "no-autoplay-audio": { run: require("./checks/manual/no-autoplay-audio-manual.js").runInPage, applicability: require("./checks/manual/no-autoplay-audio-manual.js").applicability || null },
   "object-text-alternative-present": { run: require("./checks/automatic/object-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/object-text-alternative-present.js").applicability || null },
   "object-text-alternative-quality": { run: require("./checks/manual/object-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/object-text-alternative-quality-manual.js").applicability || null },
+  "office-document-link": { run: require("./checks/manual/office-document-link-manual.js").runInPage, applicability: require("./checks/manual/office-document-link-manual.js").applicability || null },
   "optgroup-label-present": { run: require("./checks/automatic/optgroup-label-present.js").runInPage, applicability: require("./checks/automatic/optgroup-label-present.js").applicability || null },
   "option-name-present": { run: require("./checks/automatic/option-name-present.js").runInPage, applicability: require("./checks/automatic/option-name-present.js").applicability || null },
   "p-as-heading": { run: require("./checks/manual/p-as-heading-manual.js").runInPage, applicability: require("./checks/manual/p-as-heading-manual.js").applicability || null },
@@ -14780,6 +15636,7 @@ const RULE_IMPLS = {
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
   "presentational-elements-absent": { run: require("./checks/automatic/presentational-elements-absent.js").runInPage, applicability: require("./checks/automatic/presentational-elements-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
+  "radio-group-present": { run: require("./checks/manual/radio-group-present-manual.js").runInPage, applicability: require("./checks/manual/radio-group-present-manual.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
@@ -14790,6 +15647,7 @@ const RULE_IMPLS = {
   "slider-name-present": { run: require("./checks/automatic/slider-name-present.js").runInPage, applicability: require("./checks/automatic/slider-name-present.js").applicability || null },
   "spinbutton-name-present": { run: require("./checks/automatic/spinbutton-name-present.js").runInPage, applicability: require("./checks/automatic/spinbutton-name-present.js").applicability || null },
   "summary-name-present": { run: require("./checks/automatic/summary-name-present.js").runInPage, applicability: require("./checks/automatic/summary-name-present.js").applicability || null },
+  "svg-hidden-no-alternative": { run: require("./checks/automatic/svg-hidden-no-alternative.js").runInPage, applicability: require("./checks/automatic/svg-hidden-no-alternative.js").applicability || null },
   "svg-image-text-alternative-present": { run: require("./checks/automatic/svg-image-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-image-text-alternative-present.js").applicability || null },
   "svg-text-alternative-present": { run: require("./checks/automatic/svg-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/svg-text-alternative-present.js").applicability || null },
   "svg-text-alternative-quality": { run: require("./checks/manual/svg-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/svg-text-alternative-quality-manual.js").applicability || null },
@@ -14806,6 +15664,7 @@ const RULE_IMPLS = {
   "treeitem-name-present": { run: require("./checks/automatic/treeitem-name-present.js").runInPage, applicability: require("./checks/automatic/treeitem-name-present.js").applicability || null },
   "valid-lang": { run: require("./checks/automatic/valid-lang.js").runInPage, applicability: require("./checks/automatic/valid-lang.js").applicability || null },
   "video-caption": { run: require("./checks/manual/video-caption-manual.js").runInPage, applicability: require("./checks/manual/video-caption-manual.js").applicability || null },
+  "video-captions-track-kind": { run: require("./checks/automatic/video-captions-track-kind.js").runInPage, applicability: require("./checks/automatic/video-captions-track-kind.js").applicability || null },
   "video-poster-text-alternative-present": { run: require("./checks/automatic/video-poster-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/video-poster-text-alternative-present.js").applicability || null }
 };
 
@@ -15596,6 +16455,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Diese Beschriftung verweist auf die id \"{{value}}\", die kein Element in ihrem Baum hat.",
     "labelForTargetValid_summary_fail_notLabelable": "Diese Beschriftung verweist auf die id \"{{value}}\", die zu einem <{{element}}> gehört, nicht zu einem Formularfeld.",
     "labelForTargetValid_hint_fail": "Setzen Sie das for-Attribut auf die id des Felds, das diese Beschriftung benennt, oder entfernen Sie es und setzen Sie das Feld in die Beschriftung.",
+    "layoutTableNoDataMarkup_title": "Layouttabellen verwenden kein Datentabellen-Markup",
+    "layoutTableNoDataMarkup_description": "Prüft, ob eine als Layout markierte Tabelle (role=\"presentation\" oder \"none\") weder Beschriftung noch Kopfzellen, summary oder scope-, headers- oder axis-Attribute hat.",
+    "layoutTableNoDataMarkup_summary_fail": "Diese Layouttabelle verwendet Datentabellen-Markup: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Entfernen Sie das Datentabellen-Markup, oder, wenn die Tabelle Daten enthält, entfernen Sie role=\"presentation\" und behalten Sie die Kopfzellen.",
+    "figureCaptionStructure_title": "Bilder mit Bildunterschrift verwenden die vom RGAA beschriebene figure-Struktur",
+    "figureCaptionStructure_description": "Prüft, ob ein <figure> mit einem Bild und einem <figcaption> role=\"figure\" oder \"group\" und ein aria-label hat, das der Bildunterschrift entspricht.",
+    "figureCaptionStructure_summary_fail_role": "Diese Abbildung enthält ein Bild und eine Bildunterschrift, hat aber weder role=\"figure\" noch role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Diese Abbildung enthält ein Bild und eine Bildunterschrift, hat aber kein aria-label, das die Bildunterschrift wiederholt.",
+    "figureCaptionStructure_summary_fail_mismatch": "Das aria-label dieser Abbildung weicht von ihrer Bildunterschrift ab.",
+    "figureCaptionStructure_hint_fail": "Geben Sie dem <figure> role=\"figure\" und ein aria-label mit demselben Text wie sein <figcaption>.",
+    "videoCaptionsTrackKind_title": "Untertitelspuren von Videos verwenden kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Prüft, ob ein <video> mit Textspuren mindestens ein <track kind=\"captions\"> hat und nicht nur Untertitel zur Übersetzung.",
+    "videoCaptionsTrackKind_summary_fail": "Dieses Video hat Textspuren, aber keine mit kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Kennzeichnen Sie die Spur mit den Untertiteln für Gehörlose mit kind=\"captions\".",
+    "dirAttributeValid_title": "dir-Attribute sind ltr oder rtl",
+    "dirAttributeValid_description": "Prüft, ob jedes dir-Attribut ltr oder rtl ist, die beiden Werte, die der RGAA akzeptiert.",
+    "dirAttributeValid_summary_fail_auto": "Dieses Element verwendet dir=\"auto\"; der RGAA akzeptiert nur ltr oder rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Dieses Element hat dir=\"{{value}}\", was weder ltr noch rtl ist.",
+    "dirAttributeValid_hint_fail": "Setzen Sie dir auf ltr (von links nach rechts) oder rtl (von rechts nach links), je nach Leserichtung des Textes.",
+    "svgHiddenNoAlternative_title": "Ausgeblendete dekorative SVGs haben keine Textalternative",
+    "svgHiddenNoAlternative_description": "Prüft, ob ein <svg> mit aria-hidden=\"true\" weder aria-label, aria-labelledby, ein title-Attribut noch ein nicht leeres <title> oder <desc> hat.",
+    "svgHiddenNoAlternative_summary_fail": "Dieses SVG ist mit aria-hidden=\"true\" ausgeblendet, hat aber eine Textalternative: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Ist das Bild dekorativ, entfernen Sie die Textalternative. Trägt es Information, entfernen Sie aria-hidden und geben Sie ihm role=\"img\" und eine Textalternative.",
+    "fieldGroupLegend_title": "Gruppen von Formularfeldern haben eine Legende",
+    "fieldGroupLegend_description": "Markiert ein <fieldset> oder role=\"group\" mit Formularfeldern ohne Legende oder Namen, damit eine Person entscheidet, ob es gleichartige Felder gruppiert.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Dieses Fieldset gruppiert Formularfelder, hat aber keine Legende.",
+    "fieldGroupLegend_summary_cantTell_group": "Dieses Element mit role=\"group\" gruppiert Formularfelder, hat aber keinen Namen.",
+    "fieldGroupLegend_hint_cantTell": "Sind die Felder gleichartig (eine Adresse, ein Datum, eine Auswahl), geben Sie der Gruppe eine Legende: ein <legend> für ein Fieldset, aria-label oder aria-labelledby für role=\"group\".",
+    "radioGroupPresent_title": "Radiobuttons mit gleichem Namen sind gruppiert",
+    "radioGroupPresent_description": "Markiert Radiobuttons mit gleichem Namen, die nicht in einem gemeinsamen Fieldset, role=\"group\" oder role=\"radiogroup\" liegen, damit eine Person entscheidet, ob sie gruppiert werden müssen.",
+    "radioGroupPresent_summary_cantTell": "Die {{count}} Radiobuttons mit dem Namen „{{name}}“ sind nicht in einem Fieldset oder einer Gruppe zusammengefasst.",
+    "radioGroupPresent_hint_cantTell": "Legen Sie die Radiobuttons in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage, die sie beantworten, mit ihnen angesagt wird.",
+    "fakeList_title": "Als Liste gestalteter Text verwendet Listen-Markup",
+    "fakeList_description": "Markiert aufeinanderfolgende Zeilen oder Absätze, die mit Aufzählungszeichen oder fortlaufenden Nummern beginnen, aber nicht als Liste ausgezeichnet sind, damit eine Person entscheidet, ob es eine Liste ist.",
+    "fakeList_summary_cantTell_unordered": "Diese {{items}} Zeilen beginnen mit demselben Aufzählungszeichen, sind aber nicht als Liste ausgezeichnet.",
+    "fakeList_summary_cantTell_ordered": "Diese {{items}} Zeilen beginnen mit fortlaufenden Nummern, sind aber nicht als Liste ausgezeichnet.",
+    "fakeList_hint_cantTell_unordered": "Wenn es eine Liste ist, verwenden Sie <ul> und <li> (oder role=\"list\" und role=\"listitem\") und gestalten Sie die Aufzählungszeichen mit CSS.",
+    "fakeList_hint_cantTell_ordered": "Wenn es eine Liste ist, verwenden Sie <ol> und <li> (oder role=\"list\" und role=\"listitem\") und lassen Sie die Liste die Einträge nummerieren.",
+    "lettersSpacedWithSpaces_title": "Buchstaben eines Wortes werden nicht mit Leerzeichen gesperrt",
+    "lettersSpacedWithSpaces_description": "Markiert Text, in dem vier oder mehr einzelne Buchstaben hintereinander durch Leerzeichen getrennt sind, damit eine Person prüft, ob so ein Wort gesperrt wurde.",
+    "lettersSpacedWithSpaces_summary_cantTell": "Im Text „{{text}}“ sind die Buchstaben durch Leerzeichen getrennt.",
+    "lettersSpacedWithSpaces_hint_cantTell": "Wenn es ein Wort ist, schreiben Sie es ohne Leerzeichen und verwenden Sie die CSS-Eigenschaft letter-spacing für die gesperrte Darstellung.",
+    "imageAltLong_title": "Textalternativen von Bildern sind kurz",
+    "imageAltLong_description": "Markiert ein Bild, dessen Textalternative länger als 80 Zeichen ist, damit eine Person entscheidet, ob sie kurz und prägnant genug ist.",
+    "imageAltLong_summary_cantTell": "Die Textalternative dieses Bildes ist {{length}} Zeichen lang.",
+    "imageAltLong_hint_cantTell": "Beschränken Sie die Textalternative auf wenige Worte zu dem, was das Bild im Kontext vermittelt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon.",
+    "complexTableSummary_title": "Komplexe Datentabellen haben eine Zusammenfassung",
+    "complexTableSummary_description": "Markiert eine Datentabelle, deren Kopfzellen nicht alle in der ersten Zeile oder Spalte liegen und die weder aria-describedby noch summary hat, damit eine Person prüft, ob eine Zusammenfassung vorhanden ist.",
+    "complexTableSummary_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle, und nichts weist auf eine Zusammenfassung ihres Aufbaus hin.",
+    "complexTableSummary_hint_cantTell": "Prüfen Sie, ob eine Zusammenfassung den Aufbau der Tabelle erklärt, in ihrem <caption> oder in einem Textabschnitt daneben, am besten mit aria-describedby verknüpft.",
+    "officeDocumentLink_title": "Herunterladbare Office-Dokumente sind barrierefrei oder haben eine barrierefreie Version",
+    "officeDocumentLink_description": "Markiert jeden Link auf ein Office-Dokument (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
+    "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
+    "officeDocumentLink_hint_cantTell": "Prüfen Sie, ob das Dokument barrierefrei ist, oder bieten Sie eine barrierefreie Version an, zum Herunterladen oder als HTML-Seite.",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -15605,6 +16518,7 @@ const I18N = {
     "report_meta_schemaVersion": "Schemaversion",
     "report_meta_target": "Ziel",
     "report_meta_profile": "Profil",
+    "report_meta_optInRules": "Opt-in-Regeln",
     "report_meta_locale": "Sprache",
     "report_meta_localeRequested": "Sprache (angefordert: {{requested}})",
     "report_outcome_fail": "Nicht bestanden",
@@ -16434,6 +17348,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "This label points to id \"{{value}}\", which no element in its tree has.",
     "labelForTargetValid_summary_fail_notLabelable": "This label points to id \"{{value}}\", which belongs to a <{{element}}>, not a form field.",
     "labelForTargetValid_hint_fail": "Set the for attribute to the id of the field this label names, or remove it and put the field inside the label.",
+    "layoutTableNoDataMarkup_title": "Layout tables use no data table markup",
+    "layoutTableNoDataMarkup_description": "Checks that a table marked as layout (role=\"presentation\" or \"none\") has no caption, header cells, summary, or scope, headers or axis attributes.",
+    "layoutTableNoDataMarkup_summary_fail": "This layout table uses data table markup: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Remove the data table markup, or, if the table holds data, remove role=\"presentation\" and keep the headers.",
+    "figureCaptionStructure_title": "Images with a caption use the figure structure RGAA describes",
+    "figureCaptionStructure_description": "Checks that a <figure> holding an image and a <figcaption> has role=\"figure\" or \"group\" and an aria-label matching the caption.",
+    "figureCaptionStructure_summary_fail_role": "This figure holds an image and a caption but has no role=\"figure\" or role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "This figure holds an image and a caption but has no aria-label repeating the caption.",
+    "figureCaptionStructure_summary_fail_mismatch": "This figure's aria-label differs from its caption.",
+    "figureCaptionStructure_hint_fail": "Give the <figure> role=\"figure\" and an aria-label with the same text as its <figcaption>.",
+    "videoCaptionsTrackKind_title": "Video caption tracks use kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Checks that a <video> with text tracks has at least one <track kind=\"captions\">, not only subtitles.",
+    "videoCaptionsTrackKind_summary_fail": "This video has text tracks, but none with kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Mark the track that carries the captions with kind=\"captions\".",
+    "dirAttributeValid_title": "dir attributes are ltr or rtl",
+    "dirAttributeValid_description": "Checks that every dir attribute is ltr or rtl, the two values RGAA accepts.",
+    "dirAttributeValid_summary_fail_auto": "This element uses dir=\"auto\"; RGAA accepts only ltr or rtl.",
+    "dirAttributeValid_summary_fail_invalid": "This element has dir=\"{{value}}\", which is neither ltr nor rtl.",
+    "dirAttributeValid_hint_fail": "Set dir to ltr (left to right) or rtl (right to left), whichever the text reads in.",
+    "svgHiddenNoAlternative_title": "Hidden decorative SVGs carry no text alternative",
+    "svgHiddenNoAlternative_description": "Checks that an <svg> with aria-hidden=\"true\" has no aria-label, aria-labelledby, title attribute, or non-empty <title> or <desc>.",
+    "svgHiddenNoAlternative_summary_fail": "This SVG is hidden with aria-hidden=\"true\" but carries a text alternative: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "If the image is decorative, remove the text alternative. If it carries information, remove aria-hidden and give it role=\"img\" and a text alternative.",
+    "fieldGroupLegend_title": "Groups of form fields have a legend",
+    "fieldGroupLegend_description": "Flags a <fieldset> or role=\"group\" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "This fieldset groups form fields but has no legend.",
+    "fieldGroupLegend_summary_cantTell_group": "This role=\"group\" element groups form fields but has no name.",
+    "fieldGroupLegend_hint_cantTell": "If the fields are of the same kind (an address, a date, a set of choices), give the group a legend: a <legend> for a fieldset, aria-label or aria-labelledby for role=\"group\".",
+    "radioGroupPresent_title": "Radio buttons sharing a name are grouped",
+    "radioGroupPresent_description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
+    "radioGroupPresent_summary_cantTell": "The {{count}} radio buttons named \"{{name}}\" are not grouped in one fieldset or group.",
+    "radioGroupPresent_hint_cantTell": "Put the radio buttons in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question they answer is announced with them.",
+    "fakeList_title": "Text laid out as a list uses list markup",
+    "fakeList_description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
+    "fakeList_summary_cantTell_unordered": "These {{items}} lines start with the same bullet but are not marked up as a list.",
+    "fakeList_summary_cantTell_ordered": "These {{items}} lines start with consecutive numbers but are not marked up as a list.",
+    "fakeList_hint_cantTell_unordered": "If this is a list, use <ul> and <li> (or role=\"list\" and role=\"listitem\"), and style the bullets with CSS.",
+    "fakeList_hint_cantTell_ordered": "If this is a list, use <ol> and <li> (or role=\"list\" and role=\"listitem\"), and let the list number the items.",
+    "lettersSpacedWithSpaces_title": "Letters of a word are not spaced out with spaces",
+    "lettersSpacedWithSpaces_description": "Flags text where four or more single letters in a row are separated by spaces, for a person to confirm whether a word is spaced out that way.",
+    "lettersSpacedWithSpaces_summary_cantTell": "The text \"{{text}}\" has its letters separated by spaces.",
+    "lettersSpacedWithSpaces_hint_cantTell": "If this is a word, write it without spaces and use the CSS letter-spacing property for the spaced-out look.",
+    "imageAltLong_title": "Text alternatives of images are short",
+    "imageAltLong_description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
+    "imageAltLong_summary_cantTell": "This image's text alternative is {{length}} characters long.",
+    "imageAltLong_hint_cantTell": "Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.",
+    "complexTableSummary_title": "Complex data tables have a summary",
+    "complexTableSummary_description": "Flags a data table whose headers are not all in the first row or column, and that has no aria-describedby or summary, for a person to check that a summary is available.",
+    "complexTableSummary_summary_cantTell": "This table looks like a complex data table, and nothing marks a summary of its structure.",
+    "complexTableSummary_hint_cantTell": "Check that a summary explains how the table is organised, in its <caption> or in a passage next to it, ideally linked with aria-describedby.",
+    "officeDocumentLink_title": "Downloadable office documents are accessible or have an accessible version",
+    "officeDocumentLink_description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
+    "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
+    "officeDocumentLink_hint_cantTell": "Check that the document is accessible, or offer an accessible version, as a download or as an HTML page.",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -16443,6 +17411,7 @@ const I18N = {
     "report_meta_schemaVersion": "schema version",
     "report_meta_target": "target",
     "report_meta_profile": "profile",
+    "report_meta_optInRules": "opt-in rules",
     "report_meta_locale": "locale",
     "report_meta_localeRequested": "locale (requested {{requested}})",
     "report_outcome_fail": "Fail",
@@ -17272,6 +18241,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Esta etiqueta apunta al id \"{{value}}\", que ningún elemento de su árbol tiene.",
     "labelForTargetValid_summary_fail_notLabelable": "Esta etiqueta apunta al id \"{{value}}\", que pertenece a un <{{element}}>, no a un campo de formulario.",
     "labelForTargetValid_hint_fail": "Poner en el atributo for el id del campo que nombra esta etiqueta, o eliminarlo y colocar el campo dentro de la etiqueta.",
+    "layoutTableNoDataMarkup_title": "Las tablas de maquetación no usan marcado de tabla de datos",
+    "layoutTableNoDataMarkup_description": "Comprueba que una tabla marcada como maquetación (role=\"presentation\" o \"none\") no tiene título, celdas de encabezado, summary ni atributos scope, headers o axis.",
+    "layoutTableNoDataMarkup_summary_fail": "Esta tabla de maquetación usa marcado de tabla de datos: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Eliminar el marcado de tabla de datos o, si la tabla contiene datos, eliminar role=\"presentation\" y conservar los encabezados.",
+    "figureCaptionStructure_title": "Las imágenes con leyenda usan la estructura figure que describe el RGAA",
+    "figureCaptionStructure_description": "Comprueba que un <figure> con una imagen y un <figcaption> tiene role=\"figure\" o \"group\" y un aria-label igual a la leyenda.",
+    "figureCaptionStructure_summary_fail_role": "Esta figura contiene una imagen y una leyenda, pero no tiene role=\"figure\" ni role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Esta figura contiene una imagen y una leyenda, pero no tiene un aria-label que repita la leyenda.",
+    "figureCaptionStructure_summary_fail_mismatch": "El aria-label de esta figura no coincide con su leyenda.",
+    "figureCaptionStructure_hint_fail": "Dar al <figure> role=\"figure\" y un aria-label con el mismo texto que su <figcaption>.",
+    "videoCaptionsTrackKind_title": "Las pistas de subtítulos de los vídeos usan kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Comprueba que un <video> con pistas de texto tiene al menos un <track kind=\"captions\">, y no solo subtítulos de traducción.",
+    "videoCaptionsTrackKind_summary_fail": "Este vídeo tiene pistas de texto, pero ninguna con kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Marcar con kind=\"captions\" la pista que lleva los subtítulos para personas sordas.",
+    "dirAttributeValid_title": "Los atributos dir son ltr o rtl",
+    "dirAttributeValid_description": "Comprueba que cada atributo dir es ltr o rtl, los dos valores que acepta el RGAA.",
+    "dirAttributeValid_summary_fail_auto": "Este elemento usa dir=\"auto\"; el RGAA solo acepta ltr o rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Este elemento tiene dir=\"{{value}}\", que no es ni ltr ni rtl.",
+    "dirAttributeValid_hint_fail": "Poner dir en ltr (de izquierda a derecha) o rtl (de derecha a izquierda), según el sentido de lectura del texto.",
+    "svgHiddenNoAlternative_title": "Los SVG decorativos ocultos no llevan alternativa textual",
+    "svgHiddenNoAlternative_description": "Comprueba que un <svg> con aria-hidden=\"true\" no tiene aria-label, aria-labelledby, atributo title ni <title> o <desc> con contenido.",
+    "svgHiddenNoAlternative_summary_fail": "Este SVG está oculto con aria-hidden=\"true\", pero lleva una alternativa textual: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Si la imagen es decorativa, eliminar la alternativa textual. Si aporta información, eliminar aria-hidden y darle role=\"img\" y una alternativa textual.",
+    "fieldGroupLegend_title": "Los grupos de campos de formulario tienen una leyenda",
+    "fieldGroupLegend_description": "Señala un <fieldset> o role=\"group\" con campos de formulario sin leyenda ni nombre, para que una persona decida si agrupa campos de la misma naturaleza.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Este fieldset agrupa campos de formulario pero no tiene leyenda.",
+    "fieldGroupLegend_summary_cantTell_group": "Este elemento con role=\"group\" agrupa campos de formulario pero no tiene nombre.",
+    "fieldGroupLegend_hint_cantTell": "Si los campos son de la misma naturaleza (una dirección, una fecha, un conjunto de opciones), dar al grupo una leyenda: un <legend> para un fieldset, aria-label o aria-labelledby para role=\"group\".",
+    "radioGroupPresent_title": "Los botones de opción con el mismo nombre están agrupados",
+    "radioGroupPresent_description": "Señala un conjunto de botones de opción con el mismo nombre que no está dentro de un mismo fieldset, role=\"group\" o role=\"radiogroup\", para que una persona decida si necesita agruparse.",
+    "radioGroupPresent_summary_cantTell": "Los {{count}} botones de opción llamados \"{{name}}\" no están agrupados en un mismo fieldset o grupo.",
+    "radioGroupPresent_hint_cantTell": "Colocar los botones de opción en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta que responden se anuncie con ellos.",
+    "fakeList_title": "El texto presentado como lista usa marcado de lista",
+    "fakeList_description": "Señala líneas o párrafos consecutivos que empiezan con viñetas o números consecutivos pero no están marcados como lista, para que una persona decida si lo son.",
+    "fakeList_summary_cantTell_unordered": "Estas {{items}} líneas empiezan con la misma viñeta pero no están marcadas como lista.",
+    "fakeList_summary_cantTell_ordered": "Estas {{items}} líneas empiezan con números consecutivos pero no están marcadas como lista.",
+    "fakeList_hint_cantTell_unordered": "Si es una lista, usar <ul> y <li> (o role=\"list\" y role=\"listitem\") y dar estilo a las viñetas con CSS.",
+    "fakeList_hint_cantTell_ordered": "Si es una lista, usar <ol> y <li> (o role=\"list\" y role=\"listitem\") y dejar que la lista numere los elementos.",
+    "lettersSpacedWithSpaces_title": "Las letras de una palabra no se separan con espacios",
+    "lettersSpacedWithSpaces_description": "Señala texto con cuatro o más letras sueltas seguidas separadas por espacios, para que una persona confirme si así se ha espaciado una palabra.",
+    "lettersSpacedWithSpaces_summary_cantTell": "El texto \"{{text}}\" tiene las letras separadas por espacios.",
+    "lettersSpacedWithSpaces_hint_cantTell": "Si es una palabra, escribirla sin espacios y usar la propiedad CSS letter-spacing para el aspecto espaciado.",
+    "imageAltLong_title": "Las alternativas textuales de las imágenes son cortas",
+    "imageAltLong_description": "Señala una imagen cuya alternativa textual supera los 80 caracteres, para que una persona decida si es lo bastante corta y concisa.",
+    "imageAltLong_summary_cantTell": "La alternativa textual de esta imagen tiene {{length}} caracteres.",
+    "imageAltLong_hint_cantTell": "Limitar la alternativa textual a lo que la imagen transmite en su contexto, en pocas palabras. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella.",
+    "complexTableSummary_title": "Las tablas de datos complejas tienen un resumen",
+    "complexTableSummary_description": "Señala una tabla de datos cuyos encabezados no están todos en la primera fila o columna y que no tiene aria-describedby ni summary, para que una persona compruebe que hay un resumen.",
+    "complexTableSummary_summary_cantTell": "Esta tabla parece una tabla de datos compleja, y nada indica un resumen de su estructura.",
+    "complexTableSummary_hint_cantTell": "Comprobar que un resumen explica cómo está organizada la tabla, en su <caption> o en un pasaje junto a ella, idealmente enlazado con aria-describedby.",
+    "officeDocumentLink_title": "Los documentos ofimáticos descargables son accesibles o tienen una versión accesible",
+    "officeDocumentLink_description": "Señala cada enlace a un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
+    "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
+    "officeDocumentLink_hint_cantTell": "Comprobar que el documento es accesible, u ofrecer una versión accesible, para descargar o como página HTML.",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -17281,6 +18304,7 @@ const I18N = {
     "report_meta_schemaVersion": "versión del esquema",
     "report_meta_target": "objetivo",
     "report_meta_profile": "perfil",
+    "report_meta_optInRules": "reglas opcionales",
     "report_meta_locale": "idioma",
     "report_meta_localeRequested": "idioma (solicitado: {{requested}})",
     "report_outcome_fail": "No superada",
@@ -18110,6 +19134,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Cette étiquette pointe vers l’id \"{{value}}\", qu’aucun élément de son arbre ne porte.",
     "labelForTargetValid_summary_fail_notLabelable": "Cette étiquette pointe vers l’id \"{{value}}\", qui appartient à un <{{element}}>, pas à un champ de formulaire.",
     "labelForTargetValid_hint_fail": "Donnez à l’attribut for l’id du champ que nomme cette étiquette, ou supprimez-le et placez le champ dans l’étiquette.",
+    "layoutTableNoDataMarkup_title": "Les tableaux de mise en forme n’utilisent pas de balisage de tableau de données",
+    "layoutTableNoDataMarkup_description": "Vérifie qu’un tableau signalé comme mise en forme (role=\"presentation\" ou \"none\") n’a ni titre, ni cellules d’en-tête, ni summary, ni attributs scope, headers ou axis.",
+    "layoutTableNoDataMarkup_summary_fail": "Ce tableau de mise en forme utilise du balisage de tableau de données : {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Supprimez le balisage de tableau de données ou, si le tableau contient des données, supprimez role=\"presentation\" et gardez les en-têtes.",
+    "figureCaptionStructure_title": "Les images légendées utilisent la structure figure décrite par le RGAA",
+    "figureCaptionStructure_description": "Vérifie qu’une balise <figure> contenant une image et une <figcaption> a role=\"figure\" ou \"group\" et un aria-label identique à la légende.",
+    "figureCaptionStructure_summary_fail_role": "Cette figure contient une image et une légende mais n’a ni role=\"figure\" ni role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Cette figure contient une image et une légende mais n’a pas d’aria-label reprenant la légende.",
+    "figureCaptionStructure_summary_fail_mismatch": "L’aria-label de cette figure diffère de sa légende.",
+    "figureCaptionStructure_hint_fail": "Donnez à la balise <figure> role=\"figure\" et un aria-label au contenu identique à sa <figcaption>.",
+    "videoCaptionsTrackKind_title": "Les pistes de sous-titres des vidéos utilisent kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Vérifie qu’une balise <video> ayant des pistes de texte a au moins une balise <track kind=\"captions\">, et pas seulement des sous-titres de traduction.",
+    "videoCaptionsTrackKind_summary_fail": "Cette vidéo a des pistes de texte, mais aucune avec kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Indiquez kind=\"captions\" sur la piste qui porte les sous-titres synchronisés.",
+    "dirAttributeValid_title": "Les attributs dir valent ltr ou rtl",
+    "dirAttributeValid_description": "Vérifie que chaque attribut dir vaut ltr ou rtl, les deux valeurs acceptées par le RGAA.",
+    "dirAttributeValid_summary_fail_auto": "Cet élément utilise dir=\"auto\" ; le RGAA n’accepte que ltr ou rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Cet élément a dir=\"{{value}}\", qui ne vaut ni ltr ni rtl.",
+    "dirAttributeValid_hint_fail": "Donnez à dir la valeur ltr (de gauche à droite) ou rtl (de droite à gauche), selon le sens de lecture du texte.",
+    "svgHiddenNoAlternative_title": "Les SVG décoratifs masqués n’ont pas d’alternative textuelle",
+    "svgHiddenNoAlternative_description": "Vérifie qu’une balise <svg> avec aria-hidden=\"true\" n’a ni aria-label, ni aria-labelledby, ni attribut title, ni <title> ou <desc> non vide.",
+    "svgHiddenNoAlternative_summary_fail": "Ce SVG est masqué par aria-hidden=\"true\" mais porte une alternative textuelle : {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Si l’image est décorative, supprimez l’alternative textuelle. Si elle porte une information, supprimez aria-hidden et donnez-lui role=\"img\" et une alternative textuelle.",
+    "fieldGroupLegend_title": "Les regroupements de champs de formulaire ont une légende",
+    "fieldGroupLegend_description": "Signale un <fieldset> ou role=\"group\" contenant des champs de formulaire sans légende ni nom, pour qu’une personne décide s’il regroupe des champs de même nature.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Ce fieldset regroupe des champs de formulaire mais n’a pas de légende.",
+    "fieldGroupLegend_summary_cantTell_group": "Cet élément role=\"group\" regroupe des champs de formulaire mais n’a pas de nom.",
+    "fieldGroupLegend_hint_cantTell": "Si les champs sont de même nature (une adresse, une date, un ensemble de choix), donnez une légende au regroupement : un <legend> pour un fieldset, aria-label ou aria-labelledby pour role=\"group\".",
+    "radioGroupPresent_title": "Les boutons radio partageant un nom sont regroupés",
+    "radioGroupPresent_description": "Signale un ensemble de boutons radio de même nom qui n’est pas dans un même fieldset, role=\"group\" ou role=\"radiogroup\", pour qu’une personne décide s’il doit être regroupé.",
+    "radioGroupPresent_summary_cantTell": "Les {{count}} boutons radio nommés « {{name}} » ne sont pas regroupés dans un même fieldset ou groupe.",
+    "radioGroupPresent_hint_cantTell": "Placez les boutons radio dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question à laquelle ils répondent soit annoncée avec eux.",
+    "fakeList_title": "Le texte présenté en liste utilise un balisage de liste",
+    "fakeList_description": "Signale des lignes ou paragraphes consécutifs commençant par des puces ou des numéros consécutifs mais non balisés en liste, pour qu’une personne décide s’il s’agit d’une liste.",
+    "fakeList_summary_cantTell_unordered": "Ces {{items}} lignes commencent par la même puce mais ne sont pas balisées en liste.",
+    "fakeList_summary_cantTell_ordered": "Ces {{items}} lignes commencent par des numéros consécutifs mais ne sont pas balisées en liste.",
+    "fakeList_hint_cantTell_unordered": "S’il s’agit d’une liste, utilisez <ul> et <li> (ou role=\"list\" et role=\"listitem\"), et mettez en forme les puces en CSS.",
+    "fakeList_hint_cantTell_ordered": "S’il s’agit d’une liste, utilisez <ol> et <li> (ou role=\"list\" et role=\"listitem\"), et laissez la liste numéroter les éléments.",
+    "lettersSpacedWithSpaces_title": "Les lettres d’un mot ne sont pas séparées par des espaces",
+    "lettersSpacedWithSpaces_description": "Signale un texte où au moins quatre lettres isolées à la suite sont séparées par des espaces, pour qu’une personne confirme si un mot est ainsi espacé.",
+    "lettersSpacedWithSpaces_summary_cantTell": "Le texte « {{text}} » a ses lettres séparées par des espaces.",
+    "lettersSpacedWithSpaces_hint_cantTell": "S’il s’agit d’un mot, écrivez-le sans espaces et utilisez la propriété CSS letter-spacing pour l’effet d’espacement.",
+    "imageAltLong_title": "Les alternatives textuelles des images sont courtes",
+    "imageAltLong_description": "Signale une image dont l’alternative textuelle dépasse 80 caractères, pour qu’une personne décide si elle est assez courte et concise.",
+    "imageAltLong_summary_cantTell": "L’alternative textuelle de cette image fait {{length}} caractères.",
+    "imageAltLong_hint_cantTell": "Limitez l’alternative textuelle à ce que l’image transmet dans son contexte, en quelques mots. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle.",
+    "complexTableSummary_title": "Les tableaux de données complexes ont un résumé",
+    "complexTableSummary_description": "Signale un tableau de données dont les en-têtes ne sont pas tous dans la première ligne ou colonne, sans aria-describedby ni summary, pour qu’une personne vérifie qu’un résumé est disponible.",
+    "complexTableSummary_summary_cantTell": "Ce tableau semble être un tableau de données complexe, et rien n’indique un résumé de sa structure.",
+    "complexTableSummary_hint_cantTell": "Vérifiez qu’un résumé explique l’organisation du tableau, dans son <caption> ou dans un passage à côté, idéalement relié par aria-describedby.",
+    "officeDocumentLink_title": "Les documents bureautiques en téléchargement sont accessibles ou ont une version accessible",
+    "officeDocumentLink_description": "Signale chaque lien vers un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
+    "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
+    "officeDocumentLink_hint_cantTell": "Vérifiez que le document est accessible, ou proposez-en une version accessible, en téléchargement ou en page HTML.",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -18119,6 +19197,7 @@ const I18N = {
     "report_meta_schemaVersion": "version du schéma",
     "report_meta_target": "cible",
     "report_meta_profile": "profil",
+    "report_meta_optInRules": "règles optionnelles",
     "report_meta_locale": "langue",
     "report_meta_localeRequested": "langue (demandée : {{requested}})",
     "report_outcome_fail": "Échec",
@@ -18948,6 +20027,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "このラベルは id \"{{value}}\" を指していますが、同じツリーにその id を持つ要素はありません。",
     "labelForTargetValid_summary_fail_notLabelable": "このラベルは id \"{{value}}\" を指していますが、それはフォームのフィールドではなく <{{element}}> の id です。",
     "labelForTargetValid_hint_fail": "for 属性に、このラベルが示すフィールドの id を指定するか、for 属性を削除してフィールドをラベルの中に入れてください。",
+    "layoutTableNoDataMarkup_title": "レイアウト用の表がデータ表のマークアップを使用していない",
+    "layoutTableNoDataMarkup_description": "レイアウト用と示された表 (role=\"presentation\" または \"none\") に、キャプション、見出しセル、summary、scope・headers・axis 属性がないかを確認します。",
+    "layoutTableNoDataMarkup_summary_fail": "このレイアウト用の表はデータ表のマークアップを使用しています: {{markup}}。",
+    "layoutTableNoDataMarkup_hint_fail": "データ表のマークアップを削除してください。表がデータを含む場合は、role=\"presentation\" を削除して見出しを残してください。",
+    "figureCaptionStructure_title": "キャプション付きの画像が RGAA の説明する figure 構造を使用している",
+    "figureCaptionStructure_description": "画像と <figcaption> を含む <figure> に、role=\"figure\" または \"group\" と、キャプションと同じ aria-label があるかを確認します。",
+    "figureCaptionStructure_summary_fail_role": "この図は画像とキャプションを含んでいますが、role=\"figure\" も role=\"group\" もありません。",
+    "figureCaptionStructure_summary_fail_label": "この図は画像とキャプションを含んでいますが、キャプションを繰り返す aria-label がありません。",
+    "figureCaptionStructure_summary_fail_mismatch": "この図の aria-label はキャプションと異なります。",
+    "figureCaptionStructure_hint_fail": "<figure> に role=\"figure\" と、<figcaption> と同じテキストの aria-label を指定してください。",
+    "videoCaptionsTrackKind_title": "動画の字幕トラックが kind=\"captions\" を使用している",
+    "videoCaptionsTrackKind_description": "テキストトラックを持つ <video> に、翻訳字幕だけでなく <track kind=\"captions\"> が少なくとも 1 つあるかを確認します。",
+    "videoCaptionsTrackKind_summary_fail": "この動画にはテキストトラックがありますが、kind=\"captions\" のものがありません。",
+    "videoCaptionsTrackKind_hint_fail": "聴覚障害者向け字幕を含むトラックに kind=\"captions\" を指定してください。",
+    "dirAttributeValid_title": "dir 属性が ltr か rtl である",
+    "dirAttributeValid_description": "すべての dir 属性が、RGAA が認める 2 つの値 ltr か rtl であるかを確認します。",
+    "dirAttributeValid_summary_fail_auto": "この要素は dir=\"auto\" を使用していますが、RGAA が認めるのは ltr か rtl だけです。",
+    "dirAttributeValid_summary_fail_invalid": "この要素の dir=\"{{value}}\" は ltr でも rtl でもありません。",
+    "dirAttributeValid_hint_fail": "テキストの読む方向に合わせて、dir を ltr (左から右) か rtl (右から左) にしてください。",
+    "svgHiddenNoAlternative_title": "非表示の装飾用 SVG に代替テキストがない",
+    "svgHiddenNoAlternative_description": "aria-hidden=\"true\" の <svg> に、aria-label、aria-labelledby、title 属性、空でない <title> や <desc> がないかを確認します。",
+    "svgHiddenNoAlternative_summary_fail": "この SVG は aria-hidden=\"true\" で非表示ですが、代替テキストがあります: {{alternatives}}。",
+    "svgHiddenNoAlternative_hint_fail": "画像が装飾用なら代替テキストを削除してください。情報を伝える画像なら、aria-hidden を削除し、role=\"img\" と代替テキストを指定してください。",
+    "fieldGroupLegend_title": "フォームフィールドのグループに凡例がある",
+    "fieldGroupLegend_description": "フォームフィールドを含む <fieldset> または role=\"group\" に凡例や名前がない場合に示し、同じ種類のフィールドのグループかどうかを人が判断できるようにします。",
+    "fieldGroupLegend_summary_cantTell_fieldset": "この fieldset はフォームフィールドをまとめていますが、凡例がありません。",
+    "fieldGroupLegend_summary_cantTell_group": "この role=\"group\" 要素はフォームフィールドをまとめていますが、名前がありません。",
+    "fieldGroupLegend_hint_cantTell": "フィールドが同じ種類（住所、日付、選択肢の組など）なら、グループに凡例を付けてください。fieldset には <legend>、role=\"group\" には aria-label または aria-labelledby を使います。",
+    "radioGroupPresent_title": "同じ name のラジオボタンがグループ化されている",
+    "radioGroupPresent_description": "同じ name のラジオボタンの組が 1 つの fieldset、role=\"group\"、role=\"radiogroup\" に入っていない場合に示し、グループ化が必要かを人が判断できるようにします。",
+    "radioGroupPresent_summary_cantTell": "name が「{{name}}」の {{count}} 個のラジオボタンが、1 つの fieldset またはグループにまとめられていません。",
+    "radioGroupPresent_hint_cantTell": "ラジオボタンを <legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、答える質問が一緒に読み上げられるようにしてください。",
+    "fakeList_title": "リストとして並べたテキストにリストのマークアップを使う",
+    "fakeList_description": "箇条記号や連番で始まる連続した行や段落がリストとしてマークアップされていない場合に示し、リストかどうかを人が判断できるようにします。",
+    "fakeList_summary_cantTell_unordered": "この {{items}} 行は同じ箇条記号で始まっていますが、リストとしてマークアップされていません。",
+    "fakeList_summary_cantTell_ordered": "この {{items}} 行は連番で始まっていますが、リストとしてマークアップされていません。",
+    "fakeList_hint_cantTell_unordered": "リストであれば <ul> と <li>（または role=\"list\" と role=\"listitem\"）を使い、箇条記号は CSS で表示してください。",
+    "fakeList_hint_cantTell_ordered": "リストであれば <ol> と <li>（または role=\"list\" と role=\"listitem\"）を使い、番号付けはリストに任せてください。",
+    "lettersSpacedWithSpaces_title": "単語の文字をスペースで区切らない",
+    "lettersSpacedWithSpaces_description": "4 文字以上の単独の文字がスペースで区切られて並ぶテキストを示し、単語をそのように間隔を空けて書いていないかを人が確認できるようにします。",
+    "lettersSpacedWithSpaces_summary_cantTell": "テキスト「{{text}}」の文字がスペースで区切られています。",
+    "lettersSpacedWithSpaces_hint_cantTell": "単語であればスペースなしで書き、字間を空けた見た目には CSS の letter-spacing プロパティを使ってください。",
+    "imageAltLong_title": "画像の代替テキストが短い",
+    "imageAltLong_description": "代替テキストが 80 文字を超える画像を示し、十分に短く簡潔かを人が判断できるようにします。",
+    "imageAltLong_summary_cantTell": "この画像の代替テキストは {{length}} 文字あります。",
+    "imageAltLong_hint_cantTell": "代替テキストは、文脈の中で画像が伝える内容を数語で表してください。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください。",
+    "complexTableSummary_title": "複雑なデータテーブルに要約がある",
+    "complexTableSummary_description": "見出しセルがすべて先頭行または先頭列にあるわけではなく、aria-describedby も summary もないデータテーブルを示し、要約があるかを人が確認できるようにします。",
+    "complexTableSummary_summary_cantTell": "このテーブルは複雑なデータテーブルのようですが、構造の要約を示すものがありません。",
+    "complexTableSummary_hint_cantTell": "テーブルの構成を説明する要約が、<caption> または隣接する文章にあるか確認してください。aria-describedby で関連付けるのが理想です。",
+    "officeDocumentLink_title": "ダウンロードできるオフィス文書がアクセシブルであるか、アクセシブルな版がある",
+    "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）へのリンクを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
+    "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
+    "officeDocumentLink_hint_cantTell": "文書がアクセシブルか確認するか、アクセシブルな版をダウンロードまたは HTML ページとして提供してください。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -18957,6 +20090,7 @@ const I18N = {
     "report_meta_schemaVersion": "スキーマバージョン",
     "report_meta_target": "対象",
     "report_meta_profile": "プロファイル",
+    "report_meta_optInRules": "オプトインルール",
     "report_meta_locale": "ロケール",
     "report_meta_localeRequested": "ロケール (要求: {{requested}})",
     "report_outcome_fail": "不合格",
@@ -19432,11 +20566,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -19568,6 +20708,7 @@ const PROFILE_RULES = {
     "canvas-text-alternative-present",
     "canvas-text-alternative-quality",
     "combobox-name-present",
+    "complex-table-summary",
     "contrast-computable",
     "contrast-minimum",
     "css-focus-indicator-suppressed",
@@ -19576,6 +20717,7 @@ const PROFILE_RULES = {
     "definition-list-children-valid",
     "deprecated-elements-not-used",
     "dialog-name-present",
+    "dir-attribute-valid",
     "dlitem-parent-valid",
     "doctype-present",
     "duplicate-id",
@@ -19583,6 +20725,9 @@ const PROFILE_RULES = {
     "embed-text-alternative-present",
     "embed-text-alternative-quality",
     "empty-heading",
+    "fake-list",
+    "field-group-legend",
+    "figure-caption-structure",
     "form-control-label-quality",
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
@@ -19593,6 +20738,7 @@ const PROFILE_RULES = {
     "identical-iframes-same-purpose",
     "iframe-name-present",
     "iframe-title-unique",
+    "image-alt-long",
     "image-redundant-alt",
     "img-alt-decorative",
     "img-alt-present",
@@ -19605,6 +20751,8 @@ const PROFILE_RULES = {
     "label-title-only",
     "landmark-no-duplicate-main",
     "landmark-one-main",
+    "layout-table-no-data-markup",
+    "letters-spaced-with-spaces",
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
@@ -19622,6 +20770,7 @@ const PROFILE_RULES = {
     "no-autoplay-audio",
     "object-text-alternative-present",
     "object-text-alternative-quality",
+    "office-document-link",
     "optgroup-label-present",
     "p-as-heading",
     "page-title-patterns",
@@ -19629,6 +20778,7 @@ const PROFILE_RULES = {
     "presentation-role-conflict",
     "presentational-attributes-absent",
     "presentational-elements-absent",
+    "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
     "searchbox-name-present",
@@ -19636,6 +20786,7 @@ const PROFILE_RULES = {
     "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
+    "svg-hidden-no-alternative",
     "svg-text-alternative-present",
     "svg-text-alternative-quality",
     "tab-name-present",
@@ -19646,7 +20797,8 @@ const PROFILE_RULES = {
     "textbox-name-present",
     "treeitem-name-present",
     "valid-lang",
-    "video-caption"
+    "video-caption",
+    "video-captions-track-kind"
   ]
 };
 
@@ -19769,6 +20921,31 @@ function applyProfile(selection, requestedProfile) {
   return selection;
 }
 
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags ('rgaa'). It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
+  return selection;
+}
+
 /**
  * Resolve effective selection from engineOptions (preferred) or runOnly (legacy).
  *
@@ -19786,7 +20963,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -19813,7 +20995,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -19866,12 +21048,13 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly. Nothing else selects it, not a
-  // default run, a WCAG tag set or a composite id, so a scan that does not
-  // target the standard never reports a failure only that standard defines.
+  // tags, or its id is included directly, or engineOptions.optInRules
+  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
+  // set or a composite id, so a scan that does not target the standard never
+  // reports a failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
-    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
@@ -28843,6 +30026,27 @@ const runCore = (function runCore(
     } catch {}
   }
 
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and the RGAA profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
+      );
+    } catch {}
+  }
+
   // engineOptions.mappings: which standards besides WCAG a result's
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
@@ -28906,6 +30110,16 @@ const runCore = (function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -29103,6 +30317,9 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,
@@ -29367,14 +30584,21 @@ function toCompositeCatalogEntry(x, tokens) {
 }
 
 // A standard's own rollup (RGAA's per criterion) is opt-in like that
-// standard's rules: listed only when the selection names its tag or its id,
-// as the rgaa-4.1.2 profile does, so the catalog lists what a scan with the
-// same options would produce.
+// standard's rules: listed only when the selection names its tag (as the
+// rgaa-4.1.2 profile does) or its id, or unlocks its tag through
+// engineOptions.optInRules and includes nothing else, so the catalog lists
+// what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
+  // Unlocked alone does not select it: like the run, an include of other
+  // tags or ids (a WCAG profile's, say) still leaves it out.
+  const includesNothing =
+    !selection.tags.length && !selection.includeRuleIds.length && !selection.includeTestIds.length;
+  const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
   return (
+    unlocked ||
     optIn.some((t) => selection.tags.includes(t)) ||
     selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
   );
@@ -31825,6 +33049,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "complex-table-summary",
+    "title": "Complex data tables have a summary",
+    "description": "Flags a data table whose headers are not all in the first row or column, and that has no aria-describedby or summary, for a person to check that a summary is available.",
+    "i18n": {
+      "titleKey": "complexTableSummary_title",
+      "descriptionKey": "complexTableSummary_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.1.1",
+        "title": "Pour chaque tableau de données complexe, un résumé est-il disponible ?",
+        "criterion": "5.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "contrast-computable",
     "title": "Color contrast is computable for rendered text",
     "description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -32654,6 +33926,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "dir-attribute-valid",
+    "title": "dir attributes are ltr or rtl",
+    "description": "Checks that every dir attribute is ltr or rtl, the two values RGAA accepts.",
+    "i18n": {
+      "titleKey": "dirAttributeValid_title",
+      "descriptionKey": "dirAttributeValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "language",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.10.2",
+        "title": "Dans chaque page web, chaque changement du sens de lecture (attribut dir) vérifie-t-il ces conditions ?",
+        "criterion": "8.10",
+        "wcagSc": [
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "dlitem-parent-valid",
     "title": "Description-list items must be inside a description list",
     "description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
@@ -33211,6 +34531,162 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "fake-list",
+    "title": "Text laid out as a list uses list markup",
+    "description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
+    "i18n": {
+      "titleKey": "fakeList_title",
+      "descriptionKey": "fakeList_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "field-group-legend",
+    "title": "Groups of form fields have a legend",
+    "description": "Flags a <fieldset> or role=\"group\" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.",
+    "i18n": {
+      "titleKey": "fieldGroupLegend_title",
+      "descriptionKey": "fieldGroupLegend_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.6.1",
+        "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
+        "criterion": "11.6",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "figure-caption-structure",
+    "title": "Images with a caption use the figure structure RGAA describes",
+    "description": "Checks that a <figure> holding an image and a <figcaption> has role=\"figure\" or \"group\" and an aria-label matching the caption.",
+    "i18n": {
+      "titleKey": "figureCaptionStructure_title",
+      "descriptionKey": "figureCaptionStructure_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.9.1",
+        "title": "Chaque image pourvue d’une légende (balise <img>, <input> avec l’attribut type=\"image\" ou possédant un attribut WAI-ARIA role=\"img\" associée à une légende adjacente), vérifie-t-elle, si nécessaire, ces conditions ?",
+        "criterion": "1.9",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -34365,6 +35841,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "image-alt-long",
+    "title": "Text alternatives of images are short",
+    "description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
+    "i18n": {
+      "titleKey": "imageAltLong_title",
+      "descriptionKey": "imageAltLong_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.9",
+        "title": "Pour chaque image porteuse d’information et ayant une alternative textuelle, l’alternative textuelle est-elle courte et concise (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -35535,6 +37060,103 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "layout-table-no-data-markup",
+    "title": "Layout tables use no data table markup",
+    "description": "Checks that a table marked as layout (role=\"presentation\" or \"none\") has no caption, header cells, summary, or scope, headers or axis attributes.",
+    "i18n": {
+      "titleKey": "layoutTableNoDataMarkup_title",
+      "descriptionKey": "layoutTableNoDataMarkup_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.8.1",
+        "title": "Chaque tableau de mise en forme (balise <table>) vérifie-t-il ces conditions ?",
+        "criterion": "5.8",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "letters-spaced-with-spaces",
+    "title": "Letters of a word are not spaced out with spaces",
+    "description": "Flags text where four or more single letters in a row are separated by spaces, for a person to confirm whether a word is spaced out that way.",
+    "i18n": {
+      "titleKey": "lettersSpacedWithSpaces_title",
+      "descriptionKey": "lettersSpacedWithSpaces_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "presentation",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.3",
+        "title": "Dans chaque page web, l’utilisation des espaces vérifie-t-elle ces conditions ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -37305,6 +38927,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "office-document-link",
+    "title": "Downloadable office documents are accessible or have an accessible version",
+    "description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
+    "i18n": {
+      "titleKey": "officeDocumentLink_title",
+      "descriptionKey": "officeDocumentLink_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "links",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.3.1",
+        "title": "Dans chaque page web, chaque fonctionnalité de téléchargement d’un document bureautique vérifie-t-elle une de ces conditions ?",
+        "criterion": "13.3",
+        "wcagSc": [
+          "1.1.1",
+          "1.3.1",
+          "1.3.2",
+          "2.4.1",
+          "2.4.3",
+          "3.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "optgroup-label-present",
     "title": "Option groups have a label",
     "description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
@@ -38073,6 +39749,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "radio-group-present",
+    "title": "Radio buttons sharing a name are grouped",
+    "description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
+    "i18n": {
+      "titleKey": "radioGroupPresent_title",
+      "descriptionKey": "radioGroupPresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.5.1",
+        "title": "Les champs de même nature vérifient-ils l’une de ces conditions, si nécessaire ?",
+        "criterion": "11.5",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "region",
     "title": "Page content should be inside a landmark region",
     "description": "Checks that content under <body> is contained within a landmark region.",
@@ -38821,6 +40546,66 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "svg-hidden-no-alternative",
+    "title": "Hidden decorative SVGs carry no text alternative",
+    "description": "Checks that an <svg> with aria-hidden=\"true\" has no aria-label, aria-labelledby, title attribute, or non-empty <title> or <desc>.",
+    "i18n": {
+      "titleKey": "svgHiddenNoAlternative_title",
+      "descriptionKey": "svgHiddenNoAlternative_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "images",
+      "svg",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.2.4",
+        "title": "Chaque image vectorielle (balise <svg>) de décoration, sans légende, vérifie-t-elle ces conditions ?",
+        "criterion": "1.2",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -40049,6 +41834,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "video-captions-track-kind",
+    "title": "Video caption tracks use kind=\"captions\"",
+    "description": "Checks that a <video> with text tracks has at least one <track kind=\"captions\">, not only subtitles.",
+    "i18n": {
+      "titleKey": "videoCaptionsTrackKind_title",
+      "descriptionKey": "videoCaptionsTrackKind_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "media",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.3.2",
+        "title": "Pour chaque média temporel synchronisé pré-enregistré possédant des sous-titres synchronisés diffusés via une balise <track>, la balise <track> possède-t-elle un attribut kind=\"captions\" ?",
+        "criterion": "4.3",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -42192,6 +44025,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "object-text-alternative-present",
       "role-img-text-alternative-present",
       "server-side-image-map-absent",
+      "svg-hidden-no-alternative",
       "svg-text-alternative-present"
     ],
     "meta": {
@@ -42293,7 +44127,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "rgaa-4.1.2-1.2",
     "checksIds": [
       "img-alt-present",
-      "presentation-role-conflict"
+      "presentation-role-conflict",
+      "svg-hidden-no-alternative"
     ],
     "meta": {
       "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d’assistance ?",
@@ -42317,6 +44152,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             "1.1.1",
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.4",
+          "title": "Chaque image vectorielle (balise <svg>) de décoration, sans légende, vérifie-t-elle ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -42327,6 +44173,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "area-alt-quality",
       "canvas-text-alternative-quality",
       "embed-text-alternative-quality",
+      "image-alt-long",
       "image-redundant-alt",
       "img-alt-quality",
       "input-image-alt-decorative",
@@ -42418,6 +44265,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "1.3.7",
           "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
           "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.9",
+          "title": "Pour chaque image porteuse d’information et ayant une alternative textuelle, l’alternative textuelle est-elle courte et concise (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.9",
+    "checksIds": [
+      "figure-caption-structure"
+    ],
+    "meta": {
+      "title": "Chaque légende d’image est-elle, si nécessaire, correctement reliée à l’image correspondante ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.9.1",
+          "title": "Chaque image pourvue d’une légende (balise <img>, <input> avec l’attribut type=\"image\" ou possédant un attribut WAI-ARIA role=\"img\" associée à une légende adjacente), vérifie-t-elle, si nécessaire, ces conditions ?",
+          "criterion": "1.9",
           "wcagSc": [
             "1.1.1",
             "4.1.2"
@@ -42604,7 +44493,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-4.3",
     "checksIds": [
-      "video-caption"
+      "video-caption",
+      "video-captions-track-kind"
     ],
     "meta": {
       "title": "Chaque média temporel synchronisé pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?",
@@ -42623,6 +44513,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "4.1.2",
           "requirement": "4.3.1",
           "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.2",
+          "title": "Pour chaque média temporel synchronisé pré-enregistré possédant des sous-titres synchronisés diffusés via une balise <track>, la balise <track> possède-t-elle un attribut kind=\"captions\" ?",
           "criterion": "4.3",
           "wcagSc": [
             "1.2.2"
@@ -42656,6 +44556,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "criterion": "4.10",
           "wcagSc": [
             "1.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.1",
+    "checksIds": [
+      "complex-table-summary"
+    ],
+    "meta": {
+      "title": "Chaque tableau de données complexe a-t-il un résumé ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.1.1",
+          "title": "Pour chaque tableau de données complexe, un résumé est-il disponible ?",
+          "criterion": "5.1",
+          "wcagSc": [
+            "1.3.1"
           ]
         }
       ]
@@ -42765,6 +44695,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "5.7.4",
           "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
           "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.8",
+    "checksIds": [
+      "layout-table-no-data-markup"
+    ],
+    "meta": {
+      "title": "Chaque tableau de mise en forme ne doit pas utiliser d’éléments propres aux tableaux de données. Cette règle est-elle respectée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.8.1",
+          "title": "Chaque tableau de mise en forme (balise <table>) vérifie-t-il ces conditions ?",
+          "criterion": "5.8",
           "wcagSc": [
             "1.3.1"
           ]
@@ -43221,6 +45181,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "rgaa-4.1.2-8.10",
+    "checksIds": [
+      "dir-attribute-valid"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, les changements du sens de lecture sont-ils signalés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.10",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.10.2",
+          "title": "Dans chaque page web, chaque changement du sens de lecture (attribut dir) vérifie-t-il ces conditions ?",
+          "criterion": "8.10",
+          "wcagSc": [
+            "1.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-9.1",
     "checksIds": [
       "empty-heading",
@@ -43321,6 +45311,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-required-parent",
       "definition-list-children-valid",
       "dlitem-parent-valid",
+      "fake-list",
       "list-children-valid",
       "listitem-parent-valid"
     ],
@@ -43372,6 +45363,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-10.1",
     "checksIds": [
+      "letters-spaced-with-spaces",
       "presentational-attributes-absent",
       "presentational-elements-absent"
     ],
@@ -43403,6 +45395,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "4.1.2",
           "requirement": "10.1.2",
           "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.3",
+          "title": "Dans chaque page web, l’utilisation des espaces vérifie-t-elle ces conditions ?",
           "criterion": "10.1",
           "wcagSc": [
             "1.3.1",
@@ -43707,9 +45710,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "rgaa-4.1.2-11.5",
+    "checksIds": [
+      "radio-group-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, les champs de même nature sont-ils regroupés, si nécessaire ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.5",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.5.1",
+          "title": "Les champs de même nature vérifient-ils l’une de ces conditions, si nécessaire ?",
+          "criterion": "11.5",
+          "wcagSc": [
+            "1.3.1",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-11.6",
     "checksIds": [
-      "aria-role-name-present"
+      "aria-role-name-present",
+      "field-group-legend"
     ],
     "meta": {
       "title": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
@@ -44017,6 +46052,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.2.1",
             "2.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.3",
+    "checksIds": [
+      "office-document-link"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque document bureautique en téléchargement possède-t-il, si nécessaire, une version accessible (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.3.1",
+          "title": "Dans chaque page web, chaque fonctionnalité de téléchargement d’un document bureautique vérifie-t-elle une de ces conditions ?",
+          "criterion": "13.3",
+          "wcagSc": [
+            "1.1.1",
+            "1.3.1",
+            "1.3.2",
+            "2.4.1",
+            "2.4.3",
+            "3.1.1",
+            "4.1.2"
           ]
         }
       ]
@@ -50290,6 +52361,105 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "complex-table-summary": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  function hasText(v) {
+    return v != null && String(v).trim() !== '';
+  }
+
+  function firstRole(el) {
+    return String(el.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+  }
+
+  function isHeader(cell) {
+    const role = firstRole(cell);
+    if (role === 'columnheader' || role === 'rowheader') return true;
+    // A <th> given another role (role="cell", say) is not a header.
+    return String(cell.tagName).toLowerCase() === 'th' && !role;
+  }
+
+  function span(cell, attr) {
+    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
+  }
+
+  // Why the table is complex: a list of reasons, empty for a simple table.
+  function complexity(table) {
+    const reasons = [];
+    const taken = [];
+    const rows = Array.from(table.rows || []);
+    let outside = false;
+    let headersAttr = false;
+    rows.forEach((row, r) => {
+      let c = 0;
+      for (const cell of Array.from(row.cells || [])) {
+        taken[r] = taken[r] || [];
+        while (taken[r][c]) c += 1;
+        const cols = span(cell, 'colspan');
+        const rowsSpanned = span(cell, 'rowspan');
+        for (let dr = 0; dr < rowsSpanned; dr += 1) {
+          taken[r + dr] = taken[r + dr] || [];
+          for (let dc = 0; dc < cols; dc += 1) taken[r + dr][c + dc] = true;
+        }
+        if (isHeader(cell) && r > 0 && c > 0) outside = true;
+        if (hasText(cell.getAttribute('headers'))) headersAttr = true;
+        c += cols;
+      }
+    });
+    if (outside) reasons.push('headersOutsideFirstRowAndColumn');
+    if (headersAttr) reasons.push('headersAttribute');
+    return reasons;
+  }
+
+  const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const table of tables) {
+    if (!table || !table.getAttribute) continue;
+    const role = firstRole(table);
+    if (role === 'presentation' || role === 'none') continue;
+    const reasons = complexity(table);
+    if (!reasons.length) continue;
+    applicableCount += 1;
+    if (hasText(table.getAttribute('aria-describedby')) || hasText(table.getAttribute('summary'))) {
+      continue;
+    }
+
+    const caption = table.caption ? String(table.caption.textContent || '').trim() : '';
+    occurrences.push(
+      helpers.reportOccurrence(table, {
+        summary:
+          'This table looks like a complex data table, and nothing marks a summary of its structure.',
+        hint: 'Check that a summary explains how the table is organised, in its <caption> or in a passage next to it, ideally linked with aria-describedby.',
+        i18n: {
+          summaryKey: 'complexTableSummary_summary_cantTell',
+          hintKey: 'complexTableSummary_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'complexTableNoSummary', reasons, hasCaption: Boolean(caption) },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0 || !occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "contrast-computable": { run: (function runInPage(ctx) {
   const { helpers, rule, engineOptions } = ctx;
 
@@ -53030,6 +55200,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "dir-attribute-valid": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[dir]') : helpers.queryAll('[dir]');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    applicableCount += 1;
+    const raw = String(el.getAttribute('dir'));
+    const value = raw.trim().toLowerCase();
+    if (value === 'ltr' || value === 'rtl') continue;
+
+    const isAuto = value === 'auto';
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: isAuto
+          ? 'This element uses dir="auto"; RGAA accepts only ltr or rtl.'
+          : `This element has dir="${raw}", which is neither ltr nor rtl.`,
+        hint: 'Set dir to ltr (left to right) or rtl (right to left), whichever the text reads in.',
+        i18n: {
+          summaryKey: isAuto
+            ? 'dirAttributeValid_summary_fail_auto'
+            : 'dirAttributeValid_summary_fail_invalid',
+          hintKey: 'dirAttributeValid_hint_fail',
+          params: { value: raw }
+        },
+        data: {
+          details: { reasonCode: isAuto ? 'autoDir' : 'invalidDir', value: raw },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -54050,6 +56270,329 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "fake-list": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const BULLETS = '•·‣◦▪▫■□●○◆◇►▸▶–—-*+✓✔→';
+  const SKIP = 'ul, ol, [role="list"], pre, code, textarea, script, style, template';
+  const BLOCKS = 'p, div, ul, ol, dl, table, h1, h2, h3, h4, h5, h6, section, article, blockquote';
+  const MIN_ITEMS = 2;
+
+  function collapse(v) {
+    return String(v == null ? '' : v)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // The marker a line starts with: { kind, key, n }, or null.
+  function markerOf(line) {
+    const first = line.charAt(0);
+    if (first && BULLETS.includes(first) && /^.\s+\S/u.test(line)) {
+      return { kind: 'unordered', key: first };
+    }
+    const m = line.match(/^(\d{1,3})([.)])\s+\S/);
+    if (m) return { kind: 'ordered', key: m[2], n: Number(m[1]) };
+    return null;
+  }
+
+  // Whether every line starts with the same kind of marker, numbers counting up by one.
+  function listKind(lines) {
+    if (lines.length < MIN_ITEMS) return null;
+    const markers = lines.map(markerOf);
+    if (markers.some((m) => !m)) return null;
+    const [first] = markers;
+    for (let i = 1; i < markers.length; i += 1) {
+      const m = markers[i];
+      if (m.kind !== first.kind || m.key !== first.key) return null;
+      if (m.kind === 'ordered' && m.n !== first.n + i) return null;
+    }
+    return first.kind;
+  }
+
+  function linesOf(el) {
+    const lines = [''];
+    for (const node of Array.from(el.childNodes)) {
+      if (node.nodeType === 1 && String(node.tagName).toLowerCase() === 'br') lines.push('');
+      else lines[lines.length - 1] += ' ' + (node.textContent || '');
+    }
+    return lines.map(collapse).filter(Boolean);
+  }
+
+  function isParagraph(el) {
+    const tag = String(el.tagName).toLowerCase();
+    if (tag === 'p') return true;
+    return tag === 'div' && !el.querySelector(BLOCKS);
+  }
+
+  const found = [];
+  const reported = new Set();
+
+  function report(el, kind, items) {
+    reported.add(el);
+    const ordered = kind === 'ordered';
+    found.push({
+      el,
+      occurrence: helpers.reportOccurrence(el, {
+        summary: ordered
+          ? `These ${items} lines start with consecutive numbers but are not marked up as a list.`
+          : `These ${items} lines start with the same bullet but are not marked up as a list.`,
+        hint: ordered
+          ? 'If this is a list, use <ol> and <li> (or role="list" and role="listitem"), and let the list number the items.'
+          : 'If this is a list, use <ul> and <li> (or role="list" and role="listitem"), and style the bullets with CSS.',
+        i18n: {
+          summaryKey: ordered
+            ? 'fakeList_summary_cantTell_ordered'
+            : 'fakeList_summary_cantTell_unordered',
+          hintKey: ordered ? 'fakeList_hint_cantTell_ordered' : 'fakeList_hint_cantTell_unordered',
+          params: { items: String(items) }
+        },
+        data: {
+          details: { reasonCode: ordered ? 'orderedListAsText' : 'unorderedListAsText', items },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    });
+  }
+
+  const candidates = helpers.queryAllSmart
+    ? helpers.queryAllSmart('p, div, td, th, dd, li, blockquote')
+    : helpers.queryAll('p, div, td, th, dd, li, blockquote');
+
+  // Lines split by <br> inside one element.
+  for (const el of candidates) {
+    if (!el || !el.querySelector || el.closest(SKIP)) continue;
+    if (!Array.from(el.children).some((c) => String(c.tagName).toLowerCase() === 'br')) continue;
+    const lines = linesOf(el);
+    const kind = listKind(lines);
+    if (kind) report(el, kind, lines.length);
+  }
+
+  // Runs of consecutive sibling paragraphs.
+  const seen = new Set();
+  for (const el of candidates) {
+    if (!el || seen.has(el) || !isParagraph(el) || el.closest(SKIP)) continue;
+    const run = [el];
+    let next = el.nextElementSibling;
+    while (next && isParagraph(next)) {
+      run.push(next);
+      next = next.nextElementSibling;
+    }
+    run.forEach((p) => seen.add(p));
+    // Within a run, keep the longest stretch that reads as one list.
+    let start = 0;
+    while (start < run.length) {
+      let best = 0;
+      for (let end = run.length; end >= start + MIN_ITEMS; end -= 1) {
+        const slice = run.slice(start, end);
+        if (slice.some((p) => reported.has(p))) continue;
+        if (listKind(slice.map((p) => collapse(p.textContent)))) {
+          best = end;
+          break;
+        }
+      }
+      if (best) {
+        const slice = run.slice(start, best);
+        report(slice[0], listKind(slice.map((p) => collapse(p.textContent))), slice.length);
+        start = best;
+      } else {
+        start += 1;
+      }
+    }
+  }
+
+  // Both passes report in document order; merge them.
+  const occurrences = found
+    .sort((a, b) => (a.el.compareDocumentPosition(b.el) & 2 ? 1 : -1))
+    .map((f) => f.occurrence);
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
+    "field-group-legend": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const FIELDS =
+    'input:not([type="hidden" i]), select, textarea, [role="checkbox"], [role="radio"], [role="textbox"], [role="combobox"], [role="listbox"], [role="spinbutton"], [role="slider"], [role="switch"], [role="searchbox"]';
+
+  function hasText(v) {
+    return v != null && String(v).trim() !== '';
+  }
+
+  function firstRole(el) {
+    return String(el.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+  }
+
+  function labelledbyText(el) {
+    const ids = String(el.getAttribute('aria-labelledby') || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const root = el.getRootNode ? el.getRootNode() : el.ownerDocument;
+    return ids
+      .map((i) => {
+        const target = root && root.getElementById ? root.getElementById(i) : null;
+        return target ? target.textContent : '';
+      })
+      .join(' ');
+  }
+
+  function hasAriaName(el) {
+    return hasText(el.getAttribute('aria-label')) || hasText(labelledbyText(el));
+  }
+
+  const groups = helpers.queryAllSmart
+    ? helpers.queryAllSmart('fieldset, [role="group"]')
+    : helpers.queryAll('fieldset, [role="group"]');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const group of groups) {
+    if (!group || !group.getAttribute) continue;
+    const isFieldset = String(group.tagName).toLowerCase() === 'fieldset';
+    const role = firstRole(group);
+    // A fieldset given another role (say role="presentation") is not a group.
+    if (isFieldset && role && role !== 'group') continue;
+    if (!group.querySelector(FIELDS)) continue;
+    applicableCount += 1;
+
+    if (hasAriaName(group)) continue;
+    if (isFieldset) {
+      const legend = Array.from(group.children).find(
+        (c) => String(c.tagName).toLowerCase() === 'legend'
+      );
+      if (legend && hasText(legend.textContent)) continue;
+    } else if (hasText(group.getAttribute('title'))) {
+      continue;
+    }
+
+    const element = isFieldset ? 'fieldset' : 'role="group"';
+    occurrences.push(
+      helpers.reportOccurrence(group, {
+        summary: isFieldset
+          ? 'This fieldset groups form fields but has no legend.'
+          : 'This role="group" element groups form fields but has no name.',
+        hint: 'If the fields are of the same kind (an address, a date, a set of choices), give the group a legend: a <legend> for a fieldset, aria-label or aria-labelledby for role="group".',
+        i18n: {
+          summaryKey: isFieldset
+            ? 'fieldGroupLegend_summary_cantTell_fieldset'
+            : 'fieldGroupLegend_summary_cantTell_group',
+          hintKey: 'fieldGroupLegend_hint_cantTell',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'groupWithoutLegend', element },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0 || !occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
+    "figure-caption-structure": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const collapse = (s) =>
+    String(s || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const figures = helpers.queryAllSmart
+    ? helpers.queryAllSmart('figure')
+    : helpers.queryAll('figure');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const figure of figures) {
+    if (!figure || !figure.getAttribute) continue;
+    const caption = Array.from(figure.children).find(
+      (c) => String(c.tagName).toLowerCase() === 'figcaption'
+    );
+    const captionText = caption ? collapse(caption.textContent) : '';
+    const image = Array.from(
+      figure.querySelectorAll('img, input[type="image" i], [role="img"]')
+    ).find((el) => el.closest('figure') === figure);
+    if (!captionText || !image) continue;
+    applicableCount += 1;
+
+    const role = String(figure.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    const label = collapse(figure.getAttribute('aria-label'));
+
+    const reasons = [];
+    if (role !== 'figure' && role !== 'group') reasons.push('missingRole');
+    if (!label) reasons.push('missingAriaLabel');
+    else if (label !== captionText) reasons.push('ariaLabelMismatch');
+    if (!reasons.length) continue;
+
+    const reasonCode = reasons[0];
+    const texts = {
+      missingRole: [
+        'This figure holds an image and a caption but has no role="figure" or role="group".',
+        'figureCaptionStructure_summary_fail_role'
+      ],
+      missingAriaLabel: [
+        'This figure holds an image and a caption but has no aria-label repeating the caption.',
+        'figureCaptionStructure_summary_fail_label'
+      ],
+      ariaLabelMismatch: [
+        "This figure's aria-label differs from its caption.",
+        'figureCaptionStructure_summary_fail_mismatch'
+      ]
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(figure, {
+        summary: texts[reasonCode][0],
+        hint: 'Give the <figure> role="figure" and an aria-label with the same text as its <figcaption>.',
+        i18n: {
+          summaryKey: texts[reasonCode][1],
+          hintKey: 'figureCaptionStructure_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode, reasons, caption: captionText },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -56796,6 +59339,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "image-alt-long": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const MAX_LENGTH = 80;
+  const SELECTOR = 'img[alt], area[alt], input[type="image" i][alt], [role="img"][aria-label]';
+
+  function collapse(v) {
+    return String(v == null ? '' : v)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(SELECTOR)
+    : helpers.queryAll(SELECTOR);
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    const tag = String(el.tagName).toLowerCase();
+    const native = tag === 'img' || tag === 'area' || tag === 'input';
+    const text = collapse(native ? el.getAttribute('alt') : el.getAttribute('aria-label'));
+    if (!text) continue;
+    applicableCount += 1;
+    if (text.length <= MAX_LENGTH) continue;
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This image's text alternative is ${text.length} characters long.`,
+        hint: 'Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.',
+        i18n: {
+          summaryKey: 'imageAltLong_summary_cantTell',
+          hintKey: 'imageAltLong_hint_cantTell',
+          params: { length: String(text.length) }
+        },
+        data: {
+          details: { reasonCode: 'longAlternative', length: text.length, maxLength: MAX_LENGTH },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0 || !occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -60021,6 +62619,133 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences
   };
 }), applicability: null },
+    "layout-table-no-data-markup": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const MARKUP = [
+    ['caption', 'caption'],
+    ['th', 'th'],
+    ['thead', 'thead'],
+    ['tfoot', 'tfoot'],
+    ['[role="rowheader"]', 'role="rowheader"'],
+    ['[role="columnheader"]', 'role="columnheader"'],
+    ['td[scope]', 'td[scope]'],
+    ['td[headers]', 'td[headers]'],
+    ['td[axis]', 'td[axis]']
+  ];
+
+  function isLayout(table) {
+    const first = String(table.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    return first === 'presentation' || first === 'none';
+  }
+
+  const tables = helpers.queryAllSmart
+    ? helpers.queryAllSmart('table[role]')
+    : helpers.queryAll('table[role]');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const table of tables) {
+    if (!table || !table.getAttribute || !isLayout(table)) continue;
+    applicableCount += 1;
+
+    const found = [];
+    if (String(table.getAttribute('summary') || '').trim()) found.push('summary');
+    for (const [selector, label] of MARKUP) {
+      const own = Array.from(table.querySelectorAll(selector)).some(
+        (el) => el.closest('table') === table
+      );
+      if (own) found.push(label);
+    }
+    if (!found.length) continue;
+
+    const markup = found.join(', ');
+    occurrences.push(
+      helpers.reportOccurrence(table, {
+        summary: `This layout table uses data table markup: ${markup}.`,
+        hint: 'Remove the data table markup, or, if the table holds data, remove role="presentation" and keep the headers.',
+        i18n: {
+          summaryKey: 'layoutTableNoDataMarkup_summary_fail',
+          hintKey: 'layoutTableNoDataMarkup_hint_fail',
+          params: { markup }
+        },
+        data: {
+          details: { reasonCode: 'dataMarkupInLayoutTable', markup: found },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "letters-spaced-with-spaces": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const SKIP = 'pre, code, kbd, samp, textarea, script, style, template';
+  // Four or more single letters, each separated by spaces (including no-break spaces).
+  const SPACED = /(?:^|[\s\u00a0])(\p{L}(?:[ \u00a0]+\p{L}){3,})(?=$|[\s\u00a0.,;:!?])/u;
+
+  function ownText(el) {
+    return Array.from(el.childNodes)
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.nodeValue)
+      .join(' ');
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('body *')
+    : helpers.queryAll('body *');
+
+  const occurrences = [];
+
+  for (const el of nodes) {
+    if (!el || !el.childNodes || el.closest(SKIP)) continue;
+    const m = ownText(el).match(SPACED);
+    if (!m) continue;
+    const text = m[1].replace(/[ \u00a0]+/g, ' ');
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `The text "${text}" has its letters separated by spaces.`,
+        hint: 'If this is a word, write it without spaces and use the CSS letter-spacing property for the spaced-out look.',
+        i18n: {
+          summaryKey: 'lettersSpacedWithSpaces_summary_cantTell',
+          hintKey: 'lettersSpacedWithSpaces_hint_cantTell',
+          params: { text }
+        },
+        data: {
+          details: { reasonCode: 'lettersSeparatedBySpaces', text },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
+}), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
   const { helpers, rule, engineOptions } = ctx;
 
@@ -63062,6 +65787,52 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
+    "office-document-link": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const EXTENSIONS = /\.(pdf|docx?|odt|rtf|xlsx?|ods|pptx?|odp|epub)$/i;
+
+  const links = helpers.queryAllSmart
+    ? helpers.queryAllSmart('a[href], area[href]')
+    : helpers.queryAll('a[href], area[href]');
+
+  const occurrences = [];
+
+  for (const link of links) {
+    if (!link || !link.getAttribute) continue;
+    const href = String(link.getAttribute('href') || '').trim();
+    const path = href.split(/[?#]/)[0];
+    const m = path.match(EXTENSIONS);
+    if (!m) continue;
+    const extension = m[1].toLowerCase();
+
+    occurrences.push(
+      helpers.reportOccurrence(link, {
+        summary: `This link downloads a .${extension} document.`,
+        hint: 'Check that the document is accessible, or offer an accessible version, as a download or as an HTML page.',
+        i18n: {
+          summaryKey: 'officeDocumentLink_summary_cantTell',
+          hintKey: 'officeDocumentLink_hint_cantTell',
+          params: { extension }
+        },
+        data: {
+          details: { reasonCode: 'officeDocument', extension },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "optgroup-label-present": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -64684,6 +67455,66 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "radio-group-present": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const GROUP = 'fieldset, [role="group"], [role="radiogroup"]';
+
+  const radios = helpers.queryAllSmart
+    ? helpers.queryAllSmart('input[type="radio" i][name]')
+    : helpers.queryAll('input[type="radio" i][name]');
+
+  // Sets keyed by form owner and name, in document order.
+  const sets = new Map();
+  const formKeys = new Map();
+  for (const radio of radios) {
+    if (!radio || !radio.getAttribute) continue;
+    const name = String(radio.getAttribute('name'));
+    if (!name) continue;
+    const form = radio.form || null;
+    if (!formKeys.has(form)) formKeys.set(form, formKeys.size);
+    const key = `${formKeys.get(form)}|${name}`;
+    if (!sets.has(key)) sets.set(key, []);
+    sets.get(key).push(radio);
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const set of sets.values()) {
+    if (set.length < 2) continue;
+    applicableCount += 1;
+    const groups = set.map((r) => (r.parentElement ? r.parentElement.closest(GROUP) : null));
+    if (groups[0] && groups.every((g) => g === groups[0])) continue;
+
+    const name = String(set[0].getAttribute('name'));
+    occurrences.push(
+      helpers.reportOccurrence(set[0], {
+        summary: `The ${set.length} radio buttons named "${name}" are not grouped in one fieldset or group.`,
+        hint: 'Put the radio buttons in a <fieldset> with a <legend>, or in an element with role="radiogroup" and a name, so the question they answer is announced with them.',
+        i18n: {
+          summaryKey: 'radioGroupPresent_summary_cantTell',
+          hintKey: 'radioGroupPresent_hint_cantTell',
+          params: { count: String(set.length), name }
+        },
+        data: {
+          details: { reasonCode: 'radiosNotGrouped', name, count: set.length },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0 || !occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
 }), applicability: null },
     "region": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -66358,6 +69189,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "svg-hidden-no-alternative": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const hasText = (s) => !!String(s || '').trim();
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('svg[aria-hidden]')
+    : helpers.queryAll('svg[aria-hidden]');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const svg of nodes) {
+    if (!svg || !svg.getAttribute) continue;
+    if (String(svg.getAttribute('aria-hidden')).trim().toLowerCase() !== 'true') continue;
+    const outer = svg.parentElement ? svg.parentElement.closest('svg') : null;
+    if (outer) continue;
+    applicableCount += 1;
+
+    const all = [svg].concat(Array.from(svg.querySelectorAll('*')));
+    const found = [];
+    for (const attr of ['aria-label', 'aria-labelledby', 'title']) {
+      if (all.some((el) => hasText(el.getAttribute(attr)))) found.push(attr);
+    }
+    for (const tag of ['title', 'desc']) {
+      const withText = all.some(
+        (el) => String(el.localName || el.tagName).toLowerCase() === tag && hasText(el.textContent)
+      );
+      if (withText) found.push(`<${tag}>`);
+    }
+    if (!found.length) continue;
+
+    const alternatives = found.join(', ');
+    occurrences.push(
+      helpers.reportOccurrence(svg, {
+        summary: `This SVG is hidden with aria-hidden="true" but carries a text alternative: ${alternatives}.`,
+        hint: 'If the image is decorative, remove the text alternative. If it carries information, remove aria-hidden and give it role="img" and a text alternative.',
+        i18n: {
+          summaryKey: 'svgHiddenNoAlternative_summary_fail',
+          hintKey: 'svgHiddenNoAlternative_hint_fail',
+          params: { alternatives }
+        },
+        data: {
+          details: { reasonCode: 'hiddenSvgHasAlternative', alternatives: found },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
         }
       })
     );
@@ -69187,6 +72081,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // every <video> already has a captions/subtitles track.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "video-captions-track-kind": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const videos = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const video of videos) {
+    if (!video || !video.children) continue;
+    const kinds = Array.from(video.children)
+      .filter((c) => String(c.tagName).toLowerCase() === 'track')
+      .map(
+        (t) =>
+          String(t.getAttribute('kind') || 'subtitles')
+            .trim()
+            .toLowerCase() || 'subtitles'
+      )
+      .filter((k) => k === 'subtitles' || k === 'captions');
+    if (!kinds.length) continue;
+    applicableCount += 1;
+    if (kinds.includes('captions')) continue;
+
+    occurrences.push(
+      helpers.reportOccurrence(video, {
+        summary: 'This video has text tracks, but none with kind="captions".',
+        hint: 'Mark the track that carries the captions with kind="captions".',
+        i18n: {
+          summaryKey: 'videoCaptionsTrackKind_summary_fail',
+          hintKey: 'videoCaptionsTrackKind_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode: 'noCaptionsKind', kinds },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "video-poster-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -70152,6 +73099,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Diese Beschriftung verweist auf die id \"{{value}}\", die kein Element in ihrem Baum hat.",
     "labelForTargetValid_summary_fail_notLabelable": "Diese Beschriftung verweist auf die id \"{{value}}\", die zu einem <{{element}}> gehört, nicht zu einem Formularfeld.",
     "labelForTargetValid_hint_fail": "Setzen Sie das for-Attribut auf die id des Felds, das diese Beschriftung benennt, oder entfernen Sie es und setzen Sie das Feld in die Beschriftung.",
+    "layoutTableNoDataMarkup_title": "Layouttabellen verwenden kein Datentabellen-Markup",
+    "layoutTableNoDataMarkup_description": "Prüft, ob eine als Layout markierte Tabelle (role=\"presentation\" oder \"none\") weder Beschriftung noch Kopfzellen, summary oder scope-, headers- oder axis-Attribute hat.",
+    "layoutTableNoDataMarkup_summary_fail": "Diese Layouttabelle verwendet Datentabellen-Markup: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Entfernen Sie das Datentabellen-Markup, oder, wenn die Tabelle Daten enthält, entfernen Sie role=\"presentation\" und behalten Sie die Kopfzellen.",
+    "figureCaptionStructure_title": "Bilder mit Bildunterschrift verwenden die vom RGAA beschriebene figure-Struktur",
+    "figureCaptionStructure_description": "Prüft, ob ein <figure> mit einem Bild und einem <figcaption> role=\"figure\" oder \"group\" und ein aria-label hat, das der Bildunterschrift entspricht.",
+    "figureCaptionStructure_summary_fail_role": "Diese Abbildung enthält ein Bild und eine Bildunterschrift, hat aber weder role=\"figure\" noch role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Diese Abbildung enthält ein Bild und eine Bildunterschrift, hat aber kein aria-label, das die Bildunterschrift wiederholt.",
+    "figureCaptionStructure_summary_fail_mismatch": "Das aria-label dieser Abbildung weicht von ihrer Bildunterschrift ab.",
+    "figureCaptionStructure_hint_fail": "Geben Sie dem <figure> role=\"figure\" und ein aria-label mit demselben Text wie sein <figcaption>.",
+    "videoCaptionsTrackKind_title": "Untertitelspuren von Videos verwenden kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Prüft, ob ein <video> mit Textspuren mindestens ein <track kind=\"captions\"> hat und nicht nur Untertitel zur Übersetzung.",
+    "videoCaptionsTrackKind_summary_fail": "Dieses Video hat Textspuren, aber keine mit kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Kennzeichnen Sie die Spur mit den Untertiteln für Gehörlose mit kind=\"captions\".",
+    "dirAttributeValid_title": "dir-Attribute sind ltr oder rtl",
+    "dirAttributeValid_description": "Prüft, ob jedes dir-Attribut ltr oder rtl ist, die beiden Werte, die der RGAA akzeptiert.",
+    "dirAttributeValid_summary_fail_auto": "Dieses Element verwendet dir=\"auto\"; der RGAA akzeptiert nur ltr oder rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Dieses Element hat dir=\"{{value}}\", was weder ltr noch rtl ist.",
+    "dirAttributeValid_hint_fail": "Setzen Sie dir auf ltr (von links nach rechts) oder rtl (von rechts nach links), je nach Leserichtung des Textes.",
+    "svgHiddenNoAlternative_title": "Ausgeblendete dekorative SVGs haben keine Textalternative",
+    "svgHiddenNoAlternative_description": "Prüft, ob ein <svg> mit aria-hidden=\"true\" weder aria-label, aria-labelledby, ein title-Attribut noch ein nicht leeres <title> oder <desc> hat.",
+    "svgHiddenNoAlternative_summary_fail": "Dieses SVG ist mit aria-hidden=\"true\" ausgeblendet, hat aber eine Textalternative: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Ist das Bild dekorativ, entfernen Sie die Textalternative. Trägt es Information, entfernen Sie aria-hidden und geben Sie ihm role=\"img\" und eine Textalternative.",
+    "fieldGroupLegend_title": "Gruppen von Formularfeldern haben eine Legende",
+    "fieldGroupLegend_description": "Markiert ein <fieldset> oder role=\"group\" mit Formularfeldern ohne Legende oder Namen, damit eine Person entscheidet, ob es gleichartige Felder gruppiert.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Dieses Fieldset gruppiert Formularfelder, hat aber keine Legende.",
+    "fieldGroupLegend_summary_cantTell_group": "Dieses Element mit role=\"group\" gruppiert Formularfelder, hat aber keinen Namen.",
+    "fieldGroupLegend_hint_cantTell": "Sind die Felder gleichartig (eine Adresse, ein Datum, eine Auswahl), geben Sie der Gruppe eine Legende: ein <legend> für ein Fieldset, aria-label oder aria-labelledby für role=\"group\".",
+    "radioGroupPresent_title": "Radiobuttons mit gleichem Namen sind gruppiert",
+    "radioGroupPresent_description": "Markiert Radiobuttons mit gleichem Namen, die nicht in einem gemeinsamen Fieldset, role=\"group\" oder role=\"radiogroup\" liegen, damit eine Person entscheidet, ob sie gruppiert werden müssen.",
+    "radioGroupPresent_summary_cantTell": "Die {{count}} Radiobuttons mit dem Namen „{{name}}“ sind nicht in einem Fieldset oder einer Gruppe zusammengefasst.",
+    "radioGroupPresent_hint_cantTell": "Legen Sie die Radiobuttons in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage, die sie beantworten, mit ihnen angesagt wird.",
+    "fakeList_title": "Als Liste gestalteter Text verwendet Listen-Markup",
+    "fakeList_description": "Markiert aufeinanderfolgende Zeilen oder Absätze, die mit Aufzählungszeichen oder fortlaufenden Nummern beginnen, aber nicht als Liste ausgezeichnet sind, damit eine Person entscheidet, ob es eine Liste ist.",
+    "fakeList_summary_cantTell_unordered": "Diese {{items}} Zeilen beginnen mit demselben Aufzählungszeichen, sind aber nicht als Liste ausgezeichnet.",
+    "fakeList_summary_cantTell_ordered": "Diese {{items}} Zeilen beginnen mit fortlaufenden Nummern, sind aber nicht als Liste ausgezeichnet.",
+    "fakeList_hint_cantTell_unordered": "Wenn es eine Liste ist, verwenden Sie <ul> und <li> (oder role=\"list\" und role=\"listitem\") und gestalten Sie die Aufzählungszeichen mit CSS.",
+    "fakeList_hint_cantTell_ordered": "Wenn es eine Liste ist, verwenden Sie <ol> und <li> (oder role=\"list\" und role=\"listitem\") und lassen Sie die Liste die Einträge nummerieren.",
+    "lettersSpacedWithSpaces_title": "Buchstaben eines Wortes werden nicht mit Leerzeichen gesperrt",
+    "lettersSpacedWithSpaces_description": "Markiert Text, in dem vier oder mehr einzelne Buchstaben hintereinander durch Leerzeichen getrennt sind, damit eine Person prüft, ob so ein Wort gesperrt wurde.",
+    "lettersSpacedWithSpaces_summary_cantTell": "Im Text „{{text}}“ sind die Buchstaben durch Leerzeichen getrennt.",
+    "lettersSpacedWithSpaces_hint_cantTell": "Wenn es ein Wort ist, schreiben Sie es ohne Leerzeichen und verwenden Sie die CSS-Eigenschaft letter-spacing für die gesperrte Darstellung.",
+    "imageAltLong_title": "Textalternativen von Bildern sind kurz",
+    "imageAltLong_description": "Markiert ein Bild, dessen Textalternative länger als 80 Zeichen ist, damit eine Person entscheidet, ob sie kurz und prägnant genug ist.",
+    "imageAltLong_summary_cantTell": "Die Textalternative dieses Bildes ist {{length}} Zeichen lang.",
+    "imageAltLong_hint_cantTell": "Beschränken Sie die Textalternative auf wenige Worte zu dem, was das Bild im Kontext vermittelt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon.",
+    "complexTableSummary_title": "Komplexe Datentabellen haben eine Zusammenfassung",
+    "complexTableSummary_description": "Markiert eine Datentabelle, deren Kopfzellen nicht alle in der ersten Zeile oder Spalte liegen und die weder aria-describedby noch summary hat, damit eine Person prüft, ob eine Zusammenfassung vorhanden ist.",
+    "complexTableSummary_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle, und nichts weist auf eine Zusammenfassung ihres Aufbaus hin.",
+    "complexTableSummary_hint_cantTell": "Prüfen Sie, ob eine Zusammenfassung den Aufbau der Tabelle erklärt, in ihrem <caption> oder in einem Textabschnitt daneben, am besten mit aria-describedby verknüpft.",
+    "officeDocumentLink_title": "Herunterladbare Office-Dokumente sind barrierefrei oder haben eine barrierefreie Version",
+    "officeDocumentLink_description": "Markiert jeden Link auf ein Office-Dokument (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
+    "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
+    "officeDocumentLink_hint_cantTell": "Prüfen Sie, ob das Dokument barrierefrei ist, oder bieten Sie eine barrierefreie Version an, zum Herunterladen oder als HTML-Seite.",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -70161,6 +73162,7 @@ const I18N = {
     "report_meta_schemaVersion": "Schemaversion",
     "report_meta_target": "Ziel",
     "report_meta_profile": "Profil",
+    "report_meta_optInRules": "Opt-in-Regeln",
     "report_meta_locale": "Sprache",
     "report_meta_localeRequested": "Sprache (angefordert: {{requested}})",
     "report_outcome_fail": "Nicht bestanden",
@@ -70990,6 +73992,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "This label points to id \"{{value}}\", which no element in its tree has.",
     "labelForTargetValid_summary_fail_notLabelable": "This label points to id \"{{value}}\", which belongs to a <{{element}}>, not a form field.",
     "labelForTargetValid_hint_fail": "Set the for attribute to the id of the field this label names, or remove it and put the field inside the label.",
+    "layoutTableNoDataMarkup_title": "Layout tables use no data table markup",
+    "layoutTableNoDataMarkup_description": "Checks that a table marked as layout (role=\"presentation\" or \"none\") has no caption, header cells, summary, or scope, headers or axis attributes.",
+    "layoutTableNoDataMarkup_summary_fail": "This layout table uses data table markup: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Remove the data table markup, or, if the table holds data, remove role=\"presentation\" and keep the headers.",
+    "figureCaptionStructure_title": "Images with a caption use the figure structure RGAA describes",
+    "figureCaptionStructure_description": "Checks that a <figure> holding an image and a <figcaption> has role=\"figure\" or \"group\" and an aria-label matching the caption.",
+    "figureCaptionStructure_summary_fail_role": "This figure holds an image and a caption but has no role=\"figure\" or role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "This figure holds an image and a caption but has no aria-label repeating the caption.",
+    "figureCaptionStructure_summary_fail_mismatch": "This figure's aria-label differs from its caption.",
+    "figureCaptionStructure_hint_fail": "Give the <figure> role=\"figure\" and an aria-label with the same text as its <figcaption>.",
+    "videoCaptionsTrackKind_title": "Video caption tracks use kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Checks that a <video> with text tracks has at least one <track kind=\"captions\">, not only subtitles.",
+    "videoCaptionsTrackKind_summary_fail": "This video has text tracks, but none with kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Mark the track that carries the captions with kind=\"captions\".",
+    "dirAttributeValid_title": "dir attributes are ltr or rtl",
+    "dirAttributeValid_description": "Checks that every dir attribute is ltr or rtl, the two values RGAA accepts.",
+    "dirAttributeValid_summary_fail_auto": "This element uses dir=\"auto\"; RGAA accepts only ltr or rtl.",
+    "dirAttributeValid_summary_fail_invalid": "This element has dir=\"{{value}}\", which is neither ltr nor rtl.",
+    "dirAttributeValid_hint_fail": "Set dir to ltr (left to right) or rtl (right to left), whichever the text reads in.",
+    "svgHiddenNoAlternative_title": "Hidden decorative SVGs carry no text alternative",
+    "svgHiddenNoAlternative_description": "Checks that an <svg> with aria-hidden=\"true\" has no aria-label, aria-labelledby, title attribute, or non-empty <title> or <desc>.",
+    "svgHiddenNoAlternative_summary_fail": "This SVG is hidden with aria-hidden=\"true\" but carries a text alternative: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "If the image is decorative, remove the text alternative. If it carries information, remove aria-hidden and give it role=\"img\" and a text alternative.",
+    "fieldGroupLegend_title": "Groups of form fields have a legend",
+    "fieldGroupLegend_description": "Flags a <fieldset> or role=\"group\" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "This fieldset groups form fields but has no legend.",
+    "fieldGroupLegend_summary_cantTell_group": "This role=\"group\" element groups form fields but has no name.",
+    "fieldGroupLegend_hint_cantTell": "If the fields are of the same kind (an address, a date, a set of choices), give the group a legend: a <legend> for a fieldset, aria-label or aria-labelledby for role=\"group\".",
+    "radioGroupPresent_title": "Radio buttons sharing a name are grouped",
+    "radioGroupPresent_description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
+    "radioGroupPresent_summary_cantTell": "The {{count}} radio buttons named \"{{name}}\" are not grouped in one fieldset or group.",
+    "radioGroupPresent_hint_cantTell": "Put the radio buttons in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question they answer is announced with them.",
+    "fakeList_title": "Text laid out as a list uses list markup",
+    "fakeList_description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
+    "fakeList_summary_cantTell_unordered": "These {{items}} lines start with the same bullet but are not marked up as a list.",
+    "fakeList_summary_cantTell_ordered": "These {{items}} lines start with consecutive numbers but are not marked up as a list.",
+    "fakeList_hint_cantTell_unordered": "If this is a list, use <ul> and <li> (or role=\"list\" and role=\"listitem\"), and style the bullets with CSS.",
+    "fakeList_hint_cantTell_ordered": "If this is a list, use <ol> and <li> (or role=\"list\" and role=\"listitem\"), and let the list number the items.",
+    "lettersSpacedWithSpaces_title": "Letters of a word are not spaced out with spaces",
+    "lettersSpacedWithSpaces_description": "Flags text where four or more single letters in a row are separated by spaces, for a person to confirm whether a word is spaced out that way.",
+    "lettersSpacedWithSpaces_summary_cantTell": "The text \"{{text}}\" has its letters separated by spaces.",
+    "lettersSpacedWithSpaces_hint_cantTell": "If this is a word, write it without spaces and use the CSS letter-spacing property for the spaced-out look.",
+    "imageAltLong_title": "Text alternatives of images are short",
+    "imageAltLong_description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
+    "imageAltLong_summary_cantTell": "This image's text alternative is {{length}} characters long.",
+    "imageAltLong_hint_cantTell": "Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.",
+    "complexTableSummary_title": "Complex data tables have a summary",
+    "complexTableSummary_description": "Flags a data table whose headers are not all in the first row or column, and that has no aria-describedby or summary, for a person to check that a summary is available.",
+    "complexTableSummary_summary_cantTell": "This table looks like a complex data table, and nothing marks a summary of its structure.",
+    "complexTableSummary_hint_cantTell": "Check that a summary explains how the table is organised, in its <caption> or in a passage next to it, ideally linked with aria-describedby.",
+    "officeDocumentLink_title": "Downloadable office documents are accessible or have an accessible version",
+    "officeDocumentLink_description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
+    "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
+    "officeDocumentLink_hint_cantTell": "Check that the document is accessible, or offer an accessible version, as a download or as an HTML page.",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -70999,6 +74055,7 @@ const I18N = {
     "report_meta_schemaVersion": "schema version",
     "report_meta_target": "target",
     "report_meta_profile": "profile",
+    "report_meta_optInRules": "opt-in rules",
     "report_meta_locale": "locale",
     "report_meta_localeRequested": "locale (requested {{requested}})",
     "report_outcome_fail": "Fail",
@@ -71828,6 +74885,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Esta etiqueta apunta al id \"{{value}}\", que ningún elemento de su árbol tiene.",
     "labelForTargetValid_summary_fail_notLabelable": "Esta etiqueta apunta al id \"{{value}}\", que pertenece a un <{{element}}>, no a un campo de formulario.",
     "labelForTargetValid_hint_fail": "Poner en el atributo for el id del campo que nombra esta etiqueta, o eliminarlo y colocar el campo dentro de la etiqueta.",
+    "layoutTableNoDataMarkup_title": "Las tablas de maquetación no usan marcado de tabla de datos",
+    "layoutTableNoDataMarkup_description": "Comprueba que una tabla marcada como maquetación (role=\"presentation\" o \"none\") no tiene título, celdas de encabezado, summary ni atributos scope, headers o axis.",
+    "layoutTableNoDataMarkup_summary_fail": "Esta tabla de maquetación usa marcado de tabla de datos: {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Eliminar el marcado de tabla de datos o, si la tabla contiene datos, eliminar role=\"presentation\" y conservar los encabezados.",
+    "figureCaptionStructure_title": "Las imágenes con leyenda usan la estructura figure que describe el RGAA",
+    "figureCaptionStructure_description": "Comprueba que un <figure> con una imagen y un <figcaption> tiene role=\"figure\" o \"group\" y un aria-label igual a la leyenda.",
+    "figureCaptionStructure_summary_fail_role": "Esta figura contiene una imagen y una leyenda, pero no tiene role=\"figure\" ni role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Esta figura contiene una imagen y una leyenda, pero no tiene un aria-label que repita la leyenda.",
+    "figureCaptionStructure_summary_fail_mismatch": "El aria-label de esta figura no coincide con su leyenda.",
+    "figureCaptionStructure_hint_fail": "Dar al <figure> role=\"figure\" y un aria-label con el mismo texto que su <figcaption>.",
+    "videoCaptionsTrackKind_title": "Las pistas de subtítulos de los vídeos usan kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Comprueba que un <video> con pistas de texto tiene al menos un <track kind=\"captions\">, y no solo subtítulos de traducción.",
+    "videoCaptionsTrackKind_summary_fail": "Este vídeo tiene pistas de texto, pero ninguna con kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Marcar con kind=\"captions\" la pista que lleva los subtítulos para personas sordas.",
+    "dirAttributeValid_title": "Los atributos dir son ltr o rtl",
+    "dirAttributeValid_description": "Comprueba que cada atributo dir es ltr o rtl, los dos valores que acepta el RGAA.",
+    "dirAttributeValid_summary_fail_auto": "Este elemento usa dir=\"auto\"; el RGAA solo acepta ltr o rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Este elemento tiene dir=\"{{value}}\", que no es ni ltr ni rtl.",
+    "dirAttributeValid_hint_fail": "Poner dir en ltr (de izquierda a derecha) o rtl (de derecha a izquierda), según el sentido de lectura del texto.",
+    "svgHiddenNoAlternative_title": "Los SVG decorativos ocultos no llevan alternativa textual",
+    "svgHiddenNoAlternative_description": "Comprueba que un <svg> con aria-hidden=\"true\" no tiene aria-label, aria-labelledby, atributo title ni <title> o <desc> con contenido.",
+    "svgHiddenNoAlternative_summary_fail": "Este SVG está oculto con aria-hidden=\"true\", pero lleva una alternativa textual: {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Si la imagen es decorativa, eliminar la alternativa textual. Si aporta información, eliminar aria-hidden y darle role=\"img\" y una alternativa textual.",
+    "fieldGroupLegend_title": "Los grupos de campos de formulario tienen una leyenda",
+    "fieldGroupLegend_description": "Señala un <fieldset> o role=\"group\" con campos de formulario sin leyenda ni nombre, para que una persona decida si agrupa campos de la misma naturaleza.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Este fieldset agrupa campos de formulario pero no tiene leyenda.",
+    "fieldGroupLegend_summary_cantTell_group": "Este elemento con role=\"group\" agrupa campos de formulario pero no tiene nombre.",
+    "fieldGroupLegend_hint_cantTell": "Si los campos son de la misma naturaleza (una dirección, una fecha, un conjunto de opciones), dar al grupo una leyenda: un <legend> para un fieldset, aria-label o aria-labelledby para role=\"group\".",
+    "radioGroupPresent_title": "Los botones de opción con el mismo nombre están agrupados",
+    "radioGroupPresent_description": "Señala un conjunto de botones de opción con el mismo nombre que no está dentro de un mismo fieldset, role=\"group\" o role=\"radiogroup\", para que una persona decida si necesita agruparse.",
+    "radioGroupPresent_summary_cantTell": "Los {{count}} botones de opción llamados \"{{name}}\" no están agrupados en un mismo fieldset o grupo.",
+    "radioGroupPresent_hint_cantTell": "Colocar los botones de opción en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta que responden se anuncie con ellos.",
+    "fakeList_title": "El texto presentado como lista usa marcado de lista",
+    "fakeList_description": "Señala líneas o párrafos consecutivos que empiezan con viñetas o números consecutivos pero no están marcados como lista, para que una persona decida si lo son.",
+    "fakeList_summary_cantTell_unordered": "Estas {{items}} líneas empiezan con la misma viñeta pero no están marcadas como lista.",
+    "fakeList_summary_cantTell_ordered": "Estas {{items}} líneas empiezan con números consecutivos pero no están marcadas como lista.",
+    "fakeList_hint_cantTell_unordered": "Si es una lista, usar <ul> y <li> (o role=\"list\" y role=\"listitem\") y dar estilo a las viñetas con CSS.",
+    "fakeList_hint_cantTell_ordered": "Si es una lista, usar <ol> y <li> (o role=\"list\" y role=\"listitem\") y dejar que la lista numere los elementos.",
+    "lettersSpacedWithSpaces_title": "Las letras de una palabra no se separan con espacios",
+    "lettersSpacedWithSpaces_description": "Señala texto con cuatro o más letras sueltas seguidas separadas por espacios, para que una persona confirme si así se ha espaciado una palabra.",
+    "lettersSpacedWithSpaces_summary_cantTell": "El texto \"{{text}}\" tiene las letras separadas por espacios.",
+    "lettersSpacedWithSpaces_hint_cantTell": "Si es una palabra, escribirla sin espacios y usar la propiedad CSS letter-spacing para el aspecto espaciado.",
+    "imageAltLong_title": "Las alternativas textuales de las imágenes son cortas",
+    "imageAltLong_description": "Señala una imagen cuya alternativa textual supera los 80 caracteres, para que una persona decida si es lo bastante corta y concisa.",
+    "imageAltLong_summary_cantTell": "La alternativa textual de esta imagen tiene {{length}} caracteres.",
+    "imageAltLong_hint_cantTell": "Limitar la alternativa textual a lo que la imagen transmite en su contexto, en pocas palabras. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella.",
+    "complexTableSummary_title": "Las tablas de datos complejas tienen un resumen",
+    "complexTableSummary_description": "Señala una tabla de datos cuyos encabezados no están todos en la primera fila o columna y que no tiene aria-describedby ni summary, para que una persona compruebe que hay un resumen.",
+    "complexTableSummary_summary_cantTell": "Esta tabla parece una tabla de datos compleja, y nada indica un resumen de su estructura.",
+    "complexTableSummary_hint_cantTell": "Comprobar que un resumen explica cómo está organizada la tabla, en su <caption> o en un pasaje junto a ella, idealmente enlazado con aria-describedby.",
+    "officeDocumentLink_title": "Los documentos ofimáticos descargables son accesibles o tienen una versión accesible",
+    "officeDocumentLink_description": "Señala cada enlace a un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
+    "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
+    "officeDocumentLink_hint_cantTell": "Comprobar que el documento es accesible, u ofrecer una versión accesible, para descargar o como página HTML.",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -71837,6 +74948,7 @@ const I18N = {
     "report_meta_schemaVersion": "versión del esquema",
     "report_meta_target": "objetivo",
     "report_meta_profile": "perfil",
+    "report_meta_optInRules": "reglas opcionales",
     "report_meta_locale": "idioma",
     "report_meta_localeRequested": "idioma (solicitado: {{requested}})",
     "report_outcome_fail": "No superada",
@@ -72666,6 +75778,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "Cette étiquette pointe vers l’id \"{{value}}\", qu’aucun élément de son arbre ne porte.",
     "labelForTargetValid_summary_fail_notLabelable": "Cette étiquette pointe vers l’id \"{{value}}\", qui appartient à un <{{element}}>, pas à un champ de formulaire.",
     "labelForTargetValid_hint_fail": "Donnez à l’attribut for l’id du champ que nomme cette étiquette, ou supprimez-le et placez le champ dans l’étiquette.",
+    "layoutTableNoDataMarkup_title": "Les tableaux de mise en forme n’utilisent pas de balisage de tableau de données",
+    "layoutTableNoDataMarkup_description": "Vérifie qu’un tableau signalé comme mise en forme (role=\"presentation\" ou \"none\") n’a ni titre, ni cellules d’en-tête, ni summary, ni attributs scope, headers ou axis.",
+    "layoutTableNoDataMarkup_summary_fail": "Ce tableau de mise en forme utilise du balisage de tableau de données : {{markup}}.",
+    "layoutTableNoDataMarkup_hint_fail": "Supprimez le balisage de tableau de données ou, si le tableau contient des données, supprimez role=\"presentation\" et gardez les en-têtes.",
+    "figureCaptionStructure_title": "Les images légendées utilisent la structure figure décrite par le RGAA",
+    "figureCaptionStructure_description": "Vérifie qu’une balise <figure> contenant une image et une <figcaption> a role=\"figure\" ou \"group\" et un aria-label identique à la légende.",
+    "figureCaptionStructure_summary_fail_role": "Cette figure contient une image et une légende mais n’a ni role=\"figure\" ni role=\"group\".",
+    "figureCaptionStructure_summary_fail_label": "Cette figure contient une image et une légende mais n’a pas d’aria-label reprenant la légende.",
+    "figureCaptionStructure_summary_fail_mismatch": "L’aria-label de cette figure diffère de sa légende.",
+    "figureCaptionStructure_hint_fail": "Donnez à la balise <figure> role=\"figure\" et un aria-label au contenu identique à sa <figcaption>.",
+    "videoCaptionsTrackKind_title": "Les pistes de sous-titres des vidéos utilisent kind=\"captions\"",
+    "videoCaptionsTrackKind_description": "Vérifie qu’une balise <video> ayant des pistes de texte a au moins une balise <track kind=\"captions\">, et pas seulement des sous-titres de traduction.",
+    "videoCaptionsTrackKind_summary_fail": "Cette vidéo a des pistes de texte, mais aucune avec kind=\"captions\".",
+    "videoCaptionsTrackKind_hint_fail": "Indiquez kind=\"captions\" sur la piste qui porte les sous-titres synchronisés.",
+    "dirAttributeValid_title": "Les attributs dir valent ltr ou rtl",
+    "dirAttributeValid_description": "Vérifie que chaque attribut dir vaut ltr ou rtl, les deux valeurs acceptées par le RGAA.",
+    "dirAttributeValid_summary_fail_auto": "Cet élément utilise dir=\"auto\" ; le RGAA n’accepte que ltr ou rtl.",
+    "dirAttributeValid_summary_fail_invalid": "Cet élément a dir=\"{{value}}\", qui ne vaut ni ltr ni rtl.",
+    "dirAttributeValid_hint_fail": "Donnez à dir la valeur ltr (de gauche à droite) ou rtl (de droite à gauche), selon le sens de lecture du texte.",
+    "svgHiddenNoAlternative_title": "Les SVG décoratifs masqués n’ont pas d’alternative textuelle",
+    "svgHiddenNoAlternative_description": "Vérifie qu’une balise <svg> avec aria-hidden=\"true\" n’a ni aria-label, ni aria-labelledby, ni attribut title, ni <title> ou <desc> non vide.",
+    "svgHiddenNoAlternative_summary_fail": "Ce SVG est masqué par aria-hidden=\"true\" mais porte une alternative textuelle : {{alternatives}}.",
+    "svgHiddenNoAlternative_hint_fail": "Si l’image est décorative, supprimez l’alternative textuelle. Si elle porte une information, supprimez aria-hidden et donnez-lui role=\"img\" et une alternative textuelle.",
+    "fieldGroupLegend_title": "Les regroupements de champs de formulaire ont une légende",
+    "fieldGroupLegend_description": "Signale un <fieldset> ou role=\"group\" contenant des champs de formulaire sans légende ni nom, pour qu’une personne décide s’il regroupe des champs de même nature.",
+    "fieldGroupLegend_summary_cantTell_fieldset": "Ce fieldset regroupe des champs de formulaire mais n’a pas de légende.",
+    "fieldGroupLegend_summary_cantTell_group": "Cet élément role=\"group\" regroupe des champs de formulaire mais n’a pas de nom.",
+    "fieldGroupLegend_hint_cantTell": "Si les champs sont de même nature (une adresse, une date, un ensemble de choix), donnez une légende au regroupement : un <legend> pour un fieldset, aria-label ou aria-labelledby pour role=\"group\".",
+    "radioGroupPresent_title": "Les boutons radio partageant un nom sont regroupés",
+    "radioGroupPresent_description": "Signale un ensemble de boutons radio de même nom qui n’est pas dans un même fieldset, role=\"group\" ou role=\"radiogroup\", pour qu’une personne décide s’il doit être regroupé.",
+    "radioGroupPresent_summary_cantTell": "Les {{count}} boutons radio nommés « {{name}} » ne sont pas regroupés dans un même fieldset ou groupe.",
+    "radioGroupPresent_hint_cantTell": "Placez les boutons radio dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question à laquelle ils répondent soit annoncée avec eux.",
+    "fakeList_title": "Le texte présenté en liste utilise un balisage de liste",
+    "fakeList_description": "Signale des lignes ou paragraphes consécutifs commençant par des puces ou des numéros consécutifs mais non balisés en liste, pour qu’une personne décide s’il s’agit d’une liste.",
+    "fakeList_summary_cantTell_unordered": "Ces {{items}} lignes commencent par la même puce mais ne sont pas balisées en liste.",
+    "fakeList_summary_cantTell_ordered": "Ces {{items}} lignes commencent par des numéros consécutifs mais ne sont pas balisées en liste.",
+    "fakeList_hint_cantTell_unordered": "S’il s’agit d’une liste, utilisez <ul> et <li> (ou role=\"list\" et role=\"listitem\"), et mettez en forme les puces en CSS.",
+    "fakeList_hint_cantTell_ordered": "S’il s’agit d’une liste, utilisez <ol> et <li> (ou role=\"list\" et role=\"listitem\"), et laissez la liste numéroter les éléments.",
+    "lettersSpacedWithSpaces_title": "Les lettres d’un mot ne sont pas séparées par des espaces",
+    "lettersSpacedWithSpaces_description": "Signale un texte où au moins quatre lettres isolées à la suite sont séparées par des espaces, pour qu’une personne confirme si un mot est ainsi espacé.",
+    "lettersSpacedWithSpaces_summary_cantTell": "Le texte « {{text}} » a ses lettres séparées par des espaces.",
+    "lettersSpacedWithSpaces_hint_cantTell": "S’il s’agit d’un mot, écrivez-le sans espaces et utilisez la propriété CSS letter-spacing pour l’effet d’espacement.",
+    "imageAltLong_title": "Les alternatives textuelles des images sont courtes",
+    "imageAltLong_description": "Signale une image dont l’alternative textuelle dépasse 80 caractères, pour qu’une personne décide si elle est assez courte et concise.",
+    "imageAltLong_summary_cantTell": "L’alternative textuelle de cette image fait {{length}} caractères.",
+    "imageAltLong_hint_cantTell": "Limitez l’alternative textuelle à ce que l’image transmet dans son contexte, en quelques mots. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle.",
+    "complexTableSummary_title": "Les tableaux de données complexes ont un résumé",
+    "complexTableSummary_description": "Signale un tableau de données dont les en-têtes ne sont pas tous dans la première ligne ou colonne, sans aria-describedby ni summary, pour qu’une personne vérifie qu’un résumé est disponible.",
+    "complexTableSummary_summary_cantTell": "Ce tableau semble être un tableau de données complexe, et rien n’indique un résumé de sa structure.",
+    "complexTableSummary_hint_cantTell": "Vérifiez qu’un résumé explique l’organisation du tableau, dans son <caption> ou dans un passage à côté, idéalement relié par aria-describedby.",
+    "officeDocumentLink_title": "Les documents bureautiques en téléchargement sont accessibles ou ont une version accessible",
+    "officeDocumentLink_description": "Signale chaque lien vers un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
+    "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
+    "officeDocumentLink_hint_cantTell": "Vérifiez que le document est accessible, ou proposez-en une version accessible, en téléchargement ou en page HTML.",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -72675,6 +75841,7 @@ const I18N = {
     "report_meta_schemaVersion": "version du schéma",
     "report_meta_target": "cible",
     "report_meta_profile": "profil",
+    "report_meta_optInRules": "règles optionnelles",
     "report_meta_locale": "langue",
     "report_meta_localeRequested": "langue (demandée : {{requested}})",
     "report_outcome_fail": "Échec",
@@ -73504,6 +76671,60 @@ const I18N = {
     "labelForTargetValid_summary_fail_missing": "このラベルは id \"{{value}}\" を指していますが、同じツリーにその id を持つ要素はありません。",
     "labelForTargetValid_summary_fail_notLabelable": "このラベルは id \"{{value}}\" を指していますが、それはフォームのフィールドではなく <{{element}}> の id です。",
     "labelForTargetValid_hint_fail": "for 属性に、このラベルが示すフィールドの id を指定するか、for 属性を削除してフィールドをラベルの中に入れてください。",
+    "layoutTableNoDataMarkup_title": "レイアウト用の表がデータ表のマークアップを使用していない",
+    "layoutTableNoDataMarkup_description": "レイアウト用と示された表 (role=\"presentation\" または \"none\") に、キャプション、見出しセル、summary、scope・headers・axis 属性がないかを確認します。",
+    "layoutTableNoDataMarkup_summary_fail": "このレイアウト用の表はデータ表のマークアップを使用しています: {{markup}}。",
+    "layoutTableNoDataMarkup_hint_fail": "データ表のマークアップを削除してください。表がデータを含む場合は、role=\"presentation\" を削除して見出しを残してください。",
+    "figureCaptionStructure_title": "キャプション付きの画像が RGAA の説明する figure 構造を使用している",
+    "figureCaptionStructure_description": "画像と <figcaption> を含む <figure> に、role=\"figure\" または \"group\" と、キャプションと同じ aria-label があるかを確認します。",
+    "figureCaptionStructure_summary_fail_role": "この図は画像とキャプションを含んでいますが、role=\"figure\" も role=\"group\" もありません。",
+    "figureCaptionStructure_summary_fail_label": "この図は画像とキャプションを含んでいますが、キャプションを繰り返す aria-label がありません。",
+    "figureCaptionStructure_summary_fail_mismatch": "この図の aria-label はキャプションと異なります。",
+    "figureCaptionStructure_hint_fail": "<figure> に role=\"figure\" と、<figcaption> と同じテキストの aria-label を指定してください。",
+    "videoCaptionsTrackKind_title": "動画の字幕トラックが kind=\"captions\" を使用している",
+    "videoCaptionsTrackKind_description": "テキストトラックを持つ <video> に、翻訳字幕だけでなく <track kind=\"captions\"> が少なくとも 1 つあるかを確認します。",
+    "videoCaptionsTrackKind_summary_fail": "この動画にはテキストトラックがありますが、kind=\"captions\" のものがありません。",
+    "videoCaptionsTrackKind_hint_fail": "聴覚障害者向け字幕を含むトラックに kind=\"captions\" を指定してください。",
+    "dirAttributeValid_title": "dir 属性が ltr か rtl である",
+    "dirAttributeValid_description": "すべての dir 属性が、RGAA が認める 2 つの値 ltr か rtl であるかを確認します。",
+    "dirAttributeValid_summary_fail_auto": "この要素は dir=\"auto\" を使用していますが、RGAA が認めるのは ltr か rtl だけです。",
+    "dirAttributeValid_summary_fail_invalid": "この要素の dir=\"{{value}}\" は ltr でも rtl でもありません。",
+    "dirAttributeValid_hint_fail": "テキストの読む方向に合わせて、dir を ltr (左から右) か rtl (右から左) にしてください。",
+    "svgHiddenNoAlternative_title": "非表示の装飾用 SVG に代替テキストがない",
+    "svgHiddenNoAlternative_description": "aria-hidden=\"true\" の <svg> に、aria-label、aria-labelledby、title 属性、空でない <title> や <desc> がないかを確認します。",
+    "svgHiddenNoAlternative_summary_fail": "この SVG は aria-hidden=\"true\" で非表示ですが、代替テキストがあります: {{alternatives}}。",
+    "svgHiddenNoAlternative_hint_fail": "画像が装飾用なら代替テキストを削除してください。情報を伝える画像なら、aria-hidden を削除し、role=\"img\" と代替テキストを指定してください。",
+    "fieldGroupLegend_title": "フォームフィールドのグループに凡例がある",
+    "fieldGroupLegend_description": "フォームフィールドを含む <fieldset> または role=\"group\" に凡例や名前がない場合に示し、同じ種類のフィールドのグループかどうかを人が判断できるようにします。",
+    "fieldGroupLegend_summary_cantTell_fieldset": "この fieldset はフォームフィールドをまとめていますが、凡例がありません。",
+    "fieldGroupLegend_summary_cantTell_group": "この role=\"group\" 要素はフォームフィールドをまとめていますが、名前がありません。",
+    "fieldGroupLegend_hint_cantTell": "フィールドが同じ種類（住所、日付、選択肢の組など）なら、グループに凡例を付けてください。fieldset には <legend>、role=\"group\" には aria-label または aria-labelledby を使います。",
+    "radioGroupPresent_title": "同じ name のラジオボタンがグループ化されている",
+    "radioGroupPresent_description": "同じ name のラジオボタンの組が 1 つの fieldset、role=\"group\"、role=\"radiogroup\" に入っていない場合に示し、グループ化が必要かを人が判断できるようにします。",
+    "radioGroupPresent_summary_cantTell": "name が「{{name}}」の {{count}} 個のラジオボタンが、1 つの fieldset またはグループにまとめられていません。",
+    "radioGroupPresent_hint_cantTell": "ラジオボタンを <legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、答える質問が一緒に読み上げられるようにしてください。",
+    "fakeList_title": "リストとして並べたテキストにリストのマークアップを使う",
+    "fakeList_description": "箇条記号や連番で始まる連続した行や段落がリストとしてマークアップされていない場合に示し、リストかどうかを人が判断できるようにします。",
+    "fakeList_summary_cantTell_unordered": "この {{items}} 行は同じ箇条記号で始まっていますが、リストとしてマークアップされていません。",
+    "fakeList_summary_cantTell_ordered": "この {{items}} 行は連番で始まっていますが、リストとしてマークアップされていません。",
+    "fakeList_hint_cantTell_unordered": "リストであれば <ul> と <li>（または role=\"list\" と role=\"listitem\"）を使い、箇条記号は CSS で表示してください。",
+    "fakeList_hint_cantTell_ordered": "リストであれば <ol> と <li>（または role=\"list\" と role=\"listitem\"）を使い、番号付けはリストに任せてください。",
+    "lettersSpacedWithSpaces_title": "単語の文字をスペースで区切らない",
+    "lettersSpacedWithSpaces_description": "4 文字以上の単独の文字がスペースで区切られて並ぶテキストを示し、単語をそのように間隔を空けて書いていないかを人が確認できるようにします。",
+    "lettersSpacedWithSpaces_summary_cantTell": "テキスト「{{text}}」の文字がスペースで区切られています。",
+    "lettersSpacedWithSpaces_hint_cantTell": "単語であればスペースなしで書き、字間を空けた見た目には CSS の letter-spacing プロパティを使ってください。",
+    "imageAltLong_title": "画像の代替テキストが短い",
+    "imageAltLong_description": "代替テキストが 80 文字を超える画像を示し、十分に短く簡潔かを人が判断できるようにします。",
+    "imageAltLong_summary_cantTell": "この画像の代替テキストは {{length}} 文字あります。",
+    "imageAltLong_hint_cantTell": "代替テキストは、文脈の中で画像が伝える内容を数語で表してください。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください。",
+    "complexTableSummary_title": "複雑なデータテーブルに要約がある",
+    "complexTableSummary_description": "見出しセルがすべて先頭行または先頭列にあるわけではなく、aria-describedby も summary もないデータテーブルを示し、要約があるかを人が確認できるようにします。",
+    "complexTableSummary_summary_cantTell": "このテーブルは複雑なデータテーブルのようですが、構造の要約を示すものがありません。",
+    "complexTableSummary_hint_cantTell": "テーブルの構成を説明する要約が、<caption> または隣接する文章にあるか確認してください。aria-describedby で関連付けるのが理想です。",
+    "officeDocumentLink_title": "ダウンロードできるオフィス文書がアクセシブルであるか、アクセシブルな版がある",
+    "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）へのリンクを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
+    "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
+    "officeDocumentLink_hint_cantTell": "文書がアクセシブルか確認するか、アクセシブルな版をダウンロードまたは HTML ページとして提供してください。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -73513,6 +76734,7 @@ const I18N = {
     "report_meta_schemaVersion": "スキーマバージョン",
     "report_meta_target": "対象",
     "report_meta_profile": "プロファイル",
+    "report_meta_optInRules": "オプトインルール",
     "report_meta_locale": "ロケール",
     "report_meta_localeRequested": "ロケール (要求: {{requested}})",
     "report_outcome_fail": "不合格",
@@ -73988,11 +77210,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -74124,6 +77352,7 @@ const PROFILE_RULES = {
     "canvas-text-alternative-present",
     "canvas-text-alternative-quality",
     "combobox-name-present",
+    "complex-table-summary",
     "contrast-computable",
     "contrast-minimum",
     "css-focus-indicator-suppressed",
@@ -74132,6 +77361,7 @@ const PROFILE_RULES = {
     "definition-list-children-valid",
     "deprecated-elements-not-used",
     "dialog-name-present",
+    "dir-attribute-valid",
     "dlitem-parent-valid",
     "doctype-present",
     "duplicate-id",
@@ -74139,6 +77369,9 @@ const PROFILE_RULES = {
     "embed-text-alternative-present",
     "embed-text-alternative-quality",
     "empty-heading",
+    "fake-list",
+    "field-group-legend",
+    "figure-caption-structure",
     "form-control-label-quality",
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
@@ -74149,6 +77382,7 @@ const PROFILE_RULES = {
     "identical-iframes-same-purpose",
     "iframe-name-present",
     "iframe-title-unique",
+    "image-alt-long",
     "image-redundant-alt",
     "img-alt-decorative",
     "img-alt-present",
@@ -74161,6 +77395,8 @@ const PROFILE_RULES = {
     "label-title-only",
     "landmark-no-duplicate-main",
     "landmark-one-main",
+    "layout-table-no-data-markup",
+    "letters-spaced-with-spaces",
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
@@ -74178,6 +77414,7 @@ const PROFILE_RULES = {
     "no-autoplay-audio",
     "object-text-alternative-present",
     "object-text-alternative-quality",
+    "office-document-link",
     "optgroup-label-present",
     "p-as-heading",
     "page-title-patterns",
@@ -74185,6 +77422,7 @@ const PROFILE_RULES = {
     "presentation-role-conflict",
     "presentational-attributes-absent",
     "presentational-elements-absent",
+    "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
     "searchbox-name-present",
@@ -74192,6 +77430,7 @@ const PROFILE_RULES = {
     "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
+    "svg-hidden-no-alternative",
     "svg-text-alternative-present",
     "svg-text-alternative-quality",
     "tab-name-present",
@@ -74202,7 +77441,8 @@ const PROFILE_RULES = {
     "textbox-name-present",
     "treeitem-name-present",
     "valid-lang",
-    "video-caption"
+    "video-caption",
+    "video-captions-track-kind"
   ]
 };
 
@@ -74325,6 +77565,31 @@ function applyProfile(selection, requestedProfile) {
   return selection;
 }
 
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags ('rgaa'). It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
+  return selection;
+}
+
 /**
  * Resolve effective selection from engineOptions (preferred) or runOnly (legacy).
  *
@@ -74342,7 +77607,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -74369,7 +77639,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -74422,12 +77692,13 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly. Nothing else selects it, not a
-  // default run, a WCAG tag set or a composite id, so a scan that does not
-  // target the standard never reports a failure only that standard defines.
+  // tags, or its id is included directly, or engineOptions.optInRules
+  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
+  // set or a composite id, so a scan that does not target the standard never
+  // reports a failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
-    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
@@ -83399,6 +86670,27 @@ const runCore = (function runCore(
     } catch {}
   }
 
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and the RGAA profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
+      );
+    } catch {}
+  }
+
   // engineOptions.mappings: which standards besides WCAG a result's
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
@@ -83462,6 +86754,16 @@ const runCore = (function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -83659,6 +86961,9 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,

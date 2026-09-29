@@ -121,9 +121,22 @@ Some rules check a standard's own requirements, ones WCAG does not make: RGAA, f
 
 - through the standard's profile (`profile: 'rgaa-4.1.2'` lists the `rgaa` tag),
 - by that tag (`tags: { include: 'rgaa' }`, alone or with others), or
-- by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`).
+- by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`), or
+- by unlocking it with `engineOptions.optInRules`, below.
 
-Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. RGAA's per-criterion rollups (`rgaa-4.1.2-9.1` and so on) carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present` and `label-for-target-valid`.
+Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. RGAA's per-criterion rollups (`rgaa-4.1.2-9.1` and so on) carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present`, `label-for-target-valid`, `layout-table-no-data-markup`, `figure-caption-structure`, `video-captions-track-kind`, `dir-attribute-valid` and `svg-hidden-no-alternative`, and the manual `field-group-legend`, `radio-group-present`, `fake-list`, `letters-spaced-with-spaces`, `image-alt-long`, `complex-table-summary` and `office-document-link`.
+
+#### Running every rule (`optInRules`)
+
+To run every rule the engine has, whatever standard it belongs to, leave out the profile and unlock the opt-in rules:
+
+```js
+runDomRulesInPage(url, null, { optInRules: 'all' }, null);
+```
+
+`'all'` unlocks every standard's opt-in rules; a list of tags (`['rgaa']`, or `'rgaa'`) unlocks only those. It lifts the gate and nothing else: the rest of the selection still decides which rules run. So with no filter and no profile, as above, the run covers every rule and every standard's rollups; under `profile: 'wcag22-aa'` it still runs the WCAG rules only, since the RGAA rules carry no WCAG tag, and under `profile: 'rgaa-4.1.2'` it changes nothing. Excludes apply as usual. A tag that is not an opt-in tag is ignored with a `console.warn`.
+
+This is for seeing everything the engine can report, during development or when exploring a site. It is not a conformance target: such a run fails a page for things WCAG allows, such as `dir="auto"` or `<s>`, which only RGAA forbids. The result says so: `engine.optInRules` lists the tags whose rules ran (`["rgaa"]`), and the HTML report, SARIF and JUnit show it next to the profile. It adds no other standard's numbers to results; pass `mappings` for that, for example `{ optInRules: 'all', mappings: ['rgaa'] }` to see the RGAA tests each rule checks.
 
 ### Other standards (`mappings`)
 
@@ -165,6 +178,7 @@ const engineOptions = {
   wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
   profile: 'en301549-v4.1.1',      // optional — a named conformance target, see "Conformance profiles" above
   mappings: ['en301549'],          // optional — standards besides WCAG to name on each result, see "Other standards" above
+  optInRules: 'all',               // optional — also run rules other standards add beyond WCAG, see "Running every rule" above
   messages: { de: { /* key: text */ } },  // optional caller-supplied dictionaries; win over built-in ones
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
   includeShadowDom: true,          // default true — opt OUT with `false` to skip open shadow roots
@@ -213,6 +227,7 @@ const engineOptions = {
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value is ignored and the default applies. |
 | `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'`, `'section508'` or `'rgaa-4.1.2'`. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
 | `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: `'en301549'`, `'en301549:V3.2.1'`, `'en301549:V4.1.1'`, `'rgaa'` or `'rgaa:4.1.2'`, as an array or comma-separated string. Default none, so results name WCAG only; an EN 301 549 profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
+| `optInRules` | Optional: `'all'`, or a list of opt-in rule tags (`'rgaa'`), as an array or comma-separated string. Unlocks those rules outside their standard's profile; the rest of the selection still decides what runs. Reported back as `engine.optInRules` when it ran a rule the selection would not have run otherwise; unknown tags are ignored with a console warning. See ["Running every rule"](#running-every-rule-optinrules) above. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |
 | `includeShadowDom` | Default `true`: rules using `helpers.queryAllSmart` traverse into open shadow roots. Set `false` to scan only the light DOM. Closed shadow roots are never reachable either way (no DOM API exposes them). |

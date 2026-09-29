@@ -798,11 +798,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -981,6 +987,31 @@ function applyProfile(selection, requestedProfile) {
   return selection;
 }
 
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags ('rgaa'). It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
+  return selection;
+}
+
 /**
  * Resolve effective selection from engineOptions (preferred) or runOnly (legacy).
  *
@@ -998,7 +1029,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -1025,7 +1061,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -1078,12 +1114,13 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly. Nothing else selects it, not a
-  // default run, a WCAG tag set or a composite id, so a scan that does not
-  // target the standard never reports a failure only that standard defines.
+  // tags, or its id is included directly, or engineOptions.optInRules
+  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
+  // set or a composite id, so a scan that does not target the standard never
+  // reports a failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
-    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
@@ -1557,14 +1594,21 @@ function toCompositeCatalogEntry(x, tokens) {
 }
 
 // A standard's own rollup (RGAA's per criterion) is opt-in like that
-// standard's rules: listed only when the selection names its tag or its id,
-// as the rgaa-4.1.2 profile does, so the catalog lists what a scan with the
-// same options would produce.
+// standard's rules: listed only when the selection names its tag (as the
+// rgaa-4.1.2 profile does) or its id, or unlocks its tag through
+// engineOptions.optInRules and includes nothing else, so the catalog lists
+// what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
+  // Unlocked alone does not select it: like the run, an include of other
+  // tags or ids (a WCAG profile's, say) still leaves it out.
+  const includesNothing =
+    !selection.tags.length && !selection.includeRuleIds.length && !selection.includeTestIds.length;
+  const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
   return (
+    unlocked ||
     optIn.some((t) => selection.tags.includes(t)) ||
     selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
   );

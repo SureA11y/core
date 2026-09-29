@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>image-alt-long — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>image-alt-long</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>ial_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Text alternatives over 80 characters (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: long alt on img</div>
+    <img id="ial_case_01" src="chart.png" alt="Bar chart showing the sales of each of our twelve regional shops month by month for the year 2025">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: long aria-label on role="img"</div>
+    <span id="ial_case_02" role="img" aria-label="A photograph of the whole team standing in front of the new office building on the day it opened">📷</span>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: short alt</div>
+    <img id="ial_case_03" src="logo.png" alt="Company logo">
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: empty alt</div>
+    <img id="ial_case_04" src="line.png" alt="">
+  </div>
+</body>
+</html>

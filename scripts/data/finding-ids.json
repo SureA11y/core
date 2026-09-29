@@ -30,6 +30,7 @@
     "canvas-text-alternative-present",
     "canvas-text-alternative-quality",
     "combobox-name-present",
+    "complex-table-summary",
     "contrast-computable",
     "contrast-enhanced",
     "contrast-minimum",
@@ -39,6 +40,7 @@
     "definition-list-children-valid",
     "deprecated-elements-not-used",
     "dialog-name-present",
+    "dir-attribute-valid",
     "dlitem-parent-valid",
     "doctype-present",
     "duplicate-id",
@@ -47,6 +49,9 @@
     "embed-text-alternative-quality",
     "empty-heading",
     "empty-table-header",
+    "fake-list",
+    "field-group-legend",
+    "figure-caption-structure",
     "focus-order-semantics",
     "form-control-label-quality",
     "form-control-programmatic-label-present",
@@ -61,6 +66,7 @@
     "iframe-focusable-content",
     "iframe-name-present",
     "iframe-title-unique",
+    "image-alt-long",
     "image-redundant-alt",
     "img-alt-decorative",
     "img-alt-present",
@@ -80,6 +86,8 @@
     "landmark-no-duplicate-main",
     "landmark-one-main",
     "landmark-unique",
+    "layout-table-no-data-markup",
+    "letters-spaced-with-spaces",
     "link-in-text-block",
     "link-name-present",
     "link-name-quality",
@@ -99,6 +107,7 @@
     "no-autoplay-audio",
     "object-text-alternative-present",
     "object-text-alternative-quality",
+    "office-document-link",
     "optgroup-label-present",
     "option-name-present",
     "p-as-heading",
@@ -111,6 +120,7 @@
     "presentational-children-focusable-absent",
     "presentational-elements-absent",
     "progressbar-name-present",
+    "radio-group-present",
     "region",
     "role-img-text-alternative-present",
     "scope-attr-valid",
@@ -121,6 +131,7 @@
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
+    "svg-hidden-no-alternative",
     "svg-image-text-alternative-present",
     "svg-text-alternative-present",
     "svg-text-alternative-quality",
@@ -137,6 +148,7 @@
     "treeitem-name-present",
     "valid-lang",
     "video-caption",
+    "video-captions-track-kind",
     "video-poster-text-alternative-present"
   ],
   "reasonCodes": {
@@ -229,6 +241,9 @@
     "combobox-name-present": [
       "name_missing"
     ],
+    "complex-table-summary": [
+      "complexTableNoSummary"
+    ],
     "contrast-computable": [
       "ANCESTOR_OPACITY",
       "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
@@ -272,6 +287,10 @@
     "dialog-name-present": [
       "name_missing"
     ],
+    "dir-attribute-valid": [
+      "autoDir",
+      "invalidDir"
+    ],
     "dlitem-parent-valid": [
       "DLITEM_INVALID_PARENT"
     ],
@@ -290,6 +309,18 @@
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
       "TABLE_HEADER_NAME_NOT_VISIBLE_TEXT"
+    ],
+    "fake-list": [
+      "orderedListAsText",
+      "unorderedListAsText"
+    ],
+    "field-group-legend": [
+      "groupWithoutLegend"
+    ],
+    "figure-caption-structure": [
+      "ariaLabelMismatch",
+      "missingAriaLabel",
+      "missingRole"
     ],
     "focus-order-semantics": [
       "TABBABLE_WITH_NON_INTERACTIVE_ROLE"
@@ -343,6 +374,9 @@
     "iframe-title-unique": [
       "IFRAME_TITLE_DUPLICATE"
     ],
+    "image-alt-long": [
+      "longAlternative"
+    ],
     "image-redundant-alt": [
       "IMAGE_ALT_REDUNDANT"
     ],
@@ -391,6 +425,12 @@
     ],
     "landmark-unique": [
       "LANDMARK_NOT_UNIQUE"
+    ],
+    "layout-table-no-data-markup": [
+      "dataMarkupInLayoutTable"
+    ],
+    "letters-spaced-with-spaces": [
+      "lettersSeparatedBySpaces"
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
@@ -443,6 +483,9 @@
     "no-autoplay-audio": [
       "AUTOPLAY_NO_CONTROLS_MECHANISM"
     ],
+    "office-document-link": [
+      "officeDocument"
+    ],
     "optgroup-label-present": [
       "emptyLabel",
       "missingLabel"
@@ -481,6 +524,9 @@
     "progressbar-name-present": [
       "name_missing"
     ],
+    "radio-group-present": [
+      "radiosNotGrouped"
+    ],
     "region": [
       "CONTENT_OUTSIDE_LANDMARK"
     ],
@@ -514,6 +560,9 @@
     ],
     "summary-name-present": [
       "name_missing"
+    ],
+    "svg-hidden-no-alternative": [
+      "hiddenSvgHasAlternative"
     ],
     "tab-name-present": [
       "name_missing"
@@ -556,6 +605,9 @@
     ],
     "video-caption": [
       "CAPTIONS_TRACK_NOT_DETECTED"
+    ],
+    "video-captions-track-kind": [
+      "noCaptionsKind"
     ]
   }
 }

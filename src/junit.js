@@ -261,6 +261,7 @@ function renderJunitReport(result, options = {}) {
     ['schemaVersion', engine.schemaVersion],
     ['wcagVersion', engine.wcagVersion],
     ['profile', engine.profile],
+    ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
     ['locale', engine.locale && engine.locale.resolved],
     ['url', result && result.url]
   ].filter(([, v]) => v != null && v !== '');

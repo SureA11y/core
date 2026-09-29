@@ -111,11 +111,11 @@ With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its r
 
 Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1). A few links go against RGAA's correspondence on purpose: `<img ismap>` is what RGAA 1.1.4 looks for, although RGAA files 1.1.4 under WCAG 1.1.1 and the engine files the rule under 2.1.1. Such a row lists the test in `outsideCorrespondence` with the reason, the build refuses the link without one, and the entry is filed under the rule's own WCAG criteria. `RGAA_MAPPING.md` marks these tests "(exception)".
 
-101 of the 137 rules map to at least one test, and together they reach 45 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 61 no rule reaches.
+113 of the 149 rules map to at least one test, and together they reach 51 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 55 no rule reaches.
 
-`profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other selection runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping.
+`profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other profile runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping. To see them without targeting RGAA, `engineOptions.optInRules: 'all'` with no profile runs every rule the engine has, RGAA's included.
 
-Five opt-in rules check RGAA requirements WCAG does not make, each deciding exactly what the RGAA test's procedure checks:
+Ten opt-in rules decide RGAA requirements WCAG does not make, each deciding exactly what the RGAA test's procedure checks:
 
 | Rule | RGAA | Fails when |
 |---|---|---|
@@ -124,10 +124,27 @@ Five opt-in rules check RGAA requirements WCAG does not make, each deciding exac
 | `presentational-attributes-absent` | 10.1.2 | an HTML element carries an attribute RGAA lists (`align`, `bgcolor`, `border`, …), with RGAA's exceptions for `size`, `width` and `height` |
 | `optgroup-label-present` | 11.8.2 | an `<optgroup>` in a `<select>` has no label, or an empty one |
 | `label-for-target-valid` | 11.1.2 | a `<label for>` matches no id, an empty one, or an element that cannot be labelled |
+| `layout-table-no-data-markup` | 5.8.1 | a table with `role="presentation"` or `"none"` has a caption, header cells, `thead`, `tfoot`, a non-empty `summary`, or cells with `scope`, `headers` or `axis` |
+| `figure-caption-structure` | 1.9.1 | a `<figure>` holding an image and a `<figcaption>` has no `role="figure"` or `"group"`, or no `aria-label` identical to the caption |
+| `video-captions-track-kind` | 4.3.2 | a `<video>` has subtitle tracks but none with `kind="captions"` |
+| `dir-attribute-valid` | 8.10.2 | a `dir` attribute is anything but `ltr` or `rtl`, `auto` included |
+| `svg-hidden-no-alternative` | 1.2.4, 1.1.5 | an `<svg aria-hidden="true">` carries a text alternative (`aria-label`, `aria-labelledby`, `title`, or a non-empty `<title>` or `<desc>`) |
 
-They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` is, although HTML5 keeps it.
+They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` and `dir="auto"` are, although HTML allows them.
 
-Under the profile, `rulesResults` also gets one rollup per RGAA criterion a rule is linked to, next to the WCAG ones: `rgaa-4.1.2-9.1` groups the heading rules, `rgaa-4.1.2-8.1` the doctype rule. Each has RGAA's wording as its title, `meta.standard: "RGAA"` and `data.details.criterion`, and follows the same outcome rules as a WCAG rollup, naming the RGAA tests of the rules that decided it. Some RGAA findings belong to no WCAG rollup at all (heading order, the doctype, presentational markup), so these rollups are the only place a consumer reading `rulesResults` alone sees them. Like RGAA-only rules they are opt-in: no default, WCAG or EN 301 549 run produces them, and `getRulesCatalog()` lists them only under options that ask for RGAA. Every check result also carries `rollupIds`, the rollups that group it in that run, so a finding with none can be spotted.
+Seven more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
+
+| Rule | RGAA | Asks about |
+|---|---|---|
+| `field-group-legend` | 11.6.1 | a `<fieldset>` or `role="group"` holding form fields with no legend or name |
+| `radio-group-present` | 11.5.1 | radio buttons sharing a name that are not all in one `<fieldset>`, `role="group"` or `role="radiogroup"` |
+| `fake-list` | 9.3.1, 9.3.2 | lines or paragraphs starting with the same bullet, or with consecutive numbers, that are not marked up as a list |
+| `letters-spaced-with-spaces` | 10.1.3 | four or more single letters in a row separated by spaces (`S O L D E S`) |
+| `image-alt-long` | 1.3.9 | a text alternative longer than 80 characters (RGAA gives no number; 80 is a threshold for asking) |
+| `complex-table-summary` | 5.1.1 | a table with headers beyond its first row and column, or cells using `headers`, with no `aria-describedby` or `summary` |
+| `office-document-link` | 13.3.1 | each link to a `.pdf`, `.doc(x)`, `.odt`, `.rtf`, `.xls(x)`, `.ods`, `.ppt(x)`, `.odp` or `.epub` file |
+
+Under the profile, `rulesResults` also gets one rollup per RGAA criterion a rule is linked to, next to the WCAG ones: `rgaa-4.1.2-9.1` groups the heading rules, `rgaa-4.1.2-8.1` the doctype rule. Each has RGAA's wording as its title, `meta.standard: "RGAA"` and `data.details.criterion`, and follows the same outcome rules as a WCAG rollup, naming the RGAA tests of the rules that decided it. Some RGAA findings belong to no WCAG rollup at all (heading order, the doctype, presentational markup), so these rollups are the only place a consumer reading `rulesResults` alone sees them. Like RGAA-only rules they are opt-in: no default, WCAG or EN 301 549 run produces them, and `getRulesCatalog()` lists them only under options that ask for RGAA, or that unlock its rules with `optInRules` and select nothing else. Every check result also carries `rollupIds`, the rollups that group it in that run, so a finding with none can be spotted.
 
 A test on a result means the rule checks part of it, never that the test is conforme: a `pass` is not an RGAA verdict, and most tests need a human. **The mapping has not yet been reviewed by an RGAA auditor.** Every row still to check carries a review mark with a priority and the question to answer; [`RGAA_TO_REVIEW.md`](./RGAA_TO_REVIEW.md) lists them, highest priority first, along with tests some unlinked rules might be linked to. Corrections go in `src/coverage/rgaa-rule-map.js`, and `npm run rgaa-mapping-doc` regenerates both pages.
 
@@ -147,7 +164,7 @@ The build then adds its entries to every rule and composite, `engineOptions.mapp
 No automated tool — this one included — can certify full WCAG conformance. That's not a limitation specific to surea11y; it's inherent to WCAG itself; a meaningful fraction of Success Criteria require human judgment (is this alt text *accurate*, not just *present*; is this error message *understandable*) or dynamic testing this engine's static-DOM-scan architecture cannot do at all (keyboard-trap detection, real layout/reflow at zoom). See [`LIMITATIONS.md`](./LIMITATIONS.md) for the full, explicit list of what's out of scope and why.
 
 What surea11y *can* give you, honestly:
-- Every `fail` is a real, deterministic, normative violation of the standard and version you targeted — never a guess. By default that standard is WCAG: a rule for a requirement only another standard makes (an RGAA-only rule, say) is opt-in and runs only when you target that standard ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)), so a WCAG scan never fails a page for something WCAG does not require.
+- Every `fail` is a real, deterministic, normative violation of the standard and version you targeted — never a guess. By default that standard is WCAG: a rule for a requirement only another standard makes (an RGAA-only rule, say) is opt-in and runs only when you target that standard ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)), so a WCAG scan never fails a page for something WCAG does not require. The one exception is a run that asks for every rule (`engineOptions.optInRules`): it targets no single standard, and says so in `engine.optInRules`.
 - Every `cantTell` is an explicit flag for human review, not a swallowed uncertainty.
 - The facet coverage table tells you exactly which parts of which SCs have zero automated coverage, so you know where a `pass` is silent rather than exhaustive.
 

@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **137**
+Total rules (loaded without error): **149**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -640,17 +640,26 @@ Automation mix: **full 36, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
 | doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | src/checks/automatic/figure-caption-structure.js |  |  |
 | label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
+| layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
+| svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
+| video-captions-track-kind | automatic | Video caption tracks use kind="captions" | src/checks/automatic/video-captions-track-kind.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
+| fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |
+| field-group-legend | manual | Groups of form fields have a legend | src/checks/manual/field-group-legend-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
+| image-alt-long | manual | Text alternatives of images are short | src/checks/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
@@ -662,9 +671,12 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-no-duplicate-main | manual | Page must not have more than one main landmark | src/checks/manual/landmark-no-duplicate-main-manual.js |  |  |
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
+| letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
+| office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
+| radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
@@ -1279,17 +1291,26 @@ Automation mix: **full 36, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
 | doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | src/checks/automatic/figure-caption-structure.js |  |  |
 | label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
+| layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
+| svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
+| video-captions-track-kind | automatic | Video caption tracks use kind="captions" | src/checks/automatic/video-captions-track-kind.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
+| fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |
+| field-group-legend | manual | Groups of form fields have a legend | src/checks/manual/field-group-legend-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
+| image-alt-long | manual | Text alternatives of images are short | src/checks/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
@@ -1301,9 +1322,12 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-no-duplicate-main | manual | Page must not have more than one main landmark | src/checks/manual/landmark-no-duplicate-main-manual.js |  |  |
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
+| letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
+| office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
+| radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |

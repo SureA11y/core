@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>office-document-link — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>office-document-link</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>odl_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Links to office documents (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: PDF</div>
+    <a id="odl_case_01" href="/files/annual-report.pdf">Annual report</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: Word document with a query string</div>
+    <a id="odl_case_02" href="/files/form.DOCX?v=3">Application form</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FLAGGED: OpenDocument spreadsheet</div>
+    <a id="odl_case_03" href="prices.ods">Price list</a>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: HTML page</div>
+    <a id="odl_case_04" href="/report.html">Report</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: folder named pdf</div>
+    <a id="odl_case_05" href="/pdf/">Documents</a>
+  </div>
+</body>
+</html>

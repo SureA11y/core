@@ -13,13 +13,14 @@
  *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
- *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups).
+ *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
+ *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   RULE_MAPPED_STANDARDS */
+   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -766,6 +767,27 @@ function runCore(
     } catch {}
   }
 
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and the RGAA profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
+      );
+    } catch {}
+  }
+
   // engineOptions.mappings: which standards besides WCAG a result's
   // normativeMappings name. The catalog carries every one of them; a scan
   // result carries only those asked for, or implied by the applied profile.
@@ -829,6 +851,16 @@ function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -1026,6 +1058,9 @@ function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,

@@ -293,6 +293,22 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
   ]);
 });
 
+test('renderJunitReport: the opt-in rules a scan added are a run property on every suite', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"><p dir="auto">x</p></main></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { optInRules: 'all' } });
+  const all = suites(parse(renderJunitReport(result)));
+  assert.ok(all.length > 1);
+  for (const suite of all) {
+    const values = Array.from(suite.getElementsByTagName('property'))
+      .filter((p) => attr(p, 'name') === 'optInRules')
+      .map((p) => attr(p, 'value'));
+    assert.deepStrictEqual(values, ['rgaa'], attr(suite, 'name'));
+  }
+  const plain = runa11yCoreOnHtml(html);
+  assert.doesNotMatch(renderJunitReport(plain), /name="optInRules"/);
+});
+
 test("renderJunitReport: another standard's entry goes under the criteria it names in wcagSc", () => {
   const en = (requirement, sc) => ({
     standard: 'EN 301 549',

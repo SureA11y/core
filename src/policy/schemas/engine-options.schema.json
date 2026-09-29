@@ -55,6 +55,13 @@
       "type": "string",
       "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1', 'section508' or 'rgaa-4.1.2' (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly or engineOptions selects the rules instead. Excludes apply on top of it."
     },
+    "optInRules": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Opt-in rules to unlock outside their standard's profile: 'all' for every standard's, or a list of rule tags such as 'rgaa' (case-insensitive; an array or a comma-separated string). It only lifts the opt-in gate: the rest of the selection still decides, so a run with no filter and no profile then runs every rule, while a WCAG profile still runs WCAG rules only. Unknown tags are ignored with a console warning."
+    },
     "mappings": {
       "oneOf": [
         { "type": "string" },

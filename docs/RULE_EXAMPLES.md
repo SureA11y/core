@@ -1,7 +1,7 @@
 # Rule examples
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
-example pairs for all 137 rules, meant to feed a future rule-page docs site the
+example pairs for all 149 rules, meant to feed a future rule-page docs site the
 way alfa.siteimprove.com/rules pages show worked examples alongside a rule's
 description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md), which carries
 each rule's title, WCAG mapping, applicability, and expectation — this file
@@ -468,6 +468,29 @@ No fallback content, ARIA name, or title exists to review; that's `canvas-text-a
 ```
 No accessible name from any supported mechanism.
 
+## complex-table-summary
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<table>
+  <tr><td></td><th colspan="2">2025</th></tr>
+  <tr><td></td><th>Q1</th><th>Q2</th></tr>
+  <tr><th>North</th><td>10</td><td>12</td></tr>
+</table>
+```
+Two rows of headers make the table complex, and nothing points to a summary of how it is organised.
+
+**Not applicable**
+```html
+<table>
+  <tr><th>Item</th><th>Price</th></tr>
+  <tr><th>Tea</th><td>2</td></tr>
+</table>
+```
+All headers are in the first row and first column: a simple table, which needs no summary.
+
 ## contrast-computable
 
 *This rule is a computability gate: it never returns `fail`, only `pass` (a ratio was computed), `cantTell` (no ratio could be computed at all), or `notApplicable`.*
@@ -627,6 +650,22 @@ No `<blink>` or `<marquee>` element anywhere, which satisfies the rule outright 
 ```
 No accessible name; visible body text doesn't count toward a dialog's name.
 
+## dir-attribute-valid
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<p dir="rtl" lang="ar">مرحبا</p>
+```
+The direction is `rtl`, one of the two values RGAA accepts.
+
+**Failed**
+```html
+<p dir="auto" lang="ar">مرحبا</p>
+```
+HTML allows `dir="auto"`, but RGAA accepts only `ltr` or `rtl`.
+
 ## dlitem-parent-valid
 
 **Passed**
@@ -763,6 +802,69 @@ The header cell has no text content and no accessible name.
 <table><tr><th>Name</th></tr></table>
 ```
 The header cell has visible text content.
+
+## fake-list
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<p>• Apples<br>• Pears<br>• Plums</p>
+```
+Three lines start with the same bullet, but screen readers get no list.
+
+**Not applicable**
+```html
+<ul>
+  <li>Apples</li>
+  <li>Pears</li>
+</ul>
+```
+A real list; nothing is laid out as one with text alone.
+
+## field-group-legend
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<fieldset>
+  <label>Street <input name="street"></label>
+  <label>City <input name="city"></label>
+</fieldset>
+```
+The address fields are grouped, but the group has no `<legend>` saying what it is.
+
+**Not applicable**
+```html
+<fieldset>
+  <legend>Address</legend>
+  <label>Street <input name="street"></label>
+</fieldset>
+```
+The group has a legend.
+
+## figure-caption-structure
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<figure role="figure" aria-label="Sales in 2025">
+  <img src="chart.png" alt="Bar chart of sales">
+  <figcaption>Sales in 2025</figcaption>
+</figure>
+```
+The figure has `role="figure"` and an `aria-label` repeating its caption.
+
+**Failed**
+```html
+<figure>
+  <img src="chart.png" alt="Bar chart of sales">
+  <figcaption>Sales in 2025</figcaption>
+</figure>
+```
+The figure has neither a role nor an `aria-label`.
 
 ## focus-order-semantics
 
@@ -986,6 +1088,22 @@ No other frame on the page shares this title.
 <iframe title="Video player" src="b.html"></iframe>
 ```
 Two frames on the same page share the identical title despite embedding different content.
+
+## image-alt-long
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<img src="chart.png" alt="Bar chart showing the sales of each of our twelve regional shops month by month for 2025">
+```
+The text alternative runs to 88 characters; a person decides whether it should be shorter.
+
+**Not applicable**
+```html
+<img src="chart.png" alt="Sales by shop in 2025">
+```
+A short text alternative.
 
 ## image-redundant-alt
 
@@ -1295,6 +1413,42 @@ Two navigation landmarks share the identical accessible name, so a screen reader
 ```
 Each navigation landmark has a distinct accessible name.
 
+## layout-table-no-data-markup
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<table role="presentation">
+  <tr><td>Menu</td><td>Content</td></tr>
+</table>
+```
+The layout table has only plain cells.
+
+**Failed**
+```html
+<table role="presentation">
+  <tr><th>Menu</th><td>Content</td></tr>
+</table>
+```
+The layout table has a header cell.
+
+## letters-spaced-with-spaces
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<h2>S O L D E S</h2>
+```
+A screen reader reads six separate letters instead of a word.
+
+**Not applicable**
+```html
+<h2 style="letter-spacing: 0.5em">SOLDES</h2>
+```
+The same look, made with CSS, keeps the word whole.
+
 ## link-in-text-block
 
 **Passed**
@@ -1576,6 +1730,22 @@ Fallback text is present — worth confirming "Product brochure (PDF)" is genuin
 ```
 No fallback content, ARIA name, or title exists to review; that's `object-text-alternative-present`'s failure instead.
 
+## office-document-link
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<a href="/files/annual-report.pdf">Annual report</a>
+```
+The link downloads a PDF; a person checks the document or its accessible version.
+
+**Not applicable**
+```html
+<a href="/annual-report.html">Annual report</a>
+```
+The link goes to a web page, not an office document.
+
 ## optgroup-label-present
 
 *Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
@@ -1773,6 +1943,28 @@ The centring is left to CSS.
 ```
 No accessible name from any supported mechanism.
 
+## radio-group-present
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<p>Delivery</p>
+<label><input type="radio" name="delivery"> Standard</label>
+<label><input type="radio" name="delivery"> Express</label>
+```
+The two choices are not grouped, so "Delivery" is not announced with them.
+
+**Not applicable**
+```html
+<fieldset>
+  <legend>Delivery</legend>
+  <label><input type="radio" name="delivery"> Standard</label>
+  <label><input type="radio" name="delivery"> Express</label>
+</fieldset>
+```
+The choices are in a fieldset with a legend.
+
 ## region
 
 **Flagged (cantTell)**
@@ -1932,6 +2124,27 @@ Visible text content names the `<summary>`.
 </details>
 ```
 No text content and no accessible name.
+
+## svg-hidden-no-alternative
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<svg aria-hidden="true" width="16" height="16">
+  <circle cx="8" cy="8" r="6"/>
+</svg>
+```
+The hidden SVG has no text alternative.
+
+**Failed**
+```html
+<svg aria-hidden="true" width="16" height="16">
+  <title>Star</title>
+  <circle cx="8" cy="8" r="6"/>
+</svg>
+```
+The SVG is hidden as decorative but has a `<title>`.
 
 ## svg-image-text-alternative-present
 
@@ -2200,6 +2413,26 @@ No `<track>` element at all — no evidence of captions or subtitles.
 <video src="x.mp4"><track kind="captions" src="cap.vtt"></video>
 ```
 A `kind="captions"` track with a real `src` is present.
+
+## video-captions-track-kind
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<video controls src="talk.mp4">
+  <track src="talk.vtt" kind="captions" srclang="en" label="English">
+</video>
+```
+The caption track has `kind="captions"`.
+
+**Failed**
+```html
+<video controls src="talk.mp4">
+  <track src="talk.vtt" kind="subtitles" srclang="en" label="English">
+</video>
+```
+The only text track is marked as subtitles.
 
 ## video-poster-text-alternative-present
 

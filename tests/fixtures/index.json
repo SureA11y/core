@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 137,
-    "withFixture": 136,
+    "total": 149,
+    "withFixture": 148,
     "withoutFixture": 1
   },
   "rows": [
@@ -552,6 +552,23 @@
       }
     },
     {
+      "ruleId": "complex-table-summary",
+      "title": "Complex data tables have a summary",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/complex-table-summary-manual.js",
+      "testFile": "tests/engine-checks/manual/complex-table-summary.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/complex-table-summary-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "contrast-computable",
       "title": "Color contrast is computable for rendered text",
       "type": "automatic",
@@ -724,6 +741,23 @@
       }
     },
     {
+      "ruleId": "dir-attribute-valid",
+      "title": "dir attributes are ltr or rtl",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/dir-attribute-valid.js",
+      "testFile": "tests/engine-checks/automatic/dir-attribute-valid.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/dir-attribute-valid-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
       "ruleId": "dlitem-parent-valid",
       "title": "Description-list items must be inside a description list",
       "type": "automatic",
@@ -866,6 +900,57 @@
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 4,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "fake-list",
+      "title": "Text laid out as a list uses list markup",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/fake-list-manual.js",
+      "testFile": "tests/engine-checks/manual/fake-list.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/fake-list-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 7
+      }
+    },
+    {
+      "ruleId": "field-group-legend",
+      "title": "Groups of form fields have a legend",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/field-group-legend-manual.js",
+      "testFile": "tests/engine-checks/manual/field-group-legend.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/field-group-legend-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 6
+      }
+    },
+    {
+      "ruleId": "figure-caption-structure",
+      "title": "Images with a caption use the figure structure RGAA describes",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/figure-caption-structure.js",
+      "testFile": "tests/engine-checks/automatic/figure-caption-structure.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/figure-caption-structure-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 4,
+        "CANTTELL": 0,
         "OTHER": 2
       }
     },
@@ -1126,6 +1211,23 @@
         "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "image-alt-long",
+      "title": "Text alternatives of images are short",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/image-alt-long-manual.js",
+      "testFile": "tests/engine-checks/manual/image-alt-long.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/image-alt-long-all-scenarios.html",
+      "totalCases": 4,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 4
       }
     },
     {
@@ -1462,6 +1564,40 @@
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 6,
+        "OTHER": 6
+      }
+    },
+    {
+      "ruleId": "layout-table-no-data-markup",
+      "title": "Layout tables use no data table markup",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/layout-table-no-data-markup.js",
+      "testFile": "tests/engine-checks/automatic/layout-table-no-data-markup.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/layout-table-no-data-markup-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 5,
+        "CANTTELL": 0,
+        "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "letters-spaced-with-spaces",
+      "title": "Letters of a word are not spaced out with spaces",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/letters-spaced-with-spaces-manual.js",
+      "testFile": "tests/engine-checks/manual/letters-spaced-with-spaces.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/letters-spaced-with-spaces-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
         "OTHER": 6
       }
     },
@@ -1825,6 +1961,23 @@
       }
     },
     {
+      "ruleId": "office-document-link",
+      "title": "Downloadable office documents are accessible or have an accessible version",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/office-document-link-manual.js",
+      "testFile": "tests/engine-checks/manual/office-document-link.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/office-document-link-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "optgroup-label-present",
       "title": "Option groups have a label",
       "type": "automatic",
@@ -2043,6 +2196,23 @@
       }
     },
     {
+      "ruleId": "radio-group-present",
+      "title": "Radio buttons sharing a name are grouped",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/radio-group-present-manual.js",
+      "testFile": "tests/engine-checks/manual/radio-group-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/radio-group-present-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "region",
       "title": "Page content should be inside a landmark region",
       "type": "manual",
@@ -2225,6 +2395,23 @@
         "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "svg-hidden-no-alternative",
+      "title": "Hidden decorative SVGs carry no text alternative",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/svg-hidden-no-alternative.js",
+      "testFile": "tests/engine-checks/automatic/svg-hidden-no-alternative.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/svg-hidden-no-alternative-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 4,
+        "CANTTELL": 0,
+        "OTHER": 2
       }
     },
     {
@@ -2524,6 +2711,23 @@
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 3,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "video-captions-track-kind",
+      "title": "Video caption tracks use kind=\"captions\"",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/video-captions-track-kind.js",
+      "testFile": "tests/engine-checks/automatic/video-captions-track-kind.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/video-captions-track-kind-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 2,
+        "CANTTELL": 0,
         "OTHER": 2
       }
     },

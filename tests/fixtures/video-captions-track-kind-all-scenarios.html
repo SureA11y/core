@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>video-captions-track-kind — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>video-captions-track-kind</code></h1>
+
+  <p class="note">
+    Each failing target has a stable <code>id</code> of the form <code>vct_case_NN</code>. A video is checked when it has a subtitles or captions track; a track without <code>kind</code> is a subtitles track.
+  </p>
+
+  <h2>A. Text tracks, none marked as captions (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: kind="subtitles"</div>
+    <video controls id="vct_case_01">
+      <track src="talk.vtt" kind="subtitles" srclang="en" label="English">
+    </video>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: track without kind</div>
+    <video controls id="vct_case_02">
+      <track src="talk.vtt" srclang="en" label="English">
+    </video>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: kind="captions"</div>
+    <video controls id="vct_case_03">
+      <track src="talk.vtt" kind="captions" srclang="en" label="English">
+    </video>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: subtitles and captions</div>
+    <video controls id="vct_case_04">
+      <track src="talk-fr.vtt" kind="subtitles" srclang="fr" label="Français">
+      <track src="talk.vtt" kind="CAPTIONS" srclang="en" label="English">
+    </video>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: chapters only</div>
+    <video controls id="vct_case_05">
+      <track src="chapters.vtt" kind="chapters" srclang="en">
+    </video>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: no track</div>
+    <video controls id="vct_case_06"></video>
+  </div>
+</body>
+</html>

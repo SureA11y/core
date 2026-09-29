@@ -2,13 +2,13 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**137 rules total: 84 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**149 rules total: 89 automatic (WCAG-normative, can return `fail`), 60 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (84), can return `fail`
+## Automatic rules (89), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -42,11 +42,13 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`definition-list-children-valid`](#definition-list-children-valid) | Description lists must be structured correctly | 1.3.1 | A | high | serious |
 | [`deprecated-elements-not-used`](#deprecated-elements-not-used) | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | 2.2.2 | A | high | serious |
 | [`dialog-name-present`](#dialog-name-present) | Dialogs have an accessible name | 4.1.2 | A | high | serious |
+| [`dir-attribute-valid`](#dir-attribute-valid) | dir attributes are ltr or rtl | — | — | high | minor |
 | [`dlitem-parent-valid`](#dlitem-parent-valid) | Description-list items must be inside a description list | 1.3.1 | A | high | serious |
 | [`doctype-present`](#doctype-present) | Page declares a valid doctype | — | — | high | moderate |
 | [`duplicate-id`](#duplicate-id) | IDs must be unique | 4.1.1 | A | high | moderate |
 | [`duplicate-id-aria`](#duplicate-id-aria) | IDs referenced by ARIA must be unique | 4.1.2 | A | high | serious |
 | [`embed-text-alternative-present`](#embed-text-alternative-present) | &lt;embed&gt; must provide a text alternative | 1.1.1 | A | high | serious |
+| [`figure-caption-structure`](#figure-caption-structure) | Images with a caption use the figure structure RGAA describes | — | — | high | minor |
 | [`form-control-programmatic-label-present`](#form-control-programmatic-label-present) | Form controls must have a programmatic label | 1.3.1, 3.3.2, 4.1.2 | A | medium | serious |
 | [`form-control-single-label`](#form-control-single-label) | Form controls must not have multiple labels | 3.3.2 | A | high | moderate |
 | [`html-lang-attr-present`](#html-lang-attr-present) | Page language is declared | 3.1.1 | A | high | serious |
@@ -59,6 +61,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`label-for-target-valid`](#label-for-target-valid) | Labels point to a form field | — | — | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
+| [`layout-table-no-data-markup`](#layout-table-no-data-markup) | Layout tables use no data table markup | — | — | high | moderate |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
 | [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
 | [`list-children-valid`](#list-children-valid) | Lists must only directly contain list items | 1.3.1 | A | high | serious |
@@ -84,6 +87,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`slider-name-present`](#slider-name-present) | Sliders have an accessible name | 4.1.2 | A | high | serious |
 | [`spinbutton-name-present`](#spinbutton-name-present) | Spinbuttons have an accessible name | 4.1.2 | A | high | serious |
 | [`summary-name-present`](#summary-name-present) | Summary elements have an accessible name | 4.1.2 | A | high | serious |
+| [`svg-hidden-no-alternative`](#svg-hidden-no-alternative) | Hidden decorative SVGs carry no text alternative | — | — | high | minor |
 | [`svg-image-text-alternative-present`](#svg-image-text-alternative-present) | SVG &lt;image&gt; must have a text alternative | 1.1.1 | A | medium | serious |
 | [`svg-text-alternative-present`](#svg-text-alternative-present) | &lt;svg&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | [`tab-name-present`](#tab-name-present) | Tabs have an accessible name | 4.1.2 | A | high | serious |
@@ -95,9 +99,10 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`tooltip-name-present`](#tooltip-name-present) | Tooltips have an accessible name | 4.1.2 | A | high | serious |
 | [`treeitem-name-present`](#treeitem-name-present) | Tree items have an accessible name | 4.1.2 | A | high | serious |
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
+| [`video-captions-track-kind`](#video-captions-track-kind) | Video caption tracks use kind="captions" | — | — | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (53), advisory, capped at `cantTell`
+## Manual rules (60), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -107,17 +112,21 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-text`](#aria-text) | role="text" elements should have no focusable descendants | — | — | medium | minor |
 | [`bypass-blocks-present`](#bypass-blocks-present) | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | [`canvas-text-alternative-quality`](#canvas-text-alternative-quality) | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`complex-table-summary`](#complex-table-summary) | Complex data tables have a summary | — | — | medium | moderate |
 | [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.7 | AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
+| [`fake-list`](#fake-list) | Text laid out as a list uses list markup | — | — | low | moderate |
+| [`field-group-legend`](#field-group-legend) | Groups of form fields have a legend | — | — | medium | moderate |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should not rely on placeholder or title as the primary label | 4.1.2 | A | medium | moderate |
 | [`heading-order`](#heading-order) | Heading levels must not skip a level | — | — | medium | minor |
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
+| [`image-alt-long`](#image-alt-long) | Text alternatives of images are short | — | — | medium | minor |
 | [`image-redundant-alt`](#image-redundant-alt) | Image alt text must not duplicate adjacent visible text | — | — | medium | minor |
 | [`img-alt-decorative`](#img-alt-decorative) | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | 1.1.1 | A | medium | minor |
 | [`img-alt-quality`](#img-alt-quality) | &lt;img&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -133,6 +142,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`landmark-no-duplicate-main`](#landmark-no-duplicate-main) | Page must not have more than one main landmark | — | — | medium | minor |
 | [`landmark-one-main`](#landmark-one-main) | Page should have a main landmark | — | — | medium | minor |
 | [`landmark-unique`](#landmark-unique) | Landmarks with the same role must have unique names | — | — | medium | minor |
+| [`letters-spaced-with-spaces`](#letters-spaced-with-spaces) | Letters of a word are not spaced out with spaces | — | — | medium | minor |
 | [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4 | A | medium | minor |
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
@@ -140,11 +150,13 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1 | A | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`office-document-link`](#office-document-link) | Downloadable office documents are accessible or have an accessible version | — | — | high | moderate |
 | [`p-as-heading`](#p-as-heading) | A &lt;p&gt; styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
 | [`page-has-heading-one`](#page-has-heading-one) | Page should have a level-one heading | — | — | medium | minor |
 | [`page-title-patterns`](#page-title-patterns) | Page title patterns that may be insufficiently descriptive | 2.4.2 | A | medium | minor |
 | [`password-paste-enabled`](#password-paste-enabled) | Authentication fields must not block pasting | 3.3.8 | AA | medium | serious |
 | [`presentation-role-conflict`](#presentation-role-conflict) | Presentational role must not conflict with a global ARIA attribute or focusability | — | — | medium | minor |
+| [`radio-group-present`](#radio-group-present) | Radio buttons sharing a name are grouped | — | — | medium | moderate |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
 | [`scope-attr-valid`](#scope-attr-valid) | scope attribute must have a valid value | — | — | medium | minor |
 | [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | AAA | low | moderate |
@@ -578,6 +590,18 @@ Checks that elements with role="combobox" expose a non-empty accessible name.
 
 **Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, or from title. role="combobox" is name-from-author-only, so subtree text is never accepted: text sitting inside a custom combobox widget is not reliably exposed as its name. On a labelable element (&lt;input role="combobox"&gt;) an associated &lt;label&gt; counts as well.
 
+### `complex-table-summary`
+
+**Complex data tables have a summary**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Flags a data table whose headers are not all in the first row or column, and that has no aria-describedby or summary, for a person to check that a summary is available.
+
+**Applies to.** Applies to complex data tables, in RGAA's sense: tables whose header cells are not all in the first row or the first column. A table counts as complex when a header cell (&lt;th&gt;, role="columnheader" or role="rowheader") sits outside both the first row and the first column, or when a cell uses the headers attribute. Tables with role="presentation" or "none" are left out. A page with none is notApplicable.
+
+**Expectation.** A complex table without aria-describedby and without a summary attribute is flagged for a person to check that a summary is available, as RGAA 5.1.1 asks: in the &lt;caption&gt;, or in a passage near the table.
+
 ### `contrast-computable`
 
 **Color contrast is computable for rendered text**
@@ -692,6 +716,18 @@ Checks that elements with role="dialog" or role="alertdialog" expose a non-empty
 
 **Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, or from title. Both roles are name-from-author-only, so the heading or body text inside the dialog is not accepted as its name unless aria-labelledby points at it.
 
+### `dir-attribute-valid`
+
+**dir attributes are ltr or rtl**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that every dir attribute is ltr or rtl, the two values RGAA accepts.
+
+**Applies to.** Applies to elements carrying a dir attribute. A page with none is notApplicable.
+
+**Expectation.** The value is ltr or rtl, case and surrounding spaces ignored (RGAA 8.10.2: « La valeur de l'attribut dir est conforme (rtl ou ltr) »). dir="auto", which HTML allows, fails with its own reasonCode, since RGAA names only those two values. Whether the direction is the right one is the relevance condition of the same test, left to a person.
+
 ### `dlitem-parent-valid`
 
 **Description-list items must be inside a description list**
@@ -794,6 +830,42 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 **Applies to.** Applies to &lt;th&gt; elements that don't carry a conflicting explicit role, plus any element (native &lt;th&gt; or not) with role="columnheader" or role="rowheader" (`th:not([role]), [role="columnheader"], [role="rowheader"]`): a &lt;th&gt; that explicitly restates role="columnheader"/"rowheader" is still covered via the second clause, but a &lt;th role="presentation"&gt; (no longer meaningfully a header) is correctly excluded, and an ARIA-role-only header (e.g. a &lt;div role="columnheader"&gt; in a role="grid"/role="table" widget) is caught too.
 
 **Expectation.** The header cell has visible text content. A &lt;th&gt; named only via aria-label/aria-labelledby (no visible text) is ALSO flagged, not treated as equivalent: aria-label support on &lt;th&gt; is inconsistent in practice. NVDA+Firefox and iOS VoiceOver+Safari ignore it entirely (only visible text is announced), JAWS+Chrome/IE11 also only announce visible text in the header cell itself. Visible text is the one mechanism confirmed to work across every tested combination. See https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/.
+
+### `fake-list`
+
+**Text laid out as a list uses list markup**
+
+manual · no formal WCAG SC mapping · confidence low · default severity moderate
+
+Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.
+
+**Applies to.** Applies to text outside any list that looks like one: two or more lines of one element, split by &lt;br&gt;, or two or more consecutive sibling paragraphs, each starting with the same bullet character (•, -, *, …) or with consecutive numbers ("1.", "2." or "1)", "2)"). A page with none is notApplicable.
+
+**Expectation.** Such text is flagged for a person to decide whether it is a list, which RGAA 9.3.1 (bullets) and 9.3.2 (numbers) want marked up with &lt;ul&gt;/&lt;ol&gt; and &lt;li&gt;, or role="list" and role="listitem".
+
+### `field-group-legend`
+
+**Groups of form fields have a legend**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Flags a &lt;fieldset&gt; or role="group" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.
+
+**Applies to.** Applies to &lt;fieldset&gt; elements and elements with role="group" that contain at least one form field (input other than hidden, select, textarea, or an element with a form field role). A page with none is notApplicable.
+
+**Expectation.** A &lt;fieldset&gt; has a &lt;legend&gt; child with text, or an aria-label or aria-labelledby giving it a name; a role="group" element has an aria-label, aria-labelledby or title. One without is flagged for a person to decide whether it groups fields of the same kind, which is when RGAA 11.6.1 requires a legend.
+
+### `figure-caption-structure`
+
+**Images with a caption use the figure structure RGAA describes**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that a &lt;figure&gt; holding an image and a &lt;figcaption&gt; has role="figure" or "group" and an aria-label matching the caption.
+
+**Applies to.** Applies to &lt;figure&gt; elements that contain an image (&lt;img&gt;, &lt;input type="image"&gt; or an element with role="img") and a &lt;figcaption&gt; with text. A page with none is notApplicable.
+
+**Expectation.** The &lt;figure&gt; has role="figure" or role="group", and an aria-label whose text is the same as the caption's, whitespace collapsed (RGAA 1.9.1). The caption being inside a &lt;figcaption&gt; is what makes the figure applicable.
 
 ### `focus-order-semantics`
 
@@ -985,6 +1057,18 @@ Checks that no two &lt;iframe&gt;/&lt;frame&gt; elements in scope share the same
 **Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements that carry a non-empty title attribute.
 
 **Expectation.** No two frames in scope share the same (trimmed, case-sensitive) title attribute value, a duplicate title prevents assistive technology users from telling frames apart when scanning by name.
+
+### `image-alt-long`
+
+**Text alternatives of images are short**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.
+
+**Applies to.** Applies to &lt;img&gt;, &lt;area&gt; and &lt;input type="image"&gt; with an alt attribute, and to role="img" elements with an aria-label. A page with none is notApplicable.
+
+**Expectation.** A text alternative longer than 80 characters (spaces collapsed) is flagged for a person to decide whether it is short and concise, as RGAA 1.3.9 asks, or one of the particular cases it allows. RGAA's test gives no number: 80 characters is a threshold for asking, not a limit.
 
 ### `image-redundant-alt`
 
@@ -1213,6 +1297,30 @@ Checks that when two or more landmarks share the same role, each has a distinct 
 **Applies to.** Applies whenever two or more landmark regions on the page share the same landmark role (banner, contentinfo, main, navigation, complementary, region, form, or search; see implementation notes for the detection model).
 
 **Expectation.** Among landmarks sharing a role, each has a distinct accessible name (via aria-label/aria-labelledby; landmarks are not named from content). Two same-role landmarks with the same name (including two both left unnamed) are indistinguishable to assistive technology users navigating by landmark.
+
+### `layout-table-no-data-markup`
+
+**Layout tables use no data table markup**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that a table marked as layout (role="presentation" or "none") has no caption, header cells, summary, or scope, headers or axis attributes.
+
+**Applies to.** Applies to &lt;table&gt; elements whose role is presentation or none, the only way markup says a table is for layout. A page with none is notApplicable.
+
+**Expectation.** The table has no non-empty summary attribute and contains no &lt;caption&gt;, &lt;th&gt;, &lt;thead&gt;, &lt;tfoot&gt; or element with role="rowheader" or role="columnheader", and none of its &lt;td&gt; cells carries scope, headers or axis (RGAA 5.8.1). Only the table's own cells count, not those of a table nested inside it.
+
+### `letters-spaced-with-spaces`
+
+**Letters of a word are not spaced out with spaces**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Flags text where four or more single letters in a row are separated by spaces, for a person to confirm whether a word is spaced out that way.
+
+**Applies to.** Applies to text with four or more single letters in a row separated by spaces ("S O L D E S"). The text is an element's own text, outside &lt;pre&gt;, &lt;code&gt;, &lt;textarea&gt;, &lt;script&gt; and &lt;style&gt;. A page with none is notApplicable.
+
+**Expectation.** Such text is flagged for a person to confirm whether it is a word spaced out with spaces, which RGAA 10.1.3 forbids: a screen reader spells it letter by letter. CSS letter-spacing gives the same look.
 
 ### `link-in-text-block`
 
@@ -1457,6 +1565,18 @@ Flags &lt;object&gt; elements with detected fallback or name for human review of
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+### `office-document-link`
+
+**Downloadable office documents are accessible or have an accessible version**
+
+manual · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.
+
+**Applies to.** Applies to links (&lt;a href&gt;, &lt;area href&gt;) whose address, without its query and fragment, ends with an office document extension: .pdf, .doc, .docx, .odt, .rtf, .xls, .xlsx, .ods, .ppt, .pptx, .odp or .epub. A page with none is notApplicable.
+
+**Expectation.** Each such link is flagged for a person to check one of the conditions of RGAA 13.3.1: the document is accessible, or an accessible version is offered for download or in HTML.
+
 ### `optgroup-label-present`
 
 **Option groups have a label**
@@ -1601,6 +1721,18 @@ Checks that elements with role="progressbar" expose a non-empty accessible name.
 
 **Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, or from title. role="progressbar" is name-from-author-only, so subtree text is never accepted: text sitting inside a custom progressbar widget is not reliably exposed as its name.
 
+### `radio-group-present`
+
+**Radio buttons sharing a name are grouped**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Flags a set of radio buttons with the same name that is not inside one fieldset, role="group" or role="radiogroup", for a person to decide whether it needs grouping.
+
+**Applies to.** Applies to sets of two or more &lt;input type="radio"&gt; with the same name in the same form (or outside any form). A page with none is notApplicable.
+
+**Expectation.** Every radio button of the set sits in the same &lt;fieldset&gt;, role="group" or role="radiogroup" element, one of the ways RGAA 11.5.1 accepts. A set that is not is flagged: 11.5.1 applies "si nécessaire", so a person decides whether this set needs grouping.
+
 ### `region`
 
 **Page content should be inside a landmark region**
@@ -1727,6 +1859,18 @@ Checks that &lt;summary&gt; elements expose a non-empty accessible name.
 **Applies to.** Applies to &lt;summary&gt; elements included in the accessibility tree, wherever they appear, a &lt;summary&gt; outside a &lt;details&gt; is still matched.
 
 **Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, from title, or from its own subtree text, where a descendant's own name (an &lt;img alt&gt;, aria-label or title) counts as that descendant's contribution.
+
+### `svg-hidden-no-alternative`
+
+**Hidden decorative SVGs carry no text alternative**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that an &lt;svg&gt; with aria-hidden="true" has no aria-label, aria-labelledby, title attribute, or non-empty &lt;title&gt; or &lt;desc&gt;.
+
+**Applies to.** Applies to &lt;svg&gt; elements with aria-hidden="true", outer ones only. A page with none is notApplicable.
+
+**Expectation.** Neither the &lt;svg&gt; nor anything in it has an aria-label, aria-labelledby or title attribute with text, and any &lt;title&gt; or &lt;desc&gt; in it is empty (RGAA 1.2.4). An SVG that breaks this fails either way: if it is decorative it breaks 1.2.4, and if it carries information, hiding it breaks 1.1.5.
 
 ### `svg-image-text-alternative-present`
 
@@ -1971,6 +2115,18 @@ Flags &lt;video&gt; elements with no &lt;track kind="captions"|"subtitles"&gt; c
 **Applies to.** Any &lt;video&gt; element in the composed DOM.
 
 **Expectation.** SC 1.2.2 requires captions for prerecorded synchronized media, but only when the video actually has an audio track that conveys information (a silent/decorative video needs none), which cannot be verified from static markup alone (jsdom does not decode media). This rule is therefore `type: 'manual'` (cantTell-capped, never fail), matching the precedent set by `media-alternative-transcript-evidence` for the same class of "normatively mapped but not statically verifiable" gap. A &lt;video&gt; with a `&lt;track kind="captions"&gt;` (or `kind="subtitles"`, commonly used interchangeably in the wild even though captions and subtitles serve technically distinct purposes) whose `src` is non-empty is not flagged; everything else is flagged for human review.
+
+### `video-captions-track-kind`
+
+**Video caption tracks use kind="captions"**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that a &lt;video&gt; with text tracks has at least one &lt;track kind="captions"&gt;, not only subtitles.
+
+**Applies to.** Applies to &lt;video&gt; elements with at least one &lt;track&gt; child carrying text for the video: kind="subtitles", kind="captions", or no kind at all, which HTML reads as subtitles. A page with none is notApplicable.
+
+**Expectation.** At least one of those tracks has kind="captions" (RGAA 4.3.2). A video whose only text tracks are subtitles fails, because RGAA wants captions delivered through &lt;track&gt; to say so.
 
 ### `video-poster-text-alternative-present`
 

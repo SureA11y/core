@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>radio-group-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>radio-group-present</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>rgp_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Radio buttons not grouped (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: two radios outside any group</div>
+    <p>Delivery</p>
+    <label><input type="radio" name="delivery" id="rgp_case_01"> Standard</label>
+    <label><input type="radio" name="delivery"> Express</label>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: one set split across two fieldsets</div>
+    <fieldset><legend>Size</legend><label><input type="radio" name="size" id="rgp_case_02"> Small</label></fieldset>
+    <fieldset><legend>Other</legend><label><input type="radio" name="size"> Large</label></fieldset>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: set in a fieldset</div>
+    <fieldset>
+      <legend>Colour</legend>
+      <label><input type="radio" name="colour" id="rgp_case_03"> Red</label>
+      <label><input type="radio" name="colour"> Blue</label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: set in a role="radiogroup"</div>
+    <div role="radiogroup" aria-label="Payment">
+      <label><input type="radio" name="pay" id="rgp_case_04"> Card</label>
+      <label><input type="radio" name="pay"> Transfer</label>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: a single radio button</div>
+    <label><input type="radio" name="agree" id="rgp_case_05"> I agree</label>
+  </div>
+</body>
+</html>

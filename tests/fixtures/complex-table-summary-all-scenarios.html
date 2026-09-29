@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>complex-table-summary — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>complex-table-summary</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>cts_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Complex tables with no summary marked (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: two header rows</div>
+    <table id="cts_case_01">
+      <caption>Sales</caption>
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>10</td><td>12</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: cells linked with headers</div>
+    <table id="cts_case_02">
+      <tr><th id="cts_h1">Item</th><th id="cts_h2">Price</th></tr>
+      <tr><td headers="cts_h1">Tea</td><td headers="cts_h2">2</td></tr>
+    </table>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: headers in the first row and column</div>
+    <table id="cts_case_03">
+      <tr><th>Item</th><th>Price</th></tr>
+      <tr><th>Tea</th><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: complex table with aria-describedby</div>
+    <p id="cts_desc">Rows are regions; columns are quarters grouped by year.</p>
+    <table id="cts_case_04" aria-describedby="cts_desc">
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>10</td><td>12</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: layout table</div>
+    <table id="cts_case_05" role="presentation">
+      <tr><td headers="x">Left</td><td>Right</td></tr>
+    </table>
+  </div>
+</body>
+</html>

@@ -77,3 +77,122 @@ test('the rgaa-4.1.2 profile targets WCAG 2.1 and switches on the RGAA mapping',
   assert.equal(result.engine.wcagVersion, '2.1');
   assert.deepEqual(result.engine.mappings, ['rgaa:4.1.2']);
 });
+
+// --- engineOptions.optInRules ------------------------------------------------
+
+function scan(engineOptions = {}, runOnly) {
+  return runa11yCoreOnHtml(HTML, {
+    engineOptions: { customRules: [RGAA_ONLY], ...engineOptions },
+    ...(runOnly ? { runOnly } : {})
+  });
+}
+
+function withWarnings(fn) {
+  const warnings = [];
+  const original = console.warn;
+  console.warn = (...args) => warnings.push(args.join(' '));
+  try {
+    return { value: fn(), warnings };
+  } finally {
+    console.warn = original;
+  }
+}
+
+test('optInRules unlocks opt-in rules in a default run, by "all" or by tag', () => {
+  for (const optInRules of ['all', 'ALL', 'rgaa', 'RGAA', ['rgaa'], 'rgaa, all']) {
+    assert.equal(ran({ optInRules }), true, JSON.stringify(optInRules));
+  }
+});
+
+test('with optInRules "all" and nothing else, every built-in rule runs', () => {
+  const result = runa11yCoreOnHtml(HTML, { engineOptions: { optInRules: 'all' } });
+  assert.deepEqual(
+    result.checksResults.map((r) => r.ruleId).sort(),
+    core
+      .getChecksCatalog()
+      .map((r) => r.ruleId)
+      .sort()
+  );
+});
+
+test('optInRules does not widen a selection: a WCAG profile or tag set still runs WCAG rules only', () => {
+  assert.equal(ran({ optInRules: 'all', profile: 'wcag22-aa' }), false);
+  assert.equal(ran({ optInRules: 'all', tags: { include: 'wcag2a' } }), false);
+  assert.equal(ran({ optInRules: 'all' }, { includeRuleIds: ['img-alt-present'] }), false);
+  assert.equal(ran({ optInRules: 'all', tags: { include: 'atomic' } }), true);
+});
+
+test('only engineOptions.optInRules unlocks: optInTags in a caller runOnly does nothing', () => {
+  assert.equal(ran({}, { optInTags: ['rgaa'], excludeTags: ['best-practice'] }), false);
+  assert.equal(scan({}, { optInTags: ['rgaa'], excludeTags: ['x'] }).engine.optInRules, undefined);
+});
+
+test('excludes still apply to rules optInRules unlocked', () => {
+  assert.equal(ran({ optInRules: 'all', rules: { exclude: 'probe-rgaa-only' } }), false);
+  assert.equal(ran({ optInRules: 'all' }, { excludeTags: ['rgaa'] }), false);
+});
+
+test('engine.optInRules names the unlocked tags only when the unlock added a rule', () => {
+  assert.deepEqual(scan({ optInRules: 'all' }).engine.optInRules, ['rgaa']);
+  assert.deepEqual(scan({ optInRules: ['RGAA'] }).engine.optInRules, ['rgaa']);
+  // Nothing unlocked ran: a WCAG profile selects none of them.
+  assert.equal(scan({ optInRules: 'all', profile: 'wcag22-aa' }).engine.optInRules, undefined);
+  // The RGAA profile, or naming the rule, runs it without the option, so the
+  // option added nothing and the run still targets one standard.
+  assert.equal(scan({ profile: 'rgaa-4.1.2' }).engine.optInRules, undefined);
+  assert.equal(scan({ optInRules: 'all', profile: 'rgaa-4.1.2' }).engine.optInRules, undefined);
+  assert.equal(
+    scan({ optInRules: 'all', rules: { include: RGAA_ONLY.id } }).engine.optInRules,
+    undefined
+  );
+  assert.equal(scan({}).engine.optInRules, undefined);
+});
+
+test('an unknown optInRules value is ignored with a warning naming the valid ones', () => {
+  for (const optInRules of ['bitv', ['nope'], 42]) {
+    const { value, warnings } = withWarnings(() => scan({ optInRules }));
+    assert.equal(value.engine.optInRules, undefined, JSON.stringify(optInRules));
+    assert.ok(!value.checksResults.some((r) => r.ruleId === RGAA_ONLY.id));
+    assert.ok(
+      warnings.some((w) => /engineOptions\.optInRules: ignoring .*"all" or one of: rgaa/.test(w)),
+      warnings.join('\n')
+    );
+  }
+  // A known tag next to an unknown one still applies.
+  const { value, warnings } = withWarnings(() => scan({ optInRules: 'rgaa, bitv' }));
+  assert.deepEqual(value.engine.optInRules, ['rgaa']);
+  assert.ok(warnings.some((w) => w.includes('"bitv"')));
+  // false and an empty list mean "not asked", with no warning.
+  for (const optInRules of [false, null, '', []]) {
+    const quiet = withWarnings(() => scan({ optInRules }));
+    assert.equal(quiet.value.engine.optInRules, undefined);
+    assert.ok(!quiet.warnings.some((w) => w.includes('optInRules')), JSON.stringify(optInRules));
+  }
+});
+
+test('optInRules adds RGAA rollups to the run and the catalog, but no RGAA numbers without mappings', () => {
+  const plain = runa11yCoreOnHtml(HTML, { engineOptions: { optInRules: 'all' } });
+  const rollups = plain.rulesResults.filter((r) => r.meta.standard === 'RGAA');
+  assert.ok(rollups.length > 40);
+  const rgaaEntries = (r) => r.meta.normativeMappings.filter((m) => m.standard === 'RGAA');
+  assert.ok(plain.checksResults.every((r) => rgaaEntries(r).length === 0));
+  assert.equal(plain.engine.mappings, undefined);
+
+  const mapped = runa11yCoreOnHtml(HTML, {
+    engineOptions: { optInRules: 'all', mappings: ['rgaa'] }
+  });
+  assert.ok(mapped.checksResults.some((r) => rgaaEntries(r).length > 0));
+
+  const catalogRollups = (eo) =>
+    core.getRulesCatalog(eo).filter((c) => c.meta && c.meta.standard === 'RGAA').length;
+  assert.equal(catalogRollups({ optInRules: 'all' }), rollups.length);
+  // As in the run, a WCAG profile's include leaves them out.
+  assert.equal(catalogRollups({ optInRules: 'all', profile: 'wcag22-aa' }), 0);
+  assert.equal(
+    runa11yCoreOnHtml(HTML, {
+      engineOptions: { optInRules: 'all', profile: 'wcag22-aa' }
+    }).rulesResults.filter((r) => r.meta.standard === 'RGAA').length,
+    0
+  );
+  assert.equal(catalogRollups({}), 0);
+});

@@ -153,8 +153,9 @@ function isWcagCriterion(m) {
   return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
 }
 
-// What the scan was tested against. A result from an engine older than the
-// WCAG-version target carries neither field and gets no chips.
+// What the scan was tested against, and any opt-in rules it added. A result
+// from an engine older than the WCAG-version target carries none of these
+// fields and gets no chips.
 function renderTargetChips(engine, ui) {
   if (!engine) return '';
   const chips = [];
@@ -164,6 +165,11 @@ function renderTargetChips(engine, ui) {
     );
   if (engine.profile)
     chips.push(`<div><b>${esc(engine.profile)}</b>${esc(ui.tr('report_meta_profile'))}</div>`);
+  // Rules beyond the targeted standard ran (engineOptions.optInRules).
+  if (Array.isArray(engine.optInRules) && engine.optInRules.length)
+    chips.push(
+      `<div><b>${esc(engine.optInRules.join(', '))}</b>${esc(ui.tr('report_meta_optInRules'))}</div>`
+    );
   return chips.join('\n  ');
 }
 

@@ -428,7 +428,9 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 the WCAG Level A and AA rules of the version they build on, and `rgaa-4.1.2`
 adds the rules RGAA tests beyond WCAG; the result records the one used in
 `engine.profile`. A profile only chooses which rules
-run; it does not certify conformance.
+run; it does not certify conformance. To run every rule instead, including
+those only RGAA requires, pass `optInRules: 'all'` with no profile; the
+result records it in `engine.optInRules`.
 
 An EN 301 549 profile also maps every WCAG criterion in the result to the
 clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and

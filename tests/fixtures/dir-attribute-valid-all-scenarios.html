@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>dir-attribute-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>dir-attribute-valid</code></h1>
+
+  <p class="note">
+    Each failing target has a stable <code>id</code> of the form <code>dav_case_NN</code>. Every element with a <code>dir</code> attribute is checked.
+  </p>
+
+  <h2>A. Values RGAA does not accept (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: dir="auto"</div>
+    <p dir="auto" id="dav_case_01">مرحبا</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: misspelt value</div>
+    <p dir="rlt" id="dav_case_02">שלום</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: empty value</div>
+    <p dir="" id="dav_case_03">Text</p>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: rtl</div>
+    <p dir="rtl" lang="ar" id="dav_case_04">مرحبا</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: ltr, any case</div>
+    <p dir="LTR" id="dav_case_05">Text</p>
+  </div>
+</body>
+</html>
