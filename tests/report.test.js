@@ -106,9 +106,31 @@ test('renderHtmlReport: meta bar reports the locale the scan resolved to', () =>
 test('renderHtmlReport: meta bar names the requested locale when it fell back', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ko' } }));
+
+  assert.match(report, /<b>en<\/b>locale \(requested ko\)/);
+});
+
+test('renderHtmlReport: localized rule text is marked with the scan language', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } }));
 
-  assert.match(report, /<b>en<\/b>locale \(requested ja\)/);
+  assert.match(report, /<html lang="en">/);
+  assert.match(
+    report,
+    /<div class="card-snippet" lang="ja">&lt;img&gt; 要素に alt 属性がありません。/
+  );
+  assert.match(report, /var CONTENT_LANG = " lang=\\"ja\\"";/);
+});
+
+test('renderHtmlReport: an English scan adds no lang attributes to rule text', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html));
+
+  assert.doesNotMatch(report, /class="card-snippet" lang=/);
+  assert.match(report, /var CONTENT_LANG = "";/);
 });
 
 test('renderHtmlReport: a result from an engine without engine.locale gets no locale chip', () => {

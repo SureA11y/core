@@ -17,6 +17,8 @@ Open `report.html` directly from disk. Works alongside any other output mode —
 
 The meta bar under the header carries the rule count, occurrence count, engine tag, schema version, the WCAG version the scan targeted and the `engineOptions.profile` it used (when there was one), and the locale the scan resolved to. Locale fallback is per-string and invisible in the text itself, so a report requested in a language the engine does not carry reads as an ordinary English one — the chip names the requested locale alongside the resolved one when the two differ. See [`I18N.md`](./I18N.md).
 
+The report's own headings and labels are English. Rule titles, summaries and hints come from the scan in whatever locale it resolved to, so when that is not English each of them carries a `lang` attribute with the resolved locale (`lang="ja"`, for instance). A screen reader then reads Japanese or German text with the right voice rather than with English pronunciation rules.
+
 ## Library usage
 
 ```js

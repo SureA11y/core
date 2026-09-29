@@ -152,7 +152,7 @@ itself requires.
   by rule IDs, tags or WCAG version.
 - **Localized reporting.** Human-readable messages can be translated
   without affecting machine-readable data. Ships with `en`, `fr`, `de`,
-  and `es` today. See [`docs/I18N.md`](./docs/I18N.md) to use one or
+  `es` and `ja` today. See [`docs/I18N.md`](./docs/I18N.md) to use one or
   contribute another.
 
 ---
