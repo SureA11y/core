@@ -33,7 +33,7 @@ test(`${RULE_ID}: cantTell when focusable element is hidden via opacity:0`, () =
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'op0'));
-  assert.ok(rule.occurrences[0].summary.includes('opacityZero'));
+  assert.ok(rule.occurrences[0].summary.includes('Its opacity is 0.'));
 });
 
 test(`${RULE_ID}: cantTell when focusable element is off-screen (absolute left:-9999px)`, () => {
@@ -43,7 +43,7 @@ test(`${RULE_ID}: cantTell when focusable element is off-screen (absolute left:-
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'off'));
-  assert.ok(rule.occurrences[0].summary.includes('offscreen'));
+  assert.ok(rule.occurrences[0].summary.includes('It is positioned off-screen.'));
 });
 
 test(`${RULE_ID}: cantTell when focusable element is clipped (clip rect(0,0,0,0))`, () => {
@@ -53,7 +53,7 @@ test(`${RULE_ID}: cantTell when focusable element is clipped (clip rect(0,0,0,0)
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'clip'));
-  assert.ok(rule.occurrences[0].summary.includes('clipped'));
+  assert.ok(rule.occurrences[0].summary.includes('It is clipped to nothing.'));
 });
 
 test(`${RULE_ID}: cantTell via off-screen text-indent technique`, () => {
@@ -63,7 +63,7 @@ test(`${RULE_ID}: cantTell via off-screen text-indent technique`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'ti'));
-  assert.ok(rule.occurrences[0].summary.includes('offscreen'));
+  assert.ok(rule.occurrences[0].summary.includes('It is positioned off-screen.'));
 });
 
 test(`${RULE_ID}: cantTell when multiple visibility hints apply (opacity:0 + offscreen)`, () => {
@@ -98,6 +98,49 @@ test(`${RULE_ID}: redirecting hidden focus target remains cantTell and reports r
   assert.strictEqual(occ.data.details.runtimeProbe.redirected, true);
 });
 
+test(`${RULE_ID}: the redirect finding is translated like the others`, () => {
+  const dom = createDom(`<!doctype html><html><body>
+      <button id="sentinel" style="opacity:0">Sentinel</button>
+      <button id="target">Target</button>
+    </body></html>`);
+  dom.window.document.getElementById('sentinel').addEventListener('focus', () => {
+    dom.window.setTimeout(() => {
+      dom.window.document.getElementById('target').focus();
+    }, 0);
+  });
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { locale: 'ja' },
+    entryPointParity: false
+  });
+  const occ = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences.find((o) =>
+    o.html.includes('id="sentinel"')
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_redirect');
+  assert.match(occ.summary, /^フォーカス可能な button は視覚的に隠されているようですが/);
+});
+
+test(`${RULE_ID}: hiding techniques read as sentences, never as internal codes`, () => {
+  const html = `<!doctype html><html><body>
+      <button id="multi" style="opacity:0; position:absolute; left:-9999px">Multi</button>
+    </body></html>`;
+  const summaryIn = (locale) =>
+    assertRule(
+      runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale } }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1 }
+    ).occurrences[0].summary;
+
+  assert.strictEqual(
+    summaryIn('ja'),
+    'フォーカス可能な button が視覚的に隠されています。不透明度が 0 です。画面外に配置されています。'
+  );
+  for (const locale of ['en', 'de', 'es', 'fr', 'ja']) {
+    assert.doesNotMatch(summaryIn(locale), /opacityZero|offscreen|zeroSizeOverflowHidden/, locale);
+  }
+});
+
 test(`${RULE_ID}: cantTell when focusable element is clipped via clip-path:inset(50%)`, () => {
   const html = `<!doctype html><html><body>
       <button id="clippath" style="clip-path: inset(50%);">ClipPath</button>
@@ -105,7 +148,7 @@ test(`${RULE_ID}: cantTell when focusable element is clipped via clip-path:inset
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'clippath'));
-  assert.ok(rule.occurrences[0].summary.includes('clipped'));
+  assert.ok(rule.occurrences[0].summary.includes('It is clipped to nothing.'));
 });
 
 test(`${RULE_ID}: redirect scheduled via requestAnimationFrame is reported as a runtime redirect`, () => {

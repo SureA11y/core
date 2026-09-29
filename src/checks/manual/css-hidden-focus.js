@@ -419,17 +419,31 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: downgradedToRedirectReview
-        ? `Focusable ${tagName} appears visually hidden but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`
-        : `Focusable ${tagName} appears visually hidden (${hintsArr.join(',')}). Verify it becomes visible on keyboard focus.`,
+        ? `Focusable ${tagName} appears visually hidden, but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`
+        : `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
       hint: downgradedToRedirectReview
         ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on visually hidden focus targets.'
-        : 'Manually tab to the element and confirm a visible focus indicator and that the element is visible when focused. If it remains hidden while focused, fix CSS/JS so it becomes visible or is removed from the tab order until visible.',
+        : 'Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.',
       i18n: downgradedToRedirectReview
-        ? null
+        ? {
+            summaryKey: 'cssHidden_focus_summary_cantTell_redirect',
+            hintKey: 'cssHidden_focus_hint_cantTell_redirect',
+            params: { element: tagName }
+          }
         : {
             summaryKey: 'cssHidden_focus_summary_cantTell',
             hintKey: 'cssHidden_focus_hint_cantTell',
-            params: { element: tagName, visibilityHints: hintsArr.join(',') }
+            // One flag per technique, so each locale words them as sentences
+            // instead of showing the internal codes. visibilityHints stays
+            // for callers that read params directly.
+            params: {
+              element: tagName,
+              visibilityHints: hintsArr.join(','),
+              opacityZero: hintsArr.includes('opacityZero'),
+              offscreen: hintsArr.includes('offscreen'),
+              clipped: hintsArr.includes('clipped'),
+              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden')
+            }
           },
       data: {
         details: {
