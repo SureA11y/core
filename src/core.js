@@ -7492,8 +7492,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
-    "title": "Page must not use a meta refresh at all (AAA)",
-    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "title": "Page must not use a timed meta refresh (AAA)",
+    "description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "i18n": {
       "titleKey": "metaRefreshNoExceptions_title",
       "descriptionKey": "metaRefreshNoExceptions_description"
@@ -7526,28 +7526,6 @@ const CHECK_DEFS = [
         "requirement": "3.2.5",
         "title": "Change on Request",
         "conformanceLevel": "AAA"
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.1.1",
-        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-        "criterion": "13.1",
-        "wcagSc": [
-          "2.2.4",
-          "3.2.5"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.1.2",
-        "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-        "criterion": "13.1",
-        "wcagSc": [
-          "2.2.4",
-          "3.2.5"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -12889,28 +12867,7 @@ const COMPOSITE_RULES = [
         "2.2.4"
       ],
       "level": "AAA",
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.1",
-          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "2.2.4"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.2",
-          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "2.2.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -12927,28 +12884,7 @@ const COMPOSITE_RULES = [
         "3.2.5"
       ],
       "level": "AAA",
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.1",
-          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "3.2.5"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.2",
-          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "3.2.5"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -15365,7 +15301,6 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-13.1",
     "checksIds": [
-      "meta-refresh-no-exceptions",
       "meta-refresh-timing-absent"
     ],
     "meta": {
@@ -16344,8 +16279,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text scheint nicht umbrechen zu können, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
-    "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
-    "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
+    "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
+    "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
     "metaRefreshNoExceptions_hint_fail": "Entfernen Sie den Meta-Refresh; lösen Sie die Weiterleitung/Aktualisierung stattdessen nur als Reaktion auf eine Nutzeraktion aus.",
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
@@ -16536,8 +16471,8 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
-    "report_heading_rgaaRollup": "RGAA-Zusammenfassung",
-    "report_rgaaRollup_col_criterion": "Kriterium",
+    "report_heading_standardRollup": "{{standard}}-Zusammenfassung",
+    "report_standardRollup_col_criterion": "Kriterium",
     "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
@@ -17237,8 +17172,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
-    "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
-    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
+    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
     "metaRefreshNoExceptions_hint_fail": "Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.",
     "validLang_title": "Element lang attribute must be syntactically valid",
@@ -17429,8 +17364,8 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
-    "report_heading_rgaaRollup": "RGAA rollup",
-    "report_rgaaRollup_col_criterion": "Criterion",
+    "report_heading_standardRollup": "{{standard}} rollup",
+    "report_standardRollup_col_criterion": "Criterion",
     "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
@@ -18130,8 +18065,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto no parece poder saltar de línea, por lo que el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
-    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
-    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
+    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
+    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
     "metaRefreshNoExceptions_hint_fail": "Eliminar el meta refresh; activar la redirección/actualización solo en respuesta a una acción del usuario.",
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
@@ -18322,8 +18257,8 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
-    "report_heading_rgaaRollup": "Resumen RGAA",
-    "report_rgaaRollup_col_criterion": "Criterio",
+    "report_heading_standardRollup": "Resumen {{standard}}",
+    "report_standardRollup_col_criterion": "Criterio",
     "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
@@ -18483,7 +18418,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour cet élément <{{element}}> n’est clairement établie sur la page.",
     "mediaTranscriptPresent_hint_cantTell_missing": "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
-    "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
+    "mediaTranscriptPresent_hint_cantTell_unverified": "Assurez-vous qu’une transcription ou une autre alternative textuelle clairement identifiée est disponible et associée au média, visuellement ou par programmation, sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
     "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
@@ -19023,8 +18958,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte ne semble pas pouvoir revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
-    "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
-    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
+    "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
+    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
     "metaRefreshNoExceptions_hint_fail": "Retirez le rafraîchissement meta ; déclenchez la redirection/le rafraîchissement uniquement en réponse à une action de l’utilisateur.",
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
@@ -19215,8 +19150,8 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
-    "report_heading_rgaaRollup": "Synthèse RGAA",
-    "report_rgaaRollup_col_criterion": "Critère",
+    "report_heading_standardRollup": "Synthèse {{standard}}",
+    "report_standardRollup_col_criterion": "Critère",
     "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
@@ -19916,8 +19851,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "この値が基準値 (line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em) を満たしているか人の手で確認するか、要素の算出フォントサイズに対してエンジンが解決できる単位で指定してください。",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが折り返せないようなので、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
-    "metaRefreshNoExceptions_title": "ページで meta refresh を一切使用してはならない (AAA)",
-    "metaRefreshNoExceptions_description": "遅延時間にかかわらず、<meta http-equiv=\"refresh\"> がまったく存在しないかを確認します。正の遅延のみを対象とするレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
+    "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
+    "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
     "metaRefreshNoExceptions_hint_fail": "meta refresh を削除し、リダイレクトや再読み込みは利用者の操作に応じてのみ実行するようにしてください。",
     "validLang_title": "要素の lang 属性は構文上有効であること",
@@ -20108,8 +20043,8 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
-    "report_heading_rgaaRollup": "RGAA の集約結果",
-    "report_rgaaRollup_col_criterion": "基準",
+    "report_heading_standardRollup": "{{standard}} の集約結果",
+    "report_standardRollup_col_criterion": "基準",
     "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
@@ -20762,7 +20697,6 @@ const PROFILE_RULES = {
     "manual-review",
     "media-alternative-transcript-evidence",
     "menuitem-name-present",
-    "meta-refresh-no-exceptions",
     "meta-refresh-timing-absent",
     "meta-viewport-zoom-enabled",
     "mouse-only-event-handlers",
@@ -21030,6 +20964,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (RGAA's per-criterion
+// rollups carry 'rgaa'), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -21048,17 +20999,23 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly, or engineOptions.optInRules
-  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
-  // set or a composite id, so a scan that does not target the standard never
-  // reports a failure only that standard defines.
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
     const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (!askedByTag && !askedById) return false;
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
   }
 
   let idMatch = true;
@@ -38144,8 +38101,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
-    "title": "Page must not use a meta refresh at all (AAA)",
-    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "title": "Page must not use a timed meta refresh (AAA)",
+    "description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "i18n": {
       "titleKey": "metaRefreshNoExceptions_title",
       "descriptionKey": "metaRefreshNoExceptions_description"
@@ -38178,28 +38135,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "3.2.5",
         "title": "Change on Request",
         "conformanceLevel": "AAA"
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.1.1",
-        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-        "criterion": "13.1",
-        "wcagSc": [
-          "2.2.4",
-          "3.2.5"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.1.2",
-        "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-        "criterion": "13.1",
-        "wcagSc": [
-          "2.2.4",
-          "3.2.5"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -43541,28 +43476,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.2.4"
       ],
       "level": "AAA",
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.1",
-          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "2.2.4"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.2",
-          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "2.2.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -43579,28 +43493,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.2.5"
       ],
       "level": "AAA",
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.1",
-          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "3.2.5"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.1.2",
-          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
-          "criterion": "13.1",
-          "wcagSc": [
-            "3.2.5"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -46017,7 +45910,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-13.1",
     "checksIds": [
-      "meta-refresh-no-exceptions",
       "meta-refresh-timing-absent"
     ],
     "meta": {
@@ -72988,8 +72880,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text scheint nicht umbrechen zu können, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
-    "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
-    "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
+    "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
+    "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
     "metaRefreshNoExceptions_hint_fail": "Entfernen Sie den Meta-Refresh; lösen Sie die Weiterleitung/Aktualisierung stattdessen nur als Reaktion auf eine Nutzeraktion aus.",
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
@@ -73180,8 +73072,8 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
-    "report_heading_rgaaRollup": "RGAA-Zusammenfassung",
-    "report_rgaaRollup_col_criterion": "Kriterium",
+    "report_heading_standardRollup": "{{standard}}-Zusammenfassung",
+    "report_standardRollup_col_criterion": "Kriterium",
     "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
@@ -73881,8 +73773,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
-    "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
-    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
+    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
     "metaRefreshNoExceptions_hint_fail": "Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.",
     "validLang_title": "Element lang attribute must be syntactically valid",
@@ -74073,8 +73965,8 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
-    "report_heading_rgaaRollup": "RGAA rollup",
-    "report_rgaaRollup_col_criterion": "Criterion",
+    "report_heading_standardRollup": "{{standard}} rollup",
+    "report_standardRollup_col_criterion": "Criterion",
     "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
@@ -74774,8 +74666,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto no parece poder saltar de línea, por lo que el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
-    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
-    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
+    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
+    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
     "metaRefreshNoExceptions_hint_fail": "Eliminar el meta refresh; activar la redirección/actualización solo en respuesta a una acción del usuario.",
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
@@ -74966,8 +74858,8 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
-    "report_heading_rgaaRollup": "Resumen RGAA",
-    "report_rgaaRollup_col_criterion": "Criterio",
+    "report_heading_standardRollup": "Resumen {{standard}}",
+    "report_standardRollup_col_criterion": "Criterio",
     "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
@@ -75127,7 +75019,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour cet élément <{{element}}> n’est clairement établie sur la page.",
     "mediaTranscriptPresent_hint_cantTell_missing": "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
-    "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
+    "mediaTranscriptPresent_hint_cantTell_unverified": "Assurez-vous qu’une transcription ou une autre alternative textuelle clairement identifiée est disponible et associée au média, visuellement ou par programmation, sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
     "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
@@ -75667,8 +75559,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte ne semble pas pouvoir revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
-    "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
-    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
+    "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
+    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
     "metaRefreshNoExceptions_hint_fail": "Retirez le rafraîchissement meta ; déclenchez la redirection/le rafraîchissement uniquement en réponse à une action de l’utilisateur.",
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
@@ -75859,8 +75751,8 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
-    "report_heading_rgaaRollup": "Synthèse RGAA",
-    "report_rgaaRollup_col_criterion": "Critère",
+    "report_heading_standardRollup": "Synthèse {{standard}}",
+    "report_standardRollup_col_criterion": "Critère",
     "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
@@ -76560,8 +76452,8 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "この値が基準値 (line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em) を満たしているか人の手で確認するか、要素の算出フォントサイズに対してエンジンが解決できる単位で指定してください。",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが折り返せないようなので、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
-    "metaRefreshNoExceptions_title": "ページで meta refresh を一切使用してはならない (AAA)",
-    "metaRefreshNoExceptions_description": "遅延時間にかかわらず、<meta http-equiv=\"refresh\"> がまったく存在しないかを確認します。正の遅延のみを対象とするレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
+    "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
+    "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
     "metaRefreshNoExceptions_hint_fail": "meta refresh を削除し、リダイレクトや再読み込みは利用者の操作に応じてのみ実行するようにしてください。",
     "validLang_title": "要素の lang 属性は構文上有効であること",
@@ -76752,8 +76644,8 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
-    "report_heading_rgaaRollup": "RGAA の集約結果",
-    "report_rgaaRollup_col_criterion": "基準",
+    "report_heading_standardRollup": "{{standard}} の集約結果",
+    "report_standardRollup_col_criterion": "基準",
     "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
@@ -77406,7 +77298,6 @@ const PROFILE_RULES = {
     "manual-review",
     "media-alternative-transcript-evidence",
     "menuitem-name-present",
-    "meta-refresh-no-exceptions",
     "meta-refresh-timing-absent",
     "meta-viewport-zoom-enabled",
     "mouse-only-event-handlers",
@@ -77674,6 +77565,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (RGAA's per-criterion
+// rollups carry 'rgaa'), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -77692,17 +77600,23 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly, or engineOptions.optInRules
-  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
-  // set or a composite id, so a scan that does not target the standard never
-  // reports a failure only that standard defines.
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
     const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (!askedByTag && !askedById) return false;
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
   }
 
   let idMatch = true;

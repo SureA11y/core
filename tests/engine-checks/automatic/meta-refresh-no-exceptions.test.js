@@ -42,7 +42,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><meta http-equiv="refresh" content="5"></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Page must not use a meta refresh at all (AAA)');
+  assert.strictEqual(rule.title, 'Page must not use a timed meta refresh (AAA)');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/meta-refresh-no-exceptions-all-scenarios.html)`, () => {

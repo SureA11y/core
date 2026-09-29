@@ -68,7 +68,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`listbox-name-present`](#listbox-name-present) | Listboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`listitem-parent-valid`](#listitem-parent-valid) | List items must be inside a list container | 1.3.1 | A | high | serious |
 | [`menuitem-name-present`](#menuitem-name-present) | Menu items have an accessible name | 4.1.2 | A | high | serious |
-| [`meta-refresh-no-exceptions`](#meta-refresh-no-exceptions) | Page must not use a meta refresh at all (AAA) | 2.2.4, 3.2.5 | AAA | high | moderate |
+| [`meta-refresh-no-exceptions`](#meta-refresh-no-exceptions) | Page must not use a timed meta refresh (AAA) | 2.2.4, 3.2.5 | AAA | high | moderate |
 | [`meta-refresh-timing-absent`](#meta-refresh-timing-absent) | Page must not use a timed meta refresh | 2.2.1 | A | high | serious |
 | [`meta-viewport-zoom-enabled`](#meta-viewport-zoom-enabled) | Viewport meta tag must not disable zoom | 1.4.4 | AA | high | serious |
 | [`meter-name-present`](#meter-name-present) | Meters have an accessible name | 1.1.1 | A | high | serious |
@@ -1441,11 +1441,11 @@ Checks that menu items (role="menuitem*", including checkbox/radio variants) exp
 
 ### `meta-refresh-no-exceptions`
 
-**Page must not use a meta refresh at all (AAA)**
+**Page must not use a timed meta refresh (AAA)**
 
 automatic · WCAG 2.2.4, 3.2.5 (AAA) · confidence high · default severity moderate
 
-Checks that &lt;meta http-equiv="refresh"&gt; is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.
+Checks that &lt;meta http-equiv="refresh"&gt; does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.
 
 **Applies to.** Applies to the first &lt;meta http-equiv="refresh"&gt; element, in document order, with a valid content attribute, per HTML's shared declarative refresh steps, a document only ever acts on its first valid meta refresh, so a later one (valid or not) is inert and out of scope.
 

@@ -2723,7 +2723,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Page must not use a meta refresh at all (AAA)",
+      "title": "Page must not use a timed meta refresh (AAA)",
       "tags": [
         "wcag2aaa",
         "wcag224",

@@ -121,10 +121,13 @@ Some rules check a standard's own requirements, ones WCAG does not make: RGAA, f
 
 - through the standard's profile (`profile: 'rgaa-4.1.2'` lists the `rgaa` tag),
 - by that tag (`tags: { include: 'rgaa' }`, alone or with others), or
-- by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`), or
+- by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`),
+- by the id of one of its standard's own rollups that groups it (`rules: { include: 'rgaa-4.1.2-10.1' }` runs that criterion's rules, opt-in or not), or
 - by unlocking it with `engineOptions.optInRules`, below.
 
-Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. RGAA's per-criterion rollups (`rgaa-4.1.2-9.1` and so on) carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present`, `label-for-target-valid`, `layout-table-no-data-markup`, `figure-caption-structure`, `video-captions-track-kind`, `dir-attribute-valid` and `svg-hidden-no-alternative`, and the manual `field-group-legend`, `radio-group-present`, `fake-list`, `letters-spaced-with-spaces`, `image-alt-long`, `complex-table-summary` and `office-document-link`.
+Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a WCAG rollup id. RGAA's per-criterion rollups (`rgaa-4.1.2-9.1` and so on) carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present`, `label-for-target-valid`, `layout-table-no-data-markup`, `figure-caption-structure`, `video-captions-track-kind`, `dir-attribute-valid` and `svg-hidden-no-alternative`, and the manual `field-group-legend`, `radio-group-present`, `fake-list`, `letters-spaced-with-spaces`, `image-alt-long`, `complex-table-summary` and `office-document-link`.
+
+The tag selects the opt-in rules and nothing more. `tags: { include: 'rgaa' }` alone runs the seventeen rules for RGAA's own requirements, not the WCAG and best-practice rules RGAA is also mapped to, so it answers "what does RGAA require beyond WCAG" and is not an RGAA audit. Its RGAA rollups report `cantTell` for any criterion whose rules did not run (`missingChild`), which is most of them. For an audit against RGAA, use `profile: 'rgaa-4.1.2'`.
 
 #### Running every rule (`optInRules`)
 

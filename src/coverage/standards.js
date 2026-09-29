@@ -53,6 +53,10 @@
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
+ * - report: optional; how the HTML report shows the standard's own rollups.
+ *   `noteKey` is a dictionary key for the note above their table, and
+ *   `titleLang` the language their titles are written in when that is not
+ *   the scan's (RGAA's are French whatever the locale).
  *
  * Mappings state a correspondence between published documents, nothing more:
  * which standard or version applies to whom is not an engine question.
@@ -97,7 +101,8 @@ const NORMATIVE_STANDARDS = [
     // its own, related to WCAG many to many.
     mappingsFor: rgaaMappingsFor,
     composites: rgaaComposites,
-    validate: validateRgaaRuleTests
+    validate: validateRgaaRuleTests,
+    report: { noteKey: 'report_rgaaRollup_note', titleLang: 'fr' }
   }
 ];
 

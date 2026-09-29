@@ -92,7 +92,11 @@ function createUi(engine) {
     return label || String(s || '');
   };
 
-  return { tr, trStrong, num, outcomeInfo, severity, uiLocale, contentLocale };
+  // The English text a message key renders to, for telling a translated
+  // string from one that fell back to English.
+  const english = (key, params) => (key ? core.translate(key, '', params || null, 'en') : null);
+
+  return { tr, trStrong, num, outcomeInfo, severity, uiLocale, contentLocale, english };
 }
 
 function esc(s) {
@@ -195,10 +199,23 @@ function renderLocaleChip(engine, ui) {
 // dictionary the engine does not carry), those parts are marked with their
 // language so a screen reader switches voice for them (WCAG 3.1.2).
 const LANG_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
-function contentLangAttr(ui) {
+function contentLang(ui) {
   const lang = ui.contentLocale;
   if (!LANG_TAG.test(lang) || lang.toLowerCase() === ui.uiLocale.toLowerCase()) return '';
-  return ` lang="${esc(lang)}"`;
+  return lang;
+}
+
+// The language one string is in: the scan's, unless the dictionary had no
+// entry for its key and it came out as the English text, which the English
+// page around it already covers. '' when no attribute is needed.
+function textLang(ui, text, key, params) {
+  const lang = contentLang(ui);
+  if (!lang || !text) return '';
+  return key && ui.english(key, params) === text ? '' : lang;
+}
+
+function langAttr(lang) {
+  return lang ? ` lang="${esc(lang)}"` : '';
 }
 
 // One plain-language headline + one horizontal stacked bar + a legend with
@@ -273,7 +290,7 @@ function renderScorecard(byOutcome, ui) {
 // entry per Success Criterion, docs/WCAG_CONFORMANCE.md), not an invented
 // grouping. Grouped by conformance level (A / AA / AAA) since that's the
 // axis a compliance-minded reader actually cares about.
-function renderWcagRollup(rulesResults, ui, langAttr = '') {
+function renderWcagRollup(rulesResults, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
   if (!Array.isArray(rulesResults) || !rulesResults.length) {
     return `<p class="note">${esc(ui.tr('report_rollup_none'))}</p>`;
@@ -330,7 +347,7 @@ function renderWcagRollup(rulesResults, ui, langAttr = '') {
           });
           return `<tr>
             <td class="sc-cell">${scLabel}${enLabel}</td>
-            <td${rule.title ? langAttr : ''}>${esc(rule.title || rule.ruleId)}</td>
+            <td${langAttr(textLang(ui, rule.title, rule.i18n && rule.i18n.titleKey))}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}</td>
             <td class="note">${esc(checksIds.join(', '))}</td>
@@ -353,12 +370,16 @@ function renderWcagRollup(rulesResults, ui, langAttr = '') {
   return sections;
 }
 
-// RGAA rollup -- one row per RGAA criterion, present only when the scan ran
-// the RGAA profile. The criterion's wording is RGAA's own French text.
-function renderRgaaRollup(rgaaResults, ui) {
+// A registered standard's own rollups (RGAA: one per criterion), present only
+// when the scan produced them. `standard.report` supplies the note above the
+// table and the language of the titles when it is not the scan's.
+function renderStandardRollup(standard, results, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
-  const byCriterion = (r) => String((r.data && r.data.details && r.data.details.criterion) || '');
-  const rows = rgaaResults
+  const report = standard.report || {};
+  const titleLang = report.titleLang ? ` lang="${esc(report.titleLang)}"` : '';
+  const byCriterion = (r) =>
+    String((r.data && r.data.details && r.data.details.criterion) || r.ruleId || '');
+  const rows = results
     .slice()
     .sort((a, b) => byCriterion(a).localeCompare(byCriterion(b), undefined, { numeric: true }))
     .map((rule) => {
@@ -369,7 +390,7 @@ function renderRgaaRollup(rgaaResults, ui) {
       const tests = Array.from(
         new Set(
           ((rule.meta && rule.meta.normativeMappings) || [])
-            .filter((m) => m && m.standard === 'RGAA' && m.requirement)
+            .filter((m) => standardOfEntry(m) === standard)
             .map((m) => m.requirement)
         )
       );
@@ -381,17 +402,17 @@ function renderRgaaRollup(rgaaResults, ui) {
         na: ui.num(metrics.notApplicableCount)
       });
       return `<tr>
-            <td class="sc-cell">RGAA ${esc(details.criterion || '')}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
-            <td lang="fr">${esc(rule.title || rule.ruleId)}</td>
+            <td class="sc-cell">${esc(standard.standard)} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
+            <td${titleLang}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}</td>
             <td class="note">${esc(checksIds.join(', '))}</td>
           </tr>`;
     })
     .join('\n');
-  return `<p class="note">${esc(ui.tr('report_rgaaRollup_note'))}</p>
-      <table class="wcag-table">
-        <thead><tr><th>${esc(ui.tr('report_rgaaRollup_col_criterion'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
+  const note = report.noteKey ? `<p class="note">${esc(ui.tr(report.noteKey))}</p>\n      ` : '';
+  return `${note}<table class="wcag-table">
+        <thead><tr><th>${esc(ui.tr('report_standardRollup_col_criterion'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
 }
@@ -413,7 +434,7 @@ function truncateForCard(s) {
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
 
-function renderCards(checksResults, ui, langAttr = '') {
+function renderCards(checksResults, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const withIssues = checksResults.filter(
     (r) =>
@@ -447,6 +468,7 @@ function renderCards(checksResults, ui, langAttr = '') {
       const representative =
         r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
         r.occurrences[0];
+      const occI18n = representative.i18n || {};
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
         .filter(isWcagCriterion)
         .map(
@@ -468,7 +490,7 @@ function renderCards(checksResults, ui, langAttr = '') {
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(representative.selector) : ui.tr('report_card_noSelector'))}</code></div>
-        <div class="card-snippet"${langAttr}>${esc(truncateForCard(representative.summary))}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
+        <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
       </div>
     </div>`;
@@ -481,6 +503,13 @@ function renderCards(checksResults, ui, langAttr = '') {
       : '';
 
   return `<div class="cards">${cards}</div>${overflow}`;
+}
+
+// A summary or hint for a card, wrapped in its language when that is not the
+// page's. `full` is the untruncated text the key rendered to.
+function snippetPart(ui, shown, full, key, params) {
+  const lang = textLang(ui, full, key, params);
+  return lang ? `<span lang="${esc(lang)}">${esc(shown)}</span>` : esc(shown);
 }
 
 // Flatten every occurrence across every rule into one row per occurrence --
@@ -500,6 +529,12 @@ function flattenOccurrences(checksResults, ui) {
         selector: occ.selector || '',
         html: occ.html || '',
         summary: occ.summary || '',
+        summaryLang: textLang(
+          ui,
+          occ.summary,
+          occ.i18n && occ.i18n.summaryKey,
+          occ.i18n && occ.i18n.params
+        ),
         hint: occ.hint || ''
       });
     }
@@ -510,9 +545,15 @@ function flattenOccurrences(checksResults, ui) {
 function renderHtmlReport(result, options = {}) {
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
-  const isRgaaRollup = (r) => !!(r && r.meta && r.meta.standard === 'RGAA');
-  const rulesResults = allRollups.filter((r) => !isRgaaRollup(r));
-  const rgaaRollups = allRollups.filter(isRgaaRollup);
+  // A rollup a registered standard defines for itself carries that standard's
+  // name in meta.standard and gets a section of its own after the WCAG one.
+  const ownStandard = (r) =>
+    (r && r.meta && NORMATIVE_STANDARDS.find((s) => s.standard === r.meta.standard)) || null;
+  const rulesResults = allRollups.filter((r) => !ownStandard(r));
+  const standardRollups = NORMATIVE_STANDARDS.map((standard) => ({
+    standard,
+    results: allRollups.filter((r) => ownStandard(r) === standard)
+  })).filter((s) => s.results.length);
   const byOutcome = countByOutcome(checksResults);
   const engine = result && result.engine;
   const ui = createUi(engine);
@@ -533,7 +574,6 @@ function renderHtmlReport(result, options = {}) {
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
   const rows = flattenOccurrences(checksResults, ui);
-  const contentLang = contentLangAttr(ui);
   const pageLang = LANG_TAG.test(ui.uiLocale) ? ui.uiLocale : 'en';
   // Strings the in-page script needs; it cannot call the translator.
   const clientText = {
@@ -641,18 +681,18 @@ function renderHtmlReport(result, options = {}) {
   ${renderHeroBar(byOutcome, ui)}
 
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>
-  ${renderCards(checksResults, ui, contentLang)}
+  ${renderCards(checksResults, ui)}
 
   <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
-  ${renderWcagRollup(rulesResults, ui, contentLang)}
-${
-  rgaaRollups.length
-    ? `
-  <h2>${esc(ui.tr('report_heading_rgaaRollup'))}</h2>
-  ${renderRgaaRollup(rgaaRollups, ui)}
+  ${renderWcagRollup(rulesResults, ui)}
+${standardRollups
+  .map(
+    ({ standard, results }) => `
+  <h2>${esc(ui.tr('report_heading_standardRollup', { standard: standard.standard }))}</h2>
+  ${renderStandardRollup(standard, results, ui)}
 `
-    : ''
-}
+  )
+  .join('')}
   <details class="tech-details">
     <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">
@@ -694,7 +734,6 @@ ${
   var rows = JSON.parse(document.getElementById('report-data').textContent);
 
   var PAGE_SIZE = 100;
-  var CONTENT_LANG = ${jsonForScript(contentLang)};
   var TEXT = ${jsonForScript(clientText)};
   var numberFormat = new Intl.NumberFormat(${jsonForScript(ui.uiLocale)});
   function fill(template, values) {
@@ -758,7 +797,7 @@ ${
         '<td>' + chip + '</td>' +
         '<td>' + esc(r.severityLabel) + '</td>' +
         '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
-        '<td class="snippet"' + CONTENT_LANG + '>' + esc(r.summary) + '</td>' +
+        '<td class="snippet"' + (r.summaryLang ? ' lang="' + esc(r.summaryLang) + '"' : '') + '>' + esc(r.summary) + '</td>' +
         '</tr>';
     }).join('');
 

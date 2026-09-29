@@ -52,6 +52,64 @@ test('asking by its tag, by its id, or through the RGAA profile selects it', () 
   assert.equal(ran({ profile: 'rgaa-4.1.2' }), true);
 });
 
+// A standard's own rollup groups its opt-in rules, so naming the rollup asks
+// for them; otherwise the rollup would run with every child missing.
+test("naming a standard's own rollup runs the opt-in rules it groups", () => {
+  const PAGE =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><center>x</center></main></body></html>';
+  const pick = (engineOptions, runOnly) =>
+    runa11yCoreOnHtml(PAGE, { engineOptions, ...(runOnly ? { runOnly } : {}) });
+
+  const byRules = pick({ rules: { include: 'rgaa-4.1.2-10.1' } });
+  assert.deepEqual(byRules.checksResults.map((r) => r.ruleId).sort(), [
+    'letters-spaced-with-spaces',
+    'presentational-attributes-absent',
+    'presentational-elements-absent'
+  ]);
+  assert.equal(byRules.rulesResults.find((r) => r.ruleId === 'rgaa-4.1.2-10.1').outcome, 'fail');
+
+  const byRunOnly = pick({}, { includeRuleIds: ['rgaa-4.1.2-8.1'] });
+  assert.deepEqual(
+    byRunOnly.checksResults.map((r) => r.ruleId),
+    ['doctype-present']
+  );
+  assert.equal(byRunOnly.rulesResults[0].outcome, 'pass');
+
+  const excluded = pick({ rules: { include: 'rgaa-4.1.2-8.1', exclude: 'doctype-present' } });
+  assert.deepEqual(excluded.checksResults, []);
+});
+
+test('a WCAG rollup id does not unlock opt-in rules', () => {
+  const optIn = new Set(
+    core
+      .getChecksCatalog({ optInRules: 'all' })
+      .filter((c) => (c.tags || []).includes('rgaa'))
+      .map((c) => c.ruleId)
+  );
+  for (const id of core.getRulesCatalog().map((c) => c.ruleId)) {
+    const selected = core.getChecksForRunOnly({ includeRuleIds: [id] }).map((c) => c.ruleId);
+    assert.deepEqual(
+      selected.filter((r) => optIn.has(r)),
+      [],
+      id
+    );
+  }
+});
+
+// The tag answers "what does RGAA require beyond WCAG": it runs the opt-in
+// rules only. The profile is the RGAA audit and runs those and the rest.
+test('the rgaa tag alone selects only the opt-in rules; the profile selects them and more', () => {
+  const byTag = core.getChecksForRunOnly({ tags: ['rgaa'] }).map((c) => c.ruleId);
+  const optIn = core
+    .getChecksCatalog({ optInRules: 'all' })
+    .filter((c) => (c.tags || []).includes('rgaa'))
+    .map((c) => c.ruleId);
+  assert.deepEqual(byTag.sort(), optIn.sort());
+  const byProfile = core.getChecksForRunOnly(null, { profile: 'rgaa-4.1.2' }).map((c) => c.ruleId);
+  for (const id of byTag) assert.ok(byProfile.includes(id), id);
+  assert.ok(byProfile.length > byTag.length);
+});
+
 test('excludes still apply to an opt-in rule that was asked for', () => {
   assert.equal(ran({ profile: 'rgaa-4.1.2', rules: { exclude: 'probe-rgaa-only' } }), false);
   assert.equal(ran({ profile: 'rgaa-4.1.2' }, { excludeTags: ['rgaa'] }), false);

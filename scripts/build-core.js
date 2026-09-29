@@ -1096,6 +1096,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (RGAA's per-criterion
+// rollups carry 'rgaa'), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -1114,17 +1131,23 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasTagInclude = norm.tags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
-  // tags, or its id is included directly, or engineOptions.optInRules
-  // unlocked its tag. Nothing else selects it, not a default run, a WCAG tag
-  // set or a composite id, so a scan that does not target the standard never
-  // reports a failure only that standard defines.
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
   const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (optInTags.length) {
     const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (!askedByTag && !askedById) return false;
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
   }
 
   let idMatch = true;

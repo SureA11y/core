@@ -152,12 +152,23 @@ The table is generated from the criteria file DINUM publishes (`RGAA/criteres.js
 
 ## Adding another standard
 
-EN 301 549 is the first entry in a registry, `src/coverage/standards.js`, and nothing else in the engine names it. Every other standard goes the same way:
+EN 301 549 and RGAA are entries in a registry, `src/coverage/standards.js`. The build, the runner, the rule catalog and the reporters read it, so a new standard goes the same way:
 
-1. Put its table in `src/coverage/<name>-map.js`, taken from the published text, with a function that returns a rule's entries given the rule's id and WCAG criteria. Each entry is `{ standard, version, requirement, title, wcagSc }`, where `wcagSc` lists the WCAG criteria that requirement corresponds to. A standard that restates WCAG one criterion at a time, as EN 301 549 does, derives its entries from the criteria; one organised differently can look the rule up by id.
-2. Add an entry to `NORMATIVE_STANDARDS`: its `key` (what `engineOptions.mappings` accepts, and the SARIF tag prefix and JUnit property name), its `standard` (the name its entries carry and the report shows), its `versions`, any conformance profiles it brings, and that function.
+1. Put its table in `src/coverage/<name>-map.js`, taken from the published text, with a function that returns a rule's entries given the rule's id and WCAG criteria. Each entry is `{ standard, version, requirement, title, wcagSc }`, where `wcagSc` lists the WCAG criteria that requirement corresponds to. A standard that restates WCAG one criterion at a time, as EN 301 549 does, derives its entries from the criteria. One organised differently looks the rule up by id, as RGAA does in `src/coverage/rgaa-rule-map.js`.
+2. Add an entry to `NORMATIVE_STANDARDS` with its `key` (what `engineOptions.mappings` accepts, and the SARIF tag prefix and JUnit property name), its `standard` (the name its entries carry and the report shows), its `versions`, and that function as `mappingsFor`.
 
-The build then adds its entries to every rule and composite, `engineOptions.mappings` accepts its key and versions, its profiles select rules and switch its entries on, and SARIF, JUnit and the HTML report show them. `tests/coverage/standards.test.js` holds every registered standard to that contract. What stays per standard is its own table, its tests, and a public export if tools need the reverse view (as `@surea11y/core/en301549` does).
+The rest is optional, and the comment at the top of the registry describes each field:
+
+- `profiles`: named conformance targets. Each gives the WCAG tags it runs and the version it targets, and switches that version's mappings on. With `mappedRules: true` it also runs every rule the standard maps, which matters when the standard requires things WCAG leaves to best practice.
+- `ruleTag`: a tag for rules that check requirements only this standard makes. Those rules are opt-in (see [`RULE_AUTHORING.md`](./RULE_AUTHORING.md)), so a WCAG scan never runs them.
+- `ruleMapped: true`: the entries come from each rule rather than from its WCAG criterion, so a WCAG rollup names only the entries of the rules that decided its outcome.
+- `composites()`: rollups of the standard's own, such as RGAA's one per criterion. They carry the rule tag, so only a run that asks for the standard produces them, and the HTML report shows them in a section of their own.
+- `report`: the dictionary key of the note above that section (`noteKey`), and the language of the rollup titles when it is not the scan's (`titleLang`).
+- `validate(rules)`: checks the standard's own tables against the rules that exist. The build fails on any problem it returns.
+
+`tests/coverage/standards.test.js` holds every registered standard to the contract. What stays per standard is its table, its tests, its rules, and a public export if tools need the reverse view, as `@surea11y/core/en301549` and `@surea11y/core/rgaa` do.
+
+A standard is compiled into the engine. At run time, a custom rule (`engineOptions.customRules`) can name any standard in its own `normativeMappings`, and the result keeps those entries as written, but only registered standards get a profile, a `mappings` switch, opt-in rules, rollups, or a place in SARIF, JUnit and the HTML report.
 
 ## What this engine cannot tell you
 

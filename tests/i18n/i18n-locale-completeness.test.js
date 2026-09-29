@@ -63,4 +63,18 @@ for (const locale of localeFiles) {
       `${locale}.json has values whose placeholders differ from en.json: ${drifted.join(', ')}`
     );
   });
+
+  // A single-brace {name} is never interpolated and shows up literally.
+  test(`i18n locale completeness: ${locale}.json has no single-brace placeholder`, () => {
+    const dict = loadLocale(locale);
+    const broken = Object.keys(dict).filter(
+      (key) =>
+        typeof dict[key] === 'string' && /(?<!\{)\{[#^/]?\s*[\w.]+\s*\}(?!\})/.test(dict[key])
+    );
+    assert.deepStrictEqual(
+      broken,
+      [],
+      `${locale}.json has single-brace placeholders: ${broken.join(', ')}`
+    );
+  });
 }

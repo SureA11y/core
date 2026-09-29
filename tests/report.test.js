@@ -121,7 +121,7 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
   assert.match(report, /<b>ja<\/b>ロケール/);
   assert.match(report, /\(不合格、重大度: 重大\)/);
   assert.match(report, /<div class="card-snippet">&lt;img&gt; 要素に alt 属性がありません。/);
-  assert.match(report, /var CONTENT_LANG = "";/);
+  assert.doesNotMatch(report, /<span lang=|<td lang=/);
 
   // Every label of the English page, none of which may survive.
   for (const english of [
@@ -157,8 +157,20 @@ test('renderHtmlReport: a dictionary supplied at scan time keeps English labels 
   assert.equal(result.engine.locale.resolved, 'nl');
   assert.match(report, /<html lang="en">/);
   assert.match(report, /<h2>Worth reviewing<\/h2>/);
-  assert.match(report, /<div class="card-snippet" lang="nl">Het alt-attribuut ontbreekt/);
-  assert.match(report, /var CONTENT_LANG = " lang=\\"nl\\"";/);
+  // Only the string the dictionary translated is marked; its English hint,
+  // other rules' English text and English rollup titles are not.
+  assert.match(
+    report,
+    /<div class="card-snippet"><span lang="nl">Het alt-attribuut ontbreekt op &lt;img&gt;\.<\/span> — Add an alt attribute/
+  );
+  assert.doesNotMatch(report, /<td lang="nl">/);
+  const json = report.match(
+    /<script type="application\/json" id="report-data">([\s\S]*?)<\/script>/
+  )[1];
+  const marked = JSON.parse(json)
+    .filter((row) => row.summaryLang)
+    .map((row) => `${row.ruleId}:${row.summaryLang}`);
+  assert.deepEqual([...new Set(marked)], ['img-alt-present:nl']);
 });
 
 test('renderHtmlReport: an English scan adds no lang attributes to rule text', () => {
@@ -167,7 +179,7 @@ test('renderHtmlReport: an English scan adds no lang attributes to rule text', (
   const report = renderHtmlReport(runa11yCoreOnHtml(html));
 
   assert.doesNotMatch(report, /class="card-snippet" lang=/);
-  assert.match(report, /var CONTENT_LANG = "";/);
+  assert.doesNotMatch(report, /<span lang=|<td lang=|"summaryLang":"[a-z]/);
 });
 
 test('renderHtmlReport: a result from an engine without engine.locale gets no locale chip', () => {

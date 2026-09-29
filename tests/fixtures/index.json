@@ -1773,7 +1773,7 @@
     },
     {
       "ruleId": "meta-refresh-no-exceptions",
-      "title": "Page must not use a meta refresh at all (AAA)",
+      "title": "Page must not use a timed meta refresh (AAA)",
       "type": "automatic",
       "wcagSc": [
         "2.2.4",

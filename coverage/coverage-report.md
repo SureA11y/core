@@ -336,7 +336,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 2.4.1
 
@@ -505,7 +505,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 3.3.2
 
@@ -987,7 +987,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 2.4.1
 
@@ -1156,7 +1156,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 3.3.2
 
