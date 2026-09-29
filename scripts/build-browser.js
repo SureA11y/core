@@ -227,6 +227,13 @@ const BANNER = `/* SPDX-License-Identifier: MPL-2.0 */
 const LOCALE_BANNER = (locale) => `/* SPDX-License-Identifier: MPL-2.0 */
 /*! @surea11y/core -- ${locale} messages for the standalone browser bundle. Generated; load after surea11y.browser.js. */`;
 
+// Bytes as written to disk. String length counts UTF-16 code units, which
+// undercounts any script outside Latin: a Japanese character is one unit but
+// three bytes in UTF-8.
+function sizeLabel(source) {
+  return `${(Buffer.byteLength(source, 'utf8') / 1024).toFixed(0)} KB`;
+}
+
 function main() {
   const i18nAll = loadAllTranslations();
   const knownLocales = Object.keys(i18nAll);
@@ -241,7 +248,7 @@ function main() {
 
   fs.writeFileSync(OUTPUT_FILE, `${BANNER}\n${bundle}`, 'utf8');
   console.log(
-    `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${(bundle.length / 1024).toFixed(0)} KB)`
+    `[build-browser] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)} (${sizeLabel(bundle)})`
   );
 
   const wanted = new Set(knownLocales.filter((l) => l !== 'en'));
@@ -253,7 +260,7 @@ function main() {
     );
     fs.writeFileSync(localeFileFor(locale), `${LOCALE_BANNER(locale)}\n${source}`, 'utf8');
     console.log(
-      `[build-browser] wrote ${path.relative(ROOT_DIR, localeFileFor(locale))} (${(source.length / 1024).toFixed(0)} KB)`
+      `[build-browser] wrote ${path.relative(ROOT_DIR, localeFileFor(locale))} (${sizeLabel(source)})`
     );
   }
 
