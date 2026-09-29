@@ -8299,6 +8299,8 @@ const COMPOSITE_RULES = [
       "progressbar-name-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_111_non_text_content.title",
+      "descriptionKey": "catalog.rules.wcag_111_non_text_content.description",
       "title": "Non-text content: text alternatives",
       "description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
       "wcagSc": [
@@ -8327,6 +8329,8 @@ const COMPOSITE_RULES = [
       "media-alternative-transcript-evidence"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_121_prerecorded_transcript.title",
+      "descriptionKey": "catalog.rules.wcag_121_prerecorded_transcript.description",
       "title": "Audio-only and video-only (prerecorded): transcript",
       "description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
       "wcagSc": [
@@ -8355,6 +8359,8 @@ const COMPOSITE_RULES = [
       "video-caption"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_122_captions_prerecorded.title",
+      "descriptionKey": "catalog.rules.wcag_122_captions_prerecorded.description",
       "title": "Captions (Prerecorded)",
       "description": "Rollup of checks for captions-track evidence on prerecorded video.",
       "wcagSc": [
@@ -8396,6 +8402,8 @@ const COMPOSITE_RULES = [
       "td-has-header"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
+      "descriptionKey": "catalog.rules.wcag_131_info_and_relationships.description",
       "title": "Info and Relationships",
       "description": "Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable.",
       "wcagSc": [
@@ -8424,6 +8432,8 @@ const COMPOSITE_RULES = [
       "link-in-text-block"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_141_use_of_color.title",
+      "descriptionKey": "catalog.rules.wcag_141_use_of_color.description",
       "title": "Use of Color",
       "description": "Rollup of checks ensuring color is not used as the only visual means of conveying information.",
       "wcagSc": [
@@ -8452,6 +8462,8 @@ const COMPOSITE_RULES = [
       "no-autoplay-audio"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_142_audio_control.title",
+      "descriptionKey": "catalog.rules.wcag_142_audio_control.description",
       "title": "Audio Control",
       "description": "Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio.",
       "wcagSc": [
@@ -8481,6 +8493,8 @@ const COMPOSITE_RULES = [
       "contrast-minimum"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_143_contrast_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_143_contrast_minimum.description",
       "title": "Contrast: minimum",
       "description": "Rollup of checks for minimum text contrast.",
       "wcagSc": [
@@ -8510,6 +8524,8 @@ const COMPOSITE_RULES = [
       "contrast-enhanced"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_146_contrast_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_146_contrast_enhanced.description",
       "title": "Contrast: enhanced",
       "description": "Rollup of checks for enhanced text contrast.",
       "wcagSc": [
@@ -8529,6 +8545,8 @@ const COMPOSITE_RULES = [
       "mouse-only-event-handlers"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_211_keyboard.title",
+      "descriptionKey": "catalog.rules.wcag_211_keyboard.description",
       "title": "Keyboard",
       "description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
       "wcagSc": [
@@ -8557,6 +8575,8 @@ const COMPOSITE_RULES = [
       "scrollable-region-focusable"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
+      "descriptionKey": "catalog.rules.wcag_213_keyboard_no_exception.description",
       "title": "Keyboard (No Exception)",
       "description": "Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA).",
       "wcagSc": [
@@ -8572,6 +8592,8 @@ const COMPOSITE_RULES = [
       "deprecated-elements-not-used"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
+      "descriptionKey": "catalog.rules.wcag_222_pause_stop_hide.description",
       "title": "Pause, Stop, Hide",
       "description": "Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden.",
       "wcagSc": [
@@ -8600,6 +8622,8 @@ const COMPOSITE_RULES = [
       "bypass-blocks-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_241_bypass_blocks.title",
+      "descriptionKey": "catalog.rules.wcag_241_bypass_blocks.description",
       "title": "Bypass Blocks",
       "description": "Rollup of checks ensuring the page provides a way to bypass repeated blocks of content.",
       "wcagSc": [
@@ -8629,6 +8653,8 @@ const COMPOSITE_RULES = [
       "page-title-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_242_page_titled.title",
+      "descriptionKey": "catalog.rules.wcag_242_page_titled.description",
       "title": "Page titled",
       "description": "Rollup of checks ensuring documents have a meaningful page title.",
       "wcagSc": [
@@ -8657,6 +8683,8 @@ const COMPOSITE_RULES = [
       "manual-review"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_243_focus_order.title",
+      "descriptionKey": "catalog.rules.wcag_243_focus_order.description",
       "title": "Focus order",
       "description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
       "wcagSc": [
@@ -8685,6 +8713,8 @@ const COMPOSITE_RULES = [
       "link-name-quality"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
+      "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
       "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
@@ -8714,6 +8744,8 @@ const COMPOSITE_RULES = [
       "form-control-label-quality"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_246_headings_and_labels.title",
+      "descriptionKey": "catalog.rules.wcag_246_headings_and_labels.description",
       "title": "Headings and Labels",
       "description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "wcagSc": [
@@ -8745,6 +8777,8 @@ const COMPOSITE_RULES = [
       "manual-review"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_247_focus_visible.title",
+      "descriptionKey": "catalog.rules.wcag_247_focus_visible.description",
       "title": "Focus visible",
       "description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "wcagSc": [
@@ -8773,6 +8807,8 @@ const COMPOSITE_RULES = [
       "identical-links-same-purpose"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
+      "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
       "description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
@@ -8788,6 +8824,8 @@ const COMPOSITE_RULES = [
       "label-in-name"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_253_label_in_name.title",
+      "descriptionKey": "catalog.rules.wcag_253_label_in_name.description",
       "title": "Label in name",
       "description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "wcagSc": [
@@ -8816,6 +8854,8 @@ const COMPOSITE_RULES = [
       "target-size-minimum"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_258_target_size_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_258_target_size_minimum.description",
       "title": "Target size: minimum",
       "description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
       "wcagSc": [
@@ -8839,6 +8879,8 @@ const COMPOSITE_RULES = [
       "html-xml-lang-mismatch"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_311_language_of_page.title",
+      "descriptionKey": "catalog.rules.wcag_311_language_of_page.description",
       "title": "Language of page",
       "description": "Rollup of checks ensuring the page language is specified.",
       "wcagSc": [
@@ -8867,6 +8909,8 @@ const COMPOSITE_RULES = [
       "valid-lang"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_312_language_of_parts.title",
+      "descriptionKey": "catalog.rules.wcag_312_language_of_parts.description",
       "title": "Language of Parts",
       "description": "Rollup of checks ensuring elements whose language differs from the page default declare it correctly.",
       "wcagSc": [
@@ -8895,6 +8939,8 @@ const COMPOSITE_RULES = [
       "css-orientation-lock"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_134_orientation.title",
+      "descriptionKey": "catalog.rules.wcag_134_orientation.description",
       "title": "Orientation",
       "description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "wcagSc": [
@@ -8923,6 +8969,8 @@ const COMPOSITE_RULES = [
       "autocomplete-valid"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_135_identify_input_purpose.title",
+      "descriptionKey": "catalog.rules.wcag_135_identify_input_purpose.description",
       "title": "Identify Input Purpose",
       "description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
       "wcagSc": [
@@ -8951,6 +8999,8 @@ const COMPOSITE_RULES = [
       "avoid-inline-spacing"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
+      "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
       "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
       "wcagSc": [
@@ -8979,6 +9029,8 @@ const COMPOSITE_RULES = [
       "meta-refresh-no-exceptions"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_224_interruptions.title",
+      "descriptionKey": "catalog.rules.wcag_224_interruptions.description",
       "title": "Interruptions",
       "description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
       "wcagSc": [
@@ -8994,6 +9046,8 @@ const COMPOSITE_RULES = [
       "meta-refresh-no-exceptions"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_325_change_on_request.title",
+      "descriptionKey": "catalog.rules.wcag_325_change_on_request.description",
       "title": "Change on Request",
       "description": "Rollup of checks ensuring context changes only happen at the user's request (AAA).",
       "wcagSc": [
@@ -9009,6 +9063,8 @@ const COMPOSITE_RULES = [
       "duplicate-id"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_411_parsing.title",
+      "descriptionKey": "catalog.rules.wcag_411_parsing.description",
       "title": "Parsing",
       "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
       "wcagSc": [
@@ -9054,6 +9110,8 @@ const COMPOSITE_RULES = [
       "tooltip-name-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_412_name.title",
+      "descriptionKey": "catalog.rules.wcag_412_name.description",
       "title": "Name, role, value: accessible name",
       "description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
       "wcagSc": [
@@ -9094,6 +9152,8 @@ const COMPOSITE_RULES = [
       "aria-checked-state-mismatch"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_412_aria_validity.title",
+      "descriptionKey": "catalog.rules.wcag_412_aria_validity.description",
       "title": "Name, role, value: ARIA validity",
       "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "wcagSc": [
@@ -9122,6 +9182,8 @@ const COMPOSITE_RULES = [
       "meta-viewport-zoom-enabled"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_144_resize_text.title",
+      "descriptionKey": "catalog.rules.wcag_144_resize_text.description",
       "title": "Resize Text",
       "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
       "wcagSc": [
@@ -9150,6 +9212,8 @@ const COMPOSITE_RULES = [
       "meta-refresh-timing-absent"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_221_timing_adjustable.title",
+      "descriptionKey": "catalog.rules.wcag_221_timing_adjustable.description",
       "title": "Timing Adjustable",
       "description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
       "wcagSc": [
@@ -9179,6 +9243,8 @@ const COMPOSITE_RULES = [
       "form-control-programmatic-label-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_332_labels_or_instructions.title",
+      "descriptionKey": "catalog.rules.wcag_332_labels_or_instructions.description",
       "title": "Labels or Instructions",
       "description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "wcagSc": [
@@ -9207,6 +9273,8 @@ const COMPOSITE_RULES = [
       "password-paste-enabled"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_338_accessible_authentication_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_338_accessible_authentication_minimum.description",
       "title": "Accessible Authentication (Minimum)",
       "description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
       "wcagSc": [
@@ -9670,20 +9738,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Nicht-Text-Inhalte eine passende Textalternative haben.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Nur Audio und nur Video (voraufgezeichnet): Transkription",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Zusammenfassung von Prüfungen zur Verfügbarkeit einer Transkription für voraufgezeichnete Nur-Audio- oder Nur-Video-Medien.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Untertitel (aufgezeichnet)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Zusammenfassung von Prüfungen auf Hinweise auf eine Untertitelspur bei aufgezeichneten Videos.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Informationen und Beziehungen",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass durch Präsentation vermittelte Informationen, Strukturen und Beziehungen programmatisch ermittelbar sind.",
+    "catalog.rules.wcag_141_use_of_color.title": "Benutzung von Farbe",
+    "catalog.rules.wcag_141_use_of_color.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Farbe nicht das einzige visuelle Mittel zur Vermittlung von Informationen ist.",
+    "catalog.rules.wcag_142_audio_control.title": "Audio-Steuerelement",
+    "catalog.rules.wcag_142_audio_control.description": "Zusammenfassung von Prüfungen auf eine Möglichkeit, automatisch abgespieltes Audio anzuhalten, zu beenden oder in der Lautstärke zu regeln.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Kontrast: Minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Zusammenfassung von Prüfungen zum Mindesttextkontrast.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Kontrast: erweitert",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Zusammenfassung von Prüfungen zum erweiterten Textkontrast.",
+    "catalog.rules.wcag_211_keyboard.title": "Tastatur",
+    "catalog.rules.wcag_211_keyboard.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Funktionalität über eine Tastaturschnittstelle bedienbar ist.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Tastatur (keine Ausnahme)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Funktionalität ausnahmslos über eine Tastaturschnittstelle bedienbar ist (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Pausieren, beenden, ausblenden",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich bewegende, blinkende oder automatisch scrollende Inhalte pausiert, beendet oder ausgeblendet werden können.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Blöcke umgehen",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite eine Möglichkeit bietet, sich wiederholende Inhaltsblöcke zu umgehen.",
     "catalog.rules.wcag_242_page_titled.title": "Seite mit Titel",
     "catalog.rules.wcag_242_page_titled.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Dokumente einen aussagekräftigen Seitentitel haben.",
+    "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
+    "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
     "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (nur Links)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Links mit demselben zugänglichen Namen denselben Zweck erfüllen (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Beschriftung im Namen",
+    "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele die Mindestgrößenanforderungen erfüllen.",
     "catalog.rules.wcag_311_language_of_page.title": "Sprache der Seite",
     "catalog.rules.wcag_311_language_of_page.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Sprache der Seite angegeben ist.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Sprache von Teilen",
+    "catalog.rules.wcag_312_language_of_parts.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Elemente, deren Sprache von der Standardsprache der Seite abweicht, diese korrekt angeben.",
+    "catalog.rules.wcag_134_orientation.title": "Ausrichtung",
+    "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
+    "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
+    "catalog.rules.wcag_325_change_on_request.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Syntaxanalyse",
+    "catalog.rules.wcag_411_parsing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass id-Werte eindeutig sind. Nur WCAG 2.0/2.1: Erfolgskriterium 4.1.1 wurde in WCAG 2.2 entfernt, daher trägt diese Zusammenfassung das Tag wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Name, Rolle, Wert: zugänglicher Name",
     "catalog.rules.wcag_412_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass gängige interaktive Elemente einen nicht leeren zugänglichen Namen aufweisen.",
+    "catalog.rules.wcag_412_aria_validity.title": "Name, Rolle, Wert: ARIA-Gültigkeit",
+    "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
+    "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
+    "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Beschriftungen oder Anweisungen",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein Authentifizierungsschritt die Hilfsmittel, die Benutzern dabei helfen, weiterhin zulässt.",
     "labelInName_title": "Beschriftung im Namen: Der zugängliche Name enthält den sichtbaren Text",
     "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
@@ -10371,21 +10489,71 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.title": "Non-text content: text alternatives",
     "catalog.rules.wcag_111_non_text_content.description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio-only and video-only (prerecorded): transcript",
-    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only or video-only media.",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Captions (Prerecorded)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Rollup of checks for captions-track evidence on prerecorded video.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Info and Relationships",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable.",
+    "catalog.rules.wcag_141_use_of_color.title": "Use of Color",
+    "catalog.rules.wcag_141_use_of_color.description": "Rollup of checks ensuring color is not used as the only visual means of conveying information.",
+    "catalog.rules.wcag_142_audio_control.title": "Audio Control",
+    "catalog.rules.wcag_142_audio_control.description": "Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contrast: minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Rollup of checks for minimum text contrast.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contrast: enhanced",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Rollup of checks for enhanced text contrast.",
+    "catalog.rules.wcag_211_keyboard.title": "Keyboard",
+    "catalog.rules.wcag_211_keyboard.description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Keyboard (No Exception)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Pause, Stop, Hide",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Bypass Blocks",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Rollup of checks ensuring the page provides a way to bypass repeated blocks of content.",
     "catalog.rules.wcag_242_page_titled.title": "Page titled",
     "catalog.rules.wcag_242_page_titled.description": "Rollup of checks ensuring documents have a meaningful page title.",
+    "catalog.rules.wcag_243_focus_order.title": "Focus order",
+    "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
     "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Label in name",
+    "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
     "catalog.rules.wcag_311_language_of_page.title": "Language of page",
     "catalog.rules.wcag_311_language_of_page.description": "Rollup of checks ensuring the page language is specified.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Language of Parts",
+    "catalog.rules.wcag_312_language_of_parts.description": "Rollup of checks ensuring elements whose language differs from the page default declare it correctly.",
+    "catalog.rules.wcag_134_orientation.title": "Orientation",
+    "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_224_interruptions.title": "Interruptions",
+    "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
+    "catalog.rules.wcag_325_change_on_request.description": "Rollup of checks ensuring context changes only happen at the user's request (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Parsing",
+    "catalog.rules.wcag_411_parsing.description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
     "catalog.rules.wcag_412_name.title": "Name, role, value: accessible name",
     "catalog.rules.wcag_412_name.description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+    "catalog.rules.wcag_412_aria_validity.title": "Name, role, value: ARIA validity",
+    "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
+    "catalog.rules.wcag_144_resize_text.title": "Resize Text",
+    "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Labels or Instructions",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
     "labelInName_title": "Label in Name: accessible name contains visible text",
     "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
@@ -11074,20 +11242,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Agrupación de comprobaciones que garantizan que el contenido no textual tenga una alternativa textual apropiada.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Solo audio y solo video (pregrabado): transcripción",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Agrupación de comprobaciones sobre la disponibilidad de transcripción para medios pregrabados de solo audio o solo video.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Subtítulos (grabados)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Agrupación de comprobaciones de indicios de una pista de subtítulos en vídeos grabados.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Información y relaciones",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Agrupación de comprobaciones que garantizan que la información, la estructura y las relaciones transmitidas por la presentación puedan determinarse mediante programación.",
+    "catalog.rules.wcag_141_use_of_color.title": "Uso del color",
+    "catalog.rules.wcag_141_use_of_color.description": "Agrupación de comprobaciones que garantizan que el color no sea el único medio visual para transmitir información.",
+    "catalog.rules.wcag_142_audio_control.title": "Control del audio",
+    "catalog.rules.wcag_142_audio_control.description": "Agrupación de comprobaciones de un mecanismo para pausar, detener o controlar el volumen del audio que se reproduce automáticamente.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contraste: mínimo",
     "catalog.rules.wcag_143_contrast_minimum.description": "Agrupación de comprobaciones del contraste mínimo del texto.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste: mejorado",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Agrupación de comprobaciones del contraste de texto mejorado.",
+    "catalog.rules.wcag_211_keyboard.title": "Teclado",
+    "catalog.rules.wcag_211_keyboard.description": "Agrupación de comprobaciones que garantizan que la funcionalidad se pueda operar mediante una interfaz de teclado.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Teclado (sin excepciones)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Agrupación de comprobaciones que garantizan que la funcionalidad se pueda operar mediante una interfaz de teclado, sin excepciones (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Poner en pausa, detener, ocultar",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Agrupación de comprobaciones que garantizan que el contenido en movimiento, parpadeante o con desplazamiento automático se pueda pausar, detener u ocultar.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Evitar bloques",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Agrupación de comprobaciones que garantizan que la página ofrezca un modo de evitar los bloques de contenido repetidos.",
     "catalog.rules.wcag_242_page_titled.title": "Página titulada",
     "catalog.rules.wcag_242_page_titled.description": "Agrupación de comprobaciones que garantizan que los documentos tengan un título de página significativo.",
+    "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
+    "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
     "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que los enlaces con el mismo nombre accesible tengan el mismo propósito (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
+    "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo: mínimo",
     "catalog.rules.wcag_258_target_size_minimum.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero cumplan los requisitos de tamaño mínimo.",
     "catalog.rules.wcag_311_language_of_page.title": "Idioma de la página",
     "catalog.rules.wcag_311_language_of_page.description": "Agrupación de comprobaciones que garantizan que el idioma de la página esté especificado.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Idioma de las partes",
+    "catalog.rules.wcag_312_language_of_parts.description": "Agrupación de comprobaciones que garantizan que los elementos cuyo idioma difiere del idioma predeterminado de la página lo declaren correctamente.",
+    "catalog.rules.wcag_134_orientation.title": "Orientación",
+    "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
+    "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
+    "catalog.rules.wcag_325_change_on_request.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto solo se produzcan a petición del usuario (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Procesamiento",
+    "catalog.rules.wcag_411_parsing.description": "Agrupación de comprobaciones que garantizan que los valores de id sean únicos. Solo WCAG 2.0/2.1: el criterio de conformidad 4.1.1 se eliminó en WCAG 2.2, por lo que esta agrupación lleva la etiqueta wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Nombre, rol, valor: nombre accesible",
     "catalog.rules.wcag_412_name.description": "Agrupación de comprobaciones que garantizan que los elementos interactivos comunes expongan un nombre accesible no vacío.",
+    "catalog.rules.wcag_412_aria_validity.title": "Nombre, rol, valor: validez de ARIA",
+    "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
+    "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
+    "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Etiquetas o instrucciones",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Agrupación de comprobaciones que garantizan que un paso de autenticación mantenga disponibles los mecanismos que ayudan al usuario a completarlo.",
     "labelInName_title": "Etiqueta en el nombre: el nombre accesible contiene el texto visible",
     "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
@@ -11776,20 +11994,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Regroupe les contrôles garantissant que le contenu non textuel dispose d’une alternative textuelle appropriée.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio seul et vidéo seule (préenregistrés) : transcription",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Regroupe les contrôles vérifiant la disponibilité d’une transcription pour les médias audio seuls ou vidéo seuls préenregistrés.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Sous-titres (pré-enregistrés)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Regroupe les contrôles recherchant une piste de sous-titres sur les vidéos pré-enregistrées.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Information et relations",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Regroupe les contrôles garantissant que l’information, la structure et les relations véhiculées par la présentation peuvent être déterminées par un programme informatique.",
+    "catalog.rules.wcag_141_use_of_color.title": "Utilisation de la couleur",
+    "catalog.rules.wcag_141_use_of_color.description": "Regroupe les contrôles garantissant que la couleur n’est pas le seul moyen visuel de transmettre une information.",
+    "catalog.rules.wcag_142_audio_control.title": "Contrôle du son",
+    "catalog.rules.wcag_142_audio_control.description": "Regroupe les contrôles vérifiant qu’un son joué automatiquement peut être mis en pause, arrêté ou réglé en volume.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contraste : minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Regroupe les contrôles relatifs au contraste minimal du texte.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste : renforcé",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Regroupe les contrôles relatifs au contraste renforcé du texte.",
+    "catalog.rules.wcag_211_keyboard.title": "Clavier",
+    "catalog.rules.wcag_211_keyboard.description": "Regroupe les contrôles garantissant que les fonctionnalités sont utilisables au moyen d’une interface clavier.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Clavier (pas d’exception)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Regroupe les contrôles garantissant que les fonctionnalités sont utilisables au moyen d’une interface clavier, sans exception (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Mettre en pause, arrêter, masquer",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Regroupe les contrôles garantissant qu’un contenu en mouvement, clignotant ou défilant automatiquement peut être mis en pause, arrêté ou masqué.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Contourner des blocs",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Regroupe les contrôles garantissant que la page offre un moyen de contourner les blocs de contenu répétés.",
     "catalog.rules.wcag_242_page_titled.title": "Page titrée",
     "catalog.rules.wcag_242_page_titled.description": "Regroupe les contrôles garantissant que les documents possèdent un titre de page pertinent.",
+    "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
+    "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
     "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que les liens portant le même nom accessible ont la même fonction (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
+    "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible : minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
     "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
     "catalog.rules.wcag_311_language_of_page.description": "Regroupe les contrôles garantissant que la langue de la page est spécifiée.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Langue d’un passage",
+    "catalog.rules.wcag_312_language_of_parts.description": "Regroupe les contrôles garantissant que les éléments dont la langue diffère de la langue par défaut de la page la déclarent correctement.",
+    "catalog.rules.wcag_134_orientation.title": "Orientation",
+    "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_224_interruptions.title": "Interruptions",
+    "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
+    "catalog.rules.wcag_325_change_on_request.description": "Regroupe les contrôles garantissant que les changements de contexte n’ont lieu qu’à la demande de l’utilisateur (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Analyse syntaxique",
+    "catalog.rules.wcag_411_parsing.description": "Regroupe les contrôles garantissant que les valeurs d’id sont uniques. WCAG 2.0/2.1 uniquement : le critère de succès 4.1.1 a été supprimé dans WCAG 2.2, ce regroupement porte donc la balise wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Nom, rôle, valeur : nom accessible",
     "catalog.rules.wcag_412_name.description": "Regroupe les contrôles garantissant que les éléments interactifs courants exposent un nom accessible non vide.",
+    "catalog.rules.wcag_412_aria_validity.title": "Nom, rôle, valeur : validité ARIA",
+    "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
+    "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
+    "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Étiquettes ou instructions",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Regroupe les contrôles garantissant qu’une étape d’authentification laisse en place les mécanismes qui aident l’utilisateur à la franchir.",
     "labelInName_title": "Intitulé dans le nom : le nom accessible contient le texte visible",
     "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
@@ -12478,20 +12746,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "非テキストコンテンツに適切なテキストによる代替があるかを確認するチェックの集約です。",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "音声のみ及び映像のみ (収録済): トランスクリプト",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "収録済みの音声のみまたは映像のみのメディアに、トランスクリプトが用意されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "キャプション (収録済)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "収録済みの動画にキャプションのトラックがあるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_131_info_and_relationships.title": "情報及び関係性",
+    "catalog.rules.wcag_131_info_and_relationships.description": "表現によって伝えられる情報、構造、関係性が、プログラムで解釈できるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_141_use_of_color.title": "色の使用",
+    "catalog.rules.wcag_141_use_of_color.description": "色が情報を伝える唯一の視覚的手段になっていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_142_audio_control.title": "音声の制御",
+    "catalog.rules.wcag_142_audio_control.description": "自動再生される音声に、一時停止/停止または音量調節の仕組みがあるかを確認するチェックの集約です。",
     "catalog.rules.wcag_143_contrast_minimum.title": "コントラスト (最低限)",
     "catalog.rules.wcag_143_contrast_minimum.description": "テキストの最低限のコントラストを確認するチェックの集約です。",
     "catalog.rules.wcag_146_contrast_enhanced.title": "コントラスト (高度)",
     "catalog.rules.wcag_146_contrast_enhanced.description": "テキストの高度なコントラストを確認するチェックの集約です。",
+    "catalog.rules.wcag_211_keyboard.title": "キーボード",
+    "catalog.rules.wcag_211_keyboard.description": "機能がキーボードインタフェースで操作できるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "キーボード (例外なし)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "機能が例外なくキーボードインタフェースで操作できるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "一時停止、停止、非表示",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "動きのあるコンテンツ、点滅するコンテンツ、自動でスクロールするコンテンツを、一時停止、停止、非表示にできるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_241_bypass_blocks.title": "ブロックスキップ",
+    "catalog.rules.wcag_241_bypass_blocks.description": "繰り返されるコンテンツのブロックをスキップする手段がページにあるかを確認するチェックの集約です。",
     "catalog.rules.wcag_242_page_titled.title": "ページタイトル",
     "catalog.rules.wcag_242_page_titled.description": "文書に意味のあるページタイトルがあるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
+    "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
+    "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
     "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクのみ)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
+    "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
     "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
     "catalog.rules.wcag_258_target_size_minimum.description": "ポインターのターゲットが最小サイズの要件を満たしているかを確認するチェックの集約です。",
     "catalog.rules.wcag_311_language_of_page.title": "ページの言語",
     "catalog.rules.wcag_311_language_of_page.description": "ページの言語が指定されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_312_language_of_parts.title": "一部分の言語",
+    "catalog.rules.wcag_312_language_of_parts.description": "ページの既定の言語と異なる言語の要素で、その言語が正しく指定されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_134_orientation.title": "表示の向き",
+    "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
+    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_224_interruptions.title": "割り込み",
+    "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
+    "catalog.rules.wcag_325_change_on_request.description": "コンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_411_parsing.title": "構文解析",
+    "catalog.rules.wcag_411_parsing.description": "id の値が一意であるかを確認するチェックの集約です。WCAG 2.0/2.1 のみが対象です。達成基準 4.1.1 は WCAG 2.2 で削除されたため、この集約には wcag22-removed タグが付いています。",
     "catalog.rules.wcag_412_name.title": "名前 (name)・役割 (role) 及び値 (value): アクセシブルな名前",
     "catalog.rules.wcag_412_name.description": "よく使われるインタラクティブな要素が、空でないアクセシブルな名前を公開しているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_412_aria_validity.title": "名前 (name)・役割 (role) 及び値 (value): ARIA の妥当性",
+    "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
+    "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
+    "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_221_timing_adjustable.title": "タイミング調整可能",
+    "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "ラベル又は説明",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "認証の手順で、利用者を支援する仕組みが使える状態に保たれているかを確認するチェックの集約です。",
     "labelInName_title": "ラベルを含む名前 (name): アクセシブルな名前に表示テキストが含まれていること",
     "labelInName_description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認します (WCAG 2.5.3)。",
     "labelInName_summary_fail": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) が、アクセシブルな名前 (取得元: {{nameMechanism}}) に含まれていません。",
@@ -31185,6 +31503,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "progressbar-name-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_111_non_text_content.title",
+      "descriptionKey": "catalog.rules.wcag_111_non_text_content.description",
       "title": "Non-text content: text alternatives",
       "description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
       "wcagSc": [
@@ -31213,6 +31533,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "media-alternative-transcript-evidence"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_121_prerecorded_transcript.title",
+      "descriptionKey": "catalog.rules.wcag_121_prerecorded_transcript.description",
       "title": "Audio-only and video-only (prerecorded): transcript",
       "description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
       "wcagSc": [
@@ -31241,6 +31563,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "video-caption"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_122_captions_prerecorded.title",
+      "descriptionKey": "catalog.rules.wcag_122_captions_prerecorded.description",
       "title": "Captions (Prerecorded)",
       "description": "Rollup of checks for captions-track evidence on prerecorded video.",
       "wcagSc": [
@@ -31282,6 +31606,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "td-has-header"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
+      "descriptionKey": "catalog.rules.wcag_131_info_and_relationships.description",
       "title": "Info and Relationships",
       "description": "Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable.",
       "wcagSc": [
@@ -31310,6 +31636,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "link-in-text-block"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_141_use_of_color.title",
+      "descriptionKey": "catalog.rules.wcag_141_use_of_color.description",
       "title": "Use of Color",
       "description": "Rollup of checks ensuring color is not used as the only visual means of conveying information.",
       "wcagSc": [
@@ -31338,6 +31666,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "no-autoplay-audio"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_142_audio_control.title",
+      "descriptionKey": "catalog.rules.wcag_142_audio_control.description",
       "title": "Audio Control",
       "description": "Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio.",
       "wcagSc": [
@@ -31367,6 +31697,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast-minimum"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_143_contrast_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_143_contrast_minimum.description",
       "title": "Contrast: minimum",
       "description": "Rollup of checks for minimum text contrast.",
       "wcagSc": [
@@ -31396,6 +31728,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast-enhanced"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_146_contrast_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_146_contrast_enhanced.description",
       "title": "Contrast: enhanced",
       "description": "Rollup of checks for enhanced text contrast.",
       "wcagSc": [
@@ -31415,6 +31749,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouse-only-event-handlers"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_211_keyboard.title",
+      "descriptionKey": "catalog.rules.wcag_211_keyboard.description",
       "title": "Keyboard",
       "description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
       "wcagSc": [
@@ -31443,6 +31779,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollable-region-focusable"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
+      "descriptionKey": "catalog.rules.wcag_213_keyboard_no_exception.description",
       "title": "Keyboard (No Exception)",
       "description": "Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA).",
       "wcagSc": [
@@ -31458,6 +31796,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecated-elements-not-used"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
+      "descriptionKey": "catalog.rules.wcag_222_pause_stop_hide.description",
       "title": "Pause, Stop, Hide",
       "description": "Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden.",
       "wcagSc": [
@@ -31486,6 +31826,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypass-blocks-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_241_bypass_blocks.title",
+      "descriptionKey": "catalog.rules.wcag_241_bypass_blocks.description",
       "title": "Bypass Blocks",
       "description": "Rollup of checks ensuring the page provides a way to bypass repeated blocks of content.",
       "wcagSc": [
@@ -31515,6 +31857,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "page-title-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_242_page_titled.title",
+      "descriptionKey": "catalog.rules.wcag_242_page_titled.description",
       "title": "Page titled",
       "description": "Rollup of checks ensuring documents have a meaningful page title.",
       "wcagSc": [
@@ -31543,6 +31887,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "manual-review"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_243_focus_order.title",
+      "descriptionKey": "catalog.rules.wcag_243_focus_order.description",
       "title": "Focus order",
       "description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
       "wcagSc": [
@@ -31571,6 +31917,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "link-name-quality"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
+      "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
       "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
@@ -31600,6 +31948,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "form-control-label-quality"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_246_headings_and_labels.title",
+      "descriptionKey": "catalog.rules.wcag_246_headings_and_labels.description",
       "title": "Headings and Labels",
       "description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "wcagSc": [
@@ -31631,6 +31981,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "manual-review"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_247_focus_visible.title",
+      "descriptionKey": "catalog.rules.wcag_247_focus_visible.description",
       "title": "Focus visible",
       "description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "wcagSc": [
@@ -31659,6 +32011,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identical-links-same-purpose"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
+      "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
       "description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
@@ -31674,6 +32028,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "label-in-name"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_253_label_in_name.title",
+      "descriptionKey": "catalog.rules.wcag_253_label_in_name.description",
       "title": "Label in name",
       "description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "wcagSc": [
@@ -31702,6 +32058,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "target-size-minimum"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_258_target_size_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_258_target_size_minimum.description",
       "title": "Target size: minimum",
       "description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
       "wcagSc": [
@@ -31725,6 +32083,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "html-xml-lang-mismatch"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_311_language_of_page.title",
+      "descriptionKey": "catalog.rules.wcag_311_language_of_page.description",
       "title": "Language of page",
       "description": "Rollup of checks ensuring the page language is specified.",
       "wcagSc": [
@@ -31753,6 +32113,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "valid-lang"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_312_language_of_parts.title",
+      "descriptionKey": "catalog.rules.wcag_312_language_of_parts.description",
       "title": "Language of Parts",
       "description": "Rollup of checks ensuring elements whose language differs from the page default declare it correctly.",
       "wcagSc": [
@@ -31781,6 +32143,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "css-orientation-lock"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_134_orientation.title",
+      "descriptionKey": "catalog.rules.wcag_134_orientation.description",
       "title": "Orientation",
       "description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "wcagSc": [
@@ -31809,6 +32173,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocomplete-valid"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_135_identify_input_purpose.title",
+      "descriptionKey": "catalog.rules.wcag_135_identify_input_purpose.description",
       "title": "Identify Input Purpose",
       "description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
       "wcagSc": [
@@ -31837,6 +32203,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoid-inline-spacing"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
+      "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
       "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
       "wcagSc": [
@@ -31865,6 +32233,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "meta-refresh-no-exceptions"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_224_interruptions.title",
+      "descriptionKey": "catalog.rules.wcag_224_interruptions.description",
       "title": "Interruptions",
       "description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
       "wcagSc": [
@@ -31880,6 +32250,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "meta-refresh-no-exceptions"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_325_change_on_request.title",
+      "descriptionKey": "catalog.rules.wcag_325_change_on_request.description",
       "title": "Change on Request",
       "description": "Rollup of checks ensuring context changes only happen at the user's request (AAA).",
       "wcagSc": [
@@ -31895,6 +32267,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicate-id"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_411_parsing.title",
+      "descriptionKey": "catalog.rules.wcag_411_parsing.description",
       "title": "Parsing",
       "description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
       "wcagSc": [
@@ -31940,6 +32314,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tooltip-name-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_412_name.title",
+      "descriptionKey": "catalog.rules.wcag_412_name.description",
       "title": "Name, role, value: accessible name",
       "description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
       "wcagSc": [
@@ -31980,6 +32356,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-checked-state-mismatch"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_412_aria_validity.title",
+      "descriptionKey": "catalog.rules.wcag_412_aria_validity.description",
       "title": "Name, role, value: ARIA validity",
       "description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "wcagSc": [
@@ -32008,6 +32386,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "meta-viewport-zoom-enabled"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_144_resize_text.title",
+      "descriptionKey": "catalog.rules.wcag_144_resize_text.description",
       "title": "Resize Text",
       "description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
       "wcagSc": [
@@ -32036,6 +32416,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "meta-refresh-timing-absent"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_221_timing_adjustable.title",
+      "descriptionKey": "catalog.rules.wcag_221_timing_adjustable.description",
       "title": "Timing Adjustable",
       "description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
       "wcagSc": [
@@ -32065,6 +32447,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "form-control-programmatic-label-present"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_332_labels_or_instructions.title",
+      "descriptionKey": "catalog.rules.wcag_332_labels_or_instructions.description",
       "title": "Labels or Instructions",
       "description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "wcagSc": [
@@ -32093,6 +32477,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "password-paste-enabled"
     ],
     "meta": {
+      "titleKey": "catalog.rules.wcag_338_accessible_authentication_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_338_accessible_authentication_minimum.description",
       "title": "Accessible Authentication (Minimum)",
       "description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
       "wcagSc": [
@@ -56905,20 +57291,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Nicht-Text-Inhalte eine passende Textalternative haben.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Nur Audio und nur Video (voraufgezeichnet): Transkription",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Zusammenfassung von Prüfungen zur Verfügbarkeit einer Transkription für voraufgezeichnete Nur-Audio- oder Nur-Video-Medien.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Untertitel (aufgezeichnet)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Zusammenfassung von Prüfungen auf Hinweise auf eine Untertitelspur bei aufgezeichneten Videos.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Informationen und Beziehungen",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass durch Präsentation vermittelte Informationen, Strukturen und Beziehungen programmatisch ermittelbar sind.",
+    "catalog.rules.wcag_141_use_of_color.title": "Benutzung von Farbe",
+    "catalog.rules.wcag_141_use_of_color.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Farbe nicht das einzige visuelle Mittel zur Vermittlung von Informationen ist.",
+    "catalog.rules.wcag_142_audio_control.title": "Audio-Steuerelement",
+    "catalog.rules.wcag_142_audio_control.description": "Zusammenfassung von Prüfungen auf eine Möglichkeit, automatisch abgespieltes Audio anzuhalten, zu beenden oder in der Lautstärke zu regeln.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Kontrast: Minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Zusammenfassung von Prüfungen zum Mindesttextkontrast.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Kontrast: erweitert",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Zusammenfassung von Prüfungen zum erweiterten Textkontrast.",
+    "catalog.rules.wcag_211_keyboard.title": "Tastatur",
+    "catalog.rules.wcag_211_keyboard.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Funktionalität über eine Tastaturschnittstelle bedienbar ist.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Tastatur (keine Ausnahme)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Funktionalität ausnahmslos über eine Tastaturschnittstelle bedienbar ist (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Pausieren, beenden, ausblenden",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich bewegende, blinkende oder automatisch scrollende Inhalte pausiert, beendet oder ausgeblendet werden können.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Blöcke umgehen",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite eine Möglichkeit bietet, sich wiederholende Inhaltsblöcke zu umgehen.",
     "catalog.rules.wcag_242_page_titled.title": "Seite mit Titel",
     "catalog.rules.wcag_242_page_titled.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Dokumente einen aussagekräftigen Seitentitel haben.",
+    "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
+    "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
     "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (nur Links)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Links mit demselben zugänglichen Namen denselben Zweck erfüllen (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Beschriftung im Namen",
+    "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele die Mindestgrößenanforderungen erfüllen.",
     "catalog.rules.wcag_311_language_of_page.title": "Sprache der Seite",
     "catalog.rules.wcag_311_language_of_page.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Sprache der Seite angegeben ist.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Sprache von Teilen",
+    "catalog.rules.wcag_312_language_of_parts.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Elemente, deren Sprache von der Standardsprache der Seite abweicht, diese korrekt angeben.",
+    "catalog.rules.wcag_134_orientation.title": "Ausrichtung",
+    "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
+    "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
+    "catalog.rules.wcag_325_change_on_request.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Syntaxanalyse",
+    "catalog.rules.wcag_411_parsing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass id-Werte eindeutig sind. Nur WCAG 2.0/2.1: Erfolgskriterium 4.1.1 wurde in WCAG 2.2 entfernt, daher trägt diese Zusammenfassung das Tag wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Name, Rolle, Wert: zugänglicher Name",
     "catalog.rules.wcag_412_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass gängige interaktive Elemente einen nicht leeren zugänglichen Namen aufweisen.",
+    "catalog.rules.wcag_412_aria_validity.title": "Name, Rolle, Wert: ARIA-Gültigkeit",
+    "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
+    "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
+    "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Beschriftungen oder Anweisungen",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein Authentifizierungsschritt die Hilfsmittel, die Benutzern dabei helfen, weiterhin zulässt.",
     "labelInName_title": "Beschriftung im Namen: Der zugängliche Name enthält den sichtbaren Text",
     "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
@@ -57606,21 +58042,71 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.title": "Non-text content: text alternatives",
     "catalog.rules.wcag_111_non_text_content.description": "Rollup of checks ensuring non-text content has an appropriate text alternative.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio-only and video-only (prerecorded): transcript",
-    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only or video-only media.",
+    "catalog.rules.wcag_121_prerecorded_transcript.description": "Rollup of checks for transcript availability for prerecorded audio-only/video-only media.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Captions (Prerecorded)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Rollup of checks for captions-track evidence on prerecorded video.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Info and Relationships",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable.",
+    "catalog.rules.wcag_141_use_of_color.title": "Use of Color",
+    "catalog.rules.wcag_141_use_of_color.description": "Rollup of checks ensuring color is not used as the only visual means of conveying information.",
+    "catalog.rules.wcag_142_audio_control.title": "Audio Control",
+    "catalog.rules.wcag_142_audio_control.description": "Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contrast: minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Rollup of checks for minimum text contrast.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contrast: enhanced",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Rollup of checks for enhanced text contrast.",
+    "catalog.rules.wcag_211_keyboard.title": "Keyboard",
+    "catalog.rules.wcag_211_keyboard.description": "Rollup of checks ensuring functionality is operable through a keyboard interface.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Keyboard (No Exception)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Pause, Stop, Hide",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Bypass Blocks",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Rollup of checks ensuring the page provides a way to bypass repeated blocks of content.",
     "catalog.rules.wcag_242_page_titled.title": "Page titled",
     "catalog.rules.wcag_242_page_titled.description": "Rollup of checks ensuring documents have a meaningful page title.",
+    "catalog.rules.wcag_243_focus_order.title": "Focus order",
+    "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
     "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Label in name",
+    "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
     "catalog.rules.wcag_311_language_of_page.title": "Language of page",
     "catalog.rules.wcag_311_language_of_page.description": "Rollup of checks ensuring the page language is specified.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Language of Parts",
+    "catalog.rules.wcag_312_language_of_parts.description": "Rollup of checks ensuring elements whose language differs from the page default declare it correctly.",
+    "catalog.rules.wcag_134_orientation.title": "Orientation",
+    "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_224_interruptions.title": "Interruptions",
+    "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
+    "catalog.rules.wcag_325_change_on_request.description": "Rollup of checks ensuring context changes only happen at the user's request (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Parsing",
+    "catalog.rules.wcag_411_parsing.description": "Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag.",
     "catalog.rules.wcag_412_name.title": "Name, role, value: accessible name",
     "catalog.rules.wcag_412_name.description": "Rollup of checks that common interactive elements expose a non-empty accessible name.",
+    "catalog.rules.wcag_412_aria_validity.title": "Name, role, value: ARIA validity",
+    "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
+    "catalog.rules.wcag_144_resize_text.title": "Resize Text",
+    "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Labels or Instructions",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
     "labelInName_title": "Label in Name: accessible name contains visible text",
     "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
@@ -58309,20 +58795,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Agrupación de comprobaciones que garantizan que el contenido no textual tenga una alternativa textual apropiada.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Solo audio y solo video (pregrabado): transcripción",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Agrupación de comprobaciones sobre la disponibilidad de transcripción para medios pregrabados de solo audio o solo video.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Subtítulos (grabados)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Agrupación de comprobaciones de indicios de una pista de subtítulos en vídeos grabados.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Información y relaciones",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Agrupación de comprobaciones que garantizan que la información, la estructura y las relaciones transmitidas por la presentación puedan determinarse mediante programación.",
+    "catalog.rules.wcag_141_use_of_color.title": "Uso del color",
+    "catalog.rules.wcag_141_use_of_color.description": "Agrupación de comprobaciones que garantizan que el color no sea el único medio visual para transmitir información.",
+    "catalog.rules.wcag_142_audio_control.title": "Control del audio",
+    "catalog.rules.wcag_142_audio_control.description": "Agrupación de comprobaciones de un mecanismo para pausar, detener o controlar el volumen del audio que se reproduce automáticamente.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contraste: mínimo",
     "catalog.rules.wcag_143_contrast_minimum.description": "Agrupación de comprobaciones del contraste mínimo del texto.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste: mejorado",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Agrupación de comprobaciones del contraste de texto mejorado.",
+    "catalog.rules.wcag_211_keyboard.title": "Teclado",
+    "catalog.rules.wcag_211_keyboard.description": "Agrupación de comprobaciones que garantizan que la funcionalidad se pueda operar mediante una interfaz de teclado.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Teclado (sin excepciones)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Agrupación de comprobaciones que garantizan que la funcionalidad se pueda operar mediante una interfaz de teclado, sin excepciones (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Poner en pausa, detener, ocultar",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Agrupación de comprobaciones que garantizan que el contenido en movimiento, parpadeante o con desplazamiento automático se pueda pausar, detener u ocultar.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Evitar bloques",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Agrupación de comprobaciones que garantizan que la página ofrezca un modo de evitar los bloques de contenido repetidos.",
     "catalog.rules.wcag_242_page_titled.title": "Página titulada",
     "catalog.rules.wcag_242_page_titled.description": "Agrupación de comprobaciones que garantizan que los documentos tengan un título de página significativo.",
+    "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
+    "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
     "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que los enlaces con el mismo nombre accesible tengan el mismo propósito (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
+    "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo: mínimo",
     "catalog.rules.wcag_258_target_size_minimum.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero cumplan los requisitos de tamaño mínimo.",
     "catalog.rules.wcag_311_language_of_page.title": "Idioma de la página",
     "catalog.rules.wcag_311_language_of_page.description": "Agrupación de comprobaciones que garantizan que el idioma de la página esté especificado.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Idioma de las partes",
+    "catalog.rules.wcag_312_language_of_parts.description": "Agrupación de comprobaciones que garantizan que los elementos cuyo idioma difiere del idioma predeterminado de la página lo declaren correctamente.",
+    "catalog.rules.wcag_134_orientation.title": "Orientación",
+    "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
+    "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
+    "catalog.rules.wcag_325_change_on_request.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto solo se produzcan a petición del usuario (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Procesamiento",
+    "catalog.rules.wcag_411_parsing.description": "Agrupación de comprobaciones que garantizan que los valores de id sean únicos. Solo WCAG 2.0/2.1: el criterio de conformidad 4.1.1 se eliminó en WCAG 2.2, por lo que esta agrupación lleva la etiqueta wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Nombre, rol, valor: nombre accesible",
     "catalog.rules.wcag_412_name.description": "Agrupación de comprobaciones que garantizan que los elementos interactivos comunes expongan un nombre accesible no vacío.",
+    "catalog.rules.wcag_412_aria_validity.title": "Nombre, rol, valor: validez de ARIA",
+    "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
+    "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
+    "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Etiquetas o instrucciones",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Agrupación de comprobaciones que garantizan que un paso de autenticación mantenga disponibles los mecanismos que ayudan al usuario a completarlo.",
     "labelInName_title": "Etiqueta en el nombre: el nombre accesible contiene el texto visible",
     "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
@@ -59011,20 +59547,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "Regroupe les contrôles garantissant que le contenu non textuel dispose d’une alternative textuelle appropriée.",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "Audio seul et vidéo seule (préenregistrés) : transcription",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "Regroupe les contrôles vérifiant la disponibilité d’une transcription pour les médias audio seuls ou vidéo seuls préenregistrés.",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "Sous-titres (pré-enregistrés)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "Regroupe les contrôles recherchant une piste de sous-titres sur les vidéos pré-enregistrées.",
+    "catalog.rules.wcag_131_info_and_relationships.title": "Information et relations",
+    "catalog.rules.wcag_131_info_and_relationships.description": "Regroupe les contrôles garantissant que l’information, la structure et les relations véhiculées par la présentation peuvent être déterminées par un programme informatique.",
+    "catalog.rules.wcag_141_use_of_color.title": "Utilisation de la couleur",
+    "catalog.rules.wcag_141_use_of_color.description": "Regroupe les contrôles garantissant que la couleur n’est pas le seul moyen visuel de transmettre une information.",
+    "catalog.rules.wcag_142_audio_control.title": "Contrôle du son",
+    "catalog.rules.wcag_142_audio_control.description": "Regroupe les contrôles vérifiant qu’un son joué automatiquement peut être mis en pause, arrêté ou réglé en volume.",
     "catalog.rules.wcag_143_contrast_minimum.title": "Contraste : minimum",
     "catalog.rules.wcag_143_contrast_minimum.description": "Regroupe les contrôles relatifs au contraste minimal du texte.",
     "catalog.rules.wcag_146_contrast_enhanced.title": "Contraste : renforcé",
     "catalog.rules.wcag_146_contrast_enhanced.description": "Regroupe les contrôles relatifs au contraste renforcé du texte.",
+    "catalog.rules.wcag_211_keyboard.title": "Clavier",
+    "catalog.rules.wcag_211_keyboard.description": "Regroupe les contrôles garantissant que les fonctionnalités sont utilisables au moyen d’une interface clavier.",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "Clavier (pas d’exception)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "Regroupe les contrôles garantissant que les fonctionnalités sont utilisables au moyen d’une interface clavier, sans exception (AAA).",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "Mettre en pause, arrêter, masquer",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "Regroupe les contrôles garantissant qu’un contenu en mouvement, clignotant ou défilant automatiquement peut être mis en pause, arrêté ou masqué.",
+    "catalog.rules.wcag_241_bypass_blocks.title": "Contourner des blocs",
+    "catalog.rules.wcag_241_bypass_blocks.description": "Regroupe les contrôles garantissant que la page offre un moyen de contourner les blocs de contenu répétés.",
     "catalog.rules.wcag_242_page_titled.title": "Page titrée",
     "catalog.rules.wcag_242_page_titled.description": "Regroupe les contrôles garantissant que les documents possèdent un titre de page pertinent.",
+    "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
+    "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
+    "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
     "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que les liens portant le même nom accessible ont la même fonction (AAA).",
+    "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
+    "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
     "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible : minimum",
     "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
     "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
     "catalog.rules.wcag_311_language_of_page.description": "Regroupe les contrôles garantissant que la langue de la page est spécifiée.",
+    "catalog.rules.wcag_312_language_of_parts.title": "Langue d’un passage",
+    "catalog.rules.wcag_312_language_of_parts.description": "Regroupe les contrôles garantissant que les éléments dont la langue diffère de la langue par défaut de la page la déclarent correctement.",
+    "catalog.rules.wcag_134_orientation.title": "Orientation",
+    "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+    "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_224_interruptions.title": "Interruptions",
+    "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
+    "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
+    "catalog.rules.wcag_325_change_on_request.description": "Regroupe les contrôles garantissant que les changements de contexte n’ont lieu qu’à la demande de l’utilisateur (AAA).",
+    "catalog.rules.wcag_411_parsing.title": "Analyse syntaxique",
+    "catalog.rules.wcag_411_parsing.description": "Regroupe les contrôles garantissant que les valeurs d’id sont uniques. WCAG 2.0/2.1 uniquement : le critère de succès 4.1.1 a été supprimé dans WCAG 2.2, ce regroupement porte donc la balise wcag22-removed.",
     "catalog.rules.wcag_412_name.title": "Nom, rôle, valeur : nom accessible",
     "catalog.rules.wcag_412_name.description": "Regroupe les contrôles garantissant que les éléments interactifs courants exposent un nom accessible non vide.",
+    "catalog.rules.wcag_412_aria_validity.title": "Nom, rôle, valeur : validité ARIA",
+    "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
+    "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
+    "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+    "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
+    "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "Étiquettes ou instructions",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Regroupe les contrôles garantissant qu’une étape d’authentification laisse en place les mécanismes qui aident l’utilisateur à la franchir.",
     "labelInName_title": "Intitulé dans le nom : le nom accessible contient le texte visible",
     "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
     "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
@@ -59713,20 +60299,70 @@ const I18N = {
     "catalog.rules.wcag_111_non_text_content.description": "非テキストコンテンツに適切なテキストによる代替があるかを確認するチェックの集約です。",
     "catalog.rules.wcag_121_prerecorded_transcript.title": "音声のみ及び映像のみ (収録済): トランスクリプト",
     "catalog.rules.wcag_121_prerecorded_transcript.description": "収録済みの音声のみまたは映像のみのメディアに、トランスクリプトが用意されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_122_captions_prerecorded.title": "キャプション (収録済)",
+    "catalog.rules.wcag_122_captions_prerecorded.description": "収録済みの動画にキャプションのトラックがあるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_131_info_and_relationships.title": "情報及び関係性",
+    "catalog.rules.wcag_131_info_and_relationships.description": "表現によって伝えられる情報、構造、関係性が、プログラムで解釈できるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_141_use_of_color.title": "色の使用",
+    "catalog.rules.wcag_141_use_of_color.description": "色が情報を伝える唯一の視覚的手段になっていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_142_audio_control.title": "音声の制御",
+    "catalog.rules.wcag_142_audio_control.description": "自動再生される音声に、一時停止/停止または音量調節の仕組みがあるかを確認するチェックの集約です。",
     "catalog.rules.wcag_143_contrast_minimum.title": "コントラスト (最低限)",
     "catalog.rules.wcag_143_contrast_minimum.description": "テキストの最低限のコントラストを確認するチェックの集約です。",
     "catalog.rules.wcag_146_contrast_enhanced.title": "コントラスト (高度)",
     "catalog.rules.wcag_146_contrast_enhanced.description": "テキストの高度なコントラストを確認するチェックの集約です。",
+    "catalog.rules.wcag_211_keyboard.title": "キーボード",
+    "catalog.rules.wcag_211_keyboard.description": "機能がキーボードインタフェースで操作できるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_213_keyboard_no_exception.title": "キーボード (例外なし)",
+    "catalog.rules.wcag_213_keyboard_no_exception.description": "機能が例外なくキーボードインタフェースで操作できるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_222_pause_stop_hide.title": "一時停止、停止、非表示",
+    "catalog.rules.wcag_222_pause_stop_hide.description": "動きのあるコンテンツ、点滅するコンテンツ、自動でスクロールするコンテンツを、一時停止、停止、非表示にできるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_241_bypass_blocks.title": "ブロックスキップ",
+    "catalog.rules.wcag_241_bypass_blocks.description": "繰り返されるコンテンツのブロックをスキップする手段がページにあるかを確認するチェックの集約です。",
     "catalog.rules.wcag_242_page_titled.title": "ページタイトル",
     "catalog.rules.wcag_242_page_titled.description": "文書に意味のあるページタイトルがあるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
+    "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
+    "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
     "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+    "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクのみ)",
+    "catalog.rules.wcag_249_link_purpose_link_only.description": "同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
+    "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
     "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
     "catalog.rules.wcag_258_target_size_minimum.description": "ポインターのターゲットが最小サイズの要件を満たしているかを確認するチェックの集約です。",
     "catalog.rules.wcag_311_language_of_page.title": "ページの言語",
     "catalog.rules.wcag_311_language_of_page.description": "ページの言語が指定されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_312_language_of_parts.title": "一部分の言語",
+    "catalog.rules.wcag_312_language_of_parts.description": "ページの既定の言語と異なる言語の要素で、その言語が正しく指定されているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_134_orientation.title": "表示の向き",
+    "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
+    "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
+    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_224_interruptions.title": "割り込み",
+    "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
+    "catalog.rules.wcag_325_change_on_request.description": "コンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
+    "catalog.rules.wcag_411_parsing.title": "構文解析",
+    "catalog.rules.wcag_411_parsing.description": "id の値が一意であるかを確認するチェックの集約です。WCAG 2.0/2.1 のみが対象です。達成基準 4.1.1 は WCAG 2.2 で削除されたため、この集約には wcag22-removed タグが付いています。",
     "catalog.rules.wcag_412_name.title": "名前 (name)・役割 (role) 及び値 (value): アクセシブルな名前",
     "catalog.rules.wcag_412_name.description": "よく使われるインタラクティブな要素が、空でないアクセシブルな名前を公開しているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_412_aria_validity.title": "名前 (name)・役割 (role) 及び値 (value): ARIA の妥当性",
+    "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
+    "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
+    "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_221_timing_adjustable.title": "タイミング調整可能",
+    "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_332_labels_or_instructions.title": "ラベル又は説明",
+    "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
+    "catalog.rules.wcag_338_accessible_authentication_minimum.description": "認証の手順で、利用者を支援する仕組みが使える状態に保たれているかを確認するチェックの集約です。",
     "labelInName_title": "ラベルを含む名前 (name): アクセシブルな名前に表示テキストが含まれていること",
     "labelInName_description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認します (WCAG 2.5.3)。",
     "labelInName_summary_fail": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) が、アクセシブルな名前 (取得元: {{nameMechanism}}) に含まれていません。",
