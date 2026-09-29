@@ -150,6 +150,10 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 - WCAG tagging: `wcag2a`, `wcag111`
 - domain: `nontext`, `images`, plus element-specific tags
 - nature: `atomic`, plus `automatic` or `manual`
+- another standard's own requirement: `rgaa` (see below)
+
+#### Rules for another standard's own requirements
+A rule that checks something WCAG does not require, but another standard does (RGAA's doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag, `rgaa`. The tag makes it **opt-in**: it runs only under the standard's profile (`rgaa-4.1.2`), a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Map it to the standard's requirements the usual way (for RGAA, a row in `src/coverage/rgaa-rule-map.js`). Rule tags come from `ruleTag` in `src/coverage/standards.js`.
 
 #### `meta.coverage.facetsBySc`
 This is the repo’s explicit **coverage model** for an SC.

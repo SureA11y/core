@@ -1,7 +1,7 @@
 # Rule examples
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
-example pairs for all 132 rules, meant to feed a future rule-page docs site the
+example pairs for all 137 rules, meant to feed a future rule-page docs site the
 way alfa.siteimprove.com/rules pages show worked examples alongside a rule's
 description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md), which carries
 each rule's title, WCAG mapping, applicability, and expectation — this file
@@ -646,6 +646,29 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 ```
 `<dt>` has no `<dl>` ancestor at all.
 
+## doctype-present
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<!doctype html>
+<html lang="en">
+  <head><title>Quarterly report</title></head>
+  <body>Hi</body>
+</html>
+```
+The document starts with the HTML5 doctype.
+
+**Failed**
+```html
+<html lang="en">
+  <head><title>Quarterly report</title></head>
+  <body>Hi</body>
+</html>
+```
+No doctype, which RGAA 8.1.1 requires.
+
 ## duplicate-id
 
 *A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`. The failed example below targets `engineOptions.wcagVersion: '2.0'` to show the rule's underlying decision directly.*
@@ -1069,6 +1092,24 @@ Non-empty alt is present on this image button — worth confirming "Submit order
 <input type="image" src="submit.png" alt="" title="Submit order">
 ```
 Empty alt on a functional control is `input-image-alt-decorative`'s question, not this rule's.
+
+## label-for-target-valid
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<label for="email">Email</label>
+<input id="email" type="email">
+```
+The `for` value is the id of the field.
+
+**Failed**
+```html
+<label for="e-mail">Email</label>
+<input id="email" type="email">
+```
+No element has the id `e-mail`, so the label labels nothing.
 
 ## label-in-name
 
@@ -1535,6 +1576,26 @@ Fallback text is present — worth confirming "Product brochure (PDF)" is genuin
 ```
 No fallback content, ARIA name, or title exists to review; that's `object-text-alternative-present`'s failure instead.
 
+## optgroup-label-present
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<select aria-label="City">
+  <optgroup label="France"><option>Paris</option></optgroup>
+</select>
+```
+The option group has a `label`.
+
+**Failed**
+```html
+<select aria-label="City">
+  <optgroup><option>Paris</option></optgroup>
+</select>
+```
+The option group has no `label` attribute.
+
 ## option-name-present
 
 **Passed**
@@ -1649,6 +1710,22 @@ No paste handler is attached at all.
 ```
 No conflicting naming attribute is present alongside the presentation role.
 
+## presentational-attributes-absent
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<table class="prices"><tr><td>12 €</td></tr></table>
+```
+The presentation is left to CSS.
+
+**Failed**
+```html
+<table border="1" cellpadding="4"><tr><td>12 €</td></tr></table>
+```
+`border` and `cellpadding` are on RGAA 10.1.2's list of presentational attributes.
+
 ## presentational-children-focusable-absent
 
 **Passed**
@@ -1665,6 +1742,22 @@ No presentational content that also happens to be focusable.
 </button>
 ```
 The nested `<span>` carries its own interactive role and tab stop inside the button's presentational content.
+
+## presentational-elements-absent
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<p class="centred">Welcome</p>
+```
+The centring is left to CSS.
+
+**Failed**
+```html
+<center>Welcome</center>
+```
+`<center>` is on RGAA 10.1.1's list of presentational elements.
 
 ## progressbar-name-present
 

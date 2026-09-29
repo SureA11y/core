@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 132,
+    "totalRules": 137,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -1589,6 +1589,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/doctype-present.js",
+      "ruleId": "doctype-present",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page declares a valid doctype",
+      "tags": [
+        "rgaa",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/duplicate-id-aria.js",
       "ruleId": "duplicate-id-aria",
       "wcagScNormative": [
@@ -2190,6 +2213,30 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/label-for-target-valid.js",
+      "ruleId": "label-for-target-valid",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Labels point to a form field",
+      "tags": [
+        "rgaa",
+        "forms",
+        "labels",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/label-in-name.js",
@@ -2897,6 +2944,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/optgroup-label-present.js",
+      "ruleId": "optgroup-label-present",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Option groups have a label",
+      "tags": [
+        "rgaa",
+        "forms",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/option-name-present.js",
       "ruleId": "option-name-present",
       "wcagScNormative": [
@@ -2996,6 +3066,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/presentational-attributes-absent.js",
+      "ruleId": "presentational-attributes-absent",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page uses no presentational attributes",
+      "tags": [
+        "rgaa",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/presentational-children-focusable-absent.js",
       "ruleId": "presentational-children-focusable-absent",
       "wcagScNormative": [
@@ -3044,6 +3137,29 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/presentational-elements-absent.js",
+      "ruleId": "presentational-elements-absent",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page uses no presentational elements",
+      "tags": [
+        "rgaa",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/progressbar-name-present.js",

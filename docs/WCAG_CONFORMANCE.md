@@ -37,7 +37,7 @@ carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
 `{ tags: ['wcag2aa'] }` on its own therefore runs the 10 rules mapped to a 2.0 AA
 criterion, not the ~100 that make up an A + AA target. List every level you mean.
-`engineOptions.profile` (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does
+`engineOptions.profile` (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`, `section508`, `rgaa-4.1.2`) does
 this for you; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
@@ -111,7 +111,21 @@ With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its r
 
 Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1).
 
-91 of the 132 rules map to at least one test, and together they reach 41 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 65 no rule reaches.
+96 of the 137 rules map to at least one test, and together they reach 44 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 62 no rule reaches.
+
+`profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other selection runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping.
+
+Five opt-in rules check RGAA requirements WCAG does not make, each deciding exactly what the RGAA test's procedure checks:
+
+| Rule | RGAA | Fails when |
+|---|---|---|
+| `doctype-present` | 8.1.1–8.1.3 | the page has no doctype, or one that is neither HTML5 nor a W3C recommended doctype |
+| `presentational-elements-absent` | 10.1.1 | the page uses an element RGAA lists (`<font>`, `<center>`, `<big>`, `<s>`, …; `<u>` too without the HTML5 doctype) |
+| `presentational-attributes-absent` | 10.1.2 | an HTML element carries an attribute RGAA lists (`align`, `bgcolor`, `border`, …), with RGAA's exceptions for `size`, `width` and `height` |
+| `optgroup-label-present` | 11.8.2 | an `<optgroup>` in a `<select>` has no label, or an empty one |
+| `label-for-target-valid` | 11.1.2 | a `<label for>` matches no id, an empty one, or an element that cannot be labelled |
+
+They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` is, although HTML5 keeps it.
 
 A test on a result means the rule checks part of it, never that the test is conforme: a `pass` is not an RGAA verdict, and most tests need a human. **The mapping has not yet been reviewed by an RGAA auditor**; corrections go in `src/coverage/rgaa-rule-map.js`, and `npm run rgaa-mapping-doc` regenerates the page.
 
@@ -131,7 +145,7 @@ The build then adds its entries to every rule and composite, `engineOptions.mapp
 No automated tool — this one included — can certify full WCAG conformance. That's not a limitation specific to surea11y; it's inherent to WCAG itself; a meaningful fraction of Success Criteria require human judgment (is this alt text *accurate*, not just *present*; is this error message *understandable*) or dynamic testing this engine's static-DOM-scan architecture cannot do at all (keyboard-trap detection, real layout/reflow at zoom). See [`LIMITATIONS.md`](./LIMITATIONS.md) for the full, explicit list of what's out of scope and why.
 
 What surea11y *can* give you, honestly:
-- Every `fail` is a real, deterministic, normative violation under the version you targeted — never a guess.
+- Every `fail` is a real, deterministic, normative violation of the standard and version you targeted — never a guess. By default that standard is WCAG: a rule for a requirement only another standard makes (an RGAA-only rule, say) is opt-in and runs only when you target that standard ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)), so a WCAG scan never fails a page for something WCAG does not require.
 - Every `cantTell` is an explicit flag for human review, not a swallowed uncertainty.
 - The facet coverage table tells you exactly which parts of which SCs have zero automated coverage, so you know where a `pass` is silent rather than exhaustive.
 

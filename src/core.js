@@ -3269,6 +3269,74 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "doctype-present",
+    "title": "Page declares a valid doctype",
+    "description": "Checks that the document has a doctype, and that it is the HTML5 doctype or a W3C recommended one.",
+    "i18n": {
+      "titleKey": "doctypePresent_title",
+      "descriptionKey": "doctypePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.1",
+        "title": "Pour chaque page web, le type de document (balise doctype) est-il présent ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.2",
+        "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.3",
+        "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id",
     "title": "IDs must be unique",
     "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
@@ -5377,6 +5445,58 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "label-for-target-valid",
+    "title": "Labels point to a form field",
+    "description": "Checks that the for attribute of each <label> matches the id of a form field it can label.",
+    "i18n": {
+      "titleKey": "labelForTargetValid_title",
+      "descriptionKey": "labelForTargetValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "labels",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.2",
+        "title": "Chaque champ de formulaire associé à une balise <label> ayant un attribut for, vérifie-t-il ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.6",
+          "3.3.2",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -7619,6 +7739,54 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "optgroup-label-present",
+    "title": "Option groups have a label",
+    "description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
+    "i18n": {
+      "titleKey": "optgroupLabelPresent_title",
+      "descriptionKey": "optgroupLabelPresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.8.2",
+        "title": "Dans chaque balise <select>, chaque balise <optgroup> possède-t-elle un attribut label ?",
+        "criterion": "11.8",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "option-name-present",
     "title": "Options have an accessible name",
     "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
@@ -8082,6 +8250,55 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "presentational-attributes-absent",
+    "title": "Page uses no presentational attributes",
+    "description": "Checks that no HTML element carries one of the presentational attributes RGAA lists, such as align, bgcolor or border.",
+    "i18n": {
+      "titleKey": "presentationalAttributesAbsent_title",
+      "descriptionKey": "presentationalAttributesAbsent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.2",
+        "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "presentational-children-focusable-absent",
     "title": "Roles with presentational children must not contain focusable content",
     "description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
@@ -8148,6 +8365,55 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "presentational-elements-absent",
+    "title": "Page uses no presentational elements",
+    "description": "Checks that the page contains none of the presentational elements RGAA lists, such as <font>, <center> or <big>.",
+    "i18n": {
+      "titleKey": "presentationalElementsAbsent_title",
+      "descriptionKey": "presentationalElementsAbsent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.1",
+        "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -12257,6 +12523,7 @@ const RULE_IMPLS = {
   "deprecated-elements-not-used": { run: require("./checks/automatic/deprecated-elements-not-used.js").runInPage, applicability: require("./checks/automatic/deprecated-elements-not-used.js").applicability || null },
   "dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
   "dlitem-parent-valid": { run: require("./checks/automatic/dlitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/dlitem-parent-valid.js").applicability || null },
+  "doctype-present": { run: require("./checks/automatic/doctype-present.js").runInPage, applicability: require("./checks/automatic/doctype-present.js").applicability || null },
   "duplicate-id": { run: require("./checks/automatic/duplicate-id.js").runInPage, applicability: require("./checks/automatic/duplicate-id.js").applicability || null },
   "duplicate-id-aria": { run: require("./checks/automatic/duplicate-id-aria.js").runInPage, applicability: require("./checks/automatic/duplicate-id-aria.js").applicability || null },
   "embed-text-alternative-present": { run: require("./checks/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/embed-text-alternative-present.js").applicability || null },
@@ -12284,6 +12551,7 @@ const RULE_IMPLS = {
   "input-image-alt-decorative": { run: require("./checks/manual/input-image-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-decorative-manual.js").applicability || null },
   "input-image-alt-present": { run: require("./checks/automatic/input-image-alt-present.js").runInPage, applicability: require("./checks/automatic/input-image-alt-present.js").applicability || null },
   "input-image-alt-quality": { run: require("./checks/manual/input-image-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-quality-manual.js").applicability || null },
+  "label-for-target-valid": { run: require("./checks/automatic/label-for-target-valid.js").runInPage, applicability: require("./checks/automatic/label-for-target-valid.js").applicability || null },
   "label-in-name": { run: require("./checks/automatic/label-in-name.js").runInPage, applicability: require("./checks/automatic/label-in-name.js").applicability || null },
   "label-title-only": { run: require("./checks/manual/label-title-only-manual.js").runInPage, applicability: require("./checks/manual/label-title-only-manual.js").applicability || null },
   "landmark-banner-is-top-level": { run: require("./checks/manual/landmark-banner-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-banner-is-top-level-manual.js").applicability || null },
@@ -12314,6 +12582,7 @@ const RULE_IMPLS = {
   "no-autoplay-audio": { run: require("./checks/manual/no-autoplay-audio-manual.js").runInPage, applicability: require("./checks/manual/no-autoplay-audio-manual.js").applicability || null },
   "object-text-alternative-present": { run: require("./checks/automatic/object-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/object-text-alternative-present.js").applicability || null },
   "object-text-alternative-quality": { run: require("./checks/manual/object-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/object-text-alternative-quality-manual.js").applicability || null },
+  "optgroup-label-present": { run: require("./checks/automatic/optgroup-label-present.js").runInPage, applicability: require("./checks/automatic/optgroup-label-present.js").applicability || null },
   "option-name-present": { run: require("./checks/automatic/option-name-present.js").runInPage, applicability: require("./checks/automatic/option-name-present.js").applicability || null },
   "p-as-heading": { run: require("./checks/manual/p-as-heading-manual.js").runInPage, applicability: require("./checks/manual/p-as-heading-manual.js").applicability || null },
   "page-has-heading-one": { run: require("./checks/manual/page-has-heading-one-manual.js").runInPage, applicability: require("./checks/manual/page-has-heading-one-manual.js").applicability || null },
@@ -12321,7 +12590,9 @@ const RULE_IMPLS = {
   "page-title-present": { run: require("./checks/automatic/page-title-present.js").runInPage, applicability: require("./checks/automatic/page-title-present.js").applicability || null },
   "password-paste-enabled": { run: require("./checks/manual/password-paste-enabled-manual.js").runInPage, applicability: require("./checks/manual/password-paste-enabled-manual.js").applicability || null },
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
+  "presentational-attributes-absent": { run: require("./checks/automatic/presentational-attributes-absent.js").runInPage, applicability: require("./checks/automatic/presentational-attributes-absent.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
+  "presentational-elements-absent": { run: require("./checks/automatic/presentational-elements-absent.js").runInPage, applicability: require("./checks/automatic/presentational-elements-absent.js").applicability || null },
   "progressbar-name-present": { run: require("./checks/automatic/progressbar-name-present.js").runInPage, applicability: require("./checks/automatic/progressbar-name-present.js").applicability || null },
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
@@ -13115,6 +13386,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht.",
     "linkNameQuality_summary_cantTell_formatName": "Der zugängliche Name dieses Links („{{name}}“) benennt ein Dateiformat/-typ, aber nicht das zugehörige Dokument.",
     "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in nahegelegenem Text/einer zugehörigen Überschrift (z. B. „Jahresbericht herunterladen (HTML)“ statt nur „HTML“).",
+    "doctypePresent_title": "Die Seite deklariert einen gültigen Doctype",
+    "doctypePresent_description": "Prüft, ob das Dokument einen Doctype hat und ob es der HTML5-Doctype oder ein vom W3C empfohlener ist.",
+    "doctypePresent_summary_fail_missing": "Die Seite hat keinen Doctype.",
+    "doctypePresent_summary_fail_invalid": "Die Seite deklariert einen Doctype, der weder HTML5 noch vom W3C empfohlen ist.",
+    "doctypePresent_hint_fail": "Beginnen Sie die Seite mit <!DOCTYPE html>, vor dem <html>-Element.",
+    "presentationalElementsAbsent_title": "Die Seite verwendet keine Präsentationselemente",
+    "presentationalElementsAbsent_description": "Prüft, ob die Seite keines der Präsentationselemente enthält, die der RGAA aufführt, etwa <font>, <center> oder <big>.",
+    "presentationalElementsAbsent_summary_fail": "Das Präsentationselement <{{element}}> wird verwendet.",
+    "presentationalElementsAbsent_hint_fail": "Ersetzen Sie es durch das Element, das die Bedeutung trägt, oder gestalten Sie die Darstellung mit CSS.",
+    "presentationalAttributesAbsent_title": "Die Seite verwendet keine Präsentationsattribute",
+    "presentationalAttributesAbsent_description": "Prüft, ob kein HTML-Element eines der Präsentationsattribute trägt, die der RGAA aufführt, etwa align, bgcolor oder border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> trägt Präsentationsattribute: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Entfernen Sie sie und legen Sie die Darstellung stattdessen in CSS fest.",
+    "optgroupLabelPresent_title": "Optionsgruppen haben eine Beschriftung",
+    "optgroupLabelPresent_description": "Prüft, ob jedes <optgroup> in einem <select> ein nicht leeres label-Attribut hat.",
+    "optgroupLabelPresent_summary_fail_missing": "Diese Optionsgruppe hat kein label-Attribut.",
+    "optgroupLabelPresent_summary_fail_empty": "Diese Optionsgruppe hat ein leeres label-Attribut.",
+    "optgroupLabelPresent_hint_fail": "Geben Sie dem <optgroup> ein label-Attribut, das benennt, was seine Optionen gemeinsam haben.",
+    "labelForTargetValid_title": "Beschriftungen verweisen auf ein Formularfeld",
+    "labelForTargetValid_description": "Prüft, ob das for-Attribut jedes <label> der id eines Formularfelds entspricht, das es beschriften kann.",
+    "labelForTargetValid_summary_fail_empty": "Diese Beschriftung hat ein leeres for-Attribut und beschriftet daher kein Feld.",
+    "labelForTargetValid_summary_fail_missing": "Diese Beschriftung verweist auf die id \"{{value}}\", die kein Element in ihrem Baum hat.",
+    "labelForTargetValid_summary_fail_notLabelable": "Diese Beschriftung verweist auf die id \"{{value}}\", die zu einem <{{element}}> gehört, nicht zu einem Formularfeld.",
+    "labelForTargetValid_hint_fail": "Setzen Sie das for-Attribut auf die id des Felds, das diese Beschriftung benennt, oder entfernen Sie es und setzen Sie das Feld in die Beschriftung.",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -13926,6 +14221,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Make the link text itself describe its destination/purpose (e.g. \"Download the 2026 pricing guide\" instead of \"Download\"), or confirm the surrounding context already makes the purpose clear.",
     "linkNameQuality_summary_cantTell_formatName": "This link's accessible name (\"{{name}}\") names a file format/type but not the document it belongs to.",
     "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text or in nearby text/a heading the link is associated with (e.g. \"Download the annual report (HTML)\" instead of a bare \"HTML\").",
+    "doctypePresent_title": "Page declares a valid doctype",
+    "doctypePresent_description": "Checks that the document has a doctype, and that it is the HTML5 doctype or a W3C recommended one.",
+    "doctypePresent_summary_fail_missing": "The page has no doctype.",
+    "doctypePresent_summary_fail_invalid": "The page declares a doctype that is neither HTML5 nor a W3C recommended one.",
+    "doctypePresent_hint_fail": "Start the page with <!DOCTYPE html>, before the <html> element.",
+    "presentationalElementsAbsent_title": "Page uses no presentational elements",
+    "presentationalElementsAbsent_description": "Checks that the page contains none of the presentational elements RGAA lists, such as <font>, <center> or <big>.",
+    "presentationalElementsAbsent_summary_fail": "The presentational element <{{element}}> is used.",
+    "presentationalElementsAbsent_hint_fail": "Replace it with the element that carries the meaning, or with CSS for the presentation.",
+    "presentationalAttributesAbsent_title": "Page uses no presentational attributes",
+    "presentationalAttributesAbsent_description": "Checks that no HTML element carries one of the presentational attributes RGAA lists, such as align, bgcolor or border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> carries presentational attributes: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Remove them and set the presentation in CSS instead.",
+    "optgroupLabelPresent_title": "Option groups have a label",
+    "optgroupLabelPresent_description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
+    "optgroupLabelPresent_summary_fail_missing": "This option group has no label attribute.",
+    "optgroupLabelPresent_summary_fail_empty": "This option group has an empty label attribute.",
+    "optgroupLabelPresent_hint_fail": "Give the <optgroup> a label attribute naming what its options have in common.",
+    "labelForTargetValid_title": "Labels point to a form field",
+    "labelForTargetValid_description": "Checks that the for attribute of each <label> matches the id of a form field it can label.",
+    "labelForTargetValid_summary_fail_empty": "This label has an empty for attribute, so it labels no field.",
+    "labelForTargetValid_summary_fail_missing": "This label points to id \"{{value}}\", which no element in its tree has.",
+    "labelForTargetValid_summary_fail_notLabelable": "This label points to id \"{{value}}\", which belongs to a <{{element}}>, not a form field.",
+    "labelForTargetValid_hint_fail": "Set the for attribute to the id of the field this label names, or remove it and put the field inside the label.",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -14737,6 +15056,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito.",
     "linkNameQuality_summary_cantTell_formatName": "El nombre accesible de este enlace (\"{{name}}\") indica un formato/tipo de archivo, pero no el documento al que pertenece.",
     "linkNameQuality_hint_cantTell_formatName": "Indique el documento en el texto del enlace o en el texto/encabezado cercano asociado al enlace (por ejemplo, \"Descargar el informe anual (HTML)\" en lugar de un simple \"HTML\").",
+    "doctypePresent_title": "La página declara un doctype válido",
+    "doctypePresent_description": "Comprueba que el documento tiene un doctype y que es el doctype de HTML5 o uno recomendado por el W3C.",
+    "doctypePresent_summary_fail_missing": "La página no tiene doctype.",
+    "doctypePresent_summary_fail_invalid": "La página declara un doctype que no es ni HTML5 ni uno recomendado por el W3C.",
+    "doctypePresent_hint_fail": "Empezar la página con <!DOCTYPE html>, antes del elemento <html>.",
+    "presentationalElementsAbsent_title": "La página no usa elementos de presentación",
+    "presentationalElementsAbsent_description": "Comprueba que la página no contiene ninguno de los elementos de presentación que enumera el RGAA, como <font>, <center> o <big>.",
+    "presentationalElementsAbsent_summary_fail": "Se usa el elemento de presentación <{{element}}>.",
+    "presentationalElementsAbsent_hint_fail": "Sustituirlo por el elemento que aporta el significado, o por CSS para la presentación.",
+    "presentationalAttributesAbsent_title": "La página no usa atributos de presentación",
+    "presentationalAttributesAbsent_description": "Comprueba que ningún elemento HTML lleva uno de los atributos de presentación que enumera el RGAA, como align, bgcolor o border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> lleva atributos de presentación: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Eliminarlos y definir la presentación en CSS.",
+    "optgroupLabelPresent_title": "Los grupos de opciones tienen una etiqueta",
+    "optgroupLabelPresent_description": "Comprueba que cada <optgroup> de un <select> tiene un atributo label no vacío.",
+    "optgroupLabelPresent_summary_fail_missing": "Este grupo de opciones no tiene atributo label.",
+    "optgroupLabelPresent_summary_fail_empty": "Este grupo de opciones tiene un atributo label vacío.",
+    "optgroupLabelPresent_hint_fail": "Dar al <optgroup> un atributo label que diga qué tienen en común sus opciones.",
+    "labelForTargetValid_title": "Las etiquetas apuntan a un campo de formulario",
+    "labelForTargetValid_description": "Comprueba que el atributo for de cada <label> coincide con el id de un campo de formulario que puede etiquetar.",
+    "labelForTargetValid_summary_fail_empty": "Esta etiqueta tiene un atributo for vacío, así que no etiqueta ningún campo.",
+    "labelForTargetValid_summary_fail_missing": "Esta etiqueta apunta al id \"{{value}}\", que ningún elemento de su árbol tiene.",
+    "labelForTargetValid_summary_fail_notLabelable": "Esta etiqueta apunta al id \"{{value}}\", que pertenece a un <{{element}}>, no a un campo de formulario.",
+    "labelForTargetValid_hint_fail": "Poner en el atributo for el id del campo que nombra esta etiqueta, o eliminarlo y colocar el campo dentro de la etiqueta.",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -15548,6 +15891,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair.",
     "linkNameQuality_summary_cantTell_formatName": "Le nom accessible de ce lien (« {{name}} ») indique un format/type de fichier, mais pas le document auquel il appartient.",
     "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien ou dans le texte/titre proche auquel le lien est associé (ex. « Télécharger le rapport annuel (HTML) » plutôt qu’un simple « HTML »).",
+    "doctypePresent_title": "La page déclare un doctype valide",
+    "doctypePresent_description": "Vérifie que le document a un doctype, et qu’il s’agit du doctype HTML5 ou d’un doctype recommandé par le W3C.",
+    "doctypePresent_summary_fail_missing": "La page n’a pas de doctype.",
+    "doctypePresent_summary_fail_invalid": "La page déclare un doctype qui n’est ni HTML5 ni recommandé par le W3C.",
+    "doctypePresent_hint_fail": "Commencez la page par <!DOCTYPE html>, avant l’élément <html>.",
+    "presentationalElementsAbsent_title": "La page n’utilise pas d’éléments de présentation",
+    "presentationalElementsAbsent_description": "Vérifie que la page ne contient aucun des éléments de présentation listés par le RGAA, comme <font>, <center> ou <big>.",
+    "presentationalElementsAbsent_summary_fail": "L’élément de présentation <{{element}}> est utilisé.",
+    "presentationalElementsAbsent_hint_fail": "Remplacez-le par l’élément qui porte le sens, ou par des CSS pour la présentation.",
+    "presentationalAttributesAbsent_title": "La page n’utilise pas d’attributs de présentation",
+    "presentationalAttributesAbsent_description": "Vérifie qu’aucun élément HTML ne porte l’un des attributs de présentation listés par le RGAA, comme align, bgcolor ou border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> porte des attributs de présentation : {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Supprimez-les et définissez la présentation dans les CSS.",
+    "optgroupLabelPresent_title": "Les groupes d’options ont une étiquette",
+    "optgroupLabelPresent_description": "Vérifie que chaque <optgroup> d’un <select> a un attribut label non vide.",
+    "optgroupLabelPresent_summary_fail_missing": "Ce groupe d’options n’a pas d’attribut label.",
+    "optgroupLabelPresent_summary_fail_empty": "Ce groupe d’options a un attribut label vide.",
+    "optgroupLabelPresent_hint_fail": "Donnez à l’<optgroup> un attribut label qui nomme ce que ses options ont en commun.",
+    "labelForTargetValid_title": "Les étiquettes pointent vers un champ de formulaire",
+    "labelForTargetValid_description": "Vérifie que l’attribut for de chaque <label> correspond à l’id d’un champ de formulaire qu’il peut étiqueter.",
+    "labelForTargetValid_summary_fail_empty": "Cette étiquette a un attribut for vide : elle n’étiquette aucun champ.",
+    "labelForTargetValid_summary_fail_missing": "Cette étiquette pointe vers l’id \"{{value}}\", qu’aucun élément de son arbre ne porte.",
+    "labelForTargetValid_summary_fail_notLabelable": "Cette étiquette pointe vers l’id \"{{value}}\", qui appartient à un <{{element}}>, pas à un champ de formulaire.",
+    "labelForTargetValid_hint_fail": "Donnez à l’attribut for l’id du champ que nomme cette étiquette, ou supprimez-le et placez le champ dans l’étiquette.",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -16359,6 +16726,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "リンクテキスト自体でリンク先や目的がわかるようにするか (例:「ダウンロード」ではなく「2026 年版の料金ガイドをダウンロード」)、周囲の文脈ですでに目的が明確になっているか確認してください。",
     "linkNameQuality_summary_cantTell_formatName": "このリンクのアクセシブルな名前 (「{{name}}」) はファイルの形式や種類を示していますが、どの文書のものかを示していません。",
     "linkNameQuality_hint_cantTell_formatName": "リンクテキスト、またはリンクが関連付けられている近くのテキストや見出しで、文書の名前を示してください (例: 単なる「HTML」ではなく「年次報告書をダウンロード (HTML)」)。",
+    "doctypePresent_title": "ページが有効な doctype を宣言している",
+    "doctypePresent_description": "文書に doctype があり、それが HTML5 の doctype か W3C が推奨する doctype であるかを確認します。",
+    "doctypePresent_summary_fail_missing": "ページに doctype がありません。",
+    "doctypePresent_summary_fail_invalid": "ページが宣言している doctype は、HTML5 でも W3C 推奨のものでもありません。",
+    "doctypePresent_hint_fail": "ページの先頭、<html> 要素より前に <!DOCTYPE html> を記述してください。",
+    "presentationalElementsAbsent_title": "ページが表示用の要素を使用していない",
+    "presentationalElementsAbsent_description": "RGAA が挙げる表示用の要素 (<font>、<center>、<big> など) がページに含まれていないかを確認します。",
+    "presentationalElementsAbsent_summary_fail": "表示用の要素 <{{element}}> が使用されています。",
+    "presentationalElementsAbsent_hint_fail": "意味を担う要素に置き換えるか、表示は CSS で指定してください。",
+    "presentationalAttributesAbsent_title": "ページが表示用の属性を使用していない",
+    "presentationalAttributesAbsent_description": "RGAA が挙げる表示用の属性 (align、bgcolor、border など) を持つ HTML 要素がないかを確認します。",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> に表示用の属性があります: {{attributes}}。",
+    "presentationalAttributesAbsent_hint_fail": "これらを削除し、表示は CSS で指定してください。",
+    "optgroupLabelPresent_title": "選択肢のグループにラベルがある",
+    "optgroupLabelPresent_description": "<select> 内の各 <optgroup> に空でない label 属性があるかを確認します。",
+    "optgroupLabelPresent_summary_fail_missing": "この選択肢のグループには label 属性がありません。",
+    "optgroupLabelPresent_summary_fail_empty": "この選択肢のグループの label 属性は空です。",
+    "optgroupLabelPresent_hint_fail": "<optgroup> に、含まれる選択肢の共通点を表す label 属性を指定してください。",
+    "labelForTargetValid_title": "ラベルがフォームのフィールドを指している",
+    "labelForTargetValid_description": "各 <label> の for 属性が、ラベル付けできるフォームのフィールドの id と一致するかを確認します。",
+    "labelForTargetValid_summary_fail_empty": "このラベルの for 属性は空のため、どのフィールドにもラベルが付きません。",
+    "labelForTargetValid_summary_fail_missing": "このラベルは id \"{{value}}\" を指していますが、同じツリーにその id を持つ要素はありません。",
+    "labelForTargetValid_summary_fail_notLabelable": "このラベルは id \"{{value}}\" を指していますが、それはフォームのフィールドではなく <{{element}}> の id です。",
+    "labelForTargetValid_hint_fail": "for 属性に、このラベルが示すフィールドの id を指定するか、for 属性を削除してフィールドをラベルの中に入れてください。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -16895,6 +17286,13 @@ const CONFORMANCE_PROFILES = {
     "wcag2aa",
     "wcag21a",
     "wcag21aa"
+  ],
+  "rgaa-4.1.2": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "rgaa"
   ]
 }
 };
@@ -16928,12 +17326,126 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = [
+  "rgaa"
+];
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = {
+  "rgaa-4.1.2": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-allowed-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "doctype-present",
+    "duplicate-id",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "empty-heading",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "heading-order",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "image-redundant-alt",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-for-target-valid",
+    "label-in-name",
+    "landmark-no-duplicate-main",
+    "landmark-one-main",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "optgroup-label-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "presentational-attributes-absent",
+    "presentational-elements-absent",
+    "role-img-text-alternative-present",
+    "scope-attr-valid",
+    "searchbox-name-present",
+    "skip-link",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "tabindex",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "td-has-header",
+    "textbox-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption"
+  ]
+};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
   ],
   "en301549-v3.2.1": [
     "en301549:V3.2.1"
+  ],
+  "rgaa-4.1.2": [
+    "rgaa:4.1.2"
   ]
 };
 
@@ -17034,6 +17546,11 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
     selection.profile = requestedProfile;
   }
   return selection;
@@ -17134,6 +17651,19 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, or its id is included directly. Nothing else selects it, not a
+  // default run, a WCAG tag set or a composite id, so a scan that does not
+  // target the standard never reports a failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    if (!askedByTag && !askedById) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;
@@ -29845,6 +30375,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "doctype-present",
+    "title": "Page declares a valid doctype",
+    "description": "Checks that the document has a doctype, and that it is the HTML5 doctype or a W3C recommended one.",
+    "i18n": {
+      "titleKey": "doctypePresent_title",
+      "descriptionKey": "doctypePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.1",
+        "title": "Pour chaque page web, le type de document (balise doctype) est-il présent ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.2",
+        "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.3",
+        "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "duplicate-id",
     "title": "IDs must be unique",
     "description": "Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).",
@@ -31953,6 +32551,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "label-for-target-valid",
+    "title": "Labels point to a form field",
+    "description": "Checks that the for attribute of each <label> matches the id of a form field it can label.",
+    "i18n": {
+      "titleKey": "labelForTargetValid_title",
+      "descriptionKey": "labelForTargetValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "labels",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.2",
+        "title": "Chaque champ de formulaire associé à une balise <label> ayant un attribut for, vérifie-t-il ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.6",
+          "3.3.2",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -34195,6 +34845,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "optgroup-label-present",
+    "title": "Option groups have a label",
+    "description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
+    "i18n": {
+      "titleKey": "optgroupLabelPresent_title",
+      "descriptionKey": "optgroupLabelPresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.8.2",
+        "title": "Dans chaque balise <select>, chaque balise <optgroup> possède-t-elle un attribut label ?",
+        "criterion": "11.8",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "option-name-present",
     "title": "Options have an accessible name",
     "description": "Checks that elements with role=\"option\" expose a non-empty accessible name.",
@@ -34658,6 +35356,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "presentational-attributes-absent",
+    "title": "Page uses no presentational attributes",
+    "description": "Checks that no HTML element carries one of the presentational attributes RGAA lists, such as align, bgcolor or border.",
+    "i18n": {
+      "titleKey": "presentationalAttributesAbsent_title",
+      "descriptionKey": "presentationalAttributesAbsent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.2",
+        "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "presentational-children-focusable-absent",
     "title": "Roles with presentational children must not contain focusable content",
     "description": "Checks that an element whose role makes its children presentational (button, checkbox, img, option, radio, slider, switch, tab, ...) contains no descendant that takes a tab stop.",
@@ -34724,6 +35471,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "presentational-elements-absent",
+    "title": "Page uses no presentational elements",
+    "description": "Checks that the page contains none of the presentational elements RGAA lists, such as <font>, <center> or <big>.",
+    "i18n": {
+      "titleKey": "presentationalElementsAbsent_title",
+      "descriptionKey": "presentationalElementsAbsent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.1.1",
+        "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
+        "wcagSc": [
+          "1.3.1",
+          "1.3.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -47786,6 +48582,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "doctype-present": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const RECOMMENDED_PUBLIC_IDS = [
+    '-//IETF//DTD HTML 2.0//EN',
+    '-//W3C//DTD HTML 3.2 FINAL//EN',
+    '-//W3C//DTD HTML 4.01//EN',
+    '-//W3C//DTD HTML 4.01 TRANSITIONAL//EN',
+    '-//W3C//DTD HTML 4.01 FRAMESET//EN',
+    '-//W3C//DTD XHTML 1.0 STRICT//EN',
+    '-//W3C//DTD XHTML 1.0 TRANSITIONAL//EN',
+    '-//W3C//DTD XHTML 1.0 FRAMESET//EN',
+    '-//W3C//DTD XHTML 1.1//EN',
+    '-//W3C//DTD XHTML BASIC 1.0//EN',
+    '-//W3C//DTD XHTML BASIC 1.1//EN'
+  ];
+
+  const doctype = document.doctype;
+  let reasonCode = null;
+  let declared = '';
+
+  if (!doctype) {
+    reasonCode = 'missingDoctype';
+  } else {
+    const name = String(doctype.name || '');
+    const publicId = String(doctype.publicId || '');
+    const systemId = String(doctype.systemId || '');
+    declared =
+      '<!DOCTYPE ' +
+      name +
+      (publicId ? ' PUBLIC "' + publicId + '"' : systemId ? ' SYSTEM' : '') +
+      (systemId ? ' "' + systemId + '"' : '') +
+      '>';
+
+    const isHtml = name.toLowerCase() === 'html';
+    const isHtml5 = !publicId && (!systemId || systemId === 'about:legacy-compat');
+    const isRecommended = RECOMMENDED_PUBLIC_IDS.includes(publicId.trim().toUpperCase());
+    if (!isHtml || !(isHtml5 || isRecommended)) reasonCode = 'invalidDoctype';
+  }
+
+  if (!reasonCode) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  // A doctype is not an element, so the finding is reported on <html>, with
+  // the declared doctype as its snippet.
+  const missing = reasonCode === 'missingDoctype';
+  const occurrence = helpers.reportOccurrence(document.documentElement, {
+    selector: 'html',
+    html: missing ? '<!DOCTYPE>(missing)' : declared,
+    summary: missing
+      ? 'The page has no doctype.'
+      : 'The page declares a doctype that is neither HTML5 nor a W3C recommended one.',
+    hint: 'Start the page with <!DOCTYPE html>, before the <html> element.',
+    i18n: {
+      summaryKey: missing
+        ? 'doctypePresent_summary_fail_missing'
+        : 'doctypePresent_summary_fail_invalid',
+      hintKey: 'doctypePresent_hint_fail',
+      params: {}
+    },
+    data: {
+      details: { reasonCode, doctype: declared },
+      visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+    }
+  });
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences: [occurrence]
+  };
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "duplicate-id": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -52620,6 +53492,106 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+}), applicability: null },
+    "label-for-target-valid": { run: (function runInPage(ctx) {
+  const { document, window, helpers, rule } = ctx;
+
+  const LABELABLE = ['button', 'meter', 'output', 'progress', 'select', 'textarea'];
+
+  function isLabelable(el) {
+    const tag = String(el.tagName || '').toLowerCase();
+    if (LABELABLE.includes(tag)) return true;
+    if (tag === 'input') return String(el.getAttribute('type') || '').toLowerCase() !== 'hidden';
+    if (tag.includes('-')) {
+      try {
+        const definition = window && window.customElements && window.customElements.get(tag);
+        return !!(definition && definition.formAssociated === true);
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  function targetOf(label, value) {
+    let root = document;
+    try {
+      const r = label.getRootNode();
+      if (r && typeof r.getElementById === 'function') root = r;
+    } catch {
+      // keep the document
+    }
+    return root.getElementById(value);
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('label[for]')
+    : helpers.queryAll('label[for]');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const label of nodes) {
+    if (!label || !label.getAttribute) continue;
+    applicableCount += 1;
+
+    const value = String(label.getAttribute('for'));
+    let reasonCode = null;
+    let target = null;
+    if (!value) {
+      reasonCode = 'emptyFor';
+    } else {
+      target = targetOf(label, value);
+      if (!target) reasonCode = 'missingTarget';
+      else if (!isLabelable(target)) reasonCode = 'notLabelable';
+    }
+    if (!reasonCode) continue;
+
+    const element = target ? String(target.tagName).toLowerCase() : '';
+    const summaries = {
+      emptyFor: {
+        text: 'This label has an empty for attribute, so it labels no field.',
+        key: 'labelForTargetValid_summary_fail_empty'
+      },
+      missingTarget: {
+        text: `This label points to id "${value}", which no element in its tree has.`,
+        key: 'labelForTargetValid_summary_fail_missing'
+      },
+      notLabelable: {
+        text: `This label points to id "${value}", which belongs to a <${element}>, not a form field.`,
+        key: 'labelForTargetValid_summary_fail_notLabelable'
+      }
+    };
+
+    occurrences.push(
+      helpers.reportOccurrence(label, {
+        summary: summaries[reasonCode].text,
+        hint: 'Set the for attribute to the id of the field this label names, or remove it and put the field inside the label.',
+        i18n: {
+          summaryKey: summaries[reasonCode].key,
+          hintKey: 'labelForTargetValid_hint_fail',
+          params: { value, element }
+        },
+        data: {
+          details: { reasonCode, value, target: element || null },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -57582,6 +58554,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
+    "optgroup-label-present": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('select optgroup')
+    : helpers.queryAll('select optgroup');
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !el.getAttribute) continue;
+    applicableCount += 1;
+
+    const hasLabel = el.hasAttribute('label');
+    if (hasLabel && String(el.getAttribute('label')).trim()) continue;
+
+    const reasonCode = hasLabel ? 'emptyLabel' : 'missingLabel';
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: hasLabel
+          ? 'This option group has an empty label attribute.'
+          : 'This option group has no label attribute.',
+        hint: 'Give the <optgroup> a label attribute naming what its options have in common.',
+        i18n: {
+          summaryKey: hasLabel
+            ? 'optgroupLabelPresent_summary_fail_empty'
+            : 'optgroupLabelPresent_summary_fail_missing',
+          hintKey: 'optgroupLabelPresent_hint_fail',
+          params: {}
+        },
+        data: {
+          details: { reasonCode },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "option-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
@@ -58640,6 +59664,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "presentational-attributes-absent": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  const ALWAYS = [
+    'align',
+    'alink',
+    'background',
+    'bgcolor',
+    'border',
+    'cellpadding',
+    'cellspacing',
+    'char',
+    'charoff',
+    'clear',
+    'color',
+    'compact',
+    'frameborder',
+    'hspace',
+    'link',
+    'marginheight',
+    'marginwidth',
+    'text',
+    'valign',
+    'vlink',
+    'vspace'
+  ];
+  const SIZE_ALLOWED_ON = ['select'];
+  const DIMENSIONS_ALLOWED_ON = ['img', 'object', 'embed', 'canvas', 'svg'];
+
+  const selector = ALWAYS.concat(['size', 'width', 'height'])
+    .map((a) => '[' + a + ']')
+    .join(', ');
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
+
+  const occurrences = [];
+  for (const el of nodes) {
+    if (!el || !el.getAttribute || !el.tagName) continue;
+    if (el.namespaceURI && el.namespaceURI !== HTML_NS) continue;
+
+    const element = String(el.tagName).toLowerCase();
+    const found = ALWAYS.filter((a) => el.hasAttribute(a));
+    if (el.hasAttribute('size') && !SIZE_ALLOWED_ON.includes(element)) found.push('size');
+    if (!DIMENSIONS_ALLOWED_ON.includes(element)) {
+      if (el.hasAttribute('width')) found.push('width');
+      if (el.hasAttribute('height')) found.push('height');
+    }
+    if (!found.length) continue;
+
+    const attributes = found.join(', ');
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `<${element}> carries presentational attributes: ${attributes}.`,
+        hint: 'Remove them and set the presentation in CSS instead.',
+        i18n: {
+          summaryKey: 'presentationalAttributesAbsent_summary_fail',
+          hintKey: 'presentationalAttributesAbsent_hint_fail',
+          params: { element, attributes }
+        },
+        data: {
+          details: { reasonCode: 'presentationalAttribute', element, attributes: found },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
+}), applicability: null },
     "presentational-children-focusable-absent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -58879,6 +59982,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "presentational-elements-absent": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const ELEMENTS = ['basefont', 'big', 'blink', 'center', 'font', 'marquee', 's', 'strike', 'tt'];
+
+  const doctype = document.doctype;
+  const isHtml5 =
+    !!doctype &&
+    String(doctype.name || '').toLowerCase() === 'html' &&
+    !doctype.publicId &&
+    (!doctype.systemId || doctype.systemId === 'about:legacy-compat');
+  const selector = (isHtml5 ? ELEMENTS : ELEMENTS.concat(['u'])).join(', ');
+
+  const nodes = Array.from(
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  );
+  const seen = new Set(nodes);
+  for (const el of helpers.queryAll('basefont')) {
+    if (seen.has(el)) continue;
+    if (helpers.isExcluded && helpers.isExcluded(el)) continue;
+    nodes.push(el);
+  }
+
+  const occurrences = [];
+  for (const el of nodes) {
+    if (!el || !el.tagName) continue;
+    const element = String(el.tagName).toLowerCase();
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `The presentational element <${element}> is used.`,
+        hint: 'Replace it with the element that carries the meaning, or with CSS for the presentation.',
+        i18n: {
+          summaryKey: 'presentationalElementsAbsent_summary_fail',
+          hintKey: 'presentationalElementsAbsent_hint_fail',
+          params: { element }
+        },
+        data: {
+          details: { reasonCode: 'presentationalElement', element },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
 }), applicability: null },
     "progressbar-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -64463,6 +65620,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht.",
     "linkNameQuality_summary_cantTell_formatName": "Der zugängliche Name dieses Links („{{name}}“) benennt ein Dateiformat/-typ, aber nicht das zugehörige Dokument.",
     "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in nahegelegenem Text/einer zugehörigen Überschrift (z. B. „Jahresbericht herunterladen (HTML)“ statt nur „HTML“).",
+    "doctypePresent_title": "Die Seite deklariert einen gültigen Doctype",
+    "doctypePresent_description": "Prüft, ob das Dokument einen Doctype hat und ob es der HTML5-Doctype oder ein vom W3C empfohlener ist.",
+    "doctypePresent_summary_fail_missing": "Die Seite hat keinen Doctype.",
+    "doctypePresent_summary_fail_invalid": "Die Seite deklariert einen Doctype, der weder HTML5 noch vom W3C empfohlen ist.",
+    "doctypePresent_hint_fail": "Beginnen Sie die Seite mit <!DOCTYPE html>, vor dem <html>-Element.",
+    "presentationalElementsAbsent_title": "Die Seite verwendet keine Präsentationselemente",
+    "presentationalElementsAbsent_description": "Prüft, ob die Seite keines der Präsentationselemente enthält, die der RGAA aufführt, etwa <font>, <center> oder <big>.",
+    "presentationalElementsAbsent_summary_fail": "Das Präsentationselement <{{element}}> wird verwendet.",
+    "presentationalElementsAbsent_hint_fail": "Ersetzen Sie es durch das Element, das die Bedeutung trägt, oder gestalten Sie die Darstellung mit CSS.",
+    "presentationalAttributesAbsent_title": "Die Seite verwendet keine Präsentationsattribute",
+    "presentationalAttributesAbsent_description": "Prüft, ob kein HTML-Element eines der Präsentationsattribute trägt, die der RGAA aufführt, etwa align, bgcolor oder border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> trägt Präsentationsattribute: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Entfernen Sie sie und legen Sie die Darstellung stattdessen in CSS fest.",
+    "optgroupLabelPresent_title": "Optionsgruppen haben eine Beschriftung",
+    "optgroupLabelPresent_description": "Prüft, ob jedes <optgroup> in einem <select> ein nicht leeres label-Attribut hat.",
+    "optgroupLabelPresent_summary_fail_missing": "Diese Optionsgruppe hat kein label-Attribut.",
+    "optgroupLabelPresent_summary_fail_empty": "Diese Optionsgruppe hat ein leeres label-Attribut.",
+    "optgroupLabelPresent_hint_fail": "Geben Sie dem <optgroup> ein label-Attribut, das benennt, was seine Optionen gemeinsam haben.",
+    "labelForTargetValid_title": "Beschriftungen verweisen auf ein Formularfeld",
+    "labelForTargetValid_description": "Prüft, ob das for-Attribut jedes <label> der id eines Formularfelds entspricht, das es beschriften kann.",
+    "labelForTargetValid_summary_fail_empty": "Diese Beschriftung hat ein leeres for-Attribut und beschriftet daher kein Feld.",
+    "labelForTargetValid_summary_fail_missing": "Diese Beschriftung verweist auf die id \"{{value}}\", die kein Element in ihrem Baum hat.",
+    "labelForTargetValid_summary_fail_notLabelable": "Diese Beschriftung verweist auf die id \"{{value}}\", die zu einem <{{element}}> gehört, nicht zu einem Formularfeld.",
+    "labelForTargetValid_hint_fail": "Setzen Sie das for-Attribut auf die id des Felds, das diese Beschriftung benennt, oder entfernen Sie es und setzen Sie das Feld in die Beschriftung.",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -65274,6 +66455,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Make the link text itself describe its destination/purpose (e.g. \"Download the 2026 pricing guide\" instead of \"Download\"), or confirm the surrounding context already makes the purpose clear.",
     "linkNameQuality_summary_cantTell_formatName": "This link's accessible name (\"{{name}}\") names a file format/type but not the document it belongs to.",
     "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text or in nearby text/a heading the link is associated with (e.g. \"Download the annual report (HTML)\" instead of a bare \"HTML\").",
+    "doctypePresent_title": "Page declares a valid doctype",
+    "doctypePresent_description": "Checks that the document has a doctype, and that it is the HTML5 doctype or a W3C recommended one.",
+    "doctypePresent_summary_fail_missing": "The page has no doctype.",
+    "doctypePresent_summary_fail_invalid": "The page declares a doctype that is neither HTML5 nor a W3C recommended one.",
+    "doctypePresent_hint_fail": "Start the page with <!DOCTYPE html>, before the <html> element.",
+    "presentationalElementsAbsent_title": "Page uses no presentational elements",
+    "presentationalElementsAbsent_description": "Checks that the page contains none of the presentational elements RGAA lists, such as <font>, <center> or <big>.",
+    "presentationalElementsAbsent_summary_fail": "The presentational element <{{element}}> is used.",
+    "presentationalElementsAbsent_hint_fail": "Replace it with the element that carries the meaning, or with CSS for the presentation.",
+    "presentationalAttributesAbsent_title": "Page uses no presentational attributes",
+    "presentationalAttributesAbsent_description": "Checks that no HTML element carries one of the presentational attributes RGAA lists, such as align, bgcolor or border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> carries presentational attributes: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Remove them and set the presentation in CSS instead.",
+    "optgroupLabelPresent_title": "Option groups have a label",
+    "optgroupLabelPresent_description": "Checks that every <optgroup> in a <select> has a non-empty label attribute.",
+    "optgroupLabelPresent_summary_fail_missing": "This option group has no label attribute.",
+    "optgroupLabelPresent_summary_fail_empty": "This option group has an empty label attribute.",
+    "optgroupLabelPresent_hint_fail": "Give the <optgroup> a label attribute naming what its options have in common.",
+    "labelForTargetValid_title": "Labels point to a form field",
+    "labelForTargetValid_description": "Checks that the for attribute of each <label> matches the id of a form field it can label.",
+    "labelForTargetValid_summary_fail_empty": "This label has an empty for attribute, so it labels no field.",
+    "labelForTargetValid_summary_fail_missing": "This label points to id \"{{value}}\", which no element in its tree has.",
+    "labelForTargetValid_summary_fail_notLabelable": "This label points to id \"{{value}}\", which belongs to a <{{element}}>, not a form field.",
+    "labelForTargetValid_hint_fail": "Set the for attribute to the id of the field this label names, or remove it and put the field inside the label.",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -66085,6 +67290,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito.",
     "linkNameQuality_summary_cantTell_formatName": "El nombre accesible de este enlace (\"{{name}}\") indica un formato/tipo de archivo, pero no el documento al que pertenece.",
     "linkNameQuality_hint_cantTell_formatName": "Indique el documento en el texto del enlace o en el texto/encabezado cercano asociado al enlace (por ejemplo, \"Descargar el informe anual (HTML)\" en lugar de un simple \"HTML\").",
+    "doctypePresent_title": "La página declara un doctype válido",
+    "doctypePresent_description": "Comprueba que el documento tiene un doctype y que es el doctype de HTML5 o uno recomendado por el W3C.",
+    "doctypePresent_summary_fail_missing": "La página no tiene doctype.",
+    "doctypePresent_summary_fail_invalid": "La página declara un doctype que no es ni HTML5 ni uno recomendado por el W3C.",
+    "doctypePresent_hint_fail": "Empezar la página con <!DOCTYPE html>, antes del elemento <html>.",
+    "presentationalElementsAbsent_title": "La página no usa elementos de presentación",
+    "presentationalElementsAbsent_description": "Comprueba que la página no contiene ninguno de los elementos de presentación que enumera el RGAA, como <font>, <center> o <big>.",
+    "presentationalElementsAbsent_summary_fail": "Se usa el elemento de presentación <{{element}}>.",
+    "presentationalElementsAbsent_hint_fail": "Sustituirlo por el elemento que aporta el significado, o por CSS para la presentación.",
+    "presentationalAttributesAbsent_title": "La página no usa atributos de presentación",
+    "presentationalAttributesAbsent_description": "Comprueba que ningún elemento HTML lleva uno de los atributos de presentación que enumera el RGAA, como align, bgcolor o border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> lleva atributos de presentación: {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Eliminarlos y definir la presentación en CSS.",
+    "optgroupLabelPresent_title": "Los grupos de opciones tienen una etiqueta",
+    "optgroupLabelPresent_description": "Comprueba que cada <optgroup> de un <select> tiene un atributo label no vacío.",
+    "optgroupLabelPresent_summary_fail_missing": "Este grupo de opciones no tiene atributo label.",
+    "optgroupLabelPresent_summary_fail_empty": "Este grupo de opciones tiene un atributo label vacío.",
+    "optgroupLabelPresent_hint_fail": "Dar al <optgroup> un atributo label que diga qué tienen en común sus opciones.",
+    "labelForTargetValid_title": "Las etiquetas apuntan a un campo de formulario",
+    "labelForTargetValid_description": "Comprueba que el atributo for de cada <label> coincide con el id de un campo de formulario que puede etiquetar.",
+    "labelForTargetValid_summary_fail_empty": "Esta etiqueta tiene un atributo for vacío, así que no etiqueta ningún campo.",
+    "labelForTargetValid_summary_fail_missing": "Esta etiqueta apunta al id \"{{value}}\", que ningún elemento de su árbol tiene.",
+    "labelForTargetValid_summary_fail_notLabelable": "Esta etiqueta apunta al id \"{{value}}\", que pertenece a un <{{element}}>, no a un campo de formulario.",
+    "labelForTargetValid_hint_fail": "Poner en el atributo for el id del campo que nombra esta etiqueta, o eliminarlo y colocar el campo dentro de la etiqueta.",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -66896,6 +68125,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair.",
     "linkNameQuality_summary_cantTell_formatName": "Le nom accessible de ce lien (« {{name}} ») indique un format/type de fichier, mais pas le document auquel il appartient.",
     "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien ou dans le texte/titre proche auquel le lien est associé (ex. « Télécharger le rapport annuel (HTML) » plutôt qu’un simple « HTML »).",
+    "doctypePresent_title": "La page déclare un doctype valide",
+    "doctypePresent_description": "Vérifie que le document a un doctype, et qu’il s’agit du doctype HTML5 ou d’un doctype recommandé par le W3C.",
+    "doctypePresent_summary_fail_missing": "La page n’a pas de doctype.",
+    "doctypePresent_summary_fail_invalid": "La page déclare un doctype qui n’est ni HTML5 ni recommandé par le W3C.",
+    "doctypePresent_hint_fail": "Commencez la page par <!DOCTYPE html>, avant l’élément <html>.",
+    "presentationalElementsAbsent_title": "La page n’utilise pas d’éléments de présentation",
+    "presentationalElementsAbsent_description": "Vérifie que la page ne contient aucun des éléments de présentation listés par le RGAA, comme <font>, <center> ou <big>.",
+    "presentationalElementsAbsent_summary_fail": "L’élément de présentation <{{element}}> est utilisé.",
+    "presentationalElementsAbsent_hint_fail": "Remplacez-le par l’élément qui porte le sens, ou par des CSS pour la présentation.",
+    "presentationalAttributesAbsent_title": "La page n’utilise pas d’attributs de présentation",
+    "presentationalAttributesAbsent_description": "Vérifie qu’aucun élément HTML ne porte l’un des attributs de présentation listés par le RGAA, comme align, bgcolor ou border.",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> porte des attributs de présentation : {{attributes}}.",
+    "presentationalAttributesAbsent_hint_fail": "Supprimez-les et définissez la présentation dans les CSS.",
+    "optgroupLabelPresent_title": "Les groupes d’options ont une étiquette",
+    "optgroupLabelPresent_description": "Vérifie que chaque <optgroup> d’un <select> a un attribut label non vide.",
+    "optgroupLabelPresent_summary_fail_missing": "Ce groupe d’options n’a pas d’attribut label.",
+    "optgroupLabelPresent_summary_fail_empty": "Ce groupe d’options a un attribut label vide.",
+    "optgroupLabelPresent_hint_fail": "Donnez à l’<optgroup> un attribut label qui nomme ce que ses options ont en commun.",
+    "labelForTargetValid_title": "Les étiquettes pointent vers un champ de formulaire",
+    "labelForTargetValid_description": "Vérifie que l’attribut for de chaque <label> correspond à l’id d’un champ de formulaire qu’il peut étiqueter.",
+    "labelForTargetValid_summary_fail_empty": "Cette étiquette a un attribut for vide : elle n’étiquette aucun champ.",
+    "labelForTargetValid_summary_fail_missing": "Cette étiquette pointe vers l’id \"{{value}}\", qu’aucun élément de son arbre ne porte.",
+    "labelForTargetValid_summary_fail_notLabelable": "Cette étiquette pointe vers l’id \"{{value}}\", qui appartient à un <{{element}}>, pas à un champ de formulaire.",
+    "labelForTargetValid_hint_fail": "Donnez à l’attribut for l’id du champ que nomme cette étiquette, ou supprimez-le et placez le champ dans l’étiquette.",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -67707,6 +68960,30 @@ const I18N = {
     "linkNameQuality_hint_cantTell": "リンクテキスト自体でリンク先や目的がわかるようにするか (例:「ダウンロード」ではなく「2026 年版の料金ガイドをダウンロード」)、周囲の文脈ですでに目的が明確になっているか確認してください。",
     "linkNameQuality_summary_cantTell_formatName": "このリンクのアクセシブルな名前 (「{{name}}」) はファイルの形式や種類を示していますが、どの文書のものかを示していません。",
     "linkNameQuality_hint_cantTell_formatName": "リンクテキスト、またはリンクが関連付けられている近くのテキストや見出しで、文書の名前を示してください (例: 単なる「HTML」ではなく「年次報告書をダウンロード (HTML)」)。",
+    "doctypePresent_title": "ページが有効な doctype を宣言している",
+    "doctypePresent_description": "文書に doctype があり、それが HTML5 の doctype か W3C が推奨する doctype であるかを確認します。",
+    "doctypePresent_summary_fail_missing": "ページに doctype がありません。",
+    "doctypePresent_summary_fail_invalid": "ページが宣言している doctype は、HTML5 でも W3C 推奨のものでもありません。",
+    "doctypePresent_hint_fail": "ページの先頭、<html> 要素より前に <!DOCTYPE html> を記述してください。",
+    "presentationalElementsAbsent_title": "ページが表示用の要素を使用していない",
+    "presentationalElementsAbsent_description": "RGAA が挙げる表示用の要素 (<font>、<center>、<big> など) がページに含まれていないかを確認します。",
+    "presentationalElementsAbsent_summary_fail": "表示用の要素 <{{element}}> が使用されています。",
+    "presentationalElementsAbsent_hint_fail": "意味を担う要素に置き換えるか、表示は CSS で指定してください。",
+    "presentationalAttributesAbsent_title": "ページが表示用の属性を使用していない",
+    "presentationalAttributesAbsent_description": "RGAA が挙げる表示用の属性 (align、bgcolor、border など) を持つ HTML 要素がないかを確認します。",
+    "presentationalAttributesAbsent_summary_fail": "<{{element}}> に表示用の属性があります: {{attributes}}。",
+    "presentationalAttributesAbsent_hint_fail": "これらを削除し、表示は CSS で指定してください。",
+    "optgroupLabelPresent_title": "選択肢のグループにラベルがある",
+    "optgroupLabelPresent_description": "<select> 内の各 <optgroup> に空でない label 属性があるかを確認します。",
+    "optgroupLabelPresent_summary_fail_missing": "この選択肢のグループには label 属性がありません。",
+    "optgroupLabelPresent_summary_fail_empty": "この選択肢のグループの label 属性は空です。",
+    "optgroupLabelPresent_hint_fail": "<optgroup> に、含まれる選択肢の共通点を表す label 属性を指定してください。",
+    "labelForTargetValid_title": "ラベルがフォームのフィールドを指している",
+    "labelForTargetValid_description": "各 <label> の for 属性が、ラベル付けできるフォームのフィールドの id と一致するかを確認します。",
+    "labelForTargetValid_summary_fail_empty": "このラベルの for 属性は空のため、どのフィールドにもラベルが付きません。",
+    "labelForTargetValid_summary_fail_missing": "このラベルは id \"{{value}}\" を指していますが、同じツリーにその id を持つ要素はありません。",
+    "labelForTargetValid_summary_fail_notLabelable": "このラベルは id \"{{value}}\" を指していますが、それはフォームのフィールドではなく <{{element}}> の id です。",
+    "labelForTargetValid_hint_fail": "for 属性に、このラベルが示すフィールドの id を指定するか、for 属性を削除してフィールドをラベルの中に入れてください。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -68243,6 +69520,13 @@ const CONFORMANCE_PROFILES = {
     "wcag2aa",
     "wcag21a",
     "wcag21aa"
+  ],
+  "rgaa-4.1.2": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "rgaa"
   ]
 }
 };
@@ -68276,12 +69560,126 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = [
+  "rgaa"
+];
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = {
+  "rgaa-4.1.2": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-allowed-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "doctype-present",
+    "duplicate-id",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "empty-heading",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "heading-order",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "image-redundant-alt",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-for-target-valid",
+    "label-in-name",
+    "landmark-no-duplicate-main",
+    "landmark-one-main",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "optgroup-label-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "presentational-attributes-absent",
+    "presentational-elements-absent",
+    "role-img-text-alternative-present",
+    "scope-attr-valid",
+    "searchbox-name-present",
+    "skip-link",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "tabindex",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "td-has-header",
+    "textbox-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption"
+  ]
+};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
   ],
   "en301549-v3.2.1": [
     "en301549:V3.2.1"
+  ],
+  "rgaa-4.1.2": [
+    "rgaa:4.1.2"
   ]
 };
 
@@ -68382,6 +69780,11 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
     selection.profile = requestedProfile;
   }
   return selection;
@@ -68482,6 +69885,19 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, or its id is included directly. Nothing else selects it, not a
+  // default run, a WCAG tag set or a composite id, so a scan that does not
+  // target the standard never reports a failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    if (!askedByTag && !askedById) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;

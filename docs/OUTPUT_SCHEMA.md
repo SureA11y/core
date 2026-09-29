@@ -20,7 +20,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     schemaVersion: string,
     locale: { requested: string, resolved: string, reason: string },
     wcagVersion: "2.0" | "2.1" | "2.2",
-    profile?: "wcag22-aa" | "en301549-v4.1.1" | "en301549-v3.2.1" | "section508",
+    profile?: "wcag22-aa" | "en301549-v4.1.1" | "en301549-v3.2.1" | "section508" | "rgaa-4.1.2",
     mappings?: string[]    // e.g. ["en301549"], ["en301549:V3.2.1"] or ["en301549", "rgaa"]
   },
   url: string | null,

@@ -46,6 +46,7 @@ const {
   standardMappingsFor,
   withStandardMappings,
   validateStandards,
+  profileRuleIds,
   standardsData
 } = require('../src/coverage/standards');
 const {
@@ -80,6 +81,8 @@ const NORMATIVE_MAPPING_STANDARDS = Object.fromEntries(
   STANDARDS_DATA.map((s) => [s.key, { standard: s.standard, versions: s.versions }])
 );
 const WCAG_PROFILE_NAMES = ['wcag22-aa', 'section508'];
+// Tags of rules that run only when asked for: see ruleTag in the registry.
+const OPT_IN_RULE_TAGS = STANDARDS_DATA.filter((s) => s.ruleTag).map((s) => s.ruleTag);
 const STANDARD_PROFILES = Object.fromEntries(
   STANDARDS_DATA.flatMap((s) =>
     Object.entries(s.profiles).map(([name, p]) => [
@@ -89,6 +92,9 @@ const STANDARD_PROFILES = Object.fromEntries(
   )
 );
 for (const s of STANDARDS_DATA) {
+  if (s.ruleTag && (!/^[a-z0-9-]+$/.test(s.ruleTag) || /^wcag/.test(s.ruleTag))) {
+    throw new Error(`[build-core] rule tag "${s.ruleTag}" must be lowercase and not a WCAG tag`);
+  }
   if (!/^[a-z0-9-]+$/.test(s.key)) {
     throw new Error(
       `[build-core] standard key "${s.key}" must be lowercase letters, digits or '-'`
@@ -364,6 +370,12 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
   // passes the full list, so an omitted table reports dictionary-not-loaded
   // rather than pretending the language does not exist.
   const knownLocales = (knownLocalesArg || Object.keys(i18nAll || { en: {} })).slice().sort();
+
+  // Rules a profile runs by id on top of its tags (see mappedRules in the
+  // registry), computed from the rules actually built.
+  const profileRules = profileRuleIds(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  );
 
   const defs = mods.map((m) => ({
     ruleId: m.ruleId,
@@ -830,6 +842,16 @@ const NORMATIVE_MAPPING_STANDARDS = ${jsStringify(NORMATIVE_MAPPING_STANDARDS)};
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = ${jsStringify(OPT_IN_RULE_TAGS)};
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = ${jsStringify(profileRules)};
+
 const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
 
 /**
@@ -929,6 +951,11 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
     selection.profile = requestedProfile;
   }
   return selection;
@@ -1029,6 +1056,19 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, or its id is included directly. Nothing else selects it, not a
+  // default run, a WCAG tag set or a composite id, so a scan that does not
+  // target the standard never reports a failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    if (!askedByTag && !askedById) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;

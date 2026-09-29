@@ -2,13 +2,13 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**132 rules total: 79 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**137 rules total: 84 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (79), can return `fail`
+## Automatic rules (84), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -43,6 +43,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`deprecated-elements-not-used`](#deprecated-elements-not-used) | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | 2.2.2 | A | high | serious |
 | [`dialog-name-present`](#dialog-name-present) | Dialogs have an accessible name | 4.1.2 | A | high | serious |
 | [`dlitem-parent-valid`](#dlitem-parent-valid) | Description-list items must be inside a description list | 1.3.1 | A | high | serious |
+| [`doctype-present`](#doctype-present) | Page declares a valid doctype | — | — | high | moderate |
 | [`duplicate-id`](#duplicate-id) | IDs must be unique | 4.1.1 | A | high | moderate |
 | [`duplicate-id-aria`](#duplicate-id-aria) | IDs referenced by ARIA must be unique | 4.1.2 | A | high | serious |
 | [`embed-text-alternative-present`](#embed-text-alternative-present) | &lt;embed&gt; must provide a text alternative | 1.1.1 | A | high | serious |
@@ -56,6 +57,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`iframe-title-unique`](#iframe-title-unique) | Frame titles must be unique | 4.1.2 | A | high | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
+| [`label-for-target-valid`](#label-for-target-valid) | Labels point to a form field | — | — | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
 | [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
@@ -69,9 +71,12 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`meter-name-present`](#meter-name-present) | Meters have an accessible name | 1.1.1 | A | high | serious |
 | [`nested-interactive-controls-absent`](#nested-interactive-controls-absent) | Interactive controls must not be nested | 4.1.2 | A | high | serious |
 | [`object-text-alternative-present`](#object-text-alternative-present) | &lt;object&gt; must provide a text alternative | 1.1.1 | A | high | serious |
+| [`optgroup-label-present`](#optgroup-label-present) | Option groups have a label | — | — | high | moderate |
 | [`option-name-present`](#option-name-present) | Options have an accessible name | 4.1.2 | A | high | serious |
 | [`page-title-present`](#page-title-present) | Page has a non-empty title | 2.4.2 | A | high | serious |
+| [`presentational-attributes-absent`](#presentational-attributes-absent) | Page uses no presentational attributes | — | — | high | minor |
 | [`presentational-children-focusable-absent`](#presentational-children-focusable-absent) | Roles with presentational children must not contain focusable content | 4.1.2 | A | high | serious |
+| [`presentational-elements-absent`](#presentational-elements-absent) | Page uses no presentational elements | — | — | high | minor |
 | [`progressbar-name-present`](#progressbar-name-present) | Progress bars have an accessible name | 1.1.1 | A | high | serious |
 | [`role-img-text-alternative-present`](#role-img-text-alternative-present) | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | [`searchbox-name-present`](#searchbox-name-present) | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
@@ -699,6 +704,18 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 **Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container is not exposed as a term/definition to assistive technologies.
 
+### `doctype-present`
+
+**Page declares a valid doctype**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that the document has a doctype, and that it is the HTML5 doctype or a W3C recommended one.
+
+**Applies to.** Applies to a run over a whole document. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: a subtree has no doctype of its own.
+
+**Expectation.** The document has a doctype whose name is html, and which is either the HTML5 doctype (no public identifier) or one of the W3C recommended doctypes for HTML 2.0 to 4.01, XHTML 1.0, XHTML 1.1 and XHTML Basic (RGAA 8.1.1 to 8.1.3). A doctype written after &lt;html&gt; is dropped by the HTML parser, so it reads as missing here, which is what RGAA 8.1.3 fails.
+
 ### `duplicate-id`
 
 **IDs must be unique**
@@ -1052,6 +1069,18 @@ Flags &lt;input type="image"&gt; elements with non-empty alt text for human revi
 **Applies to.** Applies to &lt;input type="image"&gt; elements whose alt attribute is present and non-empty: an image button whose alt is its label. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role.
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
+
+### `label-for-target-valid`
+
+**Labels point to a form field**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity serious
+
+Checks that the for attribute of each &lt;label&gt; matches the id of a form field it can label.
+
+**Applies to.** Applies to &lt;label&gt; elements carrying a for attribute. A page with none is notApplicable.
+
+**Expectation.** The first element in the label's own tree whose id equals the for value exists and is labelable: &lt;button&gt;, &lt;input&gt; other than type="hidden", &lt;meter&gt;, &lt;output&gt;, &lt;progress&gt;, &lt;select&gt;, &lt;textarea&gt;, or a form-associated custom element (RGAA 11.1.2). A for attribute that matches nothing means the label labels nothing, not even a field nested inside it, since the HTML association falls back to the label's content only when for is absent.
 
 ### `label-in-name`
 
@@ -1428,6 +1457,18 @@ Flags &lt;object&gt; elements with detected fallback or name for human review of
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+### `optgroup-label-present`
+
+**Option groups have a label**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that every &lt;optgroup&gt; in a &lt;select&gt; has a non-empty label attribute.
+
+**Applies to.** Applies to &lt;optgroup&gt; elements inside a &lt;select&gt;. A page with none is notApplicable.
+
+**Expectation.** The &lt;optgroup&gt; has a label attribute with non-whitespace text (RGAA 11.8.2). Whether that label describes the group is RGAA 11.8.3, a human judgement this rule does not make.
+
 ### `option-name-present`
 
 **Options have an accessible name**
@@ -1512,6 +1553,18 @@ Checks that role="presentation"/"none" (including an &lt;img alt=""&gt; implicit
 
 **Expectation.** The element does not also carry a WAI-ARIA *global* state/property (aria-label, aria-hidden, aria-describedby, aria-live, aria-current, ...; the full global-attribute set, not just the naming ones), AND is not focusable. Per the WAI-ARIA spec's Presentational Roles Conflict Resolution section, a presentational role is "restored" to the element's implicit semantic role when either condition holds: the presentation/none role silently stops working, contradicting the author's evident intent to hide the element from the accessibility tree.
 
+### `presentational-attributes-absent`
+
+**Page uses no presentational attributes**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that no HTML element carries one of the presentational attributes RGAA lists, such as align, bgcolor or border.
+
+**Applies to.** Applies to any scan scope; whether an HTML element in it carries one of the attributes RGAA 10.1.2 lists is always an answerable question.
+
+**Expectation.** No HTML element carries align, alink, background, bgcolor, border, cellpadding, cellspacing, char, charoff, clear, color, compact, frameborder, hspace, link, marginheight, marginwidth, text, valign, vlink or vspace; size is allowed only on &lt;select&gt;, and width and height only on &lt;img&gt;, &lt;object&gt;, &lt;embed&gt;, &lt;canvas&gt; and &lt;svg&gt;. That is RGAA 10.1.2's list as written, so width and height on an &lt;iframe&gt; or a &lt;video&gt;, and size on an &lt;input&gt;, are reported too. One occurrence per element, naming every such attribute it carries.
+
 ### `presentational-children-focusable-absent`
 
 **Roles with presentational children must not contain focusable content**
@@ -1523,6 +1576,18 @@ Checks that an element whose role makes its children presentational (button, che
 **Applies to.** Applies to elements whose semantic role is one of the WAI-ARIA roles defined as having presentational children (button, checkbox, img, menuitemcheckbox, menuitemradio, meter, option, progressbar, radio, scrollbar, separator, slider, switch, tab, plus doc-pagebreak and graphics-symbol from the DPUB-ARIA/Graphics-ARIA modules, which inherit the same trait). The role can be explicit (role="tab") or native (&lt;button&gt;, &lt;meter&gt;, &lt;progress&gt;, &lt;option&gt;).
 
 **Expectation.** No descendant of the element is part of sequential focus navigation. The presentational-children mechanism removes every descendant from the accessibility tree, so a descendant that still takes a tab stop receives focus with no role and no name to announce.
+
+### `presentational-elements-absent`
+
+**Page uses no presentational elements**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that the page contains none of the presentational elements RGAA lists, such as &lt;font&gt;, &lt;center&gt; or &lt;big&gt;.
+
+**Applies to.** Applies to any scan scope; whether it contains one of the elements RGAA 10.1.1 lists is always an answerable question.
+
+**Expectation.** None of &lt;basefont&gt;, &lt;big&gt;, &lt;blink&gt;, &lt;center&gt;, &lt;font&gt;, &lt;marquee&gt;, &lt;s&gt;, &lt;strike&gt; or &lt;tt&gt; is present, and &lt;u&gt; is not present either unless the document has the HTML5 doctype, which gave &lt;u&gt; a meaning of its own. That is RGAA 10.1.1's list as written: it includes &lt;s&gt;, which HTML5 keeps.
 
 ### `progressbar-name-present`
 

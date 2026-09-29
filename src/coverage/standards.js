@@ -24,7 +24,10 @@
  *   `version` is always one of these.
  * - profiles: optional named conformance targets it brings, each the WCAG
  *   version-origin tags it runs and the version of the standard it targets.
- *   A profile switches its own version's mappings on.
+ *   A profile switches its own version's mappings on. With `mappedRules`, it
+ *   also runs every rule this standard maps for that version, which matters
+ *   when the standard checks things WCAG leaves to best practice (RGAA's
+ *   heading hierarchy, say): those rules carry no WCAG tag to select them by.
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -32,6 +35,12 @@
  *   `wcagSc` lists the WCAG criteria the requirement corresponds to, so a
  *   per-criterion view can tell which entries belong under which criterion. A
  *   standard may add fields of its own (RGAA adds `criterion`).
+ * - ruleTag: optional; a tag that marks rules checking this standard's own
+ *   requirements, ones WCAG does not make (RGAA's doctype or presentational
+ *   attributes, say). A rule carrying it is opt-in: it runs only when a
+ *   selection asks for it by that tag or by id, typically through one of this
+ *   standard's profiles, so a scan that targets WCAG never reports a failure
+ *   WCAG does not define. Must not be a WCAG tag.
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
@@ -64,6 +73,16 @@ const NORMATIVE_STANDARDS = [
     key: 'rgaa',
     standard: 'RGAA',
     versions: RGAA_VERSIONS.map((v) => v.version),
+    // RGAA 4.1.2 is built on WCAG 2.1 A and AA; its profile also runs the
+    // opt-in rules for RGAA's own requirements.
+    profiles: {
+      'rgaa-4.1.2': {
+        version: '4.1.2',
+        tags: WCAG21_AA_TAGS.concat(['rgaa']),
+        mappedRules: true
+      }
+    },
+    ruleTag: 'rgaa',
     // Mapped rule by rule (src/coverage/rgaa-rule-map.js): RGAA's criteria are
     // its own, related to WCAG many to many.
     mappingsFor: rgaaMappingsFor,
@@ -76,6 +95,24 @@ const NORMATIVE_STANDARDS = [
 function standardMappingsFor({ id, wcagSc, checksIds }) {
   const out = [];
   for (const s of NORMATIVE_STANDARDS) out.push(...s.mappingsFor({ id, wcagSc, checksIds }));
+  return out;
+}
+
+// For each profile with `mappedRules`, the ids of the rules its standard maps
+// for the profile's version, given every rule ([{ ruleId, wcagSc }]).
+function profileRuleIds(rules) {
+  const out = {};
+  for (const s of NORMATIVE_STANDARDS) {
+    for (const [name, p] of Object.entries(s.profiles || {})) {
+      if (!p.mappedRules) continue;
+      out[name] = rules
+        .filter((r) =>
+          s.mappingsFor({ id: r.ruleId, wcagSc: r.wcagSc }).some((m) => m.version === p.version)
+        )
+        .map((r) => r.ruleId)
+        .sort();
+    }
+  }
   return out;
 }
 
@@ -115,9 +152,10 @@ function standardsData() {
     profiles: Object.fromEntries(
       Object.entries(s.profiles || {}).map(([name, p]) => [
         name,
-        { version: p.version, tags: p.tags.slice() }
+        { version: p.version, tags: p.tags.slice(), ...(p.mappedRules ? { mappedRules: true } : {}) }
       ])
-    )
+    ),
+    ...(s.ruleTag ? { ruleTag: s.ruleTag } : {})
   }));
 }
 
@@ -133,6 +171,7 @@ module.exports = {
   standardMappingsFor,
   withStandardMappings,
   validateStandards,
+  profileRuleIds,
   standardsData,
   standardOfEntry
 };

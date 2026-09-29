@@ -123,3 +123,15 @@ test('withStandardMappings: an entry the rule already declares is not repeated',
 test('withStandardMappings: a missing or non-array list yields an empty list', () => {
   for (const v of [null, undefined, 'x', {}]) assert.deepEqual(withStandardMappings(v, 'x'), []);
 });
+
+test('a rule tag is lowercase, not a WCAG tag, and selected by its standard\'s profiles', () => {
+  for (const s of NORMATIVE_STANDARDS) {
+    if (!s.ruleTag) continue;
+    assert.match(s.ruleTag, /^[a-z0-9-]+$/, s.key);
+    assert.doesNotMatch(s.ruleTag, /^wcag/, s.key);
+    // Otherwise the standard's own rules could never run through its profile.
+    for (const [name, p] of Object.entries(s.profiles || {})) {
+      assert.ok(p.tags.includes(s.ruleTag), name);
+    }
+  }
+});

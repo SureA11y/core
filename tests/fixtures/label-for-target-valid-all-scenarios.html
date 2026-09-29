@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>label-for-target-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>label-for-target-valid</code></h1>
+
+  <p class="note">Each target <code>&lt;label&gt;</code> has a stable <code>id</code> of the form <code>lft_case_NN</code>.</p>
+
+  <h2>A. Points to a form field (PASS)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: for matches a text input</div>
+    <label id="lft_case_01" for="lft_email">Email</label>
+    <input id="lft_email" type="email">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: for matches a select</div>
+    <label id="lft_case_02" for="lft_country">Country</label>
+    <select id="lft_country"><option>France</option></select>
+  </div>
+
+  <h2>B. Points to nothing it can label (FAIL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: for matches no id</div>
+    <label id="lft_case_03" for="lft_missing">Phone</label>
+    <input id="lft_phone" type="tel">
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: for matches a div</div>
+    <label id="lft_case_04" for="lft_div">City</label>
+    <div id="lft_div">City field goes here</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: for matches a hidden input</div>
+    <label id="lft_case_05" for="lft_token">Token</label>
+    <input id="lft_token" type="hidden" value="x">
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: empty for, although the field is nested inside the label</div>
+    <label id="lft_case_06" for="">Nickname <input type="text"></label>
+  </div>
+
+  <h2>C. No for attribute (not applicable)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: label wrapping its field, no for</div>
+    <label id="lft_case_07">Age <input type="number"></label>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

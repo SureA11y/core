@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 132,
-    "withFixture": 131,
+    "total": 137,
+    "withFixture": 136,
     "withoutFixture": 1
   },
   "rows": [
@@ -743,6 +743,23 @@
       }
     },
     {
+      "ruleId": "doctype-present",
+      "title": "Page declares a valid doctype",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/doctype-present.js",
+      "testFile": "tests/engine-checks/automatic/doctype-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/doctype-present-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
       "ruleId": "duplicate-id",
       "title": "IDs must be unique",
       "type": "automatic",
@@ -1240,6 +1257,23 @@
         "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "label-for-target-valid",
+      "title": "Labels point to a form field",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/label-for-target-valid.js",
+      "testFile": "tests/engine-checks/automatic/label-for-target-valid.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/label-for-target-valid-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 4,
+        "CANTTELL": 0,
+        "OTHER": 1
       }
     },
     {
@@ -1791,6 +1825,23 @@
       }
     },
     {
+      "ruleId": "optgroup-label-present",
+      "title": "Option groups have a label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/optgroup-label-present.js",
+      "testFile": "tests/engine-checks/automatic/optgroup-label-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/optgroup-label-present-all-scenarios.html",
+      "totalCases": 3,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
       "ruleId": "option-name-present",
       "title": "Options have an accessible name",
       "type": "automatic",
@@ -1920,6 +1971,23 @@
       }
     },
     {
+      "ruleId": "presentational-attributes-absent",
+      "title": "Page uses no presentational attributes",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/presentational-attributes-absent.js",
+      "testFile": "tests/engine-checks/automatic/presentational-attributes-absent.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/presentational-attributes-absent-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 5,
+        "CANTTELL": 0,
+        "OTHER": 3
+      }
+    },
+    {
       "ruleId": "presentational-children-focusable-absent",
       "title": "Roles with presentational children must not contain focusable content",
       "type": "automatic",
@@ -1934,6 +2002,23 @@
       "caseCounts": {
         "PASS": 6,
         "FAIL": 6,
+        "CANTTELL": 0,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "presentational-elements-absent",
+      "title": "Page uses no presentational elements",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/presentational-elements-absent.js",
+      "testFile": "tests/engine-checks/automatic/presentational-elements-absent.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/presentational-elements-absent-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 2
       }

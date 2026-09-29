@@ -40,6 +40,7 @@
     "deprecated-elements-not-used",
     "dialog-name-present",
     "dlitem-parent-valid",
+    "doctype-present",
     "duplicate-id",
     "duplicate-id-aria",
     "embed-text-alternative-present",
@@ -67,6 +68,7 @@
     "input-image-alt-decorative",
     "input-image-alt-present",
     "input-image-alt-quality",
+    "label-for-target-valid",
     "label-in-name",
     "label-title-only",
     "landmark-banner-is-top-level",
@@ -97,6 +99,7 @@
     "no-autoplay-audio",
     "object-text-alternative-present",
     "object-text-alternative-quality",
+    "optgroup-label-present",
     "option-name-present",
     "p-as-heading",
     "page-has-heading-one",
@@ -104,7 +107,9 @@
     "page-title-present",
     "password-paste-enabled",
     "presentation-role-conflict",
+    "presentational-attributes-absent",
     "presentational-children-focusable-absent",
+    "presentational-elements-absent",
     "progressbar-name-present",
     "region",
     "role-img-text-alternative-present",
@@ -270,6 +275,9 @@
     "dlitem-parent-valid": [
       "DLITEM_INVALID_PARENT"
     ],
+    "doctype-present": [
+      "missingDoctype"
+    ],
     "duplicate-id": [
       "DUPLICATE_ID"
     ],
@@ -345,6 +353,11 @@
       "default_name",
       "empty_alt",
       "missing_alt"
+    ],
+    "label-for-target-valid": [
+      "emptyFor",
+      "missingTarget",
+      "notLabelable"
     ],
     "label-in-name": [
       "VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME"
@@ -430,6 +443,10 @@
     "no-autoplay-audio": [
       "AUTOPLAY_NO_CONTROLS_MECHANISM"
     ],
+    "optgroup-label-present": [
+      "emptyLabel",
+      "missingLabel"
+    ],
     "option-name-present": [
       "name_missing"
     ],
@@ -452,8 +469,14 @@
     "presentation-role-conflict": [
       "PRESENTATION_ROLE_CONFLICT"
     ],
+    "presentational-attributes-absent": [
+      "presentationalAttribute"
+    ],
     "presentational-children-focusable-absent": [
       "PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT"
+    ],
+    "presentational-elements-absent": [
+      "presentationalElement"
     ],
     "progressbar-name-present": [
       "name_missing"

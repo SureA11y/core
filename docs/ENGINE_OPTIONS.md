@@ -101,6 +101,7 @@ If you would rather not see the rule at all under 2.2, exclude it outright — t
 | `en301549-v4.1.1` | same as `wcag22-aa` | 2.2 | EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA |
 | `en301549-v3.2.1` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` | 2.1 | EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA, including 4.1.1 Parsing |
 | `section508` | `wcag2a`, `wcag2aa` | 2.0 | The Revised 508 Standards incorporate WCAG 2.0 A and AA |
+| `rgaa-4.1.2` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `rgaa`, plus every rule RGAA 4.1.2 is mapped to | 2.1 | RGAA 4.1.2 is built on WCAG 2.1 A and AA, and also tests things WCAG leaves to best practice (heading hierarchy, landmarks, skip links) |
 
 ```js
 runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
@@ -112,7 +113,17 @@ Precedence: anything that *includes* rules selects them instead of the profile �
 
 A profile only chooses which rules run. It says nothing about whether passing them meets the standard it is named after: most Success Criteria need human judgement no automated rule covers (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
-An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed; see the next section.
+An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed, and `rgaa-4.1.2` switches on the RGAA 4.1.2 tests; see the next section. `rgaa-4.1.2` also runs, whatever their tags, the rules RGAA 4.1.2 is mapped to ([`RGAA_MAPPING.md`](./RGAA_MAPPING.md)): the ones with no WCAG mapping, such as `heading-order` and `skip-link`, have no WCAG tag to be selected by.
+
+### Opt-in rules
+
+Some rules check a standard's own requirements, ones WCAG does not make: RGAA, for instance, requires a doctype and forbids presentational attributes such as `bgcolor`. A `fail` from such a rule is a failure of that standard, not of WCAG, so these rules are **off by default**. Each carries its standard's tag (`rgaa`) and runs only when the selection asks for it:
+
+- through the standard's profile (`profile: 'rgaa-4.1.2'` lists the `rgaa` tag),
+- by that tag (`tags: { include: 'rgaa' }`, alone or with others), or
+- by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`).
+
+Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present` and `label-for-target-valid`.
 
 ### Other standards (`mappings`)
 
@@ -200,7 +211,7 @@ const engineOptions = {
 |---|---|
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value is ignored and the default applies. |
-| `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'` or `'section508'`. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
+| `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'`, `'section508'` or `'rgaa-4.1.2'`. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
 | `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: `'en301549'`, `'en301549:V3.2.1'`, `'en301549:V4.1.1'`, `'rgaa'` or `'rgaa:4.1.2'`, as an array or comma-separated string. Default none, so results name WCAG only; an EN 301 549 profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. See [`I18N.md`](./I18N.md). |
 | `includeHiddenElements` | Default `false`: helper queries exclude elements hidden by structural/CSS mechanisms such as `display:none`, `[hidden]`, closed `<details>`, and hidden rendering-only host elements (with descendants excluded too). Set `true` to include those hidden/collapsed subtrees in evaluation (legacy/static-markup behavior). |

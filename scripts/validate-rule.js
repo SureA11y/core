@@ -38,6 +38,7 @@ const path = require('node:path');
 // Adjust these imports to match your repo layout if needed
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
+const { isOptInRule, runOnlyForRule } = require('./lib/rule-run-selection.js');
 const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 
 function loadWcagFacetsRegistry(repoRoot) {
@@ -293,7 +294,8 @@ function validateMeta(meta) {
   // automatic rules and not only to advisory ones.
   assert.ok(Array.isArray(meta.wcagSc), 'meta.wcagSc must be an array');
   const claimsNoCriterion =
-    Array.isArray(meta.tags) && meta.tags.map(String).includes('best-practice');
+    Array.isArray(meta.tags) &&
+    (meta.tags.map(String).includes('best-practice') || isOptInRule(meta.tags));
   if (meta.type === 'automatic' && !claimsNoCriterion) {
     assert.ok(meta.wcagSc.length > 0, 'meta.wcagSc must be non-empty array for automatic checks');
   }
@@ -358,10 +360,11 @@ function validateTags(meta) {
 
   if (meta.wcagSc.length === 0) {
     // Tier 1b: a pure "Best Practice" advisory rule with no WCAG SC at all carries
-    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag.
+    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag. A rule for
+    // another standard's own requirement carries that standard's rule tag instead.
     assert.ok(
-      tags.has('best-practice'),
-      'meta.tags must include "best-practice" for a rule with no wcagSc (Tier 1b advisory)'
+      tags.has('best-practice') || isOptInRule(meta.tags),
+      'meta.tags must include "best-practice" (or a standard\'s rule tag, e.g. "rgaa") for a rule with no wcagSc'
     );
     return;
   }
@@ -691,7 +694,8 @@ function main() {
     '<video id="probe_video" poster="x.png"></video>' +
     '</body></html>';
 
-  const runOn = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const runOn = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: runOnlyForRule(RULE_ID, mod.meta.tags) });
 
   // No-throws + determinism
   validateDeterminism(() => runOn(htmlNoTargets), RULE_ID);

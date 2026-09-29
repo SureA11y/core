@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **132**
+Total rules (loaded without error): **137**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -640,6 +640,11 @@ Automation mix: **full 36, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
+| optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
+| presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
@@ -1274,6 +1279,11 @@ Automation mix: **full 36, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
+| optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
+| presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |

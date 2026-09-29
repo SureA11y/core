@@ -16,6 +16,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
+const { runOnlyForRule } = require('./rule-run-selection');
 
 const OUTCOMES = ['fail', 'cantTell', 'pass', 'notApplicable'];
 
@@ -467,7 +468,7 @@ const ENV_PATCHES = {
   ).patchTargetSizeEnv
 };
 
-function replayFixture(run, ruleId, html, doc) {
+function replayFixture(run, ruleId, html, doc, tags) {
   if (!html) return null;
 
   let res;
@@ -478,9 +479,12 @@ function replayFixture(run, ruleId, html, doc) {
     if (patch) {
       const dom = run.createDom(html);
       patch(dom);
-      res = run.runa11yCoreOnDom(dom, { runOnly: [ruleId], entryPointParity: false });
+      res = run.runa11yCoreOnDom(dom, {
+        runOnly: runOnlyForRule(ruleId, tags),
+        entryPointParity: false
+      });
     } else {
-      res = run(html, { runOnly: [ruleId], entryPointParity: false });
+      res = run(html, { runOnly: runOnlyForRule(ruleId, tags), entryPointParity: false });
     }
   } catch (e) {
     return { error: String((e && e.message) || e).slice(0, 200) };
@@ -612,7 +616,7 @@ function collect(opts = {}) {
     const fixtureHtml = readFixture(repoRoot, fixtureFile);
     const fixtureDoc = fixtureHtml ? new JSDOM(fixtureHtml).window.document : null;
 
-    const engine = replayFixture(run, mod.id, fixtureHtml, fixtureDoc);
+    const engine = replayFixture(run, mod.id, fixtureHtml, fixtureDoc, meta.tags);
     if (engine && engine.error) replayErrors++;
     else if (engine) replayed++;
 
