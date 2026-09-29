@@ -138,7 +138,108 @@ test('validate: a test whose criterion RGAA relates to none of the rule\'s WCAG 
   });
 });
 
+test('validate: a review mark needs a known priority, a question unless it is a low-priority check, and real proposed tests', () => {
+  const sound = [
+    { priority: 'low' },
+    { priority: 'medium', question: 'q?' },
+    { priority: 'high', question: 'q?', proposed: ['1.1.3'] }
+  ];
+  for (const review of sound) {
+    withRows({ 'probe-img': { tests: ['1.1.1'], note: 'n', review } }, () => {
+      assert.deepEqual(validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-')), [], JSON.stringify(review));
+    });
+  }
+  const broken = [
+    [{ priority: 'urgent', question: 'q?' }, 'priority must be one of'],
+    [{ priority: 'medium' }, 'needs a question'],
+    [{ priority: 'low', proposed: ['1.1.3'] }, 'needs a question'],
+    [{ priority: 'low', question: 'q?', proposed: ['99.1.1'] }, 'proposes no such test 99.1.1'],
+    [{ priority: 'low', question: 'q?', proposed: ['1.1.1'] }, 'proposes 1.1.1, already linked'],
+    ['yes', 'review must be an object']
+  ];
+  for (const [review, expected] of broken) {
+    withRows({ 'probe-img': { tests: ['1.1.1'], note: 'n', review } }, () => {
+      const problems = validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'));
+      assert.ok(problems.some((p) => p.includes(expected)), `${JSON.stringify(review)}: ${problems}`);
+    });
+  }
+});
+
 test('the real table is sound against the engine\'s rules', () => {
   const rules = core.getChecksCatalog().map((r) => ({ ruleId: r.ruleId, wcagSc: r.wcagSc }));
   assert.deepEqual(validateRgaaRuleTests(rules), []);
+});
+
+test('the image button, the title-only field and the labelled decorative image name their RGAA tests', () => {
+  const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<input type="image" src="s.png" alt="" aria-label="Search">' +
+    '<input type="text" title="Your email">' +
+    '<img src="d.png" alt="" aria-label="line">' +
+    '</main></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
+  const rgaa = (ruleId) =>
+    result.checksResults
+      .find((r) => r.ruleId === ruleId)
+      .meta.normativeMappings.filter((m) => m.standard === 'RGAA')
+      .map((m) => m.requirement);
+  assert.deepEqual(rgaa('input-image-alt-decorative'), ['1.3.3']);
+  assert.deepEqual(rgaa('label-title-only'), ['11.1.3', '11.2.2']);
+  assert.deepEqual(rgaa('presentation-role-conflict'), ['1.2.1']);
+});
+
+// --- links outside RGAA's own WCAG correspondence ------------------------------
+
+test('validate: a test outside the correspondence needs a reason, and a reason needs such a test', () => {
+  const problems = (row) =>
+    withRows({ 'probe-img': { note: 'n', ...row } }, () =>
+      validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'))
+    );
+  // 3.2.1 (contrast) is related to other WCAG criteria than the rule's 1.1.1.
+  assert.match(problems({ tests: ['3.2.1'] })[0], /link it only with a reason in outsideCorrespondence/);
+  assert.deepEqual(problems({ tests: ['3.2.1'], outsideCorrespondence: { '3.2.1': 'why' } }), []);
+  assert.ok(
+    problems({ tests: ['3.2.1'], outsideCorrespondence: { '3.2.1': '  ' } }).some((p) =>
+      p.includes('link it only with a reason')
+    )
+  );
+  assert.ok(
+    problems({ tests: ['1.1.1'], outsideCorrespondence: { '1.1.1': 'why' } }).some((p) =>
+      p.includes('RGAA already relates to the rule')
+    )
+  );
+  assert.ok(
+    problems({ tests: ['1.1.1'], outsideCorrespondence: { '3.2.1': 'why' } }).some((p) =>
+      p.includes('names 3.2.1, which is not linked')
+    )
+  );
+});
+
+test('an entry linked outside the correspondence goes under the rule\'s own criteria, for rules and rollups', () => {
+  withRows(
+    { 'probe-map': { tests: ['1.1.4'], note: 'n', outsideCorrespondence: { '1.1.4': 'why' } } },
+    () => {
+      const [own] = rgaaMappingsFor({ id: 'probe-map', wcagSc: ['2.1.1'] });
+      assert.equal(own.requirement, '1.1.4');
+      assert.deepEqual(own.wcagSc, ['2.1.1']);
+      const rolled = rgaaMappingsFor({ id: 'wcag-2.1.1-x', wcagSc: ['2.1.1'], checksIds: ['probe-map'] });
+      assert.deepEqual(
+        rolled.map((e) => [e.requirement, e.wcagSc]),
+        [['1.1.4', ['2.1.1']]]
+      );
+    }
+  );
+});
+
+test('an exception on one rule does not carry over to another rule linked to the same test', () => {
+  withRows(
+    {
+      'probe-map': { tests: ['1.1.4'], note: 'n', outsideCorrespondence: { '1.1.4': 'why' } },
+      'probe-other': { tests: ['1.1.4'], note: 'n' }
+    },
+    () => {
+      assert.deepEqual(rgaaMappingsFor({ id: 'probe-other', wcagSc: ['2.1.1'] }), []);
+    }
+  );
 });
