@@ -44,6 +44,7 @@ const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const {
   standardMappingsFor,
+  standardComposites,
   withStandardMappings,
   validateStandards,
   profileRuleIds,
@@ -146,7 +147,7 @@ function loadCompositeRulesCatalog() {
   }
 
   const seen = new Set();
-  return raw.map((entry, idx) => {
+  const wcag = raw.map((entry, idx) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
       throw new Error(`[build-core] composite rule entry at index ${idx} must be an object`);
     }
@@ -175,6 +176,20 @@ function loadCompositeRulesCatalog() {
           : null
     };
   });
+
+  // Rollups a standard defines for itself (RGAA: one per criterion), with the
+  // entries they already carry. Opt-in through their meta.tags.
+  const own = standardComposites().map((entry) => ({
+    id: entry.id,
+    checksIds: entry.checksIds.slice(),
+    meta: { ...entry.meta }
+  }));
+  for (const entry of own) {
+    if (seen.has(entry.id))
+      throw new Error(`[build-core] duplicate composite rule id: ${entry.id}`);
+    seen.add(entry.id);
+  }
+  return wcag.concat(own);
 }
 
 function loadAllTranslations() {
@@ -1541,10 +1556,27 @@ function toCompositeCatalogEntry(x, tokens) {
   return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
 }
 
+// A standard's own rollup (RGAA's per criterion) is opt-in like that
+// standard's rules: listed only when the selection names its tag or its id,
+// as the rgaa-4.1.2 profile does, so the catalog lists what a scan with the
+// same options would produce.
+function isCompositeListed(x, selection) {
+  const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
+  const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (!optIn.length) return true;
+  return (
+    optIn.some((t) => selection.tags.includes(t)) ||
+    selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
+  );
+}
+
 function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
   const tokens = catalogMappingTokens(engineOptions, null);
-  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => toCompositeCatalogEntry(x, tokens)) : [];
+  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  return Array.isArray(COMPOSITE_RULES)
+    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) => toCompositeCatalogEntry(x, tokens))
+    : [];
 }
 
 function getCompositeRuleById(ruleId, engineOptions) {

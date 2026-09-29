@@ -123,7 +123,7 @@ Some rules check a standard's own requirements, ones WCAG does not make: RGAA, f
 - by that tag (`tags: { include: 'rgaa' }`, alone or with others), or
 - by its id (`rules: { include: '<rule id>' }`, or `runOnly.includeRuleIds`).
 
-Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present` and `label-for-target-valid`.
+Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a composite id. RGAA's per-criterion rollups (`rgaa-4.1.2-9.1` and so on) carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`; today `rgaa` is the only one, carried by `doctype-present`, `presentational-elements-absent`, `presentational-attributes-absent`, `optgroup-label-present` and `label-for-target-valid`.
 
 ### Other standards (`mappings`)
 

@@ -7,7 +7,7 @@
 Removing, renaming, or changing the type/meaning of any of these is a **major** version bump:
 
 - Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `engine.profile` (when present; the set of profile names may grow in a minor), `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
-- Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
+- Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `rollupIds` (check results only), `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
 

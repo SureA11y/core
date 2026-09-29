@@ -347,6 +347,49 @@ function renderWcagRollup(rulesResults, ui, langAttr = '') {
   return sections;
 }
 
+// RGAA rollup -- one row per RGAA criterion, present only when the scan ran
+// the RGAA profile. The criterion's wording is RGAA's own French text.
+function renderRgaaRollup(rgaaResults, ui) {
+  const OUTCOME_INFO = ui.outcomeInfo;
+  const byCriterion = (r) => String((r.data && r.data.details && r.data.details.criterion) || '');
+  const rows = rgaaResults
+    .slice()
+    .sort((a, b) => byCriterion(a).localeCompare(byCriterion(b), undefined, { numeric: true }))
+    .map((rule) => {
+      const info = OUTCOME_INFO[rule.outcome] || OUTCOME_INFO.notApplicable;
+      const details = (rule.data && rule.data.details) || {};
+      const metrics = details.metrics || {};
+      const checksIds = details.checksIds || [];
+      const tests = Array.from(
+        new Set(
+          ((rule.meta && rule.meta.normativeMappings) || [])
+            .filter((m) => m && m.standard === 'RGAA' && m.requirement)
+            .map((m) => m.requirement)
+        )
+      );
+      const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
+      const metricsLabel = ui.tr('report_rollup_breakdown', {
+        pass: ui.num(metrics.passCount),
+        fail: ui.num(metrics.failCount),
+        review: ui.num(metrics.cantTellCount),
+        na: ui.num(metrics.notApplicableCount)
+      });
+      return `<tr>
+            <td class="sc-cell">RGAA ${esc(details.criterion || '')}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
+            <td lang="fr">${esc(rule.title || rule.ruleId)}</td>
+            <td>${chip}</td>
+            <td class="note">${esc(metricsLabel)}</td>
+            <td class="note">${esc(checksIds.join(', '))}</td>
+          </tr>`;
+    })
+    .join('\n');
+  return `<p class="note">${esc(ui.tr('report_rgaaRollup_note'))}</p>
+      <table class="wcag-table">
+        <thead><tr><th>${esc(ui.tr('report_rgaaRollup_col_criterion'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+}
+
 // Collapse internal whitespace/newlines and cap length for card display --
 // the findings table below shows the untruncated selector and summary. The
 // hint is left whole: it is the fix advice, and the table does not repeat it.
@@ -460,7 +503,10 @@ function flattenOccurrences(checksResults, ui) {
 
 function renderHtmlReport(result, options = {}) {
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
-  const rulesResults = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
+  const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
+  const isRgaaRollup = (r) => !!(r && r.meta && r.meta.standard === 'RGAA');
+  const rulesResults = allRollups.filter((r) => !isRgaaRollup(r));
+  const rgaaRollups = allRollups.filter(isRgaaRollup);
   const byOutcome = countByOutcome(checksResults);
   const engine = result && result.engine;
   const ui = createUi(engine);
@@ -593,7 +639,14 @@ function renderHtmlReport(result, options = {}) {
 
   <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
   ${renderWcagRollup(rulesResults, ui, contentLang)}
-
+${
+  rgaaRollups.length
+    ? `
+  <h2>${esc(ui.tr('report_heading_rgaaRollup'))}</h2>
+  ${renderRgaaRollup(rgaaRollups, ui)}
+`
+    : ''
+}
   <details class="tech-details">
     <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">

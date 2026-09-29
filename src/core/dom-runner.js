@@ -132,6 +132,18 @@ function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (RGAA's per criterion) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -232,7 +244,7 @@ function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -243,6 +255,13 @@ function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -262,7 +281,9 @@ function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -349,6 +370,13 @@ function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -953,6 +981,21 @@ function runCore(
       r.meta.normativeMappings,
       mappingSelection.tokens
     );
+  }
+
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.

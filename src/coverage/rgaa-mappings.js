@@ -79,6 +79,47 @@ function rgaaMappingsFor({ id, wcagSc, checksIds }) {
   return out;
 }
 
+/**
+ * One rollup per RGAA criterion that at least one rule is linked to, grouping
+ * those rules, in the shape of src/catalogs/composites.wcag.js entries. They
+ * carry the rgaa tag, so only a run that asks for RGAA (its profile) produces
+ * them, and meta.standard 'RGAA' with the criterion, so a consumer can tell
+ * them from WCAG rollups. Their RGAA entries are the criterion's tests the
+ * grouped rules are linked to; the runner narrows them to the rules that
+ * decided the outcome, as for any rollup.
+ */
+function rgaaComposites() {
+  const out = [];
+  for (const { version } of RGAA_VERSIONS) {
+    const table = RGAA_RULE_TESTS[version] || {};
+    for (const [criterion, row] of Object.entries(RGAA_CRITERIA[version])) {
+      const ruleIds = Object.keys(table)
+        .filter((ruleId) => testsOfRule(version, ruleId).some((t) => row.tests.includes(t)))
+        .sort();
+      if (!ruleIds.length) continue;
+      const tests = [
+        ...new Set(ruleIds.flatMap((ruleId) => testsOfRule(version, ruleId)).filter((t) => row.tests.includes(t)))
+      ].sort(compareIds);
+      out.push({
+        id: `rgaa-${version}-${criterion}`,
+        checksIds: ruleIds,
+        meta: {
+          title: row.title,
+          description: '',
+          wcagSc: [],
+          level: null,
+          standard: 'RGAA',
+          version,
+          criterion,
+          tags: ['rgaa'],
+          standardMappings: tests.map((t) => entry(version, t, []))
+        }
+      });
+    }
+  }
+  return out;
+}
+
 const REVIEW_PRIORITIES = ['high', 'medium', 'low'];
 
 // A row's review mark: { priority, question?, proposed? }. The question is
@@ -163,4 +204,4 @@ function validateRgaaRuleTests(rules) {
   return problems;
 }
 
-module.exports = { rgaaMappingsFor, validateRgaaRuleTests };
+module.exports = { rgaaMappingsFor, rgaaComposites, validateRgaaRuleTests };

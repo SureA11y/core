@@ -12751,6 +12751,1920 @@ const COMPOSITE_RULES = [
         }
       ]
     }
+  },
+  {
+    "id": "rgaa-4.1.2-1.1",
+    "checksIds": [
+      "area-alt-present",
+      "canvas-text-alternative-present",
+      "embed-text-alternative-present",
+      "img-alt-decorative",
+      "img-alt-present",
+      "input-image-alt-present",
+      "object-text-alternative-present",
+      "role-img-text-alternative-present",
+      "server-side-image-map-absent",
+      "svg-text-alternative-present"
+    ],
+    "meta": {
+      "title": "Chaque image porteuse d’information a-t-elle une alternative textuelle ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.2",
+          "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.3",
+          "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.4",
+          "title": "Chaque zone cliquable d’une image réactive côté serveur est-elle doublée d’un mécanisme utilisable quel que soit le dispositif de pointage utilisé et permettant d’accéder à la même destination ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.5",
+          "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.6",
+          "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.7",
+          "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.8",
+          "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.2",
+    "checksIds": [
+      "img-alt-present",
+      "presentation-role-conflict"
+    ],
+    "meta": {
+      "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.1",
+          "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.3",
+    "checksIds": [
+      "area-alt-quality",
+      "canvas-text-alternative-quality",
+      "embed-text-alternative-quality",
+      "image-redundant-alt",
+      "img-alt-quality",
+      "input-image-alt-decorative",
+      "input-image-alt-quality",
+      "object-text-alternative-quality",
+      "svg-text-alternative-quality"
+    ],
+    "meta": {
+      "title": "Pour chaque image porteuse d’information ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.2",
+          "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.3",
+          "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.4",
+          "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.5",
+          "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.6",
+          "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.7",
+          "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-2.1",
+    "checksIds": [
+      "iframe-name-present"
+    ],
+    "meta": {
+      "title": "Chaque cadre a-t-il un titre de cadre ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "2.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.1.1",
+          "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+          "criterion": "2.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-2.2",
+    "checksIds": [
+      "identical-iframes-same-purpose",
+      "iframe-title-unique"
+    ],
+    "meta": {
+      "title": "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "2.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.2.1",
+          "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+          "criterion": "2.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-3.2",
+    "checksIds": [
+      "contrast-computable",
+      "contrast-minimum"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le contraste entre la couleur du texte et la couleur de son arrière-plan est-il suffisamment élevé (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "3.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.1",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.2",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.3",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.4",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.1",
+    "checksIds": [
+      "media-alternative-transcript-evidence"
+    ],
+    "meta": {
+      "title": "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une transcription textuelle ou une audiodescription (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.1",
+          "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.2",
+          "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.3",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.3",
+    "checksIds": [
+      "video-caption"
+    ],
+    "meta": {
+      "title": "Chaque média temporel synchronisé pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.1",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.10",
+    "checksIds": [
+      "no-autoplay-audio"
+    ],
+    "meta": {
+      "title": "Chaque son déclenché automatiquement est-il contrôlable par l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.10",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.10.1",
+          "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+          "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.4",
+    "checksIds": [
+      "table-fake-caption"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.4.1",
+          "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+          "criterion": "5.4",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.6",
+    "checksIds": [
+      "td-has-header"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.7",
+    "checksIds": [
+      "scope-attr-valid",
+      "table-headers-attr-valid"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.2",
+          "title": "Pour chaque contenu de balise <th> s’appliquant à la totalité de la ligne ou de la colonne et possédant un attribut scope, la balise <th> vérifie-t-elle une de ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.4",
+          "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-6.1",
+    "checksIds": [
+      "label-in-name",
+      "link-name-quality"
+    ],
+    "meta": {
+      "title": "Chaque lien est-il explicite (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "6.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.1",
+          "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.2",
+          "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.3",
+          "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.4",
+          "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.5",
+          "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-6.2",
+    "checksIds": [
+      "link-name-present"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque lien a-t-il un intitulé ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "6.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.2.1",
+          "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+          "criterion": "6.2",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-7.1",
+    "checksIds": [
+      "aria-role-name-present",
+      "binary-control-name-present",
+      "button-name-present",
+      "combobox-name-present",
+      "dialog-name-present",
+      "label-in-name",
+      "listbox-name-present",
+      "menuitem-name-present",
+      "searchbox-name-present",
+      "slider-name-present",
+      "spinbutton-name-present",
+      "tab-name-present",
+      "textbox-name-present",
+      "treeitem-name-present"
+    ],
+    "meta": {
+      "title": "Chaque script est-il, si nécessaire, compatible avec les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "7.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.1",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.3",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-7.3",
+    "checksIds": [
+      "mouse-only-event-handlers"
+    ],
+    "meta": {
+      "title": "Chaque script est-il contrôlable par le clavier et par tout dispositif de pointage (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "7.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.3.1",
+          "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "7.3",
+          "wcagSc": [
+            "1.3.1",
+            "2.1.1",
+            "2.4.7"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.1",
+    "checksIds": [
+      "doctype-present"
+    ],
+    "meta": {
+      "title": "Chaque page web est-elle définie par un type de document ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.1",
+          "title": "Pour chaque page web, le type de document (balise doctype) est-il présent ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.2",
+          "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.3",
+          "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.2",
+    "checksIds": [
+      "aria-allowed-attr",
+      "aria-allowed-role",
+      "aria-required-attr",
+      "aria-roles-valid",
+      "aria-valid-attr",
+      "aria-valid-attr-value",
+      "autocomplete-valid",
+      "definition-list-children-valid",
+      "deprecated-elements-not-used",
+      "dlitem-parent-valid",
+      "duplicate-id",
+      "duplicate-id-aria",
+      "html-xml-lang-mismatch",
+      "list-children-valid",
+      "listitem-parent-valid",
+      "nested-interactive-controls-absent",
+      "scope-attr-valid",
+      "table-headers-attr-valid"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, le code source généré est-il valide selon le type de document spécifié ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.3",
+    "checksIds": [
+      "html-lang-attr-present"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la langue par défaut est-elle présente ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.3.1",
+          "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+          "criterion": "8.3",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.4",
+    "checksIds": [
+      "html-lang-attr-present",
+      "html-xml-lang-mismatch"
+    ],
+    "meta": {
+      "title": "Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.4.1",
+          "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.4",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.5",
+    "checksIds": [
+      "page-title-present"
+    ],
+    "meta": {
+      "title": "Chaque page web a-t-elle un titre de page ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.5",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.5.1",
+          "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+          "criterion": "8.5",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.6",
+    "checksIds": [
+      "page-title-patterns"
+    ],
+    "meta": {
+      "title": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.6.1",
+          "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+          "criterion": "8.6",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.8",
+    "checksIds": [
+      "valid-lang"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.8.1",
+          "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.8",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.1",
+    "checksIds": [
+      "empty-heading",
+      "heading-order",
+      "heading-quality",
+      "p-as-heading"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, l’information est-elle structurée par l’utilisation appropriée de titres ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.1",
+          "title": "Dans chaque page web, la hiérarchie entre les titres (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-elle pertinente ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.2",
+          "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.3",
+          "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.2",
+    "checksIds": [
+      "landmark-no-duplicate-main",
+      "landmark-one-main"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la structure du document est-elle cohérente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.2.1",
+          "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+          "criterion": "9.2",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.3",
+    "checksIds": [
+      "aria-prohibited-children",
+      "aria-required-children",
+      "aria-required-parent",
+      "definition-list-children-valid",
+      "dlitem-parent-valid",
+      "list-children-valid",
+      "listitem-parent-valid"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque liste est-elle correctement structurée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.1",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.2",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.3",
+          "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.1",
+    "checksIds": [
+      "presentational-attributes-absent",
+      "presentational-elements-absent"
+    ],
+    "meta": {
+      "title": "Dans le site web, des feuilles de styles sont-elles utilisées pour contrôler la présentation de l’information ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.1",
+          "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.2",
+          "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.4",
+    "checksIds": [
+      "meta-viewport-zoom-enabled"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le texte reste-t-il lisible lorsque la taille des caractères est augmentée jusqu’à 200 %, au moins (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.4.2",
+          "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+          "criterion": "10.4",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.6",
+    "checksIds": [
+      "link-in-text-block"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque lien dont la nature n’est pas évidente est-il visible par rapport au texte environnant ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.6.1",
+          "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+          "criterion": "10.6",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.7",
+    "checksIds": [
+      "css-focus-indicator-suppressed",
+      "css-hidden-focus",
+      "manual-review"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, pour chaque élément recevant le focus, la prise de focus est-elle visible ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.7.1",
+          "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+          "criterion": "10.7",
+          "wcagSc": [
+            "1.4.1",
+            "2.4.7"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.8",
+    "checksIds": [
+      "aria-hidden-body",
+      "aria-hidden-focus"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, les contenus cachés ont-ils vocation à être ignorés par les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.8.1",
+          "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+          "criterion": "10.8",
+          "wcagSc": [
+            "1.3.2",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.12",
+    "checksIds": [
+      "avoid-inline-spacing"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.12",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.12.1",
+          "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+          "criterion": "10.12",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.1",
+    "checksIds": [
+      "binary-control-name-present",
+      "combobox-name-present",
+      "form-control-programmatic-label-present",
+      "form-control-programmatic-label-quality",
+      "label-for-target-valid",
+      "label-title-only",
+      "listbox-name-present",
+      "searchbox-name-present",
+      "slider-name-present",
+      "spinbutton-name-present",
+      "textbox-name-present"
+    ],
+    "meta": {
+      "title": "Chaque champ de formulaire a-t-il une étiquette ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.2",
+          "title": "Chaque champ de formulaire associé à une balise <label> ayant un attribut for, vérifie-t-il ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.3",
+          "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.2",
+    "checksIds": [
+      "form-control-label-quality",
+      "label-in-name",
+      "label-title-only"
+    ],
+    "meta": {
+      "title": "Chaque étiquette associée à un champ de formulaire est-elle pertinente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.1",
+          "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.2",
+          "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.4",
+          "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.5",
+          "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.6",
+    "checksIds": [
+      "aria-role-name-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.6.1",
+          "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
+          "criterion": "11.6",
+          "wcagSc": [
+            "1.3.1",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.8",
+    "checksIds": [
+      "optgroup-label-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, les items de même nature d’une liste de choix sont-ils regroupés de manière pertinente ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.8.2",
+          "title": "Dans chaque balise <select>, chaque balise <optgroup> possède-t-elle un attribut label ?",
+          "criterion": "11.8",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.9",
+    "checksIds": [
+      "button-name-present",
+      "label-in-name"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, l’intitulé de chaque bouton est-il pertinent (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.1",
+          "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.2",
+          "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.13",
+    "checksIds": [
+      "autocomplete-valid"
+    ],
+    "meta": {
+      "title": "La finalité d’un champ de saisie peut-elle être déduite pour faciliter le remplissage automatique des champs avec les données de l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.13",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.13.1",
+          "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+          "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.6",
+    "checksIds": [
+      "bypass-blocks-present"
+    ],
+    "meta": {
+      "title": "Les zones de regroupement de contenus présentes dans plusieurs pages web (zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche) peuvent-elles être atteintes ou évitées ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.6.1",
+          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+          "criterion": "12.6",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.7",
+    "checksIds": [
+      "bypass-blocks-present",
+      "skip-link"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, un lien d’évitement ou d’accès rapide à la zone de contenu principal est-il présent (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.1",
+          "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+          "criterion": "12.7",
+          "wcagSc": [
+            "2.4.1",
+            "2.4.3",
+            "3.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.2",
+          "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "12.7",
+          "wcagSc": [
+            "2.4.1",
+            "2.4.3",
+            "3.2.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.8",
+    "checksIds": [
+      "manual-review",
+      "tabindex"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, l’ordre de tabulation est-il cohérent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.8.1",
+          "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+          "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.9",
+    "checksIds": [
+      "manual-review"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la navigation ne doit pas contenir de piège au clavier. Cette règle est-elle respectée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.9.1",
+          "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+          "criterion": "12.9",
+          "wcagSc": [
+            "2.1.1",
+            "2.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.1",
+    "checksIds": [
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, l’utilisateur a-t-il le contrôle de chaque limite de temps modifiant le contenu (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.1",
+          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.2",
+          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.8",
+    "checksIds": [
+      "deprecated-elements-not-used"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque contenu en mouvement ou clignotant est-il contrôlable par l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.1",
+          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.2",
+          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.9",
+    "checksIds": [
+      "css-orientation-lock"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le contenu proposé est-il consultable quelle que soit l’orientation de l’écran (portrait ou paysage) (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.9.1",
+          "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "13.9",
+          "wcagSc": [
+            "1.3.4"
+          ]
+        }
+      ]
+    }
   }
 ];
 
@@ -13708,6 +15622,9 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
+    "report_heading_rgaaRollup": "RGAA-Zusammenfassung",
+    "report_rgaaRollup_col_criterion": "Kriterium",
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
     "report_heading_occurrences": "Fundstellen",
@@ -14543,6 +16460,9 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
+    "report_heading_rgaaRollup": "RGAA rollup",
+    "report_rgaaRollup_col_criterion": "Criterion",
+    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
     "report_heading_occurrences": "Occurrences",
@@ -15378,6 +17298,9 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
+    "report_heading_rgaaRollup": "Resumen RGAA",
+    "report_rgaaRollup_col_criterion": "Criterio",
+    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
     "report_heading_occurrences": "Apariciones",
@@ -16213,6 +18136,9 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
+    "report_heading_rgaaRollup": "Synthèse RGAA",
+    "report_rgaaRollup_col_criterion": "Critère",
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
     "report_heading_occurrences": "Occurrences",
@@ -17048,6 +18974,9 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
+    "report_heading_rgaaRollup": "RGAA の集約結果",
+    "report_rgaaRollup_col_criterion": "基準",
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
     "report_heading_occurrences": "検出箇所",
@@ -26280,6 +28209,18 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (RGAA's per criterion) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -26380,7 +28321,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -26391,6 +28332,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -26410,7 +28358,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -26497,6 +28447,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -27103,6 +29060,21 @@ const runCore = (function runCore(
     );
   }
 
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+  }
+
   // Optional perf counters passthrough (only when enabled). Deterministic.
   let perfStats = null;
   try {
@@ -27394,10 +29366,27 @@ function toCompositeCatalogEntry(x, tokens) {
   return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
 }
 
+// A standard's own rollup (RGAA's per criterion) is opt-in like that
+// standard's rules: listed only when the selection names its tag or its id,
+// as the rgaa-4.1.2 profile does, so the catalog lists what a scan with the
+// same options would produce.
+function isCompositeListed(x, selection) {
+  const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
+  const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (!optIn.length) return true;
+  return (
+    optIn.some((t) => selection.tags.includes(t)) ||
+    selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
+  );
+}
+
 function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
   const tokens = catalogMappingTokens(engineOptions, null);
-  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => toCompositeCatalogEntry(x, tokens)) : [];
+  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  return Array.isArray(COMPOSITE_RULES)
+    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) => toCompositeCatalogEntry(x, tokens))
+    : [];
 }
 
 function getCompositeRuleById(ruleId, engineOptions) {
@@ -40186,6 +42175,1920 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Accessible authentication (minimum)",
           "wcagSc": [
             "3.3.8"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.1",
+    "checksIds": [
+      "area-alt-present",
+      "canvas-text-alternative-present",
+      "embed-text-alternative-present",
+      "img-alt-decorative",
+      "img-alt-present",
+      "input-image-alt-present",
+      "object-text-alternative-present",
+      "role-img-text-alternative-present",
+      "server-side-image-map-absent",
+      "svg-text-alternative-present"
+    ],
+    "meta": {
+      "title": "Chaque image porteuse d’information a-t-elle une alternative textuelle ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.2",
+          "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.3",
+          "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.4",
+          "title": "Chaque zone cliquable d’une image réactive côté serveur est-elle doublée d’un mécanisme utilisable quel que soit le dispositif de pointage utilisé et permettant d’accéder à la même destination ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.5",
+          "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.6",
+          "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.7",
+          "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.8",
+          "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.2",
+    "checksIds": [
+      "img-alt-present",
+      "presentation-role-conflict"
+    ],
+    "meta": {
+      "title": "Chaque image de décoration est-elle correctement ignorée par les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.1",
+          "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-1.3",
+    "checksIds": [
+      "area-alt-quality",
+      "canvas-text-alternative-quality",
+      "embed-text-alternative-quality",
+      "image-redundant-alt",
+      "img-alt-quality",
+      "input-image-alt-decorative",
+      "input-image-alt-quality",
+      "object-text-alternative-quality",
+      "svg-text-alternative-quality"
+    ],
+    "meta": {
+      "title": "Pour chaque image porteuse d’information ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "1.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.2",
+          "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.3",
+          "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.4",
+          "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.5",
+          "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.6",
+          "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.7",
+          "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-2.1",
+    "checksIds": [
+      "iframe-name-present"
+    ],
+    "meta": {
+      "title": "Chaque cadre a-t-il un titre de cadre ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "2.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.1.1",
+          "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+          "criterion": "2.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-2.2",
+    "checksIds": [
+      "identical-iframes-same-purpose",
+      "iframe-title-unique"
+    ],
+    "meta": {
+      "title": "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "2.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.2.1",
+          "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+          "criterion": "2.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-3.2",
+    "checksIds": [
+      "contrast-computable",
+      "contrast-minimum"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le contraste entre la couleur du texte et la couleur de son arrière-plan est-il suffisamment élevé (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "3.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.1",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.2",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.3",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.4",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.1",
+    "checksIds": [
+      "media-alternative-transcript-evidence"
+    ],
+    "meta": {
+      "title": "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une transcription textuelle ou une audiodescription (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.1",
+          "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.2",
+          "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.3",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1",
+            "1.2.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.3",
+    "checksIds": [
+      "video-caption"
+    ],
+    "meta": {
+      "title": "Chaque média temporel synchronisé pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.1",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-4.10",
+    "checksIds": [
+      "no-autoplay-audio"
+    ],
+    "meta": {
+      "title": "Chaque son déclenché automatiquement est-il contrôlable par l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "4.10",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.10.1",
+          "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+          "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.4",
+    "checksIds": [
+      "table-fake-caption"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.4.1",
+          "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+          "criterion": "5.4",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.6",
+    "checksIds": [
+      "td-has-header"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-5.7",
+    "checksIds": [
+      "scope-attr-valid",
+      "table-headers-attr-valid"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.2",
+          "title": "Pour chaque contenu de balise <th> s’appliquant à la totalité de la ligne ou de la colonne et possédant un attribut scope, la balise <th> vérifie-t-elle une de ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.4",
+          "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-6.1",
+    "checksIds": [
+      "label-in-name",
+      "link-name-quality"
+    ],
+    "meta": {
+      "title": "Chaque lien est-il explicite (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "6.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.1",
+          "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.2",
+          "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.3",
+          "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.4",
+          "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.5",
+          "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4",
+            "2.5.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-6.2",
+    "checksIds": [
+      "link-name-present"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque lien a-t-il un intitulé ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "6.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.2.1",
+          "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+          "criterion": "6.2",
+          "wcagSc": [
+            "1.1.1",
+            "2.4.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-7.1",
+    "checksIds": [
+      "aria-role-name-present",
+      "binary-control-name-present",
+      "button-name-present",
+      "combobox-name-present",
+      "dialog-name-present",
+      "label-in-name",
+      "listbox-name-present",
+      "menuitem-name-present",
+      "searchbox-name-present",
+      "slider-name-present",
+      "spinbutton-name-present",
+      "tab-name-present",
+      "textbox-name-present",
+      "treeitem-name-present"
+    ],
+    "meta": {
+      "title": "Chaque script est-il, si nécessaire, compatible avec les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "7.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.1",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.3",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-7.3",
+    "checksIds": [
+      "mouse-only-event-handlers"
+    ],
+    "meta": {
+      "title": "Chaque script est-il contrôlable par le clavier et par tout dispositif de pointage (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "7.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.3.1",
+          "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "7.3",
+          "wcagSc": [
+            "1.3.1",
+            "2.1.1",
+            "2.4.7"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.1",
+    "checksIds": [
+      "doctype-present"
+    ],
+    "meta": {
+      "title": "Chaque page web est-elle définie par un type de document ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.1",
+          "title": "Pour chaque page web, le type de document (balise doctype) est-il présent ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.2",
+          "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.3",
+          "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.2",
+    "checksIds": [
+      "aria-allowed-attr",
+      "aria-allowed-role",
+      "aria-required-attr",
+      "aria-roles-valid",
+      "aria-valid-attr",
+      "aria-valid-attr-value",
+      "autocomplete-valid",
+      "definition-list-children-valid",
+      "deprecated-elements-not-used",
+      "dlitem-parent-valid",
+      "duplicate-id",
+      "duplicate-id-aria",
+      "html-xml-lang-mismatch",
+      "list-children-valid",
+      "listitem-parent-valid",
+      "nested-interactive-controls-absent",
+      "scope-attr-valid",
+      "table-headers-attr-valid"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, le code source généré est-il valide selon le type de document spécifié ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.3",
+    "checksIds": [
+      "html-lang-attr-present"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la langue par défaut est-elle présente ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.3.1",
+          "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+          "criterion": "8.3",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.4",
+    "checksIds": [
+      "html-lang-attr-present",
+      "html-xml-lang-mismatch"
+    ],
+    "meta": {
+      "title": "Pour chaque page web ayant une langue par défaut, le code de langue est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.4.1",
+          "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.4",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.5",
+    "checksIds": [
+      "page-title-present"
+    ],
+    "meta": {
+      "title": "Chaque page web a-t-elle un titre de page ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.5",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.5.1",
+          "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+          "criterion": "8.5",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.6",
+    "checksIds": [
+      "page-title-patterns"
+    ],
+    "meta": {
+      "title": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.6.1",
+          "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+          "criterion": "8.6",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-8.8",
+    "checksIds": [
+      "valid-lang"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le code de langue de chaque changement de langue est-il valide et pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "8.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.8.1",
+          "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.8",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.1",
+    "checksIds": [
+      "empty-heading",
+      "heading-order",
+      "heading-quality",
+      "p-as-heading"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, l’information est-elle structurée par l’utilisation appropriée de titres ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.1",
+          "title": "Dans chaque page web, la hiérarchie entre les titres (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-elle pertinente ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.2",
+          "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.3",
+          "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "2.4.6",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.2",
+    "checksIds": [
+      "landmark-no-duplicate-main",
+      "landmark-one-main"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la structure du document est-elle cohérente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.2.1",
+          "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+          "criterion": "9.2",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-9.3",
+    "checksIds": [
+      "aria-prohibited-children",
+      "aria-required-children",
+      "aria-required-parent",
+      "definition-list-children-valid",
+      "dlitem-parent-valid",
+      "list-children-valid",
+      "listitem-parent-valid"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque liste est-elle correctement structurée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "9.3",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.1",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.2",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.3",
+          "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.1",
+    "checksIds": [
+      "presentational-attributes-absent",
+      "presentational-elements-absent"
+    ],
+    "meta": {
+      "title": "Dans le site web, des feuilles de styles sont-elles utilisées pour contrôler la présentation de l’information ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.1",
+          "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.1.2",
+          "title": "Dans chaque page web, les attributs servant à la présentation de l’information ne doivent pas être présents dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
+          "wcagSc": [
+            "1.3.1",
+            "1.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.4",
+    "checksIds": [
+      "meta-viewport-zoom-enabled"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le texte reste-t-il lisible lorsque la taille des caractères est augmentée jusqu’à 200 %, au moins (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.4",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.4.2",
+          "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+          "criterion": "10.4",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.6",
+    "checksIds": [
+      "link-in-text-block"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque lien dont la nature n’est pas évidente est-il visible par rapport au texte environnant ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.6.1",
+          "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+          "criterion": "10.6",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.7",
+    "checksIds": [
+      "css-focus-indicator-suppressed",
+      "css-hidden-focus",
+      "manual-review"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, pour chaque élément recevant le focus, la prise de focus est-elle visible ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.7.1",
+          "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+          "criterion": "10.7",
+          "wcagSc": [
+            "1.4.1",
+            "2.4.7"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.8",
+    "checksIds": [
+      "aria-hidden-body",
+      "aria-hidden-focus"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, les contenus cachés ont-ils vocation à être ignorés par les technologies d’assistance ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.8.1",
+          "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+          "criterion": "10.8",
+          "wcagSc": [
+            "1.3.2",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-10.12",
+    "checksIds": [
+      "avoid-inline-spacing"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "10.12",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.12.1",
+          "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+          "criterion": "10.12",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.1",
+    "checksIds": [
+      "binary-control-name-present",
+      "combobox-name-present",
+      "form-control-programmatic-label-present",
+      "form-control-programmatic-label-quality",
+      "label-for-target-valid",
+      "label-title-only",
+      "listbox-name-present",
+      "searchbox-name-present",
+      "slider-name-present",
+      "spinbutton-name-present",
+      "textbox-name-present"
+    ],
+    "meta": {
+      "title": "Chaque champ de formulaire a-t-il une étiquette ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.2",
+          "title": "Chaque champ de formulaire associé à une balise <label> ayant un attribut for, vérifie-t-il ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.3",
+          "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.6",
+            "3.3.2",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.2",
+    "checksIds": [
+      "form-control-label-quality",
+      "label-in-name",
+      "label-title-only"
+    ],
+    "meta": {
+      "title": "Chaque étiquette associée à un champ de formulaire est-elle pertinente (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.1",
+          "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.2",
+          "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.4",
+          "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.5",
+          "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6",
+            "2.5.3",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.6",
+    "checksIds": [
+      "aria-role-name-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, chaque regroupement de champs de même nature a-t-il une légende ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.6.1",
+          "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
+          "criterion": "11.6",
+          "wcagSc": [
+            "1.3.1",
+            "3.3.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.8",
+    "checksIds": [
+      "optgroup-label-present"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, les items de même nature d’une liste de choix sont-ils regroupés de manière pertinente ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.8.2",
+          "title": "Dans chaque balise <select>, chaque balise <optgroup> possède-t-elle un attribut label ?",
+          "criterion": "11.8",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.9",
+    "checksIds": [
+      "button-name-present",
+      "label-in-name"
+    ],
+    "meta": {
+      "title": "Dans chaque formulaire, l’intitulé de chaque bouton est-il pertinent (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.1",
+          "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.2",
+          "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-11.13",
+    "checksIds": [
+      "autocomplete-valid"
+    ],
+    "meta": {
+      "title": "La finalité d’un champ de saisie peut-elle être déduite pour faciliter le remplissage automatique des champs avec les données de l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "11.13",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.13.1",
+          "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+          "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.6",
+    "checksIds": [
+      "bypass-blocks-present"
+    ],
+    "meta": {
+      "title": "Les zones de regroupement de contenus présentes dans plusieurs pages web (zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche) peuvent-elles être atteintes ou évitées ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.6.1",
+          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+          "criterion": "12.6",
+          "wcagSc": [
+            "1.3.1",
+            "2.4.1",
+            "4.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.7",
+    "checksIds": [
+      "bypass-blocks-present",
+      "skip-link"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, un lien d’évitement ou d’accès rapide à la zone de contenu principal est-il présent (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.7",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.1",
+          "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+          "criterion": "12.7",
+          "wcagSc": [
+            "2.4.1",
+            "2.4.3",
+            "3.2.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.2",
+          "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "12.7",
+          "wcagSc": [
+            "2.4.1",
+            "2.4.3",
+            "3.2.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.8",
+    "checksIds": [
+      "manual-review",
+      "tabindex"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, l’ordre de tabulation est-il cohérent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.8.1",
+          "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+          "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-12.9",
+    "checksIds": [
+      "manual-review"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, la navigation ne doit pas contenir de piège au clavier. Cette règle est-elle respectée ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "12.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.9.1",
+          "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+          "criterion": "12.9",
+          "wcagSc": [
+            "2.1.1",
+            "2.1.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.1",
+    "checksIds": [
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
+    ],
+    "meta": {
+      "title": "Pour chaque page web, l’utilisateur a-t-il le contrôle de chaque limite de temps modifiant le contenu (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.1",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.1",
+          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.2",
+          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.8",
+    "checksIds": [
+      "deprecated-elements-not-used"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, chaque contenu en mouvement ou clignotant est-il contrôlable par l’utilisateur ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.8",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.1",
+          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.2",
+          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.1",
+            "2.2.2"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "rgaa-4.1.2-13.9",
+    "checksIds": [
+      "css-orientation-lock"
+    ],
+    "meta": {
+      "title": "Dans chaque page web, le contenu proposé est-il consultable quelle que soit l’orientation de l’écran (portrait ou paysage) (hors cas particuliers) ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "13.9",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.9.1",
+          "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "13.9",
+          "wcagSc": [
+            "1.3.4"
           ]
         }
       ]
@@ -66275,6 +70178,9 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
+    "report_heading_rgaaRollup": "RGAA-Zusammenfassung",
+    "report_rgaaRollup_col_criterion": "Kriterium",
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
     "report_heading_occurrences": "Fundstellen",
@@ -67110,6 +71016,9 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
+    "report_heading_rgaaRollup": "RGAA rollup",
+    "report_rgaaRollup_col_criterion": "Criterion",
+    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
     "report_heading_occurrences": "Occurrences",
@@ -67945,6 +71854,9 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
+    "report_heading_rgaaRollup": "Resumen RGAA",
+    "report_rgaaRollup_col_criterion": "Criterio",
+    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
     "report_heading_occurrences": "Apariciones",
@@ -68780,6 +72692,9 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
+    "report_heading_rgaaRollup": "Synthèse RGAA",
+    "report_rgaaRollup_col_criterion": "Critère",
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
     "report_heading_occurrences": "Occurrences",
@@ -69615,6 +73530,9 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
+    "report_heading_rgaaRollup": "RGAA の集約結果",
+    "report_rgaaRollup_col_criterion": "基準",
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
     "report_heading_occurrences": "検出箇所",
@@ -78847,6 +82765,18 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (RGAA's per criterion) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -78947,7 +82877,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -78958,6 +82888,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -78977,7 +82914,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -79064,6 +83003,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -79668,6 +83614,21 @@ const runCore = (function runCore(
       r.meta.normativeMappings,
       mappingSelection.tokens
     );
+  }
+
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
   }
 
   // Optional perf counters passthrough (only when enabled). Deterministic.

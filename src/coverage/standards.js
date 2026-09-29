@@ -46,6 +46,10 @@
  *   the entries of the rules that produced its outcome; a standard that
  *   restates the criterion itself (EN 301 549) names the same entry
  *   whichever rule decided.
+ * - composites(): optional; rollups of the standard's own, shaped like the
+ *   entries of src/catalogs/composites.wcag.js and carrying the standard's
+ *   ruleTag in meta.tags so only a run that asks for the standard produces
+ *   them (RGAA: one per criterion).
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
@@ -56,7 +60,7 @@
 
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { RGAA_VERSIONS } = require('./rgaa-map');
-const { rgaaMappingsFor, validateRgaaRuleTests } = require('./rgaa-mappings');
+const { rgaaMappingsFor, rgaaComposites, validateRgaaRuleTests } = require('./rgaa-mappings');
 
 const WCAG21_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const WCAG22_AA_TAGS = WCAG21_AA_TAGS.concat(['wcag22a', 'wcag22aa']);
@@ -92,6 +96,7 @@ const NORMATIVE_STANDARDS = [
     // Mapped rule by rule (src/coverage/rgaa-rule-map.js): RGAA's criteria are
     // its own, related to WCAG many to many.
     mappingsFor: rgaaMappingsFor,
+    composites: rgaaComposites,
     validate: validateRgaaRuleTests
   }
 ];
@@ -120,6 +125,11 @@ function profileRuleIds(rules) {
     }
   }
   return out;
+}
+
+// Every registered standard's own rollups, in registry order.
+function standardComposites() {
+  return NORMATIVE_STANDARDS.flatMap((s) => (typeof s.composites === 'function' ? s.composites() : []));
 }
 
 // Every registered standard's problems with its own tables, given every rule.
@@ -178,6 +188,7 @@ module.exports = {
   standardMappingsFor,
   withStandardMappings,
   validateStandards,
+  standardComposites,
   profileRuleIds,
   standardsData,
   standardOfEntry

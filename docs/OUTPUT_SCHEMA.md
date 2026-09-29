@@ -49,7 +49,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `perfStats` | `null` unless `engineOptions.perfStats: true`. Internal timing/counters — shape not covered by this document, treat as debug-only. |
 | `contextSelector` | The (trimmed) `contextSelector` argument you passed — a string, an array of strings (multi-region scanning, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), or `null` if none/empty. |
 | `checksResults` | One entry per **atomic rule** that ran (every rule not filtered out by `runOnly` — see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). **Every loaded rule produces an entry, even ones that outcome `notApplicable`** — this is not a "violations only" list. |
-| `rulesResults` | One entry per **composite (WCAG-SC rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Empty array if no composite matched the current `runOnly`/tag filter. |
+| `rulesResults` | One entry per **composite (rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Normally one per WCAG Success Criterion; a run under `profile: 'rgaa-4.1.2'` also gets one per RGAA criterion (`meta.standard: "RGAA"`). Empty array if no composite matched the current `runOnly`/tag filter. |
 | `overriddenBuiltinIds` | Rule ids where an `engineOptions.customRules` entry shared its `id` with a built-in rule, so the custom implementation replaced the built-in one for this scan (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Always an array; empty when no collision occurred. Also logged via `console.warn` at scan time, since a same-named custom rule is as likely to be an accidental collision as a deliberate override. |
 
 ## Cross-frame result (`runa11yCoreAcrossFrames`)
@@ -101,6 +101,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   },
   engineOptions: object,   // the resolved engineOptions this rule actually ran under
   schemaVersion: string,
+  rollupIds: string[],     // the rulesResults entries that group this rule in this run; [] if none
   wcagVersionScope?: {     // present only when the target WCAG version changed this outcome
     target: "2.0" | "2.1" | "2.2",
     removedSc: string[],
@@ -114,6 +115,7 @@ Notes:
 
 - **`outcome` vs `outcomeNormalized`**: identical except `notApplicable` becomes `"inapplicable"` in `outcomeNormalized`. Both are provided so you can match either your own vocabulary or the engine's internal one.
 - **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, `type: "automatic"` findings only.
+- **`rollupIds`** lists the composites in `rulesResults` that group this rule in this run. An empty list means the rule's findings appear in no rollup, so a consumer that reads only `rulesResults` never sees them; `heading-order`, for instance, belongs to no WCAG rollup and only to `rgaa-4.1.2-9.1` under the RGAA profile.
 - **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up. The list is not WCAG-only. When the scan asks for another standard (`engineOptions.mappings`, or an EN 301 549 profile), each WCAG criterion is followed by that standard's corresponding requirement, such as the EN 301 549 clause that restates it (`{ standard: "EN 301 549", version: "V3.2.1" | "V4.1.1", requirement: "9.1.1.1", title, wcagSc: ["1.1.1"] }`, one entry per version that includes the criterion, `wcagSc` naming the criteria it corresponds to), or the RGAA tests the rule checks (`{ standard: "RGAA", version: "4.1.2", requirement: "1.1.1", title, criterion: "1.1", wcagSc: ["1.1.1"] }`); and a rule may also cite WCAG's Understanding documents (`type: "Understanding"`). Filter on `standard` (and on the absence of `type`) before reading `requirement` as a Success Criterion. A composite's WCAG entry is always first. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#en-301-549).
 - **`wcagVersionScope`**: only present when the run's target WCAG version turned this rule's `fail` into a `cantTell` — today that means a rule mapped to SC 4.1.1 Parsing (`duplicate-id`) under the default 2.2 target, since 2.2 removed that criterion. `removedSc` lists the criteria that stopped existing, `target` is the version that removed them, and `coercedFrom` is the outcome the rule itself reported. The occurrences are the rule's own, unchanged — nothing was dropped, only the conformance verdict was. Absent on every other result, and **never** reported through `error`: nothing went wrong. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22).
 - **`error`**: only present if the rule implementation threw an uncaught exception, or if the manual-fail coercion above fired. A thrown rule always surfaces as `outcome: "cantTell"` with `occurrences: []` and `error` set to the exception message — the engine never lets one broken rule crash the whole scan.
@@ -179,7 +181,7 @@ Every automatic rule that can report `cantTell` carries this, and a test holds t
 
 ## A composite result (`rulesResults[i]`)
 
-Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wcag-1.1.1-non-text-content` rolls up 22 atomic rules). Shape is the same envelope as a check result, with composite-specific `data.details`:
+Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wcag-1.1.1-non-text-content` rolls up 22 atomic rules). Under `profile: 'rgaa-4.1.2'` there is also one composite per RGAA criterion a rule is linked to (e.g. `rgaa-4.1.2-9.1`, headings), with RGAA's French wording as `title` and `meta.standard: "RGAA"`; those are the only rollup some RGAA findings have, such as `heading-order` or `doctype-present`. Shape is the same envelope as a check result, with composite-specific `data.details`:
 
 ```ts
 {
@@ -190,6 +192,9 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
   data: {
     details: {
       reasonCode: string,       // e.g. "composite.rollup.fail.anyFail"
+      standard?: "RGAA",        // an RGAA rollup only, with version and criterion
+      version?: string,         //   e.g. "4.1.2"
+      criterion?: string,       //   e.g. "9.1"
       checksIds: string[],      // every atomic ruleId this composite rolls up
       contributors: Array<{ testId: string, outcome: string, severity: string | null }>,
       metrics: { failCount, cantTellCount, notApplicableCount, passCount, missingCount }
