@@ -115,6 +115,25 @@ function runInPage(ctx) {
 
   const seenFailEls = new Set();
 
+  // Defined inside runInPage, which is serialized into the page and cannot
+  // reach module scope. English fallbacks for the dictionary keys below.
+  const CANT_TELL_HINT_KEYS = {
+    background: 'contrastComputable_hint_cantTell_background',
+    effect: 'contrastComputable_hint_cantTell_effect',
+    rootNotOpaque: 'contrastComputable_hint_cantTell_rootNotOpaque',
+    generic: 'contrast_hint_cantTell_manual'
+  };
+  const CANT_TELL_HINTS = {
+    background:
+      'Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
+    effect:
+      'Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
+    rootNotOpaque:
+      'No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.',
+    generic:
+      "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
+  };
+
   function pushCantTellOccurrence(el, reasonCode, extraDetails) {
     try {
       if (!el || seenFailEls.has(el)) return;
@@ -151,6 +170,18 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
+      // Every cantTell leaves a person to measure the contrast, so each one
+      // says how, grouped by what blocked the calculation.
+      let hintKind = 'generic';
+      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') hintKind = 'background';
+      else if (
+        rc === 'MIX_BLEND_MODE' ||
+        rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
+        rc === 'TEXT_SHADOW'
+      )
+        hintKind = 'effect';
+      else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
+
       const details = Object.assign(
         { reasonCode: rc },
         extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
@@ -160,10 +191,10 @@ function runInPage(ctx) {
         selector: '',
         html: '',
         summary: '',
-        hint: '',
+        hint: CANT_TELL_HINTS[hintKind],
         i18n: {
           summaryKey,
-          hintKey: '',
+          hintKey: CANT_TELL_HINT_KEYS[hintKind],
           params: Object.assign(
             { reasonCode: rc },
             details && typeof details === 'object'
@@ -374,11 +405,11 @@ function runInPage(ctx) {
           {
             selector: '',
             summary: '',
-            hint: '',
+            hint: CANT_TELL_HINTS.generic,
             html: '',
             i18n: {
               summaryKey: 'contrastComputable_cantTell_engineFailure',
-              hintKey: '',
+              hintKey: CANT_TELL_HINT_KEYS.generic,
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
             data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
