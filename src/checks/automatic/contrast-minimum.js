@@ -228,10 +228,10 @@ function runInPage(ctx) {
         selector: '',
         html: '',
         summary: '',
-        hint: '',
+        hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: 'contrastMinimum_fail_belowThreshold',
-          hintKey: '',
+          hintKey: 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
@@ -491,11 +491,11 @@ function runInPage(ctx) {
           {
             selector: '',
             summary: '',
-            hint: '',
+            hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
             html: '',
             i18n: {
               summaryKey: 'contrastMinimum_cantTell_engineFailure',
-              hintKey: '',
+              hintKey: 'contrast_hint_cantTell_manual',
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
             data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }

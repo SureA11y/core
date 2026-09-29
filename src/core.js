@@ -9529,15 +9529,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
+    "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
+    "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
     "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
     "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
     "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
     "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
@@ -10225,15 +10231,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
+    "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
+    "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
     "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
@@ -10921,15 +10933,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+    "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
+    "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
     "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
     "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
     "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
@@ -11617,15 +11635,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
+    "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
+    "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
     "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
@@ -12313,15 +12337,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "backdrop-filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_filterOrBackdropFilter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
+    "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
+    "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
+    "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
     "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
     "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+    "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
     "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
     "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
     "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
     "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
     "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
     "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+    "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
     "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
     "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
     "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
@@ -38307,6 +38337,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const seenFailEls = new Set();
 
+  // Defined inside runInPage, which is serialized into the page and cannot
+  // reach module scope. English fallbacks for the dictionary keys below.
+  const CANT_TELL_HINT_KEYS = {
+    background: 'contrastComputable_hint_cantTell_background',
+    effect: 'contrastComputable_hint_cantTell_effect',
+    rootNotOpaque: 'contrastComputable_hint_cantTell_rootNotOpaque',
+    generic: 'contrast_hint_cantTell_manual'
+  };
+  const CANT_TELL_HINTS = {
+    background:
+      'Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
+    effect:
+      'Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
+    rootNotOpaque:
+      'No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.',
+    generic:
+      "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
+  };
+
   function pushCantTellOccurrence(el, reasonCode, extraDetails) {
     try {
       if (!el || seenFailEls.has(el)) return;
@@ -38343,6 +38392,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
 
+      // Every cantTell leaves a person to measure the contrast, so each one
+      // says how, grouped by what blocked the calculation.
+      let hintKind = 'generic';
+      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') hintKind = 'background';
+      else if (
+        rc === 'MIX_BLEND_MODE' ||
+        rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
+        rc === 'TEXT_SHADOW'
+      )
+        hintKind = 'effect';
+      else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
+
       const details = Object.assign(
         { reasonCode: rc },
         extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
@@ -38352,10 +38413,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: '',
+        hint: CANT_TELL_HINTS[hintKind],
         i18n: {
           summaryKey,
-          hintKey: '',
+          hintKey: CANT_TELL_HINT_KEYS[hintKind],
           params: Object.assign(
             { reasonCode: rc },
             details && typeof details === 'object'
@@ -38566,11 +38627,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           {
             selector: '',
             summary: '',
-            hint: '',
+            hint: CANT_TELL_HINTS.generic,
             html: '',
             i18n: {
               summaryKey: 'contrastComputable_cantTell_engineFailure',
-              hintKey: '',
+              hintKey: CANT_TELL_HINT_KEYS.generic,
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
             data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
@@ -38810,10 +38871,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: '',
+        hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: 'contrastEnhanced_fail_belowThreshold',
-          hintKey: '',
+          hintKey: 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
@@ -39077,11 +39138,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           {
             selector: '',
             summary: '',
-            hint: '',
+            hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
             html: '',
             i18n: {
               summaryKey: 'contrastEnhanced_cantTell_engineFailure',
-              hintKey: '',
+              hintKey: 'contrast_hint_cantTell_manual',
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
             data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
@@ -39324,10 +39385,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: '',
+        hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: 'contrastMinimum_fail_belowThreshold',
-          hintKey: '',
+          hintKey: 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
@@ -39587,11 +39648,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           {
             selector: '',
             summary: '',
-            hint: '',
+            hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
             html: '',
             i18n: {
               summaryKey: 'contrastMinimum_cantTell_engineFailure',
-              hintKey: '',
+              hintKey: 'contrast_hint_cantTell_manual',
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
             data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
@@ -56703,15 +56764,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Der Kontrast ist nicht berechenbar, weil backdrop-filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
+    "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
+    "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
     "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
     "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
     "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
     "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
     "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
     "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Bei keinem zutreffenden Text war der Kontrast berechenbar (zutreffende Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
     "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
@@ -57399,15 +57466,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
+    "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
+    "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastMinimum_title": "Text meets minimum color contrast (AA)",
     "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
     "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
     "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
     "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
     "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
     "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
@@ -58095,15 +58168,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "El contraste no es computable porque se usa backdrop-filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+    "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
+    "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
     "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
     "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
     "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
     "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
     "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
@@ -58791,15 +58870,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "Le contraste ne peut pas être calculé car la propriété backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
+    "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
+    "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
     "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
     "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
     "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
     "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
     "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+    "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
     "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
     "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
     "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
@@ -59487,15 +59572,21 @@ const I18N = {
     "contrastComputable_cantTell_backdropFilter": "backdrop-filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_filterOrBackdropFilter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
+    "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
+    "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
+    "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
+    "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
     "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
     "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+    "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
     "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
     "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
     "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
     "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
     "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
     "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+    "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
     "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
     "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
     "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
