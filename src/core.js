@@ -2973,7 +2973,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "form-control-label-quality",
     "title": "Form field labels should be descriptive and distinguishable",
-    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "i18n": {
       "titleKey": "formControlLabelQuality_title",
       "descriptionKey": "formControlLabelQuality_description"
@@ -3328,7 +3328,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "heading-quality",
     "title": "Heading text should be descriptive, not a placeholder",
-    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "i18n": {
       "titleKey": "headingQuality_title",
       "descriptionKey": "headingQuality_description"
@@ -4880,7 +4880,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "link-name-quality",
     "title": "Link text should be descriptive, not generic",
-    "description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.",
+    "description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
     "i18n": {
       "titleKey": "linkNameQuality_title",
       "descriptionKey": "linkNameQuality_description"
@@ -9541,7 +9541,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
     "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
-    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet.",
+    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet. Englische Platzhalter werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn das Feld in dieser Sprache ist.",
     "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
     "formControlLabelQuality_summary_cantTell_duplicate": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) teilt sich mit {{count}} weiteren Feld(ern), ohne dass eine sichtbare Überschrift, Legende oder Zeilenbeschriftung sie unterscheidet.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Ersetzen Sie die Beschriftung durch eine, die die erfasste Information benennt.",
@@ -10181,13 +10181,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
     "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
-    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL.",
+    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
     "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Dateiname und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
     "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
-    "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist.",
+    "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn der Link in dieser Sprache ist.",
     "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
     "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht.",
     "linkNameQuality_summary_cantTell_formatName": "Der zugängliche Name dieses Links („{{name}}“) benennt ein Dateiformat/-typ, aber nicht das zugehörige Dokument.",
@@ -10297,7 +10297,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
-    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
     "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
@@ -10937,13 +10937,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
     "headingQuality_title": "Heading text should be descriptive, not a placeholder",
-    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
     "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a filename rather than a description of the content it introduces.",
     "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a URL rather than a description of the content it introduces.",
     "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
     "linkNameQuality_title": "Link text should be descriptive, not generic",
-    "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.",
+    "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
     "linkNameQuality_summary_cantTell": "This link's accessible name (\"{{name}}\") is a generic, non-descriptive phrase.",
     "linkNameQuality_hint_cantTell": "Make the link text itself describe its destination/purpose (e.g. \"Download the 2026 pricing guide\" instead of \"Download\"), or confirm the surrounding context already makes the purpose clear.",
     "linkNameQuality_summary_cantTell_formatName": "This link's accessible name (\"{{name}}\") names a file format/type but not the document it belongs to.",
@@ -11053,7 +11053,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
     "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
-    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga.",
+    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga. Los marcadores de posición en inglés se reconocen siempre, y los alemanes, españoles, franceses o japoneses cuando el campo está en ese idioma.",
     "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
     "formControlLabelQuality_summary_cantTell_duplicate": "La etiqueta visible de este campo («{{label}}») se comparte con {{count}} campo(s) más, sin que ningún encabezado, leyenda o texto de fila visible los distinga.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Sustituir la etiqueta por una que nombre la información que recoge el campo.",
@@ -11693,13 +11693,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
     "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
-    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL.",
+    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
     "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
     "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado («{{name}}») es un nombre de archivo, no una descripción del contenido que introduce.",
     "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
     "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
     "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
-    "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique a qué documento pertenece, para su revisión manual sobre si el propósito es claro.",
+    "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique a qué documento pertenece, para su revisión manual sobre si el propósito es claro. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el enlace está en ese idioma.",
     "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
     "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito.",
     "linkNameQuality_summary_cantTell_formatName": "El nombre accesible de este enlace (\"{{name}}\") indica un formato/tipo de archivo, pero no el documento al que pertenece.",
@@ -11809,7 +11809,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
     "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
-    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue.",
+    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue. Les textes de remplacement anglais sont toujours reconnus, et les textes allemands, espagnols, français ou japonais lorsque le champ est dans cette langue.",
     "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
     "formControlLabelQuality_summary_cantTell_duplicate": "L’étiquette visible de ce champ (« {{label}} ») est partagée avec {{count}} autre(s) champ(s), sans qu’aucun titre, légende ou texte de ligne visible ne les distingue.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Remplacez l’étiquette par une étiquette nommant l’information que le champ recueille.",
@@ -12449,13 +12449,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
     "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
-    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL.",
+    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
     "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
     "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (« {{name}} ») est un nom de fichier, pas une description du contenu qu’il introduit.",
     "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
     "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
     "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
-    "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant le document concerné, pour une revue manuelle visant à déterminer si l’objet du lien est clair.",
+    "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant le document concerné, pour une revue manuelle visant à déterminer si l’objet du lien est clair. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le lien est dans cette langue.",
     "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",
     "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair.",
     "linkNameQuality_summary_cantTell_formatName": "Le nom accessible de ce lien (« {{name}} ») indique un format/type de fichier, mais pas le document auquel il appartient.",
@@ -12565,7 +12565,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "画像の代替テキストが不審です (「{{alt}}」は {{pattern}} のように見えます)。人による確認が必要です。",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "代替テキストを確認してください。ファイル名、URL、仮の文字列、汎用的な語句は避け、文脈の中で画像の目的や機能を説明するテキストにしてください。",
     "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
-    "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「Label」「Field」など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。",
+    "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「ラベル」「入力欄」、\"Label\" など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。英語の仮の文字列は常に対象とし、ドイツ語、スペイン語、フランス語、日本語のものは、フィールドがその言語で書かれている場合に対象とします。",
     "formControlLabelQuality_summary_cantTell_placeholder": "このフィールドの表示ラベル (「{{label}}」) は仮の文字列であり、フィールドの用途を説明していません。",
     "formControlLabelQuality_summary_cantTell_duplicate": "このフィールドの表示ラベル (「{{label}}」) は、ほかの {{count}} 個のフィールドと同じです。区別するための見出し、legend、行のテキストも表示されていません。",
     "formControlLabelQuality_hint_cantTell_placeholder": "フィールドに入力する情報を示すラベルに置き換えてください。",
@@ -13205,13 +13205,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
     "mouseOnlyEventHandlers_hint_cantTell": "この機能をキーボードでも利用できるよう、onkeydown/onkeyup/onkeypress (ホバーで動作するものには onfocus/onblur) を追加してください。",
     "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
-    "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (\"Heading\"、\"Untitled\")、番号付きのテンプレートの枠 (\"Section 2\")、ファイル名、URL などが該当します。",
+    "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
     "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
     "headingQuality_summary_cantTell_filename": "この見出しのアクセシブルな名前 (「{{name}}」) はファイル名であり、導入するコンテンツを説明していません。",
     "headingQuality_summary_cantTell_url": "この見出しのアクセシブルな名前 (「{{name}}」) は URL であり、導入するコンテンツを説明していません。",
     "headingQuality_hint_cantTell": "後続のコンテンツの主題や目的がわかるよう、見出しを書き直してください。",
     "linkNameQuality_title": "リンクテキストは汎用的な語句ではなく、内容を説明していることが望ましい",
-    "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (\"click here\"、\"read more\"、\"more\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。",
+    "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (「こちら」「詳しくはこちら」「続きを読む」、\"click here\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、リンクがその言語で書かれている場合に対象とします。",
     "linkNameQuality_summary_cantTell": "このリンクのアクセシブルな名前 (「{{name}}」) は、汎用的で説明的でない語句です。",
     "linkNameQuality_hint_cantTell": "リンクテキスト自体でリンク先や目的がわかるようにするか (例:「ダウンロード」ではなく「2026 年版の料金ガイドをダウンロード」)、周囲の文脈ですでに目的が明確になっているか確認してください。",
     "linkNameQuality_summary_cantTell_formatName": "このリンクのアクセシブルな名前 (「{{name}}」) はファイルの形式や種類を示していますが、どの文書のものかを示していません。",
@@ -26197,7 +26197,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "form-control-label-quality",
     "title": "Form field labels should be descriptive and distinguishable",
-    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
+    "description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "i18n": {
       "titleKey": "formControlLabelQuality_title",
       "descriptionKey": "formControlLabelQuality_description"
@@ -26552,7 +26552,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "heading-quality",
     "title": "Heading text should be descriptive, not a placeholder",
-    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "i18n": {
       "titleKey": "headingQuality_title",
       "descriptionKey": "headingQuality_description"
@@ -28104,7 +28104,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "link-name-quality",
     "title": "Link text should be descriptive, not generic",
-    "description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.",
+    "description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
     "i18n": {
       "titleKey": "linkNameQuality_title",
       "descriptionKey": "linkNameQuality_description"
@@ -42501,7 +42501,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const PLACEHOLDER_LABEL_TEXT = new Set([
+  const PLACEHOLDER_LABEL_TEXT_EN = new Set([
     'label',
     'field',
     'form field',
@@ -42522,6 +42522,79 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'example',
     'default'
   ]);
+
+  const PLACEHOLDER_LABEL_TEXT = {
+    en: PLACEHOLDER_LABEL_TEXT_EN,
+    de: new Set([
+      'beschriftung',
+      'label',
+      'feld',
+      'formularfeld',
+      'eingabe',
+      'eingabefeld',
+      'text',
+      'textfeld',
+      'text eingeben',
+      'hier eingeben',
+      'wert',
+      'platzhalter',
+      'unbenannt',
+      'test',
+      'beispiel',
+      'standard'
+    ]),
+    es: new Set([
+      'etiqueta',
+      'campo',
+      'campo de formulario',
+      'entrada',
+      'campo de entrada',
+      'texto',
+      'campo de texto',
+      'introduzca texto',
+      'escriba aquí',
+      'valor',
+      'marcador de posición',
+      'sin título',
+      'prueba',
+      'ejemplo',
+      'predeterminado'
+    ]),
+    fr: new Set([
+      'libellé',
+      'étiquette',
+      'champ',
+      'champ de formulaire',
+      'saisie',
+      'champ de saisie',
+      'texte',
+      'champ de texte',
+      'saisir du texte',
+      'saisissez ici',
+      'valeur',
+      'espace réservé',
+      'sans titre',
+      'test',
+      'exemple',
+      'par défaut'
+    ]),
+    ja: new Set([
+      'ラベル',
+      'フィールド',
+      '入力',
+      '入力欄',
+      '入力フィールド',
+      'テキスト',
+      'テキストフィールド',
+      'ここに入力',
+      '値',
+      'プレースホルダー',
+      '無題',
+      '未定',
+      'テスト',
+      'サンプル'
+    ])
+  };
 
   const FIELD_SELECTOR = [
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
@@ -42549,11 +42622,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // NFKC folds full-width forms (「入力：」 ends in a full-width colon).
   function normalize(s) {
-    return normalizeWs(s)
+    return normalizeWs(String(s || '').normalize('NFKC'))
       .toLowerCase()
-      .replace(/[.,;:!?*]+$/g, '')
+      .replace(/[.,;:!?*。、]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   const isDomVisibleEligible =
@@ -42881,7 +42976,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const field of fields) {
-    const isPlaceholder = PLACEHOLDER_LABEL_TEXT.has(field.normalized);
+    const isPlaceholder = inPhraseList(
+      PLACEHOLDER_LABEL_TEXT,
+      field.normalized,
+      primaryLangOf(field.el)
+    );
     const shared = byKey.get(field.key) || [];
     const isDuplicate = shared.length > 1;
     const isPartiallyHidden = field.hiddenParts > 0;
@@ -43687,7 +43786,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const PLACEHOLDER_HEADING_TEXT = new Set([
+  const PLACEHOLDER_HEADING_TEXT_EN = new Set([
     'heading',
     'header',
     'headline',
@@ -43724,8 +43823,101 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A numbered template slot left as authored: "Heading 2", "Section 3",
   // "Chapter #1". The word alone is already in the set above; this catches
   // the same words carrying an index.
-  const NUMBERED_PLACEHOLDER =
-    /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/;
+  // "Inhalt" and "Contenido" are left out: they usually head a table of
+  // contents, which is a real heading.
+  const PLACEHOLDER_HEADING_TEXT = {
+    en: PLACEHOLDER_HEADING_TEXT_EN,
+    de: new Set([
+      'überschrift',
+      'zwischenüberschrift',
+      'titel',
+      'untertitel',
+      'unbenannt',
+      'ohne titel',
+      'abschnitt',
+      'neuer abschnitt',
+      'kapitel',
+      'hauptinhalt',
+      'text',
+      'beispieltext',
+      'blindtext',
+      'platzhalter',
+      'platzhaltertext',
+      'titel hier eingeben',
+      'test',
+      'beispiel',
+      'standard'
+    ]),
+    es: new Set([
+      'encabezado',
+      'título',
+      'subtítulo',
+      'sin título',
+      'sección',
+      'nueva sección',
+      'capítulo',
+      'contenido principal',
+      'texto',
+      'texto de ejemplo',
+      'marcador de posición',
+      'escriba el título aquí',
+      'su título aquí',
+      'por definir',
+      'prueba',
+      'ejemplo',
+      'predeterminado'
+    ]),
+    fr: new Set([
+      'titre',
+      'sous-titre',
+      'sans titre',
+      'section',
+      'nouvelle section',
+      'chapitre',
+      'contenu',
+      'contenu principal',
+      'texte',
+      "texte d'exemple",
+      'espace réservé',
+      'insérer le titre ici',
+      'votre titre ici',
+      'à définir',
+      'test',
+      'exemple',
+      'par défaut'
+    ]),
+    ja: new Set([
+      '見出し',
+      '小見出し',
+      'タイトル',
+      'サブタイトル',
+      '無題',
+      'セクション',
+      '新しいセクション',
+      '章',
+      'コンテンツ',
+      'メインコンテンツ',
+      'テキスト',
+      'サンプルテキスト',
+      'ダミーテキスト',
+      'プレースホルダー',
+      'ここにタイトルを入力',
+      'タイトルを入力',
+      '未定',
+      'テスト',
+      'サンプル'
+    ])
+  };
+
+  // A numbered template slot left as authored: "Heading 2", "Section 3",
+  // "Chapter #1", 「見出し 2」, 「第 1 章」.
+  const NUMBERED_PLACEHOLDER = {
+    en: /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/,
+    de: /^(überschrift|titel|abschnitt|kapitel|teil|schritt)\s*[-#:.]?\s*\d+$/,
+    es: /^(encabezado|título|sección|capítulo|parte|paso)\s*[-#:.]?\s*\d+$/,
+    fr: /^(titre|section|chapitre|partie|étape)\s*[-#:.]?\s*\d+$/,
+    ja: /^(?:(見出し|タイトル|セクション|章|ステップ|パート)\s*[-#:.]?\s*\d+|第\s*\d+\s*章)$/
+  };
 
   const FILENAME_LIKE =
     /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
@@ -43738,11 +43930,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // NFKC folds full-width letters and digits (「見出し２」) into ASCII forms.
   function normalize(s) {
-    return normalizeWs(s)
+    return normalizeWs(String(s || '').normalize('NFKC'))
+      .replace(/[\u2018\u2019]/g, "'")
       .toLowerCase()
-      .replace(/[.,;:!?]+$/g, '')
+      .replace(/[.,;:!?。、]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   function getExplicitRoleToken(el) {
@@ -43854,8 +44069,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function classify(normalized) {
-    if (PLACEHOLDER_HEADING_TEXT.has(normalized) || NUMBERED_PLACEHOLDER.test(normalized)) {
+  function isNumberedPlaceholder(normalized, lang) {
+    if (NUMBERED_PLACEHOLDER.en.test(normalized)) return true;
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      NUMBERED_PLACEHOLDER[lang] &&
+      NUMBERED_PLACEHOLDER[lang].test(normalized)
+    );
+  }
+
+  function classify(normalized, lang) {
+    if (
+      inPhraseList(PLACEHOLDER_HEADING_TEXT, normalized, lang) ||
+      isNumberedPlaceholder(normalized, lang)
+    ) {
       return 'PLACEHOLDER_HEADING_TEXT';
     }
     if (URL_LIKE.test(normalized)) return 'URL_LIKE_HEADING';
@@ -43888,7 +44116,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const reasonCode = classify(normalized);
+    const reasonCode = classify(normalized, primaryLangOf(el));
     if (!reasonCode) continue;
 
     const eligInfo = helpers.getEligibilityInfo
@@ -48618,7 +48846,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "link-name-quality": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const GENERIC_LINK_TEXT = new Set([
+  const GENERIC_LINK_TEXT_EN = new Set([
     'click here',
     'here',
     'click',
@@ -48639,6 +48867,100 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'see more',
     'info'
   ]);
+
+  const GENERIC_LINK_TEXT = {
+    en: GENERIC_LINK_TEXT_EN,
+    de: new Set([
+      'hier klicken',
+      'klicken sie hier',
+      'hier',
+      'klicken',
+      'mehr',
+      'mehr info',
+      'mehr infos',
+      'mehr informationen',
+      'weiterlesen',
+      'mehr lesen',
+      'mehr erfahren',
+      'weiter',
+      'details',
+      'mehr details',
+      'link',
+      'dieser link',
+      'los',
+      'herunterladen',
+      'mehr anzeigen',
+      'info'
+    ]),
+    es: new Set([
+      'haga clic aquí',
+      'haz clic aquí',
+      'clic aquí',
+      'pulse aquí',
+      'pincha aquí',
+      'aquí',
+      'clic',
+      'más',
+      'más info',
+      'más información',
+      'leer más',
+      'saber más',
+      'seguir leyendo',
+      'continuar leyendo',
+      'continuar',
+      'detalles',
+      'más detalles',
+      'enlace',
+      'este enlace',
+      'ir',
+      'descargar',
+      'ver más',
+      'info'
+    ]),
+    fr: new Set([
+      'cliquez ici',
+      'cliquer ici',
+      'ici',
+      'cliquez',
+      'plus',
+      "plus d'infos",
+      "plus d'informations",
+      'en savoir plus',
+      'lire la suite',
+      'la suite',
+      'suite',
+      'continuer',
+      'détails',
+      'plus de détails',
+      'lien',
+      'ce lien',
+      'télécharger',
+      'voir plus',
+      'info'
+    ]),
+    ja: new Set([
+      'こちら',
+      'ここ',
+      'こちらをクリック',
+      'ここをクリック',
+      'クリック',
+      '詳しく',
+      '詳しくは',
+      '詳しくはこちら',
+      '詳細',
+      '詳細はこちら',
+      '詳細を見る',
+      'もっと見る',
+      'もっと読む',
+      'さらに詳しく',
+      '続きを読む',
+      '続き',
+      'リンク',
+      'このリンク',
+      'ダウンロード',
+      '情報'
+    ])
+  };
 
   const FORMAT_NAME_LINK_TEXT = new Set([
     'html',
@@ -48663,13 +48985,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const CONTEXT_BLOCK_TAGS = new Set(['td', 'th', 'p', 'dd', 'blockquote', 'figcaption', 'dt']);
 
+  // NFKC folds full-width letters and punctuation (！, ＞) into their ASCII
+  // forms, and the curly apostrophe is folded so "plus d’infos" matches.
+  // Trailing arrows ("Read more »", 「詳しくはこちら→」) are decoration, not
+  // part of the phrase.
   function normalize(s) {
     return (s == null ? '' : String(s))
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase()
-      .replace(/[.,;:!?]+$/g, '')
+      .replace(/[\s.,;:!?。、>»›→]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   function ownDirectText(el) {
@@ -48779,7 +49128,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const isGeneric = GENERIC_LINK_TEXT.has(normalized);
+    const isGeneric = inPhraseList(GENERIC_LINK_TEXT, normalized, primaryLangOf(el));
     const isFormatName = !isGeneric && FORMAT_NAME_LINK_TEXT.has(normalized);
     if (!isGeneric && !isFormatName) continue;
 
@@ -49246,14 +49595,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  // Conservative keyword set (deterministic). Includes common EN/FR terms.
-  // Keep this list strict to avoid false positives.
+  // Conservative keyword set (deterministic), matched in every language at
+  // once: a Japanese page may well link an English transcript. Keep this
+  // list strict to avoid false positives.
   const TRANSCRIPT_TOKENS = [
     'transcript',
     'transcription',
     'texte intégral',
     'compte rendu',
-    'verbatim'
+    'verbatim',
+    'transkript',
+    'transkription',
+    'abschrift',
+    'textfassung',
+    'transcripción',
+    'transcripcion',
+    'トランスクリプト',
+    '文字起こし',
+    '書き起こし'
   ];
 
   // Minimum transcript body length to be considered "substantial" when used as evidence.
@@ -51477,18 +51836,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const GENERIC_TITLES = new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']);
+  const GENERIC_TITLES = {
+    en: new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']),
+    de: new Set(['startseite', 'willkommen', 'unbenannt', 'ohne titel', 'seite', 'dokument']),
+    es: new Set([
+      'inicio',
+      'página de inicio',
+      'bienvenido',
+      'bienvenida',
+      'sin título',
+      'página',
+      'documento'
+    ]),
+    fr: new Set(['accueil', "page d'accueil", 'bienvenue', 'sans titre', 'page', 'document']),
+    ja: new Set(['ホーム', 'トップページ', 'トップ', 'ようこそ', '無題', 'ページ', 'ドキュメント'])
+  };
+
+  // The page-specific half of "Brand | Home" in languages other than
+  // English. English keeps its word-boundary patterns below.
+  const TEMPLATE_TOKENS = {
+    de: ['startseite', 'willkommen'],
+    es: ['inicio', 'página de inicio', 'bienvenido', 'bienvenida'],
+    fr: ['accueil', "page d'accueil", 'bienvenue'],
+    ja: ['ホーム', 'トップページ', 'トップ', 'ようこそ']
+  };
+
+  const htmlEl = document.documentElement;
+  const pageLang =
+    htmlEl && htmlEl.getAttribute && htmlEl.getAttribute('lang')
+      ? htmlEl.getAttribute('lang').trim().split('-')[0].toLowerCase()
+      : '';
+  const titleNorm = titleLc.normalize('NFKC').replace(/[\u2018\u2019]/g, "'");
+
+  // Chinese, Japanese and Korean characters each carry roughly a word, so
+  // they count double: 「お問い合わせ」 is a full title in six characters.
+  function effectiveLength(s) {
+    let n = 0;
+    for (const ch of s)
+      n += /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff]/.test(ch) ? 2 : 1;
+    return n;
+  }
 
   // Conservative signals:
   // - very short title (likely non-descriptive)
   // - title is one of a small set of generic titles
-  const isVeryShort = titleText.length > 0 && titleText.length < 8;
-  const isGeneric = GENERIC_TITLES.has(titleLc);
+  const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
+  const isGeneric =
+    GENERIC_TITLES.en.has(titleNorm) ||
+    !!(pageLang && GENERIC_TITLES[pageLang] && GENERIC_TITLES[pageLang].has(titleNorm));
+
+  function isLocalTemplate(title) {
+    const tokens = TEMPLATE_TOKENS[pageLang];
+    if (!tokens) return false;
+    const parts = title.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
+    if (parts.length < 2) return false;
+    return tokens.includes(parts[0]) || tokens.includes(parts[parts.length - 1]);
+  }
 
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
   const templateLike =
     /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText);
+    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText) ||
+    isLocalTemplate(titleNorm);
 
   if (isGeneric || isVeryShort || templateLike) {
     const reasonCode = isGeneric
@@ -57131,7 +57540,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
     "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
-    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet.",
+    "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet. Englische Platzhalter werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn das Feld in dieser Sprache ist.",
     "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
     "formControlLabelQuality_summary_cantTell_duplicate": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) teilt sich mit {{count}} weiteren Feld(ern), ohne dass eine sichtbare Überschrift, Legende oder Zeilenbeschriftung sie unterscheidet.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Ersetzen Sie die Beschriftung durch eine, die die erfasste Information benennt.",
@@ -57771,13 +58180,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
     "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
-    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL.",
+    "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
     "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Dateiname und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift („{{name}}“) ist eine URL und keine Beschreibung des eingeleiteten Inhalts.",
     "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
     "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
-    "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist.",
+    "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn der Link in dieser Sprache ist.",
     "linkNameQuality_summary_cantTell": "Der zugängliche Name dieses Links („{{name}}“) ist eine generische, wenig aussagekräftige Formulierung.",
     "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext selbst sein Ziel/seinen Zweck beschreiben (z. B. „Preisliste 2026 herunterladen“ statt „Herunterladen“), oder bestätigen Sie, dass der umgebende Kontext den Zweck bereits klar macht.",
     "linkNameQuality_summary_cantTell_formatName": "Der zugängliche Name dieses Links („{{name}}“) benennt ein Dateiformat/-typ, aber nicht das zugehörige Dokument.",
@@ -57887,7 +58296,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
-    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.",
+    "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
     "formControlLabelQuality_summary_cantTell_duplicate": "This field's visible label (\"{{label}}\") is shared with {{count}} other field(s), with no visible heading, legend or row text telling them apart.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Replace the label with one naming the information the field collects.",
@@ -58527,13 +58936,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
     "headingQuality_title": "Heading text should be descriptive, not a placeholder",
-    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL.",
+    "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
     "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a filename rather than a description of the content it introduces.",
     "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a URL rather than a description of the content it introduces.",
     "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
     "linkNameQuality_title": "Link text should be descriptive, not generic",
-    "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.",
+    "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
     "linkNameQuality_summary_cantTell": "This link's accessible name (\"{{name}}\") is a generic, non-descriptive phrase.",
     "linkNameQuality_hint_cantTell": "Make the link text itself describe its destination/purpose (e.g. \"Download the 2026 pricing guide\" instead of \"Download\"), or confirm the surrounding context already makes the purpose clear.",
     "linkNameQuality_summary_cantTell_formatName": "This link's accessible name (\"{{name}}\") names a file format/type but not the document it belongs to.",
@@ -58643,7 +59052,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
     "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
-    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga.",
+    "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga. Los marcadores de posición en inglés se reconocen siempre, y los alemanes, españoles, franceses o japoneses cuando el campo está en ese idioma.",
     "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
     "formControlLabelQuality_summary_cantTell_duplicate": "La etiqueta visible de este campo («{{label}}») se comparte con {{count}} campo(s) más, sin que ningún encabezado, leyenda o texto de fila visible los distinga.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Sustituir la etiqueta por una que nombre la información que recoge el campo.",
@@ -59283,13 +59692,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
     "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
-    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL.",
+    "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
     "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
     "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado («{{name}}») es un nombre de archivo, no una descripción del contenido que introduce.",
     "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado («{{name}}») es una URL, no una descripción del contenido que introduce.",
     "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
     "linkNameQuality_title": "El texto del enlace debe ser descriptivo, no genérico",
-    "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique a qué documento pertenece, para su revisión manual sobre si el propósito es claro.",
+    "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique a qué documento pertenece, para su revisión manual sobre si el propósito es claro. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el enlace está en ese idioma.",
     "linkNameQuality_summary_cantTell": "El nombre accesible de este enlace (\"{{name}}\") es una frase genérica y no descriptiva.",
     "linkNameQuality_hint_cantTell": "Hacer que el propio texto del enlace describa su destino/propósito (por ejemplo, \"Descargar la guía de precios 2026\" en lugar de \"Descargar\"), o confirmar que el contexto circundante ya deja claro el propósito.",
     "linkNameQuality_summary_cantTell_formatName": "El nombre accesible de este enlace (\"{{name}}\") indica un formato/tipo de archivo, pero no el documento al que pertenece.",
@@ -59399,7 +59808,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
     "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
-    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue.",
+    "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue. Les textes de remplacement anglais sont toujours reconnus, et les textes allemands, espagnols, français ou japonais lorsque le champ est dans cette langue.",
     "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
     "formControlLabelQuality_summary_cantTell_duplicate": "L’étiquette visible de ce champ (« {{label}} ») est partagée avec {{count}} autre(s) champ(s), sans qu’aucun titre, légende ou texte de ligne visible ne les distingue.",
     "formControlLabelQuality_hint_cantTell_placeholder": "Remplacez l’étiquette par une étiquette nommant l’information que le champ recueille.",
@@ -60039,13 +60448,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
     "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
-    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL.",
+    "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
     "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
     "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (« {{name}} ») est un nom de fichier, pas une description du contenu qu’il introduit.",
     "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (« {{name}} ») est une URL, pas une description du contenu qu’il introduit.",
     "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
     "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
-    "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant le document concerné, pour une revue manuelle visant à déterminer si l’objet du lien est clair.",
+    "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant le document concerné, pour une revue manuelle visant à déterminer si l’objet du lien est clair. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le lien est dans cette langue.",
     "linkNameQuality_summary_cantTell": "Le nom accessible de ce lien (« {{name}} ») est une formule générique et non descriptive.",
     "linkNameQuality_hint_cantTell": "Faites en sorte que le texte du lien lui-même décrive sa destination/son objet (ex. « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger »), ou confirmez que le contexte environnant rend déjà l’objet clair.",
     "linkNameQuality_summary_cantTell_formatName": "Le nom accessible de ce lien (« {{name}} ») indique un format/type de fichier, mais pas le document auquel il appartient.",
@@ -60155,7 +60564,7 @@ const I18N = {
     "rules.img-alt-suspicious.occurrence.cantTell.summary": "画像の代替テキストが不審です (「{{alt}}」は {{pattern}} のように見えます)。人による確認が必要です。",
     "rules.img-alt-suspicious.occurrence.cantTell.hint": "代替テキストを確認してください。ファイル名、URL、仮の文字列、汎用的な語句は避け、文脈の中で画像の目的や機能を説明するテキストにしてください。",
     "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
-    "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「Label」「Field」など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。",
+    "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「ラベル」「入力欄」、\"Label\" など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。英語の仮の文字列は常に対象とし、ドイツ語、スペイン語、フランス語、日本語のものは、フィールドがその言語で書かれている場合に対象とします。",
     "formControlLabelQuality_summary_cantTell_placeholder": "このフィールドの表示ラベル (「{{label}}」) は仮の文字列であり、フィールドの用途を説明していません。",
     "formControlLabelQuality_summary_cantTell_duplicate": "このフィールドの表示ラベル (「{{label}}」) は、ほかの {{count}} 個のフィールドと同じです。区別するための見出し、legend、行のテキストも表示されていません。",
     "formControlLabelQuality_hint_cantTell_placeholder": "フィールドに入力する情報を示すラベルに置き換えてください。",
@@ -60795,13 +61204,13 @@ const I18N = {
     "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
     "mouseOnlyEventHandlers_hint_cantTell": "この機能をキーボードでも利用できるよう、onkeydown/onkeyup/onkeypress (ホバーで動作するものには onfocus/onblur) を追加してください。",
     "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
-    "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (\"Heading\"、\"Untitled\")、番号付きのテンプレートの枠 (\"Section 2\")、ファイル名、URL などが該当します。",
+    "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
     "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
     "headingQuality_summary_cantTell_filename": "この見出しのアクセシブルな名前 (「{{name}}」) はファイル名であり、導入するコンテンツを説明していません。",
     "headingQuality_summary_cantTell_url": "この見出しのアクセシブルな名前 (「{{name}}」) は URL であり、導入するコンテンツを説明していません。",
     "headingQuality_hint_cantTell": "後続のコンテンツの主題や目的がわかるよう、見出しを書き直してください。",
     "linkNameQuality_title": "リンクテキストは汎用的な語句ではなく、内容を説明していることが望ましい",
-    "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (\"click here\"、\"read more\"、\"more\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。",
+    "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (「こちら」「詳しくはこちら」「続きを読む」、\"click here\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、リンクがその言語で書かれている場合に対象とします。",
     "linkNameQuality_summary_cantTell": "このリンクのアクセシブルな名前 (「{{name}}」) は、汎用的で説明的でない語句です。",
     "linkNameQuality_hint_cantTell": "リンクテキスト自体でリンク先や目的がわかるようにするか (例:「ダウンロード」ではなく「2026 年版の料金ガイドをダウンロード」)、周囲の文脈ですでに目的が明確になっているか確認してください。",
     "linkNameQuality_summary_cantTell_formatName": "このリンクのアクセシブルな名前 (「{{name}}」) はファイルの形式や種類を示していますが、どの文書のものかを示していません。",
