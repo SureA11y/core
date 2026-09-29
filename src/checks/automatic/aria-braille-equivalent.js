@@ -113,13 +113,28 @@ function runInPage(ctx) {
         nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : ''
       );
       const name = programmaticName || getConservativeSubtreeText(el);
-      if (!name) missing.push({ attr: 'aria-braillelabel', requires: 'an accessible name' });
+      if (!name)
+        missing.push({
+          attr: 'aria-braillelabel',
+          requires: 'an accessible name',
+          messageKey: 'label',
+          summary:
+            'This element has aria-braillelabel but no accessible name, its non-braille equivalent.',
+          hint: 'aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).'
+        });
     }
 
     if (brailleRoleDesc) {
       const roleDesc = trim(el.getAttribute('aria-roledescription'));
       if (!roleDesc)
-        missing.push({ attr: 'aria-brailleroledescription', requires: 'aria-roledescription' });
+        missing.push({
+          attr: 'aria-brailleroledescription',
+          requires: 'aria-roledescription',
+          messageKey: 'roleDescription',
+          summary:
+            'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
+          hint: 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
+        });
     }
 
     if (!missing.length) continue;
@@ -129,12 +144,15 @@ function runInPage(ctx) {
     for (const m of missing) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element has ${m.attr} but not ${m.requires}, its non-braille equivalent.`,
-          hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
+          // One message per missing equivalent rather than a shared template:
+          // `requires` is English prose for the label case, and interpolating
+          // it put English into every translated sentence.
+          summary: m.summary,
+          hint: m.hint,
           i18n: {
-            summaryKey: 'ariaBrailleEquivalent_summary_fail',
-            hintKey: 'ariaBrailleEquivalent_hint_fail',
-            params: { element: tag, attr: m.attr, requires: m.requires }
+            summaryKey: `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
+            hintKey: `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
+            params: { element: tag, attr: m.attr }
           },
           uncertainty: {
             code: 'spec-only',

@@ -57,6 +57,29 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 });
 
+test(`${RULE_ID}: each missing equivalent gets its own message key`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="label" aria-braillelabel="save"></button>
+    <div id="rd" role="img" aria-brailleroledescription="pic" aria-label="cat">x</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const keysFor = (id) =>
+    rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).i18n.summaryKey;
+
+  assert.equal(keysFor('label'), 'ariaBrailleEquivalent_summary_fail_label');
+  assert.equal(keysFor('rd'), 'ariaBrailleEquivalent_summary_fail_roleDescription');
+});
+
+test(`${RULE_ID}: translated messages carry no interpolated English`, () => {
+  const html = `<!doctype html><html><body><button aria-braillelabel="save"></button></body></html>`;
+  for (const locale of ['de', 'es', 'fr', 'ja']) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale } });
+    const occ = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences[0];
+    assert.doesNotMatch(`${occ.summary} ${occ.hint}`, /an accessible name/, locale);
+  }
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-braille-equivalent-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,

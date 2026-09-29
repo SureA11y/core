@@ -10009,8 +10009,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Stellen Sie sicher, dass Links mit demselben Text demselben Zweck dienen, oder machen Sie den Linktext eindeutig genug, um jedes Ziel zu beschreiben.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription müssen ein Nicht-Braille-Äquivalent haben",
     "ariaBrailleEquivalent_description": "Prüft, ob Elemente, die aria-braillelabel verwenden, auch einen regulären zugänglichen Namen haben, und Elemente, die aria-brailleroledescription verwenden, auch aria-roledescription haben.",
-    "ariaBrailleEquivalent_summary_fail": "Dieses Element hat {{attr}}, aber nicht {{requires}}, sein Nicht-Braille-Äquivalent.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich {{requires}} bereit.",
+    "ariaBrailleEquivalent_summary_fail_label": "Dieses Element hat aria-braillelabel, aber keinen zugänglichen Namen, sein Nicht-Braille-Äquivalent.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel ist eine Braille-spezifische Ergänzung, kein Ersatz — geben Sie dem Element zusätzlich einen zugänglichen Namen (zum Beispiel über sichtbaren Text, aria-label oder aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Dieses Element hat aria-brailleroledescription, aber nicht aria-roledescription, sein Nicht-Braille-Äquivalent.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich aria-roledescription bereit.",
     "ariaConditionalAttr_title": "aria-errormessage erfordert, dass aria-invalid auf einen Wert ungleich false gesetzt ist",
     "ariaConditionalAttr_description": "Prüft, ob Elemente mit aria-errormessage auch aria-invalid auf „true“, „grammar“ oder „spelling“ gesetzt haben — andernfalls wird die Fehlermeldung aus dem Accessibility-Baum entfernt.",
     "ariaConditionalAttr_summary_fail": "Dieses Element hat aria-errormessage, aber aria-invalid fehlt oder ist „false“, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
@@ -10703,8 +10705,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
     "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but not {{requires}}, its non-braille equivalent.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "This element has aria-braillelabel but no accessible name, its non-braille equivalent.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
     "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
     "ariaConditionalAttr_summary_fail": "This element has aria-errormessage but aria-invalid is missing or \"false\", so the error message is not exposed.",
@@ -11397,8 +11401,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Asegurarse de que los enlaces con el mismo texto cumplan el mismo propósito, o hacer que el texto del enlace sea lo bastante distintivo para describir cada destino.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription deben tener un equivalente no braille",
     "ariaBrailleEquivalent_description": "Comprueba que los elementos que usan aria-braillelabel también tengan un nombre accesible normal, y que los elementos que usan aria-brailleroledescription también tengan aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "Este elemento tiene {{attr}} pero no {{requires}}, su equivalente no braille.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} es un complemento específico para braille, no un reemplazo; proporcionar también {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "Este elemento tiene aria-braillelabel pero no un nombre accesible, su equivalente no braille.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel es un complemento específico para braille, no un reemplazo; dar también al elemento un nombre accesible (por ejemplo, texto visible, aria-label o aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Este elemento tiene aria-brailleroledescription pero no aria-roledescription, su equivalente no braille.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription es un complemento específico para braille, no un reemplazo; proporcionar también aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage requiere que aria-invalid tenga un valor distinto de false",
     "ariaConditionalAttr_description": "Comprueba que los elementos con aria-errormessage también tengan aria-invalid establecido en \"true\", \"grammar\" o \"spelling\"; de lo contrario, el mensaje de error se elimina del árbol de accesibilidad.",
     "ariaConditionalAttr_summary_fail": "Este elemento tiene aria-errormessage pero aria-invalid falta o es \"false\", por lo que el mensaje de error no se expone.",
@@ -12091,8 +12097,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Assurez-vous que les liens ayant le même texte servent le même objectif, ou rendez le texte du lien suffisamment distinct pour décrire chaque destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription doivent avoir un équivalent non braille",
     "ariaBrailleEquivalent_description": "Vérifie que les éléments utilisant aria-braillelabel ont aussi un nom accessible ordinaire, et que ceux utilisant aria-brailleroledescription ont aussi aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "Cet élément a {{attr}} mais pas {{requires}}, son équivalent non braille.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} est un complément spécifique au braille, pas un remplacement — fournissez aussi {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "Cet élément a aria-braillelabel mais pas de nom accessible, son équivalent non braille.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel est un complément spécifique au braille, pas un remplacement — donnez aussi un nom accessible à l’élément (par exemple un texte visible, aria-label ou aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Cet élément a aria-brailleroledescription mais pas aria-roledescription, son équivalent non braille.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — fournissez aussi aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage exige que aria-invalid soit défini à une valeur autre que false",
     "ariaConditionalAttr_description": "Vérifie que les éléments ayant aria-errormessage ont aussi aria-invalid défini à « true », « grammar », ou « spelling » — sinon le message d’erreur est retiré de l’arbre d’accessibilité.",
     "ariaConditionalAttr_summary_fail": "Cet élément a aria-errormessage mais aria-invalid est absent ou « false », donc le message d’erreur n’est pas exposé.",
@@ -12785,8 +12793,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "同じテキストのリンクが同じ目的を果たしているか確認するか、それぞれのリンク先がわかるようにリンクテキストを区別してください。",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription には点字以外の対応する属性が必要",
     "ariaBrailleEquivalent_description": "aria-braillelabel を使用する要素に通常のアクセシブルな名前もあり、aria-brailleroledescription を使用する要素に aria-roledescription もあるかを確認します。",
-    "ariaBrailleEquivalent_summary_fail": "この要素には {{attr}} がありますが、点字以外で対応する {{requires}} がありません。",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} は点字用の補足であり、代わりになるものではありません。{{requires}} も指定してください。",
+    "ariaBrailleEquivalent_summary_fail_label": "この要素には aria-braillelabel がありますが、点字以外で対応するアクセシブルな名前がありません。",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel は点字用の補足であり、代わりになるものではありません。表示テキスト、aria-label、aria-labelledby などで、要素にアクセシブルな名前も付けてください。",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription がありません。",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。aria-roledescription も指定してください。",
     "ariaConditionalAttr_title": "aria-errormessage を使うには、aria-invalid に false 以外の値が必要",
     "ariaConditionalAttr_description": "aria-errormessage を持つ要素で、aria-invalid が \"true\"、\"grammar\"、\"spelling\" のいずれかに設定されているかを確認します。設定されていない場合、エラーメッセージはアクセシビリティツリーから除外されます。",
     "ariaConditionalAttr_summary_fail": "この要素には aria-errormessage がありますが、aria-invalid が未指定または \"false\" のため、エラーメッセージが公開されません。",
@@ -33608,13 +33618,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : ''
       );
       const name = programmaticName || getConservativeSubtreeText(el);
-      if (!name) missing.push({ attr: 'aria-braillelabel', requires: 'an accessible name' });
+      if (!name)
+        missing.push({
+          attr: 'aria-braillelabel',
+          requires: 'an accessible name',
+          messageKey: 'label',
+          summary:
+            'This element has aria-braillelabel but no accessible name, its non-braille equivalent.',
+          hint: 'aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).'
+        });
     }
 
     if (brailleRoleDesc) {
       const roleDesc = trim(el.getAttribute('aria-roledescription'));
       if (!roleDesc)
-        missing.push({ attr: 'aria-brailleroledescription', requires: 'aria-roledescription' });
+        missing.push({
+          attr: 'aria-brailleroledescription',
+          requires: 'aria-roledescription',
+          messageKey: 'roleDescription',
+          summary:
+            'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
+          hint: 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
+        });
     }
 
     if (!missing.length) continue;
@@ -33624,12 +33649,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const m of missing) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element has ${m.attr} but not ${m.requires}, its non-braille equivalent.`,
-          hint: `${m.attr} is a Braille-specific supplement, not a replacement, so also provide ${m.requires}.`,
+          // One message per missing equivalent rather than a shared template:
+          // `requires` is English prose for the label case, and interpolating
+          // it put English into every translated sentence.
+          summary: m.summary,
+          hint: m.hint,
           i18n: {
-            summaryKey: 'ariaBrailleEquivalent_summary_fail',
-            hintKey: 'ariaBrailleEquivalent_hint_fail',
-            params: { element: tag, attr: m.attr, requires: m.requires }
+            summaryKey: `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
+            hintKey: `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
+            params: { element: tag, attr: m.attr }
           },
           uncertainty: {
             code: 'spec-only',
@@ -57155,8 +57183,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Stellen Sie sicher, dass Links mit demselben Text demselben Zweck dienen, oder machen Sie den Linktext eindeutig genug, um jedes Ziel zu beschreiben.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription müssen ein Nicht-Braille-Äquivalent haben",
     "ariaBrailleEquivalent_description": "Prüft, ob Elemente, die aria-braillelabel verwenden, auch einen regulären zugänglichen Namen haben, und Elemente, die aria-brailleroledescription verwenden, auch aria-roledescription haben.",
-    "ariaBrailleEquivalent_summary_fail": "Dieses Element hat {{attr}}, aber nicht {{requires}}, sein Nicht-Braille-Äquivalent.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich {{requires}} bereit.",
+    "ariaBrailleEquivalent_summary_fail_label": "Dieses Element hat aria-braillelabel, aber keinen zugänglichen Namen, sein Nicht-Braille-Äquivalent.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel ist eine Braille-spezifische Ergänzung, kein Ersatz — geben Sie dem Element zusätzlich einen zugänglichen Namen (zum Beispiel über sichtbaren Text, aria-label oder aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Dieses Element hat aria-brailleroledescription, aber nicht aria-roledescription, sein Nicht-Braille-Äquivalent.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich aria-roledescription bereit.",
     "ariaConditionalAttr_title": "aria-errormessage erfordert, dass aria-invalid auf einen Wert ungleich false gesetzt ist",
     "ariaConditionalAttr_description": "Prüft, ob Elemente mit aria-errormessage auch aria-invalid auf „true“, „grammar“ oder „spelling“ gesetzt haben — andernfalls wird die Fehlermeldung aus dem Accessibility-Baum entfernt.",
     "ariaConditionalAttr_summary_fail": "Dieses Element hat aria-errormessage, aber aria-invalid fehlt oder ist „false“, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
@@ -57849,8 +57879,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
     "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "This element has {{attr}} but not {{requires}}, its non-braille equivalent.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} is a Braille-specific supplement, not a replacement, so also provide {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "This element has aria-braillelabel but no accessible name, its non-braille equivalent.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
     "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
     "ariaConditionalAttr_summary_fail": "This element has aria-errormessage but aria-invalid is missing or \"false\", so the error message is not exposed.",
@@ -58543,8 +58575,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Asegurarse de que los enlaces con el mismo texto cumplan el mismo propósito, o hacer que el texto del enlace sea lo bastante distintivo para describir cada destino.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription deben tener un equivalente no braille",
     "ariaBrailleEquivalent_description": "Comprueba que los elementos que usan aria-braillelabel también tengan un nombre accesible normal, y que los elementos que usan aria-brailleroledescription también tengan aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "Este elemento tiene {{attr}} pero no {{requires}}, su equivalente no braille.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} es un complemento específico para braille, no un reemplazo; proporcionar también {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "Este elemento tiene aria-braillelabel pero no un nombre accesible, su equivalente no braille.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel es un complemento específico para braille, no un reemplazo; dar también al elemento un nombre accesible (por ejemplo, texto visible, aria-label o aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Este elemento tiene aria-brailleroledescription pero no aria-roledescription, su equivalente no braille.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription es un complemento específico para braille, no un reemplazo; proporcionar también aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage requiere que aria-invalid tenga un valor distinto de false",
     "ariaConditionalAttr_description": "Comprueba que los elementos con aria-errormessage también tengan aria-invalid establecido en \"true\", \"grammar\" o \"spelling\"; de lo contrario, el mensaje de error se elimina del árbol de accesibilidad.",
     "ariaConditionalAttr_summary_fail": "Este elemento tiene aria-errormessage pero aria-invalid falta o es \"false\", por lo que el mensaje de error no se expone.",
@@ -59237,8 +59271,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "Assurez-vous que les liens ayant le même texte servent le même objectif, ou rendez le texte du lien suffisamment distinct pour décrire chaque destination.",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription doivent avoir un équivalent non braille",
     "ariaBrailleEquivalent_description": "Vérifie que les éléments utilisant aria-braillelabel ont aussi un nom accessible ordinaire, et que ceux utilisant aria-brailleroledescription ont aussi aria-roledescription.",
-    "ariaBrailleEquivalent_summary_fail": "Cet élément a {{attr}} mais pas {{requires}}, son équivalent non braille.",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} est un complément spécifique au braille, pas un remplacement — fournissez aussi {{requires}}.",
+    "ariaBrailleEquivalent_summary_fail_label": "Cet élément a aria-braillelabel mais pas de nom accessible, son équivalent non braille.",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel est un complément spécifique au braille, pas un remplacement — donnez aussi un nom accessible à l’élément (par exemple un texte visible, aria-label ou aria-labelledby).",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "Cet élément a aria-brailleroledescription mais pas aria-roledescription, son équivalent non braille.",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — fournissez aussi aria-roledescription.",
     "ariaConditionalAttr_title": "aria-errormessage exige que aria-invalid soit défini à une valeur autre que false",
     "ariaConditionalAttr_description": "Vérifie que les éléments ayant aria-errormessage ont aussi aria-invalid défini à « true », « grammar », ou « spelling » — sinon le message d’erreur est retiré de l’arbre d’accessibilité.",
     "ariaConditionalAttr_summary_fail": "Cet élément a aria-errormessage mais aria-invalid est absent ou « false », donc le message d’erreur n’est pas exposé.",
@@ -59931,8 +59967,10 @@ const I18N = {
     "identicalLinksSamePurpose_hint_cantTell": "同じテキストのリンクが同じ目的を果たしているか確認するか、それぞれのリンク先がわかるようにリンクテキストを区別してください。",
     "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription には点字以外の対応する属性が必要",
     "ariaBrailleEquivalent_description": "aria-braillelabel を使用する要素に通常のアクセシブルな名前もあり、aria-brailleroledescription を使用する要素に aria-roledescription もあるかを確認します。",
-    "ariaBrailleEquivalent_summary_fail": "この要素には {{attr}} がありますが、点字以外で対応する {{requires}} がありません。",
-    "ariaBrailleEquivalent_hint_fail": "{{attr}} は点字用の補足であり、代わりになるものではありません。{{requires}} も指定してください。",
+    "ariaBrailleEquivalent_summary_fail_label": "この要素には aria-braillelabel がありますが、点字以外で対応するアクセシブルな名前がありません。",
+    "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel は点字用の補足であり、代わりになるものではありません。表示テキスト、aria-label、aria-labelledby などで、要素にアクセシブルな名前も付けてください。",
+    "ariaBrailleEquivalent_summary_fail_roleDescription": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription がありません。",
+    "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。aria-roledescription も指定してください。",
     "ariaConditionalAttr_title": "aria-errormessage を使うには、aria-invalid に false 以外の値が必要",
     "ariaConditionalAttr_description": "aria-errormessage を持つ要素で、aria-invalid が \"true\"、\"grammar\"、\"spelling\" のいずれかに設定されているかを確認します。設定されていない場合、エラーメッセージはアクセシビリティツリーから除外されます。",
     "ariaConditionalAttr_summary_fail": "この要素には aria-errormessage がありますが、aria-invalid が未指定または \"false\" のため、エラーメッセージが公開されません。",
