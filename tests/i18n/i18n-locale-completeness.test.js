@@ -41,3 +41,26 @@ for (const locale of localeFiles) {
     );
   });
 }
+
+// A translation may move a {{placeholder}} or a {{#section}} marker within the
+// sentence, but dropping or misspelling one silently loses the value it
+// carries, so every locale has to carry the same set as English.
+const enDict = loadLocale('en');
+const PLACEHOLDER = /\{\{[#^/]?\s*[\w.]+\s*\}\}/g;
+const placeholdersOf = (value) =>
+  (String(value).match(PLACEHOLDER) || []).map((p) => p.replace(/\s+/g, '')).sort();
+
+for (const locale of localeFiles) {
+  test(`i18n locale completeness: ${locale}.json keeps every placeholder`, () => {
+    const dict = loadLocale(locale);
+    const drifted = Object.keys(enDict).filter(
+      (key) =>
+        key in dict && placeholdersOf(dict[key]).join('|') !== placeholdersOf(enDict[key]).join('|')
+    );
+    assert.deepStrictEqual(
+      drifted,
+      [],
+      `${locale}.json has values whose placeholders differ from en.json: ${drifted.join(', ')}`
+    );
+  });
+}

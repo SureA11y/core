@@ -123,7 +123,7 @@
   "html_lang_attr_hint_invalid": "Utilisez une balise de langue BCP 47 valide dans <html lang=\"…\"> (par exemple : « fr », « en », « fr-FR »).",
   "mediaTranscriptPresent_title": "Média temporel : preuve de transcription ou d’alternative textuelle",
   "mediaTranscriptPresent_description": "Détecte les éléments audio et vidéo pour lesquels la présence d’une transcription ou d’une autre alternative textuelle n’est pas clairement établie dans le contenu de la page. Cette règle est volontairement conservatrice et retourne cantTell lorsque la preuve est absente ou invérifiable.",
-  "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour ce média temporel n’est clairement établie sur la page.",
+  "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour cet élément <{{element}}> n’est clairement établie sur la page.",
   "mediaTranscriptPresent_hint_cantTell_missing": "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
   "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
   "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",

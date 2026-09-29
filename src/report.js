@@ -114,6 +114,17 @@ function renderLocaleChip(engine) {
   return `<div><b>${esc(locale.resolved)}</b>${label}</div>`;
 }
 
+// The report's own labels are English, but rule titles, summaries and hints
+// arrive in the scan's locale. Marking those parts with their language lets a
+// screen reader switch voice for them instead of reading Japanese or German
+// with English pronunciation rules (WCAG 3.1.2).
+function contentLangAttr(engine) {
+  const locale = engine && engine.locale;
+  const lang = locale && typeof locale.resolved === 'string' ? locale.resolved : '';
+  if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/.test(lang) || lang.toLowerCase() === 'en') return '';
+  return ` lang="${esc(lang)}"`;
+}
+
 // One plain-language headline + one horizontal stacked bar + a legend with
 // icon+label+count (status color is never the only signal) -- the first
 // thing a reader sees; exhaustive detail lives in the collapsed
@@ -177,7 +188,7 @@ function renderScorecard(byOutcome) {
 // entry per Success Criterion, docs/WCAG_CONFORMANCE.md), not an invented
 // grouping. Grouped by conformance level (A / AA / AAA) since that's the
 // axis a compliance-minded reader actually cares about.
-function renderWcagRollup(rulesResults) {
+function renderWcagRollup(rulesResults, langAttr = '') {
   if (!Array.isArray(rulesResults) || !rulesResults.length) {
     return '<p class="note">No WCAG composite rollups available for this scan (composite rules were excluded via runOnly/engineOptions).</p>';
   }
@@ -221,7 +232,7 @@ function renderWcagRollup(rulesResults) {
           const metricsLabel = `${metrics.passCount || 0} pass / ${metrics.failCount || 0} fail / ${metrics.cantTellCount || 0} needs review / ${metrics.notApplicableCount || 0} n/a`;
           return `<tr>
             <td class="sc-cell">${scLabel}${enLabel}</td>
-            <td>${esc(rule.title || rule.ruleId)}</td>
+            <td${rule.title ? langAttr : ''}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}</td>
             <td class="note">${esc(checksIds.join(', '))}</td>
@@ -256,7 +267,7 @@ function truncateForCard(s) {
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
 
-function renderCards(checksResults) {
+function renderCards(checksResults, langAttr = '') {
   const withIssues = checksResults.filter(
     (r) =>
       Array.isArray(r.occurrences) &&
@@ -310,7 +321,7 @@ function renderCards(checksResults) {
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
         <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>${esc(representative.selector || '(none)')}</code></div>
-        <div class="card-snippet">${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
+        <div class="card-snippet"${langAttr}>${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence; ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
       </div>
     </div>`;
@@ -360,6 +371,7 @@ function renderHtmlReport(result, options = {}) {
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
   const rows = flattenOccurrences(checksResults);
+  const contentLang = contentLangAttr(result && result.engine);
 
   return `<!doctype html>
 <html lang="en">
@@ -461,10 +473,10 @@ function renderHtmlReport(result, options = {}) {
   ${renderHeroBar(byOutcome)}
 
   <h2>Worth reviewing</h2>
-  ${renderCards(checksResults)}
+  ${renderCards(checksResults, contentLang)}
 
   <h2>WCAG rollup</h2>
-  ${renderWcagRollup(rulesResults)}
+  ${renderWcagRollup(rulesResults, contentLang)}
 
   <details class="tech-details">
     <summary>Full technical data — scorecard, searchable occurrence browser</summary>
@@ -507,6 +519,7 @@ function renderHtmlReport(result, options = {}) {
   var rows = JSON.parse(document.getElementById('report-data').textContent);
 
   var PAGE_SIZE = 100;
+  var CONTENT_LANG = ${jsonForScript(contentLang)};
   var page = 0;
   var active = {};
   DEFAULT_ON.forEach(function (c) { active[c] = true; });
@@ -563,7 +576,7 @@ function renderHtmlReport(result, options = {}) {
         '<td>' + chip + '</td>' +
         '<td>' + esc(r.severity) + '</td>' +
         '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
-        '<td class="snippet">' + esc(r.summary) + '</td>' +
+        '<td class="snippet"' + CONTENT_LANG + '>' + esc(r.summary) + '</td>' +
         '</tr>';
     }).join('');
 

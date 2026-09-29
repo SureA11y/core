@@ -213,7 +213,7 @@ test('a locale the project does not ship is still unknown-locale, not dictionary
   const result = dom.window.a11ycore.runa11yCoreInPage(
     'https://example.test/',
     null,
-    { locale: 'ja' },
+    { locale: 'ko' },
     null
   );
 
@@ -256,6 +256,39 @@ test('a registered locale still supports subtag fallback', async () => {
       reason: 'primary-subtag'
     }
   );
+
+  dom.window.close();
+});
+
+test('the ja side file works when loaded after the bundle', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['ja']);
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'ja' },
+    null
+  );
+
+  assert.deepEqual({ ...result.engine.locale }, { requested: 'ja', resolved: 'ja', reason: 'ok' });
+  assert.match(hintFrom(dom, { locale: 'ja' }), /^削除してください。/);
+  assert.match(hintFrom(dom, { locale: 'ja-JP' }), /^削除してください。/);
+
+  dom.window.close();
+});
+
+test('without its side file, ja reports dictionary-not-loaded', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/');
+
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    { locale: 'ja' },
+    null
+  );
+
+  assert.equal(result.engine.locale.reason, 'dictionary-not-loaded');
+  assert.match(hintFrom(dom, { locale: 'ja' }), /^Remove it/);
 
   dom.window.close();
 });
