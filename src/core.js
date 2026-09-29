@@ -92,6 +92,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.2",
+        "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -163,6 +173,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.2",
+        "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -239,6 +259,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -284,7 +314,19 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -669,6 +711,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.8.1",
+        "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+        "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "critical",
@@ -770,6 +822,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.8.1",
+        "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+        "criterion": "10.8",
         "wcagSc": [
           "4.1.2"
         ]
@@ -919,6 +981,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -989,6 +1071,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1065,6 +1157,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1135,6 +1247,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -1212,6 +1344,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1282,6 +1424,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1396,6 +1548,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1466,6 +1628,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1541,6 +1713,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.5"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.13.1",
+        "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+        "criterion": "11.13",
+        "wcagSc": [
+          "1.3.5"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1610,6 +1792,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.4.12",
         "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.12.1",
+        "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+        "criterion": "10.12",
         "wcagSc": [
           "1.4.12"
         ]
@@ -1689,6 +1881,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1765,6 +1977,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.9.1",
+        "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.9",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1834,6 +2066,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.1",
         "title": "Bypass blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.6.1",
+        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+        "criterion": "12.6",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.1",
+        "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+        "criterion": "12.7",
         "wcagSc": [
           "2.4.1"
         ]
@@ -1910,6 +2162,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.8",
+        "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1980,6 +2242,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.7",
+        "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -2054,6 +2326,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -2139,6 +2431,46 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.4.3",
         "title": "Contrast (minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.1",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.2",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.3",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.4",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
         "wcagSc": [
           "1.4.3"
         ]
@@ -2277,6 +2609,46 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.3"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.1",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.2",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.3",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.4",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2348,6 +2720,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.7",
         "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
         "wcagSc": [
           "2.4.7"
         ]
@@ -2425,6 +2807,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2494,6 +2886,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.4",
         "title": "Orientation",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.9.1",
+        "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "13.9",
         "wcagSc": [
           "1.3.4"
         ]
@@ -2570,6 +2972,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.3",
+        "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2639,6 +3051,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.2.2",
         "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.8.1",
+        "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+        "criterion": "13.8",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.8.2",
+        "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+        "criterion": "13.8",
         "wcagSc": [
           "2.2.2"
         ]
@@ -2716,6 +3148,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2789,6 +3231,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.3",
+        "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2850,6 +3302,16 @@ const CHECK_DEFS = [
         "version": "V3.2.1",
         "requirement": "9.4.1.1",
         "title": "Parsing",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.1"
         ]
@@ -2926,6 +3388,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2996,6 +3468,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.7",
+        "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
         "wcagSc": [
           "1.1.1"
         ]
@@ -3072,6 +3554,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.5",
+        "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -3117,7 +3609,21 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.2",
+        "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "2.4.6",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -3260,6 +3766,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.1",
+        "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.4",
+        "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -3387,6 +3913,18 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2",
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -3464,6 +4002,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.3",
+        "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -3584,7 +4142,21 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.1",
+        "title": "Dans chaque page web, la hiérarchie entre les titres (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-elle pertinente ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "2.4.6",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -3648,6 +4220,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.6",
         "title": "Headings and labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.2",
+        "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+        "criterion": "9.1",
         "wcagSc": [
           "2.4.6"
         ]
@@ -3724,6 +4306,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "3.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.3.1",
+        "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+        "criterion": "8.3",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.4.1",
+        "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.4",
+        "wcagSc": [
+          "3.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -3794,6 +4396,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.3.1.1",
         "title": "Language of page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.4.1",
+        "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.4",
         "wcagSc": [
           "3.1.1"
         ]
@@ -3868,6 +4480,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.2.1",
+        "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+        "criterion": "2.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -4073,6 +4695,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.1.1",
+        "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+        "criterion": "2.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -4147,6 +4779,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.2.1",
+        "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+        "criterion": "2.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -4192,7 +4834,19 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -4255,6 +4909,36 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.8",
+        "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
         "wcagSc": [
           "1.1.1"
         ]
@@ -4331,6 +5015,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.2.1",
+        "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.2",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -4401,6 +5105,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -4550,6 +5264,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.3",
+        "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -4623,6 +5347,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.3",
+        "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -4692,6 +5426,46 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.5.3",
         "title": "Label in name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.5",
+        "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.3",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.5",
+        "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.9.2",
+        "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.9",
         "wcagSc": [
           "2.5.3"
         ]
@@ -5006,7 +5780,18 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.2.1",
+        "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+        "criterion": "9.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -5044,7 +5829,18 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.2.1",
+        "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+        "criterion": "9.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -5151,6 +5947,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.6.1",
+        "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+        "criterion": "10.6",
+        "wcagSc": [
+          "1.4.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -5189,6 +5995,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag244",
       "wcag412",
       "navigation",
       "atomic",
@@ -5198,15 +6005,41 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.4",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.4.4",
+        "title": "Link Purpose (In Context)",
+        "conformanceLevel": "A"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -5225,6 +6058,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.2.1",
+        "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+        "criterion": "6.2",
+        "wcagSc": [
+          "2.4.4"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -5232,6 +6075,9 @@ const CHECK_DEFS = [
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "2.4.4": [
+          "link-name-present"
+        ],
         "4.1.2": [
           "link-name-present"
         ]
@@ -5295,6 +6141,46 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.4",
         "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.1",
+        "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.2",
+        "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.3",
+        "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.4",
+        "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
         "wcagSc": [
           "2.4.4"
         ]
@@ -5368,6 +6254,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -5445,6 +6351,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -5515,6 +6441,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -5672,6 +6618,36 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.8.1",
+        "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+        "criterion": "12.8",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.9.1",
+        "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+        "criterion": "12.9",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -5736,6 +6712,36 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.2.1",
         "title": "Audio-only and video-only (pre-recorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.1",
+        "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.2",
+        "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.3",
+        "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
         "wcagSc": [
           "1.2.1"
         ]
@@ -5810,6 +6816,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -5951,6 +6967,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.2.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.1",
+        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.2",
+        "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -6057,6 +7093,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.4.4",
         "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.4.2",
+        "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+        "criterion": "10.4",
         "wcagSc": [
           "1.4.4"
         ]
@@ -6205,6 +7251,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.3.1",
+        "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "7.3",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -6277,6 +7333,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -6346,6 +7412,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.4.2",
         "title": "Audio control",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.10.1",
+        "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+        "criterion": "4.10",
         "wcagSc": [
           "1.4.2"
         ]
@@ -6422,6 +7498,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.6",
+        "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -6492,6 +7578,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.4",
+        "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -6641,6 +7737,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.3",
+        "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -6752,6 +7858,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.6.1",
+        "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+        "criterion": "8.6",
+        "wcagSc": [
+          "2.4.2"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -6822,6 +7938,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.2",
         "title": "Page titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.5.1",
+        "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+        "criterion": "8.5",
         "wcagSc": [
           "2.4.2"
         ]
@@ -7187,6 +8313,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -7232,7 +8368,29 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.7.2",
+        "title": "Pour chaque contenu de balise <th> s’appliquant à la totalité de la ligne ou de la colonne et possédant un attribut scope, la balise <th> vérifie-t-elle une de ces conditions ?",
+        "criterion": "5.7",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -7384,6 +8542,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -7502,7 +8680,20 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.2",
+        "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -7566,6 +8757,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -7640,6 +8851,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -7864,6 +9095,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -7934,6 +9175,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.6",
+        "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -8011,6 +9262,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -8056,7 +9317,18 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.8.1",
+        "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+        "criterion": "12.8",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -8159,6 +9431,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.4.1",
+        "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+        "criterion": "5.4",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -8229,6 +9511,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.7.4",
+        "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+        "criterion": "5.7",
         "wcagSc": [
           "1.3.1"
         ]
@@ -8444,6 +9736,26 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.1",
+        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.2",
+        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -8515,6 +9827,26 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -8665,6 +9997,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -8738,6 +10080,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "3.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.8.1",
+        "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.8",
+        "wcagSc": [
+          "3.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -8808,6 +10160,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.2.2",
         "title": "Subtitles (pre-recorded)",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.3.1",
+        "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.3",
         "wcagSc": [
           "1.2.2"
         ]
@@ -8970,6 +10332,156 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.2",
+          "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.3",
+          "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.5",
+          "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.6",
+          "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.7",
+          "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.8",
+          "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.1",
+          "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.2",
+          "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.3",
+          "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.4",
+          "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.5",
+          "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.6",
+          "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.7",
+          "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -9006,6 +10518,36 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.2.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.1",
+          "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.2",
+          "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.3",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
         }
       ]
     }
@@ -9039,6 +10581,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.2.2",
           "title": "Subtitles (pre-recorded)",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.1",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
           "wcagSc": [
             "1.2.2"
           ]
@@ -9091,6 +10643,96 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.3.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.4.1",
+          "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+          "criterion": "5.4",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.4",
+          "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.3",
+          "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.1",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.2",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.3",
+          "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1"
+          ]
         }
       ]
     }
@@ -9124,6 +10766,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.4.1",
           "title": "Use of colour",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.6.1",
+          "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+          "criterion": "10.6",
           "wcagSc": [
             "1.4.1"
           ]
@@ -9163,6 +10815,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.4.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.10.1",
+          "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+          "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
         }
       ]
     }
@@ -9197,6 +10859,46 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.4.3",
           "title": "Contrast (minimum)",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.1",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.2",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.3",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.4",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
           "wcagSc": [
             "1.4.3"
           ]
@@ -9258,6 +10960,26 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.3.1",
+          "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "7.3",
+          "wcagSc": [
+            "2.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.9.1",
+          "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+          "criterion": "12.9",
+          "wcagSc": [
+            "2.1.1"
+          ]
         }
       ]
     }
@@ -9311,6 +11033,26 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.2.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.1",
+          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.2",
+          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.2"
+          ]
         }
       ]
     }
@@ -9344,6 +11086,26 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.4.1",
           "title": "Bypass blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.6.1",
+          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+          "criterion": "12.6",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.1",
+          "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+          "criterion": "12.7",
           "wcagSc": [
             "2.4.1"
           ]
@@ -9384,6 +11146,26 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.5.1",
+          "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+          "criterion": "8.5",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.6.1",
+          "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+          "criterion": "8.6",
+          "wcagSc": [
+            "2.4.2"
+          ]
         }
       ]
     }
@@ -9420,6 +11202,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.3"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.8.1",
+          "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+          "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
         }
       ]
     }
@@ -9427,13 +11219,14 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-2.4.4-link-purpose-in-context",
     "checksIds": [
+      "link-name-present",
       "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
       "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
-      "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+      "description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
         "2.4.4"
       ],
@@ -9453,6 +11246,56 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.4.4",
           "title": "Link purpose (in context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.1",
+          "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.2",
+          "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.3",
+          "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.4",
+          "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.2.1",
+          "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+          "criterion": "6.2",
           "wcagSc": [
             "2.4.4"
           ]
@@ -9493,6 +11336,36 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.6"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.2",
+          "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.1",
+          "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.4",
+          "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6"
+          ]
         }
       ]
     }
@@ -9529,6 +11402,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.4.7",
           "title": "Focus visible",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.7.1",
+          "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+          "criterion": "10.7",
           "wcagSc": [
             "2.4.7"
           ]
@@ -9582,6 +11465,46 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.5.3",
           "title": "Label in name",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.5",
+          "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.3",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.5",
+          "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.2",
+          "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
           "wcagSc": [
             "2.5.3"
           ]
@@ -9649,6 +11572,26 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "3.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.3.1",
+          "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+          "criterion": "8.3",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.4.1",
+          "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.4",
+          "wcagSc": [
+            "3.1.1"
+          ]
         }
       ]
     }
@@ -9682,6 +11625,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.3.1.2",
           "title": "Language of parts",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.8.1",
+          "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.8",
           "wcagSc": [
             "3.1.2"
           ]
@@ -9721,6 +11674,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.3.4"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.9.1",
+          "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "13.9",
+          "wcagSc": [
+            "1.3.4"
+          ]
         }
       ]
     }
@@ -9757,6 +11720,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.3.5"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.13.1",
+          "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+          "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
         }
       ]
     }
@@ -9790,6 +11763,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.4.12",
           "title": "Text spacing",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.12.1",
+          "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+          "criterion": "10.12",
           "wcagSc": [
             "1.4.12"
           ]
@@ -9854,6 +11837,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "4.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1"
+          ]
         }
       ]
     }
@@ -9913,6 +11906,76 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.1.1",
+          "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+          "criterion": "2.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.2.1",
+          "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+          "criterion": "2.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.1",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.8.1",
+          "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+          "criterion": "10.8",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.3",
+          "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.1",
+          "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -9961,6 +12024,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -9994,6 +12067,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.4.4",
           "title": "Resize text",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.4.2",
+          "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+          "criterion": "10.4",
           "wcagSc": [
             "1.4.4"
           ]
@@ -10033,6 +12116,26 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.2.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.1",
+          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.2",
+          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1"
+          ]
         }
       ]
     }
@@ -10067,6 +12170,16 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.3.3.2",
           "title": "Labels or instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
           "wcagSc": [
             "3.3.2"
           ]
@@ -10575,7 +12688,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
     "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links ohne zugänglichen Namen markieren oder Links, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
     "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
@@ -11386,7 +13499,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Focus order",
     "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
     "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
@@ -12197,7 +14310,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
     "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces sin nombre accesible o cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
     "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
@@ -13008,7 +15121,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
     "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens sans nom accessible, ou dont le texte seul est une formule générique connue, non descriptive.",
     "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
     "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
@@ -13819,7 +15932,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
     "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "アクセシブルな名前がないリンク、またはテキストだけを見ると説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
     "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
     "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
@@ -14803,6 +16916,12 @@ const NORMATIVE_MAPPING_STANDARDS = {
     "versions": [
       "V3.2.1",
       "V4.1.1"
+    ]
+  },
+  "rgaa": {
+    "standard": "RGAA",
+    "versions": [
+      "4.1.2"
     ]
   }
 };
@@ -24549,6 +26668,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.2",
+        "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -24620,6 +26749,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.2",
+        "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -24696,6 +26835,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -24741,7 +26890,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "high",
     "type": "automatic",
@@ -25126,6 +27287,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.8.1",
+        "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+        "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "critical",
@@ -25227,6 +27398,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.8.1",
+        "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+        "criterion": "10.8",
         "wcagSc": [
           "4.1.2"
         ]
@@ -25376,6 +27557,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -25446,6 +27647,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -25522,6 +27733,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -25592,6 +27823,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -25669,6 +27920,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25739,6 +28000,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -25853,6 +28124,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25923,6 +28204,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -25998,6 +28289,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.5"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.13.1",
+        "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+        "criterion": "11.13",
+        "wcagSc": [
+          "1.3.5"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -26067,6 +28368,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.4.12",
         "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.12.1",
+        "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+        "criterion": "10.12",
         "wcagSc": [
           "1.4.12"
         ]
@@ -26146,6 +28457,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26222,6 +28553,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.9.1",
+        "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.9",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26291,6 +28642,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.1",
         "title": "Bypass blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.6.1",
+        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+        "criterion": "12.6",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.1",
+        "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+        "criterion": "12.7",
         "wcagSc": [
           "2.4.1"
         ]
@@ -26367,6 +28738,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.8",
+        "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26437,6 +28818,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.7",
+        "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -26511,6 +28902,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -26596,6 +29007,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.4.3",
         "title": "Contrast (minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.1",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.2",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.3",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.4",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
         "wcagSc": [
           "1.4.3"
         ]
@@ -26734,6 +29185,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.3"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.1",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.2",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.3",
+        "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "3.2.4",
+        "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+        "criterion": "3.2",
+        "wcagSc": [
+          "1.4.3"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26805,6 +29296,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.7",
         "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
         "wcagSc": [
           "2.4.7"
         ]
@@ -26882,6 +29383,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26951,6 +29462,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.4",
         "title": "Orientation",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.9.1",
+        "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "13.9",
         "wcagSc": [
           "1.3.4"
         ]
@@ -27027,6 +29548,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.3",
+        "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27096,6 +29627,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.2.2",
         "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.8.1",
+        "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+        "criterion": "13.8",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.8.2",
+        "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+        "criterion": "13.8",
         "wcagSc": [
           "2.2.2"
         ]
@@ -27173,6 +29724,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27246,6 +29807,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.3",
+        "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27307,6 +29878,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V3.2.1",
         "requirement": "9.4.1.1",
         "title": "Parsing",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.1"
         ]
@@ -27383,6 +29964,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27453,6 +30044,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.7",
+        "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
         "wcagSc": [
           "1.1.1"
         ]
@@ -27529,6 +30130,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.5",
+        "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -27574,7 +30185,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.2",
+        "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "2.4.6",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -27717,6 +30342,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.1",
+        "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.4",
+        "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -27844,6 +30489,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.3.1",
+          "3.3.2",
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27921,6 +30578,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.3",
+        "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -28041,7 +30718,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.1",
+        "title": "Dans chaque page web, la hiérarchie entre les titres (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-elle pertinente ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "2.4.6",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -28105,6 +30796,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.6",
         "title": "Headings and labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.2",
+        "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+        "criterion": "9.1",
         "wcagSc": [
           "2.4.6"
         ]
@@ -28181,6 +30882,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "3.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.3.1",
+        "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+        "criterion": "8.3",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.4.1",
+        "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.4",
+        "wcagSc": [
+          "3.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28251,6 +30972,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.3.1.1",
         "title": "Language of page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.4.1",
+        "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.4",
         "wcagSc": [
           "3.1.1"
         ]
@@ -28325,6 +31056,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.2.1",
+        "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+        "criterion": "2.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -28530,6 +31271,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.1.1",
+        "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+        "criterion": "2.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28604,6 +31355,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "2.2.1",
+        "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+        "criterion": "2.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -28649,7 +31410,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -28712,6 +31485,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.8",
+        "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
         "wcagSc": [
           "1.1.1"
         ]
@@ -28788,6 +31591,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.2.1",
+        "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.2",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28858,6 +31681,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -29007,6 +31840,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.3",
+        "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -29080,6 +31923,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.3",
+        "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -29149,6 +32002,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.5.3",
         "title": "Label in name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.5",
+        "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.3",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.5",
+        "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.2",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.9.2",
+        "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "11.9",
         "wcagSc": [
           "2.5.3"
         ]
@@ -29463,7 +32356,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.2.1",
+        "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+        "criterion": "9.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -29501,7 +32405,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.2.1",
+        "title": "Dans chaque page web, la structure du document vérifie-t-elle ces conditions (hors cas particuliers) ?",
+        "criterion": "9.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -29608,6 +32523,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.6.1",
+        "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+        "criterion": "10.6",
+        "wcagSc": [
+          "1.4.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -29646,6 +32571,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag244",
       "wcag412",
       "navigation",
       "atomic",
@@ -29655,15 +32581,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.4",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.4.4",
+        "title": "Link Purpose (In Context)",
+        "conformanceLevel": "A"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -29682,6 +32634,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.2.1",
+        "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+        "criterion": "6.2",
+        "wcagSc": [
+          "2.4.4"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -29689,6 +32651,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "2.4.4": [
+          "link-name-present"
+        ],
         "4.1.2": [
           "link-name-present"
         ]
@@ -29752,6 +32717,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.4",
         "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.1",
+        "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.2",
+        "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.3",
+        "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "6.1.4",
+        "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "6.1",
         "wcagSc": [
           "2.4.4"
         ]
@@ -29825,6 +32830,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -29902,6 +32927,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -29972,6 +33017,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.1",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.3.2",
+        "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+        "criterion": "9.3",
         "wcagSc": [
           "1.3.1"
         ]
@@ -30129,6 +33194,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.7.1",
+        "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+        "criterion": "10.7",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.8.1",
+        "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+        "criterion": "12.8",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.9.1",
+        "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+        "criterion": "12.9",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -30193,6 +33288,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.2.1",
         "title": "Audio-only and video-only (pre-recorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.1",
+        "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.2",
+        "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.1.3",
+        "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.1",
         "wcagSc": [
           "1.2.1"
         ]
@@ -30267,6 +33392,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -30408,6 +33543,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.2.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.1",
+        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.2",
+        "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -30514,6 +33669,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.4.4",
         "title": "Resize text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.4.2",
+        "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+        "criterion": "10.4",
         "wcagSc": [
           "1.4.4"
         ]
@@ -30662,6 +33827,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.3.1",
+        "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "7.3",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -30734,6 +33909,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -30803,6 +33988,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.4.2",
         "title": "Audio control",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.10.1",
+        "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+        "criterion": "4.10",
         "wcagSc": [
           "1.4.2"
         ]
@@ -30879,6 +34074,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.6",
+        "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -30949,6 +34154,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.4",
+        "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -31098,6 +34313,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "9.1.3",
+        "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+        "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -31209,6 +34434,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.6.1",
+        "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+        "criterion": "8.6",
+        "wcagSc": [
+          "2.4.2"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -31279,6 +34514,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.2",
         "title": "Page titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.5.1",
+        "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+        "criterion": "8.5",
         "wcagSc": [
           "2.4.2"
         ]
@@ -31644,6 +34889,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.1",
+        "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -31689,7 +34944,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.7.2",
+        "title": "Pour chaque contenu de balise <th> s’appliquant à la totalité de la ligne ou de la colonne et possédant un attribut scope, la balise <th> vérifie-t-elle une de ces conditions ?",
+        "criterion": "5.7",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.1",
+          "4.1.2"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -31841,6 +35118,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -31959,7 +35256,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.2",
+        "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -32023,6 +35333,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -32097,6 +35427,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -32321,6 +35671,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.1.5",
+        "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+        "criterion": "1.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -32391,6 +35751,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "1.3.6",
+        "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+        "criterion": "1.3",
         "wcagSc": [
           "1.1.1"
         ]
@@ -32468,6 +35838,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -32513,7 +35893,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.8.1",
+        "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+        "criterion": "12.8",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -32616,6 +36007,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.4.1",
+        "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+        "criterion": "5.4",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -32686,6 +36087,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.7.4",
+        "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+        "criterion": "5.7",
         "wcagSc": [
           "1.3.1"
         ]
@@ -32901,6 +36312,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.1",
+        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.2",
+        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -32972,6 +36403,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -33122,6 +36573,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -33195,6 +36656,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "3.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.8.1",
+        "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+        "criterion": "8.8",
+        "wcagSc": [
+          "3.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -33265,6 +36736,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.2.2",
         "title": "Subtitles (pre-recorded)",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "4.3.1",
+        "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+        "criterion": "4.3",
         "wcagSc": [
           "1.2.2"
         ]
@@ -33427,6 +36908,156 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.2",
+          "title": "Chaque zone d’une image réactive (balise <area>) porteuse d’information a-t-elle une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.3",
+          "title": "Chaque bouton de type image (balise <input> avec l’attribut type=\"image\") a-t-il une alternative textuelle ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.5",
+          "title": "Chaque image vectorielle (balise <svg>) porteuse d’information, vérifie-t-elle ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.6",
+          "title": "Chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.7",
+          "title": "Chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.1.8",
+          "title": "Chaque image bitmap (balise <canvas>) porteuse d’information, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.2.1",
+          "title": "Chaque image (balise <img>) de décoration, sans légende, vérifie-t-elle une de ces conditions ?",
+          "criterion": "1.2",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.1",
+          "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.2",
+          "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.3",
+          "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.4",
+          "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.5",
+          "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.6",
+          "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "1.3.7",
+          "title": "Pour chaque image bitmap (balise <canvas>) porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
+          "criterion": "1.3",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -33463,6 +37094,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.2.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.1",
+          "title": "Chaque média temporel pré-enregistré seulement audio, vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.2",
+          "title": "Chaque média temporel pré-enregistré seulement vidéo vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.1.3",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.1",
+          "wcagSc": [
+            "1.2.1"
+          ]
         }
       ]
     }
@@ -33496,6 +37157,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.2.2",
           "title": "Subtitles (pre-recorded)",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.3.1",
+          "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
+          "criterion": "4.3",
           "wcagSc": [
             "1.2.2"
           ]
@@ -33548,6 +37219,96 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.3.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.4.1",
+          "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
+          "criterion": "5.4",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.7.4",
+          "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+          "criterion": "5.7",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.3",
+          "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.1",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste non ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.2",
+          "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.3.3",
+          "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
+          "criterion": "9.3",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.3.1"
+          ]
         }
       ]
     }
@@ -33581,6 +37342,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.4.1",
           "title": "Use of colour",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.6.1",
+          "title": "Dans chaque page web, chaque lien texte signalé uniquement par la couleur, et dont la nature n’est pas évidente, vérifie-t-il ces conditions ?",
+          "criterion": "10.6",
           "wcagSc": [
             "1.4.1"
           ]
@@ -33620,6 +37391,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.4.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "4.10.1",
+          "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
+          "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
         }
       ]
     }
@@ -33654,6 +37435,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.4.3",
           "title": "Contrast (minimum)",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.1",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée inférieure à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.2",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée inférieure à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.3",
+          "title": "Dans chaque page web, le texte et le texte en image sans effet de graisse d’une taille restituée supérieure ou égale à 24px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "3.2.4",
+          "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
+          "criterion": "3.2",
           "wcagSc": [
             "1.4.3"
           ]
@@ -33715,6 +37536,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.3.1",
+          "title": "Chaque élément possédant un gestionnaire d’événement contrôlé par un script vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "7.3",
+          "wcagSc": [
+            "2.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.9.1",
+          "title": "Dans chaque page web, chaque élément recevant le focus vérifie-t-il une de ces conditions ?",
+          "criterion": "12.9",
+          "wcagSc": [
+            "2.1.1"
+          ]
         }
       ]
     }
@@ -33768,6 +37609,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.2.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.1",
+          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.8.2",
+          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
+          "criterion": "13.8",
+          "wcagSc": [
+            "2.2.2"
+          ]
         }
       ]
     }
@@ -33801,6 +37662,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.4.1",
           "title": "Bypass blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.6.1",
+          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+          "criterion": "12.6",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.7.1",
+          "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+          "criterion": "12.7",
           "wcagSc": [
             "2.4.1"
           ]
@@ -33841,6 +37722,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.5.1",
+          "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
+          "criterion": "8.5",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.6.1",
+          "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+          "criterion": "8.6",
+          "wcagSc": [
+            "2.4.2"
+          ]
         }
       ]
     }
@@ -33877,6 +37778,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.3"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "12.8.1",
+          "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
+          "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
         }
       ]
     }
@@ -33884,13 +37795,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.4.4-link-purpose-in-context",
     "checksIds": [
+      "link-name-present",
       "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
       "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
-      "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+      "description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
         "2.4.4"
       ],
@@ -33910,6 +37822,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.4.4",
           "title": "Link purpose (in context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.1",
+          "title": "Chaque lien texte vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.2",
+          "title": "Chaque lien image vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.3",
+          "title": "Chaque lien composite vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.4",
+          "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.2.1",
+          "title": "Dans chaque page web, chaque lien a-t-il un intitulé entre <a> et </a> ?",
+          "criterion": "6.2",
           "wcagSc": [
             "2.4.4"
           ]
@@ -33950,6 +37912,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.6"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "9.1.2",
+          "title": "Dans chaque page web, le contenu de chaque titre (balise <hx> ou balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level) est-il pertinent ?",
+          "criterion": "9.1",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.1",
+          "title": "Chaque balise <label> permet-elle de connaître la fonction exacte du champ de formulaire auquel elle est associée ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.4",
+          "title": "Chaque passage de texte associé via l’attribut WAI-ARIA aria-labelledby permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.4.6"
+          ]
         }
       ]
     }
@@ -33986,6 +37978,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.4.7",
           "title": "Focus visible",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.7.1",
+          "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
+          "criterion": "10.7",
           "wcagSc": [
             "2.4.7"
           ]
@@ -34039,6 +38041,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.5.3",
           "title": "Label in name",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "6.1.5",
+          "title": "Pour chaque lien ayant un intitulé visible, le nom accessible du lien contient-il au moins l’intitulé visible (hors cas particuliers) ?",
+          "criterion": "6.1",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.3",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.2.5",
+          "title": "Chaque champ de formulaire ayant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.2",
+          "title": "Chaque bouton affichant un intitulé visible vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
           "wcagSc": [
             "2.5.3"
           ]
@@ -34106,6 +38148,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "3.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.3.1",
+          "title": "Pour chaque page web, l’indication de langue par défaut vérifie-t-elle une de ces conditions ?",
+          "criterion": "8.3",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.4.1",
+          "title": "Pour chaque page web ayant une langue par défaut, le code de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.4",
+          "wcagSc": [
+            "3.1.1"
+          ]
         }
       ]
     }
@@ -34139,6 +38201,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.3.1.2",
           "title": "Language of parts",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.8.1",
+          "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
+          "criterion": "8.8",
           "wcagSc": [
             "3.1.2"
           ]
@@ -34178,6 +38250,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.3.4"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.9.1",
+          "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "13.9",
+          "wcagSc": [
+            "1.3.4"
+          ]
         }
       ]
     }
@@ -34214,6 +38296,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.3.5"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.13.1",
+          "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
+          "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
         }
       ]
     }
@@ -34247,6 +38339,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.4.12",
           "title": "Text spacing",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.12.1",
+          "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+          "criterion": "10.12",
           "wcagSc": [
             "1.4.12"
           ]
@@ -34311,6 +38413,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "4.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1"
+          ]
         }
       ]
     }
@@ -34370,6 +38482,76 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.1.1",
+          "title": "Chaque cadre (balise <iframe> ou <frame>) a-t-il un attribut title ?",
+          "criterion": "2.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "2.2.1",
+          "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
+          "criterion": "2.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.1",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.8.1",
+          "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
+          "criterion": "10.8",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.3",
+          "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.9.1",
+          "title": "L’intitulé de chaque bouton vérifie-t-il ces conditions (hors cas particuliers) ?",
+          "criterion": "11.9",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -34418,6 +38600,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.2.1",
+          "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+          "criterion": "8.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -34451,6 +38643,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.4.4",
           "title": "Resize text",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "10.4.2",
+          "title": "Dans chaque page web, l’augmentation de la taille des caractères jusqu’à 200 %, au moins, doit être possible pour l’ensemble du texte dans la page. Cette règle est-elle respectée selon une de ces conditions (hors cas particuliers) ?",
+          "criterion": "10.4",
           "wcagSc": [
             "1.4.4"
           ]
@@ -34490,6 +38692,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.2.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.1",
+          "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "13.1.2",
+          "title": "Pour chaque page web, chaque procédé de redirection effectué via une balise <meta> est-il immédiat (hors cas particuliers) ?",
+          "criterion": "13.1",
+          "wcagSc": [
+            "2.2.1"
+          ]
         }
       ]
     }
@@ -34524,6 +38746,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.3.3.2",
           "title": "Labels or instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
           "wcagSc": [
             "3.3.2"
           ]
@@ -59804,7 +64036,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
     "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links ohne zugänglichen Namen markieren oder Links, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
     "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
@@ -60615,7 +64847,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Focus order",
     "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
     "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
@@ -61426,7 +65658,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
     "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces sin nombre accesible o cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
     "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
@@ -62237,7 +66469,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
     "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens sans nom accessible, ou dont le texte seul est une formule générique connue, non descriptive.",
     "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
     "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
@@ -63048,7 +67280,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
     "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "アクセシブルな名前がないリンク、またはテキストだけを見ると説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
     "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
     "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
@@ -64032,6 +68264,12 @@ const NORMATIVE_MAPPING_STANDARDS = {
     "versions": [
       "V3.2.1",
       "V4.1.1"
+    ]
+  },
+  "rgaa": {
+    "standard": "RGAA",
+    "versions": [
+      "4.1.2"
     ]
   }
 };

@@ -326,7 +326,7 @@
   "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
   "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
   "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
-  "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+  "catalog.rules.wcag_244_link_purpose_in_context.description": "アクセシブルな名前がないリンク、またはテキストだけを見ると説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
   "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
   "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
   "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",

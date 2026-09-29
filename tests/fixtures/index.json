@@ -1455,6 +1455,7 @@
       "title": "Links have an accessible name",
       "type": "automatic",
       "wcagSc": [
+        "2.4.4",
         "4.1.2"
       ],
       "ruleFile": "src/checks/automatic/link-name-present.js",

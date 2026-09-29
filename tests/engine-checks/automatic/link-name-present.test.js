@@ -390,3 +390,29 @@ test(`${RULE_ID}: a role without name from content is still unnamed`, () => {
     minOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 as well as 4.1.2`, () => {
+  // ACT rule c487ae maps a link's accessible name to both criteria, so the
+  // 2.4.4 composite no longer rests on the manual link-name-quality alone.
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x"></a></main></body></html>`;
+  const result = runa11yCoreOnHtml(html);
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.deepEqual(
+    rule.meta.normativeMappings.filter((m) => m.standard === 'WCAG').map((m) => m.requirement),
+    ['2.4.4', '4.1.2']
+  );
+  const composite = (sc) => result.rulesResults.find((r) => r.ruleId.startsWith(`wcag-${sc}-`));
+  assert.equal(composite('2.4.4').outcome, 'fail');
+  assert.equal(composite('4.1.2').outcome, 'fail');
+});
+
+test(`${RULE_ID}: maps to RGAA 6.2.1 when RGAA is asked for`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x"></a></main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { engineOptions: { mappings: ['rgaa'] } });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const rgaa = rule.meta.normativeMappings.filter((m) => m.standard === 'RGAA');
+  assert.deepEqual(
+    rgaa.map((m) => [m.requirement, m.criterion, m.wcagSc]),
+    [['6.2.1', '6.2', ['2.4.4']]]
+  );
+});

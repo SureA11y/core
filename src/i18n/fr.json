@@ -326,7 +326,7 @@
   "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
   "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
   "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
-  "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+  "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens sans nom accessible, ou dont le texte seul est une formule générique connue, non descriptive.",
   "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
   "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
   "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",

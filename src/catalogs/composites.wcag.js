@@ -246,13 +246,13 @@ module.exports = [
 
   {
     id: 'wcag-2.4.4-link-purpose-in-context',
-    checksIds: ['link-name-quality'],
+    checksIds: ['link-name-present', 'link-name-quality'],
     meta: {
       titleKey: 'catalog.rules.wcag_244_link_purpose_in_context.title',
       descriptionKey: 'catalog.rules.wcag_244_link_purpose_in_context.description',
       title: 'Link Purpose (In Context)',
       description:
-        'Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.',
+        'Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.',
       wcagSc: ['2.4.4'],
       level: 'A'
     }

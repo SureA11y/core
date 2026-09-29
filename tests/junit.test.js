@@ -292,6 +292,19 @@ test("renderJunitReport: another standard's entry goes under the criteria it nam
   assert.deepStrictEqual(enOfSuite('WCAG 4.1.2'), ['9.4.1.2']);
 });
 
+test('renderJunitReport: a rule with no WCAG criterion keeps its other-standard entries', () => {
+  const result = makeScanResult([
+    check('heading-order', 'fail', [
+      { standard: 'RGAA', version: '4.1.2', requirement: '9.1.1', wcagSc: ['1.3.1', '2.4.6'] }
+    ])
+  ]);
+  const suite = suiteNamed(parse(renderJunitReport(result)), 'Other checks');
+  const rgaa = Array.from(suite.getElementsByTagName('property'))
+    .filter((p) => attr(p, 'name') === 'rgaa')
+    .map((p) => attr(p, 'value'));
+  assert.deepStrictEqual(rgaa, ['9.1.1']);
+});
+
 test('renderJunitReport: timestamp appears only when the result carries one', () => {
   const result = makeScanResult([check('a', 'pass', [wcag('1.1.1')])]);
   assert.strictEqual(suites(parse(renderJunitReport(result)))[0].hasAttribute('timestamp'), false);

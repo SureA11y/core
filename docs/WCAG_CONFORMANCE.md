@@ -87,6 +87,36 @@ en301549ClausesForSc('2.5.8');            // [{ version: 'V4.1.1', clause: '9.2.
 
 This is a correspondence between two published documents, not a conformance claim: a clause on a result says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
 
+## RGAA
+
+RGAA (Référentiel général d’amélioration de l’accessibilité) is the French standard. Unlike EN 301 549 it does not restate WCAG criterion by criterion: its 106 criteria, in 13 themes, are its own, each checked by one or more tests (258 in all), and RGAA itself states which WCAG criteria each one relates to. The relation runs many to many. WCAG 1.1.1 alone relates to 19 RGAA criteria, across images, media, scripts and consultation.
+
+The engine carries RGAA 4.1.2, the version in force, built on WCAG 2.1. Its criteria relate to every WCAG 2.1 Level A and AA criterion except 1.2.4 Captions (Live), which no RGAA 4.1.2 criterion references.
+
+The table is public as `@surea11y/core/rgaa`, in RGAA's own French wording:
+
+```js
+const { RGAA_THEMES, RGAA_CRITERIA, RGAA_TESTS, rgaaCriteriaForSc } = require('@surea11y/core/rgaa');
+
+RGAA_CRITERIA['4.1.2']['11.1'];
+// { theme: 11, title: 'Chaque champ de formulaire a-t-il une étiquette ?',
+//   wcagSc: ['1.3.1', '2.4.6', '3.3.2', '4.1.2'], techniques: ['G82', …], tests: ['11.1.1', '11.1.2', '11.1.3'] }
+RGAA_TESTS['4.1.2']['11.1.1'].conditions;  // what the test enumerates, when it does
+rgaaCriteriaForSc('1.1.1');               // [{ version: '4.1.2', criterion: '1.1', title: '…' }, …]
+```
+
+### RGAA tests on scan results
+
+With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its rule checks: `{ standard: "RGAA", version: "4.1.2", requirement: "1.1.1", title, criterion: "1.1", wcagSc: ["1.1.1"] }`, where `requirement` is the test, `title` its wording and `criterion` the criterion it belongs to. A composite names the tests of its rules that RGAA relates to its criterion. SARIF tags them `rgaa-1.1.1`, JUnit adds `rgaa` properties, and the HTML report lists them under each criterion.
+
+Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1).
+
+91 of the 132 rules map to at least one test, and together they reach 41 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 65 no rule reaches.
+
+A test on a result means the rule checks part of it, never that the test is conforme: a `pass` is not an RGAA verdict, and most tests need a human. **The mapping has not yet been reviewed by an RGAA auditor**; corrections go in `src/coverage/rgaa-rule-map.js`, and `npm run rgaa-mapping-doc` regenerates the page.
+
+The table is generated from the criteria file DINUM publishes (`RGAA/criteres.json` in <https://github.com/DISIC/accessibilite.numerique.gouv.fr>, under Licence Ouverte 2.0), kept byte for byte in `scripts/data/rgaa/` with its provenance. Only the Markdown is removed: glossary links keep their words, and code spans lose their backticks. `npm run rgaa-map` regenerates `src/coverage/rgaa-map.js`, and a test fails if the committed file differs from what the source gives.
+
 ## Adding another standard
 
 EN 301 549 is the first entry in a registry, `src/coverage/standards.js`, and nothing else in the engine names it. Every other standard goes the same way:

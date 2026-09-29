@@ -45,6 +45,7 @@ const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const {
   standardMappingsFor,
   withStandardMappings,
+  validateStandards,
   standardsData
 } = require('../src/coverage/standards');
 const {
@@ -163,7 +164,7 @@ function loadCompositeRulesCatalog() {
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? {
               ...entry.meta,
-              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc })
+              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc, checksIds })
             }
           : null
     };
@@ -327,6 +328,15 @@ function loadRuleModules() {
   mods.sort((a, b) =>
     a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
   );
+
+  // A standard mapped rule by rule (RGAA) names rules and requirements by id;
+  // a typo or a mapping to an unrelated criterion fails the build here.
+  const problems = validateStandards(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  );
+  if (problems.length) {
+    throw new Error(`[build-core] normative mappings:\n  ${problems.join('\n  ')}`);
+  }
   return mods;
 }
 

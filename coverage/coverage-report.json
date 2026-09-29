@@ -2344,9 +2344,11 @@
       "file": "src/checks/automatic/link-name-present.js",
       "ruleId": "link-name-present",
       "wcagScNormative": [
+        "2.4.4",
         "4.1.2"
       ],
       "wcagScAll": [
+        "2.4.4",
         "4.1.2"
       ],
       "wcagScInformative": [],
@@ -2354,6 +2356,7 @@
       "title": "Links have an accessible name",
       "tags": [
         "wcag2a",
+        "wcag244",
         "wcag412",
         "navigation",
         "atomic",
@@ -2384,6 +2387,9 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
+          "2.4.4": [
+            "link-name-present"
+          ],
           "4.1.2": [
             "link-name-present"
           ]
@@ -6760,15 +6766,24 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
+          "full": 1,
           "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
         "facets": [
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
+            ]
+          },
           {
             "id": "link-text-descriptive-evidence",
             "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
@@ -8151,15 +8166,24 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
+          "full": 1,
           "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
         "facets": [
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
+            ]
+          },
           {
             "id": "link-text-descriptive-evidence",
             "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",

@@ -381,15 +381,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.6
@@ -1013,15 +1015,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.6

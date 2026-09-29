@@ -434,7 +434,8 @@ clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
 the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
 without the profile, or for both versions, pass
 `mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
-WCAG only. See
+WCAG only. `'rgaa'` adds the RGAA 4.1.2 tests each rule checks, alone or
+with EN 301 549 (see [`docs/RGAA_MAPPING.md`](./docs/RGAA_MAPPING.md)). See
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
 [`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
 
@@ -592,6 +593,7 @@ src/
   junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
+  rgaa.js                  # RGAA criteria and tests (@surea11y/core/rgaa)
 
   checks/
     automatic/             # Deterministic automated rules

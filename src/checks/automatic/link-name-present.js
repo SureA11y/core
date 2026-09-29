@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Links must have an accessible name
  * @standard WCAG 2.2
- * @sc 4.1.2
+ * @sc 2.4.4, 4.1.2
  * @applicability
  *   Applies to <a href>, <area href> and elements with role="link" that are
  *   included in the accessibility tree. An <a> without an href is not a link
@@ -33,9 +33,18 @@ const meta = {
     descriptionKey: 'linkNamePresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'navigation', 'atomic', 'automatic', 'links', 'name'],
-  wcagSc: ['4.1.2'],
+  tags: ['wcag2a', 'wcag244', 'wcag412', 'navigation', 'atomic', 'automatic', 'links', 'name'],
+  wcagSc: ['2.4.4', '4.1.2'],
+  // 2.4.4 as well as 4.1.2, as ACT rule c487ae maps it: a link with no name
+  // has no purpose to determine, in context or otherwise.
   normativeMappings: [
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.4',
+      title: 'Link Purpose (In Context)',
+      conformanceLevel: 'A'
+    },
     {
       standard: 'WCAG',
       version: '2.2',
@@ -48,8 +57,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  // IMPORTANT: update your facets registry to include "link-name-present" under 4.1.2
-  coverage: { facetsBySc: { '4.1.2': ['link-name-present'] } }
+  coverage: { facetsBySc: { '2.4.4': ['link-name-present'], '4.1.2': ['link-name-present'] } }
 };
 
 function runInPage(ctx) {

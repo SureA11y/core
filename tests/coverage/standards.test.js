@@ -18,6 +18,7 @@ const {
   standardOfEntry
 } = require('../../src/coverage/standards');
 const core = require('../../src/core.js');
+const { FACETS } = require('../../src/coverage/wcag-facets');
 
 // --- the contract every registered standard keeps ---------------------------
 
@@ -35,7 +36,7 @@ test('every standard has a unique lowercase key and a unique display name', () =
 });
 
 test('every entry a standard gives names its standard, a known version and its WCAG criteria', () => {
-  const wcagSc = core.getRulesCatalog().flatMap((c) => (c.meta && c.meta.wcagSc) || []);
+  const wcagSc = Object.keys(FACETS);
   for (const s of NORMATIVE_STANDARDS) {
     for (const check of core.getChecksCatalog()) {
       for (const m of s.mappingsFor({ id: check.ruleId, wcagSc: check.wcagSc })) {

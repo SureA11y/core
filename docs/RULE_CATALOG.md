@@ -58,7 +58,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
-| [`link-name-present`](#link-name-present) | Links have an accessible name | 4.1.2 | A | high | serious |
+| [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
 | [`list-children-valid`](#list-children-valid) | Lists must only directly contain list items | 1.3.1 | A | high | serious |
 | [`listbox-name-present`](#listbox-name-present) | Listboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`listitem-parent-valid`](#listitem-parent-valid) | List items must be inside a list container | 1.3.1 | A | high | serious |
@@ -176,7 +176,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |
-| `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 1 |
+| `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
 | `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 4 |
 | `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 1 |
@@ -1210,7 +1210,7 @@ Fails only when none of the above hold AND the color contrast between link and s
 
 **Links have an accessible name**
 
-automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 2.4.4, 4.1.2 (A) · confidence high · default severity serious
 
 Checks that links expose a non-empty accessible name.
 

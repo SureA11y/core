@@ -105,16 +105,32 @@ test('a profile that did not apply implies no mappings', () => {
   assert.deepEqual(standards(atomic(value)), ['WCAG']);
 });
 
+test("naming rgaa adds each rule's RGAA tests, with their criterion", () => {
+  const result = scan({ mappings: ['rgaa'] });
+  assert.deepEqual(result.engine.mappings, ['rgaa']);
+  const rgaa = atomic(result).meta.normativeMappings.filter((m) => m.standard === 'RGAA');
+  assert.ok(rgaa.length > 0);
+  for (const m of rgaa) {
+    assert.equal(m.version, '4.1.2');
+    assert.match(m.requirement, /^\d+\.\d+\.\d+$/);
+    assert.ok(m.requirement.startsWith(`${m.criterion}.`));
+    assert.deepEqual(m.wcagSc, ['1.1.1']);
+  }
+  assert.ok(composite(result).meta.normativeMappings.some((m) => m.standard === 'RGAA'));
+  // EN 301 549 stays off unless asked for too.
+  assert.ok(!atomic(result).meta.normativeMappings.some((m) => m.standard === 'EN 301 549'));
+});
+
 test('an unknown standard or version is ignored with a warning', () => {
   const { value, warnings } = captureWarnings(() =>
-    scan({ mappings: ['rgaa', 'en301549:V9.9.9', 'en301549:V3.2.1'] })
+    scan({ mappings: ['bitv', 'en301549:V9.9.9', 'en301549:V3.2.1'] })
   );
   assert.deepEqual(value.engine.mappings, ['en301549:V3.2.1']);
   assert.ok(
     warnings.some(
       (w) =>
         w.includes('engineOptions.mappings') &&
-        w.includes('"rgaa"') &&
+        w.includes('"bitv"') &&
         w.includes('"en301549:V9.9.9"')
     )
   );

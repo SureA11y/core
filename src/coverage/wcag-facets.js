@@ -616,6 +616,11 @@ const FACETS = {
         "level": "A",
         "facets": [
             {
+                "id": "link-name-present",
+                "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+                "automation": "full"
+            },
+            {
                 "id": "link-text-descriptive-evidence",
                 "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
                 "automation": "manual"
