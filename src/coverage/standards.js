@@ -41,6 +41,11 @@
  *   selection asks for it by that tag or by id, typically through one of this
  *   standard's profiles, so a scan that targets WCAG never reports a failure
  *   WCAG does not define. Must not be a WCAG tag.
+ * - ruleMapped: optional; true when the standard's entries come from each
+ *   rule rather than from the WCAG criterion (RGAA). A rollup then names only
+ *   the entries of the rules that produced its outcome; a standard that
+ *   restates the criterion itself (EN 301 549) names the same entry
+ *   whichever rule decided.
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
@@ -83,6 +88,7 @@ const NORMATIVE_STANDARDS = [
       }
     },
     ruleTag: 'rgaa',
+    ruleMapped: true,
     // Mapped rule by rule (src/coverage/rgaa-rule-map.js): RGAA's criteria are
     // its own, related to WCAG many to many.
     mappingsFor: rgaaMappingsFor,
@@ -155,7 +161,8 @@ function standardsData() {
         { version: p.version, tags: p.tags.slice(), ...(p.mappedRules ? { mappedRules: true } : {}) }
       ])
     ),
-    ...(s.ruleTag ? { ruleTag: s.ruleTag } : {})
+    ...(s.ruleTag ? { ruleTag: s.ruleTag } : {}),
+    ...(s.ruleMapped ? { ruleMapped: true } : {})
   }));
 }
 

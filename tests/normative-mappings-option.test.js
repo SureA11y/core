@@ -156,10 +156,76 @@ test('a custom rule keeps exactly the mappings it declares', () => {
   );
 });
 
-test('the catalogs carry every mapping whatever the scan options', () => {
-  const versions = (list) => list.filter((m) => m.standard === 'EN 301 549').map((m) => m.version);
-  const check = core.getChecksCatalog().find((r) => r.ruleId === 'img-alt-present');
-  assert.deepEqual(versions(check.normativeMappings), ['V3.2.1', 'V4.1.1']);
-  const rollup = core.getRulesCatalog().find((r) => r.id.startsWith('wcag-1.1.1-'));
-  assert.deepEqual(versions(rollup.meta.standardMappings), ['V3.2.1', 'V4.1.1']);
+// --- the catalog applies the same opt-in ---------------------------------------
+
+const OPTION_SETS = [
+  {},
+  { locale: 'en' },
+  { mappings: 'en301549' },
+  { mappings: 'en301549:V3.2.1' },
+  { mappings: ['rgaa'] },
+  { mappings: ['en301549', 'rgaa'] },
+  { profile: 'en301549-v4.1.1' },
+  { profile: 'rgaa-4.1.2' },
+  { profile: 'rgaa-4.1.2', mappings: 'en301549:V4.1.1' },
+  { profile: 'wcag22-aa' }
+];
+
+test('every catalog entry names the same standards as its scan result, for each option set', () => {
+  const HTML_ALL =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<img src="a.png"><h3>x</h3><a href="/x"></a><label for="nope">x</label></main></body></html>';
+  for (const options of OPTION_SETS) {
+    const catalog = new Map(core.getChecksCatalog(options).map((r) => [r.ruleId, r]));
+    // No runOnly: an include would override the profile in the scan but not
+    // in the catalog call, which is the comparison being made.
+    const result = runa11yCoreOnHtml(HTML_ALL, { engineOptions: options });
+    assert.ok(result.checksResults.length > 100, JSON.stringify(options));
+    for (const r of result.checksResults) {
+      const where = `${JSON.stringify(options)} ${r.ruleId}`;
+      assert.deepEqual(r.meta.normativeMappings, catalog.get(r.ruleId).normativeMappings, where);
+      assert.deepEqual(
+        core.getCheckDefById(r.ruleId, options).normativeMappings,
+        catalog.get(r.ruleId).normativeMappings,
+        where
+      );
+    }
+  }
+});
+
+test('with no options the catalogs name WCAG only', () => {
+  for (const r of core.getChecksCatalog()) {
+    assert.ok(
+      r.normativeMappings.every((m) => m.standard === 'WCAG'),
+      r.ruleId
+    );
+  }
+  assert.deepEqual(core.getCheckDefById('heading-order', { locale: 'en' }).normativeMappings, []);
+  for (const c of core.getRulesCatalog()) assert.deepEqual(c.meta.standardMappings, [], c.id);
+});
+
+test('a profile switches its standard on in the catalog, and only when it would apply', () => {
+  const standards = (entry) => [...new Set(entry.normativeMappings.map((m) => m.standard))];
+  const img = (options, runOnly) =>
+    core.getChecksForRunOnly(runOnly || null, options).find((r) => r.ruleId === 'img-alt-present');
+
+  assert.deepEqual(standards(img({ profile: 'rgaa-4.1.2' })), ['WCAG', 'RGAA']);
+  assert.deepEqual(standards(img({ profile: 'en301549-v3.2.1' })), ['WCAG', 'EN 301 549']);
+  // An include overrides the profile in a scan, so it switches nothing on here either.
+  assert.deepEqual(
+    standards(img({ profile: 'rgaa-4.1.2' }, { includeRuleIds: ['img-alt-present'] })),
+    ['WCAG']
+  );
+});
+
+test("composite catalog entries filter their rules' other-standard entries the same way", () => {
+  const byStandard = (entry) => [...new Set(entry.meta.standardMappings.map((m) => m.standard))];
+  const id = 'wcag-1.1.1-non-text-content';
+  assert.deepEqual(byStandard(core.getCompositeRuleById(id)), []);
+  assert.deepEqual(byStandard(core.getCompositeRuleById(id, { mappings: 'rgaa' })), ['RGAA']);
+  const fromCatalog = core.getRulesCatalog({ profile: 'en301549-v4.1.1' }).find((c) => c.id === id);
+  assert.deepEqual(
+    fromCatalog.meta.standardMappings.map((m) => `${m.standard} ${m.version}`),
+    ['EN 301 549 V4.1.1']
+  );
 });

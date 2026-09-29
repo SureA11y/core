@@ -17326,6 +17326,13 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Standards whose entries come from each rule (ruleMapped in the registry),
+// by the name their entries carry. A rollup keeps only the entries of the
+// rules that produced its outcome (rollupCompositeResults).
+const RULE_MAPPED_STANDARDS = [
+  "RGAA"
+];
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -17906,7 +17913,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   return out;
 }
 
-function toCatalogEntry(r, engineOptions) {
+// The standards a catalog entry names for these options, chosen exactly as for
+// a scan result: engineOptions.mappings, plus what a profile adds when it
+// would apply to this selection. With no options that is WCAG alone.
+function catalogMappingTokens(engineOptions, runOnly) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+}
+
+function toCatalogEntry(r, engineOptions, mappingTokens) {
+  const tokens = Array.isArray(mappingTokens) ? mappingTokens : catalogMappingTokens(engineOptions, null);
   return {
     ruleId: r.ruleId,
     title: (r && r.i18n ? t(r.i18n.titleKey, r.title, null, engineOptions) : r.title),
@@ -17915,7 +17931,9 @@ function toCatalogEntry(r, engineOptions) {
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
     wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
-    normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
+    normativeMappings: Array.isArray(r.normativeMappings)
+      ? filterNormativeMappings(r.normativeMappings, tokens).map((o) => ({ ...o }))
+      : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -26229,9 +26247,31 @@ const rollupCompositeResults = (function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule (RGAA) is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong
@@ -27059,32 +27099,48 @@ function getCheckDefById(ruleId, engineOptions) {
 function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
-  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions));
+  const tokens = catalogMappingTokens(engineOptions, null);
+  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
-function getRulesCatalog() {
+// A composite's catalog entry, with the other-standard entries of its rules
+// filtered the same way as a rule's.
+function toCompositeCatalogEntry(x, tokens) {
+  const meta = x.meta && typeof x.meta === 'object'
+    ? {
+        ...x.meta,
+        standardMappings: Array.isArray(x.meta.standardMappings)
+          ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
+          : []
+      }
+    : x.meta;
+  return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
+}
+
+function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
-  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => ({ ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [] })) : [];
+  const tokens = catalogMappingTokens(engineOptions, null);
+  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => toCompositeCatalogEntry(x, tokens)) : [];
 }
 
-function getCompositeRuleById(ruleId) {
+function getCompositeRuleById(ruleId, engineOptions) {
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
-  return { ...found, checksIds: Array.isArray(found.checksIds) ? found.checksIds.slice() : [] };
+  return toCompositeCatalogEntry(found, catalogMappingTokens(engineOptions, null));
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  const tokens = catalogMappingTokens(engineOptions, runOnly);
   return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+    .filter((r) => ruleMatchesRunOnly(r, selection, ENGINE_TAG))
+    .map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {
   // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
-  return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+  return getChecksForRunOnly(runOnly, engineOptions);
 }
 
 /**
@@ -69560,6 +69616,13 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Standards whose entries come from each rule (ruleMapped in the registry),
+// by the name their entries carry. A rollup keeps only the entries of the
+// rules that produced its outcome (rollupCompositeResults).
+const RULE_MAPPED_STANDARDS = [
+  "RGAA"
+];
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -70140,7 +70203,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   return out;
 }
 
-function toCatalogEntry(r, engineOptions) {
+// The standards a catalog entry names for these options, chosen exactly as for
+// a scan result: engineOptions.mappings, plus what a profile adds when it
+// would apply to this selection. With no options that is WCAG alone.
+function catalogMappingTokens(engineOptions, runOnly) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+}
+
+function toCatalogEntry(r, engineOptions, mappingTokens) {
+  const tokens = Array.isArray(mappingTokens) ? mappingTokens : catalogMappingTokens(engineOptions, null);
   return {
     ruleId: r.ruleId,
     title: (r && r.i18n ? t(r.i18n.titleKey, r.title, null, engineOptions) : r.title),
@@ -70149,7 +70221,9 @@ function toCatalogEntry(r, engineOptions) {
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
     wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
-    normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
+    normativeMappings: Array.isArray(r.normativeMappings)
+      ? filterNormativeMappings(r.normativeMappings, tokens).map((o) => ({ ...o }))
+      : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -78463,9 +78537,31 @@ const rollupCompositeResults = (function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule (RGAA) is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong

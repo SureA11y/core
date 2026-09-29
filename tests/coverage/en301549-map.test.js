@@ -168,9 +168,11 @@ test('@surea11y/core/en301549 exposes the table, frozen', () => {
   }, TypeError);
 });
 
-test('composite entries in the rules catalog carry their EN 301 549 clauses', () => {
+test('composite entries in the rules catalog carry their EN 301 549 clauses when asked for', () => {
   const core = require('../../src/index.js');
-  const composite = core.getRulesCatalog().find((c) => c.id === 'wcag-1.1.1-non-text-content');
+  const composite = core
+    .getRulesCatalog({ mappings: 'en301549' })
+    .find((c) => c.id === 'wcag-1.1.1-non-text-content');
   assert.deepEqual(
     enOf(composite.meta.standardMappings).map((m) => `${m.version} ${m.requirement}`),
     ['V3.2.1 9.1.1.1', 'V4.1.1 9.1.1.1']

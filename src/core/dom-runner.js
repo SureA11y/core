@@ -12,12 +12,14 @@
  *   normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
  *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
- *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings).
+ *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
+ *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
-   resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings */
+   resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
+   RULE_MAPPED_STANDARDS */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -374,9 +376,31 @@ function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule (RGAA) is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong

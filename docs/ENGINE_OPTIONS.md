@@ -141,7 +141,7 @@ runDomRulesInPage(url, null, { mappings: ['en301549:V3.2.1'] }, null);
 
 It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
 
-It changes only what a result names, never which rules run or their outcomes. The rule catalog (`getChecksCatalog()`, `getRulesCatalog()`) and the `@surea11y/core/en301549` table are reference data and always carry every standard. A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
+It changes only what a result names, never which rules run or their outcomes. The rule catalog follows the same option: `getChecksCatalog(engineOptions)`, `getCheckDefById(ruleId, engineOptions)`, `getChecksForRunOnly(runOnly, engineOptions)`, `getRulesCatalog(engineOptions)` and `getCompositeRuleById(id, engineOptions)` name the standards a scan with those options would, a profile included when it would apply, so a catalog entry and a result always agree. With no options they name WCAG only; pass `mappings: ['en301549', 'rgaa']` for every standard. The published tables (`@surea11y/core/en301549`, `@surea11y/core/rgaa`) are not filtered. A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
 
 ### Via `engineOptions` (no `runOnly`)
 
