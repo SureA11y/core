@@ -165,8 +165,6 @@ function runInPage(ctx) {
         ? helpers.getTextAlternativeInfo
         : null;
 
-    const trim = (v) => (v == null ? '' : String(v)).trim();
-
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     let textAltInfo = null;
     if (getTextAlternativeInfo) {

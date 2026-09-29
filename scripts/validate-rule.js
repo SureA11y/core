@@ -37,7 +37,6 @@ const path = require('node:path');
 
 // Adjust these imports to match your repo layout if needed
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
-const { assertRule } = require('../tests/helpers/assertRule.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
 const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 

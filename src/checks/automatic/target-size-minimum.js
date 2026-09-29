@@ -124,17 +124,6 @@ const meta = {
   }
 };
 
-// ---- constants (deterministic, CSS pixels) ----
-const MIN_SIZE = 24;
-const MIN_RADIUS = 12; // spacing exception circle radius (24px diameter)
-
-// Grid sampling configuration (kept small for perf; only used for undersized targets)
-const GRID_POINTS = 25; // 5x5
-const GRID_N = 5;
-
-// Circle sampling configuration (perimeter)
-const CIRCLE_SAMPLES = 16; // deterministic, fixed
-
 function runInPage(ctx) {
   'use strict';
 
