@@ -14397,7 +14397,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const wm = new WeakMap();
       sc[propName] = wm;
       return wm;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -14443,7 +14443,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const m = new Map();
       sc.__colorParseCache = m;
       return m;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -15237,13 +15237,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let computed = '';
         try {
           computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
-        } catch (_e) {
+        } catch {
           computed = '';
         }
 
         try {
           if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
-        } catch (_e) {}
+        } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
         if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
@@ -15252,7 +15252,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (parsed) return parsed;
         }
       }
-    } catch (_e) {}
+    } catch {}
 
     return null;
   }
@@ -15478,7 +15478,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const out = clamp01(prod);
       __opacityProductCache.set(el, out);
       return out;
-    } catch (_e) {
+    } catch {
       return 1;
     }
   }
@@ -15500,7 +15500,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
@@ -15513,7 +15513,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __effectiveForegroundCache.set(el, out);
         return out;
       }
-    } catch (_e) {}
+    } catch {}
 
     const cs = __contrastComputedStyle(el);
     const c = parseCssColorToRgba(cs && cs.color);
@@ -15521,7 +15521,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
         if (el) __effectiveForegroundCache.set(el, out);
-      } catch (_e) {}
+      } catch {}
       return out;
     }
 
@@ -15533,7 +15533,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __effectiveForegroundCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 
@@ -15567,7 +15567,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: null
         };
       }
-    } catch (_e) {}
+    } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
@@ -15579,7 +15579,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const m = __effectiveBackgroundCache.get(el);
           if (m && typeof m.get === 'function' && m.has(__bgKey)) return m.get(__bgKey);
         }
-      } catch (_e) {}
+      } catch {}
     }
 
     const contrast =
@@ -15680,7 +15680,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           __effectiveBackgroundCache.set(el, m);
         }
         m.set(__bgKey, out);
-      } catch (_e) {}
+      } catch {}
     }
 
     return out;
@@ -15699,7 +15699,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
       return s || '';
-    } catch (_e) {
+    } catch {
       return '';
     }
   }
@@ -15763,12 +15763,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function resolveGroupOpacityColors(el) {
     try {
       if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     function __cacheAndReturn(res) {
       try {
         if (el) __groupOpacityOverrideCache.set(el, res);
-      } catch (_e) {}
+      } catch {}
       return res;
     }
 
@@ -15831,7 +15831,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
         bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
       });
-    } catch (_e) {
+    } catch {
       return __cacheAndReturn(null);
     }
   }
@@ -15845,7 +15845,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     let cur = el;
     let guard = 0;
@@ -15901,7 +15901,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -15926,7 +15926,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -15955,7 +15955,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -15974,7 +15974,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -16005,7 +16005,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
         if (ancestorOpacity < 1) {
@@ -16021,7 +16021,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -16049,7 +16049,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 
@@ -21062,7 +21062,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
-  function getFocusableInfo(el, _ctx, opts) {
+  function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
       return { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
@@ -21084,7 +21084,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
-  function getVisibilityHintsInfo(el, _ctx, opts) {
+  function getVisibilityHintsInfo(el, _ctx, _opts) {
     // Deterministic, style-only visibility hints for triage.
     // Does NOT decide eligibility; checks decide outcomes.
     // Uses computedStyle() which is already scope-cached.
@@ -21834,7 +21834,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   }
 
-  function getLabelMethod(el, _ctx, opts) {
+  function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
 
@@ -22653,7 +22653,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
       );
     }
-  } catch (e) {
+  } catch {
     // no-throws: omit rulesResults if anything goes wrong
   }
 
@@ -22765,7 +22765,7 @@ const runCore = (function runCore(
       ) {
         return performance.now();
       }
-    } catch (e) {}
+    } catch {}
     return Date.now();
   }
 
@@ -22817,7 +22817,7 @@ const runCore = (function runCore(
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
     if (!probes || typeof probes !== 'object' || Array.isArray(probes)) probes = null;
-  } catch (e) {
+  } catch {
     probes = null;
   }
 
@@ -22847,7 +22847,7 @@ const runCore = (function runCore(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch (e) {
+        } catch {
           return null;
         }
       }
@@ -22919,7 +22919,7 @@ const runCore = (function runCore(
           '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
             overriddenBuiltinIds.join(', ')
         );
-      } catch (e) {}
+      } catch {}
     }
   }
 
@@ -23191,7 +23191,7 @@ const runCore = (function runCore(
     ) {
       perfStats = sharedHelpers.getPerfStats();
     }
-  } catch (e) {
+  } catch {
     perfStats = null;
   }
 
@@ -23250,7 +23250,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
             { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
             '*'
           );
-      } catch (e) {
+      } catch {
         /* target gone/closed -- nothing to do */
       }
       return;
@@ -23270,7 +23270,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
-      } catch (e) {
+      } catch {
         embedder = null;
       }
       if (!embedder || event.source !== embedder) return;
@@ -23291,7 +23291,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         })
@@ -23308,7 +23308,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         });
@@ -23382,7 +23382,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
         { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' },
         '*'
       );
-    } catch (e) {
+    } catch {
       if (!settled) {
         settled = true;
         clearTimeout(timeout);
@@ -49918,7 +49918,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (!el) return '';
       return el.textContent || '';
-    } catch (e) {
+    } catch {
       return '';
     }
   }
@@ -62669,7 +62669,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const wm = new WeakMap();
       sc[propName] = wm;
       return wm;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -62715,7 +62715,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const m = new Map();
       sc.__colorParseCache = m;
       return m;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -63509,13 +63509,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let computed = '';
         try {
           computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
-        } catch (_e) {
+        } catch {
           computed = '';
         }
 
         try {
           if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
-        } catch (_e) {}
+        } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
         if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
@@ -63524,7 +63524,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (parsed) return parsed;
         }
       }
-    } catch (_e) {}
+    } catch {}
 
     return null;
   }
@@ -63750,7 +63750,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const out = clamp01(prod);
       __opacityProductCache.set(el, out);
       return out;
-    } catch (_e) {
+    } catch {
       return 1;
     }
   }
@@ -63772,7 +63772,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
@@ -63785,7 +63785,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __effectiveForegroundCache.set(el, out);
         return out;
       }
-    } catch (_e) {}
+    } catch {}
 
     const cs = __contrastComputedStyle(el);
     const c = parseCssColorToRgba(cs && cs.color);
@@ -63793,7 +63793,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
         if (el) __effectiveForegroundCache.set(el, out);
-      } catch (_e) {}
+      } catch {}
       return out;
     }
 
@@ -63805,7 +63805,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __effectiveForegroundCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 
@@ -63839,7 +63839,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: null
         };
       }
-    } catch (_e) {}
+    } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
@@ -63851,7 +63851,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const m = __effectiveBackgroundCache.get(el);
           if (m && typeof m.get === 'function' && m.has(__bgKey)) return m.get(__bgKey);
         }
-      } catch (_e) {}
+      } catch {}
     }
 
     const contrast =
@@ -63952,7 +63952,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           __effectiveBackgroundCache.set(el, m);
         }
         m.set(__bgKey, out);
-      } catch (_e) {}
+      } catch {}
     }
 
     return out;
@@ -63971,7 +63971,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
       return s || '';
-    } catch (_e) {
+    } catch {
       return '';
     }
   }
@@ -64035,12 +64035,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function resolveGroupOpacityColors(el) {
     try {
       if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     function __cacheAndReturn(res) {
       try {
         if (el) __groupOpacityOverrideCache.set(el, res);
-      } catch (_e) {}
+      } catch {}
       return res;
     }
 
@@ -64103,7 +64103,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
         bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
       });
-    } catch (_e) {
+    } catch {
       return __cacheAndReturn(null);
     }
   }
@@ -64117,7 +64117,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     let cur = el;
     let guard = 0;
@@ -64173,7 +64173,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -64198,7 +64198,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -64227,7 +64227,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -64246,7 +64246,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -64277,7 +64277,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
         if (ancestorOpacity < 1) {
@@ -64293,7 +64293,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -64321,7 +64321,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 
@@ -69334,7 +69334,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
-  function getFocusableInfo(el, _ctx, opts) {
+  function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
       return { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
@@ -69356,7 +69356,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
-  function getVisibilityHintsInfo(el, _ctx, opts) {
+  function getVisibilityHintsInfo(el, _ctx, _opts) {
     // Deterministic, style-only visibility hints for triage.
     // Does NOT decide eligibility; checks decide outcomes.
     // Uses computedStyle() which is already scope-cached.
@@ -70106,7 +70106,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   }
 
-  function getLabelMethod(el, _ctx, opts) {
+  function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
 
@@ -70925,7 +70925,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
       );
     }
-  } catch (e) {
+  } catch {
     // no-throws: omit rulesResults if anything goes wrong
   }
 
@@ -71037,7 +71037,7 @@ const runCore = (function runCore(
       ) {
         return performance.now();
       }
-    } catch (e) {}
+    } catch {}
     return Date.now();
   }
 
@@ -71089,7 +71089,7 @@ const runCore = (function runCore(
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
     if (!probes || typeof probes !== 'object' || Array.isArray(probes)) probes = null;
-  } catch (e) {
+  } catch {
     probes = null;
   }
 
@@ -71119,7 +71119,7 @@ const runCore = (function runCore(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch (e) {
+        } catch {
           return null;
         }
       }
@@ -71191,7 +71191,7 @@ const runCore = (function runCore(
           '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
             overriddenBuiltinIds.join(', ')
         );
-      } catch (e) {}
+      } catch {}
     }
   }
 
@@ -71463,7 +71463,7 @@ const runCore = (function runCore(
     ) {
       perfStats = sharedHelpers.getPerfStats();
     }
-  } catch (e) {
+  } catch {
     perfStats = null;
   }
 
@@ -71522,7 +71522,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
             { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
             '*'
           );
-      } catch (e) {
+      } catch {
         /* target gone/closed -- nothing to do */
       }
       return;
@@ -71542,7 +71542,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
-      } catch (e) {
+      } catch {
         embedder = null;
       }
       if (!embedder || event.source !== embedder) return;
@@ -71563,7 +71563,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         })
@@ -71580,7 +71580,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         });
@@ -71654,7 +71654,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
         { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' },
         '*'
       );
-    } catch (e) {
+    } catch {
       if (!settled) {
         settled = true;
         clearTimeout(timeout);
@@ -71762,7 +71762,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
             { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
             '*'
           );
-      } catch (e) {
+      } catch {
         /* target gone/closed -- nothing to do */
       }
       return;
@@ -71782,7 +71782,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
       let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
-      } catch (e) {
+      } catch {
         embedder = null;
       }
       if (!embedder || event.source !== embedder) return;
@@ -71803,7 +71803,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         })
@@ -71820,7 +71820,7 @@ const installFrameRpcListener = (function installFrameRpcListener(win, channel) 
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         });
@@ -71894,7 +71894,7 @@ const pingFrame = (function pingFrame(win, targetWindow, pingWaitTime) {
         { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' },
         '*'
       );
-    } catch (e) {
+    } catch {
       if (!settled) {
         settled = true;
         clearTimeout(timeout);
@@ -72022,7 +72022,7 @@ function findChildFrameElements(roots) {
     let matches;
     try {
       matches = root.querySelectorAll('iframe, frame');
-    } catch (e) {
+    } catch {
       matches = [];
     }
     for (const el of matches) {
@@ -72040,7 +72040,7 @@ function getFrameElementUrl(el) {
     if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
       return el.contentWindow.location.href;
     }
-  } catch (e) {
+  } catch {
     // Cross-origin: reading contentWindow.location.href itself throws. Fall
     // back to the authored src attribute (always readable, any origin).
   }
@@ -72062,7 +72062,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
     let targetWindow = null;
     try {
       targetWindow = el.contentWindow || null;
-    } catch (e) {
+    } catch {
       targetWindow = null;
     }
     if (!targetWindow) {

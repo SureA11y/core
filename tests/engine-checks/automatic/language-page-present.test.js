@@ -261,7 +261,8 @@ test(`${RULE_ID} (node runtime): fail when <html> lang is invalid BCP47`, () => 
 });
 
 test(`${RULE_ID} (node runtime): notApplicable when document root is not <html> (XML document)`, () => {
-  const dom = createDom('<svg xmlns="http://www.w3.org/2000/svg"></svg>', {
+  // createDom installs this document as the global one runDomRulesInPage scans.
+  createDom('<svg xmlns="http://www.w3.org/2000/svg"></svg>', {
     url: 'https://example.test/',
     contentType: 'application/xml'
   });

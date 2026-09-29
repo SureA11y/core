@@ -415,7 +415,6 @@ test('rule selection: runOnly supports excludeTags (extended)', () => {
  */
 test('rule selection: generated combinations against reference selector', () => {
   const defs = core.CHECK_DEFS;
-  const ENGINE_TAG = core.ENGINE_TAG || 'a11ycore';
   const tagIndex = buildTagIndex(defs);
 
   const ids = defs.map((d) => d.ruleId);

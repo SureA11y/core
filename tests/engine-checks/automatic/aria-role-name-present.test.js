@@ -11,7 +11,7 @@ let assertRule;
 try {
   ({ runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml'));
   ({ assertRule } = require('../../helpers/assertRule'));
-} catch (e) {
+} catch {
   // Running outside repo context.
 }
 
