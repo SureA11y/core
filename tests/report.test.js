@@ -585,3 +585,33 @@ test('renderHtmlReport: a result without a target or profile gets no chips for t
   assert.doesNotMatch(report, /<\/b>target</);
   assert.doesNotMatch(report, /<\/b>profile</);
 });
+
+test('renderHtmlReport: cards cap a long selector and summary, the table keeps them whole', () => {
+  const selector = `html > body > ${'div > '.repeat(60)}img`;
+  const summary = `Missing alt attribute on <img>. ${'Context. '.repeat(40)}`.trim();
+  const result = {
+    checksResults: [
+      makeCheckResult({
+        ruleId: 'img-alt-present',
+        outcome: 'fail',
+        occurrences: [{ selector, summary, hint: 'Add an alt attribute.', html: '<img>' }]
+      })
+    ],
+    rulesResults: []
+  };
+  const report = renderHtmlReport(result);
+  const card = report.slice(
+    report.indexOf('<div class="card">'),
+    report.indexOf('<h2>', report.indexOf('<div class="card">'))
+  );
+
+  assert.ok(!card.includes(selector), 'card shows the full selector');
+  assert.match(card, /<code>html &gt; body &gt; (div &gt; )+[^<]*…<\/code>/);
+  assert.match(
+    card,
+    /Missing alt attribute on &lt;img&gt;\. (Context\. )+[^<]*… — Add an alt attribute\./
+  );
+  const data = JSON.parse(report.match(/id="report-data">(.*?)<\/script>/)[1]);
+  assert.equal(data[0].selector, selector);
+  assert.equal(data[0].summary, summary);
+});

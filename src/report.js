@@ -341,7 +341,8 @@ function renderWcagRollup(rulesResults, ui, langAttr = '') {
 }
 
 // Collapse internal whitespace/newlines and cap length for card display --
-// the findings table below shows the untruncated value.
+// the findings table below shows the untruncated selector and summary. The
+// hint is left whole: it is the fix advice, and the table does not repeat it.
 const CARD_SNIPPET_MAX = 220;
 function truncateForCard(s) {
   const collapsed = String(s || '')
@@ -410,8 +411,8 @@ function renderCards(checksResults, ui, langAttr = '') {
       </div>
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
-        <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector || ui.tr('report_card_noSelector'))}</code></div>
-        <div class="card-snippet"${langAttr}>${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
+        <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(representative.selector) : ui.tr('report_card_noSelector'))}</code></div>
+        <div class="card-snippet"${langAttr}>${esc(truncateForCard(representative.summary))}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
       </div>
     </div>`;
