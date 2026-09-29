@@ -17,7 +17,9 @@ Open `report.html` directly from disk. Works alongside any other output mode —
 
 The meta bar under the header carries the rule count, occurrence count, engine tag, schema version, the WCAG version the scan targeted and the `engineOptions.profile` it used (when there was one), and the locale the scan resolved to. Locale fallback is per-string and invisible in the text itself, so a report requested in a language the engine does not carry reads as an ordinary English one — the chip names the requested locale alongside the resolved one when the two differ. See [`I18N.md`](./I18N.md).
 
-The report's own headings and labels are English. Rule titles, summaries and hints come from the scan in whatever locale it resolved to, so when that is not English each of them carries a `lang` attribute with the resolved locale (`lang="ja"`, for instance). A screen reader then reads Japanese or German text with the right voice rather than with English pronunciation rules.
+The whole page is written in the locale the scan resolved to: headings, table columns, outcome and severity names, the headline, the pager, and the date format, all from the `report_*` keys in the same dictionaries as the findings. `<html lang>` names that locale. The outcome codes in the occurrence filters (`fail`, `cantTell`, …) stay as they are, because they are the values a reader searches for in the JSON result.
+
+One case keeps English labels: a scan in a language the engine does not ship, run with a caller-supplied `engineOptions.messages` dictionary. That dictionary is not part of the result, so the report cannot read labels from it; its findings are then marked with their own language (`lang="nl"`, for instance), so a screen reader still reads them with the right voice.
 
 ## Library usage
 

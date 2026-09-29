@@ -99,8 +99,8 @@ test('renderHtmlReport: meta bar reports the locale the scan resolved to', () =>
     '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'de' } }));
 
-  assert.match(report, /<b>de<\/b>locale/);
-  assert.doesNotMatch(report, /requested/);
+  assert.match(report, /<b>de<\/b>Sprache/);
+  assert.doesNotMatch(report, /angefordert/);
 });
 
 test('renderHtmlReport: meta bar names the requested locale when it fell back', () => {
@@ -111,17 +111,54 @@ test('renderHtmlReport: meta bar names the requested locale when it fell back', 
   assert.match(report, /<b>en<\/b>locale \(requested ko\)/);
 });
 
-test('renderHtmlReport: localized rule text is marked with the scan language', () => {
+test('renderHtmlReport: a report for a shipped locale is written entirely in that language', () => {
   const html =
-    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"><img src="y.png"></body></html>';
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } }));
 
+  assert.match(report, /<html lang="ja">/);
+  assert.match(report, /<h2>確認が必要な項目<\/h2>/);
+  assert.match(report, /<b>ja<\/b>ロケール/);
+  assert.match(report, /\(不合格、重大度: 重大\)/);
+  assert.match(report, /<div class="card-snippet">&lt;img&gt; 要素に alt 属性がありません。/);
+  assert.match(report, /var CONTENT_LANG = "";/);
+
+  // Every label of the English page, none of which may survive.
+  for (const english of [
+    'Worth reviewing',
+    'WCAG rollup',
+    'rules run',
+    'total occurrences',
+    'schema version',
+    'Selector:',
+    'Scorecard',
+    'Needs review',
+    'applicable checks',
+    'Prev',
+    'No matching occurrences',
+    'Contributing rules',
+    'surea11y scan report'
+  ]) {
+    assert.ok(!report.includes(english), `English label left in a Japanese report: ${english}`);
+  }
+});
+
+test('renderHtmlReport: a dictionary supplied at scan time keeps English labels and tags the findings', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const result = runa11yCoreOnHtml(html, {
+    engineOptions: {
+      locale: 'nl',
+      messages: { nl: { img_altPresent_summary_fail: 'Het alt-attribuut ontbreekt op <img>.' } }
+    }
+  });
+  const report = renderHtmlReport(result);
+
+  assert.equal(result.engine.locale.resolved, 'nl');
   assert.match(report, /<html lang="en">/);
-  assert.match(
-    report,
-    /<div class="card-snippet" lang="ja">&lt;img&gt; 要素に alt 属性がありません。/
-  );
-  assert.match(report, /var CONTENT_LANG = " lang=\\"ja\\"";/);
+  assert.match(report, /<h2>Worth reviewing<\/h2>/);
+  assert.match(report, /<div class="card-snippet" lang="nl">Het alt-attribuut ontbreekt/);
+  assert.match(report, /var CONTENT_LANG = " lang=\\"nl\\"";/);
 });
 
 test('renderHtmlReport: an English scan adds no lang attributes to rule text', () => {
