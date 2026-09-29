@@ -86,6 +86,31 @@ test(`${RULE_ID}: still fails for a normal-sized iframe with an explicit width/h
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: the redirect finding is translated`, () => {
+  const dom = createDom(
+    `<!doctype html><html><body>
+      <iframe id="a" tabindex="-1"></iframe>
+      <button id="outer-target">Outer target</button>
+    </body></html>`
+  );
+  const contentDoc = dom.window.document.getElementById('a').contentDocument;
+  contentDoc.body.innerHTML = '<button id="sentinel">Sentinel</button>';
+  contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+    contentDoc.defaultView.setTimeout(() => {
+      dom.window.document.getElementById('outer-target').focus();
+    }, 0);
+  });
+
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { locale: 'ja' },
+    entryPointParity: false
+  });
+  const occ = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'iframeFocusableContent_summary_cantTell_redirect');
+  assert.match(occ.summary, /^この <iframe> には tabindex="-1"/);
+});
+
 test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirects focus`, () => {
   const dom = createDom(
     `<!doctype html><html><body>
