@@ -120,7 +120,7 @@ function rollupComposites({ atomicResults, composites, scanLevel, runOnly }) {
     }
 
     return out;
-  } catch (e) {
+  } catch {
     // no-throws guarantee
     return [];
   }

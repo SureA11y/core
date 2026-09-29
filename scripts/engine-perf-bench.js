@@ -239,7 +239,7 @@ function workerMain() {
   function gcIfAvailable() {
     try {
       if (typeof global.gc === 'function') global.gc();
-    } catch (_) {}
+    } catch {}
   }
 
   function hrMs(startNs) {

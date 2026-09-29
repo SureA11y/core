@@ -56,19 +56,6 @@ function getOccurrences(ruleRes) {
   return [];
 }
 
-function getRuleResult(result, ruleId) {
-  const buckets = ['violations', 'passes', 'incomplete', 'inapplicable'];
-
-  for (const bucket of buckets) {
-    if (Array.isArray(result[bucket])) {
-      const found = result[bucket].find((r) => r.ruleId === ruleId || r.id === ruleId);
-      if (found) return found;
-    }
-  }
-
-  return null;
-}
-
 test('label-in-name: no applicable elements => notApplicable', () => {
   const html = `
 <!doctype html><html><body>

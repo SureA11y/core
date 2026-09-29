@@ -13,7 +13,7 @@ let assertRule;
 try {
   ({ runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml'));
   ({ assertRule } = require('../../helpers/assertRule'));
-} catch (e) {
+} catch {
   // Repo layout fallback
 }
 

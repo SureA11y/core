@@ -98,7 +98,7 @@ function runInPage(ctx) {
     try {
       if (!el) return '';
       return el.textContent || '';
-    } catch (e) {
+    } catch {
       return '';
     }
   }

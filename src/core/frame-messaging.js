@@ -52,7 +52,7 @@ function installFrameRpcListener(win, channel) {
             { __a11ycore: true, channel: channel, requestId: data.requestId, type: 'pong' },
             '*'
           );
-      } catch (e) {
+      } catch {
         /* target gone/closed -- nothing to do */
       }
       return;
@@ -72,7 +72,7 @@ function installFrameRpcListener(win, channel) {
       let embedder;
       try {
         embedder = win.parent && win.parent !== win ? win.parent : null;
-      } catch (e) {
+      } catch {
         embedder = null;
       }
       if (!embedder || event.source !== embedder) return;
@@ -93,7 +93,7 @@ function installFrameRpcListener(win, channel) {
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         })
@@ -110,7 +110,7 @@ function installFrameRpcListener(win, channel) {
                 },
                 '*'
               );
-          } catch (e) {
+          } catch {
             /* target gone/closed */
           }
         });
@@ -192,7 +192,7 @@ function pingFrame(win, targetWindow, pingWaitTime) {
         { __a11ycore: true, channel: FRAME_RPC_CHANNEL, requestId: requestId, type: 'ping' },
         '*'
       );
-    } catch (e) {
+    } catch {
       if (!settled) {
         settled = true;
         clearTimeout(timeout);

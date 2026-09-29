@@ -38,7 +38,7 @@ function findChildFrameElements(roots) {
     let matches;
     try {
       matches = root.querySelectorAll('iframe, frame');
-    } catch (e) {
+    } catch {
       matches = [];
     }
     for (const el of matches) {
@@ -56,7 +56,7 @@ function getFrameElementUrl(el) {
     if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
       return el.contentWindow.location.href;
     }
-  } catch (e) {
+  } catch {
     // Cross-origin: reading contentWindow.location.href itself throws. Fall
     // back to the authored src attribute (always readable, any origin).
   }
@@ -96,7 +96,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
     let targetWindow = null;
     try {
       targetWindow = el.contentWindow || null;
-    } catch (e) {
+    } catch {
       targetWindow = null;
     }
     if (!targetWindow) {

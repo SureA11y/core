@@ -3758,7 +3758,7 @@ function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
-  function getFocusableInfo(el, _ctx, opts) {
+  function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
       return { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
@@ -3780,7 +3780,7 @@ function createDomHelpers(opts) {
     };
   }
 
-  function getVisibilityHintsInfo(el, _ctx, opts) {
+  function getVisibilityHintsInfo(el, _ctx, _opts) {
     // Deterministic, style-only visibility hints for triage.
     // Does NOT decide eligibility; checks decide outcomes.
     // Uses computedStyle() which is already scope-cached.
@@ -4530,7 +4530,7 @@ function createDomHelpers(opts) {
     return out;
   }
 
-  function getLabelMethod(el, _ctx, opts) {
+  function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
 

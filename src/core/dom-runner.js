@@ -376,7 +376,7 @@ function rollupCompositeResults(
         normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
       );
     }
-  } catch (e) {
+  } catch {
     // no-throws: omit rulesResults if anything goes wrong
   }
 
@@ -488,7 +488,7 @@ function runCore(
       ) {
         return performance.now();
       }
-    } catch (e) {}
+    } catch {}
     return Date.now();
   }
 
@@ -540,7 +540,7 @@ function runCore(
         : null;
     probes = rawProbes ? sanitizeProbeValue(rawProbes, 6) : null;
     if (!probes || typeof probes !== 'object' || Array.isArray(probes)) probes = null;
-  } catch (e) {
+  } catch {
     probes = null;
   }
 
@@ -570,7 +570,7 @@ function runCore(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch (e) {
+        } catch {
           return null;
         }
       }
@@ -642,7 +642,7 @@ function runCore(
           '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
             overriddenBuiltinIds.join(', ')
         );
-      } catch (e) {}
+      } catch {}
     }
   }
 
@@ -914,7 +914,7 @@ function runCore(
     ) {
       perfStats = sharedHelpers.getPerfStats();
     }
-  } catch (e) {
+  } catch {
     perfStats = null;
   }
 

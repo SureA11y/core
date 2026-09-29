@@ -106,7 +106,7 @@ function runa11yCoreOnHtml(
         result._debug = result._debug || {};
         result._debug.perf = dom.window.__a11ycorePerfStatsSnapshot;
       }
-    } catch (_) {}
+    } catch {}
     // Attach per-rule timings if available and enabled
     try {
       if (
@@ -117,10 +117,10 @@ function runa11yCoreOnHtml(
       ) {
         result.ruleTimings = dom.window.__a11ycoreRuleTimingsSnapshot;
       }
-    } catch (_) {}
+    } catch {}
     try {
       dom.window && dom.window.close && dom.window.close();
-    } catch (_) {}
+    } catch {}
   }
 }
 
