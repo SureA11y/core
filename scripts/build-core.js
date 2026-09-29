@@ -1396,7 +1396,13 @@ module.exports = {
   runa11yCoreInPage,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
-  __internal: { normalizeRuleResult }
+  // translate/resolveLocale let src/report.js label its own page from the
+  // same dictionaries as the findings, without a second table to maintain.
+  __internal: {
+    normalizeRuleResult,
+    translate: (key, fallback, params, locale) => t(key, fallback, params, { locale }),
+    resolveLocale: (locale) => resolveLocale({ locale })
+  }
 };
 `;
 }

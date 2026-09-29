@@ -23,14 +23,74 @@ const STATUS = {
 // fail first: a QA tester scanning a report wants violations up front,
 // not passes.
 const OUTCOME_ORDER = ['fail', 'cantTell', 'pass', 'notApplicable'];
-const OUTCOME_INFO = {
-  fail: { label: 'Fail', status: 'serious', defaultOn: true },
-  cantTell: { label: 'Needs review', status: 'warning', defaultOn: true },
-  pass: { label: 'Pass', status: 'good', defaultOn: false },
-  notApplicable: { label: 'Not applicable', status: 'neutral', defaultOn: false }
+const OUTCOME_STATUS = {
+  fail: { status: 'serious', defaultOn: true },
+  cantTell: { status: 'warning', defaultOn: true },
+  pass: { status: 'good', defaultOn: false },
+  notApplicable: { status: 'neutral', defaultOn: false }
 };
-for (const code of OUTCOME_ORDER) {
-  Object.assign(OUTCOME_INFO[code], STATUS[OUTCOME_INFO[code].status]);
+
+// Every word on the page comes from the engine's dictionaries (report_*
+// keys), so a report reads in the language its scan resolved to and a new
+// locale needs no change here. Loaded on first use: rendering a saved result
+// should not cost a scan's worth of setup until a report is asked for.
+let translator = null;
+function getTranslator() {
+  if (!translator) translator = require('./core.js').__internal;
+  return translator;
+}
+
+// The page speaks the locale the scan resolved to when the engine carries
+// it. A dictionary the caller supplied at scan time is not in the result, so
+// such a report falls back to English labels and marks the findings with
+// their own language instead.
+function createUi(engine) {
+  const core = getTranslator();
+  const locale = engine && engine.locale;
+  const contentLocale =
+    locale && typeof locale.resolved === 'string' && locale.resolved ? locale.resolved : 'en';
+  const uiLocale = core.resolveLocale(contentLocale).resolved;
+
+  const tr = (key, params) => core.translate(key, '', params || null, uiLocale);
+
+  let numberFormat;
+  try {
+    numberFormat = new Intl.NumberFormat(uiLocale);
+  } catch {
+    numberFormat = new Intl.NumberFormat('en-US');
+  }
+  const num = (n) => numberFormat.format(Number(n) || 0);
+
+  // Escapes the translated sentence, then puts the numbers back in bold.
+  // Dictionaries hold plain text; markup never goes through them.
+  function trStrong(key, params) {
+    const marked = {};
+    const values = [];
+    for (const name of Object.keys(params)) {
+      marked[name] = `\uE000${values.length}\uE000`;
+      values.push(params[name]);
+    }
+    return esc(tr(key, marked)).replace(
+      /\uE000(\d+)\uE000/g,
+      (m, i) => `<strong>${num(values[Number(i)])}</strong>`
+    );
+  }
+
+  const outcomeInfo = {};
+  for (const code of OUTCOME_ORDER) {
+    outcomeInfo[code] = {
+      label: tr(`report_outcome_${code}`),
+      defaultOn: OUTCOME_STATUS[code].defaultOn,
+      ...STATUS[OUTCOME_STATUS[code].status]
+    };
+  }
+
+  const severity = (s) => {
+    const label = typeof s === 'string' ? tr(`report_severity_${s}`) : '';
+    return label || String(s || '');
+  };
+
+  return { tr, trStrong, num, outcomeInfo, severity, uiLocale, contentLocale };
 }
 
 function esc(s) {
@@ -93,35 +153,43 @@ function isWcagCriterion(m) {
 
 // What the scan was tested against. A result from an engine older than the
 // WCAG-version target carries neither field and gets no chips.
-function renderTargetChips(engine) {
+function renderTargetChips(engine, ui) {
   if (!engine) return '';
   const chips = [];
-  if (engine.wcagVersion) chips.push(`<div><b>WCAG ${esc(engine.wcagVersion)}</b>target</div>`);
-  if (engine.profile) chips.push(`<div><b>${esc(engine.profile)}</b>profile</div>`);
+  if (engine.wcagVersion)
+    chips.push(
+      `<div><b>WCAG ${esc(engine.wcagVersion)}</b>${esc(ui.tr('report_meta_target'))}</div>`
+    );
+  if (engine.profile)
+    chips.push(`<div><b>${esc(engine.profile)}</b>${esc(ui.tr('report_meta_profile'))}</div>`);
   return chips.join('\n  ');
 }
 
 // Locale fallback is per-string and silent in the text itself, so a report
 // generated in a locale the engine does not carry reads as a normal English
 // one. A result from an older engine has no engine.locale and gets no chip.
-function renderLocaleChip(engine) {
+function renderLocaleChip(engine, ui) {
   const locale = engine && engine.locale;
   if (!locale || typeof locale.resolved !== 'string' || !locale.resolved) return '';
 
   const fellBack = locale.requested !== locale.resolved;
-  const label = fellBack ? `locale (requested ${esc(locale.requested)})` : 'locale';
+  const label = esc(
+    fellBack
+      ? ui.tr('report_meta_localeRequested', { requested: locale.requested })
+      : ui.tr('report_meta_locale')
+  );
 
   return `<div><b>${esc(locale.resolved)}</b>${label}</div>`;
 }
 
-// The report's own labels are English, but rule titles, summaries and hints
-// arrive in the scan's locale. Marking those parts with their language lets a
-// screen reader switch voice for them instead of reading Japanese or German
-// with English pronunciation rules (WCAG 3.1.2).
-function contentLangAttr(engine) {
-  const locale = engine && engine.locale;
-  const lang = locale && typeof locale.resolved === 'string' ? locale.resolved : '';
-  if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/.test(lang) || lang.toLowerCase() === 'en') return '';
+// Rule titles, summaries and hints arrive in the scan's locale. When the
+// page's own labels are in a different language (a caller-supplied
+// dictionary the engine does not carry), those parts are marked with their
+// language so a screen reader switches voice for them (WCAG 3.1.2).
+const LANG_TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+function contentLangAttr(ui) {
+  const lang = ui.contentLocale;
+  if (!LANG_TAG.test(lang) || lang.toLowerCase() === ui.uiLocale.toLowerCase()) return '';
   return ` lang="${esc(lang)}"`;
 }
 
@@ -129,7 +197,8 @@ function contentLangAttr(engine) {
 // icon+label+count (status color is never the only signal) -- the first
 // thing a reader sees; exhaustive detail lives in the collapsed
 // "full technical data" section further down.
-function renderHeroBar(byOutcome) {
+function renderHeroBar(byOutcome, ui) {
+  const OUTCOME_INFO = ui.outcomeInfo;
   const total = OUTCOME_ORDER.reduce((sum, c) => sum + byOutcome[c], 0) || 1;
   const applicable = byOutcome.pass + byOutcome.fail + byOutcome.cantTell;
 
@@ -138,7 +207,7 @@ function renderHeroBar(byOutcome) {
       const n = byOutcome[c];
       const pct = (n / total) * 100;
       const info = OUTCOME_INFO[c];
-      return `<div class="hero-bar-seg" style="width:${pct}%; background:${info.color}" title="${esc(info.label)}: ${n.toLocaleString()} (${pct.toFixed(1)}%)"></div>`;
+      return `<div class="hero-bar-seg" style="width:${pct}%; background:${info.color}" title="${esc(info.label)}: ${ui.num(n)} (${pct.toFixed(1)}%)"></div>`;
     })
     .join('');
 
@@ -148,19 +217,26 @@ function renderHeroBar(byOutcome) {
     return `<div class="hero-legend-item">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
         <span class="hero-legend-label">${esc(info.label)}</span>
-        <span class="hero-legend-count">${n.toLocaleString()} (${fmtPct(n, total)})</span>
+        <span class="hero-legend-count">${ui.num(n)} (${fmtPct(n, total)})</span>
       </div>`;
   }).join('\n');
 
   let headline;
   if (byOutcome.fail > 0) {
-    headline = `<strong>${byOutcome.pass.toLocaleString()}</strong> of <strong>${applicable.toLocaleString()}</strong> applicable checks passed. <strong>${byOutcome.fail.toLocaleString()}</strong> failure${byOutcome.fail === 1 ? '' : 's'} need${byOutcome.fail === 1 ? 's' : ''} attention below.`;
+    headline = ui.trStrong(
+      byOutcome.fail === 1 ? 'report_hero_failures_one' : 'report_hero_failures_other',
+      { passed: byOutcome.pass, applicable, failed: byOutcome.fail }
+    );
   } else if (byOutcome.cantTell > 0) {
-    headline = `<strong>${byOutcome.pass.toLocaleString()}</strong> of <strong>${applicable.toLocaleString()}</strong> applicable checks passed, with <strong>${byOutcome.cantTell.toLocaleString()}</strong> needing manual review.`;
+    headline = ui.trStrong('report_hero_review', {
+      passed: byOutcome.pass,
+      applicable,
+      review: byOutcome.cantTell
+    });
   } else if (applicable > 0) {
-    headline = `All <strong>${applicable.toLocaleString()}</strong> applicable checks passed.`;
+    headline = ui.trStrong('report_hero_allPassed', { applicable });
   } else {
-    headline = 'No applicable checks ran for this scan.';
+    headline = esc(ui.tr('report_hero_none'));
   }
 
   return `<div class="hero">
@@ -170,13 +246,14 @@ function renderHeroBar(byOutcome) {
   </div>`;
 }
 
-function renderScorecard(byOutcome) {
+function renderScorecard(byOutcome, ui) {
+  const OUTCOME_INFO = ui.outcomeInfo;
   const total = OUTCOME_ORDER.reduce((sum, c) => sum + byOutcome[c], 0);
   const tiles = OUTCOME_ORDER.map((c) => {
     const n = byOutcome[c];
     const info = OUTCOME_INFO[c];
     return `<div class="tile" style="border-color:${info.color}; background:${info.bg}">
-      <div class="tile-num" style="color:${info.color}">${n.toLocaleString()}</div>
+      <div class="tile-num" style="color:${info.color}">${ui.num(n)}</div>
       <div class="tile-pct">${fmtPct(n, total)}</div>
       <div class="tile-label">${esc(info.label)}</div>
     </div>`;
@@ -188,9 +265,10 @@ function renderScorecard(byOutcome) {
 // entry per Success Criterion, docs/WCAG_CONFORMANCE.md), not an invented
 // grouping. Grouped by conformance level (A / AA / AAA) since that's the
 // axis a compliance-minded reader actually cares about.
-function renderWcagRollup(rulesResults, langAttr = '') {
+function renderWcagRollup(rulesResults, ui, langAttr = '') {
+  const OUTCOME_INFO = ui.outcomeInfo;
   if (!Array.isArray(rulesResults) || !rulesResults.length) {
-    return '<p class="note">No WCAG composite rollups available for this scan (composite rules were excluded via runOnly/engineOptions).</p>';
+    return `<p class="note">${esc(ui.tr('report_rollup_none'))}</p>`;
   }
 
   const byLevel = { A: [], AA: [], AAA: [], other: [] };
@@ -217,7 +295,9 @@ function renderWcagRollup(rulesResults, langAttr = '') {
           const metrics = (rule.data && rule.data.details && rule.data.details.metrics) || {};
           const checksIds = (rule.data && rule.data.details && rule.data.details.checksIds) || [];
           const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
-          const scLabel = mapping ? `WCAG ${esc(mapping.requirement)}` : 'WCAG (unmapped)';
+          const scLabel = mapping
+            ? `WCAG ${esc(mapping.requirement)}`
+            : esc(ui.tr('report_rollup_unmapped'));
           // Clause numbers match across EN 301 549 versions, so one label each.
           const enClauses = Array.from(
             new Set(
@@ -229,7 +309,12 @@ function renderWcagRollup(rulesResults, langAttr = '') {
           const enLabel = enClauses.length
             ? `<br><span class="note">EN 301 549 ${enClauses.map(esc).join(', ')}</span>`
             : '';
-          const metricsLabel = `${metrics.passCount || 0} pass / ${metrics.failCount || 0} fail / ${metrics.cantTellCount || 0} needs review / ${metrics.notApplicableCount || 0} n/a`;
+          const metricsLabel = ui.tr('report_rollup_breakdown', {
+            pass: ui.num(metrics.passCount),
+            fail: ui.num(metrics.failCount),
+            review: ui.num(metrics.cantTellCount),
+            na: ui.num(metrics.notApplicableCount)
+          });
           return `<tr>
             <td class="sc-cell">${scLabel}${enLabel}</td>
             <td${rule.title ? langAttr : ''}>${esc(rule.title || rule.ruleId)}</td>
@@ -240,9 +325,13 @@ function renderWcagRollup(rulesResults, langAttr = '') {
         })
         .join('\n');
 
-      return `<h3 class="wcag-level-heading">Level ${level === 'other' ? '(unmapped)' : level}</h3>
+      const levelHeading =
+        level === 'other'
+          ? ui.tr('report_rollup_levelUnmapped')
+          : ui.tr('report_rollup_level', { level });
+      return `<h3 class="wcag-level-heading">${esc(levelHeading)}</h3>
       <table class="wcag-table">
-        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <thead><tr><th>${esc(ui.tr('report_rollup_col_sc'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
     })
@@ -267,7 +356,8 @@ function truncateForCard(s) {
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
 
-function renderCards(checksResults, langAttr = '') {
+function renderCards(checksResults, ui, langAttr = '') {
+  const OUTCOME_INFO = ui.outcomeInfo;
   const withIssues = checksResults.filter(
     (r) =>
       Array.isArray(r.occurrences) &&
@@ -277,7 +367,7 @@ function renderCards(checksResults, langAttr = '') {
       })
   );
   if (!withIssues.length) {
-    return '<p class="note">No fail/cantTell rules with occurrences on this scan.</p>';
+    return `<p class="note">${esc(ui.tr('report_cards_none'))}</p>`;
   }
 
   const sorted = withIssues.slice().sort((a, b) => {
@@ -310,19 +400,19 @@ function renderCards(checksResults, langAttr = '') {
       const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
       const countLabel =
         r.occurrences.length > 1
-          ? ` <span class="card-count">× ${r.occurrences.length.toLocaleString()}${hasMixedOutcomes ? ` (${occurrenceCounts.fail.toLocaleString()} fail / ${occurrenceCounts.cantTell.toLocaleString()} needs review)` : ''}</span>`
+          ? ` <span class="card-count">× ${ui.num(r.occurrences.length)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
           : '';
 
       return `<div class="card">
       <div class="card-head">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
-        <span class="card-title"><strong>${esc(r.ruleId)}</strong> (${esc(info.label)}, ${esc(r.severity)})${countLabel}</span>
+        <span class="card-title"><strong>${esc(r.ruleId)}</strong> ${esc(ui.tr('report_card_status', { outcome: info.label, severity: ui.severity(r.severity) }))}${countLabel}</span>
       </div>
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
-        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>${esc(representative.selector || '(none)')}</code></div>
+        <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector || ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet"${langAttr}>${esc(representative.summary)}${representative.hint ? ` — ${esc(representative.hint)}` : ''}</div>
-        ${r.occurrences.length > 1 ? `<p class="card-note">Selector/summary above are from one representative occurrence; ${r.occurrences.length.toLocaleString()} total on this rule.</p>` : ''}
+        ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
       </div>
     </div>`;
     })
@@ -330,7 +420,7 @@ function renderCards(checksResults, langAttr = '') {
 
   const overflow =
     sorted.length > MAX_CARDS
-      ? `<p class="note">Showing the ${MAX_CARDS} highest-priority rules of ${sorted.length.toLocaleString()} with issues. See the full technical data below for the rest.</p>`
+      ? `<p class="note">${esc(ui.tr('report_cards_overflow', { shown: ui.num(MAX_CARDS), total: ui.num(sorted.length) }))}</p>`
       : '';
 
   return `<div class="cards">${cards}</div>${overflow}`;
@@ -339,7 +429,7 @@ function renderCards(checksResults, langAttr = '') {
 // Flatten every occurrence across every rule into one row per occurrence --
 // the searchable/filterable/paginated detail view. Rules with zero
 // occurrences (pass/notApplicable) have nothing to show at this granularity.
-function flattenOccurrences(checksResults) {
+function flattenOccurrences(checksResults, ui) {
   const rows = [];
   for (const r of checksResults) {
     if (!Array.isArray(r.occurrences)) continue;
@@ -349,6 +439,7 @@ function flattenOccurrences(checksResults) {
         ruleId: r.ruleId,
         outcome: occurrenceOutcome || r.outcome,
         severity: r.severity,
+        severityLabel: ui.severity(r.severity),
         selector: occ.selector || '',
         html: occ.html || '',
         summary: occ.summary || '',
@@ -363,18 +454,35 @@ function renderHtmlReport(result, options = {}) {
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const rulesResults = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
   const byOutcome = countByOutcome(checksResults);
-  const generatedAtLabel = new Date().toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'medium'
-  });
-  const title = (options && options.title) || 'surea11y scan report';
+  const engine = result && result.engine;
+  const ui = createUi(engine);
+  const OUTCOME_INFO = ui.outcomeInfo;
+  let generatedAtLabel;
+  try {
+    generatedAtLabel = new Date().toLocaleString(ui.uiLocale, {
+      dateStyle: 'medium',
+      timeStyle: 'medium'
+    });
+  } catch {
+    generatedAtLabel = new Date().toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'medium'
+    });
+  }
+  const title = (options && options.title) || ui.tr('report_title_default');
 
   const defaultOnList = OUTCOME_ORDER.filter((c) => OUTCOME_INFO[c].defaultOn);
-  const rows = flattenOccurrences(checksResults);
-  const contentLang = contentLangAttr(result && result.engine);
+  const rows = flattenOccurrences(checksResults, ui);
+  const contentLang = contentLangAttr(ui);
+  const pageLang = LANG_TAG.test(ui.uiLocale) ? ui.uiLocale : 'en';
+  // Strings the in-page script needs; it cannot call the translator.
+  const clientText = {
+    none: ui.tr('report_pager_none'),
+    info: ui.tr('report_pager_info')
+  };
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${esc(pageLang)}">
 <head>
 <meta charset="utf-8">
 <title>${esc(title)} — ${esc(generatedAtLabel)}</title>
@@ -457,54 +565,54 @@ function renderHtmlReport(result, options = {}) {
 
 <header>
   <h1>${esc(title)}</h1>
-  <div class="sub">${esc(result && result.url ? result.url : '(no url)')} — generated ${esc(generatedAtLabel)}</div>
+  <div class="sub">${esc(result && result.url ? result.url : ui.tr('report_noUrl'))} — ${esc(ui.tr('report_generated', { date: generatedAtLabel }))}</div>
 </header>
 
 <div class="meta-bar">
-  <div><b>${checksResults.length}</b>rules run</div>
-  <div><b>${rows.length}</b>total occurrences</div>
-  <div><b>${esc((result && result.engine && result.engine.tag) || '?')}</b>engine</div>
-  <div><b>${esc((result && result.engine && result.engine.schemaVersion) || '?')}</b>schema version</div>
-  ${renderTargetChips(result && result.engine)}
-  ${renderLocaleChip(result && result.engine)}
+  <div><b>${ui.num(checksResults.length)}</b>${esc(ui.tr('report_meta_rulesRun'))}</div>
+  <div><b>${ui.num(rows.length)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
+  <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
+  <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
+  ${renderTargetChips(engine, ui)}
+  ${renderLocaleChip(engine, ui)}
 </div>
 
 <main>
-  ${renderHeroBar(byOutcome)}
+  ${renderHeroBar(byOutcome, ui)}
 
-  <h2>Worth reviewing</h2>
-  ${renderCards(checksResults, contentLang)}
+  <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>
+  ${renderCards(checksResults, ui, contentLang)}
 
-  <h2>WCAG rollup</h2>
-  ${renderWcagRollup(rulesResults, contentLang)}
+  <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
+  ${renderWcagRollup(rulesResults, ui, contentLang)}
 
   <details class="tech-details">
-    <summary>Full technical data — scorecard, searchable occurrence browser</summary>
+    <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">
-      <h2>Scorecard</h2>
-      ${renderScorecard(byOutcome)}
+      <h2>${esc(ui.tr('report_heading_scorecard'))}</h2>
+      ${renderScorecard(byOutcome, ui)}
 
-      <h2>Occurrences</h2>
+      <h2>${esc(ui.tr('report_heading_occurrences'))}</h2>
       <div class="filters" id="filters"></div>
-      <input type="search" id="search" placeholder="Search rule id / selector / html…" style="margin-bottom:10px; padding:6px 10px; border:1px solid #ccc; border-radius:5px; font-size:13px; width:100%; max-width:480px;">
+      <input type="search" id="search" aria-label="${esc(ui.tr('report_search_placeholder'))}" placeholder="${esc(ui.tr('report_search_placeholder'))}" style="margin-bottom:10px; padding:6px 10px; border:1px solid #ccc; border-radius:5px; font-size:13px; width:100%; max-width:480px;">
       <div style="overflow-x:auto;">
         <table class="findings-table" id="findings-table">
           <thead>
             <tr>
-              <th>Rule</th>
-              <th>Outcome</th>
-              <th>Severity</th>
-              <th>Selector</th>
-              <th>Summary</th>
+              <th>${esc(ui.tr('report_col_rule'))}</th>
+              <th>${esc(ui.tr('report_col_outcome'))}</th>
+              <th>${esc(ui.tr('report_col_severity'))}</th>
+              <th>${esc(ui.tr('report_col_selector'))}</th>
+              <th>${esc(ui.tr('report_col_summary'))}</th>
             </tr>
           </thead>
           <tbody id="findings-body"></tbody>
         </table>
       </div>
       <div class="pager">
-        <button id="prev-page">&larr; Prev</button>
+        <button id="prev-page">&larr; ${esc(ui.tr('report_pager_prev'))}</button>
         <span id="page-info"></span>
-        <button id="next-page">Next &rarr;</button>
+        <button id="next-page">${esc(ui.tr('report_pager_next'))} &rarr;</button>
       </div>
     </div>
   </details>
@@ -520,6 +628,13 @@ function renderHtmlReport(result, options = {}) {
 
   var PAGE_SIZE = 100;
   var CONTENT_LANG = ${jsonForScript(contentLang)};
+  var TEXT = ${jsonForScript(clientText)};
+  var numberFormat = new Intl.NumberFormat(${jsonForScript(ui.uiLocale)});
+  function fill(template, values) {
+    return template.replace(/\\{\\{(\\w+)\\}\\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m;
+    });
+  }
   var page = 0;
   var active = {};
   DEFAULT_ON.forEach(function (c) { active[c] = true; });
@@ -574,15 +689,20 @@ function renderHtmlReport(result, options = {}) {
       return '<tr>' +
         '<td class="snippet">' + esc(r.ruleId) + '</td>' +
         '<td>' + chip + '</td>' +
-        '<td>' + esc(r.severity) + '</td>' +
+        '<td>' + esc(r.severityLabel) + '</td>' +
         '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
         '<td class="snippet"' + CONTENT_LANG + '>' + esc(r.summary) + '</td>' +
         '</tr>';
     }).join('');
 
     pageInfoEl.textContent = filtered.length === 0
-      ? 'No matching occurrences'
-      : ('Page ' + (page + 1) + ' / ' + totalPages + '  (' + filtered.length.toLocaleString() + ' matching, ' + rows.length.toLocaleString() + ' total)');
+      ? TEXT.none
+      : fill(TEXT.info, {
+          page: numberFormat.format(page + 1),
+          pages: numberFormat.format(totalPages),
+          matching: numberFormat.format(filtered.length),
+          total: numberFormat.format(rows.length)
+        });
     prevBtn.disabled = page <= 0;
     nextBtn.disabled = page >= totalPages - 1;
   }
