@@ -108,7 +108,7 @@ test('renderJunitReport: a pass is a bare testcase', () => {
 test('renderJunitReport: cantTell is skipped by default, never a failure', () => {
   const doc = parse(renderJunitReport(makeScanResult([check('m', 'cantTell', [wcag('2.4.3')])])));
   const skipped = doc.getElementsByTagName('skipped')[0];
-  assert.strictEqual(attr(skipped, 'message'), '1 occurrence need manual review');
+  assert.strictEqual(attr(skipped, 'message'), '1 occurrence needs manual review');
   assert.strictEqual(doc.getElementsByTagName('failure').length, 0);
   assert.strictEqual(attr(doc.documentElement, 'skipped'), '1');
   assert.match(doc.getElementsByTagName('system-out')[0].textContent, /Needs manual review:/);
@@ -123,6 +123,31 @@ test('renderJunitReport: cantTellAs "failure" turns cantTell into a failure of i
   const failure = doc.getElementsByTagName('failure')[0];
   assert.strictEqual(attr(failure, 'type'), 'cantTell');
   assert.strictEqual(attr(doc.documentElement, 'failures'), '1');
+});
+
+test('renderJunitReport: the manual-review message agrees with the count', () => {
+  const two = check('m', 'cantTell', [wcag('2.4.3')], {
+    occurrences: [makeOccurrence(), makeOccurrence()]
+  });
+  const skipped = parse(renderJunitReport(makeScanResult([two]))).getElementsByTagName(
+    'skipped'
+  )[0];
+  assert.strictEqual(attr(skipped, 'message'), '2 occurrences need manual review');
+
+  for (const [occurrences, expected] of [
+    [[makeOccurrence()], '1 occurrence needs manual review'],
+    [[makeOccurrence(), makeOccurrence()], '2 occurrences need manual review']
+  ]) {
+    const doc = parse(
+      renderJunitReport(
+        makeScanResult([check('m', 'cantTell', [wcag('2.4.3')], { occurrences })]),
+        {
+          cantTellAs: 'failure'
+        }
+      )
+    );
+    assert.strictEqual(attr(doc.getElementsByTagName('failure')[0], 'message'), expected);
+  }
 });
 
 test('renderJunitReport: a cantTell rule with no occurrences still reads as needing review', () => {

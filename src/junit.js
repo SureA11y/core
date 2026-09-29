@@ -160,6 +160,10 @@ function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+function needReview(n) {
+  return `${plural(n, 'occurrence')} ${n === 1 ? 'needs' : 'need'} manual review`;
+}
+
 function renderTestcase(entry, classname, indent) {
   const { check, status, failing, undecided, baselined } = entry;
   const open = `${indent}<testcase classname="${xmlText(classname)}" name="${xmlText(check.ruleId)}" time="0"`;
@@ -171,16 +175,13 @@ function renderTestcase(entry, classname, indent) {
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText(failing.map(describeOccurrence).join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
-    const message = undecided.length
-      ? `${plural(undecided.length, 'occurrence')} need manual review`
-      : 'Needs manual review';
+    const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
     inner.push(
       `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText(undecided.map(describeOccurrence).join('\n'))}</failure>`
     );
   } else if (status === 'skipped') {
     const parts = [];
-    if (undecided.length)
-      parts.push(`${plural(undecided.length, 'occurrence')} need manual review`);
+    if (undecided.length) parts.push(needReview(undecided.length));
     else if (check.outcome === 'cantTell' && !baselined) parts.push('Needs manual review');
     if (baselined) parts.push(`${plural(baselined, 'known failure')} recorded in the baseline`);
     inner.push(`${indent}  <skipped message="${xmlText(parts.join('; '))}"/>`);
