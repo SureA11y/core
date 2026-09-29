@@ -48,14 +48,24 @@ function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
-  // Conservative keyword set (deterministic). Includes common EN/FR terms.
-  // Keep this list strict to avoid false positives.
+  // Conservative keyword set (deterministic), matched in every language at
+  // once: a Japanese page may well link an English transcript. Keep this
+  // list strict to avoid false positives.
   const TRANSCRIPT_TOKENS = [
     'transcript',
     'transcription',
     'texte intégral',
     'compte rendu',
-    'verbatim'
+    'verbatim',
+    'transkript',
+    'transkription',
+    'abschrift',
+    'textfassung',
+    'transcripción',
+    'transcripcion',
+    'トランスクリプト',
+    '文字起こし',
+    '書き起こし'
   ];
 
   // Minimum transcript body length to be considered "substantial" when used as evidence.

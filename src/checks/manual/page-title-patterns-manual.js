@@ -244,18 +244,68 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const GENERIC_TITLES = new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']);
+  const GENERIC_TITLES = {
+    en: new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']),
+    de: new Set(['startseite', 'willkommen', 'unbenannt', 'ohne titel', 'seite', 'dokument']),
+    es: new Set([
+      'inicio',
+      'página de inicio',
+      'bienvenido',
+      'bienvenida',
+      'sin título',
+      'página',
+      'documento'
+    ]),
+    fr: new Set(['accueil', "page d'accueil", 'bienvenue', 'sans titre', 'page', 'document']),
+    ja: new Set(['ホーム', 'トップページ', 'トップ', 'ようこそ', '無題', 'ページ', 'ドキュメント'])
+  };
+
+  // The page-specific half of "Brand | Home" in languages other than
+  // English. English keeps its word-boundary patterns below.
+  const TEMPLATE_TOKENS = {
+    de: ['startseite', 'willkommen'],
+    es: ['inicio', 'página de inicio', 'bienvenido', 'bienvenida'],
+    fr: ['accueil', "page d'accueil", 'bienvenue'],
+    ja: ['ホーム', 'トップページ', 'トップ', 'ようこそ']
+  };
+
+  const htmlEl = document.documentElement;
+  const pageLang =
+    htmlEl && htmlEl.getAttribute && htmlEl.getAttribute('lang')
+      ? htmlEl.getAttribute('lang').trim().split('-')[0].toLowerCase()
+      : '';
+  const titleNorm = titleLc.normalize('NFKC').replace(/[\u2018\u2019]/g, "'");
+
+  // Chinese, Japanese and Korean characters each carry roughly a word, so
+  // they count double: 「お問い合わせ」 is a full title in six characters.
+  function effectiveLength(s) {
+    let n = 0;
+    for (const ch of s)
+      n += /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff]/.test(ch) ? 2 : 1;
+    return n;
+  }
 
   // Conservative signals:
   // - very short title (likely non-descriptive)
   // - title is one of a small set of generic titles
-  const isVeryShort = titleText.length > 0 && titleText.length < 8;
-  const isGeneric = GENERIC_TITLES.has(titleLc);
+  const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
+  const isGeneric =
+    GENERIC_TITLES.en.has(titleNorm) ||
+    !!(pageLang && GENERIC_TITLES[pageLang] && GENERIC_TITLES[pageLang].has(titleNorm));
+
+  function isLocalTemplate(title) {
+    const tokens = TEMPLATE_TOKENS[pageLang];
+    if (!tokens) return false;
+    const parts = title.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
+    if (parts.length < 2) return false;
+    return tokens.includes(parts[0]) || tokens.includes(parts[parts.length - 1]);
+  }
 
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
   const templateLike =
     /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText);
+    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText) ||
+    isLocalTemplate(titleNorm);
 
   if (isGeneric || isVeryShort || templateLike) {
     const reasonCode = isGeneric

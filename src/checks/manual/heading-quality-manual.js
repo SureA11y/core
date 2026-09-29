@@ -21,6 +21,11 @@
  *   2", "Section 3"), a filename, or a URL. None of these describe the
  *   topic or purpose of the content they introduce.
  * @implementation-notes
+ * - Phrase lists exist for en, de, es, fr and ja. English is always
+ *   checked; the list for the element's own language (nearest lang
+ *   attribute, across shadow roots) is added on top. Matching every list
+ *   everywhere would flag words that are generic in one language and a
+ *   real name in another ("Suite", "Plus" on an English page).
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), for the
  *   same reason `link-name-quality` is: whether a heading describes the
  *   content that follows it is a reading-comprehension judgment. What is
@@ -52,7 +57,7 @@ const id = 'heading-quality';
 const meta = {
   title: 'Heading text should be descriptive, not a placeholder',
   description:
-    'Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL.',
+    'Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.',
   i18n: {
     titleKey: 'headingQuality_title',
     descriptionKey: 'headingQuality_description'
@@ -81,7 +86,7 @@ function runInPage(ctx) {
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const PLACEHOLDER_HEADING_TEXT = new Set([
+  const PLACEHOLDER_HEADING_TEXT_EN = new Set([
     'heading',
     'header',
     'headline',
@@ -118,8 +123,101 @@ function runInPage(ctx) {
   // A numbered template slot left as authored: "Heading 2", "Section 3",
   // "Chapter #1". The word alone is already in the set above; this catches
   // the same words carrying an index.
-  const NUMBERED_PLACEHOLDER =
-    /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/;
+  // "Inhalt" and "Contenido" are left out: they usually head a table of
+  // contents, which is a real heading.
+  const PLACEHOLDER_HEADING_TEXT = {
+    en: PLACEHOLDER_HEADING_TEXT_EN,
+    de: new Set([
+      'überschrift',
+      'zwischenüberschrift',
+      'titel',
+      'untertitel',
+      'unbenannt',
+      'ohne titel',
+      'abschnitt',
+      'neuer abschnitt',
+      'kapitel',
+      'hauptinhalt',
+      'text',
+      'beispieltext',
+      'blindtext',
+      'platzhalter',
+      'platzhaltertext',
+      'titel hier eingeben',
+      'test',
+      'beispiel',
+      'standard'
+    ]),
+    es: new Set([
+      'encabezado',
+      'título',
+      'subtítulo',
+      'sin título',
+      'sección',
+      'nueva sección',
+      'capítulo',
+      'contenido principal',
+      'texto',
+      'texto de ejemplo',
+      'marcador de posición',
+      'escriba el título aquí',
+      'su título aquí',
+      'por definir',
+      'prueba',
+      'ejemplo',
+      'predeterminado'
+    ]),
+    fr: new Set([
+      'titre',
+      'sous-titre',
+      'sans titre',
+      'section',
+      'nouvelle section',
+      'chapitre',
+      'contenu',
+      'contenu principal',
+      'texte',
+      "texte d'exemple",
+      'espace réservé',
+      'insérer le titre ici',
+      'votre titre ici',
+      'à définir',
+      'test',
+      'exemple',
+      'par défaut'
+    ]),
+    ja: new Set([
+      '見出し',
+      '小見出し',
+      'タイトル',
+      'サブタイトル',
+      '無題',
+      'セクション',
+      '新しいセクション',
+      '章',
+      'コンテンツ',
+      'メインコンテンツ',
+      'テキスト',
+      'サンプルテキスト',
+      'ダミーテキスト',
+      'プレースホルダー',
+      'ここにタイトルを入力',
+      'タイトルを入力',
+      '未定',
+      'テスト',
+      'サンプル'
+    ])
+  };
+
+  // A numbered template slot left as authored: "Heading 2", "Section 3",
+  // "Chapter #1", 「見出し 2」, 「第 1 章」.
+  const NUMBERED_PLACEHOLDER = {
+    en: /^(heading|header|headline|subheading|title|subtitle|section|chapter|part|step)\s*[-#:.]?\s*\d+$/,
+    de: /^(überschrift|titel|abschnitt|kapitel|teil|schritt)\s*[-#:.]?\s*\d+$/,
+    es: /^(encabezado|título|sección|capítulo|parte|paso)\s*[-#:.]?\s*\d+$/,
+    fr: /^(titre|section|chapitre|partie|étape)\s*[-#:.]?\s*\d+$/,
+    ja: /^(?:(見出し|タイトル|セクション|章|ステップ|パート)\s*[-#:.]?\s*\d+|第\s*\d+\s*章)$/
+  };
 
   const FILENAME_LIKE =
     /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
@@ -132,11 +230,34 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // NFKC folds full-width letters and digits (「見出し２」) into ASCII forms.
   function normalize(s) {
-    return normalizeWs(s)
+    return normalizeWs(String(s || '').normalize('NFKC'))
+      .replace(/[\u2018\u2019]/g, "'")
       .toLowerCase()
-      .replace(/[.,;:!?]+$/g, '')
+      .replace(/[.,;:!?。、]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   function getExplicitRoleToken(el) {
@@ -248,8 +369,21 @@ function runInPage(ctx) {
     }
   }
 
-  function classify(normalized) {
-    if (PLACEHOLDER_HEADING_TEXT.has(normalized) || NUMBERED_PLACEHOLDER.test(normalized)) {
+  function isNumberedPlaceholder(normalized, lang) {
+    if (NUMBERED_PLACEHOLDER.en.test(normalized)) return true;
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      NUMBERED_PLACEHOLDER[lang] &&
+      NUMBERED_PLACEHOLDER[lang].test(normalized)
+    );
+  }
+
+  function classify(normalized, lang) {
+    if (
+      inPhraseList(PLACEHOLDER_HEADING_TEXT, normalized, lang) ||
+      isNumberedPlaceholder(normalized, lang)
+    ) {
       return 'PLACEHOLDER_HEADING_TEXT';
     }
     if (URL_LIKE.test(normalized)) return 'URL_LIKE_HEADING';
@@ -282,7 +416,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const reasonCode = classify(normalized);
+    const reasonCode = classify(normalized, primaryLangOf(el));
     if (!reasonCode) continue;
 
     const eligInfo = helpers.getEligibilityInfo

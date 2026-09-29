@@ -27,6 +27,11 @@
  *   billing), and (c) is the whole of the field's programmatic label, not
  *   the visible fragment of a label whose descriptive part is hidden.
  * @implementation-notes
+ * - Phrase lists exist for en, de, es, fr and ja. English is always
+ *   checked; the list for the element's own language (nearest lang
+ *   attribute, across shadow roots) is added on top. Matching every list
+ *   everywhere would flag words that are generic in one language and a
+ *   real name in another ("Suite", "Plus" on an English page).
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). Whether a
  *   label describes its field is a reading judgment: ACT cc0f0a fails
  *   `<label>Menu<input type="text" name="fname"></label>` on the meaning
@@ -66,7 +71,7 @@ const id = 'form-control-label-quality';
 const meta = {
   title: 'Form field labels should be descriptive and distinguishable',
   description:
-    'Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field\'s label with no visible context (heading, legend, or row) telling the two apart.',
+    'Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field\'s label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.',
   i18n: {
     titleKey: 'formControlLabelQuality_title',
     descriptionKey: 'formControlLabelQuality_description'
@@ -95,7 +100,7 @@ function runInPage(ctx) {
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const PLACEHOLDER_LABEL_TEXT = new Set([
+  const PLACEHOLDER_LABEL_TEXT_EN = new Set([
     'label',
     'field',
     'form field',
@@ -116,6 +121,79 @@ function runInPage(ctx) {
     'example',
     'default'
   ]);
+
+  const PLACEHOLDER_LABEL_TEXT = {
+    en: PLACEHOLDER_LABEL_TEXT_EN,
+    de: new Set([
+      'beschriftung',
+      'label',
+      'feld',
+      'formularfeld',
+      'eingabe',
+      'eingabefeld',
+      'text',
+      'textfeld',
+      'text eingeben',
+      'hier eingeben',
+      'wert',
+      'platzhalter',
+      'unbenannt',
+      'test',
+      'beispiel',
+      'standard'
+    ]),
+    es: new Set([
+      'etiqueta',
+      'campo',
+      'campo de formulario',
+      'entrada',
+      'campo de entrada',
+      'texto',
+      'campo de texto',
+      'introduzca texto',
+      'escriba aquí',
+      'valor',
+      'marcador de posición',
+      'sin título',
+      'prueba',
+      'ejemplo',
+      'predeterminado'
+    ]),
+    fr: new Set([
+      'libellé',
+      'étiquette',
+      'champ',
+      'champ de formulaire',
+      'saisie',
+      'champ de saisie',
+      'texte',
+      'champ de texte',
+      'saisir du texte',
+      'saisissez ici',
+      'valeur',
+      'espace réservé',
+      'sans titre',
+      'test',
+      'exemple',
+      'par défaut'
+    ]),
+    ja: new Set([
+      'ラベル',
+      'フィールド',
+      '入力',
+      '入力欄',
+      '入力フィールド',
+      'テキスト',
+      'テキストフィールド',
+      'ここに入力',
+      '値',
+      'プレースホルダー',
+      '無題',
+      '未定',
+      'テスト',
+      'サンプル'
+    ])
+  };
 
   const FIELD_SELECTOR = [
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
@@ -143,11 +221,33 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // NFKC folds full-width forms (「入力：」 ends in a full-width colon).
   function normalize(s) {
-    return normalizeWs(s)
+    return normalizeWs(String(s || '').normalize('NFKC'))
       .toLowerCase()
-      .replace(/[.,;:!?*]+$/g, '')
+      .replace(/[.,;:!?*。、]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   const isDomVisibleEligible =
@@ -475,7 +575,11 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const field of fields) {
-    const isPlaceholder = PLACEHOLDER_LABEL_TEXT.has(field.normalized);
+    const isPlaceholder = inPhraseList(
+      PLACEHOLDER_LABEL_TEXT,
+      field.normalized,
+      primaryLangOf(field.el)
+    );
     const shared = byKey.get(field.key) || [];
     const isDuplicate = shared.length > 1;
     const isPartiallyHidden = field.hiddenParts > 0;

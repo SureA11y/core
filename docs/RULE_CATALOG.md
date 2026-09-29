@@ -796,7 +796,7 @@ Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive st
 
 manual · WCAG 2.4.6 (AA) · confidence medium · default severity minor
 
-Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart.
+Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.
 
 **Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox) that carry a visible programmatic label: a `&lt;label&gt;` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s).
 
@@ -879,7 +879,7 @@ Checks that heading levels increase by at most one at a time in document order.
 
 manual · WCAG 2.4.6 (AA) · confidence medium · default severity minor
 
-Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL.
+Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word ("Heading", "Untitled"), a numbered template slot ("Section 2"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.
 
 **Applies to.** Elements with a heading role (native &lt;h1&gt;-&lt;h6&gt;, or any element with an explicit role="heading") that are included in the accessibility tree and have a non-empty accessible name. A heading with no name at all is `empty-heading`'s concern, not this rule's.
 
@@ -1224,7 +1224,7 @@ Checks that links expose a non-empty accessible name.
 
 manual · WCAG 2.4.4 (A) · confidence medium · default severity minor
 
-Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.
+Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.
 
 **Applies to.** Elements matching `a[href], area[href], [role="link"]` with a non-empty computed accessible name (programmatic first, then "name from content", same two-step resolution as `link-name-present`, same selector too). Links with no name at all are `link-name-present`'s concern, not this rule's.
 

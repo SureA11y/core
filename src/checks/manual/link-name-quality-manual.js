@@ -24,6 +24,11 @@
  *   enclosing list item/table cell/paragraph's own text, or (format
  *   names only) a table's first-row header) naming what it belongs to.
  * @implementation-notes
+ * - Phrase lists exist for en, de, es, fr and ja. English is always
+ *   checked; the list for the element's own language (nearest lang
+ *   attribute, across shadow roots) is added on top. Matching every list
+ *   everywhere would flag words that are generic in one language and a
+ *   real name in another ("Suite", "Plus" on an English page).
  * - EXACT match only, on purpose, against small, well-established
  *   phrase lists, not a substring/contains check. "Read more about our
  *   privacy policy" does not match "read more"; only the bare phrase
@@ -52,7 +57,7 @@ const id = 'link-name-quality';
 const meta = {
   title: 'Link text should be descriptive, not generic',
   description:
-    'Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear.',
+    'Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.',
   i18n: {
     titleKey: 'linkNameQuality_title',
     descriptionKey: 'linkNameQuality_description'
@@ -79,7 +84,7 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const GENERIC_LINK_TEXT = new Set([
+  const GENERIC_LINK_TEXT_EN = new Set([
     'click here',
     'here',
     'click',
@@ -100,6 +105,100 @@ function runInPage(ctx) {
     'see more',
     'info'
   ]);
+
+  const GENERIC_LINK_TEXT = {
+    en: GENERIC_LINK_TEXT_EN,
+    de: new Set([
+      'hier klicken',
+      'klicken sie hier',
+      'hier',
+      'klicken',
+      'mehr',
+      'mehr info',
+      'mehr infos',
+      'mehr informationen',
+      'weiterlesen',
+      'mehr lesen',
+      'mehr erfahren',
+      'weiter',
+      'details',
+      'mehr details',
+      'link',
+      'dieser link',
+      'los',
+      'herunterladen',
+      'mehr anzeigen',
+      'info'
+    ]),
+    es: new Set([
+      'haga clic aquí',
+      'haz clic aquí',
+      'clic aquí',
+      'pulse aquí',
+      'pincha aquí',
+      'aquí',
+      'clic',
+      'más',
+      'más info',
+      'más información',
+      'leer más',
+      'saber más',
+      'seguir leyendo',
+      'continuar leyendo',
+      'continuar',
+      'detalles',
+      'más detalles',
+      'enlace',
+      'este enlace',
+      'ir',
+      'descargar',
+      'ver más',
+      'info'
+    ]),
+    fr: new Set([
+      'cliquez ici',
+      'cliquer ici',
+      'ici',
+      'cliquez',
+      'plus',
+      "plus d'infos",
+      "plus d'informations",
+      'en savoir plus',
+      'lire la suite',
+      'la suite',
+      'suite',
+      'continuer',
+      'détails',
+      'plus de détails',
+      'lien',
+      'ce lien',
+      'télécharger',
+      'voir plus',
+      'info'
+    ]),
+    ja: new Set([
+      'こちら',
+      'ここ',
+      'こちらをクリック',
+      'ここをクリック',
+      'クリック',
+      '詳しく',
+      '詳しくは',
+      '詳しくはこちら',
+      '詳細',
+      '詳細はこちら',
+      '詳細を見る',
+      'もっと見る',
+      'もっと読む',
+      'さらに詳しく',
+      '続きを読む',
+      '続き',
+      'リンク',
+      'このリンク',
+      'ダウンロード',
+      '情報'
+    ])
+  };
 
   const FORMAT_NAME_LINK_TEXT = new Set([
     'html',
@@ -124,13 +223,40 @@ function runInPage(ctx) {
 
   const CONTEXT_BLOCK_TAGS = new Set(['td', 'th', 'p', 'dd', 'blockquote', 'figcaption', 'dt']);
 
+  // NFKC folds full-width letters and punctuation (！, ＞) into their ASCII
+  // forms, and the curly apostrophe is folded so "plus d’infos" matches.
+  // Trailing arrows ("Read more »", 「詳しくはこちら→」) are decoration, not
+  // part of the phrase.
   function normalize(s) {
     return (s == null ? '' : String(s))
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase()
-      .replace(/[.,;:!?]+$/g, '')
+      .replace(/[\s.,;:!?。、>»›→]+$/g, '')
       .trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared. Phrase lists are matched in English
+  // plus this language, so a word that is generic in one language ("plus"
+  // in French) is not flagged when it is a real name in another.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function inPhraseList(byLang, normalized, lang) {
+    if (byLang.en.has(normalized)) return true;
+    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
   function ownDirectText(el) {
@@ -240,7 +366,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const isGeneric = GENERIC_LINK_TEXT.has(normalized);
+    const isGeneric = inPhraseList(GENERIC_LINK_TEXT, normalized, primaryLangOf(el));
     const isFormatName = !isGeneric && FORMAT_NAME_LINK_TEXT.has(normalized);
     if (!isGeneric && !isFormatName) continue;
 
