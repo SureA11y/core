@@ -436,7 +436,6 @@ function main() {
       const mod = safeRequire(facetsFile);
       facetMap = mod && mod.FACETS ? mod.FACETS : null;
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[wcag-coverage] Failed to load facets file:', facetsFile, e.message);
     }
   }
@@ -617,7 +616,6 @@ function main() {
     countUnknownFacetIds(facetSummaries.enforced) + countUnknownFacetIds(facetSummaries.all);
 
   if (args.strictFacets && unknownCount > 0) {
-    // eslint-disable-next-line no-console
     console.error(`[wcag-coverage] strictFacets: found ${unknownCount} unknown facet id(s).`);
     process.exit(2);
   }
@@ -716,11 +714,9 @@ function main() {
     const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
 
     if (readOrNull(mdPath) !== md || readOrNull(jsonPath) !== json) {
-      // eslint-disable-next-line no-console
       console.error(`Coverage report is stale. Run: npm run coverage`);
       process.exit(1);
     }
-    // eslint-disable-next-line no-console
     console.log('[wcag-coverage] report is up to date.');
     return;
   }
@@ -729,7 +725,6 @@ function main() {
   fs.writeFileSync(mdPath, md, 'utf8');
   fs.writeFileSync(jsonPath, json, 'utf8');
 
-  // eslint-disable-next-line no-console
   console.log(`[wcag-coverage] wrote ${args.out} and ${args.json}`);
 }
 
