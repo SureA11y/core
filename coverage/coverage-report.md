@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **150**
+Total rules (loaded without error): **195**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -639,20 +639,58 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | src/checks/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| aria-attribute-conformance | automatic | aria-* attributes are valid for the W3C validator | src/checks/automatic/aria-attribute-conformance.js |  |  |
+| aria-list-item-roles | automatic | ARIA lists use role="listitem" for their items | src/checks/automatic/aria-list-item-roles.js |  |  |
+| aria-role-conformance | automatic | Role attributes are valid for the W3C validator | src/checks/automatic/aria-role-conformance.js |  |  |
+| canvas-decorative-aria-hidden | automatic | Decorative &lt;canvas&gt; images have aria-hidden="true" and no alternative | src/checks/automatic/canvas-decorative-aria-hidden.js |  |  |
+| canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | src/checks/automatic/canvas-role-img.js |  |  |
+| contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | src/checks/automatic/contrast-minimum-rgaa.js |  |  |
 | dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
-| doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| doctype-present | automatic | Page declares a doctype | src/checks/automatic/doctype-present.js |  |  |
+| doctype-valid | automatic | Declared doctype is valid | src/checks/automatic/doctype-valid.js |  |  |
+| embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | src/checks/automatic/embed-image-role-img.js |  |  |
+| field-label-in-name-sources | automatic | Every label source of a form field contains its visible label | src/checks/automatic/field-label-in-name-sources.js |  |  |
+| field-label-listed-source | automatic | Form fields have a label from a source RGAA lists | src/checks/automatic/field-label-listed-source.js |  |  |
 | figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | src/checks/automatic/figure-caption-structure.js |  |  |
+| focus-indicator-contrast | automatic | Author focus indicators have a contrast ratio of at least 3:1 | src/checks/automatic/focus-indicator-contrast.js |  |  |
+| form-button-label-in-name-sources | automatic | The accessible name of a button in a form contains its visible label | src/checks/automatic/form-button-label-in-name-sources.js |  |  |
+| form-button-name-present | automatic | Buttons in a form have a label | src/checks/automatic/form-button-name-present.js |  |  |
+| frame-title-attribute-present | automatic | Frames have a title attribute | src/checks/automatic/frame-title-attribute-present.js |  |  |
+| frame-title-not-empty | automatic | Frame titles are not empty | src/checks/automatic/frame-title-not-empty.js |  |  |
+| heading-content-present | automatic | Headings have content | src/checks/automatic/heading-content-present.js |  |  |
+| heading-role-level-present | automatic | ARIA headings have an aria-level attribute | src/checks/automatic/heading-role-level-present.js |  |  |
+| html-elements-attributes-valid | automatic | HTML elements and attribute values are valid | src/checks/automatic/html-elements-attributes-valid.js |  |  |
+| html-lang-code-valid | automatic | Default language code is valid | src/checks/automatic/html-lang-code-valid.js |  |  |
+| html-nesting-valid | automatic | HTML elements are nested as HTML allows | src/checks/automatic/html-nesting-valid.js |  |  |
+| img-decorative-no-alternative | automatic | Decorative images have no aria-labelledby, aria-label or title | src/checks/automatic/img-decorative-no-alternative.js |  |  |
 | label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
 | layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
+| link-content-label-present | automatic | Links have a label in their content | src/checks/automatic/link-content-label-present.js |  |  |
+| link-label-in-name-sources | automatic | Every name source of a link contains its visible label | src/checks/automatic/link-label-in-name-sources.js |  |  |
+| listbox-option-groups-absent | automatic | ARIA listboxes do not group options | src/checks/automatic/listbox-option-groups-absent.js |  |  |
+| main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | src/checks/automatic/main-element-structure.js |  |  |
+| media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | src/checks/automatic/media-transcript-adjacent.js |  |  |
+| meta-redirect-immediate | automatic | Meta redirects are immediate | src/checks/automatic/meta-redirect-immediate.js |  |  |
+| meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | src/checks/automatic/meta-refresh-no-url-timing.js |  |  |
+| object-image-role-img | automatic | Image objects have role="img" and a text alternative | src/checks/automatic/object-image-role-img.js |  |  |
+| optgroup-label-not-empty | automatic | Option group labels are not empty | src/checks/automatic/optgroup-label-not-empty.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| page-language-present | automatic | Page gives a default language | src/checks/automatic/page-language-present.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
+| role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | src/checks/automatic/role-img-aria-name.js |  |  |
+| skip-link-present | automatic | Pages have a skip link to the main content | src/checks/automatic/skip-link-present.js |  |  |
 | svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
+| svg-role-img | automatic | SVGs with a text alternative have role="img" | src/checks/automatic/svg-role-img.js |  |  |
+| title-placeholder-identical | automatic | A form field's title and placeholder are identical | src/checks/automatic/title-placeholder-identical.js |  |  |
 | video-captions-track-kind | automatic | Video caption tracks use kind="captions" | src/checks/automatic/video-captions-track-kind.js |  |  |
+| widget-label-in-name | automatic | The accessible name of a scripted component contains its visible label | src/checks/automatic/widget-label-in-name.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
+| complex-table-summary-quality | manual | Complex data table summaries are relevant | src/checks/manual/complex-table-summary-quality-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |
@@ -661,6 +699,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-alt-long | manual | Text alternatives of images are short | src/checks/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| keyboard-only-event-handlers | manual | Keyboard-only inline event handlers should have a pointer equivalent | src/checks/manual/keyboard-only-event-handlers-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -672,8 +711,12 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
 | letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
+| link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | src/checks/manual/link-context-review-manual.js |  |  |
+| link-state-colors-review | manual | Link states shown by color alone are reviewed | src/checks/manual/link-state-colors-review-manual.js |  |  |
+| markup-validation-review | manual | The generated source code is checked with the W3C validator | src/checks/manual/markup-validation-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
 | office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
+| orientation-content-parity | manual | Content stays the same in portrait and landscape | src/checks/manual/orientation-content-parity-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
@@ -683,6 +726,8 @@ Automation mix: **full 36, partial 1, manual 2**.
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
+| th-scope-row-col | manual | Table headers use scope="row" or scope="col" | src/checks/manual/th-scope-row-col-manual.js |  |  |
+| viewport-zoom-review | manual | Text can reach 200% zoom despite a viewport meta tag that limits zoom | src/checks/manual/viewport-zoom-review-manual.js |  |  |
 
 ## SC Coverage (B): Enforced + manual/informative (normativeMappings + informativeReferences)
 
@@ -1291,20 +1336,58 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | src/checks/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| aria-attribute-conformance | automatic | aria-* attributes are valid for the W3C validator | src/checks/automatic/aria-attribute-conformance.js |  |  |
+| aria-list-item-roles | automatic | ARIA lists use role="listitem" for their items | src/checks/automatic/aria-list-item-roles.js |  |  |
+| aria-role-conformance | automatic | Role attributes are valid for the W3C validator | src/checks/automatic/aria-role-conformance.js |  |  |
+| canvas-decorative-aria-hidden | automatic | Decorative &lt;canvas&gt; images have aria-hidden="true" and no alternative | src/checks/automatic/canvas-decorative-aria-hidden.js |  |  |
+| canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | src/checks/automatic/canvas-role-img.js |  |  |
+| contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | src/checks/automatic/contrast-minimum-rgaa.js |  |  |
 | dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
-| doctype-present | automatic | Page declares a valid doctype | src/checks/automatic/doctype-present.js |  |  |
+| doctype-present | automatic | Page declares a doctype | src/checks/automatic/doctype-present.js |  |  |
+| doctype-valid | automatic | Declared doctype is valid | src/checks/automatic/doctype-valid.js |  |  |
+| embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | src/checks/automatic/embed-image-role-img.js |  |  |
+| field-label-in-name-sources | automatic | Every label source of a form field contains its visible label | src/checks/automatic/field-label-in-name-sources.js |  |  |
+| field-label-listed-source | automatic | Form fields have a label from a source RGAA lists | src/checks/automatic/field-label-listed-source.js |  |  |
 | figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | src/checks/automatic/figure-caption-structure.js |  |  |
+| focus-indicator-contrast | automatic | Author focus indicators have a contrast ratio of at least 3:1 | src/checks/automatic/focus-indicator-contrast.js |  |  |
+| form-button-label-in-name-sources | automatic | The accessible name of a button in a form contains its visible label | src/checks/automatic/form-button-label-in-name-sources.js |  |  |
+| form-button-name-present | automatic | Buttons in a form have a label | src/checks/automatic/form-button-name-present.js |  |  |
+| frame-title-attribute-present | automatic | Frames have a title attribute | src/checks/automatic/frame-title-attribute-present.js |  |  |
+| frame-title-not-empty | automatic | Frame titles are not empty | src/checks/automatic/frame-title-not-empty.js |  |  |
+| heading-content-present | automatic | Headings have content | src/checks/automatic/heading-content-present.js |  |  |
+| heading-role-level-present | automatic | ARIA headings have an aria-level attribute | src/checks/automatic/heading-role-level-present.js |  |  |
+| html-elements-attributes-valid | automatic | HTML elements and attribute values are valid | src/checks/automatic/html-elements-attributes-valid.js |  |  |
+| html-lang-code-valid | automatic | Default language code is valid | src/checks/automatic/html-lang-code-valid.js |  |  |
+| html-nesting-valid | automatic | HTML elements are nested as HTML allows | src/checks/automatic/html-nesting-valid.js |  |  |
+| img-decorative-no-alternative | automatic | Decorative images have no aria-labelledby, aria-label or title | src/checks/automatic/img-decorative-no-alternative.js |  |  |
 | label-for-target-valid | automatic | Labels point to a form field | src/checks/automatic/label-for-target-valid.js |  |  |
 | layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
+| link-content-label-present | automatic | Links have a label in their content | src/checks/automatic/link-content-label-present.js |  |  |
+| link-label-in-name-sources | automatic | Every name source of a link contains its visible label | src/checks/automatic/link-label-in-name-sources.js |  |  |
+| listbox-option-groups-absent | automatic | ARIA listboxes do not group options | src/checks/automatic/listbox-option-groups-absent.js |  |  |
+| main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | src/checks/automatic/main-element-structure.js |  |  |
+| media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | src/checks/automatic/media-transcript-adjacent.js |  |  |
+| meta-redirect-immediate | automatic | Meta redirects are immediate | src/checks/automatic/meta-redirect-immediate.js |  |  |
+| meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | src/checks/automatic/meta-refresh-no-url-timing.js |  |  |
+| object-image-role-img | automatic | Image objects have role="img" and a text alternative | src/checks/automatic/object-image-role-img.js |  |  |
+| optgroup-label-not-empty | automatic | Option group labels are not empty | src/checks/automatic/optgroup-label-not-empty.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| page-language-present | automatic | Page gives a default language | src/checks/automatic/page-language-present.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
+| role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | src/checks/automatic/role-img-aria-name.js |  |  |
+| skip-link-present | automatic | Pages have a skip link to the main content | src/checks/automatic/skip-link-present.js |  |  |
 | svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
+| svg-role-img | automatic | SVGs with a text alternative have role="img" | src/checks/automatic/svg-role-img.js |  |  |
+| title-placeholder-identical | automatic | A form field's title and placeholder are identical | src/checks/automatic/title-placeholder-identical.js |  |  |
 | video-captions-track-kind | automatic | Video caption tracks use kind="captions" | src/checks/automatic/video-captions-track-kind.js |  |  |
+| widget-label-in-name | automatic | The accessible name of a scripted component contains its visible label | src/checks/automatic/widget-label-in-name.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
+| complex-table-summary-quality | manual | Complex data table summaries are relevant | src/checks/manual/complex-table-summary-quality-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |
@@ -1313,6 +1396,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-alt-long | manual | Text alternatives of images are short | src/checks/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| keyboard-only-event-handlers | manual | Keyboard-only inline event handlers should have a pointer equivalent | src/checks/manual/keyboard-only-event-handlers-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -1324,8 +1408,12 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
 | letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
+| link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | src/checks/manual/link-context-review-manual.js |  |  |
+| link-state-colors-review | manual | Link states shown by color alone are reviewed | src/checks/manual/link-state-colors-review-manual.js |  |  |
+| markup-validation-review | manual | The generated source code is checked with the W3C validator | src/checks/manual/markup-validation-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
 | office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
+| orientation-content-parity | manual | Content stays the same in portrait and landscape | src/checks/manual/orientation-content-parity-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
@@ -1335,4 +1423,6 @@ Automation mix: **full 36, partial 1, manual 2**.
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
+| th-scope-row-col | manual | Table headers use scope="row" or scope="col" | src/checks/manual/th-scope-row-col-manual.js |  |  |
+| viewport-zoom-review | manual | Text can reach 200% zoom despite a viewport meta tag that limits zoom | src/checks/manual/viewport-zoom-review-manual.js |  |  |
 

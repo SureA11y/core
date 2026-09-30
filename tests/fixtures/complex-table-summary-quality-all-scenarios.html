@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>complex-table-summary-quality — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    th, td, [role="cell"], [role="columnheader"], [role="rowheader"] { border: 1px solid #999; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>complex-table-summary-quality</code> (RGAA 5.2.1)</h1>
+
+  <p class="note">
+    Each target table has a stable <code>id</code> of the form <code>ctsq_case_NN</code>.
+    This page has an HTML5 doctype, so a <code>summary</code> attribute is not a summary here.
+    Whether a summary explains the nature and structure of the table is for a person.
+  </p>
+
+  <h2>A. Complex table with a summary (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: two header rows, summary in the caption</div>
+    <table id="ctsq_case_01">
+      <caption>Sales by quarter. Years head groups of quarter columns; regions head the rows.</caption>
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: headers attribute, summary linked with aria-describedby</div>
+    <p id="ctsq_desc_02">Each price cell lists its item and its size.</p>
+    <table id="ctsq_case_02" aria-describedby="ctsq_desc_02">
+      <tr><th id="ctsq_item">Item</th><th id="ctsq_size">Size</th></tr>
+      <tr><td headers="ctsq_item ctsq_size">Tea</td><td>Large</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: ARIA table with a header outside the first row and column, and aria-describedby</div>
+    <p id="ctsq_desc_03">Two header rows: years, then quarters.</p>
+    <div role="table" id="ctsq_case_03" aria-label="Sales" aria-describedby="ctsq_desc_03">
+      <div role="row"><span role="cell"></span><span role="columnheader">2025</span></div>
+      <div role="row"><span role="cell"></span><span role="columnheader">Q1</span></div>
+      <div role="row"><span role="rowheader">North</span><span role="cell">1</span></div>
+    </div>
+  </div>
+
+  <h2>B. Out of scope</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: complex table with no summary (5.1.1, complex-table-summary)</div>
+    <table id="ctsq_case_04">
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: complex table whose only summary is the summary attribute, in HTML5</div>
+    <table id="ctsq_case_05" summary="Years head groups of quarters">
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: simple table with a caption</div>
+    <table id="ctsq_case_06">
+      <caption>Opening hours</caption>
+      <tr><th>Day</th><th>Hours</th></tr>
+      <tr><td>Monday</td><td>9–17</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: complex table whose aria-describedby points to nothing</div>
+    <table id="ctsq_case_07" aria-describedby="ctsq_missing">
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

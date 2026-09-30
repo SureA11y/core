@@ -55,9 +55,10 @@ test('a cantTell rollup names the RGAA tests of its undecided rules only', () =>
 });
 
 test('a passing rollup names the RGAA tests of its passing rules', () => {
-  const { composite } = rollup(page('<p>x</p>'), 'wcag-3.1.1-');
+  // aria-hidden-body passes on a page whose <body> is not aria-hidden.
+  const { composite } = rollup(page('<p>x</p>'), 'wcag-4.1.2-name');
   assert.equal(composite.outcome, 'pass');
-  assert.deepEqual(rgaaOf(composite), ['8.3.1', '8.4.1']);
+  assert.deepEqual(rgaaOf(composite), ['10.8.1']);
 });
 
 test('a notApplicable rollup names no RGAA test', () => {

@@ -211,3 +211,17 @@ test(`${RULE_ID}: same outcomes under wcag22-aa and rgaa-4.1.2`, () => {
     assertRule(run(`<table>${TABLE_4X4_WELL_HEADED}</table>`), RULE_ID, 'pass');
   }
 });
+
+// RGAA 5.7.4 covers cells associated with headers that have an id; a cell
+// with no header at all is not one, so the rule no longer reports under 5.7
+// while its WCAG 1.3.1 verdict stays.
+test(`${RULE_ID}: fails WCAG 1.3.1 but not RGAA 5.7 in the same rgaa-4.1.2 run`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
+  assertRule(result, RULE_ID, 'fail');
+  const rollup = (id) => result.rulesResults.find((r) => r.ruleId === id);
+  assert.equal(rollup('wcag-1.3.1-info-and-relationships').outcome, 'fail');
+  const r57 = rollup('rgaa-4.1.2-5.7');
+  assert.ok(!r57 || !r57.data.details.checksIds.includes(RULE_ID));
+  assert.ok(!r57 || r57.outcome !== 'fail');
+});

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>skip-link-present — scenario fixture (fail case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="case-title">01 — FAIL: navigation before the main content, and the skip link points to an id that does not exist</div>
+  <a href="#contenu" id="slp_case_01">Aller au contenu</a>
+  <header>
+    <nav aria-label="Menu principal">
+      <a href="/">Accueil</a>
+      <a href="/actualites">Actualités</a>
+      <a href="/contact">Contact</a>
+    </nav>
+  </header>
+  <main id="principal">
+    <h1>Actualités</h1>
+    <p>Le contenu principal de la page.</p>
+    <p class="note">
+      This is a whole-document check: one outcome per page. The skip link above targets
+      <code>#contenu</code>, but the main element's id is <code>principal</code>. The pass case (a link to
+      <code>#principal</code>), the question on a page without navigation, and the other reasons are covered
+      by the rule's <code>.test.js</code> file.
+    </p>
+  </main>
+</body>
+</html>

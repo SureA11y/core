@@ -179,6 +179,30 @@ test('isLargeText: >=24px is always large; >=18.6667px is large only when bold (
   assert.strictEqual(isLargeText('not-a-size', 400), false);
 });
 
+// RGAA 3.2.2/3.2.4 put the bold threshold at 18.5px. The third argument sets
+// it; without it the WCAG threshold (parsePx('14pt')) stays in force.
+test('isLargeText: an explicit bold threshold moves only the bold boundary', () => {
+  const wcagBold = 14 * (96 / 72);
+  for (const size of [18.4, 18.5, 18.6, 18.66, wcagBold, 19, 23.9, 24]) {
+    for (const weight of [400, 600, 700, 900]) {
+      assert.strictEqual(
+        isLargeText(size, weight, undefined),
+        isLargeText(size, weight),
+        `${size}px ${weight}`
+      );
+      assert.strictEqual(isLargeText(size, weight, NaN), isLargeText(size, weight));
+      assert.strictEqual(isLargeText(size, weight, '18.5'), isLargeText(size, weight));
+    }
+  }
+  assert.strictEqual(isLargeText(18.5, 700), false);
+  assert.strictEqual(isLargeText(18.5, 700, 18.5), true);
+  assert.strictEqual(isLargeText(18.49, 700, 18.5), false);
+  assert.strictEqual(isLargeText(18.5, 400, 18.5), false);
+  assert.strictEqual(isLargeText(24, 400, 18.5), true);
+  assert.strictEqual(isLargeText(wcagBold, 700), true);
+  assert.strictEqual(isLargeText('not-a-size', 700, 18.5), false);
+});
+
 test('requiredRatio: AA is 4.5/3.0 (normal/large), AAA is 7.0/4.5', () => {
   assert.strictEqual(requiredRatio('AA', false), 4.5);
   assert.strictEqual(requiredRatio('AA', true), 3.0);

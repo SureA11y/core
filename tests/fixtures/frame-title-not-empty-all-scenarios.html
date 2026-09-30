@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>frame-title-not-empty — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    iframe { width: 200px; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>frame-title-not-empty</code> (RGAA 2.2.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ftn_case_NN</code>.
+    An empty title cannot be relevant. Whether a non-empty title is relevant is
+    left to a person.
+  </p>
+
+  <h2>A. Empty title (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: iframe with title=""</div>
+    <iframe id="ftn_case_01" title="" src="content.html"></iframe>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: whitespace-only title, even with an aria-label</div>
+    <iframe id="ftn_case_02" title="   " aria-label="Map" src="content.html"></iframe>
+  </div>
+
+  <h2>B. Non-empty title (PASS)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: iframe with a title</div>
+    <iframe id="ftn_case_03" title="Weather forecast" src="content.html"></iframe>
+  </div>
+
+  <h2>C. Out of scope</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: no title attribute (2.1.1's matter)</div>
+    <iframe id="ftn_case_04" src="content.html"></iframe>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: empty title on an aria-hidden="true" iframe</div>
+    <iframe id="ftn_case_05" title="" aria-hidden="true" src="content.html"></iframe>
+  </div>
+</body>
+</html>

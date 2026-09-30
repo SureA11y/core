@@ -373,7 +373,8 @@ test('rule selection: includeMode=and (default) => intersection between checks.i
 });
 
 test('rule selection: includeMode=or => union between checks.include and tags.include', () => {
-  const defs = core.CHECK_DEFS;
+  // A plain tag include never selects an opt-in rule, so leave them out.
+  const defs = core.CHECK_DEFS.filter((d) => !isOptIn(d));
   const tagIndex = buildTagIndex(defs);
 
   const picked = findSharedNonUniversalTag(defs, tagIndex);

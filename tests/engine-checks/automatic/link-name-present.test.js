@@ -406,13 +406,15 @@ test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 as well as 4.1.2`, () => {
   assert.equal(composite('4.1.2').outcome, 'fail');
 });
 
-test(`${RULE_ID}: maps to RGAA 6.2.1 when RGAA is asked for`, () => {
+// RGAA 6.2.1 asks for a label in the link content, which
+// link-content-label-present checks; this rule accepts aria-label and title.
+test(`${RULE_ID}: carries no RGAA test when RGAA is asked for`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x"></a></main></body></html>`;
   const result = runa11yCoreOnHtml(html, { engineOptions: { mappings: ['rgaa'] } });
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
-  const rgaa = rule.meta.normativeMappings.filter((m) => m.standard === 'RGAA');
+  assert.equal(rule.outcome, 'fail');
   assert.deepEqual(
-    rgaa.map((m) => [m.requirement, m.criterion, m.wcagSc]),
-    [['6.2.1', '6.2', ['2.4.4']]]
+    rule.meta.normativeMappings.filter((m) => m.standard === 'RGAA'),
+    []
   );
 });

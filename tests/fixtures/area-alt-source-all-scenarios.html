@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>area-alt-source — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>area-alt-source</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>aas_case_NN</code>. Linked <code>&lt;area&gt;</code> elements of a used image map are checked (RGAA 1.1.2).
+  </p>
+
+  <h2>A. Named only by title or aria-labelledby (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: title only</div>
+    <img src="map.png" usemap="#aas_m1" alt="Carte de France" width="100" height="100"><map name="aas_m1"><area href="/paris" shape="rect" coords="0,0,50,50" title="Paris" id="aas_case_01"></map>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-labelledby only</div>
+    <span id="aas_l">Lyon</span><img src="map.png" usemap="#aas_m2" alt="Carte de France" width="100" height="100"><map name="aas_m2"><area href="/lyon" shape="rect" coords="0,0,50,50" aria-labelledby="aas_l" id="aas_case_02"></map>
+  </div>
+
+  <h2>B. alt or aria-label (PASS)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: alt</div>
+    <img src="map.png" usemap="#aas_m3" alt="Carte de France" width="100" height="100"><map name="aas_m3"><area href="/nantes" shape="rect" coords="0,0,50,50" alt="Nantes" id="aas_case_03"></map>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: aria-label and title</div>
+    <img src="map.png" usemap="#aas_m4" alt="Carte de France" width="100" height="100"><map name="aas_m4"><area href="/lille" shape="rect" coords="0,0,50,50" aria-label="Lille" title="Lille" id="aas_case_04"></map>
+  </div>
+
+  <h2>C. Not checked</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: no name source at all</div>
+    <img src="map.png" usemap="#aas_m5" alt="Carte de France" width="100" height="100"><map name="aas_m5"><area href="/brest" shape="rect" coords="0,0,50,50" id="aas_case_05"></map>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: map not used by any image</div>
+    <map name="aas_unused"><area href="/nice" shape="rect" coords="0,0,50,50" title="Nice" id="aas_case_06"></map>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: area without href</div>
+    <img src="map.png" usemap="#aas_m7" alt="Carte de France" width="100" height="100"><map name="aas_m7"><area shape="rect" coords="0,0,50,50" title="Zone" id="aas_case_07"></map>
+  </div>
+</body>
+</html>

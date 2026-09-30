@@ -495,14 +495,17 @@ function validateOutcomeOccurrenceInvariants(ruleResult, isAutomatic) {
   const occCount = (ruleResult.occurrences || []).length;
 
   if (isAutomatic) {
-    const ok = new Set(['pass', 'fail', 'notApplicable']);
+    // An automatic rule may ask (cantTell) where it cannot decide, as
+    // RULE_AUTHORING.md's outcome contract allows, always with the
+    // occurrences that need review.
+    const ok = new Set(['pass', 'fail', 'cantTell', 'notApplicable']);
     assert.ok(
       ok.has(ruleResult.outcome),
       `automatic rule outcome must be one of ${Array.from(ok).join(', ')}`
     );
 
-    if (ruleResult.outcome === 'fail') {
-      assert.ok(occCount >= 1, 'fail outcome must include >= 1 occurrence');
+    if (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell') {
+      assert.ok(occCount >= 1, `${ruleResult.outcome} outcome must include >= 1 occurrence`);
     } else {
       // In this ruleset, pass and notApplicable are expected to carry no occurrences
       assert.ok(occCount === 0, `${ruleResult.outcome} outcome must include 0 occurrences`);

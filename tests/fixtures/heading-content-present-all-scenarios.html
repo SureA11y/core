@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>heading-content-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    .intro { font-size: 20px; font-weight: 700; margin: 0 0 16px; }
+    .section { font-size: 16px; font-weight: 700; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <p class="intro">Scenario fixture: <code>heading-content-present</code></p>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>hcp_case_NN</code>. The section titles of this
+    page are paragraphs, so that the only headings are the cases.
+  </p>
+
+  <p class="section">A. Empty headings (FAIL)</p>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: empty h2</div>
+    <h2 id="hcp_case_01"></h2>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role="heading" with aria-level and only white space</div>
+    <div role="heading" aria-level="2" id="hcp_case_02"> </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: the only text is inside display:none</div>
+    <h3 id="hcp_case_03"><span style="display:none">Hidden title</span></h3>
+  </div>
+
+  <p class="section">B. No text in the content, but not empty (CANTTELL)</p>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: named only by its title attribute</div>
+    <h2 title="News" id="hcp_case_04"></h2>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: named only by aria-label</div>
+    <h2 aria-label="Events" id="hcp_case_05"></h2>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: the only content is an image with alt=""</div>
+    <h2 id="hcp_case_06"><img src="logo.png" alt=""></h2>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: the only text is hidden with aria-hidden="true"</div>
+    <h2 id="hcp_case_07"><span aria-hidden="true">★</span></h2>
+  </div>
+
+  <p class="section">C. Content with text or an image text alternative (PASS)</p>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: text content</div>
+    <h2 id="hcp_case_08">Opening hours</h2>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: an image with a text alternative</div>
+    <h2 id="hcp_case_09"><img src="news.png" alt="News"></h2>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: text hidden only visually, still a heading for RGAA</div>
+    <h2 class="sr-only" id="hcp_case_10">Main menu</h2>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: role="heading" without aria-level is not an RGAA heading</div>
+    <div role="heading" id="hcp_case_11"></div>
+  </div>
+</body>
+</html>

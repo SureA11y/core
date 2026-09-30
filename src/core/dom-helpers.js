@@ -1262,6 +1262,35 @@ function createDomHelpers(opts) {
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
 
+  // The document's doctype, classified. RGAA verdicts that depend on the HTML
+  // version (9.2 does not apply outside HTML5; 8.3.1 reads lang or xml:lang
+  // by version; 10.1.1 counts <u> only before HTML5) read `kind`:
+  //   'html5'   name html, no public id, no system id or about:legacy-compat
+  //   'xhtml10' a public id of XHTML 1.0 (strict, transitional, frameset)
+  //   'xhtml11' any other W3C XHTML public id: 1.1, Basic, 1.1 plus MathML
+  //             (and SVG), XHTML+RDFa
+  //   'html4'   a W3C or IETF HTML public id: 2.0, 3.2, 4.0, 4.01, 4.01+RDFa
+  //   'other'   any other doctype, including a name other than html
+  //   'none'    no doctype
+  // Public ids are compared case-insensitively, as HTML's parser does.
+  function getDoctypeInfo() {
+    const doctype = document ? document.doctype : null;
+    if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
+    const name = String(doctype.name || '');
+    const publicId = String(doctype.publicId || '');
+    const systemId = String(doctype.systemId || '');
+    const pub = publicId.trim().toUpperCase();
+    let kind = 'other';
+    if (name.toLowerCase() === 'html') {
+      if (!publicId && (!systemId || systemId === 'about:legacy-compat')) kind = 'html5';
+      else if (pub.startsWith('-//W3C//DTD XHTML 1.0 ')) kind = 'xhtml10';
+      else if (pub.startsWith('-//W3C//DTD XHTML')) kind = 'xhtml11';
+      else if (pub.startsWith('-//W3C//DTD HTML ') || pub.startsWith('-//IETF//DTD HTML'))
+        kind = 'html4';
+    }
+    return { kind, name, publicId, systemId };
+  }
+
   // -------------------------------------------------------------------------
   // Per-run shared caches (DOM helpers)
   // -------------------------------------------------------------------------
@@ -4832,6 +4861,7 @@ function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    getDoctypeInfo,
     getOuterHtmlSnippet,
     buildSimpleSelector,
     buildSelector,

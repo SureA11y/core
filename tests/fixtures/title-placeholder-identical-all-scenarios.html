@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>title-placeholder-identical — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>title-placeholder-identical</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>tpi_case_NN</code>. RGAA's glossary entry
+    "Étiquette de champ de formulaire" requires a field's title and placeholder, when both are present, to be
+    identical.
+  </p>
+
+  <h2>A. Title and placeholder differ (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: labelled field whose title and placeholder differ</div>
+    <label for="tpi_case_01">Nom</label>
+    <input type="text" id="tpi_case_01" title="Nom de famille" placeholder="Dupont">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: textarea whose title and placeholder differ</div>
+    <textarea id="tpi_case_02" title="Message" placeholder="Votre message"></textarea>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: the two differ only by case</div>
+    <input type="search" id="tpi_case_03" title="Rechercher" placeholder="rechercher">
+  </div>
+
+  <h2>B. Title and placeholder identical (PASS)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: identical values</div>
+    <input type="email" id="tpi_case_04" title="Adresse e-mail" placeholder="Adresse e-mail">
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: identical once whitespace is collapsed</div>
+    <input type="text" id="tpi_case_05" title="Code  postal" placeholder=" Code postal ">
+  </div>
+
+  <h2>C. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: placeholder only</div>
+    <input type="text" id="tpi_case_06" aria-label="Ville" placeholder="Paris">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: a checkbox shows no placeholder</div>
+    <input type="checkbox" id="tpi_case_07" title="Accepter" placeholder="Oui">
+  </div>
+</body>
+</html>

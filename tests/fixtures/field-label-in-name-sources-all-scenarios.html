@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>field-label-in-name-sources — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>field-label-in-name-sources</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>fins_case_NN</code>. RGAA 11.2.5 checks that the
+    aria-label, the aria-labelledby text, the title and the <code>&lt;label&gt;</code> of a field each contain its
+    visible label. Punctuation and capital letters are ignored; accents are not.
+  </p>
+
+  <h2>A. A source does not contain the visible label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: title that does not repeat the label</div>
+    <label for="fins_case_01">E-mail</label>
+    <input type="email" id="fins_case_01" title="Adresse électronique">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-label that replaces the label</div>
+    <label for="fins_case_02">Nom</label>
+    <input type="text" id="fins_case_02" aria-label="Prénom">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: the title drops an accent</div>
+    <label for="fins_case_03">Déposer</label>
+    <input type="file" id="fins_case_03" title="Deposer un fichier">
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: checkbox role whose aria-label does not contain its text</div>
+    <div role="checkbox" aria-checked="false" tabindex="0" aria-label="Accepter les conditions" id="fins_case_04">J’accepte</div>
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: the title leaves out the text in parentheses</div>
+    <label for="fins_case_05">Téléphone (facultatif)</label>
+    <input type="tel" id="fins_case_05" title="Téléphone">
+  </div>
+
+  <h2>C. Every source contains the visible label (PASS)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: title that starts with the label</div>
+    <label for="fins_case_06">E-mail</label>
+    <input type="email" id="fins_case_06" title="E-mail (exemple : nom@domaine.fr)">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: aria-labelledby text that contains the label</div>
+    <label for="fins_case_07">Nom</label>
+    <input type="text" id="fins_case_07" aria-labelledby="fins_ref_07"><span id="fins_ref_07">Nom de famille</span>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: wrapping label whose select option text is not part of the label</div>
+    <label>Pays <select id="fins_case_08" aria-label="Pays de naissance"><option>France</option></select></label>
+  </div>
+
+  <h2>D. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: a label and no other source</div>
+    <label for="fins_case_09">Ville</label>
+    <input type="text" id="fins_case_09">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NOT APPLICABLE: no visible label</div>
+    <input type="search" aria-label="Rechercher" id="fins_case_10">
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NOT APPLICABLE: a submit button is not a field</div>
+    <input type="submit" value="Envoyer" aria-label="Valider" id="fins_case_11">
+  </div>
+</body>
+</html>

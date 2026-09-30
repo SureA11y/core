@@ -166,7 +166,10 @@ test('the image button, the title-only field and the labelled decorative image n
       .map((m) => m.requirement);
   assert.deepEqual(rgaa('input-image-alt-decorative'), ['1.3.3']);
   assert.deepEqual(rgaa('label-title-only'), ['11.1.3', '11.2.2']);
-  assert.deepEqual(rgaa('presentation-role-conflict'), ['1.2.1']);
+  // presentation-role-conflict maps to no RGAA test, so the profile does not
+  // run it; img-decorative-no-alternative reports the image under 1.2.1.
+  assert.deepEqual(rgaa('img-decorative-no-alternative'), ['1.2.1']);
+  assert.ok(!result.checksResults.some((r) => r.ruleId === 'presentation-role-conflict'));
 });
 
 // --- links outside RGAA's own WCAG correspondence ------------------------------

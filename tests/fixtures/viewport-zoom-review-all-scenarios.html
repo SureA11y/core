@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, user-scalable=no" />
+  <title>viewport-zoom-review — scenario fixture (CANTTELL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>viewport-zoom-review</code> (RGAA 10.4.2)</h1>
+  <div class="case-title">01 — CANTTELL: viewport meta sets user-scalable=no</div>
+  <p class="note">
+    The rule reads the document's own &lt;meta name="viewport"&gt;, so one page
+    shows one scenario. RGAA 10.4.2 passes when text reaches 200% with the
+    browser text zoom, the browser graphic zoom or a zoom control of the site,
+    so a tag that blocks pinch zoom is a question, not a failure. The
+    notApplicable cases (no restriction, no viewport meta) are in the rule's
+    test file.
+  </p>
+</body>
+</html>

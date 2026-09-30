@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>widget-label-in-name — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>widget-label-in-name</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>wlin_case_NN</code>. RGAA 7.1.3 checks that the
+    accessible name of a scripted component contains its visible label.
+  </p>
+
+  <h2>A. The accessible name does not contain the visible label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: tab whose aria-label replaces its text</div>
+    <div role="tablist"><div role="tab" tabindex="0" aria-selected="true" aria-label="Réglages" id="wlin_case_01">Paramètres</div></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: menu item named by aria-labelledby text that does not contain its text</div>
+    <ul role="menu"><li role="menuitem" tabindex="-1" aria-labelledby="wlin_ref_02" id="wlin_case_02">Imprimer</li></ul>
+    <span id="wlin_ref_02">Exporter</span>
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: a single letter that may be a symbol ("B" for bold)</div>
+    <ul role="menu"><li role="menuitem" tabindex="-1" aria-label="Mettre en gras" id="wlin_case_03">B</li></ul>
+  </div>
+
+  <h2>C. The accessible name contains the visible label (PASS)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: aria-label that starts with the tab text</div>
+    <div role="tablist"><div role="tab" tabindex="0" aria-selected="true" aria-label="Paramètres avancés" id="wlin_case_04">Paramètres</div></div>
+  </div>
+
+  <h2>D. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: a title is not checked, only the accessible name</div>
+    <div role="tablist"><div role="tab" tabindex="0" aria-selected="true" title="Réglages" id="wlin_case_05">Paramètres</div></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: a button, not a widget role</div>
+    <button type="button" aria-label="Fermer" id="wlin_case_06">Valider</button>
+  </div>
+</body>
+</html>

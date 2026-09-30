@@ -68,16 +68,16 @@ test(`${RULE_ID}: reports multiple occurrences of <marquee>`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
-test(`${RULE_ID}: same outcomes under the wcag22-aa and rgaa-4.1.2 profiles; no RGAA 10.1.1 link`, () => {
+test(`${RULE_ID}: same outcomes under the wcag22-aa and rgaa-4.1.2 profiles; no RGAA link`, () => {
   const blink = `<!doctype html><html lang="en"><head><title>t</title></head><body><blink>Sale</blink></body></html>`;
   const marquee = `<!doctype html><html lang="en"><head><title>t</title></head><body><marquee>News</marquee></body></html>`;
   for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
     const run = (html) => runa11yCoreOnHtml(html, { engineOptions: { profile } });
     assertRule(run(blink), RULE_ID, 'pass', { maxOccurrences: 0 });
     const rule = assertRule(run(marquee), RULE_ID, 'cantTell', { minOccurrences: 1 });
-    // 10.1.1 comes from presentational-elements-absent only, so the element is
-    // counted once there.
-    assert.deepEqual(rgaaTests(rule), profile === 'rgaa-4.1.2' ? ['8.2.1'] : [], profile);
+    // 10.1.1 comes from presentational-elements-absent only and 8.2.1 from
+    // html-elements-attributes-valid, so the element is counted once in each.
+    assert.deepEqual(rgaaTests(rule), [], profile);
   }
 });
 

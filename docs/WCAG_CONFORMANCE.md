@@ -111,41 +111,91 @@ With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its r
 
 Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1). A few links go against RGAA's correspondence on purpose: `<img ismap>` is what RGAA 1.1.4 looks for, although RGAA files 1.1.4 under WCAG 1.1.1 and the engine files the rule under 2.1.1. Such a row lists the test in `outsideCorrespondence` with the reason, the build refuses the link without one, and the entry is filed under the rule's own WCAG criteria. `RGAA_MAPPING.md` marks these tests "(exception)".
 
-119 of the 150 rules map to at least one test, and together they reach 50 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 56 no rule reaches.
+120 of the 195 rules map to at least one test, and together they reach 50 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 56 no rule reaches.
 
 `profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other profile runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping. To see them without targeting RGAA, `engineOptions.optInRules: 'all'` with no profile runs every rule the engine has, RGAA's included.
 
-Ten opt-in rules decide RGAA requirements WCAG does not make, each deciding exactly what the RGAA test's procedure checks:
+Fifteen opt-in rules decide RGAA requirements WCAG does not make, each deciding exactly what the RGAA test's procedure checks:
 
 | Rule | RGAA | Fails when |
 |---|---|---|
-| `doctype-present` | 8.1.1–8.1.3 | the page has no doctype, or one that is neither HTML5 nor a W3C recommended doctype |
+| `doctype-present` | 8.1.1 | the page has no doctype |
+| `doctype-valid` | 8.1.2 | the doctype is neither HTML5 nor a W3C recommended one |
+| `html-nesting-valid` | 8.2.1 | the page has a nesting error the W3C validator reports: list or description-list content, interactive content or `tabindex` inside `<a>` or `<button>`, `<img ismap>` outside a link, a second `<main>` without `hidden`; hidden content included |
+| `html-elements-attributes-valid` | 8.2.1 | the page has an obsolete or unknown element, or a `dir`, `id`, `lang`, `xml:lang`, `scope`, `headers`, `optgroup` label, image-button `alt` or `autocomplete` value the W3C validator rejects; hidden content included |
+| `aria-role-conformance` | 8.2.1 | a `role` attribute has an error the W3C validator reports: empty, a token that is not a role it accepts, a role the element does not allow, or a role on an `<img>` with an empty or missing alt (`role="presentation"` there is asked about); hidden content included |
+| `aria-attribute-conformance` | 8.2.1 | an `aria-*` attribute has an error the W3C validator reports: unknown, an invalid value, not allowed on the element or role, naming an element that cannot be named, contradicting a native attribute, or a required attribute missing; hidden content included |
 | `presentational-elements-absent` | 10.1.1 | the page uses an element RGAA lists (`<font>`, `<center>`, `<big>`, `<s>`, …; `<u>` too without the HTML5 doctype) |
 | `presentational-attributes-absent` | 10.1.2 | an HTML element carries an attribute RGAA lists (`align`, `bgcolor`, `border`, …), with RGAA's exceptions for `size`, `width` and `height` |
-| `optgroup-label-present` | 11.8.2 | an `<optgroup>` in a `<select>` has no label, or an empty one |
-| `label-for-target-valid` | 11.1.2 | a `<label for>` matches no id, an empty one, or an element that cannot be labelled |
-| `layout-table-no-data-markup` | 5.8.1 | a table with `role="presentation"` or `"none"` has a caption, header cells, `thead`, `tfoot`, a non-empty `summary`, or cells with `scope`, `headers` or `axis` |
+| `optgroup-label-present` | 11.8.2 | an `<optgroup>` in a `<select>` has no `label` attribute |
+| `label-for-target-valid` | 11.1.2 | a `<label for>` matches no id, an empty one, or an element that is neither labelable nor an ARIA form field |
+| `layout-table-no-data-markup` | 5.8.1 | a table with `role="presentation"` or `"none"` has a caption, header cells, `thead`, `tfoot`, `colgroup`, a non-empty `summary`, or cells with `scope`, `headers` or `axis` (a table that looks like a data table is asked about instead) |
 | `figure-caption-structure` | 1.9.1 | a `<figure>` holding an image and a `<figcaption>` has no `role="figure"` or `"group"`, or no `aria-label` identical to the caption |
-| `video-captions-track-kind` | 4.3.2 | a `<video>` has subtitle tracks but none with `kind="captions"` |
-| `dir-attribute-valid` | 8.10.2 | a `dir` attribute is anything but `ltr` or `rtl`, `auto` included |
-| `svg-hidden-no-alternative` | 1.2.4, 1.1.5 | an `<svg aria-hidden="true">` carries a text alternative (`aria-label`, `aria-labelledby`, `title`, or a non-empty `<title>` or `<desc>`) |
+| `video-captions-track-kind` | 4.3.2 | a `<video>` has subtitle tracks in its own language but none with `kind="captions"` and a `src` (subtitles that may be a translation are asked about) |
+| `dir-attribute-valid` | 8.10.2 | a `dir` attribute is anything but exactly `ltr` or `rtl`, and `auto` on text that reads in the opposite direction |
+| `svg-hidden-no-alternative` | 1.2.4, 1.1.5 | an `<svg aria-hidden="true">` carries a text alternative (`aria-label`, `aria-labelledby`, `title`, or a non-empty `<title>` or `<desc>`), on itself, its content or what it draws through `<use>` |
 
-They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` and `dir="auto"` are, although HTML allows them.
+They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` is, although HTML allows it.
 
-Eight more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
+Nine more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
 
 | Rule | RGAA | Asks about |
 |---|---|---|
-| `field-group-legend` | 11.6.1 | a `<fieldset>` or `role="group"` holding form fields with no legend or name |
+| `field-group-legend` | 11.6.1 | a `<fieldset>` holding form fields with no `<legend>`, or a `role="group"` or `"radiogroup"` with no `aria-label` or `aria-labelledby` |
 | `radio-group-present` | 11.5.1 | radio buttons sharing a name that are not all in one `<fieldset>`, `role="group"` or `role="radiogroup"` |
 | `fake-list` | 9.3.1, 9.3.2 | lines or paragraphs starting with the same bullet, or with consecutive numbers, that are not marked up as a list |
-| `letters-spaced-with-spaces` | 10.1.3 | four or more single letters in a row separated by spaces (`S O L D E S`) |
-| `image-alt-long` | 1.3.9 | a text alternative longer than 80 characters (RGAA gives no number; 80 is a threshold for asking) |
-| `complex-table-summary` | 5.1.1 | a table with headers beyond its first row and column, or cells using `headers`, with no `aria-describedby` or `summary` |
-| `office-document-link` | 13.3.1 | each link to a `.pdf`, `.doc(x)`, `.odt`, `.rtf`, `.xls(x)`, `.ods`, `.ppt(x)`, `.odp` or `.epub` file |
+| `letters-spaced-with-spaces` | 10.1.3 | four or more single letters in a row separated by spaces (`S O L D E S`), or three capitals that form an element's whole text |
+| `image-alt-long` | 1.3.9 | a text alternative from any source, on any kind of image, longer than 80 characters (RGAA gives no number; 80 is a threshold for asking) |
+| `complex-table-summary` | 5.1.1 | a table with headers beyond its first row and column, cells using `headers`, `scope="rowgroup"`/`"colgroup"` or headers spanning groups, with no `aria-describedby`, nor a `summary` outside HTML5 |
+| `office-document-link` | 13.3.1 | each link, `download` attribute, query-string value or form action naming a `.pdf`, `.epub`, `.rtf`, Word, Excel, PowerPoint or OpenDocument file |
 | `scripted-components-review` | 7.1.1–7.1.3 | every scripted component on a page with script, listing the elements that look like one (widget roles, `tabindex`, inline handlers, `contenteditable`, `aria-expanded` and similar) |
+| `markup-validation-review` | 8.2.1 | every page: the W3C validator's report on the generated source, since the DOM no longer shows errors the parser repaired. RGAA 8.2 therefore rolls up to `cantTell` at best |
 
 Criterion 7.1 always asks for a manual check through `scripted-components-review`, unless the page contains no script at all: no executable script element, inline handler, `javascript:` URL or custom element. The engine cannot see behaviour attached from script files, so the absence of findings says nothing about the page's scripted components. A missing name on a widget is reported under 11.1 when RGAA counts it as a form field (`role="slider"`, `"searchbox"`, `"option"`) and under 11.9 for a button; on a tree, grid, tab, menu item or dialog it fails 7.1.1.
+
+Where RGAA judges a check differently from WCAG, the WCAG rule keeps its behaviour and no longer links the RGAA test, and a separate opt-in rule reports that test with RGAA's verdict. One run under the profile can then show a WCAG rollup that passes and an RGAA rollup that fails for the same element, or the reverse, each right for its standard. These rules fail only where RGAA's text makes the failure certain, and ask otherwise:
+
+| Rule | RGAA | Instead of | Fails when |
+|---|---|---|---|
+| `role-img-aria-name` | 1.1.1 | `role-img-text-alternative-present` | an element with `role="img"` has no `aria-labelledby` or `aria-label`; a `title` alone does not count |
+| `area-alt-source` | 1.1.2 | `area-alt-present` (1.1.2 kept) | a linked `<area>` is named only by `title` or `aria-labelledby`, which 1.1.2 does not list |
+| `svg-role-img` | 1.1.5 | `svg-text-alternative-present` (1.1.5 kept) | an `<svg>` with a text alternative has no `role="img"` |
+| `object-image-role-img` | 1.1.6 | `object-text-alternative-present` | an `<object type="image/…">` has no alternative, no fallback content and no link or button after it |
+| `embed-image-role-img` | 1.1.7 | `embed-text-alternative-present` | the same for `<embed type="image/…">` |
+| `canvas-role-img` | 1.1.8 | `canvas-text-alternative-present` | a `<canvas role="img">` has no `aria-labelledby` or `aria-label`, or a canvas without the role has no fallback content |
+| `img-decorative-no-alternative` | 1.2.1 | `presentation-role-conflict` | an `<img aria-hidden="true">` still carries `aria-label`, `aria-labelledby` or `title` |
+| `canvas-decorative-aria-hidden` | 1.2.5 | – | a canvas marked decorative has no `aria-hidden="true"`, or still carries an alternative |
+| `frame-title-attribute-present` | 2.1.1 | `iframe-name-present` | an `<iframe>` or `<frame>` has no `title` attribute, even when `aria-label` names it or it has `tabindex="-1"` |
+| `frame-title-not-empty` | 2.2.1 | `identical-iframes-same-purpose` | a frame's `title` attribute is empty or only spaces |
+| `contrast-minimum-rgaa` | 3.2.1–3.2.4 | `contrast-minimum` | text has less contrast than RGAA asks, with RGAA's sizes: bold text is large from 18.5px, where WCAG uses 14pt (about 18.67px) |
+| `media-transcript-adjacent` | 4.1.1–4.1.3 | `media-alternative-transcript-evidence` | never fails: passes media with a transcript, or a link or button to one, right before or after it, and asks about the rest |
+| `complex-table-summary-quality` | 5.2.1 | `table-duplicate-name` | never fails: asks whether a complex table's summary (its caption, its `aria-describedby`, or before HTML5 its `summary`) explains the table |
+| `th-scope-row-col` | 5.7.2, 5.7.3 | – | never fails: asks about a `<th>` with `scope="rowgroup"` or `"colgroup"`, which RGAA 5.7.2 and 5.7.3 do not list |
+| `link-context-review` | 6.1.1–6.1.4 | `link-name-quality` (kept) | never fails: asks about a generic link whose only context is an `aria-describedby` text or a `<dd>`, `<dt>`, `<blockquote>` or `<figcaption>`, which RGAA does not count as link context |
+| `link-label-in-name-sources` | 6.1.5 | `label-in-name` | a link's `title`, `aria-label` or `aria-labelledby` text does not contain its visible text, even when that source is not the one that names it |
+| `link-content-label-present` | 6.2.1 | `link-name-present` | a link has no text or image alternative in its content, even when `aria-label`, `aria-labelledby` or `title` names it |
+| `widget-label-in-name` | 7.1.3 | `label-in-name` | a tab, menu item, tree item, grid cell or option has an accessible name that does not contain its visible text |
+| `keyboard-only-event-handlers` | 7.3.1 | – | never fails: asks about an element with an inline key handler and no click or pointer handler, since RGAA also wants pointer access |
+| `page-language-present` | 8.3.1 | `html-lang-attr-present` | some displayed text has no language on it or on a parent; `lang` on `<body>` is enough, and `xml:lang` alone passes on XHTML 1.1 and is asked about elsewhere |
+| `html-lang-code-valid` | 8.4.1 | `html-lang-attr-present` | the code before the first hyphen of the page's `lang` or `xml:lang` is not an ISO 639 code; ISO 639-2 codes such as `fra` pass |
+| `heading-content-present` | 9.1.2 | `empty-heading` | a heading has no text and no image alternative in its content |
+| `heading-role-level-present` | 9.1.3 | – | an element with `role="heading"` has no numeric `aria-level` |
+| `main-element-structure` | 9.2.1 | `landmark-one-main`, `landmark-no-duplicate-main` | on an HTML5 page, `role="main"` is used with no `<main>`, or a second `<main>` lacks the `hidden` attribute, even when CSS or `aria-hidden` hides it |
+| `aria-list-item-roles` | 9.3.1, 9.3.2 | `aria-required-children`, `aria-required-parent`, `aria-prohibited-children` | never fails: asks about a `role="list"` whose children do not all have `role="listitem"` |
+| `viewport-zoom-review` | 10.4.2 | `meta-viewport-zoom-enabled` | never fails: asks about a viewport that limits zoom, since RGAA also accepts the browser's text or page zoom or a zoom control on the site |
+| `link-state-colors-review` | 10.6.1 | `link-in-text-block` (kept) | never fails: asks about a link shown only by colour whose visited, active, hover or focus state changes that colour |
+| `focus-indicator-contrast` | 10.7.1 | – | an outline, border or box-shadow that a focus rule draws in place of the browser outline has less than 3:1 contrast with the colours next to it |
+| `field-label-listed-source` | 11.1.1 | the field-name rules, `form-control-programmatic-label-present` | a form field, as RGAA's glossary lists them, has none of the label sources 11.1.1 lists: a placeholder, the field's own content or an `<output>`'s value do not count |
+| `title-placeholder-identical` | 11.2.2 | – | never fails: asks about a field whose `title` and `placeholder` are both present but differ, since RGAA's glossary wants them identical |
+| `field-label-in-name-sources` | 11.2.5 | `label-in-name` | a field's `aria-label`, `aria-labelledby` text, `title` or `<label>` does not contain its visible label |
+| `listbox-option-groups-absent` | 11.8.1 | – | a `role="listbox"` groups its options with `role="group"`, which RGAA 11.8 does not accept in place of `<select>` and `<optgroup>` |
+| `optgroup-label-not-empty` | 11.8.3 | – | an `<optgroup>` in a `<select>` has an empty `label` |
+| `form-button-name-present` | 11.9.1 | `button-name-present` | a button inside a form has no label; a button outside any form is not applicable |
+| `form-button-label-in-name-sources` | 11.9.2 | `label-in-name` | a button in a form has an accessible name that does not contain its visible label; another source that does not is asked about |
+| `skip-link-present` | 12.7.1 | `bypass-blocks-present` (12.6.1 kept) | navigation comes before `<main>` with no working link to the main content, or a skip link points nowhere |
+| `meta-refresh-no-url-timing` | 13.1.1 | `meta-refresh-timing-absent` | a meta refresh reloads the page more often than every 20 hours |
+| `meta-redirect-immediate` | 13.1.2 | `meta-refresh-timing-absent` | never fails: an immediate redirect passes and a delayed one is asked about, since a redirect from an obsolete address is outside 13.1 |
+| `orientation-content-parity` | 13.9.1 | – | never fails: asks about each element an orientation media query hides, since RGAA wants the same content in portrait and landscape |
 
 Under the profile, `rulesResults` also gets one rollup per RGAA criterion a rule is linked to, next to the WCAG ones: `rgaa-4.1.2-9.1` groups the heading rules, `rgaa-4.1.2-8.1` the doctype rule. Each has RGAA's wording as its title, `meta.standard: "RGAA"` and `data.details.criterion`, and follows the same outcome rules as a WCAG rollup, naming the RGAA tests of the rules that decided it. Some RGAA findings belong to no WCAG rollup at all (heading order, the doctype, presentational markup), so these rollups are the only place a consumer reading `rulesResults` alone sees them. Like RGAA-only rules they are opt-in: no default, WCAG or EN 301 549 run produces them, and `getRulesCatalog()` lists them only under options that ask for RGAA, or that unlock its rules with `optInRules` and select nothing else. Every check result also carries `rollupIds`, the rollups that group it in that run, so a finding with none can be spotted.
 

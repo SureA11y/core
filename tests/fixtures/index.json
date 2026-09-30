@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 150,
-    "withFixture": 149,
-    "withoutFixture": 1
+    "total": 195,
+    "withFixture": 175,
+    "withoutFixture": 20
   },
   "rows": [
     {
@@ -61,6 +61,23 @@
       }
     },
     {
+      "ruleId": "area-alt-source",
+      "title": "Linked image-map areas are named by alt or aria-label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/area-alt-source.js",
+      "testFile": "tests/engine-checks/automatic/area-alt-source.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/area-alt-source-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 3
+      }
+    },
+    {
       "ruleId": "aria-allowed-attr",
       "title": "aria-* attributes must be permitted for the element’s role",
       "type": "automatic",
@@ -95,6 +112,18 @@
         "CANTTELL": 22,
         "OTHER": 1
       }
+    },
+    {
+      "ruleId": "aria-attribute-conformance",
+      "title": "aria-* attributes are valid for the W3C validator",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/aria-attribute-conformance.js",
+      "testFile": "tests/engine-checks/automatic/aria-attribute-conformance.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "aria-braille-equivalent",
@@ -212,6 +241,23 @@
       }
     },
     {
+      "ruleId": "aria-list-item-roles",
+      "title": "ARIA lists use role=\"listitem\" for their items",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/aria-list-item-roles.js",
+      "testFile": "tests/engine-checks/automatic/aria-list-item-roles.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/aria-list-item-roles-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 2
+      }
+    },
+    {
       "ruleId": "aria-prohibited-attr",
       "title": "ARIA naming attributes must not be used on roles that prohibit them",
       "type": "automatic",
@@ -305,6 +351,18 @@
         "CANTTELL": 0,
         "OTHER": 4
       }
+    },
+    {
+      "ruleId": "aria-role-conformance",
+      "title": "Role attributes are valid for the W3C validator",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/aria-role-conformance.js",
+      "testFile": "tests/engine-checks/automatic/aria-role-conformance.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "aria-role-name-present",
@@ -495,6 +553,40 @@
       }
     },
     {
+      "ruleId": "canvas-decorative-aria-hidden",
+      "title": "Decorative <canvas> images have aria-hidden=\"true\" and no alternative",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/canvas-decorative-aria-hidden.js",
+      "testFile": "tests/engine-checks/automatic/canvas-decorative-aria-hidden.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/canvas-decorative-aria-hidden-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 1,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "canvas-role-img",
+      "title": "<canvas> images have role=\"img\" with an ARIA name, or fallback content",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/canvas-role-img.js",
+      "testFile": "tests/engine-checks/automatic/canvas-role-img.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/canvas-role-img-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 4,
+        "CANTTELL": 1,
+        "OTHER": 2
+      }
+    },
+    {
       "ruleId": "canvas-text-alternative-present",
       "title": "<canvas> must provide a text alternative",
       "type": "automatic",
@@ -569,6 +661,23 @@
       }
     },
     {
+      "ruleId": "complex-table-summary-quality",
+      "title": "Complex data table summaries are relevant",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/complex-table-summary-quality-manual.js",
+      "testFile": "tests/engine-checks/manual/complex-table-summary-quality.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/complex-table-summary-quality-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 4
+      }
+    },
+    {
       "ruleId": "contrast-computable",
       "title": "Color contrast is computable for rendered text",
       "type": "automatic",
@@ -625,6 +734,18 @@
         "CANTTELL": 0,
         "OTHER": 28
       }
+    },
+    {
+      "ruleId": "contrast-minimum-rgaa",
+      "title": "Text meets RGAA minimum color contrast",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/contrast-minimum-rgaa.js",
+      "testFile": "tests/engine-checks/automatic/contrast-minimum-rgaa.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "css-focus-indicator-suppressed",
@@ -778,7 +899,7 @@
     },
     {
       "ruleId": "doctype-present",
-      "title": "Page declares a valid doctype",
+      "title": "Page declares a doctype",
       "type": "automatic",
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/doctype-present.js",
@@ -792,6 +913,18 @@
         "CANTTELL": 0,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "doctype-valid",
+      "title": "Declared doctype is valid",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/doctype-valid.js",
+      "testFile": "tests/engine-checks/automatic/doctype-valid.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "duplicate-id",
@@ -829,6 +962,23 @@
         "FAIL": 0,
         "CANTTELL": 3,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "embed-image-role-img",
+      "title": "Embedded images have role=\"img\" and a text alternative",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/embed-image-role-img.js",
+      "testFile": "tests/engine-checks/automatic/embed-image-role-img.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/embed-image-role-img-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 2,
+        "OTHER": 3
       }
     },
     {
@@ -938,6 +1088,40 @@
       }
     },
     {
+      "ruleId": "field-label-in-name-sources",
+      "title": "Every label source of a form field contains its visible label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/field-label-in-name-sources.js",
+      "testFile": "tests/engine-checks/automatic/field-label-in-name-sources.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/field-label-in-name-sources-all-scenarios.html",
+      "totalCases": 11,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 4,
+        "CANTTELL": 1,
+        "OTHER": 3
+      }
+    },
+    {
+      "ruleId": "field-label-listed-source",
+      "title": "Form fields have a label from a source RGAA lists",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/field-label-listed-source.js",
+      "testFile": "tests/engine-checks/automatic/field-label-listed-source.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/field-label-listed-source-all-scenarios.html",
+      "totalCases": 15,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 7,
+        "CANTTELL": 3,
+        "OTHER": 1
+      }
+    },
+    {
       "ruleId": "figure-caption-structure",
       "title": "Images with a caption use the figure structure RGAA describes",
       "type": "automatic",
@@ -955,6 +1139,18 @@
       }
     },
     {
+      "ruleId": "focus-indicator-contrast",
+      "title": "Author focus indicators have a contrast ratio of at least 3:1",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/focus-indicator-contrast.js",
+      "testFile": "tests/engine-checks/automatic/focus-indicator-contrast-chromium.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "focus-order-semantics",
       "title": "Elements added to the tab order should have interactive semantics",
       "type": "manual",
@@ -969,6 +1165,40 @@
         "FAIL": 0,
         "CANTTELL": 2,
         "OTHER": 4
+      }
+    },
+    {
+      "ruleId": "form-button-label-in-name-sources",
+      "title": "The accessible name of a button in a form contains its visible label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/form-button-label-in-name-sources.js",
+      "testFile": "tests/engine-checks/automatic/form-button-label-in-name-sources.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/form-button-label-in-name-sources-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 2,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "form-button-name-present",
+      "title": "Buttons in a form have a label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/form-button-name-present.js",
+      "testFile": "tests/engine-checks/automatic/form-button-name-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/form-button-name-present-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 3,
+        "CANTTELL": 2,
+        "OTHER": 1
       }
     },
     {
@@ -1050,6 +1280,47 @@
       }
     },
     {
+      "ruleId": "frame-title-attribute-present",
+      "title": "Frames have a title attribute",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/frame-title-attribute-present.js",
+      "testFile": "tests/engine-checks/automatic/frame-title-attribute-present.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "frame-title-not-empty",
+      "title": "Frame titles are not empty",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/frame-title-not-empty.js",
+      "testFile": "tests/engine-checks/automatic/frame-title-not-empty.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "heading-content-present",
+      "title": "Headings have content",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/heading-content-present.js",
+      "testFile": "tests/engine-checks/automatic/heading-content-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/heading-content-present-all-scenarios.html",
+      "totalCases": 11,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 3,
+        "CANTTELL": 4,
+        "OTHER": 1
+      }
+    },
+    {
       "ruleId": "heading-order",
       "title": "Heading levels must not skip a level",
       "type": "manual",
@@ -1086,6 +1357,35 @@
       }
     },
     {
+      "ruleId": "heading-role-level-present",
+      "title": "ARIA headings have an aria-level attribute",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/heading-role-level-present.js",
+      "testFile": "tests/engine-checks/automatic/heading-role-level-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/heading-role-level-present-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 3,
+        "CANTTELL": 0,
+        "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "html-elements-attributes-valid",
+      "title": "HTML elements and attribute values are valid",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/html-elements-attributes-valid.js",
+      "testFile": "tests/engine-checks/automatic/html-elements-attributes-valid.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "html-lang-attr-present",
       "title": "Page language is declared",
       "type": "automatic",
@@ -1103,6 +1403,30 @@
         "CANTTELL": 0,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "html-lang-code-valid",
+      "title": "Default language code is valid",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/html-lang-code-valid.js",
+      "testFile": "tests/engine-checks/automatic/html-lang-code-valid.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "html-nesting-valid",
+      "title": "HTML elements are nested as HTML allows",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/html-nesting-valid.js",
+      "testFile": "tests/engine-checks/automatic/html-nesting-valid.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "html-xml-lang-mismatch",
@@ -1305,6 +1629,23 @@
       }
     },
     {
+      "ruleId": "img-decorative-no-alternative",
+      "title": "Decorative images have no aria-labelledby, aria-label or title",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/img-decorative-no-alternative.js",
+      "testFile": "tests/engine-checks/automatic/img-decorative-no-alternative.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/img-decorative-no-alternative-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 2,
+        "CANTTELL": 2,
+        "OTHER": 2
+      }
+    },
+    {
       "ruleId": "input-image-alt-decorative",
       "title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
       "type": "manual",
@@ -1360,6 +1701,18 @@
         "CANTTELL": 0,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "keyboard-only-event-handlers",
+      "title": "Keyboard-only inline event handlers should have a pointer equivalent",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/keyboard-only-event-handlers-manual.js",
+      "testFile": "tests/engine-checks/manual/keyboard-only-event-handlers.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "label-for-target-valid",
@@ -1602,6 +1955,40 @@
       }
     },
     {
+      "ruleId": "link-content-label-present",
+      "title": "Links have a label in their content",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/link-content-label-present.js",
+      "testFile": "tests/engine-checks/automatic/link-content-label-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-content-label-present-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 4,
+        "CANTTELL": 1,
+        "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "link-context-review",
+      "title": "Generic links whose only context is outside RGAA's list are reviewed",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/link-context-review-manual.js",
+      "testFile": "tests/engine-checks/manual/link-context-review.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-context-review-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 3
+      }
+    },
+    {
       "ruleId": "link-in-text-block",
       "title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
       "type": "automatic",
@@ -1618,6 +2005,23 @@
         "FAIL": 2,
         "CANTTELL": 2,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "link-label-in-name-sources",
+      "title": "Every name source of a link contains its visible label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/link-label-in-name-sources.js",
+      "testFile": "tests/engine-checks/automatic/link-label-in-name-sources.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-label-in-name-sources-all-scenarios.html",
+      "totalCases": 13,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 4,
+        "CANTTELL": 3,
+        "OTHER": 3
       }
     },
     {
@@ -1660,6 +2064,23 @@
       }
     },
     {
+      "ruleId": "link-state-colors-review",
+      "title": "Link states shown by color alone are reviewed",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/link-state-colors-review-manual.js",
+      "testFile": "tests/engine-checks/manual/link-state-colors-review.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/link-state-colors-review-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 4
+      }
+    },
+    {
       "ruleId": "list-children-valid",
       "title": "Lists must only directly contain list items",
       "type": "automatic",
@@ -1698,6 +2119,23 @@
       }
     },
     {
+      "ruleId": "listbox-option-groups-absent",
+      "title": "ARIA listboxes do not group options",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/listbox-option-groups-absent.js",
+      "testFile": "tests/engine-checks/automatic/listbox-option-groups-absent.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/listbox-option-groups-absent-all-scenarios.html",
+      "totalCases": 4,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 1
+      }
+    },
+    {
       "ruleId": "listitem-parent-valid",
       "title": "List items must be inside a list container",
       "type": "automatic",
@@ -1717,6 +2155,18 @@
       }
     },
     {
+      "ruleId": "main-element-structure",
+      "title": "Main content uses one visible <main> element",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/main-element-structure.js",
+      "testFile": "tests/engine-checks/automatic/main-element-structure.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "manual-review",
       "title": "Manual review: keyboard navigation and focus order",
       "type": "manual",
@@ -1732,6 +2182,18 @@
         "CANTTELL": 1,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "markup-validation-review",
+      "title": "The generated source code is checked with the W3C validator",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/markup-validation-review-manual.js",
+      "testFile": "tests/engine-checks/manual/markup-validation-review.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "media-alternative-transcript-evidence",
@@ -1753,6 +2215,18 @@
       }
     },
     {
+      "ruleId": "media-transcript-adjacent",
+      "title": "Audio and video have an adjacent transcript or a link to one",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/media-transcript-adjacent.js",
+      "testFile": "tests/engine-checks/automatic/media-transcript-adjacent.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "menuitem-name-present",
       "title": "Menu items have an accessible name",
       "type": "automatic",
@@ -1770,6 +2244,18 @@
         "CANTTELL": 0,
         "OTHER": 8
       }
+    },
+    {
+      "ruleId": "meta-redirect-immediate",
+      "title": "Meta redirects are immediate",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/meta-redirect-immediate.js",
+      "testFile": "tests/engine-checks/automatic/meta-redirect-immediate.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "meta-refresh-no-exceptions",
@@ -1790,6 +2276,18 @@
         "CANTTELL": 0,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "meta-refresh-no-url-timing",
+      "title": "Meta refresh waits 20 hours or more",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/meta-refresh-no-url-timing.js",
+      "testFile": "tests/engine-checks/automatic/meta-refresh-no-url-timing.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "meta-refresh-timing-absent",
@@ -1923,6 +2421,23 @@
       }
     },
     {
+      "ruleId": "object-image-role-img",
+      "title": "Image objects have role=\"img\" and a text alternative",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/object-image-role-img.js",
+      "testFile": "tests/engine-checks/automatic/object-image-role-img.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/object-image-role-img-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 2,
+        "CANTTELL": 3,
+        "OTHER": 2
+      }
+    },
+    {
       "ruleId": "object-text-alternative-present",
       "title": "<object> must provide a text alternative",
       "type": "automatic",
@@ -1978,6 +2493,23 @@
       }
     },
     {
+      "ruleId": "optgroup-label-not-empty",
+      "title": "Option group labels are not empty",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/optgroup-label-not-empty.js",
+      "testFile": "tests/engine-checks/automatic/optgroup-label-not-empty.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/optgroup-label-not-empty-all-scenarios.html",
+      "totalCases": 4,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 1
+      }
+    },
+    {
       "ruleId": "optgroup-label-present",
       "title": "Option groups have a label",
       "type": "automatic",
@@ -2014,6 +2546,18 @@
       }
     },
     {
+      "ruleId": "orientation-content-parity",
+      "title": "Content stays the same in portrait and landscape",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/orientation-content-parity-manual.js",
+      "testFile": "tests/engine-checks/manual/orientation-content-parity.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
       "ruleId": "p-as-heading",
       "title": "A <p> styled to look like a heading should probably be a real heading",
       "type": "manual",
@@ -2048,6 +2592,18 @@
         "CANTTELL": 1,
         "OTHER": 0
       }
+    },
+    {
+      "ruleId": "page-language-present",
+      "title": "Page gives a default language",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/page-language-present.js",
+      "testFile": "tests/engine-checks/automatic/page-language-present.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "page-title-patterns",
@@ -2230,6 +2786,23 @@
       }
     },
     {
+      "ruleId": "role-img-aria-name",
+      "title": "Elements with role=\"img\" are named with aria-labelledby or aria-label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/role-img-aria-name.js",
+      "testFile": "tests/engine-checks/automatic/role-img-aria-name.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/role-img-aria-name-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 1,
+        "OTHER": 3
+      }
+    },
+    {
       "ruleId": "role-img-text-alternative-present",
       "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "type": "automatic",
@@ -2358,6 +2931,23 @@
       }
     },
     {
+      "ruleId": "skip-link-present",
+      "title": "Pages have a skip link to the main content",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/skip-link-present.js",
+      "testFile": "tests/engine-checks/automatic/skip-link-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/skip-link-present-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
       "ruleId": "slider-name-present",
       "title": "Sliders have an accessible name",
       "type": "automatic",
@@ -2448,6 +3038,23 @@
         "FAIL": 8,
         "CANTTELL": 0,
         "OTHER": 6
+      }
+    },
+    {
+      "ruleId": "svg-role-img",
+      "title": "SVGs with a text alternative have role=\"img\"",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/svg-role-img.js",
+      "testFile": "tests/engine-checks/automatic/svg-role-img.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/svg-role-img-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 1,
+        "OTHER": 3
       }
     },
     {
@@ -2656,6 +3263,40 @@
       }
     },
     {
+      "ruleId": "th-scope-row-col",
+      "title": "Table headers use scope=\"row\" or scope=\"col\"",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/th-scope-row-col-manual.js",
+      "testFile": "tests/engine-checks/manual/th-scope-row-col.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/th-scope-row-col-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
+        "OTHER": 3
+      }
+    },
+    {
+      "ruleId": "title-placeholder-identical",
+      "title": "A form field's title and placeholder are identical",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/title-placeholder-identical.js",
+      "testFile": "tests/engine-checks/automatic/title-placeholder-identical.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/title-placeholder-identical-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 2
+      }
+    },
+    {
       "ruleId": "tooltip-name-present",
       "title": "Tooltips have an accessible name",
       "type": "automatic",
@@ -2765,6 +3406,35 @@
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 4
+      }
+    },
+    {
+      "ruleId": "viewport-zoom-review",
+      "title": "Text can reach 200% zoom despite a viewport meta tag that limits zoom",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/viewport-zoom-review-manual.js",
+      "testFile": "tests/engine-checks/manual/viewport-zoom-review.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "widget-label-in-name",
+      "title": "The accessible name of a scripted component contains its visible label",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/widget-label-in-name.js",
+      "testFile": "tests/engine-checks/automatic/widget-label-in-name.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/widget-label-in-name-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 1,
+        "OTHER": 2
       }
     }
   ]

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>orientation-content-parity — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+
+    @media (orientation: portrait) {
+      #ocp_case_01 { display: none; }
+      #ocp_case_05 { flex-direction: column; }
+      #ocp_case_06 { display: block; }
+    }
+    @media screen and (orientation: landscape) {
+      #ocp_case_02 { visibility: hidden; }
+    }
+    @supports (display: grid) {
+      @media (orientation: portrait) {
+        #ocp_case_03 { display: none; }
+      }
+    }
+    @media (max-width: 400px) {
+      #ocp_case_04 { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>orientation-content-parity</code> (RGAA 13.9.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ocp_case_NN</code>.
+    RGAA 13.9.1 asks that the content stays the same in portrait and in
+    landscape. An element that an orientation media query hides is asked
+    about, whatever the orientation the scan runs in.
+  </p>
+
+  <h2>A. Hidden in one orientation (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: table hidden with display:none in portrait</div>
+    <table id="ocp_case_01"><tr><th>Year</th><td>2025</td></tr></table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: paragraph hidden with visibility:hidden in landscape</div>
+    <p id="ocp_case_02">Opening hours: 9:00 to 17:00.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: orientation query nested in @supports</div>
+    <p id="ocp_case_03">Delivery is free from 50 euros.</p>
+  </div>
+
+  <h2>B. Not hidden by an orientation query (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: hidden by a width media query</div>
+    <p id="ocp_case_04">Only on wide screens.</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: orientation query changes the layout only</div>
+    <div id="ocp_case_05" style="display:flex"><span>One</span><span>Two</span></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: orientation query shows the element</div>
+    <p id="ocp_case_06">Shown in portrait.</p>
+  </div>
+</body>
+</html>

@@ -60,16 +60,14 @@ test(`${RULE_ID}: a doctype after <html> is dropped by the parser and fails as m
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'missingDoctype');
 });
 
-test(`${RULE_ID}: an unknown doctype fails as invalid, naming what was declared`, () => {
+// Whether a declared doctype is valid is RGAA 8.1.2, which doctype-valid
+// reports; this rule checks presence only (8.1.1).
+test(`${RULE_ID}: an unknown doctype is present, so it passes here`, () => {
   for (const doctype of [
     '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">',
     '<!DOCTYPE html PUBLIC "-//Example//DTD Custom//EN">'
   ]) {
-    const rule = assertRule(scan(doctype + BODY), RULE_ID, 'fail', { minOccurrences: 1 });
-    const occ = rule.occurrences[0];
-    assert.equal(occ.data.details.reasonCode, 'invalidDoctype');
-    assert.equal(occ.i18n.summaryKey, 'doctypePresent_summary_fail_invalid');
-    assert.match(occ.html, /^<!DOCTYPE /);
+    assertRule(scan(doctype + BODY), RULE_ID, 'pass', { maxOccurrences: 0 });
   }
 });
 

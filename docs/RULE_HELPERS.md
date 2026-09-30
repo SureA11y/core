@@ -49,6 +49,24 @@ what is rendered, such as RGAA's tests on the generated source (8.2.1, 10.1.1, 1
 `<template>` content is not in the DOM tree and stays out. A WCAG rule should not use
 it: hidden content is not presented to users.
 
+### `getDoctypeInfo()` → `{ kind, name, publicId, systemId }`
+The document's doctype, classified by HTML version. `kind` is one of:
+
+| `kind` | Doctype |
+|---|---|
+| `'html5'` | name `html`, no public id, and no system id or `about:legacy-compat` |
+| `'xhtml10'` | a public id of XHTML 1.0 (strict, transitional or frameset) |
+| `'xhtml11'` | any other W3C XHTML public id: XHTML 1.1, XHTML Basic, XHTML 1.1 plus MathML (and SVG), XHTML+RDFa |
+| `'html4'` | a W3C or IETF HTML public id: HTML 2.0, 3.2, 4.0, 4.01, HTML 4.01+RDFa |
+| `'other'` | any other doctype, including one whose name is not `html` |
+| `'none'` | no doctype |
+
+Public ids are compared without regard to case, as the HTML parser does. `name`,
+`publicId` and `systemId` are the doctype's own values (empty strings when there is
+none). For rules whose verdict depends on the HTML version, such as RGAA's: criterion
+9.2 does not apply outside HTML5, and test 8.3.1 reads `lang` or `xml:lang` by version.
+Whether a doctype is valid at all is `doctype-present`'s question, not this helper's.
+
 ### `composedParent(node)` → `Node | null`
 One step up the *flat tree*: `assignedSlot` first (a slotted node's rendered parent is
 its slot, not its light-DOM `parentNode`), then `parentNode`, then `.host` once you're
@@ -329,9 +347,11 @@ Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba
 `computeEffectiveForeground`/`computeEffectiveBackground`, `getComputabilityBlocker`,
 `getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
 (`clamp01`, `round2`, `toHex2`, `pxToPt`, `fontWeightLabel`, …). Backs the
-`contrast-*` rule family (`contrast-minimum`, `contrast-enhanced`,
-`contrast-computable`) — see `src/core/contrast-helpers.js` if you're extending that
-family specifically.
+`contrast-*` rule family (`contrast-minimum`, `contrast-minimum-rgaa`, `contrast-enhanced`,
+`contrast-computable`) and `focus-indicator-contrast` — see `src/core/contrast-helpers.js`
+if you're extending that family specifically. `isLargeText(fontSizePx, fontWeightNum,
+boldLargeMinPx)` takes an optional third argument, the size from which bold text is large:
+WCAG's 14pt when it is left out, 18.5 for RGAA 3.2.
 
 ### `helpers.aria.*`
 ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,

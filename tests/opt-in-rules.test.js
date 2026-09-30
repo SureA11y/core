@@ -69,13 +69,15 @@ test("naming a standard's own rollup runs the opt-in rules it groups", () => {
   assert.equal(byRules.rulesResults.find((r) => r.ruleId === 'rgaa-4.1.2-10.1').outcome, 'fail');
 
   const byRunOnly = pick({}, { includeRuleIds: ['rgaa-4.1.2-8.1'] });
-  assert.deepEqual(
-    byRunOnly.checksResults.map((r) => r.ruleId),
-    ['doctype-present']
-  );
+  assert.deepEqual(byRunOnly.checksResults.map((r) => r.ruleId).sort(), [
+    'doctype-present',
+    'doctype-valid'
+  ]);
   assert.equal(byRunOnly.rulesResults[0].outcome, 'pass');
 
-  const excluded = pick({ rules: { include: 'rgaa-4.1.2-8.1', exclude: 'doctype-present' } });
+  const excluded = pick({
+    rules: { include: 'rgaa-4.1.2-8.1', exclude: 'doctype-present, doctype-valid' }
+  });
   assert.deepEqual(excluded.checksResults, []);
 });
 
@@ -121,8 +123,9 @@ test('the rgaa-4.1.2 profile runs WCAG 2.1 A and AA, the rules RGAA maps, and th
     .map((r) => r.ruleId);
   const profile = core.getChecksForRunOnly(null, { profile: 'rgaa-4.1.2' }).map((r) => r.ruleId);
   for (const id of wcag21) assert.ok(profile.includes(id), id);
-  // Rules with no WCAG mapping that RGAA tests: heading hierarchy, skip links.
-  for (const id of ['heading-order', 'skip-link', 'landmark-one-main']) {
+  // Rules with no WCAG mapping that RGAA tests: heading hierarchy, skip links,
+  // tab order.
+  for (const id of ['heading-order', 'skip-link', 'tabindex']) {
     assert.ok(!wcag21.includes(id) && profile.includes(id), id);
   }
   // A best-practice rule RGAA does not map stays out.
