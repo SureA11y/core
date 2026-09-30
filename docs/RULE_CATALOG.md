@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**195 rules total: 126 automatic (WCAG-normative, can return `fail`), 69 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**197 rules total: 126 automatic (WCAG-normative, can return `fail`), 71 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -139,7 +139,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 | [`widget-label-in-name`](#widget-label-in-name) | The accessible name of a scripted component contains its visible label | — | — | high | serious |
 
-## Manual rules (69), advisory, capped at `cantTell`
+## Manual rules (71), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -153,7 +153,9 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`complex-table-summary-quality`](#complex-table-summary-quality) | Complex data table summaries are relevant | — | — | medium | moderate |
 | [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.7 | AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
+| [`data-table-headers-review`](#data-table-headers-review) | Tables with no header cells are checked for unmarked headers | — | — | medium | moderate |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`embedded-refresh-review`](#embedded-refresh-review) | Embedded content that may refresh itself lets the user control the refresh | — | — | low | moderate |
 | [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
 | [`fake-list`](#fake-list) | Text laid out as a list uses list markup | — | — | low | moderate |
@@ -194,7 +196,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`office-document-link`](#office-document-link) | Downloadable office documents are accessible or have an accessible version | — | — | high | moderate |
 | [`orientation-content-parity`](#orientation-content-parity) | Content stays the same in portrait and landscape | — | — | medium | moderate |
-| [`p-as-heading`](#p-as-heading) | A &lt;p&gt; styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
+| [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
 | [`page-has-heading-one`](#page-has-heading-one) | Page should have a level-one heading | — | — | medium | minor |
 | [`page-title-patterns`](#page-title-patterns) | Page title patterns that may be insufficiently descriptive | 2.4.2 | A | medium | minor |
 | [`password-paste-enabled`](#password-paste-enabled) | Authentication fields must not block pasting | 3.3.8 | AA | medium | serious |
@@ -620,7 +622,7 @@ Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed au
 
 **Applies to.** Applies to form controls (input, select, textarea) with a non-empty autocomplete attribute. Disabled controls (the disabled attribute, including a control disabled by a disabled fieldset ancestor, or aria-disabled="true") and input types with a fixed value are exempt, as in ACT 73f2c2.
 
-**Expectation.** The value is "on"/"off" alone, or a well-formed autofill detail token list: an optional "section-*" token, then an optional "shipping"/"billing" token, then an optional contact-modality token (home/work/mobile/fax/pager/impp), then exactly one recognized field-name token (name, email, street-address, cc-number, tel, ...), optionally followed by "webauthn". The field name must also suit the control: the HTML Standard gives each field name a control group, and each group is allowed only on some input types (street-address only on textarea or select; email only on text, search or email inputs; and so on). A malformed or unsuitable value means the field is not reliably identified for assistive technology that relies on autocomplete to describe the expected input purpose.
+**Expectation.** The value is "on"/"off" alone, or a well-formed autofill detail token list: an optional "section-*" token, then an optional "shipping"/"billing" token, then an optional contact-modality token (home/work/mobile/fax/pager), then exactly one recognized field-name token (name, email, street-address, cc-number, tel, ...), optionally followed by "webauthn". The field name must also suit the control: the HTML Standard gives each field name a control group, and each group is allowed only on some input types (street-address only on textarea or select; email only on text, search or email inputs; and so on). A malformed or unsuitable value means the field is not reliably identified for assistive technology that relies on autocomplete to describe the expected input purpose.
 
 ### `avoid-inline-spacing`
 
@@ -894,6 +896,18 @@ Checks that no @media (orientation: portrait|landscape) rule sets a transform: r
 
 **Expectation.** No `@media (orientation: portrait)` or `@media (orientation: landscape)` block sets a `transform`/`-webkit-transform`/`rotate` rotation of approximately 90 degrees (mod 180, i.e. ~90 or ~270), the well-known technique for visually forcing one orientation regardless of the device's actual orientation, which defeats WCAG 1.3.4's requirement that content not restrict its view to a single display orientation unless that orientation is essential. Such a rotation fails. A second shape is asked about (cantTell): an orientation media block that hides the page's content with `display: none` or `visibility: hidden`, the usual form of WCAG F100 (content replaced by a "rotate your device" message in one orientation). The hidden element counts as the page's content when it is `html` or `body`, the `main` landmark, an ancestor of it, or, on a page without a main landmark, an element holding at least half of the body's text. Whether the orientation is essential, and whether the page stays usable, is left to a person.
 
+### `data-table-headers-review`
+
+**Tables with no header cells are checked for unmarked headers**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Flags a table of at least two rows and two columns with no &lt;th&gt; and no columnheader or rowheader role, for a person to check whether it is a data table whose headers should be marked up.
+
+**Applies to.** Applies to a &lt;table&gt;, or an element with role="table", that has at least two rows and two columns and no header cell at all: no &lt;th&gt; (without another role) and no cell with role="columnheader" or role="rowheader". Tables with role="presentation" or "none" are left out, and so is a table with no text in its cells.
+
+**Expectation.** Each such table is asked about (cantTell). RGAA 5.6.1 and 5.6.2 want each header that applies to a whole column or row marked with &lt;th&gt; or a columnheader or rowheader role. A data table usually has headers in its first row or column, but only a person can tell whether this one does, or whether it is a layout table, which 5.3 and 5.8 cover.
+
 ### `definition-list-children-valid`
 
 **Description lists must be structured correctly**
@@ -1055,6 +1069,26 @@ Flags &lt;embed&gt; elements with a detected name for human review of appropriat
 **Applies to.** Applies to &lt;embed&gt; elements that already carry a text alternative: a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. An aria-labelledby pointing at a missing id resolves to nothing and so is not a text alternative to review; that element is embed-text-alternative-present's failure. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role.
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
+
+### `embedded-refresh-review`
+
+**Embedded content that may refresh itself lets the user control the refresh**
+
+manual · no formal WCAG SC mapping · confidence low · default severity moderate
+
+Flags &lt;object&gt;, &lt;embed&gt;, &lt;canvas&gt; and scripted &lt;svg&gt; elements, for a person to check whether they refresh their content on their own and, if so, whether the user can stop, slow down or be warned of the refresh.
+
+**Applies to.**
+
+Applies to the elements RGAA 13.1.1 lists as refresh methods, other than &lt;meta&gt;:
+
+- every &lt;object&gt; and &lt;embed&gt;, except one that shows a still image (a `type` of image/* other than image/svg+xml, or with no `type`, a `data` or `src` ending in a raster image extension);
+- every &lt;canvas&gt;, since a script draws it and may redraw it;
+- every &lt;svg&gt; that contains a &lt;script&gt;.
+
+Hidden elements count, as they can still reload content. An element inside an &lt;object&gt; already asked about is its fallback and is left out.
+
+**Expectation.** Each element found is asked about (cantTell). If it refreshes its content on its own, RGAA 13.1.1 wants the user to be able to stop or restart the refresh, lengthen the delay tenfold, be warned in time to lengthen it, or the delay to be twenty hours at least. The markup does not show whether any refresh happens.
 
 ### `empty-heading`
 
@@ -2111,9 +2145,9 @@ Checks that an interactive control (link, button, form control, or ARIA widget r
 
 manual · WCAG 1.4.2 (A) · confidence low · default severity moderate
 
-Flags &lt;audio&gt;/&lt;video&gt; elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.
+Flags &lt;audio&gt;/&lt;video&gt; elements that autoplay unmuted with no native controls attribute, and &lt;embed&gt;, &lt;object&gt; or &lt;bgsound&gt; elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.
 
-**Applies to.** Any &lt;audio autoplay&gt; or &lt;video autoplay&gt; element that is not `muted`.
+**Applies to.** Any &lt;audio autoplay&gt; or &lt;video autoplay&gt; element that is not `muted`. Also any &lt;bgsound&gt;, and any &lt;embed&gt; or &lt;object&gt; that loads sound or video, or a plugin (Flash) that may play it: its `type` is audio/*, video/* or a plugin type, or its `src`/`data` ends in a sound or video file extension. An &lt;embed&gt; or &lt;object&gt; with `autostart` or `autoplay` set to false (attribute or &lt;param&gt;) is left out.
 
 **Expectation.** SC 1.4.2 only applies when audio plays automatically for MORE than 3 seconds; clip duration is not knowable from static markup (jsdom does not decode media), so this rule cannot determine whether the SC even applies to a given element. It is authored as `type: 'manual'` (cantTell-capped, never fail) on purpose rather than guessing: an autoplaying unmuted element with no `controls` attribute (the native, statically-verifiable mechanism to pause/stop or adjust volume) is flagged for human review rather than treated as a deterministic violation.
 
@@ -2233,13 +2267,13 @@ Flags each element that an orientation media query hides (display: none or visib
 
 ### `p-as-heading`
 
-**A &lt;p&gt; styled to look like a heading should probably be a real heading**
+**Text styled to look like a heading should probably be a real heading**
 
 manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
-Flags short &lt;p&gt; elements whose entire text is bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
+Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `&lt;p&gt;` elements with short (&lt;=120 char), non-empty trimmed text content that is entirely bold (the `&lt;p&gt;`'s own computed `font-weight` &gt;= 700, OR its entire text is wrapped in a single `&lt;strong&gt;`/`&lt;b&gt;` child) and rendered at &gt;=18px.
+**Applies to.** `&lt;p&gt;` elements, and `&lt;div&gt;` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `&lt;strong&gt;`/`&lt;b&gt;` or a styled `&lt;span&gt;`) and rendered at &gt;=18px.
 
 **Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`&lt;h1&gt;`-`&lt;h6&gt;` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
 

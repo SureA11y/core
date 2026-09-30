@@ -159,6 +159,9 @@ function scanTestFiles(repoRoot, testsDirArg) {
   const ruleIdRe = /const\s+RULE_ID\s*=\s*['"]([^'"]+)['"]/;
   const fixtureRefRe = /fixtures['"]\s*,\s*['"]([\w.-]+\.html)['"]/;
   const fixtureRefInlineRe = /fixtures\/([\w.-]+\.html)/;
+  // Newer tests build the name from the rule id: `${RULE_ID}-all-scenarios.html`.
+  const fixtureRefTemplateRe =
+    /(?:fixtures['"]|FIXTURES)\s*,\s*`\$\{RULE_ID\}([\w.-]*\.html)`|fixtures\/\$\{RULE_ID\}([\w.-]*\.html)/;
 
   for (const file of files) {
     let src;
@@ -173,7 +176,9 @@ function scanTestFiles(repoRoot, testsDirArg) {
 
     let fixtureFile = null;
     const fm = fixtureRefRe.exec(src) || fixtureRefInlineRe.exec(src);
+    const tm = fixtureRefTemplateRe.exec(src);
     if (fm) fixtureFile = fm[1];
+    else if (tm) fixtureFile = `${ruleId}${tm[1] || tm[2]}`;
 
     const rel = path.relative(repoRoot, file);
     if (!byRuleId.has(ruleId)) {

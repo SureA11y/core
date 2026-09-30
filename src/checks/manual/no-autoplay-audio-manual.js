@@ -5,11 +5,16 @@
 /**
  * @check no-autoplay-audio
  * @atomic true
- * @summary Autoplaying, unmuted <audio>/<video> should provide a pause/stop or volume-control mechanism
+ * @summary Sound that plays automatically should have a pause/stop or volume-control mechanism
  * @standard WCAG 2.2
  * @sc 1.4.2
  * @applicability
  *   Any <audio autoplay> or <video autoplay> element that is not `muted`.
+ *   Also any <bgsound>, and any <embed> or <object> that loads sound or
+ *   video, or a plugin (Flash) that may play it: its `type` is audio/*,
+ *   video/* or a plugin type, or its `src`/`data` ends in a sound or video
+ *   file extension. An <embed> or <object> with `autostart` or `autoplay`
+ *   set to false (attribute or <param>) is left out.
  * @expectation
  *   SC 1.4.2 only applies when audio plays automatically for MORE than 3
  *   seconds; clip duration is not knowable from static markup (jsdom does
@@ -27,6 +32,11 @@
  * - Elements with `muted` present are not flagged: muted playback is not
  *   audible, so the SC's condition ("plays automatically... audio")
  *   does not apply.
+ * - <embed>, <object> and <bgsound> have no `controls` or `muted` to
+ *   read, so each one found is asked about. RGAA 4.10.1 lists them as
+ *   sound sources along with <audio> and <video>. <bgsound> is obsolete
+ *   and current browsers ignore it, but it still plays in older ones.
+ * - Sound started by a script cannot be detected.
  * - Custom (JS-built) controls that don't use the native `controls`
  *   attribute cannot be detected statically. That's a documented limitation,
  *   same class as `iframe-focusable-content`'s `contentDocument` gap.
@@ -46,7 +56,7 @@ const id = 'no-autoplay-audio';
 const meta = {
   title: 'Autoplaying audio should provide a pause/stop or volume-control mechanism',
   description:
-    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.',
+    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.',
   i18n: {
     titleKey: 'noAutoplayAudio_title',
     descriptionKey: 'noAutoplayAudio_description'
@@ -114,6 +124,70 @@ function runInPage(ctx) {
       },
       data: {
         details: { reasonCode: 'AUTOPLAY_NO_CONTROLS_MECHANISM', mediaTag }
+      }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push(baseOccurrence);
+    }
+  }
+
+  // <embed>, <object> and <bgsound>: no controls or muted attribute to read.
+  const MEDIA_EXT =
+    /\.(mp3|wav|wave|ogg|oga|opus|m4a|aac|flac|wma|mid|midi|mp4|m4v|webm|ogv|mov|avi|wmv|mpg|mpeg|swf)(?:[?#]|$)/i;
+  const PLUGIN_TYPES = /^(application\/x-shockwave-flash|application\/futuresplash)$/i;
+
+  function attr(el, name) {
+    return String(el.getAttribute(name) || '').trim();
+  }
+
+  function mayPlaySound(el, urlAttr) {
+    const type = attr(el, 'type').toLowerCase().split(';')[0].trim();
+    if (type) return /^(audio|video)\//.test(type) || PLUGIN_TYPES.test(type);
+    return MEDIA_EXT.test(attr(el, urlAttr));
+  }
+
+  function startsDisabled(el) {
+    const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
+    if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
+    return Array.from(el.children || []).some((c) => {
+      if ((c.tagName || '').toLowerCase() !== 'param') return false;
+      const name = attr(c, 'name').toLowerCase();
+      return (
+        (name === 'autostart' || name === 'autoplay' || name === 'play') &&
+        isOff(c.getAttribute('value'))
+      );
+    });
+  }
+
+  // The fallback inside an <object> already asked about is the same sound.
+  const askedObjects = [];
+
+  for (const el of queryAllUnfiltered('embed, object, bgsound')) {
+    if (!el || !el.getAttribute) continue;
+    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'embed' && !mayPlaySound(el, 'src')) continue;
+    if (tag === 'object' && !mayPlaySound(el, 'data')) continue;
+    if (tag !== 'bgsound' && startsDisabled(el)) continue;
+
+    applicableCount += 1;
+    if (tag === 'object') askedObjects.push(el);
+
+    const baseOccurrence = {
+      selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      summary: 'This element may play sound as soon as the page loads.',
+      hint: 'Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.',
+      i18n: {
+        summaryKey: 'noAutoplayAudio_summary_cantTell_embedded',
+        hintKey: 'noAutoplayAudio_hint_cantTell_embedded',
+        params: { element: tag }
+      },
+      data: {
+        details: { reasonCode: 'EMBEDDED_SOUND_SOURCE', mediaTag: tag }
       }
     };
 

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>identical-iframes-same-purpose — scenario fixture</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        line-height: 1.4;
+        margin: 24px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 16px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 22px 0 10px;
+      }
+      .note {
+        font-size: 12px;
+        opacity: 0.85;
+        margin: 8px 0 16px;
+      }
+      .case {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .case-title {
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      iframe {
+        width: 200px;
+        height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>identical-iframes-same-purpose</code> (WCAG 4.1.2)</h1>
+
+    <p class="note">
+      The rule compares frames that share an accessible name. Each case uses its own name, so frames
+      from different cases never form a set. Targets have ids of the form
+      <code>iisp_case_NN_a</code> and <code>iisp_case_NN_b</code>. Frames that load different
+      resources are asked about, never failed: different resources can still serve the same purpose.
+    </p>
+
+    <h2>A. Same resource (PASS)</h2>
+
+    <div class="case" id="case_01">
+      <div class="case-title">01 — PASS: two frames named "Weather" load the same page</div>
+      <iframe id="iisp_case_01_a" title="Weather" src="weather.html"></iframe>
+      <iframe id="iisp_case_01_b" title="Weather" src="weather.html"></iframe>
+    </div>
+
+    <div class="case" id="case_02">
+      <div class="case-title">02 — PASS: same name through title and aria-label, same page</div>
+      <iframe id="iisp_case_02_a" title="Opening hours" src="hours.html"></iframe>
+      <iframe id="iisp_case_02_b" aria-label="Opening hours" src="hours.html"></iframe>
+    </div>
+
+    <div class="case" id="case_03">
+      <div class="case-title">03 — PASS: the addresses differ only by a fragment</div>
+      <iframe id="iisp_case_03_a" title="Map" src="map.html#north"></iframe>
+      <iframe id="iisp_case_03_b" title="Map" src="map.html#south"></iframe>
+    </div>
+
+    <h2>B. Different resources (CANTTELL)</h2>
+
+    <div class="case" id="case_04">
+      <div class="case-title">
+        04 — CANTTELL: two frames named "Contributors" load different pages
+      </div>
+      <iframe id="iisp_case_04_a" title="Contributors" src="contributors-2024.html"></iframe>
+      <iframe id="iisp_case_04_b" title="Contributors" src="contributors-2025.html"></iframe>
+    </div>
+
+    <div class="case" id="case_05">
+      <div class="case-title">
+        05 — CANTTELL: one frame has no src, so its resource cannot be compared
+      </div>
+      <iframe id="iisp_case_05_a" title="Newsletter" src="newsletter.html"></iframe>
+      <iframe id="iisp_case_05_b" title="Newsletter" srcdoc="&lt;p&gt;Subscribe&lt;/p&gt;"></iframe>
+    </div>
+
+    <h2>C. No set (NOT APPLICABLE)</h2>
+
+    <div class="case" id="case_06">
+      <div class="case-title">06 — NOT APPLICABLE: the two frames have different names</div>
+      <iframe id="iisp_case_06_a" title="Video player" src="player-a.html"></iframe>
+      <iframe id="iisp_case_06_b" title="Audio player" src="player-b.html"></iframe>
+    </div>
+
+    <div class="case" id="case_07">
+      <div class="case-title">
+        07 — NOT APPLICABLE: one of the two frames is hidden with aria-hidden="true"
+      </div>
+      <iframe id="iisp_case_07_a" title="Advert" aria-hidden="true" src="advert-a.html"></iframe>
+      <iframe id="iisp_case_07_b" title="Advert" src="advert-b.html"></iframe>
+    </div>
+  </body>
+</html>

@@ -45,6 +45,7 @@
     "css-focus-indicator-suppressed",
     "css-hidden-focus",
     "css-orientation-lock",
+    "data-table-headers-review",
     "definition-list-children-valid",
     "deprecated-elements-not-used",
     "dialog-name-present",
@@ -57,6 +58,7 @@
     "embed-image-role-img",
     "embed-text-alternative-present",
     "embed-text-alternative-quality",
+    "embedded-refresh-review",
     "empty-heading",
     "empty-table-header",
     "fake-list",
@@ -212,6 +214,15 @@
     "aria-allowed-role": [
       "ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT"
     ],
+    "aria-attribute-conformance": [
+      "attributeNotAllowed",
+      "invalidValue",
+      "missingRequired",
+      "namingProhibited",
+      "nativeAttributeConflict",
+      "nativeCheckedConflict",
+      "unknownAttribute"
+    ],
     "aria-braille-equivalent": [
       "BRAILLE_ATTR_WITHOUT_EQUIVALENT"
     ],
@@ -256,6 +267,14 @@
     ],
     "aria-required-parent": [
       "ARIA_REQUIRED_PARENT_MISSING"
+    ],
+    "aria-role-conformance": [
+      "emptyRole",
+      "imgPresentationRole",
+      "imgRoleEmptyAlt",
+      "imgRoleNoName",
+      "roleNotAllowed",
+      "unknownRoleToken"
     ],
     "aria-role-name-present": [
       "name_missing"
@@ -354,6 +373,9 @@
       "ORIENTATION_MEDIA_ROTATE_TRANSFORM",
       "STYLESHEETS_NOT_READABLE"
     ],
+    "data-table-headers-review": [
+      "NO_HEADER_CELLS"
+    ],
     "definition-list-children-valid": [
       "DL_DT_DD_ORDER",
       "DL_INVALID_CHILD",
@@ -388,6 +410,9 @@
       "adjacentLinkOrButton",
       "alternativeWithoutRoleImg",
       "noAlternative"
+    ],
+    "embedded-refresh-review": [
+      "POSSIBLE_REFRESH_SOURCE"
     ],
     "empty-heading": [
       "HEADING_EMPTY"
@@ -483,6 +508,19 @@
       "ariaLevelNotNumber",
       "missingAriaLevel"
     ],
+    "html-elements-attributes-valid": [
+      "autocompleteControl",
+      "autocompleteValue",
+      "dirValue",
+      "headersTarget",
+      "idValue",
+      "inputImageAlt",
+      "langValue",
+      "obsoleteElement",
+      "optgroupLabel",
+      "scopeValue",
+      "unknownElement"
+    ],
     "html-lang-attr-present": [
       "lang-empty",
       "lang-invalid-bcp47",
@@ -490,6 +528,18 @@
     ],
     "html-lang-code-valid": [
       "invalidLanguageCode"
+    ],
+    "html-nesting-valid": [
+      "dlChild",
+      "dlGroupOrder",
+      "dlItemParent",
+      "dlMixedGroups",
+      "extraMain",
+      "interactiveDescendant",
+      "ismapOutsideLink",
+      "listChild",
+      "listItemParent",
+      "tabindexDescendant"
     ],
     "html-xml-lang-mismatch": [
       "HTML_XML_LANG_MISMATCH"
@@ -622,12 +672,19 @@
     "listitem-parent-valid": [
       "LISTITEM_INVALID_PARENT"
     ],
+    "main-element-structure": [
+      "extraMain"
+    ],
     "markup-validation-review": [
       "pageReview"
     ],
     "media-alternative-transcript-evidence": [
       "transcriptEvidenceUnverified",
       "transcriptNotDetected"
+    ],
+    "media-transcript-adjacent": [
+      "describedTranscriptNotAdjacent",
+      "noAdjacentTranscript"
     ],
     "menuitem-name-present": [
       "name_missing"
@@ -661,7 +718,8 @@
       "NESTED_INTERACTIVE_CONTROL"
     ],
     "no-autoplay-audio": [
-      "AUTOPLAY_NO_CONTROLS_MECHANISM"
+      "AUTOPLAY_NO_CONTROLS_MECHANISM",
+      "EMBEDDED_SOUND_SOURCE"
     ],
     "object-image-role-img": [
       "adjacentLinkOrButton",
@@ -685,6 +743,7 @@
       "hiddenInOrientation"
     ],
     "p-as-heading": [
+      "BOLD_LARGE_DIV",
       "BOLD_LARGE_PARAGRAPH"
     ],
     "page-has-heading-one": [

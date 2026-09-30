@@ -111,7 +111,7 @@ With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its r
 
 Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1). A few links go against RGAA's correspondence on purpose: `<img ismap>` is what RGAA 1.1.4 looks for, although RGAA files 1.1.4 under WCAG 1.1.1 and the engine files the rule under 2.1.1. Such a row lists the test in `outsideCorrespondence` with the reason, the build refuses the link without one, and the entry is filed under the rule's own WCAG criteria. `RGAA_MAPPING.md` marks these tests "(exception)".
 
-120 of the 195 rules map to at least one test, and together they reach 50 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 56 no rule reaches.
+122 of the 197 rules map to at least one test, and together they reach 51 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 55 no rule reaches.
 
 `profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other profile runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping. To see them without targeting RGAA, `engineOptions.optInRules: 'all'` with no profile runs every rule the engine has, RGAA's included.
 
@@ -137,7 +137,7 @@ Fifteen opt-in rules decide RGAA requirements WCAG does not make, each deciding 
 
 They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` is, although HTML allows it.
 
-Nine more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
+Eleven more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
 
 | Rule | RGAA | Asks about |
 |---|---|---|
@@ -150,6 +150,8 @@ Nine more are manual: they cannot decide, so they point a person at what to chec
 | `office-document-link` | 13.3.1 | each link, `download` attribute, query-string value or form action naming a `.pdf`, `.epub`, `.rtf`, Word, Excel, PowerPoint or OpenDocument file |
 | `scripted-components-review` | 7.1.1–7.1.3 | every scripted component on a page with script, listing the elements that look like one (widget roles, `tabindex`, inline handlers, `contenteditable`, `aria-expanded` and similar) |
 | `markup-validation-review` | 8.2.1 | every page: the W3C validator's report on the generated source, since the DOM no longer shows errors the parser repaired. RGAA 8.2 therefore rolls up to `cantTell` at best |
+| `data-table-headers-review` | 5.6.1, 5.6.2 | a table of two rows and two columns or more with no header cell at all: only a person can say whether it is a data table whose first row or column holds headers |
+| `embedded-refresh-review` | 13.1.1 | each `<object>`, `<embed>` and `<canvas>`, and each `<svg>` with a `<script>`, which 13.1.1 lists as refresh methods; still images are left out |
 
 Criterion 7.1 always asks for a manual check through `scripted-components-review`, unless the page contains no script at all: no executable script element, inline handler, `javascript:` URL or custom element. The engine cannot see behaviour attached from script files, so the absence of findings says nothing about the page's scripted components. A missing name on a widget is reported under 11.1 when RGAA counts it as a form field (`role="slider"`, `"searchbox"`, `"option"`) and under 11.9 for a button; on a tree, grid, tab, menu item or dialog it fails 7.1.1.
 

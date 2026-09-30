@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>embedded-refresh-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>embedded-refresh-review</code> (RGAA 13.1.1)</h1>
+
+  <p class="note">
+    Each target has an id of the form <code>err_case_NN</code>. RGAA 13.1.1
+    lists object, embed, svg, canvas and meta as refresh methods; the rule
+    asks about the first four, since the markup does not show whether they
+    refresh.
+  </p>
+
+  <h2>A. Possible refresh methods (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: an &lt;object&gt; that embeds a live scores page</div>
+    <object id="err_case_01" data="scores.html" type="text/html" width="300" height="100"></object>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: an &lt;embed&gt; that embeds a news ticker</div>
+    <embed id="err_case_02" src="ticker.html" type="text/html" width="300" height="40">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: a &lt;canvas&gt;, which a script draws and may redraw</div>
+    <canvas id="err_case_03" width="200" height="80" role="img" aria-label="Visitors today"></canvas>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: an &lt;svg&gt; that holds a script</div>
+    <svg id="err_case_04" viewBox="0 0 10 10" width="40" height="40" role="img" aria-label="Clock">
+      <circle cx="5" cy="5" r="4" fill="none" stroke="currentColor"/>
+      <script>void 0;</script>
+    </svg>
+  </div>
+
+  <h2>B. Not asked about (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: an &lt;object&gt; that shows a PNG image</div>
+    <object id="err_case_05" data="chart.png" type="image/png" role="img" aria-label="Sales"></object>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: an inline &lt;svg&gt; icon with no script</div>
+    <svg id="err_case_06" viewBox="0 0 10 10" width="16" height="16" aria-hidden="true"><circle cx="5" cy="5" r="4"/></svg>
+  </div>
+</body>
+</html>

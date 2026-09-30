@@ -49,7 +49,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(
     rule.title,
-    'A <p> styled to look like a heading should probably be a real heading'
+    'Text styled to look like a heading should probably be a real heading'
   );
 });
 
@@ -58,15 +58,110 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFlaggedIds = ['pah_case_01'];
-  const expectedNoOccIds = ['pah_case_02', 'pah_case_03', 'pah_case_04'];
+  const expectedFlaggedIds = ['pah_case_01', 'pah_case_05', 'pah_case_06'];
+  const expectedNoOccIds = [
+    'pah_case_02',
+    'pah_case_03',
+    'pah_case_04',
+    'pah_case_07',
+    'pah_case_08',
+    'pah_case_09',
+    'pah_case_10'
+  ];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+});
+
+test(`${RULE_ID}: bold can come from any inner element, as long as all the text is bold`, () => {
+  const page = (body) => `<!doctype html><html><body>${body}</body></html>`;
+  for (const body of [
+    '<p id="a" style="font-size:22px"><span style="font-weight:bold">Our team</span></p>',
+    '<p id="a" style="font-size:22px"><b>Our</b> <strong>team</strong></p>',
+    '<p id="a" style="font-size:22px;font-weight:700">Our <em>team</em></p>'
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'a'), body);
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_LARGE_PARAGRAPH');
+  }
+  for (const body of [
+    '<p style="font-size:22px;font-weight:bold">Our <span style="font-weight:normal">team</span></p>',
+    '<p style="font-size:22px"><span style="font-weight:bold">Our</span> team</p>',
+    '<p style="font-weight:bold">Our <span style="font-size:22px">team</span></p>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: a <div> holding only text and inline markup is asked about`, () => {
+  const page = (body) =>
+    `<!doctype html><html><head><style>.h{font-weight:bold;font-size:22px}</style></head><body>${body}</body></html>`;
+  for (const body of [
+    '<div id="a" class="h">Opening hours</div>',
+    '<div class="h"><div id="a">Opening hours</div></div>',
+    '<div id="a" style="font-size:22px"><strong>Opening</strong> <b>hours</b></div>'
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'a'), body);
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_LARGE_DIV');
+    assert.equal(
+      rule.occurrences[0].summary,
+      'This block of text is entirely bold and rendered at a heading-like size.'
+    );
+  }
+});
+
+test(`${RULE_ID}: a paragraph inside a bold <div> is asked about once, as a paragraph`, () => {
+  const html = `<!doctype html><html><body><div style="font-weight:bold;font-size:22px"><p id="a">Opening hours</p></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'BOLD_LARGE_PARAGRAPH');
+});
+
+test(`${RULE_ID}: text that already has a role of its own, or a <div> that holds more than text, is left out`, () => {
+  const page = (body) =>
+    `<!doctype html><html><head><style>.h{font-weight:bold;font-size:22px}</style></head><body>${body}</body></html>`;
+  for (const body of [
+    '<div class="h" role="button" tabindex="0">Menu</div>',
+    '<div class="h" role="heading" aria-level="2">Menu</div>',
+    '<button><div class="h">Send</div></button>',
+    '<h2><div class="h">Title</div></h2>',
+    '<label><div class="h">Name</div><input></label>',
+    '<table><tr><th><div class="h">Price</div></th></tr></table>',
+    '<details><summary><div class="h">More</div></summary></details>',
+    '<div class="h"><img src="a.png" alt="">Logo</div>',
+    '<div class="h"><ul><li>One</li></ul></div>',
+    '<div class="h"><input aria-label="q"> Search</div>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
   }
 });

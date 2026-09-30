@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 195,
+    "totalRules": 197,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -5495,6 +5495,29 @@
       }
     },
     {
+      "file": "src/checks/manual/data-table-headers-review-manual.js",
+      "ruleId": "data-table-headers-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Tables with no header cells are checked for unmarked headers",
+      "tags": [
+        "rgaa",
+        "tables",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/manual/embed-text-alternative-quality-manual.js",
       "ruleId": "embed-text-alternative-quality",
       "wcagScNormative": [
@@ -5542,6 +5565,29 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/manual/embedded-refresh-review-manual.js",
+      "ruleId": "embedded-refresh-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Embedded content that may refresh itself lets the user control the refresh",
+      "tags": [
+        "rgaa",
+        "time",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/manual/empty-heading-manual.js",
@@ -6817,7 +6863,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "A <p> styled to look like a heading should probably be a real heading",
+      "title": "Text styled to look like a heading should probably be a real heading",
       "tags": [
         "wcag2a",
         "wcag131",

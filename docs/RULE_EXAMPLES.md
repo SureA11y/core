@@ -1,7 +1,7 @@
 # Rule examples
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
-example pairs for all 195 rules, meant to feed a future rule-page docs site the
+example pairs for all 197 rules, meant to feed a future rule-page docs site the
 way alfa.siteimprove.com/rules pages show worked examples alongside a rule's
 description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md), which carries
 each rule's title, WCAG mapping, applicability, and expectation — this file
@@ -785,6 +785,28 @@ No orientation media query rotates the page.
 ```
 A landscape media query forces a 90-degree rotation, locking the page to portrait regardless of device orientation.
 
+## data-table-headers-review
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<table>
+  <tr><td>Name</td><td>Age</td></tr>
+  <tr><td>Ann</td><td>34</td></tr>
+</table>
+```
+No cell is a header. If this is a data table, "Name" and "Age" are column headers and RGAA 5.6.1 wants them in `<th>`. Only a person can tell whether it is a data table.
+
+**Not applicable**
+```html
+<table>
+  <tr><th>Name</th><th>Age</th></tr>
+  <tr><td>Ann</td><td>34</td></tr>
+</table>
+```
+The table has header cells, so the question does not come up. A table with `role="presentation"` is not asked about either.
+
 ## definition-list-children-valid
 
 **Passed**
@@ -1010,6 +1032,22 @@ A `title` is present — worth confirming it identifies the document well enough
 <embed src="report.pdf" type="application/pdf">
 ```
 No aria-label, resolved aria-labelledby, or title exists to review; that's `embed-text-alternative-present`'s failure instead.
+
+## embedded-refresh-review
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<object data="scores.html" type="text/html"></object>
+```
+The embedded page may reload itself. RGAA 13.1.1 lists `<object>`, `<embed>`, `<svg>` and `<canvas>` as refresh methods, and a person checks whether a refresh happens and whether the user can stop it, lengthen it or be warned of it.
+
+**Not applicable**
+```html
+<svg viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4"/></svg>
+```
+An `<svg>` with no `<script>` cannot reload anything, and an `<object>` or `<embed>` that shows a still image is left out too.
 
 ## empty-heading
 
@@ -2402,6 +2440,12 @@ The audio autoplays unmuted with no `controls` attribute, giving the user no way
 ```
 Native `controls` gives the user a pause/volume mechanism.
 
+**Flagged (cantTell)**
+```html
+<embed src="welcome.mp3">
+```
+An `<embed>` or `<object>` that loads sound or video, and any `<bgsound>`, may play as soon as the page loads, and it has no `controls` or `muted` to read. One with `autostart="false"` (or a `<param>` saying so) is not asked about.
+
 ## object-image-role-img
 
 *Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
@@ -2562,6 +2606,12 @@ Bold, heading-sized, and short — visually a heading, but marked up as a plain 
 <p>Just a normal paragraph of body text that is not bold at all.</p>
 ```
 Normal weight and size; nothing visually suggests a heading.
+
+**Flagged (cantTell)**
+```html
+<div style="font-size: 24px"><span style="font-weight: bold">Our team</span></div>
+```
+A `<div>` holding only text is checked like a `<p>`, and the bold can come from a styled `<span>` inside it. A `<div>` that holds other blocks, and text inside a button, label or table header, is not asked about.
 
 ## page-has-heading-one
 

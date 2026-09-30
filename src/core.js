@@ -3185,6 +3185,64 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "data-table-headers-review",
+    "title": "Tables with no header cells are checked for unmarked headers",
+    "description": "Flags a table of at least two rows and two columns with no <th> and no columnheader or rowheader role, for a person to check whether it is a data table whose headers should be marked up.",
+    "i18n": {
+      "titleKey": "dataTableHeadersReview_title",
+      "descriptionKey": "dataTableHeadersReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.1",
+        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.2",
+        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "definition-list-children-valid",
     "title": "Description lists must be structured correctly",
     "description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
@@ -3995,6 +4053,55 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "embedded-refresh-review",
+    "title": "Embedded content that may refresh itself lets the user control the refresh",
+    "description": "Flags <object>, <embed>, <canvas> and scripted <svg> elements, for a person to check whether they refresh their content on their own and, if so, whether the user can stop, slow down or be warned of the refresh.",
+    "i18n": {
+      "titleKey": "embeddedRefreshReview_title",
+      "descriptionKey": "embeddedRefreshReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "time",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.1",
+        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1",
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -9202,7 +9309,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "no-autoplay-audio",
     "title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "i18n": {
       "titleKey": "noAutoplayAudio_title",
       "descriptionKey": "noAutoplayAudio_description"
@@ -9771,8 +9878,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "p-as-heading",
-    "title": "A <p> styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "title": "Text styled to look like a heading should probably be a real heading",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -15386,6 +15493,46 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "rgaa-4.1.2-5.6",
+    "checksIds": [
+      "data-table-headers-review"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-5.7",
     "checksIds": [
       "scope-attr-valid",
@@ -16755,6 +16902,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-13.1",
     "checksIds": [
+      "embedded-refresh-review",
       "meta-redirect-immediate",
       "meta-refresh-no-url-timing"
     ],
@@ -16910,6 +17058,7 @@ const RULE_IMPLS = {
   "css-focus-indicator-suppressed": { run: require("./checks/manual/css-focus-indicator-suppressed-manual.js").runInPage, applicability: require("./checks/manual/css-focus-indicator-suppressed-manual.js").applicability || null },
   "css-hidden-focus": { run: require("./checks/manual/css-hidden-focus.js").runInPage, applicability: require("./checks/manual/css-hidden-focus.js").applicability || null },
   "css-orientation-lock": { run: require("./checks/automatic/css-orientation-lock.js").runInPage, applicability: require("./checks/automatic/css-orientation-lock.js").applicability || null },
+  "data-table-headers-review": { run: require("./checks/manual/data-table-headers-review-manual.js").runInPage, applicability: require("./checks/manual/data-table-headers-review-manual.js").applicability || null },
   "definition-list-children-valid": { run: require("./checks/automatic/definition-list-children-valid.js").runInPage, applicability: require("./checks/automatic/definition-list-children-valid.js").applicability || null },
   "deprecated-elements-not-used": { run: require("./checks/automatic/deprecated-elements-not-used.js").runInPage, applicability: require("./checks/automatic/deprecated-elements-not-used.js").applicability || null },
   "dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
@@ -16922,6 +17071,7 @@ const RULE_IMPLS = {
   "embed-image-role-img": { run: require("./checks/automatic/embed-image-role-img.js").runInPage, applicability: require("./checks/automatic/embed-image-role-img.js").applicability || null },
   "embed-text-alternative-present": { run: require("./checks/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/embed-text-alternative-present.js").applicability || null },
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
+  "embedded-refresh-review": { run: require("./checks/manual/embedded-refresh-review-manual.js").runInPage, applicability: require("./checks/manual/embedded-refresh-review-manual.js").applicability || null },
   "empty-heading": { run: require("./checks/manual/empty-heading-manual.js").runInPage, applicability: require("./checks/manual/empty-heading-manual.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
   "fake-list": { run: require("./checks/manual/fake-list-manual.js").runInPage, applicability: require("./checks/manual/fake-list-manual.js").applicability || null },
@@ -17756,6 +17906,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Prüft, dass ein <meta http-equiv=\"refresh\">, das die Seite neu lädt, mindestens 20 Stunden wartet.",
     "metaRefreshNoUrlTiming_summary_fail": "Diese Seite lädt sich alle {{delay}} Sekunden neu, also in weniger als 20 Stunden.",
     "metaRefreshNoUrlTiming_hint_fail": "Entfernen Sie den Meta-Refresh oder aktualisieren Sie den Inhalt mit einem Skript, das Besucher anhalten, neu starten oder verlangsamen können.",
+    "embeddedRefreshReview_title": "Eingebettete Inhalte, die sich selbst aktualisieren können, lassen den Nutzer die Aktualisierung steuern",
+    "embeddedRefreshReview_description": "Markiert <object>-, <embed>-, <canvas>- und <svg>-Elemente mit Skript, damit eine Person prüft, ob sie ihren Inhalt selbst aktualisieren und ob der Nutzer die Aktualisierung dann anhalten, verlangsamen oder vorher gewarnt werden kann.",
+    "embeddedRefreshReview_summary_cantTell": "Dieses Element kann seinen Inhalt selbst aktualisieren. Prüfen Sie, ob es das tut und ob der Nutzer die Aktualisierung steuern kann.",
+    "embeddedRefreshReview_hint_cantTell": "Eine Aktualisierung ist zulässig, wenn der Nutzer sie anhalten und neu starten kann, die Wartezeit mindestens verzehnfachen kann, rechtzeitig davor gewarnt wird oder die Wartezeit mindestens zwanzig Stunden beträgt.",
     "metaRedirectImmediate_title": "Meta-Weiterleitungen erfolgen sofort",
     "metaRedirectImmediate_description": "Prüft, ob ein <meta http-equiv=\"refresh\">, das Besucher an eine andere Adresse weiterleitet, vorher wartet.",
     "metaRedirectImmediate_summary_cantTell": "Diese Seite leitet Besucher nach {{delay}} Sekunden an eine andere Adresse weiter.",
@@ -18049,9 +18203,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und ein nicht lesbares Stylesheet kann diese Farbe in einigen seiner Zustände ändern.",
     "linkStateColorsReview_hint_cantTell": "Versetzen Sie den Link in jeden Zustand (besucht, aktiv, Hover, Fokus) und prüfen Sie, dass seine Farbe mindestens 3:1 zum umgebenden Text kontrastiert, oder geben Sie dem Link eine andere Kennzeichnung als Farbe, etwa eine Unterstreichung.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
-    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
     "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
     "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
@@ -18101,10 +18257,12 @@ const I18N = {
     "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, region, presentation), zur manuellen Überprüfung.",
     "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
     "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn dieses Element nicht interaktiv sein soll, oder verwenden Sie eine interaktive Rolle, die seinem tatsächlichen Verhalten entspricht.",
-    "pAsHeading_title": "Ein <p>, das wie eine Überschrift aussieht, sollte wahrscheinlich eine echte Überschrift sein",
-    "pAsHeading_description": "Markiert kurze <p>-Elemente, deren gesamter Text fett ist und in >= 18px dargestellt wird, zur manuellen Überprüfung, ob stattdessen ein echtes Überschriften-Element verwendet werden sollte.",
+    "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
+    "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
     "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
     "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
+    "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
+    "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
     "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
     "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
     "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -18290,6 +18448,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Markiert eine komplexe Datentabelle mit einer Zusammenfassung (caption, aria-describedby oder vor HTML5 ein summary-Attribut), damit eine Person prüft, ob sie Art und Aufbau der Tabelle erklärt.",
     "complexTableSummaryQuality_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle und hat eine Zusammenfassung. Prüfen Sie, ob sie erklärt, wie die Tabelle aufgebaut ist.",
     "complexTableSummaryQuality_hint_cantTell": "Die Zusammenfassung sollte sagen, was die Tabelle enthält und wie ihre Überschriften angeordnet sind, nicht nur ihren Titel wiederholen. Sie kann in der <caption> stehen, bei Bedarf per CSS ausgeblendet, oder in einem mit aria-describedby verknüpften Textabschnitt.",
+    "dataTableHeadersReview_title": "Tabellen ohne Kopfzellen werden auf nicht ausgezeichnete Überschriften geprüft",
+    "dataTableHeadersReview_description": "Markiert eine Tabelle mit mindestens zwei Zeilen und zwei Spalten ohne <th> und ohne columnheader- oder rowheader-Rolle, damit eine Person prüft, ob es eine Datentabelle ist, deren Überschriften ausgezeichnet werden sollten.",
+    "dataTableHeadersReview_summary_cantTell": "Diese Tabelle hat keine Kopfzellen. Falls es eine Datentabelle ist, prüfen Sie, ob ihre erste Zeile oder Spalte Überschriften enthält.",
+    "dataTableHeadersReview_hint_cantTell": "Zeichnen Sie jede Überschrift, die für eine ganze Spalte oder Zeile gilt, mit <th> aus (oder mit role=\"columnheader\" oder role=\"rowheader\" in einer ARIA-Tabelle). Dient die Tabelle nur dem Layout, geben Sie ihr stattdessen role=\"presentation\".",
     "officeDocumentLink_title": "Herunterladbare Office-Dokumente sind barrierefrei oder haben eine barrierefreie Version",
     "officeDocumentLink_description": "Markiert jeden Link und jedes Formular, das ein Office-Dokument herunterlädt (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
     "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
@@ -19054,6 +19216,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Checks that a <meta http-equiv=\"refresh\"> that reloads the page waits at least 20 hours.",
     "metaRefreshNoUrlTiming_summary_fail": "This page reloads itself every {{delay}} seconds, less than 20 hours.",
     "metaRefreshNoUrlTiming_hint_fail": "Remove the meta refresh, or update the content with a script the visitor can stop, relaunch or slow down.",
+    "embeddedRefreshReview_title": "Embedded content that may refresh itself lets the user control the refresh",
+    "embeddedRefreshReview_description": "Flags <object>, <embed>, <canvas> and scripted <svg> elements, for a person to check whether they refresh their content on their own and, if so, whether the user can stop, slow down or be warned of the refresh.",
+    "embeddedRefreshReview_summary_cantTell": "This element may refresh its content on its own. Check whether it does, and whether the user can control the refresh.",
+    "embeddedRefreshReview_hint_cantTell": "A refresh passes when the user can stop and restart it, can make the delay at least ten times longer, is warned in time to do so, or when the delay is at least twenty hours.",
     "metaRedirectImmediate_title": "Meta redirects are immediate",
     "metaRedirectImmediate_description": "Checks whether a <meta http-equiv=\"refresh\"> that sends the visitor to another address waits before doing so.",
     "metaRedirectImmediate_summary_cantTell": "This page sends the visitor to another address after {{delay}} seconds.",
@@ -19347,9 +19513,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "This link in a run of text is shown only by its color, and a style sheet that could not be read may change that color in some of its states.",
     "linkStateColorsReview_hint_cantTell": "Put the link in each state (visited, active, hovered, focused) and check that its color contrasts at least 3:1 with the surrounding text, or give the link a mark other than color, such as an underline.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
     "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
     "videoCaption_summary_cantTell": "This video has no captions track.",
@@ -19399,10 +19567,12 @@ const I18N = {
     "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
     "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.",
-    "pAsHeading_title": "A <p> styled to look like a heading should probably be a real heading",
-    "pAsHeading_description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
+    "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
     "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
+    "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
+    "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
     "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
     "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
     "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -19588,6 +19758,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Flags a complex data table that has a summary (caption, aria-describedby, or before HTML5 a summary attribute), for a person to check that it explains the nature and structure of the table.",
     "complexTableSummaryQuality_summary_cantTell": "This table looks like a complex data table and has a summary. Check that it explains how the table is organised.",
     "complexTableSummaryQuality_hint_cantTell": "The summary should say what the table contains and how its headers are arranged, not only repeat its title. It can sit in the <caption>, hidden with CSS if needed, or in a passage linked with aria-describedby.",
+    "dataTableHeadersReview_title": "Tables with no header cells are checked for unmarked headers",
+    "dataTableHeadersReview_description": "Flags a table of at least two rows and two columns with no <th> and no columnheader or rowheader role, for a person to check whether it is a data table whose headers should be marked up.",
+    "dataTableHeadersReview_summary_cantTell": "This table has no header cells. If it is a data table, check whether its first row or column holds headers.",
+    "dataTableHeadersReview_hint_cantTell": "Mark each header that applies to a whole column or row with <th> (or role=\"columnheader\" or role=\"rowheader\" in an ARIA table). If the table is only used for layout, give it role=\"presentation\" instead.",
     "officeDocumentLink_title": "Downloadable office documents are accessible or have an accessible version",
     "officeDocumentLink_description": "Flags each link or form that downloads an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
     "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
@@ -20352,6 +20526,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Comprueba que un <meta http-equiv=\"refresh\"> que recarga la página espera al menos 20 horas.",
     "metaRefreshNoUrlTiming_summary_fail": "Esta página se recarga cada {{delay}} segundos, menos de 20 horas.",
     "metaRefreshNoUrlTiming_hint_fail": "Quite la actualización meta, o actualice el contenido con un script que el visitante pueda detener, reanudar o ralentizar.",
+    "embeddedRefreshReview_title": "El contenido incrustado que puede actualizarse solo permite al usuario controlar la actualización",
+    "embeddedRefreshReview_description": "Señala elementos <object>, <embed>, <canvas> y <svg> con script, para que una persona compruebe si actualizan su contenido por sí solos y, en ese caso, si el usuario puede detener, ralentizar o recibir aviso de la actualización.",
+    "embeddedRefreshReview_summary_cantTell": "Este elemento puede actualizar su contenido por sí solo. Compruebe si lo hace y si el usuario puede controlar la actualización.",
+    "embeddedRefreshReview_hint_cantTell": "Una actualización es conforme si el usuario puede detenerla y reanudarla, puede alargar el intervalo al menos diez veces, recibe aviso a tiempo para hacerlo, o si el intervalo es de al menos veinte horas.",
     "metaRedirectImmediate_title": "Las redirecciones meta son inmediatas",
     "metaRedirectImmediate_description": "Comprueba si un <meta http-equiv=\"refresh\"> que envía al visitante a otra dirección espera antes de hacerlo.",
     "metaRedirectImmediate_summary_cantTell": "Esta página envía al visitante a otra dirección tras {{delay}} segundos.",
@@ -20645,9 +20823,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Este enlace dentro de un texto se distingue solo por su color, y una hoja de estilo que no se pudo leer puede cambiar ese color en algunos de sus estados.",
     "linkStateColorsReview_hint_cantTell": "Ponga el enlace en cada estado (visitado, activo, con el puntero encima, con el foco) y compruebe que su color tiene un contraste de al menos 3:1 con el texto circundante, o dé al enlace una marca distinta del color, como un subrayado.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
-    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
+    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
     "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
     "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
@@ -20697,10 +20877,12 @@ const I18N = {
     "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, region, presentation), para su revisión manual.",
     "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Eliminar tabindex si este elemento no está pensado para ser interactivo, o usar un rol interactivo que coincida con su comportamiento real.",
-    "pAsHeading_title": "Un <p> con estilo de encabezado probablemente debería ser un encabezado real",
-    "pAsHeading_description": "Señala elementos <p> cortos cuyo texto completo está en negrita y se renderiza a >=18px, para su revisión manual sobre si debería usarse un elemento de encabezado real en su lugar.",
+    "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
+    "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
     "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
     "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
+    "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
+    "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
     "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
     "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un caption falso.",
     "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un caption falso.",
@@ -20886,6 +21068,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Señala una tabla de datos compleja con un resumen (caption, aria-describedby o, antes de HTML5, un atributo summary), para que una persona compruebe que explica la naturaleza y la estructura de la tabla.",
     "complexTableSummaryQuality_summary_cantTell": "Esta tabla parece una tabla de datos compleja y tiene un resumen. Compruebe que explica cómo está organizada la tabla.",
     "complexTableSummaryQuality_hint_cantTell": "El resumen debe decir qué contiene la tabla y cómo están dispuestos sus encabezados, no solo repetir su título. Puede estar en el <caption>, oculto con CSS si hace falta, o en un pasaje vinculado con aria-describedby.",
+    "dataTableHeadersReview_title": "Las tablas sin celdas de encabezado se revisan en busca de encabezados sin marcar",
+    "dataTableHeadersReview_description": "Señala una tabla de al menos dos filas y dos columnas sin <th> ni rol columnheader o rowheader, para que una persona compruebe si es una tabla de datos cuyos encabezados deberían marcarse.",
+    "dataTableHeadersReview_summary_cantTell": "Esta tabla no tiene celdas de encabezado. Si es una tabla de datos, compruebe si su primera fila o columna contiene encabezados.",
+    "dataTableHeadersReview_hint_cantTell": "Marque con <th> cada encabezado que se aplique a toda una columna o fila (o con role=\"columnheader\" o role=\"rowheader\" en una tabla ARIA). Si la tabla solo sirve para maquetar, dele role=\"presentation\".",
     "officeDocumentLink_title": "Los documentos ofimáticos descargables son accesibles o tienen una versión accesible",
     "officeDocumentLink_description": "Señala cada enlace o formulario que descarga un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
     "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
@@ -21650,6 +21836,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Vérifie qu’un <meta http-equiv=\"refresh\"> qui recharge la page attend au moins 20 heures.",
     "metaRefreshNoUrlTiming_summary_fail": "Cette page se rafraîchit toutes les {{delay}} secondes, moins de 20 heures.",
     "metaRefreshNoUrlTiming_hint_fail": "Retirez le rafraîchissement meta, ou mettez à jour le contenu avec un script que l’utilisateur peut arrêter, relancer ou ralentir.",
+    "embeddedRefreshReview_title": "Les contenus intégrés qui peuvent se rafraîchir laissent l’utilisateur contrôler le rafraîchissement",
+    "embeddedRefreshReview_description": "Signale les éléments <object>, <embed>, <canvas> et <svg> contenant un script, pour qu’une personne vérifie s’ils rafraîchissent leur contenu d’eux-mêmes et, le cas échéant, si l’utilisateur peut arrêter, ralentir ou être averti du rafraîchissement.",
+    "embeddedRefreshReview_summary_cantTell": "Cet élément peut rafraîchir son contenu de lui-même. Vérifiez si c’est le cas et si l’utilisateur peut contrôler le rafraîchissement.",
+    "embeddedRefreshReview_hint_cantTell": "Le rafraîchissement est conforme si l’utilisateur peut l’arrêter et le relancer, peut augmenter le délai d’au moins dix fois, est averti à temps pour le faire, ou si le délai est d’au moins vingt heures.",
     "metaRedirectImmediate_title": "Les redirections meta sont immédiates",
     "metaRedirectImmediate_description": "Vérifie si un <meta http-equiv=\"refresh\"> qui redirige l’utilisateur vers une autre adresse attend avant de le faire.",
     "metaRedirectImmediate_summary_cantTell": "Cette page redirige l’utilisateur vers une autre adresse après {{delay}} secondes.",
@@ -21943,9 +22133,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une feuille de style illisible peut changer cette couleur dans certains de ses états.",
     "linkStateColorsReview_hint_cantTell": "Placez le lien dans chaque état (visité, activé, survolé, avec le focus) et vérifiez que sa couleur a un rapport de contraste d’au moins 3:1 avec le texte environnant, ou donnez au lien un marqueur autre que la couleur, comme un soulignement.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
-    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
     "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
     "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
@@ -21995,10 +22187,12 @@ const I18N = {
     "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, region, presentation), pour une revue manuelle.",
     "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
     "focusOrderSemantics_hint_cantTell": "Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.",
-    "pAsHeading_title": "Un <p> stylé pour ressembler à un titre devrait probablement être un véritable titre",
-    "pAsHeading_description": "Signale les éléments <p> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
+    "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
+    "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
     "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
     "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
+    "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
+    "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
     "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
     "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une revue manuelle visant à déterminer si cette cellule fait office de légende factice.",
     "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -22184,6 +22378,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Signale un tableau de données complexe pourvu d’un résumé (balise <caption>, attribut aria-describedby ou, avant HTML5, attribut summary), pour qu’une personne vérifie qu’il explique la nature et la structure du tableau.",
     "complexTableSummaryQuality_summary_cantTell": "Ce tableau semble être un tableau de données complexe et a un résumé. Vérifiez qu’il explique comment le tableau est organisé.",
     "complexTableSummaryQuality_hint_cantTell": "Le résumé doit donner la nature et la structure du tableau, et pas seulement reprendre son titre. Il peut figurer dans la balise <caption>, masqué via CSS si nécessaire, ou dans un passage de texte lié avec aria-describedby.",
+    "dataTableHeadersReview_title": "Les tableaux sans cellule d’en-tête sont vérifiés pour des en-têtes non structurés",
+    "dataTableHeadersReview_description": "Signale un tableau d’au moins deux lignes et deux colonnes sans balise <th> ni rôle columnheader ou rowheader, pour qu’une personne vérifie s’il s’agit d’un tableau de données dont les en-têtes doivent être structurés.",
+    "dataTableHeadersReview_summary_cantTell": "Ce tableau n’a aucune cellule d’en-tête. S’il s’agit d’un tableau de données, vérifiez si sa première ligne ou sa première colonne contient des en-têtes.",
+    "dataTableHeadersReview_hint_cantTell": "Structurez chaque en-tête qui s’applique à toute une colonne ou toute une ligne avec une balise <th> (ou role=\"columnheader\" ou role=\"rowheader\" dans un tableau ARIA). Si le tableau sert uniquement à la mise en forme, donnez-lui plutôt role=\"presentation\".",
     "officeDocumentLink_title": "Les documents bureautiques en téléchargement sont accessibles ou ont une version accessible",
     "officeDocumentLink_description": "Signale chaque lien ou formulaire qui télécharge un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
     "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
@@ -22948,6 +23146,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "ページを再読み込みする <meta http-equiv=\"refresh\"> が 20 時間以上待つことを確認します。",
     "metaRefreshNoUrlTiming_summary_fail": "このページは {{delay}} 秒ごとに再読み込みされます。20 時間未満です。",
     "metaRefreshNoUrlTiming_hint_fail": "meta による再読み込みを削除するか、利用者が停止・再開・減速できるスクリプトで内容を更新してください。",
+    "embeddedRefreshReview_title": "自動で更新される可能性のある埋め込みコンテンツは、利用者が更新を制御できる",
+    "embeddedRefreshReview_description": "<object>、<embed>、<canvas>、スクリプトを含む <svg> 要素を検出し、内容が自動で更新されるか、その場合に利用者が更新を停止、延長、または事前に通知を受けられるかを人が確認できるようにします。",
+    "embeddedRefreshReview_summary_cantTell": "この要素は内容を自動で更新する可能性があります。更新されるかどうか、また利用者が更新を制御できるかを確認してください。",
+    "embeddedRefreshReview_hint_cantTell": "利用者が更新を停止・再開できる、間隔を 10 倍以上に延ばせる、延ばすのに間に合うよう事前に通知される、または間隔が 20 時間以上であれば適合します。",
     "metaRedirectImmediate_title": "meta によるリダイレクトが即時である",
     "metaRedirectImmediate_description": "利用者を別のアドレスへ移動させる <meta http-equiv=\"refresh\"> が、移動の前に待機するかどうかを確認します。",
     "metaRedirectImmediate_summary_cantTell": "このページは {{delay}} 秒後に利用者を別のアドレスへ移動させます。",
@@ -23241,9 +23443,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "文中のこのリンクは色だけで示されており、読み取れなかったスタイルシートが一部の状態でその色を変えている可能性があります。",
     "linkStateColorsReview_hint_cantTell": "リンクを各状態（訪問済み、アクティブ、ホバー、フォーカス）にして、その色が周囲のテキストと 3:1 以上のコントラストを持つことを確認してください。または下線など、色以外の目印をリンクに付けてください。",
     "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
-    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
+    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
+    "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
     "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
     "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
@@ -23293,10 +23497,12 @@ const I18N = {
     "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、region、presentation など) である要素を検出し、人が確認できるようにします。",
     "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
     "focusOrderSemantics_hint_cantTell": "この要素を操作可能にする意図がなければ tabindex を削除し、そうでなければ実際の動作に合ったインタラクティブなロールを使用してください。",
-    "pAsHeading_title": "見出しのように装飾された <p> は、本来の見出し要素にすることが望ましい場合がある",
-    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示されている短い <p> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
+    "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
+    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
     "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
     "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
+    "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
+    "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
     "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
     "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
     "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -23482,6 +23688,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "要約（caption、aria-describedby、または HTML5 より前の summary 属性）を持つ複雑なデータテーブルを示し、表の性質と構造を説明しているかを人が確認できるようにします。",
     "complexTableSummaryQuality_summary_cantTell": "このテーブルは複雑なデータテーブルのようで、要約があります。表の構成を説明しているか確認してください。",
     "complexTableSummaryQuality_hint_cantTell": "要約では、表の内容と見出しの配置を説明し、タイトルを繰り返すだけにしないでください。<caption> 内（必要なら CSS で非表示）か、aria-describedby で関連付けた文章に置けます。",
+    "dataTableHeadersReview_title": "見出しセルのない表について、マークアップされていない見出しがないかを確認する",
+    "dataTableHeadersReview_description": "2 行 2 列以上で、<th> も columnheader/rowheader ロールもない表を検出し、見出しをマークアップすべきデータテーブルかどうかを人が確認できるようにします。",
+    "dataTableHeadersReview_summary_cantTell": "この表には見出しセルがありません。データテーブルであれば、最初の行または列に見出しがないか確認してください。",
+    "dataTableHeadersReview_hint_cantTell": "列全体または行全体に適用される見出しは <th> (ARIA の表では role=\"columnheader\" または role=\"rowheader\") でマークアップしてください。レイアウトのためだけの表であれば、代わりに role=\"presentation\" を指定してください。",
     "officeDocumentLink_title": "ダウンロードできるオフィス文書がアクセシブルであるか、アクセシブルな版がある",
     "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）をダウンロードするリンクやフォームを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
     "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
@@ -24128,6 +24338,7 @@ const PROFILE_RULES = {
     "css-focus-indicator-suppressed",
     "css-hidden-focus",
     "css-orientation-lock",
+    "data-table-headers-review",
     "definition-list-children-valid",
     "dialog-name-present",
     "dir-attribute-valid",
@@ -24137,6 +24348,7 @@ const PROFILE_RULES = {
     "duplicate-id",
     "embed-image-role-img",
     "embed-text-alternative-quality",
+    "embedded-refresh-review",
     "fake-list",
     "field-group-legend",
     "field-label-in-name-sources",
@@ -37509,6 +37721,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "data-table-headers-review",
+    "title": "Tables with no header cells are checked for unmarked headers",
+    "description": "Flags a table of at least two rows and two columns with no <th> and no columnheader or rowheader role, for a person to check whether it is a data table whose headers should be marked up.",
+    "i18n": {
+      "titleKey": "dataTableHeadersReview_title",
+      "descriptionKey": "dataTableHeadersReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "tables",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.1",
+        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.6.2",
+        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+        "criterion": "5.6",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "definition-list-children-valid",
     "title": "Description lists must be structured correctly",
     "description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
@@ -38319,6 +38589,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "embedded-refresh-review",
+    "title": "Embedded content that may refresh itself lets the user control the refresh",
+    "description": "Flags <object>, <embed>, <canvas> and scripted <svg> elements, for a person to check whether they refresh their content on their own and, if so, whether the user can stop, slow down or be warned of the refresh.",
+    "i18n": {
+      "titleKey": "embeddedRefreshReview_title",
+      "descriptionKey": "embeddedRefreshReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "time",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "13.1.1",
+        "title": "Pour chaque page web, chaque procédé de rafraîchissement (balise <object>, balise <embed>, balise <svg>, balise <canvas>, balise <meta>) vérifie-t-il une de ces conditions (hors cas particuliers) ?",
+        "criterion": "13.1",
+        "wcagSc": [
+          "2.2.1",
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -43526,7 +43845,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "no-autoplay-audio",
     "title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "i18n": {
       "titleKey": "noAutoplayAudio_title",
       "descriptionKey": "noAutoplayAudio_description"
@@ -44095,8 +44414,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "p-as-heading",
-    "title": "A <p> styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "title": "Text styled to look like a heading should probably be a real heading",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -49710,6 +50029,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "rgaa-4.1.2-5.6",
+    "checksIds": [
+      "data-table-headers-review"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.6",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.1",
+          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.6.2",
+          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
+          "criterion": "5.6",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-5.7",
     "checksIds": [
       "scope-attr-valid",
@@ -51079,6 +51438,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-13.1",
     "checksIds": [
+      "embedded-refresh-review",
       "meta-redirect-immediate",
       "meta-refresh-no-url-timing"
     ],
@@ -57181,13 +57541,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'tel-national',
     'tel-area-code',
     'tel-local',
+    'tel-local-prefix',
+    'tel-local-suffix',
     'tel-extension',
     'email',
     'impp',
     'url',
     'photo'
   ]);
-  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager', 'impp']);
+  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
   // Control group of each field name that is not in the Text group (HTML
   // Standard, autofill field table).
@@ -62945,6 +63307,136 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
+    "data-table-headers-review": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  function hasText(v) {
+    return v != null && String(v).trim() !== '';
+  }
+
+  function firstRole(el) {
+    return String(el.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+  }
+
+  function isHeader(cell) {
+    const role = firstRole(cell);
+    if (role === 'columnheader' || role === 'rowheader') return true;
+    // A <th> given another role (role="cell", say) is not a header.
+    return String(cell.tagName).toLowerCase() === 'th' && !role;
+  }
+
+  function span(cell, attr) {
+    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
+  }
+
+  const ARIA_TABLE_ROLES = ['table', 'grid', 'treegrid'];
+  const ARIA_CELL_ROLES = ['cell', 'gridcell', 'columnheader', 'rowheader'];
+
+  function owningTable(el) {
+    let cur = el.parentElement;
+    while (cur) {
+      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
+      cur = cur.parentElement;
+    }
+    return null;
+  }
+
+  function gridOf(table) {
+    if (String(table.tagName).toLowerCase() === 'table') {
+      return {
+        rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
+        colspan: 'colspan',
+        rowspan: 'rowspan'
+      };
+    }
+    const rows = Array.from(table.querySelectorAll('[role]'))
+      .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
+      .map((row) =>
+        Array.from(row.children).filter((cell) => ARIA_CELL_ROLES.includes(firstRole(cell)))
+      );
+    return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
+  }
+
+  // Row and column counts, with spans; null once a header cell is found.
+  function sizeWithoutHeaders(table) {
+    const grid = gridOf(table);
+    const taken = [];
+    let cols = 0;
+    let withText = false;
+    for (let r = 0; r < grid.rows.length; r += 1) {
+      let c = 0;
+      for (const cell of grid.rows[r]) {
+        if (isHeader(cell)) return null;
+        if (hasText(cell.textContent)) withText = true;
+        taken[r] = taken[r] || [];
+        while (taken[r][c]) c += 1;
+        const colSpan = span(cell, grid.colspan);
+        const rowSpan = span(cell, grid.rowspan);
+        for (let dr = 0; dr < rowSpan; dr += 1) {
+          taken[r + dr] = taken[r + dr] || [];
+          for (let dc = 0; dc < colSpan; dc += 1) taken[r + dr][c + dc] = true;
+        }
+        c += colSpan;
+        cols = Math.max(cols, c);
+      }
+    }
+    return { rows: taken.length, cols, withText };
+  }
+
+  const tables = helpers.queryAllSmart
+    ? helpers.queryAllSmart('table, [role]')
+    : helpers.queryAll('table, [role]');
+
+  const occurrences = [];
+
+  for (const table of tables) {
+    if (!table || !table.getAttribute) continue;
+    const role = firstRole(table);
+    const isNative = String(table.tagName).toLowerCase() === 'table';
+    if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
+
+    const size = sizeWithoutHeaders(table);
+    if (!size || !size.withText || size.rows < 2 || size.cols < 2) continue;
+
+    occurrences.push(
+      helpers.reportOccurrence(table, {
+        summary:
+          'This table has no header cells. If it is a data table, check whether its first row or column holds headers.',
+        hint: 'Mark each header that applies to a whole column or row with <th> (or role="columnheader" or role="rowheader" in an ARIA table). If the table is only used for layout, give it role="presentation" instead.',
+        i18n: {
+          summaryKey: 'dataTableHeadersReview_summary_cantTell',
+          hintKey: 'dataTableHeadersReview_hint_cantTell',
+          params: {}
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed:
+            'Whether this is a data table, and whether any of its cells is a header that should be marked up.',
+          evidence: { rows: size.rows, columns: size.cols }
+        },
+        data: {
+          details: { reasonCode: 'NO_HEADER_CELLS', rows: size.rows, columns: size.cols },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -64263,6 +64755,84 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+}), applicability: null },
+    "embedded-refresh-review": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  // Every match in scope, hidden or not: a hidden element can still reload.
+  function queryAllUnfiltered(sel) {
+    const engineOptions = ctx.engineOptions || {};
+    const deep =
+      engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
+    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    return typeof helpers.isExcluded === 'function'
+      ? list.filter((el) => !helpers.isExcluded(el))
+      : list;
+  }
+
+  const STILL_IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?)(?:[?#]|$)/i;
+
+  function attr(el, name) {
+    return String(el.getAttribute(name) || '').trim();
+  }
+
+  function isStillImage(el, urlAttr) {
+    const type = attr(el, 'type').toLowerCase().split(';')[0].trim();
+    if (type) return type.startsWith('image/') && type !== 'image/svg+xml';
+    return STILL_IMAGE_EXT.test(attr(el, urlAttr));
+  }
+
+  function applies(el, tag) {
+    if (tag === 'object') return !isStillImage(el, 'data');
+    if (tag === 'embed') return !isStillImage(el, 'src');
+    if (tag === 'canvas') return true;
+    if (tag === 'svg') return !!el.querySelector('script');
+    return false;
+  }
+
+  const occurrences = [];
+  const askedObjects = [];
+
+  for (const el of queryAllUnfiltered('object, embed, canvas, svg')) {
+    if (!el || !el.getAttribute) continue;
+    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
+    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    if (!applies(el, tag)) continue;
+    if (tag === 'object') askedObjects.push(el);
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          'This element may refresh its content on its own. Check whether it does, and whether the user can control the refresh.',
+        hint: 'A refresh passes when the user can stop and restart it, can make the delay at least ten times longer, is warned in time to do so, or when the delay is at least twenty hours.',
+        i18n: {
+          summaryKey: 'embeddedRefreshReview_summary_cantTell',
+          hintKey: 'embeddedRefreshReview_hint_cantTell',
+          params: { element: tag }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed:
+            'Whether this element refreshes its content automatically, and if so how the user can control it.',
+          evidence: { element: tag }
+        },
+        data: {
+          details: { reasonCode: 'POSSIBLE_REFRESH_SOURCE', element: tag },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
 }), applicability: null },
     "empty-heading": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -80531,6 +81101,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // <embed>, <object> and <bgsound>: no controls or muted attribute to read.
+  const MEDIA_EXT =
+    /\.(mp3|wav|wave|ogg|oga|opus|m4a|aac|flac|wma|mid|midi|mp4|m4v|webm|ogv|mov|avi|wmv|mpg|mpeg|swf)(?:[?#]|$)/i;
+  const PLUGIN_TYPES = /^(application\/x-shockwave-flash|application\/futuresplash)$/i;
+
+  function attr(el, name) {
+    return String(el.getAttribute(name) || '').trim();
+  }
+
+  function mayPlaySound(el, urlAttr) {
+    const type = attr(el, 'type').toLowerCase().split(';')[0].trim();
+    if (type) return /^(audio|video)\//.test(type) || PLUGIN_TYPES.test(type);
+    return MEDIA_EXT.test(attr(el, urlAttr));
+  }
+
+  function startsDisabled(el) {
+    const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
+    if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
+    return Array.from(el.children || []).some((c) => {
+      if ((c.tagName || '').toLowerCase() !== 'param') return false;
+      const name = attr(c, 'name').toLowerCase();
+      return (
+        (name === 'autostart' || name === 'autoplay' || name === 'play') &&
+        isOff(c.getAttribute('value'))
+      );
+    });
+  }
+
+  // The fallback inside an <object> already asked about is the same sound.
+  const askedObjects = [];
+
+  for (const el of queryAllUnfiltered('embed, object, bgsound')) {
+    if (!el || !el.getAttribute) continue;
+    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'embed' && !mayPlaySound(el, 'src')) continue;
+    if (tag === 'object' && !mayPlaySound(el, 'data')) continue;
+    if (tag !== 'bgsound' && startsDisabled(el)) continue;
+
+    applicableCount += 1;
+    if (tag === 'object') askedObjects.push(el);
+
+    const baseOccurrence = {
+      selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      summary: 'This element may play sound as soon as the page loads.',
+      hint: 'Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.',
+      i18n: {
+        summaryKey: 'noAutoplayAudio_summary_cantTell_embedded',
+        hintKey: 'noAutoplayAudio_hint_cantTell_embedded',
+        params: { element: tag }
+      },
+      data: {
+        details: { reasonCode: 'EMBEDDED_SOUND_SOURCE', mediaTag: tag }
+      }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push(baseOccurrence);
+    }
+  }
+
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -81586,65 +82220,101 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  function isEntirelyBold(p, text) {
-    const cs = safeComputedStyle(p);
-    if (isBoldWeight(cs)) return true;
+  // Elements whose text already has a role of its own.
+  const OWN_ROLE_ANCESTORS =
+    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
 
-    // A single <strong>/<b> child that wraps the whole text also counts.
-    const children = Array.from(p.children || []);
-    const boldWrap = children.find((c) => {
-      const tag = (c.tagName || '').toLowerCase();
-      return tag === 'strong' || tag === 'b';
-    });
-    if (boldWrap && children.length === 1) {
-      const wrapText = trim(boldWrap.textContent || '');
-      if (wrapText && wrapText === text) return true;
+  // Anything but text and inline markup makes a <div> a container, not a
+  // passage of text.
+  const NOT_INLINE =
+    'address, article, aside, blockquote, details, dialog, div, dl, fieldset, figure, figcaption, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, hr, li, main, nav, ol, p, pre, section, table, ul, img, svg, picture, video, audio, canvas, iframe, object, embed, input, select, textarea, button';
+
+  function textPieces(el) {
+    const pieces = [];
+    const doc = el.ownerDocument;
+    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    let node = walker.nextNode();
+    while (node) {
+      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      node = walker.nextNode();
     }
-    return false;
+    return pieces;
   }
 
-  function getFontSizePx(p) {
-    const cs = safeComputedStyle(p);
-    if (!cs) return 0;
-    const px = Number.parseFloat(cs.fontSize);
-    return Number.isFinite(px) ? px : 0;
+  // Every piece of text is bold, and the smallest is the size reported.
+  function boldSize(el) {
+    let minPx = Infinity;
+    for (const holder of textPieces(el)) {
+      const cs = safeComputedStyle(holder);
+      if (!isBoldWeight(cs)) return 0;
+      const px = Number.parseFloat(cs.fontSize);
+      if (!Number.isFinite(px)) return 0;
+      minPx = Math.min(minPx, px);
+    }
+    return Number.isFinite(minPx) ? minPx : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
+  function isCandidate(el) {
+    const tag = (el.tagName || '').toLowerCase();
+    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    if (tag === 'p') return true;
+    if (tag !== 'div') return false;
+    if (trim(el.getAttribute('role'))) return false;
+    return !el.querySelector(NOT_INLINE);
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('p, div')
+    : helpers.queryAll('p, div');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+    if (!isCandidate(el)) continue;
 
     const text = trim(el.textContent || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
 
-    if (!isEntirelyBold(el, text)) continue;
-
-    const fontSizePx = getFontSizePx(el);
+    const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
+    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    const baseOccurrence = {
-      selector: stableSelector,
-      html,
-      summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
-      hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
-      i18n: {
-        summaryKey: 'pAsHeading_summary_cantTell',
-        hintKey: 'pAsHeading_hint_cantTell',
-        params: { fontSizePx: String(fontSizePx) }
-      },
-      data: {
-        details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
-      }
-    };
+    const baseOccurrence = isParagraph
+      ? {
+          selector: stableSelector,
+          html,
+          summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell',
+            hintKey: 'pAsHeading_hint_cantTell',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
+          }
+        }
+      : {
+          selector: stableSelector,
+          html,
+          summary: 'This block of text is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a <div> to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell_div',
+            hintKey: 'pAsHeading_hint_cantTell_div',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_DIV', fontSizePx }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -90841,6 +91511,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Prüft, dass ein <meta http-equiv=\"refresh\">, das die Seite neu lädt, mindestens 20 Stunden wartet.",
     "metaRefreshNoUrlTiming_summary_fail": "Diese Seite lädt sich alle {{delay}} Sekunden neu, also in weniger als 20 Stunden.",
     "metaRefreshNoUrlTiming_hint_fail": "Entfernen Sie den Meta-Refresh oder aktualisieren Sie den Inhalt mit einem Skript, das Besucher anhalten, neu starten oder verlangsamen können.",
+    "embeddedRefreshReview_title": "Eingebettete Inhalte, die sich selbst aktualisieren können, lassen den Nutzer die Aktualisierung steuern",
+    "embeddedRefreshReview_description": "Markiert <object>-, <embed>-, <canvas>- und <svg>-Elemente mit Skript, damit eine Person prüft, ob sie ihren Inhalt selbst aktualisieren und ob der Nutzer die Aktualisierung dann anhalten, verlangsamen oder vorher gewarnt werden kann.",
+    "embeddedRefreshReview_summary_cantTell": "Dieses Element kann seinen Inhalt selbst aktualisieren. Prüfen Sie, ob es das tut und ob der Nutzer die Aktualisierung steuern kann.",
+    "embeddedRefreshReview_hint_cantTell": "Eine Aktualisierung ist zulässig, wenn der Nutzer sie anhalten und neu starten kann, die Wartezeit mindestens verzehnfachen kann, rechtzeitig davor gewarnt wird oder die Wartezeit mindestens zwanzig Stunden beträgt.",
     "metaRedirectImmediate_title": "Meta-Weiterleitungen erfolgen sofort",
     "metaRedirectImmediate_description": "Prüft, ob ein <meta http-equiv=\"refresh\">, das Besucher an eine andere Adresse weiterleitet, vorher wartet.",
     "metaRedirectImmediate_summary_cantTell": "Diese Seite leitet Besucher nach {{delay}} Sekunden an eine andere Adresse weiter.",
@@ -91134,9 +91808,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und ein nicht lesbares Stylesheet kann diese Farbe in einigen seiner Zustände ändern.",
     "linkStateColorsReview_hint_cantTell": "Versetzen Sie den Link in jeden Zustand (besucht, aktiv, Hover, Fokus) und prüfen Sie, dass seine Farbe mindestens 3:1 zum umgebenden Text kontrastiert, oder geben Sie dem Link eine andere Kennzeichnung als Farbe, etwa eine Unterstreichung.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
-    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
     "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
     "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
@@ -91186,10 +91862,12 @@ const I18N = {
     "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, region, presentation), zur manuellen Überprüfung.",
     "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
     "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn dieses Element nicht interaktiv sein soll, oder verwenden Sie eine interaktive Rolle, die seinem tatsächlichen Verhalten entspricht.",
-    "pAsHeading_title": "Ein <p>, das wie eine Überschrift aussieht, sollte wahrscheinlich eine echte Überschrift sein",
-    "pAsHeading_description": "Markiert kurze <p>-Elemente, deren gesamter Text fett ist und in >= 18px dargestellt wird, zur manuellen Überprüfung, ob stattdessen ein echtes Überschriften-Element verwendet werden sollte.",
+    "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
+    "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
     "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
     "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
+    "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
+    "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
     "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
     "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
     "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -91375,6 +92053,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Markiert eine komplexe Datentabelle mit einer Zusammenfassung (caption, aria-describedby oder vor HTML5 ein summary-Attribut), damit eine Person prüft, ob sie Art und Aufbau der Tabelle erklärt.",
     "complexTableSummaryQuality_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle und hat eine Zusammenfassung. Prüfen Sie, ob sie erklärt, wie die Tabelle aufgebaut ist.",
     "complexTableSummaryQuality_hint_cantTell": "Die Zusammenfassung sollte sagen, was die Tabelle enthält und wie ihre Überschriften angeordnet sind, nicht nur ihren Titel wiederholen. Sie kann in der <caption> stehen, bei Bedarf per CSS ausgeblendet, oder in einem mit aria-describedby verknüpften Textabschnitt.",
+    "dataTableHeadersReview_title": "Tabellen ohne Kopfzellen werden auf nicht ausgezeichnete Überschriften geprüft",
+    "dataTableHeadersReview_description": "Markiert eine Tabelle mit mindestens zwei Zeilen und zwei Spalten ohne <th> und ohne columnheader- oder rowheader-Rolle, damit eine Person prüft, ob es eine Datentabelle ist, deren Überschriften ausgezeichnet werden sollten.",
+    "dataTableHeadersReview_summary_cantTell": "Diese Tabelle hat keine Kopfzellen. Falls es eine Datentabelle ist, prüfen Sie, ob ihre erste Zeile oder Spalte Überschriften enthält.",
+    "dataTableHeadersReview_hint_cantTell": "Zeichnen Sie jede Überschrift, die für eine ganze Spalte oder Zeile gilt, mit <th> aus (oder mit role=\"columnheader\" oder role=\"rowheader\" in einer ARIA-Tabelle). Dient die Tabelle nur dem Layout, geben Sie ihr stattdessen role=\"presentation\".",
     "officeDocumentLink_title": "Herunterladbare Office-Dokumente sind barrierefrei oder haben eine barrierefreie Version",
     "officeDocumentLink_description": "Markiert jeden Link und jedes Formular, das ein Office-Dokument herunterlädt (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
     "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
@@ -92139,6 +92821,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Checks that a <meta http-equiv=\"refresh\"> that reloads the page waits at least 20 hours.",
     "metaRefreshNoUrlTiming_summary_fail": "This page reloads itself every {{delay}} seconds, less than 20 hours.",
     "metaRefreshNoUrlTiming_hint_fail": "Remove the meta refresh, or update the content with a script the visitor can stop, relaunch or slow down.",
+    "embeddedRefreshReview_title": "Embedded content that may refresh itself lets the user control the refresh",
+    "embeddedRefreshReview_description": "Flags <object>, <embed>, <canvas> and scripted <svg> elements, for a person to check whether they refresh their content on their own and, if so, whether the user can stop, slow down or be warned of the refresh.",
+    "embeddedRefreshReview_summary_cantTell": "This element may refresh its content on its own. Check whether it does, and whether the user can control the refresh.",
+    "embeddedRefreshReview_hint_cantTell": "A refresh passes when the user can stop and restart it, can make the delay at least ten times longer, is warned in time to do so, or when the delay is at least twenty hours.",
     "metaRedirectImmediate_title": "Meta redirects are immediate",
     "metaRedirectImmediate_description": "Checks whether a <meta http-equiv=\"refresh\"> that sends the visitor to another address waits before doing so.",
     "metaRedirectImmediate_summary_cantTell": "This page sends the visitor to another address after {{delay}} seconds.",
@@ -92432,9 +93118,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "This link in a run of text is shown only by its color, and a style sheet that could not be read may change that color in some of its states.",
     "linkStateColorsReview_hint_cantTell": "Put the link in each state (visited, active, hovered, focused) and check that its color contrasts at least 3:1 with the surrounding text, or give the link a mark other than color, such as an underline.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
     "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
     "videoCaption_summary_cantTell": "This video has no captions track.",
@@ -92484,10 +93172,12 @@ const I18N = {
     "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
     "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.",
-    "pAsHeading_title": "A <p> styled to look like a heading should probably be a real heading",
-    "pAsHeading_description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
+    "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
     "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
+    "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
+    "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
     "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
     "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
     "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -92673,6 +93363,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Flags a complex data table that has a summary (caption, aria-describedby, or before HTML5 a summary attribute), for a person to check that it explains the nature and structure of the table.",
     "complexTableSummaryQuality_summary_cantTell": "This table looks like a complex data table and has a summary. Check that it explains how the table is organised.",
     "complexTableSummaryQuality_hint_cantTell": "The summary should say what the table contains and how its headers are arranged, not only repeat its title. It can sit in the <caption>, hidden with CSS if needed, or in a passage linked with aria-describedby.",
+    "dataTableHeadersReview_title": "Tables with no header cells are checked for unmarked headers",
+    "dataTableHeadersReview_description": "Flags a table of at least two rows and two columns with no <th> and no columnheader or rowheader role, for a person to check whether it is a data table whose headers should be marked up.",
+    "dataTableHeadersReview_summary_cantTell": "This table has no header cells. If it is a data table, check whether its first row or column holds headers.",
+    "dataTableHeadersReview_hint_cantTell": "Mark each header that applies to a whole column or row with <th> (or role=\"columnheader\" or role=\"rowheader\" in an ARIA table). If the table is only used for layout, give it role=\"presentation\" instead.",
     "officeDocumentLink_title": "Downloadable office documents are accessible or have an accessible version",
     "officeDocumentLink_description": "Flags each link or form that downloads an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
     "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
@@ -93437,6 +94131,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Comprueba que un <meta http-equiv=\"refresh\"> que recarga la página espera al menos 20 horas.",
     "metaRefreshNoUrlTiming_summary_fail": "Esta página se recarga cada {{delay}} segundos, menos de 20 horas.",
     "metaRefreshNoUrlTiming_hint_fail": "Quite la actualización meta, o actualice el contenido con un script que el visitante pueda detener, reanudar o ralentizar.",
+    "embeddedRefreshReview_title": "El contenido incrustado que puede actualizarse solo permite al usuario controlar la actualización",
+    "embeddedRefreshReview_description": "Señala elementos <object>, <embed>, <canvas> y <svg> con script, para que una persona compruebe si actualizan su contenido por sí solos y, en ese caso, si el usuario puede detener, ralentizar o recibir aviso de la actualización.",
+    "embeddedRefreshReview_summary_cantTell": "Este elemento puede actualizar su contenido por sí solo. Compruebe si lo hace y si el usuario puede controlar la actualización.",
+    "embeddedRefreshReview_hint_cantTell": "Una actualización es conforme si el usuario puede detenerla y reanudarla, puede alargar el intervalo al menos diez veces, recibe aviso a tiempo para hacerlo, o si el intervalo es de al menos veinte horas.",
     "metaRedirectImmediate_title": "Las redirecciones meta son inmediatas",
     "metaRedirectImmediate_description": "Comprueba si un <meta http-equiv=\"refresh\"> que envía al visitante a otra dirección espera antes de hacerlo.",
     "metaRedirectImmediate_summary_cantTell": "Esta página envía al visitante a otra dirección tras {{delay}} segundos.",
@@ -93730,9 +94428,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Este enlace dentro de un texto se distingue solo por su color, y una hoja de estilo que no se pudo leer puede cambiar ese color en algunos de sus estados.",
     "linkStateColorsReview_hint_cantTell": "Ponga el enlace en cada estado (visitado, activo, con el puntero encima, con el foco) y compruebe que su color tiene un contraste de al menos 3:1 con el texto circundante, o dé al enlace una marca distinta del color, como un subrayado.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
-    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
+    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
     "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
     "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
@@ -93782,10 +94482,12 @@ const I18N = {
     "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, region, presentation), para su revisión manual.",
     "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Eliminar tabindex si este elemento no está pensado para ser interactivo, o usar un rol interactivo que coincida con su comportamiento real.",
-    "pAsHeading_title": "Un <p> con estilo de encabezado probablemente debería ser un encabezado real",
-    "pAsHeading_description": "Señala elementos <p> cortos cuyo texto completo está en negrita y se renderiza a >=18px, para su revisión manual sobre si debería usarse un elemento de encabezado real en su lugar.",
+    "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
+    "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
     "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
     "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
+    "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
+    "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
     "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
     "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un caption falso.",
     "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un caption falso.",
@@ -93971,6 +94673,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Señala una tabla de datos compleja con un resumen (caption, aria-describedby o, antes de HTML5, un atributo summary), para que una persona compruebe que explica la naturaleza y la estructura de la tabla.",
     "complexTableSummaryQuality_summary_cantTell": "Esta tabla parece una tabla de datos compleja y tiene un resumen. Compruebe que explica cómo está organizada la tabla.",
     "complexTableSummaryQuality_hint_cantTell": "El resumen debe decir qué contiene la tabla y cómo están dispuestos sus encabezados, no solo repetir su título. Puede estar en el <caption>, oculto con CSS si hace falta, o en un pasaje vinculado con aria-describedby.",
+    "dataTableHeadersReview_title": "Las tablas sin celdas de encabezado se revisan en busca de encabezados sin marcar",
+    "dataTableHeadersReview_description": "Señala una tabla de al menos dos filas y dos columnas sin <th> ni rol columnheader o rowheader, para que una persona compruebe si es una tabla de datos cuyos encabezados deberían marcarse.",
+    "dataTableHeadersReview_summary_cantTell": "Esta tabla no tiene celdas de encabezado. Si es una tabla de datos, compruebe si su primera fila o columna contiene encabezados.",
+    "dataTableHeadersReview_hint_cantTell": "Marque con <th> cada encabezado que se aplique a toda una columna o fila (o con role=\"columnheader\" o role=\"rowheader\" en una tabla ARIA). Si la tabla solo sirve para maquetar, dele role=\"presentation\".",
     "officeDocumentLink_title": "Los documentos ofimáticos descargables son accesibles o tienen una versión accesible",
     "officeDocumentLink_description": "Señala cada enlace o formulario que descarga un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
     "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
@@ -94735,6 +95441,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "Vérifie qu’un <meta http-equiv=\"refresh\"> qui recharge la page attend au moins 20 heures.",
     "metaRefreshNoUrlTiming_summary_fail": "Cette page se rafraîchit toutes les {{delay}} secondes, moins de 20 heures.",
     "metaRefreshNoUrlTiming_hint_fail": "Retirez le rafraîchissement meta, ou mettez à jour le contenu avec un script que l’utilisateur peut arrêter, relancer ou ralentir.",
+    "embeddedRefreshReview_title": "Les contenus intégrés qui peuvent se rafraîchir laissent l’utilisateur contrôler le rafraîchissement",
+    "embeddedRefreshReview_description": "Signale les éléments <object>, <embed>, <canvas> et <svg> contenant un script, pour qu’une personne vérifie s’ils rafraîchissent leur contenu d’eux-mêmes et, le cas échéant, si l’utilisateur peut arrêter, ralentir ou être averti du rafraîchissement.",
+    "embeddedRefreshReview_summary_cantTell": "Cet élément peut rafraîchir son contenu de lui-même. Vérifiez si c’est le cas et si l’utilisateur peut contrôler le rafraîchissement.",
+    "embeddedRefreshReview_hint_cantTell": "Le rafraîchissement est conforme si l’utilisateur peut l’arrêter et le relancer, peut augmenter le délai d’au moins dix fois, est averti à temps pour le faire, ou si le délai est d’au moins vingt heures.",
     "metaRedirectImmediate_title": "Les redirections meta sont immédiates",
     "metaRedirectImmediate_description": "Vérifie si un <meta http-equiv=\"refresh\"> qui redirige l’utilisateur vers une autre adresse attend avant de le faire.",
     "metaRedirectImmediate_summary_cantTell": "Cette page redirige l’utilisateur vers une autre adresse après {{delay}} secondes.",
@@ -95028,9 +95738,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une feuille de style illisible peut changer cette couleur dans certains de ses états.",
     "linkStateColorsReview_hint_cantTell": "Placez le lien dans chaque état (visité, activé, survolé, avec le focus) et vérifiez que sa couleur a un rapport de contraste d’au moins 3:1 avec le texte environnant, ou donnez au lien un marqueur autre que la couleur, comme un soulignement.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
-    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
     "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
     "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
@@ -95080,10 +95792,12 @@ const I18N = {
     "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, region, presentation), pour une revue manuelle.",
     "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
     "focusOrderSemantics_hint_cantTell": "Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.",
-    "pAsHeading_title": "Un <p> stylé pour ressembler à un titre devrait probablement être un véritable titre",
-    "pAsHeading_description": "Signale les éléments <p> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
+    "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
+    "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
     "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
     "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
+    "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
+    "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
     "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
     "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une revue manuelle visant à déterminer si cette cellule fait office de légende factice.",
     "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -95269,6 +95983,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "Signale un tableau de données complexe pourvu d’un résumé (balise <caption>, attribut aria-describedby ou, avant HTML5, attribut summary), pour qu’une personne vérifie qu’il explique la nature et la structure du tableau.",
     "complexTableSummaryQuality_summary_cantTell": "Ce tableau semble être un tableau de données complexe et a un résumé. Vérifiez qu’il explique comment le tableau est organisé.",
     "complexTableSummaryQuality_hint_cantTell": "Le résumé doit donner la nature et la structure du tableau, et pas seulement reprendre son titre. Il peut figurer dans la balise <caption>, masqué via CSS si nécessaire, ou dans un passage de texte lié avec aria-describedby.",
+    "dataTableHeadersReview_title": "Les tableaux sans cellule d’en-tête sont vérifiés pour des en-têtes non structurés",
+    "dataTableHeadersReview_description": "Signale un tableau d’au moins deux lignes et deux colonnes sans balise <th> ni rôle columnheader ou rowheader, pour qu’une personne vérifie s’il s’agit d’un tableau de données dont les en-têtes doivent être structurés.",
+    "dataTableHeadersReview_summary_cantTell": "Ce tableau n’a aucune cellule d’en-tête. S’il s’agit d’un tableau de données, vérifiez si sa première ligne ou sa première colonne contient des en-têtes.",
+    "dataTableHeadersReview_hint_cantTell": "Structurez chaque en-tête qui s’applique à toute une colonne ou toute une ligne avec une balise <th> (ou role=\"columnheader\" ou role=\"rowheader\" dans un tableau ARIA). Si le tableau sert uniquement à la mise en forme, donnez-lui plutôt role=\"presentation\".",
     "officeDocumentLink_title": "Les documents bureautiques en téléchargement sont accessibles ou ont une version accessible",
     "officeDocumentLink_description": "Signale chaque lien ou formulaire qui télécharge un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
     "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
@@ -96033,6 +96751,10 @@ const I18N = {
     "metaRefreshNoUrlTiming_description": "ページを再読み込みする <meta http-equiv=\"refresh\"> が 20 時間以上待つことを確認します。",
     "metaRefreshNoUrlTiming_summary_fail": "このページは {{delay}} 秒ごとに再読み込みされます。20 時間未満です。",
     "metaRefreshNoUrlTiming_hint_fail": "meta による再読み込みを削除するか、利用者が停止・再開・減速できるスクリプトで内容を更新してください。",
+    "embeddedRefreshReview_title": "自動で更新される可能性のある埋め込みコンテンツは、利用者が更新を制御できる",
+    "embeddedRefreshReview_description": "<object>、<embed>、<canvas>、スクリプトを含む <svg> 要素を検出し、内容が自動で更新されるか、その場合に利用者が更新を停止、延長、または事前に通知を受けられるかを人が確認できるようにします。",
+    "embeddedRefreshReview_summary_cantTell": "この要素は内容を自動で更新する可能性があります。更新されるかどうか、また利用者が更新を制御できるかを確認してください。",
+    "embeddedRefreshReview_hint_cantTell": "利用者が更新を停止・再開できる、間隔を 10 倍以上に延ばせる、延ばすのに間に合うよう事前に通知される、または間隔が 20 時間以上であれば適合します。",
     "metaRedirectImmediate_title": "meta によるリダイレクトが即時である",
     "metaRedirectImmediate_description": "利用者を別のアドレスへ移動させる <meta http-equiv=\"refresh\"> が、移動の前に待機するかどうかを確認します。",
     "metaRedirectImmediate_summary_cantTell": "このページは {{delay}} 秒後に利用者を別のアドレスへ移動させます。",
@@ -96326,9 +97048,11 @@ const I18N = {
     "linkStateColorsReview_summary_cantTell_unreadable": "文中のこのリンクは色だけで示されており、読み取れなかったスタイルシートが一部の状態でその色を変えている可能性があります。",
     "linkStateColorsReview_hint_cantTell": "リンクを各状態（訪問済み、アクティブ、ホバー、フォーカス）にして、その色が周囲のテキストと 3:1 以上のコントラストを持つことを確認してください。または下線など、色以外の目印をリンクに付けてください。",
     "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
-    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
+    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
+    "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
     "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
     "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
@@ -96378,10 +97102,12 @@ const I18N = {
     "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、region、presentation など) である要素を検出し、人が確認できるようにします。",
     "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
     "focusOrderSemantics_hint_cantTell": "この要素を操作可能にする意図がなければ tabindex を削除し、そうでなければ実際の動作に合ったインタラクティブなロールを使用してください。",
-    "pAsHeading_title": "見出しのように装飾された <p> は、本来の見出し要素にすることが望ましい場合がある",
-    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示されている短い <p> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
+    "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
+    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
     "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
     "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
+    "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
+    "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
     "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
     "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
     "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -96567,6 +97293,10 @@ const I18N = {
     "complexTableSummaryQuality_description": "要約（caption、aria-describedby、または HTML5 より前の summary 属性）を持つ複雑なデータテーブルを示し、表の性質と構造を説明しているかを人が確認できるようにします。",
     "complexTableSummaryQuality_summary_cantTell": "このテーブルは複雑なデータテーブルのようで、要約があります。表の構成を説明しているか確認してください。",
     "complexTableSummaryQuality_hint_cantTell": "要約では、表の内容と見出しの配置を説明し、タイトルを繰り返すだけにしないでください。<caption> 内（必要なら CSS で非表示）か、aria-describedby で関連付けた文章に置けます。",
+    "dataTableHeadersReview_title": "見出しセルのない表について、マークアップされていない見出しがないかを確認する",
+    "dataTableHeadersReview_description": "2 行 2 列以上で、<th> も columnheader/rowheader ロールもない表を検出し、見出しをマークアップすべきデータテーブルかどうかを人が確認できるようにします。",
+    "dataTableHeadersReview_summary_cantTell": "この表には見出しセルがありません。データテーブルであれば、最初の行または列に見出しがないか確認してください。",
+    "dataTableHeadersReview_hint_cantTell": "列全体または行全体に適用される見出しは <th> (ARIA の表では role=\"columnheader\" または role=\"rowheader\") でマークアップしてください。レイアウトのためだけの表であれば、代わりに role=\"presentation\" を指定してください。",
     "officeDocumentLink_title": "ダウンロードできるオフィス文書がアクセシブルであるか、アクセシブルな版がある",
     "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）をダウンロードするリンクやフォームを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
     "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
@@ -97213,6 +97943,7 @@ const PROFILE_RULES = {
     "css-focus-indicator-suppressed",
     "css-hidden-focus",
     "css-orientation-lock",
+    "data-table-headers-review",
     "definition-list-children-valid",
     "dialog-name-present",
     "dir-attribute-valid",
@@ -97222,6 +97953,7 @@ const PROFILE_RULES = {
     "duplicate-id",
     "embed-image-role-img",
     "embed-text-alternative-quality",
+    "embedded-refresh-review",
     "fake-list",
     "field-group-legend",
     "field-label-in-name-sources",

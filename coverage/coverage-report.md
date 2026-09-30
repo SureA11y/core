@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **195**
+Total rules (loaded without error): **197**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -154,7 +154,7 @@ Uncovered facets: form-control-label-quality-review
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
-| p-as-heading | manual | A &lt;p&gt; styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
+| p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
 ### 1.3.4
@@ -691,6 +691,8 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
 | complex-table-summary-quality | manual | Complex data table summaries are relevant | src/checks/manual/complex-table-summary-quality-manual.js |  |  |
+| data-table-headers-review | manual | Tables with no header cells are checked for unmarked headers | src/checks/manual/data-table-headers-review-manual.js |  |  |
+| embedded-refresh-review | manual | Embedded content that may refresh itself lets the user control the refresh | src/checks/manual/embedded-refresh-review-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |
@@ -851,7 +853,7 @@ Uncovered facets: form-control-label-quality-review
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
-| p-as-heading | manual | A &lt;p&gt; styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
+| p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
 ### 1.3.4
@@ -1388,6 +1390,8 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | complex-table-summary | manual | Complex data tables have a summary | src/checks/manual/complex-table-summary-manual.js |  |  |
 | complex-table-summary-quality | manual | Complex data table summaries are relevant | src/checks/manual/complex-table-summary-quality-manual.js |  |  |
+| data-table-headers-review | manual | Tables with no header cells are checked for unmarked headers | src/checks/manual/data-table-headers-review-manual.js |  |  |
+| embedded-refresh-review | manual | Embedded content that may refresh itself lets the user control the refresh | src/checks/manual/embedded-refresh-review-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | fake-list | manual | Text laid out as a list uses list markup | src/checks/manual/fake-list-manual.js |  |  |

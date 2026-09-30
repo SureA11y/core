@@ -113,6 +113,28 @@ test(`${RULE_ID}: a contact modality token needs a contact field after it`, () =
   }
 });
 
+// impp is a field name, not a contact modality: HTML's modality tokens are
+// home, work, mobile, fax and pager. tel-local-prefix and tel-local-suffix
+// are field names too.
+test(`${RULE_ID}: pass impp on its own and the tel-local-prefix/suffix field names`, () => {
+  for (const value of [
+    'impp',
+    'tel-local-prefix',
+    'fax tel-local-suffix',
+    'work tel-local-prefix'
+  ]) {
+    const html = `<!doctype html><html><body><input autocomplete="${value}"></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+
+  const bad = `<!doctype html><html><body><input autocomplete="impp email"></body></html>`;
+  assertRule(runa11yCoreOnHtml(bad, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: full token order is accepted`, () => {
   for (const value of ['section-one shipping work email', 'billing email webauthn', 'photo']) {
     const html = `<!doctype html><html><body><input autocomplete="${value}"></body></html>`;

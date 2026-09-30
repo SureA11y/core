@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 195,
-    "withFixture": 175,
-    "withoutFixture": 20
+    "total": 197,
+    "withFixture": 197,
+    "withoutFixture": 0
   },
   "rows": [
     {
@@ -120,10 +120,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/aria-attribute-conformance.js",
       "testFile": "tests/engine-checks/automatic/aria-attribute-conformance.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/aria-attribute-conformance-all-scenarios.html",
+      "totalCases": 19,
+      "caseCounts": {
+        "PASS": 5,
+        "FAIL": 14,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "aria-braille-equivalent",
@@ -359,10 +364,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/aria-role-conformance.js",
       "testFile": "tests/engine-checks/automatic/aria-role-conformance.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/aria-role-conformance-all-scenarios.html",
+      "totalCases": 20,
+      "caseCounts": {
+        "PASS": 5,
+        "FAIL": 14,
+        "CANTTELL": 1,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "aria-role-name-present",
@@ -742,10 +752,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/contrast-minimum-rgaa.js",
       "testFile": "tests/engine-checks/automatic/contrast-minimum-rgaa.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/contrast-minimum-rgaa-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 3,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "css-focus-indicator-suppressed",
@@ -802,6 +817,23 @@
         "FAIL": 1,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "data-table-headers-review",
+      "title": "Tables with no header cells are checked for unmarked headers",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/data-table-headers-review-manual.js",
+      "testFile": "tests/engine-checks/manual/data-table-headers-review.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/data-table-headers-review-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 4
       }
     },
     {
@@ -921,10 +953,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/doctype-valid.js",
       "testFile": "tests/engine-checks/automatic/doctype-valid.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/doctype-valid-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "duplicate-id",
@@ -1017,6 +1054,23 @@
         "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "embedded-refresh-review",
+      "title": "Embedded content that may refresh itself lets the user control the refresh",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/embedded-refresh-review-manual.js",
+      "testFile": "tests/engine-checks/manual/embedded-refresh-review.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/embedded-refresh-review-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 4,
+        "OTHER": 2
       }
     },
     {
@@ -1145,10 +1199,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/focus-indicator-contrast.js",
       "testFile": "tests/engine-checks/automatic/focus-indicator-contrast-chromium.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/focus-indicator-contrast-all-scenarios.html",
+      "totalCases": 11,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 3,
+        "CANTTELL": 4,
+        "OTHER": 2
+      }
     },
     {
       "ruleId": "focus-order-semantics",
@@ -1286,10 +1345,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/frame-title-attribute-present.js",
       "testFile": "tests/engine-checks/automatic/frame-title-attribute-present.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/frame-title-attribute-present-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 4,
+        "CANTTELL": 0,
+        "OTHER": 3
+      }
     },
     {
       "ruleId": "frame-title-not-empty",
@@ -1298,10 +1362,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/frame-title-not-empty.js",
       "testFile": "tests/engine-checks/automatic/frame-title-not-empty.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/frame-title-not-empty-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 2
+      }
     },
     {
       "ruleId": "heading-content-present",
@@ -1380,10 +1449,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/html-elements-attributes-valid.js",
       "testFile": "tests/engine-checks/automatic/html-elements-attributes-valid.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/html-elements-attributes-valid-all-scenarios.html",
+      "totalCases": 16,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 12,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "html-lang-attr-present",
@@ -1411,10 +1485,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/html-lang-code-valid.js",
       "testFile": "tests/engine-checks/automatic/html-lang-code-valid.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/html-lang-code-valid-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "html-nesting-valid",
@@ -1423,10 +1502,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/html-nesting-valid.js",
       "testFile": "tests/engine-checks/automatic/html-nesting-valid.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/html-nesting-valid-all-scenarios.html",
+      "totalCases": 17,
+      "caseCounts": {
+        "PASS": 5,
+        "FAIL": 12,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "html-xml-lang-mismatch",
@@ -1456,10 +1540,15 @@
       ],
       "ruleFile": "src/checks/automatic/identical-iframes-same-purpose.js",
       "testFile": "tests/engine-checks/automatic/identical-iframes-same-purpose.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/identical-iframes-same-purpose-all-scenarios.html",
+      "totalCases": 7,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "CANTTELL": 2,
+        "OTHER": 2
+      }
     },
     {
       "ruleId": "identical-links-same-purpose",
@@ -1709,10 +1798,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/manual/keyboard-only-event-handlers-manual.js",
       "testFile": "tests/engine-checks/manual/keyboard-only-event-handlers.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/keyboard-only-event-handlers-all-scenarios.html",
+      "totalCases": 10,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 4,
+        "OTHER": 6
+      }
     },
     {
       "ruleId": "label-for-target-valid",
@@ -2161,10 +2255,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/main-element-structure.js",
       "testFile": "tests/engine-checks/automatic/main-element-structure.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/main-element-structure-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "manual-review",
@@ -2190,10 +2289,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/manual/markup-validation-review-manual.js",
       "testFile": "tests/engine-checks/manual/markup-validation-review.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/markup-validation-review-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "media-alternative-transcript-evidence",
@@ -2221,10 +2325,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/media-transcript-adjacent.js",
       "testFile": "tests/engine-checks/automatic/media-transcript-adjacent.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/media-transcript-adjacent-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "CANTTELL": 5,
+        "OTHER": 1
+      }
     },
     {
       "ruleId": "menuitem-name-present",
@@ -2252,10 +2361,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/meta-redirect-immediate.js",
       "testFile": "tests/engine-checks/automatic/meta-redirect-immediate.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/meta-redirect-immediate-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "meta-refresh-no-exceptions",
@@ -2284,10 +2398,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/meta-refresh-no-url-timing.js",
       "testFile": "tests/engine-checks/automatic/meta-refresh-no-url-timing.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/meta-refresh-no-url-timing-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "meta-refresh-timing-absent",
@@ -2412,12 +2531,12 @@
       "testFile": "tests/engine-checks/manual/no-autoplay-audio.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/no-autoplay-audio-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 3
+        "CANTTELL": 6,
+        "OTHER": 5
       }
     },
     {
@@ -2552,14 +2671,19 @@
       "wcagSc": [],
       "ruleFile": "src/checks/manual/orientation-content-parity-manual.js",
       "testFile": "tests/engine-checks/manual/orientation-content-parity.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/orientation-content-parity-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 3
+      }
     },
     {
       "ruleId": "p-as-heading",
-      "title": "A <p> styled to look like a heading should probably be a real heading",
+      "title": "Text styled to look like a heading should probably be a real heading",
       "type": "manual",
       "wcagSc": [
         "1.3.1"
@@ -2568,12 +2692,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 10,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 1,
-        "OTHER": 3
+        "CANTTELL": 3,
+        "OTHER": 7
       }
     },
     {
@@ -2600,10 +2724,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/automatic/page-language-present.js",
       "testFile": "tests/engine-checks/automatic/page-language-present.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/page-language-present-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "page-title-patterns",
@@ -3415,10 +3544,15 @@
       "wcagSc": [],
       "ruleFile": "src/checks/manual/viewport-zoom-review-manual.js",
       "testFile": "tests/engine-checks/manual/viewport-zoom-review.test.js",
-      "hasFixture": false,
-      "fixtureFile": null,
-      "totalCases": 0,
-      "caseCounts": null
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/viewport-zoom-review-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
+        "OTHER": 0
+      }
     },
     {
       "ruleId": "widget-label-in-name",

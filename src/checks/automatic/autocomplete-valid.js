@@ -18,7 +18,7 @@
  *   The value is "on"/"off" alone, or a well-formed autofill detail
  *   token list: an optional "section-*" token, then an optional
  *   "shipping"/"billing" token, then an optional contact-modality token
- *   (home/work/mobile/fax/pager/impp), then exactly one recognized
+ *   (home/work/mobile/fax/pager), then exactly one recognized
  *   field-name token (name, email, street-address, cc-number, tel, ...),
  *   optionally followed by "webauthn". The field name must also suit the
  *   control: the HTML Standard gives each field name a control group, and
@@ -128,13 +128,15 @@ function runInPage(ctx) {
     'tel-national',
     'tel-area-code',
     'tel-local',
+    'tel-local-prefix',
+    'tel-local-suffix',
     'tel-extension',
     'email',
     'impp',
     'url',
     'photo'
   ]);
-  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager', 'impp']);
+  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
   // Control group of each field name that is not in the Text group (HTML
   // Standard, autofill field table).
