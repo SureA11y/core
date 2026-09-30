@@ -111,7 +111,7 @@ With `engineOptions.mappings: ['rgaa']`, every result names the RGAA tests its r
 
 Because the relation is many to many, a rule's tests cannot be derived from its WCAG criteria the way an EN 301 549 clause is. They are stated rule by rule in `src/coverage/rgaa-rule-map.js`, under one rule: a rule maps to a test when its failure (or, for a manual rule, the question it raises) is direct evidence about what the test's official methodology checks, on the same kind of element. Covering one step of a test is enough; sharing a WCAG criterion is not. Each row says which step and why. The build rejects an unknown rule or test, and a test whose criterion RGAA relates to none of the rule's WCAG criteria. A rule with no WCAG mapping may map to any test, since RGAA checks some things WCAG leaves to best practice, such as heading hierarchy (9.1.1) and landmarks (9.2.1). A few links go against RGAA's correspondence on purpose: `<img ismap>` is what RGAA 1.1.4 looks for, although RGAA files 1.1.4 under WCAG 1.1.1 and the engine files the rule under 2.1.1. Such a row lists the test in `outsideCorrespondence` with the reason, the build refuses the link without one, and the entry is filed under the rule's own WCAG criteria. `RGAA_MAPPING.md` marks these tests "(exception)".
 
-118 of the 149 rules map to at least one test, and together they reach 50 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 56 no rule reaches.
+119 of the 150 rules map to at least one test, and together they reach 50 of the 106 criteria. [`RGAA_MAPPING.md`](./RGAA_MAPPING.md) lists every rule's tests with the reason, and every criterion with the rules that speak to it, including the 56 no rule reaches.
 
 `profile: 'rgaa-4.1.2'` targets RGAA directly: it runs the WCAG 2.1 A and AA rules, every rule mapped to an RGAA test (including those with no WCAG mapping, such as `heading-order`), and the opt-in rules for RGAA's own requirements, tagged `rgaa`, which no other profile runs (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)); it also switches on the RGAA mapping. To see them without targeting RGAA, `engineOptions.optInRules: 'all'` with no profile runs every rule the engine has, RGAA's included.
 
@@ -132,7 +132,7 @@ Ten opt-in rules decide RGAA requirements WCAG does not make, each deciding exac
 
 They follow RGAA's lists as written, so `width` on an `<iframe>` and `size` on an `<input>` are reported, and `<s>` and `dir="auto"` are, although HTML allows them.
 
-Seven more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
+Eight more are manual: they cannot decide, so they point a person at what to check and return `cantTell`, never `fail`:
 
 | Rule | RGAA | Asks about |
 |---|---|---|
@@ -143,6 +143,9 @@ Seven more are manual: they cannot decide, so they point a person at what to che
 | `image-alt-long` | 1.3.9 | a text alternative longer than 80 characters (RGAA gives no number; 80 is a threshold for asking) |
 | `complex-table-summary` | 5.1.1 | a table with headers beyond its first row and column, or cells using `headers`, with no `aria-describedby` or `summary` |
 | `office-document-link` | 13.3.1 | each link to a `.pdf`, `.doc(x)`, `.odt`, `.rtf`, `.xls(x)`, `.ods`, `.ppt(x)`, `.odp` or `.epub` file |
+| `scripted-components-review` | 7.1.1–7.1.3 | every scripted component on a page with script, listing the elements that look like one (widget roles, `tabindex`, inline handlers, `contenteditable`, `aria-expanded` and similar) |
+
+Criterion 7.1 always asks for a manual check through `scripted-components-review`, unless the page contains no script at all: no executable script element, inline handler, `javascript:` URL or custom element. The engine cannot see behaviour attached from script files, so the absence of findings says nothing about the page's scripted components. A missing name on a widget is reported under 11.1 when RGAA counts it as a form field (`role="slider"`, `"searchbox"`, `"option"`) and under 11.9 for a button; on a tree, grid, tab, menu item or dialog it fails 7.1.1.
 
 Under the profile, `rulesResults` also gets one rollup per RGAA criterion a rule is linked to, next to the WCAG ones: `rgaa-4.1.2-9.1` groups the heading rules, `rgaa-4.1.2-8.1` the doctype rule. Each has RGAA's wording as its title, `meta.standard: "RGAA"` and `data.details.criterion`, and follows the same outcome rules as a WCAG rollup, naming the RGAA tests of the rules that decided it. Some RGAA findings belong to no WCAG rollup at all (heading order, the doctype, presentational markup), so these rollups are the only place a consumer reading `rulesResults` alone sees them. Like RGAA-only rules they are opt-in: no default, WCAG or EN 301 549 run produces them, and `getRulesCatalog()` lists them only under options that ask for RGAA, or that unlock its rules with `optInRules` and select nothing else. Every check result also carries `rollupIds`, the rollups that group it in that run, so a finding with none can be spotted.
 

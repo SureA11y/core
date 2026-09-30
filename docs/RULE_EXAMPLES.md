@@ -1,7 +1,7 @@
 # Rule examples
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
-example pairs for all 149 rules, meant to feed a future rule-page docs site the
+example pairs for all 150 rules, meant to feed a future rule-page docs site the
 way alfa.siteimprove.com/rules pages show worked examples alongside a rule's
 description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md), which carries
 each rule's title, WCAG mapping, applicability, and expectation — this file
@@ -2012,6 +2012,26 @@ Text content is not a valid name source for an element with an explicit role="im
 <table><tr><th scope="col">Name</th></tr></table>
 ```
 "col" is a valid `scope` value.
+
+## scripted-components-review
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Flagged (cantTell)**
+```html
+<script src="/js/tabs.js"></script>
+<div role="tablist">
+  <div role="tab" aria-selected="true">Details</div>
+</div>
+```
+The page has script, so a person checks every scripted component against RGAA 7.1. The two `role` elements are listed as candidates; `tabs.js` may attach behaviour to other elements that the markup does not show.
+
+**Not applicable**
+```html
+<h1>Opening hours</h1>
+<p>Monday to Friday, 9:00 to 17:00.</p>
+```
+The page has no script element, inline handler, `javascript:` URL or custom element, so nothing can create or control a scripted component.
 
 ## scrollable-region-focusable
 

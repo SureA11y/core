@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **149**. With fixture: **148**. Without fixture: **1**.
+Total rules: **150**. With fixture: **149**. Without fixture: **1**.
 
 ## Rules WITHOUT a fixture (1)
 
@@ -12,7 +12,7 @@ Total rules: **149**. With fixture: **148**. Without fixture: **1**.
 |---|---|---|---|---|
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | tests/engine-checks/automatic/identical-iframes-same-purpose.test.js |
 
-## Rules WITH a fixture (148)
+## Rules WITH a fixture (149)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -138,6 +138,7 @@ Total rules: **149**. With fixture: **148**. Without fixture: **1**.
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 25 | 5 | 10 | 0 | 10 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
+| scripted-components-review | manual | `tests/fixtures/scripted-components-review-all-scenarios.html` | 12 | 0 | 0 | 0 | 12 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 3 | 0 | 1 | 0 | 2 |

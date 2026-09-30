@@ -124,6 +124,7 @@
     "region",
     "role-img-text-alternative-present",
     "scope-attr-valid",
+    "scripted-components-review",
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
@@ -538,6 +539,14 @@
     ],
     "scope-attr-valid": [
       "SCOPE_ATTR_INVALID"
+    ],
+    "scripted-components-review": [
+      "contentEditable",
+      "focusableNonNative",
+      "inlineHandler",
+      "pageReview",
+      "stateAttribute",
+      "widgetRole"
     ],
     "scrollable-region-focusable": [
       "SCROLLABLE_OVERFLOW_NOT_FOCUSABLE"

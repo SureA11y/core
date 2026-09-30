@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 149,
+    "totalRules": 150,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -6042,6 +6042,29 @@
         "best-practice",
         "tables",
         "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/manual/scripted-components-review-manual.js",
+      "ruleId": "scripted-components-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Scripted components are compatible with assistive technologies",
+      "tags": [
+        "rgaa",
+        "aria",
         "atomic",
         "manual"
       ],

@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**149 rules total: 89 automatic (WCAG-normative, can return `fail`), 60 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**150 rules total: 89 automatic (WCAG-normative, can return `fail`), 61 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -102,7 +102,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-captions-track-kind`](#video-captions-track-kind) | Video caption tracks use kind="captions" | — | — | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (60), advisory, capped at `cantTell`
+## Manual rules (61), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -159,6 +159,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`radio-group-present`](#radio-group-present) | Radio buttons sharing a name are grouped | — | — | medium | moderate |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
 | [`scope-attr-valid`](#scope-attr-valid) | scope attribute must have a valid value | — | — | medium | minor |
+| [`scripted-components-review`](#scripted-components-review) | Scripted components are compatible with assistive technologies | — | — | medium | moderate |
 | [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | AAA | low | moderate |
 | [`skip-link`](#skip-link) | Skip link must have a resolvable, usable target | — | — | medium | minor |
 | [`svg-text-alternative-quality`](#svg-text-alternative-quality) | &lt;svg&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -1775,6 +1776,18 @@ Checks that scope="..." is one of row, col, rowgroup, or colgroup.
 **Applies to.** Applies to elements with a non-empty scope attribute.
 
 **Expectation.** The scope value is one of "row", "col", "rowgroup", or "colgroup" (case-insensitive). An invalid scope value is not recognized by assistive technology, silently losing the row/column header association it was meant to declare.
+
+### `scripted-components-review`
+
+**Scripted components are compatible with assistive technologies**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+On a page with script, asks a person to check every scripted component against RGAA 7.1 (name, role, value, settings and state changes exposed and rendered by assistive technologies, a name that contains the visible label), and lists the elements in the markup that look like scripted components as a starting point.
+
+**Applies to.** Applies to every page that contains script, in the scanned document or any open shadow root inside it: an executable &lt;script&gt; element, an inline event handler attribute (onclick and the like) on any element, a href, src, action or formaction starting with "javascript:", or a custom element (a tag name with a hyphen, which only works through script). A page with none of these is notApplicable: RGAA 7.1 asks about scripts, and with no script nothing can create or drive a custom component.
+
+**Expectation.** Always cantTell on a page with script, never pass or fail. One occurrence at the scan root asks a person to check that every scripted component exposes its name, role, value, settings and state changes to assistive technologies (RGAA 7.1.1), is rendered correctly by them (7.1.2) and has a relevant name and role, with a name that contains its visible label (7.1.3), or that an accessible alternative exists. Behaviour attached from script files (addEventListener) cannot be seen in the markup, so this question stands even when nothing else is listed. After it, one occurrence per candidate element found in the markup, as a starting list for the auditor, never a complete one.
 
 ### `scrollable-region-focusable`
 

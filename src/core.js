@@ -9326,6 +9326,77 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "scripted-components-review",
+    "title": "Scripted components are compatible with assistive technologies",
+    "description": "On a page with script, asks a person to check every scripted component against RGAA 7.1 (name, role, value, settings and state changes exposed and rendered by assistive technologies, a name that contains the visible label), and lists the elements in the markup that look like scripted components as a starting point.",
+    "i18n": {
+      "titleKey": "scriptedComponentsReview_title",
+      "descriptionKey": "scriptedComponentsReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "aria",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.2",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface respecte-t-il une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.3",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "scrollable-region-focusable",
     "title": "Scrollable regions with no focusable content should be keyboard-focusable",
     "description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
@@ -14109,6 +14180,7 @@ const COMPOSITE_RULES = [
       "dialog-name-present",
       "label-in-name",
       "menuitem-name-present",
+      "scripted-components-review",
       "tab-name-present",
       "treeitem-name-present"
     ],
@@ -14129,6 +14201,17 @@ const COMPOSITE_RULES = [
           "version": "4.1.2",
           "requirement": "7.1.1",
           "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.2",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface respecte-t-il une de ces conditions ?",
           "criterion": "7.1",
           "wcagSc": [
             "2.5.3",
@@ -15507,6 +15590,7 @@ const RULE_IMPLS = {
   "region": { run: require("./checks/manual/region-manual.js").runInPage, applicability: require("./checks/manual/region-manual.js").applicability || null },
   "role-img-text-alternative-present": { run: require("./checks/automatic/role-img-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/role-img-text-alternative-present.js").applicability || null },
   "scope-attr-valid": { run: require("./checks/manual/scope-attr-valid-manual.js").runInPage, applicability: require("./checks/manual/scope-attr-valid-manual.js").applicability || null },
+  "scripted-components-review": { run: require("./checks/manual/scripted-components-review-manual.js").runInPage, applicability: require("./checks/manual/scripted-components-review-manual.js").applicability || null },
   "scrollable-region-focusable": { run: require("./checks/manual/scrollable-region-focusable-manual.js").runInPage, applicability: require("./checks/manual/scrollable-region-focusable-manual.js").applicability || null },
   "searchbox-name-present": { run: require("./checks/automatic/searchbox-name-present.js").runInPage, applicability: require("./checks/automatic/searchbox-name-present.js").applicability || null },
   "server-side-image-map-absent": { run: require("./checks/automatic/server-side-image-map-absent.js").runInPage, applicability: require("./checks/automatic/server-side-image-map-absent.js").applicability || null },
@@ -16376,6 +16460,20 @@ const I18N = {
     "officeDocumentLink_description": "Markiert jeden Link auf ein Office-Dokument (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
     "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
     "officeDocumentLink_hint_cantTell": "Prüfen Sie, ob das Dokument barrierefrei ist, oder bieten Sie eine barrierefreie Version an, zum Herunterladen oder als HTML-Seite.",
+    "scriptedComponentsReview_title": "Skriptgesteuerte Komponenten sind mit assistiven Technologien kompatibel",
+    "scriptedComponentsReview_description": "Fordert auf einer Seite mit Skript eine Person auf, jede skriptgesteuerte Komponente nach RGAA 7.1 zu prüfen (Name, Rolle, Wert, Einstellungen und Zustandsänderungen werden assistiven Technologien bereitgestellt und von ihnen ausgegeben, der Name enthält die sichtbare Beschriftung), und listet als Ausgangspunkt die Elemente im Markup auf, die wie skriptgesteuerte Komponenten aussehen.",
+    "scriptedComponentsReview_summary_cantTell_page": "Prüfen Sie jede skriptgesteuerte Komponente: Die Engine sieht kein Verhalten, das aus Skriptdateien angehängt wird, daher ist diese Prüfung auch dann nötig, wenn kein Kandidat aufgeführt ist.",
+    "scriptedComponentsReview_hint_cantTell_page": "Prüfen Sie, ob jede skriptgesteuerte Komponente ihren Namen, ihre Rolle, ihren Wert, ihre Einstellungen und Zustandsänderungen assistiven Technologien bereitstellt (RGAA 7.1.1), von ihnen korrekt ausgegeben wird (7.1.2) und einen zutreffenden Namen und eine zutreffende Rolle hat, wobei der Name die sichtbare Beschriftung enthält (7.1.3), oder ob es eine barrierefreie Alternative gibt. Die mit dieser Prüfung aufgeführten Kandidaten stammen aus dem Markup: ein Ausgangspunkt, keine vollständige Liste.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Dieses <{{element}}> hat role=\"{{role}}\", eine Widget-Rolle, die es nativ nicht hat.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Prüfen Sie mit assistiven Technologien, ob diese Komponente ihren Namen, ihre Rolle, ihren Wert, ihre Einstellungen und Zustandsänderungen bereitstellt und ob ihr Name die sichtbare Beschriftung enthält (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Dieses <{{element}}> wird mit tabindex=\"{{tabindex}}\" fokussierbar gemacht, obwohl es nativ nicht fokussierbar ist.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Prüfen Sie, ob dieses Element eine skriptgesteuerte Komponente ist; wenn ja, prüfen Sie mit assistiven Technologien, ob es eine zutreffende Rolle, einen Namen, einen Wert und einen Zustand bereitstellt (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Dieses <{{element}}> hat einen Inline-Event-Handler {{attribute}}.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Prüfen Sie, ob dieses Element eine skriptgesteuerte Komponente ist; wenn ja, prüfen Sie mit assistiven Technologien, ob es eine zutreffende Rolle, einen Namen, einen Wert und einen Zustand bereitstellt (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Dieses <{{element}}> ist bearbeitbar (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -17269,6 +17367,20 @@ const I18N = {
     "officeDocumentLink_description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
     "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
     "officeDocumentLink_hint_cantTell": "Check that the document is accessible, or offer an accessible version, as a download or as an HTML page.",
+    "scriptedComponentsReview_title": "Scripted components are compatible with assistive technologies",
+    "scriptedComponentsReview_description": "On a page with script, asks a person to check every scripted component against RGAA 7.1 (name, role, value, settings and state changes exposed and rendered by assistive technologies, a name that contains the visible label), and lists the elements in the markup that look like scripted components as a starting point.",
+    "scriptedComponentsReview_summary_cantTell_page": "Check every scripted component: the engine cannot see behaviour attached from script files, so this check is needed even when no candidate is listed.",
+    "scriptedComponentsReview_hint_cantTell_page": "Check that each scripted component exposes its name, role, value, settings and state changes to assistive technologies (RGAA 7.1.1), is correctly rendered by them (7.1.2) and has a relevant name and role, with a name that contains its visible label (7.1.3), or that an accessible alternative exists. The candidates listed with this check come from the markup and are a starting point, not a complete list.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "This <{{element}}> has role=\"{{role}}\", a widget role it does not have natively.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Check with assistive technologies that this component exposes its name, role, value, settings and state changes, and that its name contains its visible label (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "This <{{element}}> is made focusable with tabindex=\"{{tabindex}}\" although it is not focusable natively.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "This <{{element}}> has an inline {{attribute}} event handler.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "This <{{element}}> can be edited (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Check with assistive technologies that this editing area exposes a relevant role, name and state, and that its changes are rendered (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -18162,6 +18274,20 @@ const I18N = {
     "officeDocumentLink_description": "Señala cada enlace a un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
     "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
     "officeDocumentLink_hint_cantTell": "Comprobar que el documento es accesible, u ofrecer una versión accesible, para descargar o como página HTML.",
+    "scriptedComponentsReview_title": "Los componentes controlados por script son compatibles con las tecnologías de asistencia",
+    "scriptedComponentsReview_description": "En una página con script, pide a una persona que compruebe cada componente controlado por script según el criterio RGAA 7.1 (nombre, rol, valor, configuración y cambios de estado expuestos a las tecnologías de asistencia y transmitidos por ellas, un nombre que contiene la etiqueta visible), y lista como punto de partida los elementos del código que parecen componentes controlados por script.",
+    "scriptedComponentsReview_summary_cantTell_page": "Comprobar cada componente controlado por script: el motor no ve el comportamiento añadido desde archivos de script, así que esta comprobación es necesaria aunque no se liste ningún candidato.",
+    "scriptedComponentsReview_hint_cantTell_page": "Comprobar que cada componente controlado por script expone su nombre, rol, valor, configuración y cambios de estado a las tecnologías de asistencia (RGAA 7.1.1), que estas lo transmiten correctamente (7.1.2) y que tiene un nombre y un rol pertinentes, con un nombre que contiene su etiqueta visible (7.1.3), o que existe una alternativa accesible. Los candidatos listados con esta comprobación salen del código: son un punto de partida, no una lista completa.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Este <{{element}}> tiene role=\"{{role}}\", un rol de widget que no tiene de forma nativa.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Comprobar con tecnologías de asistencia que este componente expone su nombre, rol, valor, configuración y cambios de estado, y que su nombre contiene su etiqueta visible (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Este <{{element}}> se hace enfocable con tabindex=\"{{tabindex}}\" aunque no es enfocable de forma nativa.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Comprobar si este elemento es un componente controlado por script; si lo es, comprobar con tecnologías de asistencia que expone un rol, un nombre, un valor y un estado pertinentes (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Este <{{element}}> tiene un manejador de eventos {{attribute}} en línea.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Comprobar si este elemento es un componente controlado por script; si lo es, comprobar con tecnologías de asistencia que expone un rol, un nombre, un valor y un estado pertinentes (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Este <{{element}}> es editable (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Comprobar con tecnologías de asistencia que esta zona de edición expone un rol, un nombre y un estado pertinentes, y que sus cambios se transmiten (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -19055,6 +19181,20 @@ const I18N = {
     "officeDocumentLink_description": "Signale chaque lien vers un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
     "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
     "officeDocumentLink_hint_cantTell": "Vérifiez que le document est accessible, ou proposez-en une version accessible, en téléchargement ou en page HTML.",
+    "scriptedComponentsReview_title": "Les composants d’interface gérés par script sont compatibles avec les technologies d’assistance",
+    "scriptedComponentsReview_description": "Sur une page qui contient du script, demande à une personne de vérifier chaque composant d’interface géré par script au regard du critère RGAA 7.1 (nom, rôle, valeur, paramétrage et changements d’états accessibles aux technologies d’assistance et restitués par elles, nom accessible contenant l’intitulé visible), et liste comme point de départ les éléments du code qui ressemblent à des composants d’interface.",
+    "scriptedComponentsReview_summary_cantTell_page": "Vérifiez chaque composant d’interface géré par script : le moteur ne voit pas les comportements ajoutés depuis des fichiers de script, cette vérification est donc nécessaire même si aucun candidat n’est listé.",
+    "scriptedComponentsReview_hint_cantTell_page": "Vérifiez que chaque composant d’interface géré par script rend son nom, son rôle, sa valeur, son paramétrage et ses changements d’états accessibles aux technologies d’assistance (RGAA 7.1.1), qu’il est correctement restitué par elles (7.1.2) et qu’il a un nom et un rôle pertinents, avec un nom accessible qui contient l’intitulé visible (7.1.3), ou qu’une alternative accessible existe. Les candidats listés avec cette vérification viennent du code : c’est un point de départ, pas une liste complète.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Cet élément <{{element}}> a role=\"{{role}}\", un rôle de composant d’interface qu’il n’a pas nativement.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Vérifiez avec les technologies d’assistance que ce composant d’interface rend accessibles son nom, son rôle, sa valeur, son paramétrage et ses changements d’états, et que son nom accessible contient son intitulé visible (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Cet élément <{{element}}> est rendu focalisable par tabindex=\"{{tabindex}}\" alors qu’il ne l’est pas nativement.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Vérifiez si cet élément est un composant d’interface géré par script ; si c’est le cas, vérifiez avec les technologies d’assistance qu’il expose un rôle, un nom, une valeur et un état pertinents (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Cet élément <{{element}}> a un gestionnaire d’événement {{attribute}} dans son code HTML.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Vérifiez si cet élément est un composant d’interface géré par script ; si c’est le cas, vérifiez avec les technologies d’assistance qu’il expose un rôle, un nom, une valeur et un état pertinents (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Cet élément <{{element}}> est modifiable (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -19948,6 +20088,20 @@ const I18N = {
     "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）へのリンクを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
     "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
     "officeDocumentLink_hint_cantTell": "文書がアクセシブルか確認するか、アクセシブルな版をダウンロードまたは HTML ページとして提供してください。",
+    "scriptedComponentsReview_title": "スクリプトで制御されるコンポーネントが支援技術に対応している",
+    "scriptedComponentsReview_description": "スクリプトを含むページで、スクリプトで制御される各コンポーネントを RGAA 7.1 に照らして人が確認するよう求めます (名前、役割、値、設定、状態の変化が支援技術に公開され、支援技術で正しく伝えられるか、名前が視覚的なラベルを含むか)。また、スクリプトで制御されるコンポーネントに見える要素をマークアップから出発点として一覧にします。",
+    "scriptedComponentsReview_summary_cantTell_page": "スクリプトで制御される各コンポーネントを確認してください。スクリプトファイルから追加された動作はエンジンからは見えないため、候補が一覧にない場合もこの確認が必要です。",
+    "scriptedComponentsReview_hint_cantTell_page": "スクリプトで制御される各コンポーネントが、名前、役割、値、設定、状態の変化を支援技術に公開していること (RGAA 7.1.1)、支援技術で正しく伝えられること (7.1.2)、適切な名前と役割を持ち、名前が視覚的なラベルを含むこと (7.1.3)、またはアクセシブルな代替手段があることを確認してください。この確認とともに示す候補はマークアップから見つけたもので、出発点であり、すべてを網羅した一覧ではありません。",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "この <{{element}}> には role=\"{{role}}\" が指定されています。これはこの要素がネイティブには持たないウィジェットの役割です。",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "このコンポーネントが名前、役割、値、設定、状態の変化を公開し、名前が視覚的なラベルを含むことを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "この <{{element}}> はネイティブにはフォーカスできませんが、tabindex=\"{{tabindex}}\" でフォーカス可能にされています。",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "この要素がスクリプトで制御されるコンポーネントかどうかを確認し、そうであれば適切な役割、名前、値、状態を公開していることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "この <{{element}}> にはインラインのイベントハンドラー {{attribute}} があります。",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "この要素がスクリプトで制御されるコンポーネントかどうかを確認し、そうであれば適切な役割、名前、値、状態を公開していることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "この <{{element}}> は編集可能です (contenteditable)。",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -20652,6 +20806,7 @@ const PROFILE_RULES = {
     "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
+    "scripted-components-review",
     "searchbox-name-present",
     "server-side-image-map-absent",
     "skip-link",
@@ -39873,6 +40028,77 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "scripted-components-review",
+    "title": "Scripted components are compatible with assistive technologies",
+    "description": "On a page with script, asks a person to check every scripted component against RGAA 7.1 (name, role, value, settings and state changes exposed and rendered by assistive technologies, a name that contains the visible label), and lists the elements in the markup that look like scripted components as a starting point.",
+    "i18n": {
+      "titleKey": "scriptedComponentsReview_title",
+      "descriptionKey": "scriptedComponentsReview_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "aria",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.1",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.2",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface respecte-t-il une de ces conditions ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "7.1.3",
+        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "7.1",
+        "wcagSc": [
+          "2.5.3",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "scrollable-region-focusable",
     "title": "Scrollable regions with no focusable content should be keyboard-focusable",
     "description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
@@ -44656,6 +44882,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "dialog-name-present",
       "label-in-name",
       "menuitem-name-present",
+      "scripted-components-review",
       "tab-name-present",
       "treeitem-name-present"
     ],
@@ -44676,6 +44903,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "4.1.2",
           "requirement": "7.1.1",
           "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
+          "criterion": "7.1",
+          "wcagSc": [
+            "2.5.3",
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "7.1.2",
+          "title": "Chaque script qui génère ou contrôle un composant d’interface respecte-t-il une de ces conditions ?",
           "criterion": "7.1",
           "wcagSc": [
             "2.5.3",
@@ -67862,6 +68100,475 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "scripted-components-review": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const JS_TYPES = new Set([
+    'module',
+    'application/ecmascript',
+    'application/javascript',
+    'application/x-ecmascript',
+    'application/x-javascript',
+    'text/ecmascript',
+    'text/javascript',
+    'text/javascript1.0',
+    'text/javascript1.1',
+    'text/javascript1.2',
+    'text/javascript1.3',
+    'text/javascript1.4',
+    'text/javascript1.5',
+    'text/jscript',
+    'text/livescript',
+    'text/x-ecmascript',
+    'text/x-javascript'
+  ]);
+
+  // Event handler content attributes. An attribute also counts when the
+  // element has the matching IDL property, which covers handlers this list
+  // does not name.
+  const HANDLER_NAMES =
+    /^on(abort|afterprint|animation(start|end|iteration|cancel)|auxclick|before(input|print|toggle|unload|matched)|blur|cancel|can(play|playthrough)|change|click|close|contextmenu|contextlost|contextrestored|copy|cuechange|cut|dblclick|drag|dragend|dragenter|dragleave|dragover|dragstart|drop|durationchange|emptied|ended|error|focus|focusin|focusout|formdata|fullscreen(change|error)|gotpointercapture|hashchange|input|invalid|keydown|keypress|keyup|languagechange|load|loadeddata|loadedmetadata|loadstart|lostpointercapture|message|messageerror|mousedown|mouseenter|mouseleave|mousemove|mouseout|mouseover|mouseup|mousewheel|offline|online|page(hide|show|reveal|swap)|paste|pause|play|playing|pointer(cancel|down|enter|leave|move|out|over|rawupdate|up)|popstate|progress|ratechange|rejectionhandled|reset|resize|scroll|scrollend|securitypolicyviolation|seeked|seeking|select|selectionchange|selectstart|slotchange|stalled|storage|submit|suspend|timeupdate|toggle|touch(start|end|move|cancel)|transition(start|end|run|cancel)|unhandledrejection|unload|volumechange|waiting|webkit\w+|wheel)$/;
+
+  // Handlers that make an element respond to a person, which is what a
+  // candidate component needs; onload or onerror on an image does not.
+  const INTERACTION_HANDLERS = [
+    'onclick',
+    'ondblclick',
+    'onauxclick',
+    'oncontextmenu',
+    'onmousedown',
+    'onmouseup',
+    'onmouseover',
+    'onmouseout',
+    'onmouseenter',
+    'onmouseleave',
+    'onpointerdown',
+    'onpointerup',
+    'onpointerover',
+    'onpointerout',
+    'onpointerenter',
+    'onpointerleave',
+    'ontouchstart',
+    'ontouchend',
+    'onkeydown',
+    'onkeyup',
+    'onkeypress',
+    'onfocus',
+    'onblur',
+    'onfocusin',
+    'onfocusout',
+    'onchange',
+    'oninput',
+    'onbeforeinput',
+    'onwheel',
+    'ondragstart',
+    'ondrop'
+  ];
+
+  const WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'tabpanel',
+    'textbox',
+    'tree',
+    'treegrid',
+    'treeitem',
+    'dialog',
+    'alertdialog'
+  ]);
+
+  const STATE_ATTRIBUTES = ['aria-expanded', 'aria-pressed', 'aria-haspopup', 'aria-controls'];
+  const URL_ATTRIBUTES = new Set(['href', 'xlink:href', 'src', 'action', 'formaction']);
+
+  function lower(v) {
+    return String(v == null ? '' : v)
+      .trim()
+      .toLowerCase();
+  }
+
+  function localNameOf(el) {
+    return lower(el.localName || el.tagName || '');
+  }
+
+  function attr(el, name) {
+    try {
+      return el.getAttribute(name);
+    } catch {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // 1. Is there any script at all?
+  // ---------------------------------------------------------------------
+
+  function isEngineScript(el) {
+    const src = attr(el, 'src');
+    if (src != null && String(src).trim() !== '') {
+      const path = String(src).trim().split(/[?#]/)[0];
+      return /(^|\/)surea11y\.(browser|i18n\.[a-z0-9_-]+)\.js$/i.test(path);
+    }
+    let head;
+    try {
+      const first = el.firstChild;
+      head =
+        first && first.nodeType === 3 && typeof first.data === 'string'
+          ? first.data.slice(0, 600)
+          : String(el.textContent || '').slice(0, 600);
+    } catch {
+      head = '';
+    }
+    return (
+      /@surea11y\/core -- (standalone browser bundle|[a-z0-9_-]+ messages for the standalone browser bundle)/i.test(
+        head
+      ) || /^\s*\/\/ SELF-CONTAINED in-page runner/.test(head)
+    );
+  }
+
+  function isExecutableScript(el) {
+    const typeAttr = attr(el, 'type');
+    let type;
+    if (typeAttr == null) {
+      const language = attr(el, 'language');
+      if (language == null || String(language).trim() === '') return true;
+      type = 'text/' + lower(language);
+    } else {
+      if (String(typeAttr).trim() === '') return true;
+      type = lower(typeAttr);
+    }
+    const essence = type.split(';')[0].trim();
+    return JS_TYPES.has(essence);
+  }
+
+  function isEventHandlerAttr(el, name) {
+    if (name.length < 3 || name.indexOf('on') !== 0) return false;
+    if (HANDLER_NAMES.test(name)) return true;
+    try {
+      return name in el && (el[name] === null || typeof el[name] === 'function');
+    } catch {
+      return false;
+    }
+  }
+
+  function isJavascriptUrl(value) {
+    // The URL parser drops leading C0 controls and spaces, and every tab and
+    // newline, so " java\nscript:" runs too.
+    const v = String(value || '').replace(/[\t\n\r]/g, '');
+    let i = 0;
+    while (i < v.length && v.charCodeAt(i) <= 0x20) i++;
+    return /^javascript:/i.test(v.slice(i));
+  }
+
+  // Every element of the document and of each open shadow root inside it.
+  function scriptEvidence() {
+    const scopes = [document];
+    for (let i = 0; i < scopes.length; i++) {
+      let els;
+      try {
+        els = scopes[i].querySelectorAll('*');
+      } catch {
+        els = [];
+      }
+      for (const el of els) {
+        if (!el || el.nodeType !== 1) continue;
+        try {
+          if (el.shadowRoot) scopes.push(el.shadowRoot);
+        } catch {}
+
+        const name = localNameOf(el);
+        if (name === 'script') {
+          if (isExecutableScript(el) && !isEngineScript(el)) return 'scriptElement';
+          continue;
+        }
+        if (name.indexOf('-') !== -1) return 'customElement';
+
+        const attrs = el.attributes || [];
+        for (let a = 0; a < attrs.length; a++) {
+          const attrName = lower(attrs[a].name);
+          if (isEventHandlerAttr(el, attrName)) return 'inlineHandler';
+          if (URL_ATTRIBUTES.has(attrName) && isJavascriptUrl(attrs[a].value)) {
+            return 'javascriptUrl';
+          }
+        }
+      }
+    }
+    return '';
+  }
+
+  const evidence = scriptEvidence();
+  if (!evidence) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // ---------------------------------------------------------------------
+  // 2. The question for the whole page.
+  // ---------------------------------------------------------------------
+
+  const roots = Array.isArray(ctx.root) ? ctx.root : ctx.root ? [ctx.root] : [];
+  const scanRoot = roots.find((r) => r && r.nodeType === 1) || document.documentElement;
+
+  const visibilityFilter = { targetSet: 'dom', accEligible: null, reasons: [] };
+
+  const occurrences = [
+    helpers.reportOccurrence(scanRoot, {
+      summary:
+        'Check every scripted component: the engine cannot see behaviour attached from script files, so this check is needed even when no candidate is listed.',
+      hint: 'Check that each scripted component exposes its name, role, value, settings and state changes to assistive technologies (RGAA 7.1.1), is correctly rendered by them (7.1.2) and has a relevant name and role, with a name that contains its visible label (7.1.3), or that an accessible alternative exists. The candidates listed with this check come from the markup and are a starting point, not a complete list.',
+      i18n: {
+        summaryKey: 'scriptedComponentsReview_summary_cantTell_page',
+        hintKey: 'scriptedComponentsReview_hint_cantTell_page',
+        params: {}
+      },
+      data: {
+        details: { reasonCode: 'pageReview', scriptEvidence: evidence },
+        visibilityFilter
+      }
+    })
+  ];
+
+  // ---------------------------------------------------------------------
+  // 3. Candidates found in the markup.
+  // ---------------------------------------------------------------------
+
+  function tokens(value) {
+    return lower(value).split(/\s+/).filter(Boolean);
+  }
+
+  function inputType(el) {
+    return lower(attr(el, 'type')) || 'text';
+  }
+
+  // Roles an element has natively, so restating one is not a sign of script.
+  function nativeRoles(el) {
+    const name = localNameOf(el);
+    switch (name) {
+      case 'a':
+      case 'area':
+        return attr(el, 'href') != null ? ['link'] : [];
+      case 'button':
+        return ['button'];
+      case 'summary':
+        return ['button'];
+      case 'input': {
+        const t = inputType(el);
+        if (t === 'button' || t === 'submit' || t === 'reset' || t === 'image') return ['button'];
+        if (t === 'checkbox') return ['checkbox'];
+        if (t === 'radio') return ['radio'];
+        if (t === 'range') return ['slider'];
+        if (t === 'number') return ['spinbutton'];
+        if (t === 'search') return ['searchbox', 'combobox'];
+        if (t === 'hidden' || t === 'color' || t === 'file') return [];
+        return ['textbox', 'combobox'];
+      }
+      case 'textarea':
+        return ['textbox'];
+      case 'select':
+        return ['combobox', 'listbox'];
+      case 'datalist':
+        return ['listbox'];
+      case 'option':
+        return ['option'];
+      case 'progress':
+        return ['progressbar'];
+      case 'dialog':
+        return ['dialog', 'alertdialog'];
+      case 'td':
+      case 'th':
+        return ['gridcell'];
+      default:
+        return [];
+    }
+  }
+
+  function isNativelyFocusable(el) {
+    const name = localNameOf(el);
+    if (name === 'a' || name === 'area') return attr(el, 'href') != null;
+    if (name === 'input') return inputType(el) !== 'hidden';
+    if (
+      name === 'button' ||
+      name === 'select' ||
+      name === 'textarea' ||
+      name === 'iframe' ||
+      name === 'object' ||
+      name === 'embed' ||
+      name === 'summary'
+    ) {
+      return true;
+    }
+    if ((name === 'audio' || name === 'video') && attr(el, 'controls') != null) return true;
+    return isEditable(el);
+  }
+
+  function isNativeControl(el) {
+    const name = localNameOf(el);
+    if (name === 'a' || name === 'area') return attr(el, 'href') != null;
+    if (name === 'input') return inputType(el) !== 'hidden';
+    return (
+      name === 'button' ||
+      name === 'select' ||
+      name === 'textarea' ||
+      name === 'option' ||
+      name === 'summary'
+    );
+  }
+
+  function isEditable(el) {
+    const v = attr(el, 'contenteditable');
+    if (v == null) return false;
+    const t = lower(v);
+    return t === '' || t === 'true' || t === 'plaintext-only';
+  }
+
+  function isInHeadOrPageRoot(el) {
+    const name = localNameOf(el);
+    if (name === 'html' || name === 'body' || name === 'head') return true;
+    try {
+      return !!(el.closest && el.closest('head'));
+    } catch {
+      return false;
+    }
+  }
+
+  function widgetRoleOf(el) {
+    const own = tokens(attr(el, 'role')).find((r) => WIDGET_ROLES.has(r));
+    if (!own) return '';
+    return nativeRoles(el).indexOf(own) === -1 ? own : '';
+  }
+
+  function tabindexOf(el) {
+    const raw = attr(el, 'tabindex');
+    if (raw == null || !/^\s*[+-]?\d+\s*$/.test(raw)) return null;
+    return parseInt(raw, 10);
+  }
+
+  function candidate(el) {
+    const element = localNameOf(el);
+
+    const role = widgetRoleOf(el);
+    if (role) {
+      return {
+        reasonCode: 'widgetRole',
+        params: { element, role },
+        summary: `This <${element}> has role="${role}", a widget role it does not have natively.`
+      };
+    }
+
+    const tabindex = tabindexOf(el);
+    if (tabindex != null && tabindex >= 0 && !isNativelyFocusable(el)) {
+      return {
+        reasonCode: 'focusableNonNative',
+        params: { element, tabindex: String(tabindex) },
+        summary: `This <${element}> is made focusable with tabindex="${tabindex}" although it is not focusable natively.`
+      };
+    }
+
+    if (!isNativeControl(el) && !isInHeadOrPageRoot(el)) {
+      const handler = INTERACTION_HANDLERS.find((h) => attr(el, h) != null);
+      if (handler) {
+        return {
+          reasonCode: 'inlineHandler',
+          params: { element, attribute: handler },
+          summary: `This <${element}> has an inline ${handler} event handler.`
+        };
+      }
+    }
+
+    if (isEditable(el) && element !== 'input' && element !== 'textarea' && element !== 'select') {
+      return {
+        reasonCode: 'contentEditable',
+        params: { element },
+        summary: `This <${element}> can be edited (contenteditable).`
+      };
+    }
+
+    const state = STATE_ATTRIBUTES.find((a) => attr(el, a) != null);
+    if (state) {
+      return {
+        reasonCode: 'stateAttribute',
+        params: { element, attribute: state },
+        summary: `This <${element}> has ${state}, which a script usually updates.`
+      };
+    }
+
+    return null;
+  }
+
+  const HINTS = {
+    widgetRole:
+      'Check with assistive technologies that this component exposes its name, role, value, settings and state changes, and that its name contains its visible label (RGAA 7.1).',
+    focusableNonNative:
+      'Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).',
+    inlineHandler:
+      'Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).',
+    contentEditable:
+      'Check with assistive technologies that this editing area exposes a relevant role, name and state, and that its changes are rendered (RGAA 7.1).',
+    stateAttribute:
+      'Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).'
+  };
+
+  const selector = [
+    '[role]',
+    '[tabindex]',
+    '[contenteditable]',
+    ...STATE_ATTRIBUTES.map((a) => `[${a}]`),
+    ...INTERACTION_HANDLERS.map((h) => `[${h}]`)
+  ].join(', ');
+
+  const elements = helpers.queryAllSmart
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
+
+  const seen = new Set();
+  for (const el of elements) {
+    if (!el || el.nodeType !== 1 || seen.has(el)) continue;
+    seen.add(el);
+    const c = candidate(el);
+    if (!c) continue;
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: c.summary,
+        hint: HINTS[c.reasonCode],
+        i18n: {
+          summaryKey: `scriptedComponentsReview_summary_cantTell_${c.reasonCode}`,
+          hintKey: `scriptedComponentsReview_hint_cantTell_${c.reasonCode}`,
+          params: c.params
+        },
+        data: {
+          details: { reasonCode: c.reasonCode, ...c.params },
+          visibilityFilter
+        }
+      })
+    );
+  }
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -72915,6 +73622,20 @@ const I18N = {
     "officeDocumentLink_description": "Markiert jeden Link auf ein Office-Dokument (PDF, Word, OpenDocument, Tabelle, Präsentation, EPUB, RTF), damit eine Person das Dokument oder seine barrierefreie Version prüft.",
     "officeDocumentLink_summary_cantTell": "Dieser Link lädt ein .{{extension}}-Dokument herunter.",
     "officeDocumentLink_hint_cantTell": "Prüfen Sie, ob das Dokument barrierefrei ist, oder bieten Sie eine barrierefreie Version an, zum Herunterladen oder als HTML-Seite.",
+    "scriptedComponentsReview_title": "Skriptgesteuerte Komponenten sind mit assistiven Technologien kompatibel",
+    "scriptedComponentsReview_description": "Fordert auf einer Seite mit Skript eine Person auf, jede skriptgesteuerte Komponente nach RGAA 7.1 zu prüfen (Name, Rolle, Wert, Einstellungen und Zustandsänderungen werden assistiven Technologien bereitgestellt und von ihnen ausgegeben, der Name enthält die sichtbare Beschriftung), und listet als Ausgangspunkt die Elemente im Markup auf, die wie skriptgesteuerte Komponenten aussehen.",
+    "scriptedComponentsReview_summary_cantTell_page": "Prüfen Sie jede skriptgesteuerte Komponente: Die Engine sieht kein Verhalten, das aus Skriptdateien angehängt wird, daher ist diese Prüfung auch dann nötig, wenn kein Kandidat aufgeführt ist.",
+    "scriptedComponentsReview_hint_cantTell_page": "Prüfen Sie, ob jede skriptgesteuerte Komponente ihren Namen, ihre Rolle, ihren Wert, ihre Einstellungen und Zustandsänderungen assistiven Technologien bereitstellt (RGAA 7.1.1), von ihnen korrekt ausgegeben wird (7.1.2) und einen zutreffenden Namen und eine zutreffende Rolle hat, wobei der Name die sichtbare Beschriftung enthält (7.1.3), oder ob es eine barrierefreie Alternative gibt. Die mit dieser Prüfung aufgeführten Kandidaten stammen aus dem Markup: ein Ausgangspunkt, keine vollständige Liste.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Dieses <{{element}}> hat role=\"{{role}}\", eine Widget-Rolle, die es nativ nicht hat.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Prüfen Sie mit assistiven Technologien, ob diese Komponente ihren Namen, ihre Rolle, ihren Wert, ihre Einstellungen und Zustandsänderungen bereitstellt und ob ihr Name die sichtbare Beschriftung enthält (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Dieses <{{element}}> wird mit tabindex=\"{{tabindex}}\" fokussierbar gemacht, obwohl es nativ nicht fokussierbar ist.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Prüfen Sie, ob dieses Element eine skriptgesteuerte Komponente ist; wenn ja, prüfen Sie mit assistiven Technologien, ob es eine zutreffende Rolle, einen Namen, einen Wert und einen Zustand bereitstellt (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Dieses <{{element}}> hat einen Inline-Event-Handler {{attribute}}.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Prüfen Sie, ob dieses Element eine skriptgesteuerte Komponente ist; wenn ja, prüfen Sie mit assistiven Technologien, ob es eine zutreffende Rolle, einen Namen, einen Wert und einen Zustand bereitstellt (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Dieses <{{element}}> ist bearbeitbar (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
     "report_title_default": "surea11y-Scanbericht",
     "report_generated": "erstellt {{date}}",
     "report_noUrl": "(keine URL)",
@@ -73808,6 +74529,20 @@ const I18N = {
     "officeDocumentLink_description": "Flags each link to an office document (PDF, Word, OpenDocument, spreadsheet, presentation, EPUB, RTF) for a person to check the document or its accessible version.",
     "officeDocumentLink_summary_cantTell": "This link downloads a .{{extension}} document.",
     "officeDocumentLink_hint_cantTell": "Check that the document is accessible, or offer an accessible version, as a download or as an HTML page.",
+    "scriptedComponentsReview_title": "Scripted components are compatible with assistive technologies",
+    "scriptedComponentsReview_description": "On a page with script, asks a person to check every scripted component against RGAA 7.1 (name, role, value, settings and state changes exposed and rendered by assistive technologies, a name that contains the visible label), and lists the elements in the markup that look like scripted components as a starting point.",
+    "scriptedComponentsReview_summary_cantTell_page": "Check every scripted component: the engine cannot see behaviour attached from script files, so this check is needed even when no candidate is listed.",
+    "scriptedComponentsReview_hint_cantTell_page": "Check that each scripted component exposes its name, role, value, settings and state changes to assistive technologies (RGAA 7.1.1), is correctly rendered by them (7.1.2) and has a relevant name and role, with a name that contains its visible label (7.1.3), or that an accessible alternative exists. The candidates listed with this check come from the markup and are a starting point, not a complete list.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "This <{{element}}> has role=\"{{role}}\", a widget role it does not have natively.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Check with assistive technologies that this component exposes its name, role, value, settings and state changes, and that its name contains its visible label (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "This <{{element}}> is made focusable with tabindex=\"{{tabindex}}\" although it is not focusable natively.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "This <{{element}}> has an inline {{attribute}} event handler.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Check whether this element is a scripted component; if it is, check with assistive technologies that it exposes a relevant role, name, value and state (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "This <{{element}}> can be edited (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Check with assistive technologies that this editing area exposes a relevant role, name and state, and that its changes are rendered (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
     "report_title_default": "surea11y scan report",
     "report_generated": "generated {{date}}",
     "report_noUrl": "(no url)",
@@ -74701,6 +75436,20 @@ const I18N = {
     "officeDocumentLink_description": "Señala cada enlace a un documento ofimático (PDF, Word, OpenDocument, hoja de cálculo, presentación, EPUB, RTF) para que una persona compruebe el documento o su versión accesible.",
     "officeDocumentLink_summary_cantTell": "Este enlace descarga un documento .{{extension}}.",
     "officeDocumentLink_hint_cantTell": "Comprobar que el documento es accesible, u ofrecer una versión accesible, para descargar o como página HTML.",
+    "scriptedComponentsReview_title": "Los componentes controlados por script son compatibles con las tecnologías de asistencia",
+    "scriptedComponentsReview_description": "En una página con script, pide a una persona que compruebe cada componente controlado por script según el criterio RGAA 7.1 (nombre, rol, valor, configuración y cambios de estado expuestos a las tecnologías de asistencia y transmitidos por ellas, un nombre que contiene la etiqueta visible), y lista como punto de partida los elementos del código que parecen componentes controlados por script.",
+    "scriptedComponentsReview_summary_cantTell_page": "Comprobar cada componente controlado por script: el motor no ve el comportamiento añadido desde archivos de script, así que esta comprobación es necesaria aunque no se liste ningún candidato.",
+    "scriptedComponentsReview_hint_cantTell_page": "Comprobar que cada componente controlado por script expone su nombre, rol, valor, configuración y cambios de estado a las tecnologías de asistencia (RGAA 7.1.1), que estas lo transmiten correctamente (7.1.2) y que tiene un nombre y un rol pertinentes, con un nombre que contiene su etiqueta visible (7.1.3), o que existe una alternativa accesible. Los candidatos listados con esta comprobación salen del código: son un punto de partida, no una lista completa.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Este <{{element}}> tiene role=\"{{role}}\", un rol de widget que no tiene de forma nativa.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Comprobar con tecnologías de asistencia que este componente expone su nombre, rol, valor, configuración y cambios de estado, y que su nombre contiene su etiqueta visible (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Este <{{element}}> se hace enfocable con tabindex=\"{{tabindex}}\" aunque no es enfocable de forma nativa.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Comprobar si este elemento es un componente controlado por script; si lo es, comprobar con tecnologías de asistencia que expone un rol, un nombre, un valor y un estado pertinentes (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Este <{{element}}> tiene un manejador de eventos {{attribute}} en línea.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Comprobar si este elemento es un componente controlado por script; si lo es, comprobar con tecnologías de asistencia que expone un rol, un nombre, un valor y un estado pertinentes (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Este <{{element}}> es editable (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Comprobar con tecnologías de asistencia que esta zona de edición expone un rol, un nombre y un estado pertinentes, y que sus cambios se transmiten (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
     "report_title_default": "Informe de análisis de surea11y",
     "report_generated": "generado el {{date}}",
     "report_noUrl": "(sin URL)",
@@ -75594,6 +76343,20 @@ const I18N = {
     "officeDocumentLink_description": "Signale chaque lien vers un document bureautique (PDF, Word, OpenDocument, tableur, présentation, EPUB, RTF) pour qu’une personne vérifie le document ou sa version accessible.",
     "officeDocumentLink_summary_cantTell": "Ce lien télécharge un document .{{extension}}.",
     "officeDocumentLink_hint_cantTell": "Vérifiez que le document est accessible, ou proposez-en une version accessible, en téléchargement ou en page HTML.",
+    "scriptedComponentsReview_title": "Les composants d’interface gérés par script sont compatibles avec les technologies d’assistance",
+    "scriptedComponentsReview_description": "Sur une page qui contient du script, demande à une personne de vérifier chaque composant d’interface géré par script au regard du critère RGAA 7.1 (nom, rôle, valeur, paramétrage et changements d’états accessibles aux technologies d’assistance et restitués par elles, nom accessible contenant l’intitulé visible), et liste comme point de départ les éléments du code qui ressemblent à des composants d’interface.",
+    "scriptedComponentsReview_summary_cantTell_page": "Vérifiez chaque composant d’interface géré par script : le moteur ne voit pas les comportements ajoutés depuis des fichiers de script, cette vérification est donc nécessaire même si aucun candidat n’est listé.",
+    "scriptedComponentsReview_hint_cantTell_page": "Vérifiez que chaque composant d’interface géré par script rend son nom, son rôle, sa valeur, son paramétrage et ses changements d’états accessibles aux technologies d’assistance (RGAA 7.1.1), qu’il est correctement restitué par elles (7.1.2) et qu’il a un nom et un rôle pertinents, avec un nom accessible qui contient l’intitulé visible (7.1.3), ou qu’une alternative accessible existe. Les candidats listés avec cette vérification viennent du code : c’est un point de départ, pas une liste complète.",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "Cet élément <{{element}}> a role=\"{{role}}\", un rôle de composant d’interface qu’il n’a pas nativement.",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "Vérifiez avec les technologies d’assistance que ce composant d’interface rend accessibles son nom, son rôle, sa valeur, son paramétrage et ses changements d’états, et que son nom accessible contient son intitulé visible (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "Cet élément <{{element}}> est rendu focalisable par tabindex=\"{{tabindex}}\" alors qu’il ne l’est pas nativement.",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "Vérifiez si cet élément est un composant d’interface géré par script ; si c’est le cas, vérifiez avec les technologies d’assistance qu’il expose un rôle, un nom, une valeur et un état pertinents (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "Cet élément <{{element}}> a un gestionnaire d’événement {{attribute}} dans son code HTML.",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "Vérifiez si cet élément est un composant d’interface géré par script ; si c’est le cas, vérifiez avec les technologies d’assistance qu’il expose un rôle, un nom, une valeur et un état pertinents (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "Cet élément <{{element}}> est modifiable (contenteditable).",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
     "report_title_default": "Rapport d’analyse surea11y",
     "report_generated": "généré le {{date}}",
     "report_noUrl": "(aucune URL)",
@@ -76487,6 +77250,20 @@ const I18N = {
     "officeDocumentLink_description": "オフィス文書（PDF、Word、OpenDocument、表計算、プレゼンテーション、EPUB、RTF）へのリンクを示し、文書またはそのアクセシブルな版を人が確認できるようにします。",
     "officeDocumentLink_summary_cantTell": "このリンクは .{{extension}} 文書をダウンロードします。",
     "officeDocumentLink_hint_cantTell": "文書がアクセシブルか確認するか、アクセシブルな版をダウンロードまたは HTML ページとして提供してください。",
+    "scriptedComponentsReview_title": "スクリプトで制御されるコンポーネントが支援技術に対応している",
+    "scriptedComponentsReview_description": "スクリプトを含むページで、スクリプトで制御される各コンポーネントを RGAA 7.1 に照らして人が確認するよう求めます (名前、役割、値、設定、状態の変化が支援技術に公開され、支援技術で正しく伝えられるか、名前が視覚的なラベルを含むか)。また、スクリプトで制御されるコンポーネントに見える要素をマークアップから出発点として一覧にします。",
+    "scriptedComponentsReview_summary_cantTell_page": "スクリプトで制御される各コンポーネントを確認してください。スクリプトファイルから追加された動作はエンジンからは見えないため、候補が一覧にない場合もこの確認が必要です。",
+    "scriptedComponentsReview_hint_cantTell_page": "スクリプトで制御される各コンポーネントが、名前、役割、値、設定、状態の変化を支援技術に公開していること (RGAA 7.1.1)、支援技術で正しく伝えられること (7.1.2)、適切な名前と役割を持ち、名前が視覚的なラベルを含むこと (7.1.3)、またはアクセシブルな代替手段があることを確認してください。この確認とともに示す候補はマークアップから見つけたもので、出発点であり、すべてを網羅した一覧ではありません。",
+    "scriptedComponentsReview_summary_cantTell_widgetRole": "この <{{element}}> には role=\"{{role}}\" が指定されています。これはこの要素がネイティブには持たないウィジェットの役割です。",
+    "scriptedComponentsReview_hint_cantTell_widgetRole": "このコンポーネントが名前、役割、値、設定、状態の変化を公開し、名前が視覚的なラベルを含むことを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_focusableNonNative": "この <{{element}}> はネイティブにはフォーカスできませんが、tabindex=\"{{tabindex}}\" でフォーカス可能にされています。",
+    "scriptedComponentsReview_hint_cantTell_focusableNonNative": "この要素がスクリプトで制御されるコンポーネントかどうかを確認し、そうであれば適切な役割、名前、値、状態を公開していることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_inlineHandler": "この <{{element}}> にはインラインのイベントハンドラー {{attribute}} があります。",
+    "scriptedComponentsReview_hint_cantTell_inlineHandler": "この要素がスクリプトで制御されるコンポーネントかどうかを確認し、そうであれば適切な役割、名前、値、状態を公開していることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_contentEditable": "この <{{element}}> は編集可能です (contenteditable)。",
+    "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
+    "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
+    "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
     "report_title_default": "surea11y スキャンレポート",
     "report_generated": "生成日時: {{date}}",
     "report_noUrl": "(URL なし)",
@@ -77191,6 +77968,7 @@ const PROFILE_RULES = {
     "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
+    "scripted-components-review",
     "searchbox-name-present",
     "server-side-image-map-absent",
     "skip-link",

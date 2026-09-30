@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 149,
-    "withFixture": 148,
+    "total": 150,
+    "withFixture": 149,
     "withoutFixture": 1
   },
   "rows": [
@@ -2263,6 +2263,23 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "scripted-components-review",
+      "title": "Scripted components are compatible with assistive technologies",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/scripted-components-review-manual.js",
+      "testFile": "tests/engine-checks/manual/scripted-components-review.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/scripted-components-review-all-scenarios.html",
+      "totalCases": 12,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 0,
+        "OTHER": 12
       }
     },
     {

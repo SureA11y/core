@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **149**
+Total rules (loaded without error): **150**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -679,6 +679,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
+| scripted-components-review | manual | Scripted components are compatible with assistive technologies | src/checks/manual/scripted-components-review-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
@@ -1330,6 +1331,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
+| scripted-components-review | manual | Scripted components are compatible with assistive technologies | src/checks/manual/scripted-components-review-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
