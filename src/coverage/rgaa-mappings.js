@@ -120,31 +120,7 @@ function rgaaComposites() {
   return out;
 }
 
-const REVIEW_PRIORITIES = ['high', 'medium', 'low'];
-
-// A row's review mark: { priority, question?, proposed? }. The question is
-// required except for a low-priority check of the linked tests, and proposed
-// lists tests the rule is not linked to yet but might be.
-function reviewProblems(version, ruleId, row) {
-  const review = row.review;
-  const where = `${version} ${ruleId}: review`;
-  if (!review || typeof review !== 'object') return [`${where} must be an object`];
-  const problems = [];
-  if (!REVIEW_PRIORITIES.includes(review.priority)) {
-    problems.push(`${where}.priority must be one of ${REVIEW_PRIORITIES.join(', ')}`);
-  }
-  const proposed = review.proposed === undefined ? [] : review.proposed;
-  if (!Array.isArray(proposed)) problems.push(`${where}.proposed must be an array`);
-  const hasQuestion = typeof review.question === 'string' && review.question.trim();
-  if (!hasQuestion && (review.priority !== 'low' || (Array.isArray(proposed) && proposed.length))) {
-    problems.push(`${where} needs a question`);
-  }
-  for (const test of Array.isArray(proposed) ? proposed : []) {
-    if (!RGAA_TESTS[version][test]) problems.push(`${where} proposes no such test ${test}`);
-    else if (row.tests.includes(test)) problems.push(`${where} proposes ${test}, already linked`);
-  }
-  return problems;
-}
+const ROW_KEYS = ['tests', 'note', 'outsideCorrespondence'];
 
 /**
  * Problems with the mapping table, given the rules that exist
@@ -168,7 +144,9 @@ function validateRgaaRuleTests(rules) {
         problems.push(`${version} ${ruleId}: needs { tests: [...], note: '...' }`);
         continue;
       }
-      if (row.review !== undefined) problems.push(...reviewProblems(version, ruleId, row));
+      for (const key of Object.keys(row)) {
+        if (!ROW_KEYS.includes(key)) problems.push(`${version} ${ruleId}: unknown field ${key}`);
+      }
       for (const test of Object.keys(exceptionsOf(version, ruleId))) {
         if (!row.tests.includes(test)) {
           problems.push(`${version} ${ruleId}: outsideCorrespondence names ${test}, which is not linked`);

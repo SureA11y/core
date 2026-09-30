@@ -465,6 +465,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -905,6 +915,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1351,6 +1371,16 @@ const CHECK_DEFS = [
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1905,16 +1935,6 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -1994,16 +2014,6 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -2346,16 +2356,6 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -3146,19 +3146,9 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "13.8.1",
-        "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-        "criterion": "13.8",
-        "wcagSc": [
-          "2.2.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.8.2",
-        "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-        "criterion": "13.8",
+        "requirement": "10.1.1",
+        "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
         "wcagSc": [
           "2.2.2"
         ]
@@ -4392,6 +4382,16 @@ const CHECK_DEFS = [
         "requirement": "11.1.3",
         "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
         "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.2",
+        "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+        "criterion": "11.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -6979,16 +6979,6 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -7813,6 +7803,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -8398,6 +8398,16 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -9047,6 +9057,16 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -9441,16 +9461,6 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -9589,6 +9599,18 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
+        "requirement": "12.7.1",
+        "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
         "requirement": "12.7.2",
         "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
         "criterion": "12.7",
@@ -9662,16 +9684,6 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -9756,16 +9768,6 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -10331,7 +10333,18 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.2.1",
+        "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+        "criterion": "5.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -10715,19 +10728,9 @@ const CHECK_DEFS = [
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "5.6.1",
-        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-        "criterion": "5.6",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "5.6.2",
-        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-        "criterion": "5.6",
+        "requirement": "5.7.4",
+        "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+        "criterion": "5.7",
         "wcagSc": [
           "1.3.1"
         ]
@@ -10802,16 +10805,6 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -11505,6 +11498,16 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -11673,26 +11676,6 @@ const COMPOSITE_RULES = [
           "requirement": "5.4.1",
           "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
           "criterion": "5.4",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.1",
-          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.2",
-          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
           "wcagSc": [
             "1.3.1"
           ]
@@ -12090,19 +12073,9 @@ const COMPOSITE_RULES = [
         {
           "standard": "RGAA",
           "version": "4.1.2",
-          "requirement": "13.8.1",
-          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.2",
-          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
+          "requirement": "10.1.1",
+          "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
           "wcagSc": [
             "2.2.2"
           ]
@@ -13043,6 +13016,16 @@ const COMPOSITE_RULES = [
         {
           "standard": "RGAA",
           "version": "4.1.2",
+          "requirement": "11.2.2",
+          "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
           "requirement": "11.6.1",
           "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
           "criterion": "11.6",
@@ -13876,6 +13859,36 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "rgaa-4.1.2-5.2",
+    "checksIds": [
+      "table-duplicate-name"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.2.1",
+          "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+          "criterion": "5.2",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-5.4",
     "checksIds": [
       "table-fake-caption"
@@ -13906,50 +13919,11 @@ const COMPOSITE_RULES = [
     }
   },
   {
-    "id": "rgaa-4.1.2-5.6",
-    "checksIds": [
-      "td-has-header"
-    ],
-    "meta": {
-      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
-      "description": "",
-      "wcagSc": [],
-      "level": null,
-      "standard": "RGAA",
-      "version": "4.1.2",
-      "criterion": "5.6",
-      "tags": [
-        "rgaa"
-      ],
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.1",
-          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.2",
-          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        }
-      ]
-    }
-  },
-  {
     "id": "rgaa-4.1.2-5.7",
     "checksIds": [
       "scope-attr-valid",
-      "table-headers-attr-valid"
+      "table-headers-attr-valid",
+      "td-has-header"
     ],
     "meta": {
       "title": "Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ?",
@@ -14132,18 +14106,10 @@ const COMPOSITE_RULES = [
     "id": "rgaa-4.1.2-7.1",
     "checksIds": [
       "aria-role-name-present",
-      "binary-control-name-present",
-      "button-name-present",
-      "combobox-name-present",
       "dialog-name-present",
       "label-in-name",
-      "listbox-name-present",
       "menuitem-name-present",
-      "searchbox-name-present",
-      "slider-name-present",
-      "spinbutton-name-present",
       "tab-name-present",
-      "textbox-name-present",
       "treeitem-name-present"
     ],
     "meta": {
@@ -14270,6 +14236,8 @@ const COMPOSITE_RULES = [
     "checksIds": [
       "aria-allowed-attr",
       "aria-allowed-role",
+      "aria-checked-state-mismatch",
+      "aria-prohibited-attr",
       "aria-required-attr",
       "aria-roles-valid",
       "aria-valid-attr",
@@ -14647,6 +14615,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-10.1",
     "checksIds": [
+      "deprecated-elements-not-used",
       "letters-spaced-with-spaces",
       "presentational-attributes-absent",
       "presentational-elements-absent"
@@ -14857,6 +14826,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-11.1",
     "checksIds": [
+      "aria-role-name-present",
       "binary-control-name-present",
       "combobox-name-present",
       "form-control-programmatic-label-present",
@@ -14864,6 +14834,9 @@ const COMPOSITE_RULES = [
       "label-for-target-valid",
       "label-title-only",
       "listbox-name-present",
+      "meter-name-present",
+      "option-name-present",
+      "progressbar-name-present",
       "searchbox-name-present",
       "slider-name-present",
       "spinbutton-name-present",
@@ -14927,6 +14900,7 @@ const COMPOSITE_RULES = [
     "id": "rgaa-4.1.2-11.2",
     "checksIds": [
       "form-control-label-quality",
+      "form-control-programmatic-label-quality",
       "label-in-name",
       "label-title-only"
     ],
@@ -15371,48 +15345,6 @@ const COMPOSITE_RULES = [
             "2.4.3",
             "3.1.1",
             "4.1.2"
-          ]
-        }
-      ]
-    }
-  },
-  {
-    "id": "rgaa-4.1.2-13.8",
-    "checksIds": [
-      "deprecated-elements-not-used"
-    ],
-    "meta": {
-      "title": "Dans chaque page web, chaque contenu en mouvement ou clignotant est-il contrôlable par l’utilisateur ?",
-      "description": "",
-      "wcagSc": [],
-      "level": null,
-      "standard": "RGAA",
-      "version": "4.1.2",
-      "criterion": "13.8",
-      "tags": [
-        "rgaa"
-      ],
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.1",
-          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.1",
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.2",
-          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.1",
-            "2.2.2"
           ]
         }
       ]
@@ -20625,8 +20557,10 @@ const PROFILE_RULES = {
     "area-alt-quality",
     "aria-allowed-attr",
     "aria-allowed-role",
+    "aria-checked-state-mismatch",
     "aria-hidden-body",
     "aria-hidden-focus",
+    "aria-prohibited-attr",
     "aria-prohibited-children",
     "aria-required-attr",
     "aria-required-children",
@@ -20699,6 +20633,7 @@ const PROFILE_RULES = {
     "menuitem-name-present",
     "meta-refresh-timing-absent",
     "meta-viewport-zoom-enabled",
+    "meter-name-present",
     "mouse-only-event-handlers",
     "nested-interactive-controls-absent",
     "no-autoplay-audio",
@@ -20706,12 +20641,14 @@ const PROFILE_RULES = {
     "object-text-alternative-quality",
     "office-document-link",
     "optgroup-label-present",
+    "option-name-present",
     "p-as-heading",
     "page-title-patterns",
     "page-title-present",
     "presentation-role-conflict",
     "presentational-attributes-absent",
     "presentational-elements-absent",
+    "progressbar-name-present",
     "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
@@ -20725,6 +20662,7 @@ const PROFILE_RULES = {
     "svg-text-alternative-quality",
     "tab-name-present",
     "tabindex",
+    "table-duplicate-name",
     "table-fake-caption",
     "table-headers-attr-valid",
     "td-has-header",
@@ -31074,6 +31012,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -31514,6 +31462,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.2.1",
+        "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
+        "criterion": "8.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -31960,6 +31918,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -32514,16 +32482,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -32603,16 +32561,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -32955,16 +32903,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -33755,19 +33693,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "13.8.1",
-        "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-        "criterion": "13.8",
-        "wcagSc": [
-          "2.2.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "13.8.2",
-        "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-        "criterion": "13.8",
+        "requirement": "10.1.1",
+        "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+        "criterion": "10.1",
         "wcagSc": [
           "2.2.2"
         ]
@@ -35001,6 +34929,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "11.1.3",
         "title": "Chaque champ de formulaire ayant une étiquette dont le contenu n’est pas visible ou à proximité (masqué, aria-label) ou qui n’est pas accolé au champ (aria-labelledby), vérifie-t-il une de ses conditions ?",
         "criterion": "11.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.2.2",
+        "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+        "criterion": "11.2",
         "wcagSc": [
           "4.1.2"
         ]
@@ -37588,16 +37526,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -38422,6 +38350,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39007,6 +38945,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -39656,6 +39604,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "11.1.1",
+        "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+        "criterion": "11.1",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40050,16 +40008,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
         "requirement": "11.1.1",
         "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
         "criterion": "11.1",
@@ -40198,6 +40146,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
+        "requirement": "12.7.1",
+        "title": "Dans chaque page web, un lien permet-il d’éviter la zone de contenu principal ou d’y accéder (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
         "requirement": "12.7.2",
         "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
         "criterion": "12.7",
@@ -40271,16 +40231,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -40365,16 +40315,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -40940,7 +40880,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "5.2.1",
+        "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+        "criterion": "5.2",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -41324,19 +41275,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "RGAA",
         "version": "4.1.2",
-        "requirement": "5.6.1",
-        "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-        "criterion": "5.6",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "5.6.2",
-        "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-        "criterion": "5.6",
+        "requirement": "5.7.4",
+        "title": "Pour chaque contenu de balise <td> ou <th> associée à un ou plusieurs en-têtes possédant un attribut id, la balise vérifie-t-elle ces conditions ?",
+        "criterion": "5.7",
         "wcagSc": [
           "1.3.1"
         ]
@@ -41411,16 +41352,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "7.1.1",
-        "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
-        "criterion": "7.1",
         "wcagSc": [
           "4.1.2"
         ]
@@ -42114,6 +42045,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "11.1.1",
+          "title": "Chaque champ de formulaire vérifie-t-il une de ces conditions ?",
+          "criterion": "11.1",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -42282,26 +42223,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "5.4.1",
           "title": "Pour chaque tableau de données ayant un titre, le titre est-il correctement associé au tableau de données ?",
           "criterion": "5.4",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.1",
-          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.2",
-          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
           "wcagSc": [
             "1.3.1"
           ]
@@ -42699,19 +42620,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         {
           "standard": "RGAA",
           "version": "4.1.2",
-          "requirement": "13.8.1",
-          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.2",
-          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
+          "requirement": "10.1.1",
+          "title": "Dans chaque page web, les balises servant à la présentation de l’information ne doivent pas être présentes dans le code source généré des pages. Cette règle est-elle respectée ?",
+          "criterion": "10.1",
           "wcagSc": [
             "2.2.2"
           ]
@@ -43652,6 +43563,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         {
           "standard": "RGAA",
           "version": "4.1.2",
+          "requirement": "11.2.2",
+          "title": "Chaque attribut title permet-il de connaître la fonction exacte du champ de formulaire auquel il est associé ?",
+          "criterion": "11.2",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
           "requirement": "11.6.1",
           "title": "Chaque regroupement de champs de même nature possède-t-il une légende ?",
           "criterion": "11.6",
@@ -44485,6 +44406,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "rgaa-4.1.2-5.2",
+    "checksIds": [
+      "table-duplicate-name"
+    ],
+    "meta": {
+      "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "RGAA",
+      "version": "4.1.2",
+      "criterion": "5.2",
+      "tags": [
+        "rgaa"
+      ],
+      "standardMappings": [
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "5.2.1",
+          "title": "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?",
+          "criterion": "5.2",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "rgaa-4.1.2-5.4",
     "checksIds": [
       "table-fake-caption"
@@ -44515,50 +44466,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
-    "id": "rgaa-4.1.2-5.6",
-    "checksIds": [
-      "td-has-header"
-    ],
-    "meta": {
-      "title": "Pour chaque tableau de données, chaque en-tête de colonne et chaque en-tête de ligne sont-ils correctement déclarés ?",
-      "description": "",
-      "wcagSc": [],
-      "level": null,
-      "standard": "RGAA",
-      "version": "4.1.2",
-      "criterion": "5.6",
-      "tags": [
-        "rgaa"
-      ],
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.1",
-          "title": "Pour chaque tableau de données, chaque en-tête de colonne s’appliquant à la totalité de la colonne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "5.6.2",
-          "title": "Pour chaque tableau de données, chaque en-tête de ligne s’appliquant à la totalité de la ligne vérifie-t-il une de ces conditions ?",
-          "criterion": "5.6",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        }
-      ]
-    }
-  },
-  {
     "id": "rgaa-4.1.2-5.7",
     "checksIds": [
       "scope-attr-valid",
-      "table-headers-attr-valid"
+      "table-headers-attr-valid",
+      "td-has-header"
     ],
     "meta": {
       "title": "Pour chaque tableau de données, la technique appropriée permettant d’associer chaque cellule avec ses en-têtes est-elle utilisée (hors cas particuliers) ?",
@@ -44741,18 +44653,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "rgaa-4.1.2-7.1",
     "checksIds": [
       "aria-role-name-present",
-      "binary-control-name-present",
-      "button-name-present",
-      "combobox-name-present",
       "dialog-name-present",
       "label-in-name",
-      "listbox-name-present",
       "menuitem-name-present",
-      "searchbox-name-present",
-      "slider-name-present",
-      "spinbutton-name-present",
       "tab-name-present",
-      "textbox-name-present",
       "treeitem-name-present"
     ],
     "meta": {
@@ -44879,6 +44783,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "checksIds": [
       "aria-allowed-attr",
       "aria-allowed-role",
+      "aria-checked-state-mismatch",
+      "aria-prohibited-attr",
       "aria-required-attr",
       "aria-roles-valid",
       "aria-valid-attr",
@@ -45256,6 +45162,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-10.1",
     "checksIds": [
+      "deprecated-elements-not-used",
       "letters-spaced-with-spaces",
       "presentational-attributes-absent",
       "presentational-elements-absent"
@@ -45466,6 +45373,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-11.1",
     "checksIds": [
+      "aria-role-name-present",
       "binary-control-name-present",
       "combobox-name-present",
       "form-control-programmatic-label-present",
@@ -45473,6 +45381,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "label-for-target-valid",
       "label-title-only",
       "listbox-name-present",
+      "meter-name-present",
+      "option-name-present",
+      "progressbar-name-present",
       "searchbox-name-present",
       "slider-name-present",
       "spinbutton-name-present",
@@ -45536,6 +45447,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "rgaa-4.1.2-11.2",
     "checksIds": [
       "form-control-label-quality",
+      "form-control-programmatic-label-quality",
       "label-in-name",
       "label-title-only"
     ],
@@ -45980,48 +45892,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             "2.4.3",
             "3.1.1",
             "4.1.2"
-          ]
-        }
-      ]
-    }
-  },
-  {
-    "id": "rgaa-4.1.2-13.8",
-    "checksIds": [
-      "deprecated-elements-not-used"
-    ],
-    "meta": {
-      "title": "Dans chaque page web, chaque contenu en mouvement ou clignotant est-il contrôlable par l’utilisateur ?",
-      "description": "",
-      "wcagSc": [],
-      "level": null,
-      "standard": "RGAA",
-      "version": "4.1.2",
-      "criterion": "13.8",
-      "tags": [
-        "rgaa"
-      ],
-      "standardMappings": [
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.1",
-          "title": "Dans chaque page web, chaque contenu en mouvement déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.1",
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "13.8.2",
-          "title": "Dans chaque page web, chaque contenu clignotant déclenché automatiquement, vérifie-t-il une de ces conditions ?",
-          "criterion": "13.8",
-          "wcagSc": [
-            "2.2.1",
-            "2.2.2"
           ]
         }
       ]
@@ -77226,8 +77096,10 @@ const PROFILE_RULES = {
     "area-alt-quality",
     "aria-allowed-attr",
     "aria-allowed-role",
+    "aria-checked-state-mismatch",
     "aria-hidden-body",
     "aria-hidden-focus",
+    "aria-prohibited-attr",
     "aria-prohibited-children",
     "aria-required-attr",
     "aria-required-children",
@@ -77300,6 +77172,7 @@ const PROFILE_RULES = {
     "menuitem-name-present",
     "meta-refresh-timing-absent",
     "meta-viewport-zoom-enabled",
+    "meter-name-present",
     "mouse-only-event-handlers",
     "nested-interactive-controls-absent",
     "no-autoplay-audio",
@@ -77307,12 +77180,14 @@ const PROFILE_RULES = {
     "object-text-alternative-quality",
     "office-document-link",
     "optgroup-label-present",
+    "option-name-present",
     "p-as-heading",
     "page-title-patterns",
     "page-title-present",
     "presentation-role-conflict",
     "presentational-attributes-absent",
     "presentational-elements-absent",
+    "progressbar-name-present",
     "radio-group-present",
     "role-img-text-alternative-present",
     "scope-attr-valid",
@@ -77326,6 +77201,7 @@ const PROFILE_RULES = {
     "svg-text-alternative-quality",
     "tab-name-present",
     "tabindex",
+    "table-duplicate-name",
     "table-fake-caption",
     "table-headers-attr-valid",
     "td-has-header",

@@ -138,31 +138,11 @@ test('validate: a test whose criterion RGAA relates to none of the rule\'s WCAG 
   });
 });
 
-test('validate: a review mark needs a known priority, a question unless it is a low-priority check, and real proposed tests', () => {
-  const sound = [
-    { priority: 'low' },
-    { priority: 'medium', question: 'q?' },
-    { priority: 'high', question: 'q?', proposed: ['1.1.3'] }
-  ];
-  for (const review of sound) {
-    withRows({ 'probe-img': { tests: ['1.1.1'], note: 'n', review } }, () => {
-      assert.deepEqual(validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-')), [], JSON.stringify(review));
-    });
-  }
-  const broken = [
-    [{ priority: 'urgent', question: 'q?' }, 'priority must be one of'],
-    [{ priority: 'medium' }, 'needs a question'],
-    [{ priority: 'low', proposed: ['1.1.3'] }, 'needs a question'],
-    [{ priority: 'low', question: 'q?', proposed: ['99.1.1'] }, 'proposes no such test 99.1.1'],
-    [{ priority: 'low', question: 'q?', proposed: ['1.1.1'] }, 'proposes 1.1.1, already linked'],
-    ['yes', 'review must be an object']
-  ];
-  for (const [review, expected] of broken) {
-    withRows({ 'probe-img': { tests: ['1.1.1'], note: 'n', review } }, () => {
-      const problems = validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'));
-      assert.ok(problems.some((p) => p.includes(expected)), `${JSON.stringify(review)}: ${problems}`);
-    });
-  }
+test('validate: a row has only tests, note and outsideCorrespondence', () => {
+  withRows({ 'probe-img': { tests: ['1.1.1'], note: 'n', review: { priority: 'low' } } }, () => {
+    const problems = validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'));
+    assert.deepEqual(problems, ['4.1.2 probe-img: unknown field review']);
+  });
 });
 
 test('the real table is sound against the engine\'s rules', () => {
