@@ -61,9 +61,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/no-autoplay-audio-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFlaggedIds = ['naa_case_01', 'naa_case_02'];
+  const expectedFlaggedIds = ['naa_case_01', 'naa_case_02', 'naa_case_06'];
   const expectedNoOccIds = ['naa_case_03', 'naa_case_04', 'naa_case_05'];
 
   for (const id of expectedFlaggedIds) {
@@ -71,5 +71,47 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/no-autoplay-audio-all-scenari
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+});
+
+// Hidden media still plays, so the hidden-content filter does not apply
+// (in a real browser an <audio> without controls is always display:none;
+// tests/engine-checks/manual/media-rules-chromium.test.js checks that case).
+test(`${RULE_ID}: autoplaying audio in a hidden container is still flagged`, () => {
+  for (const wrapper of [
+    '<div style="display:none">',
+    '<div hidden>',
+    '<div aria-hidden="true">'
+  ]) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${wrapper}<audio id="a" autoplay loop src="m.mp3"></audio></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), wrapper);
+  }
+});
+
+test(`${RULE_ID}: excludeSelectors and the scan scope still apply`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div id="out" style="display:none"><audio autoplay src="m.mp3"></audio></div><main id="in"><p>x</p></main></body></html>`;
+  assertRule(
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID], excludeSelectors: ['#out'] }),
+    RULE_ID,
+    'notApplicable'
+  );
+  assertRule(
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID], contextSelector: '#in' }),
+    RULE_ID,
+    'notApplicable'
+  );
+});
+
+test(`${RULE_ID}: hidden autoplaying audio is cantTell under wcag22-aa and rgaa-4.1.2 (4.10.1)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div style="display:none"><audio autoplay loop src="m.mp3"></audio></div></body></html>`;
+  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
+    const result = runa11yCoreOnHtml(html, { engineOptions: { profile } });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const tests = rule.meta.normativeMappings
+      .filter((m) => m.standard === 'RGAA')
+      .map((m) => m.requirement);
+    assert.deepEqual(tests, profile === 'rgaa-4.1.2' ? ['4.10.1'] : []);
   }
 });

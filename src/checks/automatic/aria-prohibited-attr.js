@@ -14,7 +14,9 @@
  *   list for naming attributes (pure text-semantics / non-naming
  *   structural roles: caption, code, deletion, emphasis, generic,
  *   insertion, mark, none, paragraph, presentation, strong, subscript,
- *   suggestion, superscript, time), and (b) elements with no role at all:
+ *   suggestion, superscript, time), plus a native <caption> with no valid
+ *   explicit role, whose implicit role is caption, and (b) elements with no
+ *   role at all:
  *   a curated set of native HTML tags verified to carry no implicit role
  *   (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a
  *   hyphenated, author-defined tag per the Custom Elements spec; see
@@ -147,14 +149,25 @@ function runInPage(ctx) {
 
   // --- Tier 1: explicit, valid role from the naming-prohibited set ---
 
+  // A native <caption> has the caption role without saying so, and is judged
+  // the same way as role="caption"; only one that carries a naming attribute
+  // needs visiting.
+  const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
   const roleNodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role]')
-    : helpers.queryAll('[role]');
+    ? helpers.queryAllSmart(tier1Selector)
+    : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    let role = explicitRole;
+    if (
+      (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
+      String(el.localName || '').toLowerCase() === 'caption'
+    ) {
+      role = 'caption';
+    }
     if (!role || !ROLES_PROHIBITING_NAME.has(role)) continue;
 
     applicableCount += 1;

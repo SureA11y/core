@@ -51,24 +51,88 @@ test(`${RULE_ID}: fail when a color-only link has an insufficient contrast diffe
   assert.ok(rule.occurrences[0].data.details.metrics.ratio < 3);
 });
 
-test(`${RULE_ID}: pass when color-only but contrast vs surrounding text is >= 3:1`, () => {
+test(`${RULE_ID}: cantTell when color is the only cue, even at >= 3:1 (G183 also needs hover and focus cues)`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
     p { color: #222222; }
     .nodeco { text-decoration: none; }
     .strong { color: #969696; }
-  </style></head><body><p>Read <a href="#" class="nodeco strong">this link</a> for more.</p></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  </style></head><body><p>Read <a href="#" id="a" class="nodeco strong">this link</a> for more.</p></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = rule.occurrences[0];
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+    assert.strictEqual(occ.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+    assert.ok(occ.data.details.metrics.ratio >= 3);
+    assert.strictEqual(occ.uncertainty.code, 'runtime-dependent');
+    assert.strictEqual(occ.i18n.summaryKey, 'linkInTextBlock_summary_cantTell_contrastOnly');
+  }
+});
+
+test(`${RULE_ID}: a same-colored link marked by a border, shadow, outline, background or icon passes`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #222222; }`;
+  for (const [css, inner] of [
+    ['.m { border-bottom: 1px solid; }', 'la suite'],
+    ['.m { box-shadow: 0 1px 0 #222222; }', 'la suite'],
+    ['.m { outline: 1px dotted #222222; }', 'la suite'],
+    ['.m { background-color: #ffff99; }', 'la suite'],
+    ['.m { background-image: url(ext.svg); }', 'la suite'],
+    ['.m::after { content: " \\2197"; }', 'la suite'],
+    ['', 'la suite <img src="ext.png" alt="">'],
+    ['', 'la suite <svg width="8" height="8" aria-hidden="true"><path d="M0 0h8v8z"/></svg>']
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">${inner}</a> ici.</p></body></html>`;
+    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    }
+  }
+});
+
+test(`${RULE_ID}: a zero-width border or an empty ::after is not a cue`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; }`;
+  for (const css of [
+    '.m { border-bottom: 0 solid; }',
+    '.m::after { content: ""; }',
+    '.m:hover::after { content: "x"; }'
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">la suite</a> ici.</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
+});
+
+test(`${RULE_ID}: role="link" elements are in scope and get no default underline`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+  </style></head><body>
+    <p>Lire <span role="link" tabindex="0" id="weak" style="color:#2a2a2a">la suite</span> ici.</p>
+    <p>Lire <span role="link" tabindex="0" id="red" style="color:#dd0000">la suite</span> ici.</p>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const byId = (id) =>
+    rule.occurrences.find((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  assert.strictEqual(byId('weak').data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(byId('red').data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  assert.strictEqual(byId('red').occurrenceOutcome, 'cantTell');
 });
 
 test(`${RULE_ID}: cantTell, not pass, when contrast is not confidently computable (background-image blocker)`, () => {
+  // The image is behind the whole paragraph: on the link alone it would be a
+  // mark of its own, and the link would pass.
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
     p { color: #222222; }
     .nodeco { text-decoration: none; color: #2a2a2a; }
     .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
-  </style></head><body><p>Read <a href="#" class="nodeco bgimg">this link</a> for more.</p></body></html>`;
+  </style></head><body><p class="bgimg">Read <a href="#" class="nodeco">this link</a> for more.</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.notStrictEqual(rule.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
@@ -83,7 +147,7 @@ test(`${RULE_ID}: an unevaluable link does not mask a proven failure elsewhere`,
     .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
   </style></head><body>
     <p>Read <a href="#" id="weakLink" class="nodeco weak">this link</a> for more.</p>
-    <p>Or <a href="#" id="blockedLink" class="nodeco bgimg">this one</a> instead.</p>
+    <p class="bgimg">Or <a href="#" id="blockedLink" class="nodeco">this one</a> instead.</p>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
@@ -155,23 +219,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // Two, not one: case 07 is undecidable and is reported as a cantTell-tier
-  // occurrence alongside case 05's confident fail rather than discarded by it.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  // Cases 04 and 07 are cantTell-tier occurrences reported alongside the
+  // confident fails rather than discarded by them.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
-  const undecided = (rule.occurrences || []).find(
-    (o) => typeof o.html === 'string' && o.html.includes('id="litb_case_07"')
-  );
-  assert.ok(undecided, 'Expected occurrence for id="litb_case_07"');
-  assert.strictEqual(undecided.occurrenceOutcome, 'cantTell');
+  for (const id of ['litb_case_04', 'litb_case_07']) {
+    const undecided = (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    );
+    assert.ok(undecided, `Expected occurrence for id="${id}"`);
+    assert.strictEqual(undecided.occurrenceOutcome, 'cantTell');
+  }
 
-  const expectedFailIds = ['litb_case_05'];
+  const expectedFailIds = ['litb_case_05', 'litb_case_09'];
   const expectedNoOccIds = [
     'litb_case_01',
     'litb_case_02',
     'litb_case_03',
-    'litb_case_04',
-    'litb_case_06'
+    'litb_case_06',
+    'litb_case_08'
   ];
 
   for (const id of expectedFailIds) {

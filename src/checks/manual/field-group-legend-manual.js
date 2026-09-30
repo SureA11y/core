@@ -8,20 +8,29 @@
  * @summary A group of form fields should have a legend
  * @standard RGAA 4.1.2 (no WCAG Success Criterion)
  * @applicability
- *   Applies to <fieldset> elements and elements with role="group" that
- *   contain at least one form field (input other than hidden, select,
- *   textarea, or an element with a form field role). A page with none is
- *   notApplicable.
+ *   Applies to <fieldset> elements and elements with role="group" or
+ *   role="radiogroup" that contain at least one form field (input other
+ *   than hidden, select, textarea, or an element with a form field role).
+ *   A page with none is notApplicable.
  * @expectation
- *   A <fieldset> has a <legend> child with text, or an aria-label or
- *   aria-labelledby giving it a name; a role="group" element has an
- *   aria-label, aria-labelledby or title. One without is flagged for a
- *   person to decide whether it groups fields of the same kind, which is
- *   when RGAA 11.6.1 requires a legend.
+ *   RGAA 11.6.1 step 2: a <fieldset> has a <legend> child with text; an
+ *   element with role="group" or role="radiogroup" has an aria-label or an
+ *   aria-labelledby that resolves to text. A fieldset that itself carries
+ *   role="group" or role="radiogroup" may use either. aria-label on a plain
+ *   fieldset, and title on a group, do not count: step 2 names only those
+ *   mechanisms. A group without one is flagged for a person to decide
+ *   whether it groups fields of the same kind, which is when RGAA 11.6.1
+ *   requires a legend, and, if so, whether every field instead carries a
+ *   title, aria-label, aria-labelledby or aria-describedby that names the
+ *   group (step 3).
  * @implementation-notes
  * - Manual (cantTell): a fieldset can group unrelated fields for layout,
  *   and a toolbar can use role="group". Only a person can tell.
- * - role="radiogroup" without a name is left to aria-role-name-present.
+ * - Step 3 is not decided here: whether a field's title or aria-label
+ *   "permet de déterminer l'appartenance du champ au groupement" is a
+ *   judgment, and most fields carry an aria-label or title for their own
+ *   name. So a group whose fields all carry one of those attributes is
+ *   still asked about.
  * - Opt-in (tag `rgaa`): WCAG does not require a legend on every group.
  */
 
@@ -30,7 +39,7 @@ const id = 'field-group-legend';
 const meta = {
   title: 'Groups of form fields have a legend',
   description:
-    'Flags a <fieldset> or role="group" holding form fields that has no legend or name, for a person to decide whether it groups fields of the same kind.',
+    'Flags a <fieldset> without a legend, or a role="group" or role="radiogroup" without aria-label or aria-labelledby, holding form fields, for a person to decide whether it groups fields of the same kind.',
   i18n: {
     titleKey: 'fieldGroupLegend_title',
     descriptionKey: 'fieldGroupLegend_description'
@@ -81,9 +90,10 @@ function runInPage(ctx) {
     return hasText(el.getAttribute('aria-label')) || hasText(labelledbyText(el));
   }
 
+  // Filtered below by the first role token.
   const groups = helpers.queryAllSmart
-    ? helpers.queryAllSmart('fieldset, [role="group"]')
-    : helpers.queryAll('fieldset, [role="group"]');
+    ? helpers.queryAllSmart('fieldset, [role]')
+    : helpers.queryAll('fieldset, [role]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -92,34 +102,35 @@ function runInPage(ctx) {
     if (!group || !group.getAttribute) continue;
     const isFieldset = String(group.tagName).toLowerCase() === 'fieldset';
     const role = firstRole(group);
+    const isAriaGroup = role === 'group' || role === 'radiogroup';
     // A fieldset given another role (say role="presentation") is not a group.
-    if (isFieldset && role && role !== 'group') continue;
+    if (isFieldset ? role && !isAriaGroup : !isAriaGroup) continue;
     if (!group.querySelector(FIELDS)) continue;
     applicableCount += 1;
 
-    if (hasAriaName(group)) continue;
+    // RGAA 11.6.1 step 2: a legend for a fieldset, aria-label or
+    // aria-labelledby for role="group"/"radiogroup".
+    if (isAriaGroup && hasAriaName(group)) continue;
     if (isFieldset) {
       const legend = Array.from(group.children).find(
         (c) => String(c.tagName).toLowerCase() === 'legend'
       );
       if (legend && hasText(legend.textContent)) continue;
-    } else if (hasText(group.getAttribute('title'))) {
-      continue;
     }
 
-    const element = isFieldset ? 'fieldset' : 'role="group"';
+    const element = isFieldset ? 'fieldset' : `role="${role}"`;
     occurrences.push(
       helpers.reportOccurrence(group, {
         summary: isFieldset
           ? 'This fieldset groups form fields but has no legend.'
-          : 'This role="group" element groups form fields but has no name.',
-        hint: 'If the fields are of the same kind (an address, a date, a set of choices), give the group a legend: a <legend> for a fieldset, aria-label or aria-labelledby for role="group".',
+          : `This role="${role}" element groups form fields but has no aria-label or aria-labelledby.`,
+        hint: 'If the fields are of the same kind (an address, a date, a set of choices), give the group a legend: a <legend> for a fieldset, aria-label or aria-labelledby for role="group" or role="radiogroup". Otherwise check that each field has a title, aria-label, aria-labelledby or aria-describedby that names the group.',
         i18n: {
           summaryKey: isFieldset
             ? 'fieldGroupLegend_summary_cantTell_fieldset'
             : 'fieldGroupLegend_summary_cantTell_group',
           hintKey: 'fieldGroupLegend_hint_cantTell',
-          params: {}
+          params: { role }
         },
         data: {
           details: { reasonCode: 'groupWithoutLegend', element },

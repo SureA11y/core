@@ -10,7 +10,8 @@
  * @sc 1.1.1
  * @type manual
  * @applicability
- *   Applies to <area> elements whose alt attribute is present and non-empty.
+ *   Applies to <area> elements that get a non-empty text alternative from any
+ *   source: aria-labelledby (resolving to text), aria-label, alt or title.
  *   The <area> must carry a non-empty href (otherwise it is not a hyperlink
  *   at all per the HTML spec) and belong to a <map> that an <img usemap>
  *   actually references; an <area> in an unused map is out of scope. The
@@ -24,14 +25,18 @@
  *   <img>+<map> pairing do. role="presentation"/"none" takes an element out
  *   unless it is focusable.
  * @expectation
- *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ *   Human review is required to confirm that the provided text alternative is
+ *   accurate and appropriate. Each occurrence lists every source present
+ *   (data.details.sources), so the reviewer checks each one: a title or
+ *   aria-label that is not the name still reaches some users.
  */
 
 const id = 'area-alt-quality';
 
 const meta = {
-  title: '<area> alt text must be appropriate (manual review)',
-  description: 'Flags <area> elements with non-empty alt text for human review of appropriateness.',
+  title: '<area> text alternative must be appropriate (manual review)',
+  description:
+    'Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.',
   i18n: {
     titleKey: 'area_altQuality_title',
     descriptionKey: 'area_altQuality_description'
@@ -179,6 +184,53 @@ function runInPage(ctx) {
     return !focusable;
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  // Every non-empty text-alternative source on the element, in accessible-name
+  // order: aria-labelledby (when it resolves to text), aria-label, alt, title.
+  // aria-labelledby wins over aria-label in the name, but a present aria-label
+  // is still listed, since RGAA 1.3.2 asks about each attribute present.
+  function collectTextAlternativeSources(el) {
+    const attr = (name) => {
+      try {
+        const v = el.getAttribute(name);
+        return v == null ? '' : String(v).trim();
+      } catch {
+        return '';
+      }
+    };
+    const sources = [];
+    let name = '';
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      name = String(aria.value).trim();
+      sources.push(aria.mechanism);
+      if (aria.mechanism === 'aria-labelledby' && attr('aria-label')) sources.push('aria-label');
+    } else if (!getAriaNameInfo && attr('aria-label')) {
+      name = attr('aria-label');
+      sources.push('aria-label');
+    }
+    const altText = attr('alt');
+    if (altText) {
+      sources.push('alt');
+      if (!name) name = altText;
+    }
+    const titleText = attr('title');
+    if (titleText) {
+      sources.push('title');
+      if (!name) name = titleText;
+    }
+    return { sources, name, alt: altText };
+  }
+
   const els = (() => {
     try {
       return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
@@ -239,38 +291,30 @@ function runInPage(ctx) {
 
     if (isRolePresentationExcluded(el)) continue;
 
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    let alt;
-    try {
-      alt = el.getAttribute('alt');
-    } catch {
-      alt = null;
-    }
-    if (alt === null) continue;
-    if (String(alt).trim() === '') continue; // only non-empty alt is applicable here
+    // Applies when any text-alternative source gives the area a non-empty
+    // name; each present source is listed so the reviewer checks all of them.
+    const alt = collectTextAlternativeSources(el);
+    if (!alt.sources.length) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
 
-    let altVal;
-    try {
-      altVal = String(el.getAttribute('alt') || '');
-    } catch {
-      altVal = '';
-    }
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
 
     const baseOccurrence = {
-      summary: 'Review alt text on <area> for accuracy and appropriateness.',
-      hint: 'Ensure the alt text identifies the destination/action of the image map area in context.',
+      summary: `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
       i18n: {
         summaryKey: 'area_altQuality_summary_cantTell',
         hintKey: 'area_altQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { alt: altVal.trim() } // optional but useful for manual review
+        details
       }
     };
 

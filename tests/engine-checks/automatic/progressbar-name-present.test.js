@@ -59,6 +59,25 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Progress bars have an accessible name');
 });
 
+test(`${RULE_ID}: an associated <label> names a labelable <progress role="progressbar">`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body>
+    <label for="p">Chargement</label><progress id="p" role="progressbar" value="5" max="10"></progress>
+    <label>Envoi <progress role="progressbar" value="1" max="10"></progress></label>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a <label for> does not name a non-labelable element with role="progressbar"`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body>
+    <label for="p">Chargement</label><div id="p" role="progressbar" aria-valuenow="5"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/progressbar-name-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -69,10 +88,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/progressbar-name-present-all-
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFailIds = ['pbar_case_05', 'pbar_case_06', 'pbar_case_08', 'pbar_case_09'];
-  const expectedNoOccIds = ['pbar_case_02', 'pbar_case_03', 'pbar_case_04', 'pbar_case_07'];
+  const expectedFailIds = [
+    'pbar_case_11',
+    'pbar_case_05',
+    'pbar_case_06',
+    'pbar_case_08',
+    'pbar_case_09'
+  ];
+  const expectedNoOccIds = [
+    'pbar_case_10',
+    'pbar_case_02',
+    'pbar_case_03',
+    'pbar_case_04',
+    'pbar_case_07'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

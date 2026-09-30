@@ -1250,6 +1250,18 @@ function createDomHelpers(opts) {
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
 
+  // Same deep query as queryAllSmart (shadow roots when includeShadowDom,
+  // context scope, excludeSelectors) but with no hidden-content filter:
+  // elements inside `hidden`, `display:none`, closed <details> and the like
+  // are returned whatever includeHiddenElements says. For rules that judge
+  // the markup itself rather than what is rendered (RGAA's "code source
+  // généré" tests: 8.2.1, 10.1.1, 10.1.2). <template> content is not part
+  // of the DOM tree and stays out, as it does for the W3C validator.
+  function queryAllSource(sel) {
+    const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+    return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+  }
+
   // -------------------------------------------------------------------------
   // Per-run shared caches (DOM helpers)
   // -------------------------------------------------------------------------
@@ -3426,6 +3438,25 @@ function createDomHelpers(opts) {
     };
   }
 
+  // Text of an SVG element's first <title> child, the name source SVG-AAM
+  // uses after aria-labelledby and aria-label. '' when the element is not in
+  // the SVG namespace, has no such child, or carries role none/presentation
+  // (which a <title> does not override: it is not a global ARIA attribute).
+  function getSvgTitleChildText(node) {
+    try {
+      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
+      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      if (role === 'none' || role === 'presentation') return '';
+      const kids = node.children ? Array.from(node.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
+          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        }
+      }
+    } catch {}
+    return '';
+  }
+
   // C.1) "Name from content": recursive accname-aligned content-name computation.
   //
   // Rationale: the accname spec's "name from content" step (2F) is recursive:
@@ -3617,6 +3648,25 @@ function createDomHelpers(opts) {
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
+      }
+
+      // An SVG element is named by its first <title> child (SVG-AAM), after
+      // aria-labelledby and aria-label. The <title> itself is never rendered,
+      // so the walk below would skip it: <button><svg><title>Search</title>
+      // </svg></button> is named "Search" in browsers.
+      const svgTitle = getSvgTitleChildText(node);
+      if (svgTitle) {
+        const ariaName = getAriaNameInfo(node, _ctx, opts);
+        if (ariaName && ariaName.present && ariaName.value) {
+          parts.push(ariaName.value);
+          if (flags.indexOf('descendant-name-used:svg-aria') === -1)
+            flags.push('descendant-name-used:svg-aria');
+          return;
+        }
+        parts.push(svgTitle);
+        if (flags.indexOf('descendant-name-used:svg-title') === -1)
+          flags.push('descendant-name-used:svg-title');
+        return;
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
@@ -4530,6 +4580,76 @@ function createDomHelpers(opts) {
     return out;
   }
 
+  // Input types whose placeholder HTML-AAM uses as the last name source.
+  const PLACEHOLDER_NAMED_INPUT_TYPES = new Set([
+    'text',
+    'password',
+    'number',
+    'search',
+    'tel',
+    'email',
+    'url'
+  ]);
+
+  // The name an element gets from its own HTML host markup rather than from
+  // ARIA: an associated <label> on a labelable element, the first child
+  // <legend> of a <fieldset>, the first child <caption> of a <table>, and,
+  // only when opts.placeholder is true, the placeholder of a text-like
+  // <input> or a <textarea> (HTML-AAM's last source). For the
+  // name-from-author-only role rules (role="textbox", "slider",
+  // "radiogroup", ...), whose ARIA check does not look at host markup: the
+  // browser still computes these for the native host whatever role it
+  // carries. Returns { present, value, mechanism } with mechanism one of
+  // 'label', 'legend', 'caption', 'placeholder' or 'none'.
+  function getNativeHostNameInfo(el, _ctx, opts) {
+    const none = { present: false, value: '', mechanism: 'none' };
+    if (!isElement(el)) return none;
+    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
+    const tag = lower(el.localName || el.tagName);
+
+    try {
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          return { present: true, value: info.value, mechanism: 'label' };
+        }
+      }
+    } catch {}
+
+    const firstChildOfType = (childTag) => {
+      const kids = el.children ? Array.from(el.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === childTag) return kid;
+      }
+      return null;
+    };
+    const contentOf = (child, mechanism) => {
+      if (!child) return null;
+      const info = getContentNameInfo(child, _ctx, opts);
+      const value = info && info.present ? trim(info.value) : '';
+      return value ? { present: true, value, mechanism } : null;
+    };
+
+    if (tag === 'fieldset') {
+      const r = contentOf(firstChildOfType('legend'), 'legend');
+      if (r) return r;
+    }
+    if (tag === 'table') {
+      const r = contentOf(firstChildOfType('caption'), 'caption');
+      if (r) return r;
+    }
+
+    if (opts && opts.placeholder) {
+      const type = tag === 'input' ? lower(getAttr(el, 'type') || 'text') : '';
+      if (tag === 'textarea' || (tag === 'input' && PLACEHOLDER_NAMED_INPUT_TYPES.has(type))) {
+        const ph = trim(String(getAttr(el, 'placeholder') || '').replace(/\s+/g, ' '));
+        if (ph) return { present: true, value: ph, mechanism: 'placeholder' };
+      }
+    }
+    return none;
+  }
+
   function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
@@ -4711,6 +4831,7 @@ function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    queryAllSource,
     getOuterHtmlSnippet,
     buildSimpleSelector,
     buildSelector,
@@ -4784,6 +4905,7 @@ function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control
     // (own aria-name, else rendered content, else title). Shared so

@@ -79,13 +79,13 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
+| area-alt-quality | manual | &lt;area&gt; text alternative must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
 | img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
-| input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
+| input-image-alt-quality | manual | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
 | object-text-alternative-quality | manual | &lt;object&gt; text alternative must be appropriate (manual review) | src/checks/manual/object-text-alternative-quality-manual.js | text-alternative-quality |  |
 | svg-text-alternative-quality | manual | &lt;svg&gt; text alternative must be appropriate (manual review) | src/checks/manual/svg-text-alternative-quality-manual.js | text-alternative-quality |  |
 
@@ -281,7 +281,7 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
-| server-side-image-map-absent | automatic | Images must not use a server-side image map | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -323,7 +323,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| deprecated-elements-not-used | automatic | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
 
 ### 2.2.4
 
@@ -731,13 +731,13 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
+| area-alt-quality | manual | &lt;area&gt; text alternative must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
 | img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
-| input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
+| input-image-alt-quality | manual | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
 | object-text-alternative-quality | manual | &lt;object&gt; text alternative must be appropriate (manual review) | src/checks/manual/object-text-alternative-quality-manual.js | text-alternative-quality |  |
 | svg-text-alternative-quality | manual | &lt;svg&gt; text alternative must be appropriate (manual review) | src/checks/manual/svg-text-alternative-quality-manual.js | text-alternative-quality |  |
 
@@ -933,7 +933,7 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
-| server-side-image-map-absent | automatic | Images must not use a server-side image map | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -975,7 +975,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| deprecated-elements-not-used | automatic | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
 
 ### 2.2.4
 

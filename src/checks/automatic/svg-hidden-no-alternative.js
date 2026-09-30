@@ -16,6 +16,10 @@
  *   (RGAA 1.2.4). An SVG that breaks this fails either way: if it is
  *   decorative it breaks 1.2.4, and if it carries information, hiding it
  *   breaks 1.1.5.
+ *   Content drawn through <use href="#id"> (or xlink:href) counts as the
+ *   SVG's own: the note of RGAA criterion 1.2 says 1.2.4 also applies to the
+ *   <svg> or <symbol> a <use> element points to. Only same-document
+ *   references are followed, recursively; an external file is not fetched.
  * @implementation-notes
  * - Opt-in (tag `rgaa`): WCAG does not forbid a text alternative inside
  *   hidden content, so the rule runs only under the rgaa-4.1.2 profile, the
@@ -63,6 +67,30 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const all = [svg].concat(Array.from(svg.querySelectorAll('*')));
+    const referenced = [];
+    // Follow same-document <use> references (see @expectation above).
+    const visited = new Set(all);
+    for (let i = 0; i < all.length; i += 1) {
+      const el = all[i];
+      if (String(el.localName || el.tagName).toLowerCase() !== 'use') continue;
+      const ref = String(el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim();
+      if (ref.length < 2 || ref[0] !== '#') continue;
+      let target;
+      try {
+        const rootNode = el.getRootNode ? el.getRootNode() : null;
+        const scope = rootNode && rootNode.getElementById ? rootNode : svg.ownerDocument;
+        target = scope ? scope.getElementById(decodeURIComponent(ref.slice(1))) : null;
+      } catch {
+        target = null;
+      }
+      if (!target || visited.has(target)) continue;
+      referenced.push(ref);
+      for (const node of [target].concat(Array.from(target.querySelectorAll('*')))) {
+        if (visited.has(node)) continue;
+        visited.add(node);
+        all.push(node);
+      }
+    }
     const found = [];
     for (const attr of ['aria-label', 'aria-labelledby', 'title']) {
       if (all.some((el) => hasText(el.getAttribute(attr)))) found.push(attr);
@@ -86,7 +114,11 @@ function runInPage(ctx) {
           params: { alternatives }
         },
         data: {
-          details: { reasonCode: 'hiddenSvgHasAlternative', alternatives: found },
+          details: {
+            reasonCode: 'hiddenSvgHasAlternative',
+            alternatives: found,
+            ...(referenced.length ? { usesReferenced: referenced } : {})
+          },
           visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
         }
       })

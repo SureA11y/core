@@ -58,5 +58,17 @@
     <div class="case-title">05 — NEUTRAL: a single radio button</div>
     <label><input type="radio" name="agree" id="rgp_case_05"> I agree</label>
   </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: one outer fieldset holds the whole set, though an inner group splits it</div>
+    <fieldset>
+      <legend>Delivery</legend>
+      <div role="group" aria-label="Fast">
+        <label><input type="radio" name="ship" id="rgp_case_06"> Express</label>
+        <label><input type="radio" name="ship"> Courier</label>
+      </div>
+      <label><input type="radio" name="ship"> Standard</label>
+    </fieldset>
+  </div>
 </body>
 </html>

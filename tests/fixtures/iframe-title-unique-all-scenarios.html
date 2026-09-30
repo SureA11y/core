@@ -32,13 +32,25 @@
   <h2>B. Duplicate titles</h2>
 
   <div class="case" id="case_02">
-    <div class="case-title">02 — FAIL: first frame sharing title "Video player"</div>
+    <div class="case-title">02 — CANTTELL: first frame sharing title "Video player", different source</div>
     <iframe id="ifu_case_02" title="Video player" src="a.html"></iframe>
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: second frame sharing title "Video player"</div>
+    <div class="case-title">03 — CANTTELL: second frame sharing title "Video player", different source</div>
     <iframe id="ifu_case_03" title="Video player" src="b.html"></iframe>
+  </div>
+
+  <h2>B2. Shared title, same resource</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: first frame titled "Weather", loading w.html</div>
+    <iframe id="ifu_case_05" title="Weather" src="w.html"></iframe>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: second frame titled "Weather", loading the same w.html</div>
+    <iframe id="ifu_case_06" title="Weather" src="w.html"></iframe>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

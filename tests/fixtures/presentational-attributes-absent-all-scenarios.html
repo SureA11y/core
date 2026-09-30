@@ -66,6 +66,23 @@
     <svg id="pat_case_08" width="20" height="20" aria-hidden="true"><rect width="20" height="20" /></svg>
   </div>
 
+  <h2>C. Hidden content and basefont (FAIL)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: align inside a hidden subtree, still in the generated source</div>
+    <div hidden><p id="pat_case_09" align="center">Hidden paragraph</p></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: valign on an element hidden with display:none</div>
+    <div id="pat_case_10" style="display:none" valign="top">Not displayed</div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: basefont, listed by RGAA 10.1.2</div>
+    <p id="pat_case_11" basefont="3">Paragraph</p>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

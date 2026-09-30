@@ -121,6 +121,73 @@ test(`${RULE_ID}: fail when the rotation is expressed in a non-degree unit (0.25
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+function styled(css, body) {
+  return `<!doctype html><html><head><style>${css}</style></head><body>${body}</body></html>`;
+}
+
+test(`${RULE_ID}: an orientation block that hides main behind a "rotate your device" message is asked about (F100)`, () => {
+  const html = styled(
+    '.msg{display:none} @media (orientation: portrait){ main{display:none} .msg{display:block} }',
+    '<p class="msg">Tournez votre appareil</p><main id="m"><h1>Tarifs</h1><p>Contenu</p></main>'
+  );
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = rule.occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'ORIENTATION_MEDIA_HIDES_CONTENT');
+    assert.strictEqual(occ.data.details.selectorText, 'main');
+    assert.ok(occ.html.includes('id="m"'));
+    assert.strictEqual(occ.uncertainty.code, 'judgement-required');
+    assert.strictEqual(occ.i18n.summaryKey, 'cssOrientationLock_summary_cantTell_hidesContent');
+  }
+});
+
+test(`${RULE_ID}: hiding body, a wrapper of main, or most of the text of a page without main is asked about`, () => {
+  for (const [css, body] of [
+    ['@media (orientation: landscape){ body{visibility:hidden} }', '<p>Texte</p>'],
+    [
+      '@media (orientation: portrait){ #app{display:none} }',
+      '<div id="app"><main><p>Contenu</p></main></div>'
+    ],
+    [
+      '@media (orientation: portrait){ .page{display:none} }',
+      '<header>Logo</header><div class="page"><h1>Tarifs</h1><p>Une longue description du contenu de la page.</p></div>'
+    ]
+  ]) {
+    const result = runa11yCoreOnHtml(styled(css, body), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test(`${RULE_ID}: an orientation block hiding a small part of the page still passes`, () => {
+  const html = styled(
+    '@media (orientation: portrait){ .aside{display:none} }',
+    '<main><h1>Tarifs</h1><p>Contenu principal de la page.</p></main><div class="aside">Pub</div>'
+  );
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: a rotation lock still fails, with the hidden-content question kept beside it`, () => {
+  const html = styled(
+    '@media (orientation: portrait){ html{transform:rotate(90deg)} main{display:none} }',
+    '<main><p>Contenu</p></main>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.deepStrictEqual(
+    rule.occurrences.map((o) => [o.occurrenceOutcome, o.data.details.reasonCode]),
+    [
+      ['fail', 'ORIENTATION_MEDIA_ROTATE_TRANSFORM'],
+      ['cantTell', 'ORIENTATION_MEDIA_HIDES_CONTENT']
+    ]
+  );
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

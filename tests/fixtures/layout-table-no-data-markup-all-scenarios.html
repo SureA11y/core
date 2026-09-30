@@ -20,7 +20,7 @@
     Each failing target has a stable <code>id</code> of the form <code>ltn_case_NN</code>. Only tables with role="presentation" or role="none" are checked.
   </p>
 
-  <h2>A. Layout tables with data table markup (FAIL)</h2>
+  <h2>A. Layout tables with data table markup (FAIL, or CANTTELL when the table looks like a data table)</h2>
 
   <div class="case" id="case_01">
     <div class="case-title">01 — FAIL: caption</div>
@@ -57,6 +57,23 @@
       <thead><tr><td>Top</td></tr></thead>
       <tbody><tr><td>Middle</td></tr></tbody>
       <tfoot><tr><td>Bottom</td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: colgroup</div>
+    <table role="presentation" id="ltn_case_10">
+      <colgroup><col><col></colgroup>
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: marked as layout but looks like a data table (full header row over data)</div>
+    <table role="presentation" id="ltn_case_11">
+      <tr><th>Item</th><th>Price</th></tr>
+      <tr><td>Tea</td><td>2</td></tr>
+      <tr><td>Milk</td><td>1</td></tr>
     </table>
   </div>
 

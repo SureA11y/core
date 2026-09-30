@@ -47,6 +47,29 @@
     </div>
   </div>
 
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: fieldset named by aria-label, with no legend</div>
+    <fieldset aria-label="Shipping address" id="fgl_case_07">
+      <label>Street <input name="street3"></label>
+      <label>City <input name="city3"></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: role="group" named only by title</div>
+    <div role="group" title="Shipping address" id="fgl_case_08">
+      <label>Street <input name="street4"></label>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FLAGGED: role="radiogroup" without aria-label or aria-labelledby</div>
+    <div role="radiogroup" id="fgl_case_09">
+      <label><input type="radio" name="civ"> Mr</label>
+      <label><input type="radio" name="civ"> Ms</label>
+    </div>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_04">
@@ -70,6 +93,14 @@
     <div role="group" id="fgl_case_06">
       <button type="button">Bold</button>
       <button type="button">Italic</button>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: role="radiogroup" named with aria-label</div>
+    <div role="radiogroup" aria-label="Civility" id="fgl_case_10">
+      <label><input type="radio" name="civ2"> Mr</label>
+      <label><input type="radio" name="civ2"> Ms</label>
     </div>
   </div>
 </body>

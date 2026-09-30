@@ -37,6 +37,50 @@ test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () =
   assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, ['*:focus']);
 });
 
+test(`${RULE_ID}: an outline removed by a rule with no focus state is asked about (F78)`, () => {
+  for (const css of ['a{outline:none}', '*{outline:0}', 'nav a{outline-style:none}']) {
+    const html = page(css, '<nav><a href="/x" id="a">Lien</a></nav>');
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
+      assert.ok(hasOccurrenceForId(rule, 'a'), css);
+      assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
+      assert.deepStrictEqual(rule.occurrences[0].data.details.suppressingSelectors, [
+        css.slice(0, css.indexOf('{'))
+      ]);
+    }
+  }
+});
+
+test(`${RULE_ID}: a focus rule restoring an indicator clears an outline removed with no state`, () => {
+  for (const css of [
+    'a{outline:none} a:focus{outline:2px solid}',
+    'a{outline:none} a:focus-visible{box-shadow:0 0 0 2px navy}'
+  ]) {
+    const result = runa11yCoreOnHtml(page(css, '<a href="/x" id="a">Lien</a>'), {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a reset limited to another state, or to a pseudo-element, is not a suppression`, () => {
+  for (const css of [
+    'a:hover{outline:none}',
+    'a:active{outline:0}',
+    'button::-moz-focus-inner{border:0;outline:none}'
+  ]) {
+    const result = runa11yCoreOnHtml(
+      page(css, '<a href="/x" id="a">Lien</a><button type="button">B</button>'),
+      { runOnly: [RULE_ID] }
+    );
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: outline suppression is recognized in each of its written forms`, () => {
   for (const decl of [
     'outline:none',
@@ -225,14 +269,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedIds = [
     'cfis_case_01',
     'cfis_case_02',
     'cfis_case_03',
     'cfis_case_04',
-    'cfis_case_05'
+    'cfis_case_05',
+    'cfis_case_13'
   ];
   const expectedNoOccIds = [
     'cfis_case_06',
@@ -241,7 +286,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_09',
     'cfis_case_10',
     'cfis_case_11',
-    'cfis_case_12'
+    'cfis_case_12',
+    'cfis_case_14'
   ];
 
   for (const id of expectedIds) {

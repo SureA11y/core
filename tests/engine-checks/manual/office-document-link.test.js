@@ -62,8 +62,69 @@ test(`${RULE_ID}: image map areas count as links`, () => {
 
 test(`${RULE_ID}: other links are not flagged`, () => {
   const body =
-    '<a href="/report.html">Report</a><a href="/pdf/">Documents</a><a href="?file=a.pdf">Query only</a><a>No href</a>';
+    '<a href="/report.html">Report</a><a href="/pdf/">Documents</a><a href="/data/prices.csv">CSV</a><a href="?q=pdf">Search</a><a>No href</a>';
   assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'notApplicable');
+});
+
+function extensionsOf(rule) {
+  return rule.occurrences.map((o) => o.data.details.extension);
+}
+
+test(`${RULE_ID}: a document named in the query string is flagged`, () => {
+  const body =
+    '<a href="/get?file=rapport.pdf">Rapport</a><a href="/open?id=4&amp;url=%2Fdocs%2Fbudget.xlsx%3Fv%3D2">Budget</a>';
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.deepEqual(extensionsOf(rule), ['pdf', 'xlsx']);
+});
+
+test(`${RULE_ID}: the download attribute's filename is read first`, () => {
+  const body =
+    '<a href="/dl/1" download="r.docx">Report</a><a href="/files/a.pdf" download="a.odt">Form</a><a href="/files/b.pdf" download>Other</a>';
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  assert.deepEqual(extensionsOf(rule), ['docx', 'odt', 'pdf']);
+});
+
+test(`${RULE_ID}: a form or submit button that downloads a document is flagged`, () => {
+  const body =
+    '<form id="f" action="/r.pdf"><button>Télécharger</button></form>' +
+    '<form action="/search"><button id="b" formaction="/export?format=x&amp;name=list.ods">Export</button><button type="button" formaction="/x.pdf">Not a submit</button></form>';
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.deepEqual(extensionsOf(rule), ['pdf', 'ods']);
+  assert.ok(rule.occurrences[0].html.includes('id="f"'));
+  assert.ok(rule.occurrences[1].html.includes('id="b"'));
+  assert.equal(rule.occurrences[0].i18n.summaryKey, 'officeDocumentLink_summary_cantTell_form');
+  assert.equal(rule.occurrences[0].summary, 'This form downloads a .pdf document.');
+});
+
+test(`${RULE_ID}: macro-enabled, template and OpenDocument drawing extensions are caught`, () => {
+  const exts = ['docm', 'dotx', 'xlsm', 'xltx', 'pptm', 'ppsx', 'potx', 'odg', 'ott', 'ots', 'otp'];
+  const body = exts.map((e, i) => `<a href="f${i}.${e}">${e}</a>`).join(' ');
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: exts.length,
+    maxOccurrences: exts.length
+  });
+  assert.deepEqual(extensionsOf(rule), exts);
+});
+
+test(`${RULE_ID}: the RGAA profile runs it and a query-string PDF is asked about under 13.3.1`, () => {
+  const result = runa11yCoreOnHtml(page('<a href="/get?file=rapport.pdf">Rapport</a>'), {
+    engineOptions: { profile: 'rgaa-4.1.2' }
+  });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule);
+  assert.equal(rule.outcome, 'cantTell');
+  const rollup = result.rulesResults.find((r) => r.ruleId === 'rgaa-4.1.2-13.3');
+  assert.ok(rollup, 'the 13.3 rollup is reported');
+  assert.equal(rollup.outcome, 'cantTell');
 });
 
 test(`${RULE_ID}: opt-in, so a default run does not include it`, () => {
@@ -79,7 +140,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/office-document-link-all-scen
     'office-document-link-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, ['odl_case_01', 'odl_case_02', 'odl_case_03']);
+  assert.deepEqual(ids, [
+    'odl_case_01',
+    'odl_case_02',
+    'odl_case_03',
+    'odl_case_06',
+    'odl_case_07',
+    'odl_case_08',
+    'odl_case_09'
+  ]);
 });

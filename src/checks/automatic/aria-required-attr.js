@@ -18,6 +18,11 @@
  *   <input type="checkbox" role="checkbox">, which is exempt because the
  *   native control's own state exposure already covers it; no aria-checked
  *   is required. helpers.aria.getNativeRoleForElement resolves this).
+ *   A native <input type="checkbox"> or <input type="radio"> with another
+ *   checkable role (switch, menuitemcheckbox, menuitemradio, or checkbox on
+ *   a radio and the reverse) is in scope, but its aria-checked counts as
+ *   supplied: the browser exposes the input's own checked state (HTML-AAM),
+ *   so it passes without the attribute.
  * @expectation
  *   Every required state/property for that role is present and non-empty.
  *   Graded by whether ARIA supplies a stand-in for the missing attribute:
@@ -136,6 +141,23 @@ function runInPage(ctx) {
     }
   }
 
+  const CHECKABLE_ROLES = new Set([
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitemcheckbox',
+    'menuitemradio'
+  ]);
+
+  function isNativeCheckable(el) {
+    if (String(el.localName || '').toLowerCase() !== 'input') return false;
+    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
+    const type = String(el.getAttribute('type') || '')
+      .trim()
+      .toLowerCase();
+    return type === 'checkbox' || type === 'radio';
+  }
+
   function isMarkedBusy(el) {
     const v = el.getAttribute('aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
@@ -165,6 +187,12 @@ function runInPage(ctx) {
 
     const required = ariaHelpers.getRequiredAttrsForRole(role).slice();
 
+    // A native checkbox or radio exposes its own checked state whatever
+    // checkable role it carries (HTML-AAM maps the checkedness; ARIA in HTML
+    // tells authors not to set aria-checked on it), so aria-checked is
+    // supplied on <input type="checkbox" role="switch"> and the like.
+    const nativeChecked = isNativeCheckable(el) && CHECKABLE_ROLES.has(role);
+
     // combobox's aria-controls is required only once the popup is actually
     // displayed (aria-expanded="true") -- see this file's header comment.
     if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
@@ -187,6 +215,7 @@ function runInPage(ctx) {
     const missing = [];
     for (const attr of required) {
       const v = el.getAttribute(attr);
+      if (attr === 'aria-checked' && nativeChecked) continue;
       if (v == null || String(v).trim() === '') missing.push(attr);
     }
 

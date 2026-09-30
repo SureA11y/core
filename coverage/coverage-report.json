@@ -1452,7 +1452,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
+      "title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
       "tags": [
         "wcag2a",
         "wcag222",
@@ -3390,7 +3390,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Images must not use a server-side image map",
+      "title": "Server-side image maps must have a keyboard-operable alternative",
       "tags": [
         "wcag2a",
         "wcag211",
@@ -4258,7 +4258,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "<area> alt text must be appropriate (manual review)",
+      "title": "<area> text alternative must be appropriate (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -5196,7 +5196,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
+      "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",

@@ -42,6 +42,16 @@
     <svg aria-hidden="true" title="Star" width="16" height="16" id="shn_case_04"><circle cx="8" cy="8" r="6"/></svg>
   </div>
 
+  <svg style="display:none">
+    <symbol id="shn_icon_cart" viewBox="0 0 16 16"><title>Cart</title><circle cx="8" cy="8" r="6"/></symbol>
+    <symbol id="shn_icon_plain" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></symbol>
+  </svg>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: use pointing at a symbol with a title element</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_09"><use href="#shn_icon_cart"/></svg>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_05">
@@ -62,6 +72,11 @@
   <div class="case" id="case_08">
     <div class="case-title">08 — NEUTRAL: aria-hidden="false"</div>
     <svg aria-hidden="false" aria-label="Star" width="16" height="16" id="shn_case_08"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: use pointing at a symbol with no text alternative</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_10"><use href="#shn_icon_plain"/></svg>
   </div>
 </body>
 </html>

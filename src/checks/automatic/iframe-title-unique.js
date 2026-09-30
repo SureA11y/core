@@ -5,17 +5,24 @@
 /**
  * @check iframe-title-unique
  * @atomic true
- * @summary <iframe>/<frame> title attributes must be unique among frames
+ * @summary Frames that share a title attribute must load the same resource
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
  *   Applies to <iframe>/<frame> elements that carry a non-empty title
  *   attribute.
  * @expectation
- *   No two frames in scope share the same (trimmed, case-sensitive) title
- *   attribute value, a duplicate title prevents assistive technology
- *   users from telling frames apart when scanning by name.
+ *   Frames in scope that share the same (trimmed, case-sensitive) title
+ *   attribute value load the same resource (the same resolved src, or the
+ *   same srcdoc). Such a group passes: the same content under the same
+ *   title is what ACT 4b1c6c accepts. A group whose frames load different
+ *   resources is cantTell: a shared title may stop assistive technology
+ *   users from telling the frames apart, but the frames may also serve the
+ *   same purpose (two instances of one widget), which only a person can
+ *   judge. Every frame of such a group is reported.
  * @implementation-notes
+ * - Never fails: no WCAG criterion requires unique frame names, and the
+ *   relevance of a title (RGAA 2.2.1) is a judgment.
  * - Distinct, atomic decision from iframe-name-present (presence):
  *   a frame can have a non-empty title while still failing uniqueness.
  * - Compares the title ATTRIBUTE specifically, not the full computed
@@ -31,7 +38,7 @@ const id = 'iframe-title-unique';
 const meta = {
   title: 'Frame titles must be unique',
   description:
-    'Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.',
+    'Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.',
   i18n: {
     titleKey: 'iframeTitleUnique_title',
     descriptionKey: 'iframeTitleUnique_description'
@@ -82,21 +89,51 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // The resource a frame loads: srcdoc wins over src, and src is resolved
+  // against the document base so "w.html" and "/w.html" can match.
+  function resourceKey(el) {
+    if (el.hasAttribute && el.hasAttribute('srcdoc')) {
+      return 'srcdoc:' + String(el.getAttribute('srcdoc'));
+    }
+    const raw = String(el.getAttribute('src') || '').trim();
+    if (!raw) return 'src:about:blank';
+    try {
+      const base = (el.ownerDocument && el.ownerDocument.baseURI) || undefined;
+      return 'src:' + new URL(raw, base).href;
+    } catch {
+      return 'src:' + raw;
+    }
+  }
+
   const occurrences = [];
 
   for (const [title, els] of groups) {
     if (els.length < 2) continue;
+    const keys = els.map(resourceKey);
+    if (new Set(keys).size === 1) continue;
 
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This frame’s title is not unique among the frames on this page.',
-          hint: 'Give each frame a distinct title describing its specific content or purpose.',
+          summary: `This <${tag}>'s title "${title}" is shared with a frame that loads a different resource.`,
+          hint: 'Check whether these frames have the same content or purpose. If they do not, give each frame a distinct title describing its specific content or purpose.',
           i18n: {
-            summaryKey: 'iframeTitleUnique_summary_fail',
-            hintKey: 'iframeTitleUnique_hint_fail',
+            summaryKey: 'iframeTitleUnique_summary_cantTell',
+            hintKey: 'iframeTitleUnique_hint_cantTell',
             params: { element: tag, title }
+          },
+          uncertainty: {
+            code: 'equivalence-unknown',
+            needed:
+              'Whether frames loading different resources under one title serve the same purpose.',
+            evidence: {
+              element: tag,
+              title,
+              resource: resourceKey(el),
+              otherResources: keys.filter((k) => k !== resourceKey(el)),
+              setSize: els.length
+            }
           },
           data: {
             details: {
@@ -114,7 +151,7 @@ function runInPage(ctx) {
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: 'cantTell',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
     };

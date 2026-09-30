@@ -68,7 +68,7 @@ The `<area>` is a link (has `href`) in a used map but has no `alt`.
   <area href="/rooms/12" shape="rect" coords="0,0,40,24" alt="Room 12">
 </map>
 ```
-The area has non-empty alt text in a used image map — worth confirming "Room 12" is accurate for that region.
+The area has a non-empty text alternative in a used image map, worth confirming "Room 12" is accurate for that region. An `aria-label`, `aria-labelledby` or `title` is asked about the same way, and each occurrence lists the sources it found.
 
 **Not applicable**
 ```html
@@ -372,9 +372,15 @@ The forced letter-spacing is above the WCAG 1.4.12 minimum metric.
 
 **Failed**
 ```html
-<p style="line-height:1.2 !important">Spaced text</p>
+<p style="line-height:1.2 !important">The toy brought back fond memories of being lost in the rain forest.</p>
 ```
 `!important` forces line-height below the 1.5 minimum, and the page's own styles can't override it.
+
+**Flagged (cantTell)**
+```html
+<p style="line-height:1 !important">Opening hours</p>
+```
+The text is short enough to fit on one line, so it may never wrap, and the criterion applies only to text that wraps.
 
 ## binary-control-name-present
 
@@ -546,6 +552,13 @@ About 4.6:1, above the AA 4.5:1 minimum for normal text.
 ```
 `:focus { outline: none; }` removes the focus indicator, and no other rule matching this link draws a replacement.
 
+**Flagged (cantTell)**
+```html
+<style>a { outline: none; }</style>
+<a href="/news">News</a>
+```
+A rule with no `:focus` still applies while the link has focus, and it outranks the browser's own focus outline (F78). No focus rule draws a replacement.
+
 **Not applicable**
 ```html
 <style>.reset-shadow:focus { outline: none; box-shadow: 0 0 0 3px navy; }</style>
@@ -566,6 +579,13 @@ The link stays in the tab order despite `opacity:0` making it invisible to sight
 <a href="/x">Visible link</a>
 ```
 The link is both focusable and visible — nothing to flag.
+
+**Not applicable**
+```html
+<style>.skip { position: absolute; left: -9999px; } .skip:focus { left: 0; }</style>
+<a class="skip" href="#main">Skip to content</a>
+```
+The link is off-screen at rest, but its `:focus` rule brings it back into view when it takes focus.
 
 ## css-orientation-lock
 
@@ -623,14 +643,15 @@ The `<p>` is a direct child of `<dl>` that isn't `dt`/`dd` (or an allowed wrappe
 **Passed**
 ```html
 <p>Normal content</p>
+<blink>Sale</blink>
 ```
-No `<blink>` or `<marquee>` element anywhere, which satisfies the rule outright — there is no separate not-applicable case.
+No `<marquee>` anywhere, which satisfies the rule outright; there is no separate not-applicable case. `<blink>` is not reported, since no browser makes it blink.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <marquee>Breaking news</marquee>
 ```
-`<marquee>`'s auto-scrolling has no built-in way for a user to pause, stop, or hide it.
+`<marquee>` scrolls its content and gives the user no way to pause, stop, or hide it; whether the page adds its own control is for a person to check. This rule never fails.
 
 ## dialog-name-present
 
@@ -664,7 +685,7 @@ The direction is `rtl`, one of the two values RGAA accepts.
 ```html
 <p dir="auto" lang="ar">مرحبا</p>
 ```
-HTML allows `dir="auto"`, but RGAA accepts only `ltr` or `rtl`.
+HTML allows `dir="auto"`, but RGAA accepts only `ltr` or `rtl` on text that reads in the reverse direction of the page. `dir="auto"` on text in the page's own direction is not applicable.
 
 ## dlitem-parent-valid
 
@@ -1082,12 +1103,12 @@ No `title`, `aria-label`, or `aria-labelledby`.
 ```
 No other frame on the page shares this title.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <iframe title="Video player" src="a.html"></iframe>
 <iframe title="Video player" src="b.html"></iframe>
 ```
-Two frames on the same page share the identical title despite embedding different content.
+Two frames share the same title but load different content; a person checks whether they serve the same purpose. Two frames that share a title and load the same `src` pass.
 
 ## image-alt-long
 
@@ -1097,7 +1118,7 @@ Two frames on the same page share the identical title despite embedding differen
 ```html
 <img src="chart.png" alt="Bar chart showing the sales of each of our twelve regional shops month by month for 2025">
 ```
-The text alternative runs to 88 characters; a person decides whether it should be shorter.
+The text alternative runs to 88 characters; a person decides whether it should be shorter. The same question is asked of `aria-label`, `aria-labelledby`, `title` and an svg's `<title>`, on any kind of image.
 
 **Not applicable**
 ```html
@@ -1203,7 +1224,7 @@ No `alt` attribute.
 ```html
 <input type="image" src="submit.png" alt="Submit order">
 ```
-Non-empty alt is present on this image button — worth confirming "Submit order" matches what the button actually does.
+Non-empty alt is present on this image button, worth confirming "Submit order" matches what the button actually does. An image button named only by `aria-label`, `aria-labelledby` or `title` is asked about too.
 
 **Not applicable**
 ```html
@@ -1463,6 +1484,12 @@ The link is underlined, distinguishing it from surrounding text by more than col
 ```
 The only difference from surrounding text is a color shift with about 1.1:1 contrast, well under the 3:1 minimum, and no underline or weight/style change.
 
+**Flagged (cantTell)**
+```html
+<p style="color:#000000;">Read <a href="#" style="text-decoration:none; color:#d00000;">this link</a> for more information.</p>
+```
+The link's color contrasts with the text by more than 3:1, but color is its only cue. Technique G183 also needs a non-color cue on hover and focus, which a person checks.
+
 ## link-name-present
 
 **Passed**
@@ -1664,6 +1691,12 @@ No accessible name from any supported mechanism.
 ```
 `onmouseover`/`onmouseout` have no `onfocus`/`onblur` counterpart, so a keyboard user can never trigger this behavior.
 
+**Flagged (cantTell)**
+```html
+<div onmouseover="show()" onfocus="show()">Menu</div>
+```
+The `onfocus` handler never runs: the `<div>` cannot take focus.
+
 **Not applicable**
 ```html
 <div onmouseover="show()" onmouseout="hide()" onfocus="show()" onblur="hide()" tabindex="0">Hover + focus pair</div>
@@ -1739,6 +1772,12 @@ No fallback content, ARIA name, or title exists to review; that's `object-text-a
 <a href="/files/annual-report.pdf">Annual report</a>
 ```
 The link downloads a PDF; a person checks the document or its accessible version.
+
+**Flagged (cantTell)**
+```html
+<a href="/get?file=rapport.pdf">Rapport annuel</a>
+```
+The query string names a PDF, so the link downloads one even though its path has no extension.
 
 **Not applicable**
 ```html
@@ -2072,15 +2111,15 @@ No accessible name from any supported mechanism.
   <area href="/x" shape="rect" coords="0,0,10,10" alt="Go">
 </map>
 ```
-A client-side image map has no `ismap` attribute, which satisfies the rule outright — there is no separate not-applicable case.
+A client-side image map has no `ismap` attribute, which satisfies the rule outright. (An `<img ismap>` outside a link does nothing and makes the rule not applicable.)
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <a href="/map-handler">
   <img src="image.png" ismap alt="Site map">
 </a>
 ```
-`ismap` depends on the browser sending click coordinates to the server — there's no keyboard-operable equivalent.
+`ismap` depends on the browser sending click coordinates to the server, so the map's regions cannot be reached from the keyboard; whether the page offers the same destinations as links is for a person to check. This rule never fails.
 
 ## skip-link
 
@@ -2089,6 +2128,12 @@ A client-side image map has no `ismap` attribute, which satisfies the rule outri
 <a href="#missing">Skip to main content</a>
 ```
 The link's fragment target doesn't exist anywhere on the page, so activating it goes nowhere.
+
+**Flagged (cantTell)**
+```html
+<a href="#contenu">Aller au contenu</a>
+```
+French skip-link wording is recognised as well, and the target is missing.
 
 **Not applicable**
 ```html
@@ -2426,7 +2471,7 @@ The value isn't valid BCP 47 syntax.
 ```html
 <video src="x.mp4"></video>
 ```
-No `<track>` element at all — no evidence of captions or subtitles.
+No `<track>` element at all, so no evidence of captions. A video whose only track is `kind="subtitles"` is asked about too, since subtitles may translate the dialogue without the sound information captions carry.
 
 **Not applicable**
 ```html
@@ -2452,7 +2497,7 @@ The caption track has `kind="captions"`.
   <track src="talk.vtt" kind="subtitles" srclang="en" label="English">
 </video>
 ```
-The only text track is marked as subtitles.
+On a page with `lang="en"`, the only text track is marked as subtitles although it is in the video's language. Subtitles in another language, or without `srclang`, are asked about instead (cantTell), since they may be translations.
 
 ## video-poster-text-alternative-present
 

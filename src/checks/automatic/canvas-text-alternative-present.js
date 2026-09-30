@@ -12,7 +12,16 @@
  *   Applies to <canvas> elements included in the accessibility tree.
  *   Hidden elements are excluded whether or not they are focusable.
  * @expectation
- *   Each applicable <canvas> provides a text alternative via fallback content or an accessible name.
+ *   Each applicable <canvas> provides a text alternative via fallback content
+ *   or an accessible name, with two exceptions:
+ *   - role="img" (first role token) makes the canvas's children
+ *     presentational and its name comes from the author only, so fallback
+ *     content does not count: aria-labelledby, aria-label or title must name
+ *     it.
+ *   - role="none"/"presentation" marks the canvas decorative, and it passes.
+ *     The role is ignored (presentational role conflict) when the canvas is
+ *     focusable or carries aria-label/aria-labelledby, and the canvas is then
+ *     judged like any other.
  */
 
 const id = 'canvas-text-alternative-present';
@@ -85,6 +94,64 @@ function runInPage(ctx) {
       ? helpers.getTextAlternativeInfo
       : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+
+  function attrText(el, name) {
+    try {
+      const v = el.getAttribute(name);
+      return v == null ? '' : String(v).trim();
+    } catch {
+      return '';
+    }
+  }
+
+  function firstRoleToken(el) {
+    const raw = attrText(el, 'role').toLowerCase();
+    return raw ? raw.split(/\s+/)[0] : '';
+  }
+
+  // ARIA's presentational role conflict: a focusable element, or one with a
+  // global naming attribute, keeps its native role.
+  function isPresentationHonoured(el) {
+    if (attrText(el, 'aria-label') || attrText(el, 'aria-labelledby')) return false;
+    if (getFocusableInfo) {
+      try {
+        const fi = getFocusableInfo(el, ctx);
+        if (fi && fi.focusable) return false;
+      } catch {}
+    } else if (attrText(el, 'tabindex') !== '') {
+      return false;
+    }
+    return true;
+  }
+
+  // role="img": the name comes from the author (aria-labelledby, aria-label,
+  // then title), never from the children.
+  function getRoleImgNameInfo(el) {
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      return { present: true, value: aria.value, mechanism: aria.mechanism };
+    }
+    if (!getAriaNameInfo) {
+      const label = attrText(el, 'aria-label');
+      if (label) return { present: true, value: label, mechanism: 'aria-label' };
+    }
+    const title = attrText(el, 'title');
+    if (title) return { present: true, value: title, mechanism: 'title' };
+    return { present: false, value: '', mechanism: 'none' };
+  }
+
   const canvases = (() => {
     try {
       return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
@@ -118,16 +185,25 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
+    const role = firstRoleToken(el);
+
+    // A decorative canvas needs no text alternative.
+    if ((role === 'none' || role === 'presentation') && isPresentationHonoured(el)) continue;
+
+    const isRoleImg = role === 'img';
+
     // Expectation: must provide a text alternative.
-    const ti = getTextAlternativeInfo
-      ? (() => {
-          try {
-            return getTextAlternativeInfo(el, ctx);
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+    const ti = isRoleImg
+      ? getRoleImgNameInfo(el)
+      : getTextAlternativeInfo
+        ? (() => {
+            try {
+              return getTextAlternativeInfo(el, ctx);
+            } catch {
+              return null;
+            }
+          })()
+        : null;
 
     const hasTextAlt = !!(ti && ti.present);
 
@@ -135,14 +211,29 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const messages = isRoleImg
+      ? {
+          summary:
+            'This <canvas role="img"> has no accessible name; with role="img" its fallback content does not count.',
+          hint: 'Name it with aria-label or aria-labelledby, or remove role="img" so that its fallback content can serve as the text alternative.',
+          summaryKey: 'canvas_textAltPresent_summary_fail_roleImg',
+          hintKey: 'canvas_textAltPresent_hint_fail_roleImg'
+        }
+      : {
+          summary: 'Missing text alternative for <canvas>.',
+          hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
+          summaryKey: 'canvas_textAltPresent_summary_fail',
+          hintKey: 'canvas_textAltPresent_hint_fail'
+        };
+
     const baseOccurrence = {
       selector: '',
       html: '',
-      summary: 'Missing text alternative for <canvas>.',
-      hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
+      summary: messages.summary,
+      hint: messages.hint,
       i18n: {
-        summaryKey: 'canvas_textAltPresent_summary_fail',
-        hintKey: 'canvas_textAltPresent_hint_fail',
+        summaryKey: messages.summaryKey,
+        hintKey: messages.hintKey,
         params: { element: 'canvas' }
       },
       data: {

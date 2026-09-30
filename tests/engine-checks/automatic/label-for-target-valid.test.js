@@ -65,6 +65,37 @@ test(`${RULE_ID}: a for matching an element that cannot be labelled fails as not
   }
 });
 
+// RGAA 11.1.2 asks only that the field has an id equal to the for value; the
+// glossary counts these ARIA roles as form fields. The name HTML does not
+// give such a field is 11.1.1's concern.
+test(`${RULE_ID}: a for matching an element with a form-field ARIA role passes`, () => {
+  for (const markup of [
+    '<div id="t" role="textbox" contenteditable="true"></div>',
+    '<div id="t" role="combobox" tabindex="0"></div>',
+    '<span id="t" role="switch checkbox" aria-checked="false" tabindex="0"></span>',
+    '<div id="t" role="slider" aria-valuenow="1" tabindex="0"></div>'
+  ]) {
+    const html = page(`<label for="t">Name</label>${markup}`);
+    assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
+    assertRule(
+      runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } }),
+      RULE_ID,
+      'pass',
+      { maxOccurrences: 0 }
+    );
+  }
+});
+
+test(`${RULE_ID}: a for matching a role that is not a form field still fails`, () => {
+  for (const markup of [
+    '<div id="t" role="button" tabindex="0">x</div>',
+    '<p id="t" role="none">x</p>'
+  ]) {
+    const occ = reasonOf(`<label for="t">Name</label>${markup}`);
+    assert.equal(occ.data.details.reasonCode, 'notLabelable', markup);
+  }
+});
+
 test(`${RULE_ID}: with duplicate ids the first element decides, as in HTML`, () => {
   const occ = reasonOf('<label for="t">Name</label><span id="t"></span><input id="t">');
   assert.equal(occ.data.details.reasonCode, 'notLabelable');

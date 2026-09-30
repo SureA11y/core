@@ -5,34 +5,37 @@
 /**
  * @check deprecated-elements-not-used
  * @atomic true
- * @summary Obsolete non-stoppable elements must not be used
+ * @summary Scrolling <marquee> content needs a way to pause, stop, or hide it
  * @standard WCAG 2.2
  * @sc 2.2.2
  * @applicability
- *   Applies to any scan scope; whether it contains a <blink> or <marquee>
- *   element is always an answerable question. These are obsolete,
- *   non-standard HTML elements whose defining behavior (blinking or
- *   auto-scrolling text) has no built-in user mechanism to pause, stop, or
- *   hide it.
+ *   Applies to any scan scope; whether it contains a <marquee> element is
+ *   always an answerable question. <marquee> is an obsolete, non-standard
+ *   HTML element that browsers still render as auto-scrolling text, with no
+ *   built-in user mechanism to pause, stop, or hide it.
  * @expectation
- *   Neither element is present. Since their movement can never be paused,
- *   stopped, or hidden by the user, presence is itself the violation, and
- *   absence is itself a pass -- there is no third, not-applicable case.
+ *   Each <marquee> is reported as cantTell: the scrolling itself is certain,
+ *   but a page can offer its own pause or stop control (a button calling the
+ *   element's stop() method, for example), and then failure F16 does not
+ *   apply. Whether such a control exists is for a person to check. A scope
+ *   with no <marquee> passes; there is no separate not-applicable case.
  * @implementation-notes
- * - Not rule-gated on isAccTreeEligible: presence in markup is itself the
- *   violation, independent of visibility (moving/blinking content inside a
- *   hidden ancestor could still become visible later without a code
- *   change, so hiding it today does not remove the underlying defect).
- *   Engine-level hidden-subtree filtering still applies unless
- *   engineOptions.includeHiddenElements is true.
+ * - <blink> is not reported. No current browser makes it blink: it renders
+ *   as an unknown inline element, so it holds no blinking content for 2.2.2
+ *   to govern. RGAA 10.1.1 lists it as a presentation tag, and
+ *   presentational-elements-absent reports it there.
+ * - Not rule-gated on isAccTreeEligible: presence in markup is what the rule
+ *   asks about, independent of visibility. Engine-level hidden-subtree
+ *   filtering still applies unless engineOptions.includeHiddenElements is
+ *   true.
  */
 
 const id = 'deprecated-elements-not-used';
 
 const meta = {
-  title: 'Obsolete non-stoppable elements (<blink>, <marquee>) must not be used',
+  title: 'Scrolling <marquee> content must be possible to pause, stop, or hide',
   description:
-    'Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.',
+    'Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.',
   i18n: {
     titleKey: 'deprecatedElements_title',
     descriptionKey: 'deprecatedElements_description'
@@ -60,8 +63,8 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('blink, marquee')
-    : helpers.queryAll('blink, marquee');
+    ? helpers.queryAllSmart('marquee')
+    : helpers.queryAll('marquee');
 
   const occurrences = [];
 
@@ -72,29 +75,35 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
-        hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
+        summary:
+          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'deprecatedElements_summary_fail',
-          hintKey: 'deprecatedElements_hint_fail',
+          summaryKey: 'deprecatedElements_summary_cantTell',
+          hintKey: 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
+        uncertainty: {
+          code: 'runtime-dependent',
+          needed:
+            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          evidence: { element: tag }
+        },
         data: {
-          details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
+          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
         }
       })
     );
   }
 
-  // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence, and "neither element is present" is
-  // itself the passing case -- there is no separate notApplicable case.
+  // No <marquee> in scope is itself the passing case (see @expectation above).
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
     occurrences
   };

@@ -33,7 +33,12 @@
  * - Not gated on `isAccTreeEligible`: unlike most rules, a `display:none`
  *   or `aria-hidden` audio/video element still plays audible sound in a
  *   real browser, so visual/AT-tree eligibility is not a relevant filter
- *   here.
+ *   here. For the same reason the rule does not use queryAllSmart, whose
+ *   hidden-content filter would drop such elements: an <audio> without
+ *   `controls` is always one, since browsers hide it with their own
+ *   stylesheet (`display: none`). It queries the DOM directly (and open
+ *   shadow roots, unless includeShadowDom is false), honouring only the
+ *   scan scope and excludeSelectors.
  */
 
 const id = 'no-autoplay-audio';
@@ -68,9 +73,18 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('audio[autoplay], video[autoplay]')
-    : helpers.queryAll('audio[autoplay], video[autoplay]');
+  // Every match in scope, hidden or not (see @implementation-notes).
+  function queryAllUnfiltered(sel) {
+    const engineOptions = ctx.engineOptions || {};
+    const deep =
+      engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
+    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    return typeof helpers.isExcluded === 'function'
+      ? list.filter((el) => !helpers.isExcluded(el))
+      : list;
+  }
+
+  const nodes = queryAllUnfiltered('audio[autoplay], video[autoplay]');
 
   const occurrences = [];
   let applicableCount = 0;

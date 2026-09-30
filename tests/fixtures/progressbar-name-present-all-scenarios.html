@@ -40,6 +40,12 @@
     <div role="progressbar" aria-valuenow="50" id="pbar_case_04" title="Sync progress"></div>
   </div>
 
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: &lt;progress role="progressbar"&gt; named by an associated &lt;label for&gt;</div>
+    <label for="pbar_case_10">Chargement</label>
+    <progress role="progressbar" value="5" max="10" id="pbar_case_10"></progress>
+  </div>
+
   <h2>B. Unnamed (eligible, FAIL)</h2>
 
   <div class="case" id="case_05">
@@ -60,6 +66,12 @@
   <div class="case" id="case_09">
     <div class="case-title">09 — FAIL: role=progressbar, no name of its own, but a descendant carries an unrelated aria-label (must not be picked up as a fallback name)</div>
     <ul role="progressbar" aria-valuenow="50" id="pbar_case_09"><li><span aria-label="Loading Box"></span></li></ul>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: a &lt;label for&gt; does not name a non-labelable &lt;div role="progressbar"&gt;</div>
+    <label for="pbar_case_11">Envoi</label>
+    <div role="progressbar" aria-valuenow="50" id="pbar_case_11"></div>
   </div>
 
   <h2>C. Ineligible (excluded from accessibility tree, skipped)</h2>

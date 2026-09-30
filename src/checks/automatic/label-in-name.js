@@ -22,9 +22,12 @@
  * @expectation
  *   The accessible name contains the visible label's words, adjacent and in
  *   order. The comparison is over words rather than characters:
- *   parenthesised text is dropped, case is folded, text is NFKD-normalised,
- *   and every non-letter/digit becomes a separator, so punctuation and
- *   spacing differences never decide the outcome. Four shapes markup cannot
+ *   parenthesised text is dropped, case is folded, text is NFKC-normalised,
+ *   and every character that is not a letter, digit or combining mark
+ *   becomes a separator, so punctuation and spacing differences never
+ *   decide the outcome. Accents are not folded: "Déposer" stays one word,
+ *   and a name that drops an accent ("Deposer") does not contain it. RGAA
+ *   likewise excuses only punctuation and capital letters. Four shapes markup cannot
  *   settle are reported as cantTell instead of fail: a word hyphenated
  *   differently in the two places; a visible word the author may have
  *   abbreviated, marked by its trailing period; visible text rendered
@@ -86,20 +89,23 @@ function runInPage(ctx) {
   }
 
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
-  // parenthesised text, case-fold and NFKD-normalise, then reduce every
-  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // parenthesised text, case-fold and NFKC-normalise, then reduce every
+  // character that is not a letter, digit or combining mark to a space.
+  // NFKC folds compatibility forms (ligatures, full-width letters) but keeps
+  // accented letters whole; with NFKD, "déposer" split at its combining
+  // accent into "de" and "poser". `hyphensJoin` deletes hyphens instead of
   // splitting on them, which distinguishes a real mismatch from one that is
   // only a hyphenation difference.
   function tokenize(s, hyphensJoin) {
     let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
     try {
-      v = v.normalize('NFKD');
+      v = v.normalize('NFKC');
     } catch {
       // Realm without String#normalize: the word comparison below still holds.
     }
     if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
     return v
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
       .split(' ')
       .filter(Boolean);
   }
@@ -129,7 +135,7 @@ function runInPage(ctx) {
   function abbreviatedWords(s) {
     const out = new Set();
     for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
-      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      const m = /^([\p{L}\p{N}\p{M}]+)\.$/u.exec(w);
       if (m) out.add(m[1].toLowerCase());
     }
     return out;

@@ -16,16 +16,22 @@
  *
  * @expectation
  *   The <html> element has a lang attribute.
- *   The lang attribute is not empty and contains a syntactically valid language tag.
+ *   The lang attribute is not empty and its primary language subtag (the
+ *   part before the first hyphen) is a registered language subtag, as ACT
+ *   bf051a requires and as the RGAA glossary "Code de langue" reads it
+ *   ("ne concerne que la partie [code] avant le tiret"). A malformed later
+ *   subtag (lang="fr-FR-!!") still identifies French, so it passes here;
+ *   it is a markup validity error, not a missing language.
  *
  * @outcomes
  *   Pass:
- *     The <html> element has a non-empty lang attribute with a valid language tag.
+ *     The <html> element has a non-empty lang attribute whose primary subtag is valid.
  *
  *   Fail:
  *     The <html> element does not have a lang attribute.
  *     The <html> element has a lang attribute that is present but empty or whitespace.
- *     The <html> element has a lang attribute with an invalid language tag.
+ *     The <html> element has a lang attribute whose primary subtag is not a
+ *     registered language subtag.
  *
  * @notes
  *   This rule does not verify that the declared language matches the actual language
@@ -143,12 +149,13 @@ function runInPage(ctx) {
     };
   }
 
-  // Minimal BCP47 primary subtag check
+  // Only the primary subtag is judged (ACT bf051a); the shared helper checks
+  // its shape and that the IANA registry lists it.
   const isValidTag =
     helpers && typeof helpers.isValidLanguageTag === 'function'
       ? helpers.isValidLanguageTag
-      : (v) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(String(v || ''));
-  if (!isValidTag(lang)) {
+      : (v) => /^[a-zA-Z]{2,3}$/.test(String(v || ''));
+  if (!isValidTag(lang.split('-')[0])) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',

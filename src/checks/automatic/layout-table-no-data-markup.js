@@ -13,10 +13,18 @@
  *   notApplicable.
  * @expectation
  *   The table has no non-empty summary attribute and contains no <caption>,
- *   <th>, <thead>, <tfoot> or element with role="rowheader" or
+ *   <th>, <thead>, <tfoot>, <colgroup> or element with role="rowheader" or
  *   role="columnheader", and none of its <td> cells carries scope, headers
  *   or axis (RGAA 5.8.1). Only the table's own cells count, not those of a
  *   table nested inside it.
+ *   A table that has such markup and also looks like a data table is
+ *   reported as cantTell instead of fail: 5.8.1 applies to layout tables,
+ *   and role="presentation" on a real data table is a different defect (its
+ *   headers are no longer exposed). It looks like a data table when it has
+ *   at least two rows and two columns, a data cell, and a full header row
+ *   (every cell of the first row a header) or a full header column (the
+ *   first cell of every row a header), headers being <th>,
+ *   role="columnheader" or role="rowheader".
  * @implementation-notes
  * - Opt-in (tag `rgaa`): WCAG does not forbid this markup on a layout table,
  *   so the rule runs only under the rgaa-4.1.2 profile, the `rgaa` tag or
@@ -31,7 +39,7 @@ const id = 'layout-table-no-data-markup';
 const meta = {
   title: 'Layout tables use no data table markup',
   description:
-    'Checks that a table marked as layout (role="presentation" or "none") has no caption, header cells, summary, or scope, headers or axis attributes.',
+    'Checks that a table marked as layout (role="presentation" or "none") has no caption, header cells, colgroup, summary, or scope, headers or axis attributes, and asks when such a table looks like a data table.',
   i18n: {
     titleKey: 'layoutTableNoDataMarkup_title',
     descriptionKey: 'layoutTableNoDataMarkup_description'
@@ -55,6 +63,7 @@ function runInPage(ctx) {
     ['th', 'th'],
     ['thead', 'thead'],
     ['tfoot', 'tfoot'],
+    ['colgroup', 'colgroup'],
     ['[role="rowheader"]', 'role="rowheader"'],
     ['[role="columnheader"]', 'role="columnheader"'],
     ['td[scope]', 'td[scope]'],
@@ -70,11 +79,33 @@ function runInPage(ctx) {
     return first === 'presentation' || first === 'none';
   }
 
+  function isHeaderCell(cell) {
+    const role = String(cell.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    if (role === 'columnheader' || role === 'rowheader') return true;
+    return String(cell.tagName).toLowerCase() === 'th' && !role;
+  }
+
+  // A full header row or column over a real grid of data suggests the
+  // table holds data, whatever its role says.
+  function looksLikeDataTable(table) {
+    const rows = Array.from(table.rows || []).map((row) => Array.from(row.cells || []));
+    if (rows.length < 2) return false;
+    if (!rows.some((cells) => cells.length >= 2)) return false;
+    if (!rows.some((cells) => cells.some((cell) => !isHeaderCell(cell)))) return false;
+    const headerRow = rows[0].length >= 2 && rows[0].every(isHeaderCell);
+    const headerColumn = rows.every((cells) => cells.length > 0 && isHeaderCell(cells[0]));
+    return headerRow || headerColumn;
+  }
+
   const tables = helpers.queryAllSmart
     ? helpers.queryAllSmart('table[role]')
     : helpers.queryAll('table[role]');
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const table of tables) {
@@ -92,6 +123,32 @@ function runInPage(ctx) {
     if (!found.length) continue;
 
     const markup = found.join(', ');
+
+    if (looksLikeDataTable(table)) {
+      cantTellOccurrences.push(
+        helpers.reportOccurrence(table, {
+          summary: `This table is marked as layout but looks like a data table, with a full header row or column; it uses data table markup: ${markup}.`,
+          hint: 'If the table holds data, remove role="presentation" so that its headers are exposed. If it is for layout, remove the data table markup.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'layoutTableNoDataMarkup_summary_cantTell_dataLike',
+            hintKey: 'layoutTableNoDataMarkup_hint_cantTell_dataLike',
+            params: { markup }
+          },
+          uncertainty: {
+            code: 'judgement-required',
+            needed: 'Whether this table lays out content or holds data.',
+            evidence: { markup: found.slice() }
+          },
+          data: {
+            details: { reasonCode: 'dataLikeTableMarkedLayout', markup: found },
+            visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(table, {
         summary: `This layout table uses data table markup: ${markup}.`,
@@ -112,15 +169,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

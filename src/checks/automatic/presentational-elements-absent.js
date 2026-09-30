@@ -19,11 +19,11 @@
  * @implementation-notes
  * - Opt-in (tag `rgaa`): WCAG does not forbid these elements, so the rule
  *   runs only under the rgaa-4.1.2 profile, the `rgaa` tag or its own id.
- * - Elements in hidden subtrees are skipped like everywhere else in the
- *   engine, unless engineOptions.includeHiddenElements is true. <basefont> is
- *   the exception: it never renders, so the hidden-content filter would drop
- *   every one of them. It is looked for in the scanned scope, excludes
- *   applied, but not in shadow roots.
+ * - Hidden content is checked too (helpers.queryAllSource): 10.1.1 judges
+ *   the generated source, and markup inside `hidden` or display:none is part
+ *   of it. This also covers <basefont>, which never renders.
+ *   includeHiddenElements makes no difference here. <template> content is
+ *   not in the DOM tree and is not checked.
  */
 
 const id = 'presentational-elements-absent';
@@ -60,15 +60,9 @@ function runInPage(ctx) {
     (!doctype.systemId || doctype.systemId === 'about:legacy-compat');
   const selector = (isHtml5 ? ELEMENTS : ELEMENTS.concat(['u'])).join(', ');
 
-  const nodes = Array.from(
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
-  );
-  const seen = new Set(nodes);
-  for (const el of helpers.queryAll('basefont')) {
-    if (seen.has(el)) continue;
-    if (helpers.isExcluded && helpers.isExcluded(el)) continue;
-    nodes.push(el);
-  }
+  const nodes = helpers.queryAllSource
+    ? helpers.queryAllSource(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   for (const el of nodes) {

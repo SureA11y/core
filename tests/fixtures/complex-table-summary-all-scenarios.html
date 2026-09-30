@@ -40,6 +40,33 @@
     </table>
   </div>
 
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FLAGGED: HTML5 page, summary attribute only (summary is not a résumé in HTML5)</div>
+    <table id="cts_case_06" summary="Rows are regions; columns are quarters grouped by year.">
+      <tr><td></td><th colspan="2">2025</th></tr>
+      <tr><td></td><th>Q1</th><th>Q2</th></tr>
+      <tr><th>North</th><td>10</td><td>12</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: ARIA table (role="table") with a header outside the first row and column</div>
+    <div role="table" id="cts_case_07">
+      <div role="row"><span role="cell"></span><span role="columnheader">2025</span></div>
+      <div role="row"><span role="cell"></span><span role="columnheader">Q1</span></div>
+      <div role="row"><span role="rowheader">North</span><span role="cell">10</span></div>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: a header with scope="rowgroup"</div>
+    <table id="cts_case_08">
+      <tr><th>Region</th><th>City</th><th>Sales</th></tr>
+      <tr><th rowspan="2" scope="rowgroup">North</th><td>Lille</td><td>10</td></tr>
+      <tr><td>Amiens</td><td>12</td></tr>
+    </table>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_03">

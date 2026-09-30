@@ -64,6 +64,22 @@ test(`${RULE_ID}: an empty id value is out of scope`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// getElementById does not trim, so "a " and "a" are two ids. Whitespace in an
+// id is a validity error of its own, not a duplicate.
+test(`${RULE_ID}: ids are compared as written, not trimmed`, () => {
+  const html = page('<p id="a ">x</p><p id="a">y</p>');
+  for (const engineOptions of [{}, { wcagVersion: '2.1' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const same = runa11yCoreOnHtml(page('<p id="a ">x</p><p id="a ">y</p>'), {
+    runOnly: [RULE_ID],
+    engineOptions: { wcagVersion: '2.1' }
+  });
+  const rule = assertRule(same, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.strictEqual(rule.occurrences[0].data.details.id, 'a ');
+});
+
 test(`${RULE_ID}: a non-rendered element still counts as a duplicate`, () => {
   // ACT 3ea0c8 evaluates elements that are neither visible nor in the
   // accessibility tree: a duplicate id breaks lookups either way.
@@ -241,6 +257,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/duplicate-id-all-scenarios.ht
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
   assert.ok(!hasOccurrenceForId(rule, 'dupid_case_01'));
+  assert.ok(!rule.occurrences.some((o) => o.html.includes('dupid_case_07')));
 
   const counts = {};
   for (const o of rule.occurrences) counts[o.data.details.id] = o.data.details.count;

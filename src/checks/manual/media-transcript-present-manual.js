@@ -13,6 +13,16 @@
  * @expectation If a strong transcript/text-alternative signal is present (e.g., aria-describedby binding to
  *              a visible transcript block, or a nearby clearly labeled Transcript section/link), no occurrence is reported.
  *              Otherwise, the rule reports cantTell (insufficient evidence) for that media element.
+ * @implementation-notes
+ * - An <audio> without `controls` is hidden by the browser's own stylesheet
+ *   (`display: none`), not by the author, and it still plays. So the rule
+ *   does not use queryAllSmart, whose hidden-content filter would drop it in
+ *   a real browser. It queries <audio>/<video> directly (scope,
+ *   excludeSelectors and open shadow roots honoured) and applies the
+ *   eligibility check to the element itself, except for an <audio> without
+ *   `controls`: there it applies the check to the parent (or shadow host)
+ *   and to the element's own `hidden` and `aria-hidden="true"`, since its
+ *   computed style cannot tell the browser's hiding from the author's.
  */
 
 const id = 'media-alternative-transcript-evidence';
@@ -294,12 +304,49 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('audio,video')
-    : helpers.queryAll('audio,video');
+  // Every match in scope, hidden or not (see @implementation-notes).
+  function queryAllUnfiltered(sel) {
+    const engineOptions = ctx.engineOptions || {};
+    const deep =
+      engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
+    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    return typeof helpers.isExcluded === 'function'
+      ? list.filter((el) => !helpers.isExcluded(el))
+      : list;
+  }
+
+  function hiddenByBrowserStylesheet(el) {
+    return (
+      String(el.tagName || '').toLowerCase() === 'audio' &&
+      !(el.hasAttribute && el.hasAttribute('controls'))
+    );
+  }
+
+  // The eligibility that decides whether the media element is in scope.
+  function getMediaEligibility(el) {
+    if (!hiddenByBrowserStylesheet(el)) return getEligibility(el);
+    if (el.hasAttribute('hidden')) {
+      return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
+    }
+    if (
+      String(el.getAttribute('aria-hidden') || '')
+        .trim()
+        .toLowerCase() === 'true'
+    ) {
+      return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
+    }
+    let parent = el.parentElement;
+    if (!parent) {
+      const rootNode = el.getRootNode ? el.getRootNode() : null;
+      parent = rootNode && rootNode.host ? rootNode.host : null;
+    }
+    return parent ? getEligibility(parent) : getEligibility(el);
+  }
+
+  const nodes = queryAllUnfiltered('audio,video');
 
   for (const el of nodes) {
-    const eligInfo = getEligibility(el);
+    const eligInfo = getMediaEligibility(el);
     if (!eligInfo || !eligInfo.eligible) continue;
 
     applicableCount += 1;

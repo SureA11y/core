@@ -12,10 +12,12 @@
  *   in the same form (or outside any form). A page with none is
  *   notApplicable.
  * @expectation
- *   Every radio button of the set sits in the same <fieldset>, role="group"
- *   or role="radiogroup" element, one of the ways RGAA 11.5.1 accepts. A set
- *   that is not is flagged: 11.5.1 applies "si nécessaire", so a person
- *   decides whether this set needs grouping.
+ *   Every radio button of the set sits in one <fieldset>, role="group" or
+ *   role="radiogroup" element, one of the ways RGAA 11.5.1 accepts. That
+ *   element need not be the closest group around each radio: an outer
+ *   fieldset holding every radio of the set groups them even when inner
+ *   groups split them. A set that is not is flagged: 11.5.1 applies "si
+ *   nécessaire", so a person decides whether this set needs grouping.
  * @implementation-notes
  * - Manual (cantTell): a lone yes/no pair with a clear label can be fine.
  * - Custom role="radio" widgets are left out; aria-required-parent reports
@@ -68,14 +70,23 @@ function runInPage(ctx) {
     sets.get(key).push(radio);
   }
 
+  // True when some grouping ancestor of the first radio contains every radio
+  // of the set.
+  function hasCommonGroup(set) {
+    const parentGroup = (el) => (el.parentElement ? el.parentElement.closest(GROUP) : null);
+    for (let g = parentGroup(set[0]); g; g = parentGroup(g)) {
+      if (set.every((r) => g.contains(r))) return true;
+    }
+    return false;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
   for (const set of sets.values()) {
     if (set.length < 2) continue;
     applicableCount += 1;
-    const groups = set.map((r) => (r.parentElement ? r.parentElement.closest(GROUP) : null));
-    if (groups[0] && groups.every((g) => g === groups[0])) continue;
+    if (hasCommonGroup(set)) continue;
 
     const name = String(set[0].getAttribute('name'));
     occurrences.push(

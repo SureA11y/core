@@ -14,10 +14,13 @@
  * @expectation
  *   The document has a doctype whose name is html, and which is either the
  *   HTML5 doctype (no public identifier) or one of the W3C recommended
- *   doctypes for HTML 2.0 to 4.01, XHTML 1.0, XHTML 1.1 and XHTML Basic
- *   (RGAA 8.1.1 to 8.1.3). A doctype written after <html> is dropped by the
+ *   doctypes for HTML 2.0 to 4.01, XHTML 1.0, XHTML 1.1, XHTML Basic,
+ *   XHTML 1.1 plus MathML 2.0 (plus SVG 1.1), XHTML+RDFa 1.0 and 1.1, and
+ *   HTML 4.01+RDFa 1.1 (RGAA 8.1.1 to 8.1.3). A doctype written after <html> is dropped by the
  *   HTML parser, so it reads as missing here, which is what RGAA 8.1.3 fails.
  * @implementation-notes
+ * - The W3C list also has SVG and MathML doctypes. Their name is svg or
+ *   math, not html, so they do not describe an HTML page and still fail.
  * - Opt-in (tag `rgaa`): WCAG does not require a doctype, so the rule runs
  *   only under the rgaa-4.1.2 profile, the `rgaa` tag or its own id.
  */
@@ -61,7 +64,12 @@ function runInPage(ctx) {
     '-//W3C//DTD XHTML 1.0 FRAMESET//EN',
     '-//W3C//DTD XHTML 1.1//EN',
     '-//W3C//DTD XHTML BASIC 1.0//EN',
-    '-//W3C//DTD XHTML BASIC 1.1//EN'
+    '-//W3C//DTD XHTML BASIC 1.1//EN',
+    '-//W3C//DTD XHTML 1.1 PLUS MATHML 2.0//EN',
+    '-//W3C//DTD XHTML 1.1 PLUS MATHML 2.0 PLUS SVG 1.1//EN',
+    '-//W3C//DTD XHTML+RDFA 1.0//EN',
+    '-//W3C//DTD XHTML+RDFA 1.1//EN',
+    '-//W3C//DTD HTML 4.01+RDFA 1.1//EN'
   ];
 
   const doctype = document.doctype;

@@ -9,22 +9,26 @@
  * @standard WCAG 2.2
  * @sc 1.4.1
  * @applicability
- *   Applies to <a href> elements whose immediate parent element also has
- *   at least one direct-child text node with non-whitespace content
- *   (i.e. the link sits inline within a run of plain text, not as a
- *   standalone item, e.g. not the sole content of a <li> nav item).
+ *   Applies to links (`<a href>` and elements with `role="link"`) whose
+ *   immediate parent element also has at least one direct-child text node
+ *   with non-whitespace content (i.e. the link sits inline within a run of
+ *   plain text, not as a standalone item, e.g. not the sole content of a
+ *   <li> nav item).
  * @expectation
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
  *     - text-decoration: underline, OR
- *     - a different font-weight than the surrounding text, OR
- *     - a different font-style than the surrounding text, OR
- *     - a contrast ratio of at least 3:1 between the link's text color and
- *       the surrounding text's color (WCAG technique G183's threshold,
- *       sufficient contrast alone is an accepted alternative to underline).
- *   Fails only when none of the above hold AND the color contrast between
- *   link and surrounding text is confidently computable and below 3:1,
- *   i.e. color is demonstrably the only cue.
+ *     - a different font-weight or font-style than the surrounding text, OR
+ *     - another visible mark on the link itself: a border, box-shadow or
+ *       outline, a background color different from the surrounding one, a
+ *       background image, an image or svg inside it, or ::before/::after
+ *       content.
+ *   A link with none of these is distinguished by color alone. When its
+ *   color contrasts with the surrounding text by at least 3:1, technique
+ *   G183 is met only if hover and focus also bring a non-color cue, which
+ *   a static scan cannot see, so the link is reported as cantTell. Below
+ *   3:1, with contrast confidently computable, color is demonstrably the
+ *   only cue and the link fails.
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
  *   parent element's own computed style, not a full inline-context walk
@@ -42,8 +46,11 @@
  *   computeEffectiveForeground/Background, getComputabilityBlocker,
  *   contrastRatio helpers as `contrast-minimum`), rather than re-deriving
  *   color math independently.
- * - Scoped to `a[href]` only (not `area[href]` or `[role="link"]`),
- *   matches the common real-world shape of this issue (prose links).
+ * - ::before/::after content is read from the CSSOM only (a DOM emulator
+ *   does not compute pseudo-element styles), so content declared in a
+ *   cross-origin stylesheet is not seen.
+ * - Only the resting state is evaluated. The :hover, :focus and :visited
+ *   states are not.
  */
 
 const id = 'link-in-text-block';
@@ -52,7 +59,7 @@ const meta = {
   title:
     'Links in text blocks must be distinguishable from surrounding text without relying on color alone',
   description:
-    'Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.',
+    'Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.',
   i18n: {
     titleKey: 'linkInTextBlock_title',
     descriptionKey: 'linkInTextBlock_description'
@@ -194,6 +201,16 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The user agent underlines `a[href]`; an element with role="link" has no
+  // default decoration.
+  function uaUnderlines(el) {
+    return (
+      String(el.localName || '').toLowerCase() === 'a' &&
+      typeof el.hasAttribute === 'function' &&
+      el.hasAttribute('href')
+    );
+  }
+
   function resolveUnderlineFromCssom(el) {
     const doc = el && el.ownerDocument ? el.ownerDocument : null;
     if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
@@ -272,7 +289,145 @@ function runInPage(ctx) {
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the UA default stands, and for a link that means underlined.
     if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
-    return { underlined: true, resolved: true };
+    return { underlined: uaUnderlines(el), resolved: true };
+  }
+
+  // ---- Non-color cues on the link itself ----
+  const LINE_STYLES = /^(solid|dashed|dotted|double|groove|ridge|inset|outset|auto)$/;
+
+  function isZeroWidth(v) {
+    return /^0(\.0+)?[a-z%]*$/i.test(String(v || '').trim());
+  }
+
+  function hasBorder(cs) {
+    for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+      const style = String(cs['border' + side + 'Style'] || '')
+        .trim()
+        .toLowerCase();
+      if (!style || style === 'none' || style === 'hidden') continue;
+      if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
+    }
+    return false;
+  }
+
+  // Some environments do not expand the `outline` shorthand into its
+  // longhands, so it is read too.
+  function hasOutline(cs) {
+    const style = String(cs.outlineStyle || '')
+      .trim()
+      .toLowerCase();
+    if (style && style !== 'none' && style !== 'hidden') return !isZeroWidth(cs.outlineWidth);
+    const tokens = String((cs.getPropertyValue && cs.getPropertyValue('outline')) || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
+  }
+
+  function hasBoxShadow(cs) {
+    const v = String(cs.boxShadow || '')
+      .trim()
+      .toLowerCase();
+    return !!v && v !== 'none';
+  }
+
+  function hasBackgroundImage(cs) {
+    const v = String(cs.backgroundImage || '')
+      .trim()
+      .toLowerCase();
+    return !!v && v !== 'none';
+  }
+
+  function hasVisibleImageChild(el) {
+    let imgs;
+    try {
+      imgs = Array.from(el.querySelectorAll('img, svg, picture, canvas, [role="img"]'));
+    } catch {
+      return false;
+    }
+    return imgs.some((img) => {
+      if (!helpers.isDomVisibleEligible) return true;
+      try {
+        const vis = helpers.isDomVisibleEligible(img, ctx, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true
+        });
+        return !(vis && vis.eligible === false);
+      } catch {
+        return true;
+      }
+    });
+  }
+
+  const EMPTY_CONTENT = ['', 'none', 'normal', '""', "''"];
+  let pseudoContentRules = null;
+  // Style rules that put content in a ::before/::after box, by the selector
+  // of the element that box belongs to.
+  function getPseudoContentRules(doc) {
+    if (pseudoContentRules) return pseudoContentRules;
+    pseudoContentRules = [];
+    function consider(cssRule) {
+      const style = cssRule.style;
+      if (!style || typeof style.getPropertyValue !== 'function') return;
+      const content = String(style.getPropertyValue('content') || '').trim();
+      if (EMPTY_CONTENT.indexOf(content.toLowerCase()) !== -1) return;
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        if (!/::?(before|after)\s*$/i.test(part)) continue;
+        if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
+          continue;
+        }
+        pseudoContentRules.push(part.replace(/::?(before|after)\s*$/i, '').trim() || '*');
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of (doc && doc.styleSheets) || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          continue; // cross-origin, not inspectable
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      // no readable stylesheets
+    }
+    return pseudoContentRules;
+  }
+
+  function hasPseudoContent(el) {
+    return getPseudoContentRules(el.ownerDocument).some((base) => {
+      try {
+        return el.matches(base);
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  function hasNonColorMark(el, cs) {
+    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs))) {
+      return true;
+    }
+    return hasVisibleImageChild(el) || hasPseudoContent(el);
   }
 
   function hasSurroundingText(el, parent) {
@@ -297,13 +452,14 @@ function runInPage(ctx) {
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
-  const selector = 'a[href]';
+  const selector = 'a[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
   const occurrences = [];
   const undecided = [];
+  const contrastOnly = [];
   let applicableCount = 0;
   let decidedCount = 0;
 
@@ -345,6 +501,13 @@ function runInPage(ctx) {
       continue;
     }
 
+    // A border, box-shadow, outline, background image, icon or generated
+    // content marks the link without relying on color.
+    if (hasNonColorMark(el, linkCs)) {
+      decidedCount += 1;
+      continue;
+    }
+
     if (!c) {
       markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
       continue;
@@ -352,6 +515,7 @@ function runInPage(ctx) {
 
     let flagged = false;
     let computed = false;
+    let backgroundDiffers = false;
     let ratio = null;
     let fgLinkHex = '';
     let fgParentHex = '';
@@ -387,6 +551,21 @@ function runInPage(ctx) {
 
           computed = true;
           if (!(ratio >= 3)) flagged = true;
+
+          // A background color of the link's own, different from the one
+          // behind the surrounding text, marks it like a highlight.
+          const ownBg = String((linkCs && linkCs.backgroundColor) || '').replace(/\s+/g, '');
+          const transparentBg =
+            !ownBg || ownBg === 'transparent' || /^rgba\(\d+,\d+,\d+,0(\.0+)?\)$/.test(ownBg);
+          if (!transparentBg && c.rgbToHex) {
+            const parentBg = c.computeEffectiveBackground(parent, {
+              contrast: { mode, rootCanvasFallback },
+              collectStack: false
+            });
+            if (parentBg && parentBg.ok && parentBg.rgba) {
+              backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+            }
+          }
         }
         // else: not confidently computable, recorded below.
       }
@@ -400,14 +579,12 @@ function runInPage(ctx) {
       continue;
     }
 
-    // Contrast alone is an accepted alternative to an underline (G183), so a
-    // link clearing 3:1 is distinguishable regardless of decoration.
-    if (!flagged) {
+    if (backgroundDiffers) {
       decidedCount += 1;
       continue;
     }
 
-    // Below 3:1, an underline is the last remaining cue -- and only now does
+    // An underline is the last remaining non-color cue -- and only now does
     // it matter whether this environment can actually report one.
     const decoration = decorationInfo(linkCs);
     let underlined;
@@ -427,6 +604,13 @@ function runInPage(ctx) {
       continue;
     }
 
+    // Color is the only cue at rest. At 3:1 or more, G183 also needs a
+    // non-color cue on hover and focus, which a static scan cannot see.
+    if (!flagged) {
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
+      continue;
+    }
+
     decidedCount += 1;
 
     const eligInfo = helpers.getEligibilityInfo
@@ -439,7 +623,7 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary:
           'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-        hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
+        hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
           summaryKey: 'linkInTextBlock_summary_fail',
           hintKey: 'linkInTextBlock_hint_fail',
@@ -466,7 +650,7 @@ function runInPage(ctx) {
       occurrenceOutcome: 'cantTell',
       summary:
         'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
-      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
       i18n: {
         summaryKey: 'linkInTextBlock_summary_cantTell',
         hintKey: 'linkInTextBlock_hint_cantTell'
@@ -486,14 +670,43 @@ function runInPage(ctx) {
     })
   );
 
+  const contrastOnlyOccurrences = contrastOnly.map(({ el, ratio, fgLinkHex, fgParentHex }) => {
+    const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
+    return helpers.reportOccurrence(el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
+      hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
+      i18n: {
+        summaryKey: 'linkInTextBlock_summary_cantTell_contrastOnly',
+        hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
+        params: { ratio: String(ratioStr), threshold: '3' }
+      },
+      uncertainty: {
+        code: 'runtime-dependent',
+        needed: 'Whether hovering and focusing the link add a non-color cue.',
+        evidence: { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
+      },
+      data: {
+        visibilityFilter: helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: {
+          reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
+          metrics: { ratio, threshold: 3 },
+          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+        }
+      }
+    });
+  });
+
   // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
   // violation outranks an undecided candidate for the rule's own outcome, but
   // never discards it, so an unevaluable link survives a failure elsewhere in
   // the same run.
-  if (occurrences.length || cantTellOccurrences.length) {
+  if (occurrences.length || cantTellOccurrences.length || contrastOnlyOccurrences.length) {
     const resolved = helpers.resolveTieredOutcome(
       occurrences,
-      cantTellOccurrences,
+      contrastOnlyOccurrences.concat(cantTellOccurrences),
       rule.defaultSeverity || 'serious'
     );
     return {

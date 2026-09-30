@@ -8,14 +8,20 @@
  * @summary An image's text alternative should be short
  * @standard RGAA 4.1.2 (no WCAG Success Criterion)
  * @applicability
- *   Applies to <img>, <area> and <input type="image"> with an alt
- *   attribute, and to role="img" elements with an aria-label. A page with
- *   none is notApplicable.
+ *   Applies to images that carry a text alternative: <img>, <area>,
+ *   <input type="image">, <svg>, <canvas>, <object>, <embed>, and any
+ *   element whose role (first token) is img. The alternative can come from
+ *   alt (on <img>, <area> and <input type="image">), aria-label,
+ *   aria-labelledby (the text it resolves to), title, or an <svg>'s own
+ *   <title> child, the sources RGAA's image tests list. A page with none is
+ *   notApplicable.
  * @expectation
- *   A text alternative longer than 80 characters (spaces collapsed) is
- *   flagged for a person to decide whether it is short and concise, as RGAA
- *   1.3.9 asks, or one of the particular cases it allows. RGAA's test gives
- *   no number: 80 characters is a threshold for asking, not a limit.
+ *   A text alternative longer than 80 characters (spaces collapsed), from
+ *   any of those sources, is flagged for a person to decide whether it is
+ *   short and concise, as RGAA 1.3.9 asks, or one of the particular cases it
+ *   allows. RGAA's test gives no number: 80 characters is a threshold for
+ *   asking, not a limit. The occurrence lists each source over the
+ *   threshold. Fallback content of <canvas> and <object> is not measured.
  * @implementation-notes
  * - Manual (cantTell): a long alternative can be right, and a detailed
  *   description belongs in a separate long description (RGAA 1.8).
@@ -47,12 +53,48 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const MAX_LENGTH = 80;
-  const SELECTOR = 'img[alt], area[alt], input[type="image" i][alt], [role="img"][aria-label]';
+  const SELECTOR = 'img, area, input[type="image" i], svg, canvas, object, embed, [role]';
+  const IMAGE_TAGS = ['img', 'area', 'input', 'svg', 'canvas', 'object', 'embed'];
+  const ALT_TAGS = ['img', 'area', 'input'];
+
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
   function collapse(v) {
     return String(v == null ? '' : v)
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  function firstRole(el) {
+    return collapse(el.getAttribute('role')).toLowerCase().split(' ')[0];
+  }
+
+  // Each non-empty text-alternative source, with its collapsed text.
+  function alternatives(el, tag) {
+    const out = [];
+    const add = (source, value) => {
+      const text = collapse(value);
+      if (text) out.push({ source, text });
+    };
+    if (ALT_TAGS.includes(tag)) add('alt', el.getAttribute('alt'));
+    add('aria-label', el.getAttribute('aria-label'));
+    if (collapse(el.getAttribute('aria-labelledby')) && getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(el, ctx);
+        if (aria && aria.present && aria.mechanism === 'aria-labelledby') {
+          add('aria-labelledby', aria.value);
+        }
+      } catch {}
+    }
+    add('title', el.getAttribute('title'));
+    if (tag === 'svg') {
+      const titleChild = Array.from(el.children || []).find(
+        (c) => String(c.localName || c.tagName).toLowerCase() === 'title'
+      );
+      if (titleChild) add('<title>', titleChild.textContent);
+    }
+    return out;
   }
 
   const nodes = helpers.queryAllSmart
@@ -64,12 +106,18 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
-    const tag = String(el.tagName).toLowerCase();
-    const native = tag === 'img' || tag === 'area' || tag === 'input';
-    const text = collapse(native ? el.getAttribute('alt') : el.getAttribute('aria-label'));
-    if (!text) continue;
+    const tag = String(el.localName || el.tagName).toLowerCase();
+    const isImage =
+      tag === 'input'
+        ? collapse(el.getAttribute('type')).toLowerCase() === 'image'
+        : IMAGE_TAGS.includes(tag) || firstRole(el) === 'img';
+    if (!isImage) continue;
+    const found = alternatives(el, tag);
+    if (!found.length) continue;
     applicableCount += 1;
-    if (text.length <= MAX_LENGTH) continue;
+    const long = found.filter((a) => a.text.length > MAX_LENGTH);
+    if (!long.length) continue;
+    const text = long.reduce((a, b) => (b.text.length > a.text.length ? b : a)).text;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -81,7 +129,12 @@ function runInPage(ctx) {
           params: { length: String(text.length) }
         },
         data: {
-          details: { reasonCode: 'longAlternative', length: text.length, maxLength: MAX_LENGTH },
+          details: {
+            reasonCode: 'longAlternative',
+            length: text.length,
+            maxLength: MAX_LENGTH,
+            sources: long.map((a) => ({ source: a.source, length: a.text.length }))
+          },
           visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
         }
       })

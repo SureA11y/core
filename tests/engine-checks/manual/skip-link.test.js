@@ -70,11 +70,76 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/skip-link-all-scenarios.html)
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
-  assert.ok(hasOccurrenceForId(rule, 'sl_case_02'));
-  assert.ok(hasOccurrenceForId(rule, 'sl_case_04'));
-  assert.ok(hasOccurrenceForId(rule, 'sl_case_06'));
-  assert.ok(!hasOccurrenceForId(rule, 'sl_case_01'));
-  assert.ok(!hasOccurrenceForId(rule, 'sl_case_03'));
-  assert.ok(!hasOccurrenceForId(rule, 'sl_case_05'));
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  for (const id of [
+    'sl_case_02',
+    'sl_case_04',
+    'sl_case_06',
+    'sl_case_07',
+    'sl_case_09',
+    'sl_case_10',
+    'sl_case_11'
+  ]) {
+    assert.ok(hasOccurrenceForId(rule, id), id);
+  }
+  for (const id of ['sl_case_01', 'sl_case_03', 'sl_case_05', 'sl_case_08']) {
+    assert.ok(!hasOccurrenceForId(rule, id), id);
+  }
+});
+
+test(`${RULE_ID}: French wording with a missing target is asked about`, () => {
+  for (const name of [
+    'Aller au contenu',
+    'Accès direct au contenu',
+    'Passer au contenu principal'
+  ]) {
+    const html = `<!doctype html><html lang="fr"><body><a id="a" href="#contenu">${name}</a><p>Texte</p></body></html>`;
+    // A best-practice rule: the default run and the RGAA profile (12.7) run it.
+    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
+      assert.equal(rule.occurrences[0].data.details.reasonCode, 'SKIP_LINK_TARGET_MISSING', name);
+    }
+  }
+});
+
+test(`${RULE_ID}: German, Spanish and Japanese wording is recognised`, () => {
+  for (const name of [
+    'Zum Inhalt springen',
+    'Direkt zum Hauptinhalt',
+    'Saltar al contenido',
+    'Ir al contenido principal',
+    '本文へスキップ',
+    '本文へ移動'
+  ]) {
+    const html = `<!doctype html><html><body><p>Intro</p><a href="/a">A</a><a id="a" href="#nope">${name}</a></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test(`${RULE_ID}: the first link, placed before main, is a skip link whatever its wording`, () => {
+  const html = `<!doctype html><html><body><a id="a" href="#principal">Contenu</a><nav><a href="/x">X</a></nav><main><h1>T</h1></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+test(`${RULE_ID}: a same-page link that is not the first link, or with no main after it, is not a skip link`, () => {
+  const notFirst = `<!doctype html><html><body><a href="/home">Home</a><a href="#menu">Menu</a><main><h1>T</h1></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(notFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+  const noMain = `<!doctype html><html><body><a href="#menu">Menu</a><p>Text</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(noMain, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+  const afterMain = `<!doctype html><html><body><main><a href="#top">Contenu</a></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(afterMain, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+});
+
+test(`${RULE_ID}: wording that only resembles a skip link is left alone`, () => {
+  const html = `<!doctype html><html><body><a href="/x">X</a><a href="#top">Aller en haut</a><a href="#s2">Section 2</a></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
 });

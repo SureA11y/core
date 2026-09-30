@@ -105,6 +105,22 @@ test(`${RULE_ID}: still fails when li has an explicit role="listitem" (a no-op r
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+// <menu> is a list container with the implicit role list (HTML-AAM).
+test(`${RULE_ID}: pass when li is inside a <menu>`, () => {
+  const html = `<!doctype html><html><body><menu><li>a</li><li>b</li></menu></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a <menu> given another role is not a list container`, () => {
+  const html = `<!doctype html><html><body><menu role="toolbar"><li id="a">a</li></menu></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div><li id="a">orphan</li></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -139,7 +155,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/listitem-parent-valid-all-sce
     'lpv_case_08',
     'lpv_case_10',
     'lpv_case_11',
-    'lpv_case_12'
+    'lpv_case_12',
+    'lpv_case_14'
   ];
 
   for (const id of expectedFailIds) {

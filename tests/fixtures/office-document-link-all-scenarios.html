@@ -37,6 +37,28 @@
     <a id="odl_case_03" href="prices.ods">Price list</a>
   </div>
 
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FLAGGED: the document is named in the query string</div>
+    <a id="odl_case_06" href="/get?file=rapport-annuel.pdf">Rapport annuel</a>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: the download attribute names a Word file</div>
+    <a id="odl_case_07" href="/dl/123" download="rapport.docx">Download the report</a>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: macro-enabled Word document</div>
+    <a id="odl_case_08" href="/files/budget.docm">Budget template</a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FLAGGED: a form whose action downloads a PDF</div>
+    <form id="odl_case_09" action="/files/certificate.pdf">
+      <button type="submit">Download the certificate</button>
+    </form>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_04">
@@ -47,6 +69,11 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — NEUTRAL: folder named pdf</div>
     <a id="odl_case_05" href="/pdf/">Documents</a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: CSV data file, not an office document format in RGAA's list</div>
+    <a id="odl_case_10" href="/files/prices.csv">Price list (CSV)</a>
   </div>
 </body>
 </html>

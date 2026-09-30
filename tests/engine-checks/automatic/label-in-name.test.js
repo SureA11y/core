@@ -160,6 +160,35 @@ test(`${RULE_ID}: punctuation and emoji on either side do not affect the compari
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// Accented letters stay whole: NFKD used to split "Déposer" at its combining
+// accent into "de" + "poser". Accents are not folded either (RGAA excuses only
+// punctuation and capitals).
+test(`${RULE_ID}: accented words are compared whole, without folding accents`, () => {
+  const pass = `<!doctype html><html><body>
+    <button aria-label="Déposer une annonce">Déposer</button>
+    <button aria-label="Ouvrir la fenêtre">fenêtre</button>
+    <button aria-label="De\u0301poser">D\u00e9poser</button>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(pass, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+
+  for (const [label, name] of [
+    ['Déposer', 'Deposer une annonce'],
+    ['poser', 'Déposer une annonce'],
+    ['Déposer', 'De poser'],
+    ['tre', 'Ouvrir la fenêtre']
+  ]) {
+    const html = `<!doctype html><html><body><button id="b" aria-label="${name}">${label}</button></body></html>`;
+    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.ok(hasOccurrenceForId(rule, 'b'), `${label} / ${name}`);
+    }
+  }
+});
+
 test(`${RULE_ID}: a label word that merely prefixes a name word does not satisfy the rule`, () => {
   const html = `
 <!doctype html><html><body>
@@ -275,14 +304,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'lin_case_02',
     'lin_case_04',
     'lin_case_06',
     'lin_case_14',
-    'lin_case_15'
+    'lin_case_15',
+    'lin_case_18'
   ];
 
   const expectedNoOccIds = [
@@ -297,7 +327,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_12',
     'lin_case_13',
     'lin_case_16',
-    'lin_case_17'
+    'lin_case_17',
+    'lin_case_19'
   ];
 
   for (const id of expectedFailIds) {

@@ -56,6 +56,25 @@ test(`${RULE_ID}: a set split across two groups is flagged`, () => {
   assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell');
 });
 
+// RGAA 11.5.1 asks that the set is grouped in a fieldset or group; an outer
+// one holding every radio does that even when inner groups split the set.
+test(`${RULE_ID}: an outer fieldset or group holding the whole set is enough`, () => {
+  for (const body of [
+    '<fieldset><legend>Livraison</legend>' +
+      `<div role="group" aria-label="Rapide">${radio('x', 'Express')}${radio('x', 'Coursier')}</div>` +
+      `${radio('x', 'Standard')}</fieldset>`,
+    '<div role="radiogroup" aria-label="Size">' +
+      `<fieldset><legend>A</legend>${radio('s', 'Small')}</fieldset>` +
+      `<fieldset><legend>B</legend>${radio('s', 'Large')}</fieldset></div>`
+  ]) {
+    for (const options of [RUN, { engineOptions: { profile: 'rgaa-4.1.2' } }]) {
+      assertRule(runa11yCoreOnHtml(page(body), options), RULE_ID, 'notApplicable', {
+        maxOccurrences: 0
+      });
+    }
+  }
+});
+
 test(`${RULE_ID}: a single radio, or one per form under the same name, is not a set`, () => {
   for (const body of [
     radio('agree', 'I agree'),

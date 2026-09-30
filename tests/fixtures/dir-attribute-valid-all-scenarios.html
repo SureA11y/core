@@ -23,7 +23,7 @@
   <h2>A. Values RGAA does not accept (FAIL)</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: dir="auto"</div>
+    <div class="case-title">01 — FAIL: dir="auto" on Arabic text in a left-to-right page</div>
     <p dir="auto" id="dav_case_01">مرحبا</p>
   </div>
 
@@ -37,6 +37,11 @@
     <p dir="" id="dav_case_03">Text</p>
   </div>
 
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: value with surrounding spaces (browsers ignore it)</div>
+    <p dir=" RTL " id="dav_case_06">مرحبا</p>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_04">
@@ -47,6 +52,16 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — PASS: ltr, any case</div>
     <p dir="LTR" id="dav_case_05">Text</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: dir="auto" on a field with no text</div>
+    <input dir="auto" aria-label="Comment" id="dav_case_07">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: dir="auto" on text in the page's own direction</div>
+    <p dir="auto" id="dav_case_08">Plain English text</p>
   </div>
 </body>
 </html>

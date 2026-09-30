@@ -8,15 +8,19 @@
  * @summary A "skip" link must resolve to a real, usable target
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to <a href="#fragment"> elements whose accessible name
- *   matches a common "skip to ..." / "jump to ..." authoring convention
- *   (case-insensitive "skip" or "jump to" in the name), the recognizable
- *   pattern for a skip-navigation link, not every same-page anchor link
- *   on the page. "jump to" is included alongside "skip" since real skip
- *   links use both conventions (e.g. a "Jump to section" link, which a
- *   purely positional match would catch but a "skip"-only text pattern
- *   would miss). Text-pattern matching itself stays intentional (see
- *   implementation-notes); this only widens the known-convention list.
+ *   Applies to <a href="#fragment"> elements that are skip links by one of
+ *   two signs:
+ *   - the accessible name follows a common skip-link wording in one of the
+ *     shipped locales: "skip" or "jump to" (English); "aller au contenu",
+ *     "passer au contenu", "accéder au contenu", "accès direct", "évitement"
+ *     (French); "springen", "überspringen", "direkt zum", "zum Inhalt"
+ *     (German); "saltar", "ir al contenido" (Spanish); "スキップ", "本文へ"
+ *     (Japanese). "jump to" sits beside "skip" because real skip links use
+ *     both conventions (e.g. a "Jump to section" link);
+ *   - or it is the first link in the document, and it comes before the
+ *     `main` element (or `[role="main"]`): the usual place of a skip link
+ *     whatever its wording.
+ *   Other same-page anchor links are not skip links and are left alone.
  * @expectation
  *   The link's fragment resolves to a real element in the document
  *   (via a matching id, or a legacy <a name="...">), and that target is
@@ -28,10 +32,12 @@
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Keyed on the "skip" text-pattern convention rather than positional
- *   heuristics (first link in tab order, etc.), matching the same
- *   deliberate-leniency reasoning documented in
- *   bypass-blocks-present's implementation notes.
+ * - Keyed mainly on the wording, matching the same deliberate-leniency
+ *   reasoning documented in bypass-blocks-present's implementation notes.
+ *   The one positional sign is narrow on purpose: only the page's very
+ *   first link, and only when a main landmark follows it, so an ordinary
+ *   in-page link (a "Menu" toggle after other links, a table of contents)
+ *   is not taken for a skip link.
  */
 
 const id = 'skip-link';
@@ -109,9 +115,46 @@ function runInPage(ctx) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
+  // Common skip-link wording in the shipped locales (en, fr, de, es, ja).
+  const SKIP_NAME_PATTERNS = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+
+  function hasSkipWording(name) {
+    return SKIP_NAME_PATTERNS.some((re) => re.test(name));
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('a[href]')
     : helpers.queryAll('a[href]');
+
+  // The page's first link, when it comes before the main landmark, is where a
+  // skip link sits whatever its wording.
+  let positionalSkipLink = null;
+  try {
+    const main = document.querySelector('main, [role="main"]');
+    const first = nodes.length ? nodes[0] : null;
+    if (
+      main &&
+      first &&
+      typeof first.compareDocumentPosition === 'function' &&
+      first.compareDocumentPosition(main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
+    ) {
+      positionalSkipLink = first;
+    }
+  } catch {
+    positionalSkipLink = null;
+  }
 
   const occurrences = [];
   let applicableCount = 0;
@@ -123,7 +166,7 @@ function runInPage(ctx) {
     if (href.length < 2 || href.charAt(0) !== '#') continue;
 
     const name = getAccessibleNameText(el);
-    if (!/skip/i.test(name) && !/jump\s*to/i.test(name)) continue;
+    if (el !== positionalSkipLink && !hasSkipWording(name)) continue;
 
     applicableCount += 1;
 

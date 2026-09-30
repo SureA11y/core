@@ -89,14 +89,14 @@
     <table role="navigation" id="aar_case_19"><tbody><tr><td>x</td></tr></tbody></table>
   </div>
 
-  <div class="case" id="case_20">
-    <div class="case-title">20 — PASS: role="listitem" is permitted on a &lt;tr&gt;</div>
-    <table><tbody><tr role="listitem" id="aar_case_20"><td>x</td></tr></tbody></table>
+  <div class="case" id="case_51">
+    <div class="case-title">51 — PASS: role="button" is permitted on a &lt;td&gt; of a layout table (role="presentation")</div>
+    <table role="presentation"><tbody><tr><td role="button" id="aar_case_51">x</td></tr></tbody></table>
   </div>
 
-  <div class="case" id="case_21">
-    <div class="case-title">21 — PASS: role="button" is permitted on a &lt;td&gt;</div>
-    <table><tbody><tr><td role="button" id="aar_case_21">x</td></tr></tbody></table>
+  <div class="case" id="case_53">
+    <div class="case-title">53 — PASS: role="gridcell" on a &lt;td&gt; of a table with role="grid"</div>
+    <table role="grid"><tbody><tr><td role="gridcell" id="aar_case_53">x</td></tr></tbody></table>
   </div>
 
   <div class="case" id="case_22">
@@ -272,6 +272,21 @@
   <div class="case" id="case_50">
     <div class="case-title">50 — CANTTELL: role="grid" is still not permitted on &lt;button&gt; (only the four widened roles above were added, not the whole role vocabulary)</div>
     <button role="grid" id="aar_case_50"></button>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — CANTTELL: role="listitem" is not permitted on a &lt;tr&gt; of a native table</div>
+    <table><tbody><tr role="listitem" id="aar_case_20"><td>x</td></tr></tbody></table>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — CANTTELL: role="button" is not permitted on a &lt;td&gt; of a native table</div>
+    <table><tbody><tr><td role="button" id="aar_case_21">x</td></tr></tbody></table>
+  </div>
+
+  <div class="case" id="case_52">
+    <div class="case-title">52 — CANTTELL: no role other than main is permitted on &lt;main&gt;</div>
+    <main role="navigation" id="aar_case_52"></main>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

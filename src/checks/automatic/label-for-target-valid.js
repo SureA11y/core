@@ -17,7 +17,13 @@
  *   custom element (RGAA 11.1.2). A for attribute that matches nothing means
  *   the label labels nothing, not even a field nested inside it, since the
  *   HTML association falls back to the label's content only when for is
- *   absent.
+ *   absent. A target that is not labelable but has a form-field ARIA role
+ *   (textbox, combobox, listbox, searchbox, spinbutton, slider, progressbar,
+ *   checkbox, radio, switch, option: the roles the RGAA glossary "Champ de
+ *   saisie de formulaire" counts as fields) passes: 11.1.2 asks only that
+ *   the field has an id equal to the for value. HTML does not let such a
+ *   label name the field, and that missing name belongs to 11.1.1, not
+ *   here.
  * @implementation-notes
  * - Opt-in (tag `rgaa`): a label pointing nowhere is not in itself a WCAG
  *   failure (the field may be named another way, which
@@ -52,6 +58,28 @@ function runInPage(ctx) {
   const { document, window, helpers, rule } = ctx;
 
   const LABELABLE = ['button', 'meter', 'output', 'progress', 'select', 'textarea'];
+  // Roles the RGAA glossary "Champ de saisie de formulaire" counts as fields.
+  const FIELD_ROLES = [
+    'progressbar',
+    'slider',
+    'spinbutton',
+    'textbox',
+    'listbox',
+    'searchbox',
+    'combobox',
+    'option',
+    'checkbox',
+    'radio',
+    'switch'
+  ];
+
+  function hasFieldRole(el) {
+    const role = String(el.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    return FIELD_ROLES.includes(role);
+  }
 
   function isLabelable(el) {
     const tag = String(el.tagName || '').toLowerCase();
@@ -98,7 +126,7 @@ function runInPage(ctx) {
     } else {
       target = targetOf(label, value);
       if (!target) reasonCode = 'missingTarget';
-      else if (!isLabelable(target)) reasonCode = 'notLabelable';
+      else if (!isLabelable(target) && !hasFieldRole(target)) reasonCode = 'notLabelable';
     }
     if (!reasonCode) continue;
 

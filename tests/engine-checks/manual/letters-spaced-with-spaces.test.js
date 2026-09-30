@@ -35,7 +35,7 @@ test(`${RULE_ID}: no-break spaces, several spaces and accented letters count`, (
   for (const [body, text] of [
     ['<p>H&nbsp;E&nbsp;L&nbsp;L&nbsp;O!</p>', 'H E L L O'],
     ['<p>Big  S  A  L  E  today</p>', 'S A L E'],
-    ['<p>É T É</p><p>É T É S</p>', 'É T É S']
+    ['<p>é t é</p><p>é t é s</p>', 'é t é s']
   ]) {
     const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
       minOccurrences: 1,
@@ -45,9 +45,55 @@ test(`${RULE_ID}: no-break spaces, several spaces and accented letters count`, (
   }
 });
 
+// F32 and RGAA 10.1.3 cover short words too: three capitals that are the
+// whole text are asked about.
+test(`${RULE_ID}: three capitals making up the whole text are flagged`, () => {
+  for (const [body, text] of [
+    ['<h2>T O P</h2>', 'T O P'],
+    ['<p>É T É</p>', 'É T É'],
+    ['<button>N E W</button>', 'N E W']
+  ]) {
+    for (const options of [RUN, { engineOptions: { profile: 'rgaa-4.1.2' } }]) {
+      const rule = assertRule(runa11yCoreOnHtml(page(body), options), RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
+      assert.equal(rule.occurrences[0].data.details.text, text, body);
+    }
+  }
+});
+
+test(`${RULE_ID}: letters split across inline elements are read as one run, on the block`, () => {
+  const body =
+    '<p id="p"><span>S</span> <span>O</span> <span>L</span> <span>D</span></p>' +
+    '<h2 id="h"><b>N</b> E <i>W</i> S</h2>';
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.deepEqual(
+    rule.occurrences.map((o) => [(o.html.match(/id="([^"]+)"/) || [])[1], o.data.details.text]),
+    [
+      ['p', 'S O L D'],
+      ['h', 'N E W S']
+    ]
+  );
+});
+
+test(`${RULE_ID}: a run in an inline element is reported once, on its block`, () => {
+  const body = '<p id="p">Our <strong>S O L D E S</strong> start today</p>';
+  const rule = assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(rule.occurrences[0].html.includes('id="p"'));
+});
+
 test(`${RULE_ID}: fewer than four letters, letters with punctuation, code and CSS spacing are left alone`, () => {
   for (const body of [
     '<p>Vote for A B C</p>',
+    '<p>a b c</p>',
+    '<p>N<span>E</span>W<b>S</b></p>',
     '<p>Choose a, b, c or d</p>',
     '<p>J. R. R. T. Tolkien</p>',
     '<p><code>a b c d</code></p>',
@@ -71,7 +117,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/letters-spaced-with-spaces-al
     'letters-spaced-with-spaces-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, ['lss_case_01', 'lss_case_02']);
+  assert.deepEqual(ids, ['lss_case_01', 'lss_case_02', 'lss_case_07', 'lss_case_08']);
 });

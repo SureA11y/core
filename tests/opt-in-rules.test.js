@@ -62,7 +62,6 @@ test("naming a standard's own rollup runs the opt-in rules it groups", () => {
 
   const byRules = pick({ rules: { include: 'rgaa-4.1.2-10.1' } });
   assert.deepEqual(byRules.checksResults.map((r) => r.ruleId).sort(), [
-    'deprecated-elements-not-used',
     'letters-spaced-with-spaces',
     'presentational-attributes-absent',
     'presentational-elements-absent'

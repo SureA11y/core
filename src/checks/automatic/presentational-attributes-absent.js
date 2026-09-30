@@ -11,7 +11,7 @@
  *   Applies to any scan scope; whether an HTML element in it carries one of
  *   the attributes RGAA 10.1.2 lists is always an answerable question.
  * @expectation
- *   No HTML element carries align, alink, background, bgcolor, border,
+ *   No HTML element carries align, alink, background, basefont, bgcolor, border,
  *   cellpadding, cellspacing, char, charoff, clear, color, compact,
  *   frameborder, hspace, link, marginheight, marginwidth, text, valign,
  *   vlink or vspace; size is allowed only on <select>, and width and height
@@ -25,8 +25,10 @@
  * - Only elements in the HTML namespace are checked: inside SVG and MathML,
  *   attributes such as width, height and color are the content's geometry
  *   and paint, not HTML presentation.
- * - Elements in hidden subtrees are skipped like everywhere else in the
- *   engine, unless engineOptions.includeHiddenElements is true.
+ * - Hidden content is checked too (helpers.queryAllSource): 10.1.2 judges
+ *   the generated source, and markup inside `hidden` or display:none is part
+ *   of it. includeHiddenElements makes no difference here. <template>
+ *   content is not in the DOM tree and is not checked.
  */
 
 const id = 'presentational-attributes-absent';
@@ -58,6 +60,7 @@ function runInPage(ctx) {
     'align',
     'alink',
     'background',
+    'basefont',
     'bgcolor',
     'border',
     'cellpadding',
@@ -83,8 +86,8 @@ function runInPage(ctx) {
   const selector = ALWAYS.concat(['size', 'width', 'height'])
     .map((a) => '[' + a + ']')
     .join(', ');
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+  const nodes = helpers.queryAllSource
+    ? helpers.queryAllSource(selector)
     : helpers.queryAll(selector);
 
   const occurrences = [];

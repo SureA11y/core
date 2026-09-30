@@ -36,6 +36,23 @@ test(`${RULE_ID}: fail when the lang value is syntactically invalid`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ELEMENT_LANG_INVALID');
 });
 
+// ACT de46e4 judges the primary language subtag; the RGAA glossary "Code de
+// langue" reads only "la partie [code] avant le tiret".
+test(`${RULE_ID}: a malformed later subtag passes; an unknown primary subtag fails`, () => {
+  const ok = `<!doctype html><html lang="fr"><body><p lang="en-US_x">Hello</p><p lang="de-DE-!!">Hallo</p></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(ok, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const bad = `<!doctype html><html lang="fr"><body><p id="a" lang="xx">Hello</p><p id="b" lang="en_US">Hi</p></body></html>`;
+  for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(bad, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+    assert.ok(hasOccurrenceForId(rule, 'b'));
+  }
+});
+
 test(`${RULE_ID}: does not evaluate the root <html> element`, () => {
   const html = `<!doctype html><html lang="???"><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -133,4 +150,5 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/valid-lang-all-scenarios.html
   assert.ok(hasOccurrenceForId(rule, 'vl_case_02'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_01'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_03'));
+  assert.ok(!hasOccurrenceForId(rule, 'vl_case_04'));
 });

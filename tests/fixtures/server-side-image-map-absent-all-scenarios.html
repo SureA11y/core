@@ -14,21 +14,21 @@
   </style>
 </head>
 <body>
-  <h1>Scenario fixture: <code>server-side-image-map-absent</code> (no server-side image maps)</h1>
+  <h1>Scenario fixture: <code>server-side-image-map-absent</code> (server-side image maps need a keyboard-operable alternative)</h1>
 
   <p class="note">
     Each target &lt;img&gt; has a stable <code>id</code> of the form <code>ssim_case_NN</code>.
-    Presence of ismap is itself the violation; absence is a pass, not a separate not-applicable case.
+    An &lt;img ismap&gt; inside a link is asked about, since the rule cannot see whether its destinations are also offered as links; no ismap at all is a pass.
   </p>
 
-  <h2>A. Invalid</h2>
+  <h2>A. Asked about</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: img with ismap, inside a link</div>
+    <div class="case-title">01 — CANTTELL: img with ismap, inside a link</div>
     <a href="/map"><img id="ssim_case_01" src="map.png" ismap alt="Site map"></a>
   </div>
 
-  <h2>B. Valid (not flagged; the whole page is checked as one pass/fail, see the rule's own tests for that)</h2>
+  <h2>B. Not flagged (not counted; see the rule's own tests for the page-level outcome)</h2>
 
   <div class="case" id="case_02">
     <div class="case-title">02 — NEUTRAL: ordinary image, no ismap attribute</div>
@@ -39,6 +39,11 @@
     <div class="case-title">03 — NEUTRAL: client-side image map (usemap), not flagged by this rule</div>
     <img id="ssim_case_03" src="map2.png" usemap="#sitemap" alt="Site map">
     <map name="sitemap"><area shape="rect" coords="0,0,50,50" href="/home" alt="Home"></map>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: ismap outside a link does nothing, so it is not a server-side image map</div>
+    <img id="ssim_case_04" src="map3.png" ismap alt="Plan">
   </div>
 
   <p class="note">End of fixture.</p>

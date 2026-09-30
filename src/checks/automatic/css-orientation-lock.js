@@ -20,6 +20,16 @@
  *   regardless of the device's actual orientation, which defeats WCAG
  *   1.3.4's requirement that content not restrict its view to a single
  *   display orientation unless that orientation is essential.
+ *   Such a rotation fails.
+ *
+ *   A second shape is asked about (cantTell): an orientation media block
+ *   that hides the page's content with `display: none` or `visibility:
+ *   hidden`, the usual form of WCAG F100 (content replaced by a "rotate
+ *   your device" message in one orientation). The hidden element counts as
+ *   the page's content when it is `html` or `body`, the `main` landmark, an
+ *   ancestor of it, or, on a page without a main landmark, an element
+ *   holding at least half of the body's text. Whether the orientation is
+ *   essential, and whether the page stays usable, is left to a person.
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
  *   merely the presence of a `rotate()` function: a small decorative icon
@@ -38,11 +48,16 @@
  *   security model) and are skipped, same class of limitation as any
  *   check that can only see same-origin/inspectable content (compare
  *   `iframe-focusable-content`).
- * - Not per-element: this is a whole-document/whole-stylesheet concern,
- *   so occurrences are reported against `document.documentElement`,
+ * - A rotation lock is not decided per element: this is a
+ *   whole-document/whole-stylesheet concern, so its occurrences are
+ *   reported against `document.documentElement`,
  *   matching the "whole-document checks" precedent documented in
  *   `docs/RULE_AUTHORING.md` §11.2 (e.g. `aria-hidden-body`,
- *   `meta-viewport-zoom-enabled`).
+ *   `meta-viewport-zoom-enabled`). A hidden-content finding is reported
+ *   against the hidden element.
+ * - The rotation lock stays a failure, as in ACT b33eff, which assumes the
+ *   orientation is not essential; a person reviewing an essential lock (a
+ *   piano keyboard, a cheque scan) can set that finding aside.
  */
 
 const id = 'css-orientation-lock';
@@ -50,7 +65,7 @@ const id = 'css-orientation-lock';
 const meta = {
   title: 'CSS must not lock the page to a single orientation',
   description:
-    'Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.',
+    "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
   i18n: {
     titleKey: 'cssOrientationLock_title',
     descriptionKey: 'cssOrientationLock_description'
@@ -228,17 +243,50 @@ function runInPage(ctx) {
     return m.includes('orientation') && (m.includes('portrait') || m.includes('landscape'));
   }
 
-  function scanRuleList(rules, mediaText, findings) {
+  function hidesContent(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    const display = trim(styleDecl.getPropertyValue('display')).toLowerCase();
+    const visibility = trim(styleDecl.getPropertyValue('visibility')).toLowerCase();
+    return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
+  }
+
+  function scanRuleList(rules, mediaText, findings, hidings) {
     if (!rules) return;
     for (const r of rules) {
-      if (!r) continue;
-      if (r.type === CSS_STYLE_RULE && isLockingRotation(r.style)) {
+      if (!r || r.type !== CSS_STYLE_RULE) continue;
+      if (isLockingRotation(r.style)) {
         findings.push({ mediaText, selectorText: trim(r.selectorText) });
+      }
+      if (r.selectorText && hidesContent(r.style)) {
+        hidings.push({ mediaText, selectorText: trim(r.selectorText) });
       }
     }
   }
 
+  // Whether an element hidden by an orientation block holds the page's
+  // content: the root, the body, the main landmark or an ancestor of it, or,
+  // with no main landmark, most of the body's text.
+  function textLength(el) {
+    return String((el && el.textContent) || '').replace(/\s+/g, '').length;
+  }
+  let mainEl = null;
+  try {
+    mainEl = document.querySelector('main, [role="main"]');
+  } catch {
+    mainEl = null;
+  }
+  const bodyTextLength = document.body ? textLength(document.body) : 0;
+
+  function holdsPageContent(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const tag = String(el.localName || '').toLowerCase();
+    if (tag === 'html' || tag === 'body') return true;
+    if (mainEl) return el === mainEl || (typeof el.contains === 'function' && el.contains(mainEl));
+    return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
+  }
+
   const findings = [];
+  const hidings = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
 
@@ -261,7 +309,7 @@ function runInPage(ctx) {
         if (!rule2 || rule2.type !== CSS_MEDIA_RULE) continue;
         const mediaText = rule2.media ? rule2.media.mediaText : '';
         if (!isOrientationMedia(mediaText)) continue;
-        scanRuleList(rule2.cssRules, mediaText, findings);
+        scanRuleList(rule2.cssRules, mediaText, findings, hidings);
       }
     }
   } catch {
@@ -270,8 +318,90 @@ function runInPage(ctx) {
 
   const scanTarget = document.documentElement || document.body || null;
 
+  function unreadableSheetsOccurrence(count) {
+    return helpers.reportOccurrence(scanTarget, {
+      summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+      hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+        hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+        params: { count: String(count) }
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed: 'The contents of the stylesheets this scan could not read.',
+        evidence: { unreadableSheetCount: count, reasonCode: 'STYLESHEETS_NOT_READABLE' }
+      },
+      data: {
+        details: {
+          reasonCode: 'STYLESHEETS_NOT_READABLE',
+          unreadableSheetCount: count
+        }
+      }
+    });
+  }
+
+  // Orientation blocks hiding the page's content (F100): one question per
+  // hidden element.
+  const hiddenContent = [];
+  const seenHidden = new Set();
+  for (const h of hidings) {
+    let matched;
+    try {
+      matched = Array.from(document.querySelectorAll(h.selectorText));
+    } catch {
+      matched = [];
+    }
+    for (const el of matched) {
+      if (seenHidden.has(el) || !holdsPageContent(el)) continue;
+      seenHidden.add(el);
+      hiddenContent.push({ el, mediaText: h.mediaText, selectorText: h.selectorText });
+    }
+  }
+  const hiddenContentOccurrences = hiddenContent.map((f) =>
+    helpers.reportOccurrence(f.el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `A "${f.mediaText}" media query hides "${f.selectorText}", which holds the page's main content, so the page may not be usable in that orientation.`,
+      hint: 'Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_hidesContent',
+        hintKey: 'cssOrientationLock_hint_cantTell_hidesContent',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      uncertainty: {
+        code: 'judgement-required',
+        needed:
+          'Whether the page stays usable in that orientation, and whether one orientation is essential.',
+        evidence: {
+          mediaText: f.mediaText,
+          selectorText: f.selectorText,
+          reasonCode: 'ORIENTATION_MEDIA_HIDES_CONTENT'
+        }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_HIDES_CONTENT',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
+      }
+    })
+  );
+
   // A lock found in a readable sheet is still a lock, so `fail` outranks the
   // uncertainty below.
+  if (!findings.length && hiddenContentOccurrences.length) {
+    const unreadable =
+      unreadableSheetCount > 0 ? [unreadableSheetsOccurrence(unreadableSheetCount)] : [];
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: 'low',
+      occurrences: hiddenContentOccurrences.concat(unreadable)
+    };
+  }
+
   if (!findings.length) {
     if (unreadableSheetCount > 0) {
       return {
@@ -279,28 +409,7 @@ function runInPage(ctx) {
         outcome: 'cantTell',
         severity: rule.defaultSeverity || 'serious',
         confidence: 'low',
-        occurrences: [
-          helpers.reportOccurrence(scanTarget, {
-            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
-            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
-            i18n: {
-              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
-              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
-              params: { count: String(unreadableSheetCount) }
-            },
-            uncertainty: {
-              code: 'not-computable',
-              needed: 'The contents of the stylesheets this scan could not read.',
-              evidence: { unreadableSheetCount, reasonCode: 'STYLESHEETS_NOT_READABLE' }
-            },
-            data: {
-              details: {
-                reasonCode: 'STYLESHEETS_NOT_READABLE',
-                unreadableSheetCount
-              }
-            }
-          })
-        ]
+        occurrences: [unreadableSheetsOccurrence(unreadableSheetCount)]
       };
     }
     if (sheetCount === 0) {
@@ -332,6 +441,19 @@ function runInPage(ctx) {
       }
     })
   );
+
+  if (hiddenContentOccurrences.length) {
+    // See helpers.resolveTieredOutcome: the lock fails, and the hidden-content
+    // questions are kept beside it.
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(
+        occurrences,
+        hiddenContentOccurrences,
+        rule.defaultSeverity || 'serious'
+      )
+    };
+  }
 
   return {
     ruleId: rule.ruleId,

@@ -53,7 +53,8 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     'img_d_09',
     'svg_d_02',
     'svg_d_03',
-    'canvas_d_02'
+    'canvas_d_02',
+    'img_d_13' // alt=" " is not the decorative marker; img-alt-present fails it
   ];
 
   for (const id of expected) {
@@ -186,4 +187,25 @@ test(`${RULE_ID}: a display:none img is not applicable (not visible at all)`, ()
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// Only a literally empty alt is the decorative marker (HTML-AAM): alt=" "
+// keeps the img role with an empty name, which img-alt-present fails. Asking
+// "is it decorative?" here would contradict that failure.
+test(`${RULE_ID}: alt=" " is not treated as decorative; img-alt-present fails it`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="a" src="a.png" alt=" "></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, {
+      engineOptions,
+      ...(engineOptions.profile ? {} : { runOnly: [RULE_ID, 'img-alt-present'] })
+    });
+    assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+    const present = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
+    if (engineOptions.profile === 'rgaa-4.1.2') {
+      const tests = present.meta.normativeMappings
+        .filter((m) => m.standard === 'RGAA')
+        .map((m) => m.requirement);
+      assert.ok(tests.includes('1.1.1'), tests.join(','));
+    }
+  }
 });

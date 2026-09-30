@@ -52,6 +52,7 @@ test(`${RULE_ID}: every attribute RGAA lists is caught`, () => {
     'align',
     'alink',
     'background',
+    'basefont',
     'bgcolor',
     'border',
     'cellpadding',
@@ -102,6 +103,38 @@ test(`${RULE_ID}: SVG and MathML content is not checked`, () => {
   assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: hidden content is part of the generated source and is checked`, () => {
+  const html = page(
+    '<div hidden><p id="h1" align="center">x</p></div>' +
+      '<p id="h2" style="display:none" align="center">y</p>' +
+      '<p id="b" basefont="3">z</p>' +
+      '<template><p align="center">t</p></template>'
+  );
+  for (const opts of [RUN, { ...RUN, engineOptions: { includeHiddenElements: true } }]) {
+    const rule = assertRule(runa11yCoreOnHtml(html, opts), RULE_ID, 'fail', {
+      minOccurrences: 3,
+      maxOccurrences: 3
+    });
+    assert.deepEqual(attributesOf(rule, 'h1'), ['align']);
+    assert.deepEqual(attributesOf(rule, 'h2'), ['align']);
+    assert.deepEqual(attributesOf(rule, 'b'), ['basefont']);
+  }
+  assertRule(
+    runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } }),
+    RULE_ID,
+    'fail',
+    {
+      minOccurrences: 3,
+      maxOccurrences: 3
+    }
+  );
+});
+
+test(`${RULE_ID}: excludeSelectors still apply to hidden content`, () => {
+  const html = page('<div id="skip" hidden><p align="center">x</p></div>');
+  assertRule(runa11yCoreOnHtml(html, { ...RUN, excludeSelectors: ['#skip'] }), RULE_ID, 'pass');
+});
+
 test(`${RULE_ID}: opt-in, so a default run does not include it`, () => {
   const result = runa11yCoreOnHtml(page('<p align="center">x</p>'));
   assert.ok(!result.checksResults.some((r) => r.ruleId === RULE_ID));
@@ -115,13 +148,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentational-attributes-abs
     'presentational-attributes-absent-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
   assert.deepEqual(ids, [
     'pat_case_01',
     'pat_case_02',
     'pat_case_03',
     'pat_case_04',
-    'pat_case_05'
+    'pat_case_05',
+    'pat_case_09',
+    'pat_case_10',
+    'pat_case_11'
   ]);
 });

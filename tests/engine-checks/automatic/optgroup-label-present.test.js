@@ -39,12 +39,18 @@ test(`${RULE_ID}: a missing label fails`, () => {
   assert.equal(occ.i18n.summaryKey, 'optgroupLabelPresent_summary_fail_missing');
 });
 
-test(`${RULE_ID}: an empty or whitespace-only label fails as empty`, () => {
+// RGAA 11.8.2 only asks whether the attribute exists; an empty label is a
+// relevance question for 11.8.3.
+test(`${RULE_ID}: an empty or whitespace-only label attribute passes`, () => {
   for (const label of ['', '   ']) {
     const html = page(select(`<optgroup label="${label}"><option>Apple</option></optgroup>`));
-    const rule = assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'fail', { minOccurrences: 1 });
-    assert.equal(rule.occurrences[0].data.details.reasonCode, 'emptyLabel');
-    assert.equal(rule.occurrences[0].i18n.summaryKey, 'optgroupLabelPresent_summary_fail_empty');
+    assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
+    assertRule(
+      runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } }),
+      RULE_ID,
+      'pass',
+      { maxOccurrences: 0 }
+    );
   }
 });
 
@@ -61,7 +67,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/optgroup-label-present-all-sc
     'optgroup-label-present-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, ['ogl_case_02', 'ogl_case_03']);
+  assert.deepEqual(ids, ['ogl_case_02']);
 });

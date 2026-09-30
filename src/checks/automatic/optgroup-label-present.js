@@ -11,21 +11,20 @@
  *   Applies to <optgroup> elements inside a <select>. A page with none is
  *   notApplicable.
  * @expectation
- *   The <optgroup> has a label attribute with non-whitespace text (RGAA
- *   11.8.2). Whether that label describes the group is RGAA 11.8.3, a human
- *   judgement this rule does not make.
+ *   The <optgroup> has a label attribute (RGAA 11.8.2: « vérifier qu'il
+ *   possède un attribut label »). An empty or whitespace-only label meets
+ *   11.8.2; that it names nothing is a relevance failure under 11.8.3,
+ *   which this rule does not judge.
  * @implementation-notes
  * - Opt-in (tag `rgaa`): WCAG does not require the attribute, so the rule
  *   runs only under the rgaa-4.1.2 profile, the `rgaa` tag or its own id.
- * - An empty label fails with its own reasonCode: RGAA only asks for the
- *   attribute, but an empty one names the group no better than none.
  */
 
 const id = 'optgroup-label-present';
 
 const meta = {
   title: 'Option groups have a label',
-  description: 'Checks that every <optgroup> in a <select> has a non-empty label attribute.',
+  description: 'Checks that every <optgroup> in a <select> has a label attribute.',
   i18n: {
     titleKey: 'optgroupLabelPresent_title',
     descriptionKey: 'optgroupLabelPresent_description'
@@ -55,25 +54,19 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
     applicableCount += 1;
 
-    const hasLabel = el.hasAttribute('label');
-    if (hasLabel && String(el.getAttribute('label')).trim()) continue;
+    if (el.hasAttribute('label')) continue;
 
-    const reasonCode = hasLabel ? 'emptyLabel' : 'missingLabel';
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: hasLabel
-          ? 'This option group has an empty label attribute.'
-          : 'This option group has no label attribute.',
+        summary: 'This option group has no label attribute.',
         hint: 'Give the <optgroup> a label attribute naming what its options have in common.',
         i18n: {
-          summaryKey: hasLabel
-            ? 'optgroupLabelPresent_summary_fail_empty'
-            : 'optgroupLabelPresent_summary_fail_missing',
+          summaryKey: 'optgroupLabelPresent_summary_fail_missing',
           hintKey: 'optgroupLabelPresent_hint_fail',
           params: {}
         },
         data: {
-          details: { reasonCode },
+          details: { reasonCode: 'missingLabel' },
           visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
         }
       })

@@ -40,6 +40,15 @@ open shadow roots are in scope and let this helper honor the caller's choice.
 const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
 ```
 
+### `queryAllSource(selector)` → `Element[]`
+The same query as `queryAllSmart` (shadow roots per `includeShadowDom`, context scope,
+`excludeSelectors`) with no hidden-content filter: elements inside `hidden`,
+`display:none`, closed `<details>` and the like are returned whatever
+`includeHiddenElements` says. Only for rules that judge the markup itself rather than
+what is rendered, such as RGAA's tests on the generated source (8.2.1, 10.1.1, 10.1.2).
+`<template>` content is not in the DOM tree and stays out. A WCAG rule should not use
+it: hidden content is not presented to users.
+
 ### `composedParent(node)` → `Node | null`
 One step up the *flat tree*: `assignedSlot` first (a slotted node's rendered parent is
 its slot, not its light-DOM `parentNode`), then `parentNode`, then `.host` once you're
@@ -176,7 +185,9 @@ a name exists.
 Recursive "name from content" (accname step 2F): walks children using each child's
 *own* accessible name (not just literal text), so `<a href="…"><img alt="Company
 Name"></a>` and `<button><span aria-label="Close"></span></button>` both name correctly.
-A plain `TreeWalker(SHOW_TEXT)` walk misses both.
+A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
+speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
+`aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
 Real `<label>` element(s) associated with `el` — a `<label for="id">` pointing at it,
@@ -185,6 +196,15 @@ native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 `.labels` is an expensive whole-document walk per element (`.control` resolution is
 another one), which used to dominate whole-engine runtime on form-heavy pages. Use this
 whenever a rule needs the actual label element(s), not just a yes/no.
+
+### `getNativeHostNameInfo(el, ctx, opts)` → `{ present, value, mechanism }`
+The name an element gets from its HTML host markup rather than from ARIA: an associated
+`<label>` on a labelable element, the first child `<legend>` of a `<fieldset>`, the first
+child `<caption>` of a `<table>`, and, only with `opts.placeholder: true`, the
+`placeholder` of a text-like `<input>` or a `<textarea>` (HTML-AAM's last name source).
+`mechanism` is `'label'`, `'legend'`, `'caption'`, `'placeholder'` or `'none'`. For rules
+on name-from-author-only roles (`role="textbox"`, `"slider"`, `"radiogroup"`, …) whose
+ARIA check does not read host markup, although the browser still computes it.
 
 ### `labelContributesAccessibleName(labelEl)` → `boolean`
 Whether a `<label>` element itself carries text that would name its control: own

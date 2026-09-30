@@ -313,7 +313,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 14, maxOccurrences: 14 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   const expectedFailIds = [
     'btn_case_01',
@@ -329,7 +329,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_28',
     'btn_case_30',
     'btn_case_32',
-    'btn_case_33'
+    'btn_case_33',
+    'btn_case_35'
   ];
 
   const expectedNoOccIds = [
@@ -352,7 +353,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_18g',
     'btn_case_27',
     'btn_case_29',
-    'btn_case_31'
+    'btn_case_31',
+    'btn_case_34'
   ];
 
   for (const id of expectedFailIds) {
@@ -360,6 +362,31 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+});
+
+test(`${RULE_ID}: an svg's <title> child names the button through its content`, () => {
+  for (const svg of [
+    '<svg role="img"><title>Rechercher</title></svg>',
+    '<svg><title>Rechercher</title><path d="M0 0h1"/></svg>'
+  ]) {
+    const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><form><button id="a">${svg}</button></form></body></html>`;
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    }
+  }
+});
+
+test(`${RULE_ID}: an svg <title> does not name the button when the svg is aria-hidden or presentational`, () => {
+  for (const svg of [
+    '<svg aria-hidden="true"><title>Rechercher</title></svg>',
+    '<svg role="presentation"><title>Rechercher</title></svg>',
+    '<svg><g><title>Rechercher</title></g></svg>'.replace('<g>', '<g role="none">')
+  ]) {
+    const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><button id="a">${svg}</button></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   }
 });
 

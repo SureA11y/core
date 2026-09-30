@@ -223,12 +223,14 @@
       "ARIA_ATTR_VALUE_TARGET_ABSENT"
     ],
     "autocomplete-valid": [
+      "AUTOCOMPLETE_FIELD_CONTROL_MISMATCH",
       "AUTOCOMPLETE_VALUE_INVALID"
     ],
     "avoid-inline-spacing": [
       "INLINE_SPACING_IMPORTANT",
       "INLINE_SPACING_NOT_RESOLVABLE",
-      "INLINE_SPACING_NO_SOFT_WRAP"
+      "INLINE_SPACING_NO_SOFT_WRAP",
+      "INLINE_SPACING_SHORT_TEXT"
     ],
     "binary-control-name-present": [
       "name_missing"
@@ -275,15 +277,17 @@
       "cssHiddenTabbable_runtimeRedirect_needsReview"
     ],
     "css-orientation-lock": [
+      "ORIENTATION_MEDIA_HIDES_CONTENT",
       "ORIENTATION_MEDIA_ROTATE_TRANSFORM",
       "STYLESHEETS_NOT_READABLE"
     ],
     "definition-list-children-valid": [
+      "DL_DT_DD_ORDER",
       "DL_INVALID_CHILD",
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "DEPRECATED_NON_STOPPABLE_ELEMENT"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
     ],
     "dialog-name-present": [
       "name_missing"
@@ -428,6 +432,7 @@
       "LANDMARK_NOT_UNIQUE"
     ],
     "layout-table-no-data-markup": [
+      "dataLikeTableMarkedLayout",
       "dataMarkupInLayoutTable"
     ],
     "letters-spaced-with-spaces": [
@@ -435,7 +440,8 @@
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
-      "COLOR_ONLY_DIFFERENTIATION"
+      "COLOR_ONLY_DIFFERENTIATION",
+      "LINK_COLOR_CONTRAST_ONLY"
     ],
     "link-name-present": [
       "name_missing"
@@ -476,6 +482,7 @@
       "name_missing"
     ],
     "mouse-only-event-handlers": [
+      "MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE",
       "MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT"
     ],
     "nested-interactive-controls-absent": [
@@ -488,7 +495,6 @@
       "officeDocument"
     ],
     "optgroup-label-present": [
-      "emptyLabel",
       "missingLabel"
     ],
     "option-name-present": [
@@ -613,10 +619,12 @@
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [
-      "CAPTIONS_TRACK_NOT_DETECTED"
+      "CAPTIONS_TRACK_NOT_DETECTED",
+      "SUBTITLES_TRACK_ONLY"
     ],
     "video-captions-track-kind": [
-      "noCaptionsKind"
+      "noCaptionsKind",
+      "subtitlesMayBeTranslation"
     ]
   }
 }

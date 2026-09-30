@@ -75,6 +75,20 @@ test('slider-name-present: role=slider missing name => fail', () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: an associated <label> names any labelable host with role="slider"`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><label for="a">Volume</label><input id="a" type="number" role="slider"><label>Balance <input type="number" role="slider"></label></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a placeholder names a text-like <input role="slider">`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input type="number" role="slider" placeholder="Volume"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test('slider-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden', () => {
   const html = `<!doctype html><html><body>
     <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
@@ -115,6 +129,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/slider-name-present-all-scena
   ];
 
   const expectedNoOccIds = [
+    'slider_case_24',
+    'slider_case_25',
     // native input[type=range] with no explicit role: owned by
     // form-control-programmatic-label-present
     'slider_case_01',
@@ -168,10 +184,8 @@ test("slider-name-present: label association with empty content falls back to th
   // content is empty, never checking the label's own title attribute, the
   // same final-fallback step the general accname algorithm applies to any
   // element being asked for its name, regardless of why.
-  // Uses a native input[type=range], not role="slider" on a <div>: native
-  // <label for> association is only checked for native range inputs
-  // (role="slider" is name-from-author-only per WAI-ARIA and doesn't use
-  // native label association at all).
+  // Uses a native input[type=range], not role="slider" on a <div>: a
+  // <label> only names a labelable element.
   const html = `<!doctype html><html><body><label for='a' title='Search'></label><input id='a' type='range' role='slider'/></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {

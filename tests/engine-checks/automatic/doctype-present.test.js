@@ -34,6 +34,18 @@ test(`${RULE_ID}: W3C recommended legacy doctypes pass`, () => {
   }
 });
 
+test(`${RULE_ID}: the W3C recommended mixed-namespace and RDFa doctypes pass`, () => {
+  for (const doctype of [
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0 plus SVG 1.1//EN" "http://www.w3.org/2002/04/xhtml-math-svg/xhtml-math-svg.dtd">',
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN" "http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd">',
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">',
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.1//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-2.dtd">',
+    '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01+RDFa 1.1//EN" "http://www.w3.org/MarkUp/DTD/html401-rdfa11-1.dtd">'
+  ]) {
+    assertRule(scan(doctype + BODY), RULE_ID, 'pass', { maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: no doctype fails as missing`, () => {
   const rule = assertRule(scan(BODY), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];

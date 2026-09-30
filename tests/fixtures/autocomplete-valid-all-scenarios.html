@@ -31,8 +31,8 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — PASS: shipping + field name</div>
-    <input autocomplete="shipping street-address" id="acv_case_03">
+    <div class="case-title">03 — PASS: shipping + field name, on a textarea (street-address is multiline)</div>
+    <textarea autocomplete="shipping street-address" id="acv_case_03"></textarea>
   </div>
 
   <div class="case" id="case_04">
@@ -50,6 +50,28 @@
   <div class="case" id="case_06">
     <div class="case-title">06 — FAIL: unrecognized tokens</div>
     <input autocomplete="foo bar" id="acv_case_06">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: street-address on a single-line input</div>
+    <input autocomplete="street-address" id="acv_case_08">
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: email on a number input</div>
+    <input type="number" autocomplete="email" id="acv_case_09">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: bday-day on a number input</div>
+    <input type="number" autocomplete="bday-day" id="acv_case_10">
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: invalid value on a control disabled by its fieldset</div>
+    <fieldset disabled>
+      <label>Nom <input autocomplete="nom" id="acv_case_11"></label>
+    </fieldset>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

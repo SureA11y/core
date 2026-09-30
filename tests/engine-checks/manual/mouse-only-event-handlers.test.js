@@ -48,6 +48,43 @@ test(`${RULE_ID}: notApplicable when onmousedown is paired with onkeydown`, () =
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: onfocus on an element that cannot take focus is not an equivalent`, () => {
+  const html = `<!doctype html><html><body><div id="m" onmouseover="show()" onfocus="show()">Menu</div></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = rule.occurrences[0];
+    assert.ok(hasOccurrenceForId(rule, 'm'));
+    assert.equal(
+      occ.data.details.reasonCode,
+      'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE'
+    );
+    assert.deepStrictEqual(occ.data.details.keyboardAttrs, ['onfocus']);
+    assert.equal(occ.i18n.summaryKey, 'mouseOnlyEventHandlers_summary_cantTell_notFocusable');
+    assert.equal(
+      occ.summary,
+      'This element has onmouseover and onfocus, but it cannot take keyboard focus, so the keyboard handlers never run.'
+    );
+  }
+});
+
+test(`${RULE_ID}: the same element with tabindex="0" is notApplicable`, () => {
+  const html = `<!doctype html><html><body><div onmouseover="show()" onfocus="show()" tabindex="0">Menu</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a key handler counts when a descendant can take focus, a focus handler does not`, () => {
+  const keyHtml = `<!doctype html><html><body><div onmouseover="show()" onkeydown="show()"><a href="/x">Menu</a></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(keyHtml, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+
+  const focusHtml = `<!doctype html><html><body><div onmouseover="show()" onfocus="show()"><a href="/x">Menu</a></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(focusHtml, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: notApplicable when the pointer-only handler is on a hidden element`, () => {
   const html = `<!doctype html><html><body><div onmouseover="show()" hidden>hover</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -74,10 +111,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/mouse-only-event-handlers-all
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFlaggedIds = ['moeh_case_01', 'moeh_case_02'];
-  const expectedNoOccIds = ['moeh_case_03', 'moeh_case_04', 'moeh_case_05', 'moeh_case_06'];
+  const expectedFlaggedIds = ['moeh_case_01', 'moeh_case_02', 'moeh_case_07'];
+  const expectedNoOccIds = [
+    'moeh_case_03',
+    'moeh_case_04',
+    'moeh_case_05',
+    'moeh_case_06',
+    'moeh_case_08'
+  ];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

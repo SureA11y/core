@@ -111,6 +111,31 @@ test('cantTell for a generic title from the GENERIC_TITLES set ("Home")', () => 
   assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_generic');
 });
 
+test('cantTell for a generic title the parser left in <body>, as for one in <head>', () => {
+  // document.title reads the first <title> anywhere in the document, so a
+  // <title> outside <head> is still the page title (page-title-present passes
+  // the same page).
+  const html =
+    '<!doctype html><html lang="fr"><head></head><body><title>Accueil</title><p>Bonjour</p></body></html>';
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const occ = getFirstOccurrence(rule);
+    assert.strictEqual(occ.data.details.reasonCode, 'genericTitle');
+    assert.ok(occ.html.includes('Accueil'));
+  }
+});
+
+test('an inline <svg><title> is not read as the page title', () => {
+  const html =
+    '<!doctype html><html lang="en"><head></head><body><svg><title>Home</title></svg><p>Hi</p></body></html>';
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test('cantTell for a generic title from the GENERIC_TITLES set ("Untitled")', () => {
   const html = withTitle('Untitled');
 

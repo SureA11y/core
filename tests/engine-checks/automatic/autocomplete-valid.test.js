@@ -65,10 +65,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/autocomplete-valid-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
-  assert.ok(hasOccurrenceForId(rule, 'acv_case_05'));
-  assert.ok(hasOccurrenceForId(rule, 'acv_case_06'));
-  for (const id of ['acv_case_01', 'acv_case_02', 'acv_case_03', 'acv_case_04', 'acv_case_07']) {
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  for (const id of ['acv_case_05', 'acv_case_06', 'acv_case_08', 'acv_case_09']) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+  }
+  for (const id of [
+    'acv_case_01',
+    'acv_case_02',
+    'acv_case_03',
+    'acv_case_04',
+    'acv_case_07',
+    'acv_case_10',
+    'acv_case_11'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
@@ -111,4 +120,70 @@ test(`${RULE_ID}: full token order is accepted`, () => {
       maxOccurrences: 0
     });
   }
+});
+
+// The HTML Standard gives each autofill field name a control group, and each
+// group is allowed only on some input types.
+test(`${RULE_ID}: fail when the field name does not suit the input type`, () => {
+  for (const markup of [
+    '<input id="a" autocomplete="street-address">',
+    '<input id="a" type="text" autocomplete="shipping street-address">',
+    '<input id="a" type="number" autocomplete="email">',
+    '<input id="a" type="date" autocomplete="bday-day">',
+    '<input id="a" type="email" autocomplete="name">',
+    '<input id="a" type="password" autocomplete="username">',
+    '<input id="a" type="tel" autocomplete="tel-national">'
+  ]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+      const html = `<!doctype html><html><body>${markup}</body></html>`;
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.ok(hasOccurrenceForId(rule, 'a'), markup);
+      assert.equal(
+        rule.occurrences[0].data.details.reasonCode,
+        'AUTOCOMPLETE_FIELD_CONTROL_MISMATCH',
+        markup
+      );
+    }
+  }
+});
+
+test(`${RULE_ID}: pass when the field name suits the control`, () => {
+  for (const markup of [
+    '<textarea autocomplete="street-address"></textarea>',
+    '<select autocomplete="shipping street-address"><option>a</option></select>',
+    '<input type="search" autocomplete="bday-day">',
+    '<input type="number" autocomplete="bday-day">',
+    '<input type="email" autocomplete="username">',
+    '<input type="email" autocomplete="work email">',
+    '<input type="password" autocomplete="current-password">',
+    '<input type="tel" autocomplete="home tel">',
+    '<input type="url" autocomplete="photo">',
+    '<input type="month" autocomplete="cc-exp">',
+    '<input type="date" autocomplete="bday">',
+    '<input type="bogus" autocomplete="name">',
+    '<input type="time" autocomplete="name">'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: notApplicable for a control disabled by a disabled fieldset`, () => {
+  const html = `<!doctype html><html><body><fieldset disabled><label>Nom <input autocomplete="nom"></label></fieldset></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a control in the first legend of a disabled fieldset is still checked`, () => {
+  const html = `<!doctype html><html><body><fieldset disabled><legend><input id="a" autocomplete="nom"></legend></fieldset></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
 });

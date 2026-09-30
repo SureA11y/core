@@ -17,6 +17,10 @@
  * Notes:
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
+ * - Disabled controls are not focusable, including those disabled by an ancestor
+ *   <fieldset disabled> (matched with :disabled).
+ * - <area href> has no box of its own, so it is judged by the <img usemap> that uses its
+ *   <map>: it counts as focusable when such an image is rendered and not inert.
  * - Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip)
  *   remain in-scope and will be flagged when focusable.
  */
@@ -525,8 +529,68 @@ function runInPage(ctx) {
   // DOM-visibility gate to avoid false positives:
   // Exclude structural/CSS hidden cases that prevent focus (display:none, visibility:hidden, hidden attr, etc.).
   // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
+  // Style-only visibility gate. opacity:0 does not count as hidden: the
+  // element can still take focus.
+  function isRenderedForFocus(el) {
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      if (vis && vis.eligible === false) {
+        const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
+        const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
+        if (nonOpacity.length) return false;
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  }
+
+  // <area href> generates no box of its own (browsers give it display:none),
+  // so the visibility gate cannot be applied to it. It takes focus when its
+  // <map> is used by an <img usemap> that is rendered and not inert; judge it
+  // by that image instead.
+  function isFocusableArea(el) {
+    if (!trim(el.getAttribute('href'))) return false;
+    let map;
+    try {
+      map = el.closest ? el.closest('map') : null;
+    } catch {
+      map = null;
+    }
+    if (!map) return false;
+    const name = trim(map.getAttribute('name') || map.getAttribute('id'));
+    if (!name) return false;
+    const scope = el.getRootNode ? el.getRootNode() : document;
+    if (!scope || typeof scope.querySelectorAll !== 'function') return false;
+    let imgs;
+    try {
+      imgs = Array.from(scope.querySelectorAll('img[usemap]'));
+    } catch {
+      imgs = [];
+    }
+    const want = name.toLowerCase();
+    for (const img of imgs) {
+      const usemap = lower(img.getAttribute('usemap')).replace(/^#/, '');
+      if (usemap !== want) continue;
+      if (hasInertAncestor(img)) continue;
+      if (isRenderedForFocus(img)) return true;
+    }
+    return false;
+  }
+
   function isActuallyFocusable(el) {
     if (!el || !el.getAttribute) return false;
+
+    // An explicit negative tabindex takes the area out of the tab order too.
+    if (lower(el.tagName || '') === 'area') {
+      const ti = trim(el.getAttribute('tabindex'));
+      if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
+      return isFocusableArea(el);
+    }
 
     // Hard blockers that should always win (even if fallback logic would say "focusable")
     if (hasInertAncestor(el)) return false;
@@ -564,7 +628,7 @@ function runInPage(ctx) {
     const tag = lower(el.tagName || '');
     let fallbackFocusable = false;
 
-    if (tag === 'a' || tag === 'area') {
+    if (tag === 'a') {
       const href = trim(el.getAttribute('href'));
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
@@ -601,23 +665,7 @@ function runInPage(ctx) {
 
     // 2) exclude non-rendered / non-visible-by-style blockers
     // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
-    if (isDomVisibleEligible) {
-      try {
-        const vis = isDomVisibleEligible(el, ctx, {
-          visibilityMode: 'styleOnly',
-          disableGeometry: true
-        });
-        if (vis && vis.eligible === false) {
-          const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
-          const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
-          if (nonOpacity.length) return false;
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    return true;
+    return isRenderedForFocus(el);
   }
 
   function hasInertAncestor(el) {
@@ -635,6 +683,14 @@ function runInPage(ctx) {
   }
 
   function isDisabledFormControl(el) {
+    try {
+      // :disabled also covers a control disabled by an ancestor
+      // <fieldset disabled> (outside its first <legend>), which the
+      // `disabled` IDL attribute does not reflect.
+      if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+    } catch {
+      // ignore
+    }
     try {
       // Covers button/input/select/textarea/option/optgroup/fieldset etc.
       if (typeof el.disabled === 'boolean' && el.disabled) return true;

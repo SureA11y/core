@@ -91,16 +91,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/definition-list-children-vali
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
-  const expectedFailIds = ['dlv_case_03', 'dlv_case_05', 'dlv_case_09', 'dlv_case_10'];
+  const expectedFailIds = [
+    'dlv_case_03',
+    'dlv_case_05',
+    'dlv_case_09',
+    'dlv_case_10',
+    'dlv_case_11',
+    'dlv_case_12',
+    'dlv_case_13'
+  ];
   const expectedNoOccIds = [
     'dlv_case_01',
     'dlv_case_02',
     'dlv_case_04',
     'dlv_case_06',
     'dlv_case_07',
-    'dlv_case_08'
+    'dlv_case_08',
+    'dlv_case_14'
   ];
 
   for (const id of expectedFailIds) {
@@ -109,4 +118,50 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/definition-list-children-vali
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: fail when the dt/dd groups are out of order`, () => {
+  for (const markup of [
+    '<dl id="a"><dd>b</dd><dt>a</dt></dl>',
+    '<dl id="a"><dt>a</dt><dd>b</dd><dt>c</dt></dl>',
+    '<dl id="a"><div><dd>b</dd></div><div><dt>a</dt></div></dl>'
+  ]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+      const html = `<!doctype html><html><body>${markup}</body></html>`;
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.ok(hasOccurrenceForId(rule, 'a'), markup);
+      assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_DT_DD_ORDER', markup);
+    }
+  }
+});
+
+test(`${RULE_ID}: pass for several dt then several dd, repeated`, () => {
+  const html = `<!doctype html><html><body><dl><dt>a</dt><dt>b</dt><dd>1</dd><dd>2</dd><dt>c</dt><dd>3</dd></dl></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: fail for non-whitespace text directly inside the dl or a wrapping div`, () => {
+  for (const markup of [
+    '<dl id="a">hello</dl>',
+    '<dl id="a"><dt>a</dt>stray<dd>b</dd></dl>',
+    '<dl id="a"><div>stray<dt>a</dt><dd>b</dd></div></dl>'
+  ]) {
+    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+      const html = `<!doctype html><html><body>${markup}</body></html>`;
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.equal(rule.occurrences[0].data.details.reasonCode, 'DL_INVALID_CHILD', markup);
+      assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['#text']);
+    }
+  }
+});
+
+test(`${RULE_ID}: whitespace between groups is not a text child`, () => {
+  const html = `<!doctype html><html><body><dl>\n  <dt>a</dt>\n  <dd>b</dd>\n</dl></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
 });

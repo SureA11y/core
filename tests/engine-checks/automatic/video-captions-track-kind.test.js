@@ -37,11 +37,11 @@ test(`${RULE_ID}: a video with no subtitles or captions track is not applicable`
   }
 });
 
-test(`${RULE_ID}: subtitles only fail, and a track without kind counts as subtitles`, () => {
+test(`${RULE_ID}: subtitles only in the page language fail, and a track without kind counts as subtitles`, () => {
   for (const [html, kinds] of [
-    [page(video('kind="subtitles"')), ['subtitles']],
-    [page(video('')), ['subtitles']],
-    [page(video('kind=""', 'kind="chapters"')), ['subtitles']]
+    [page(video('kind="subtitles" srclang="en"')), ['subtitles']],
+    [page(video('srclang="en-GB"')), ['subtitles']],
+    [page(video('kind="" srclang="en"', 'kind="chapters"')), ['subtitles']]
   ]) {
     const rule = assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'fail', {
       minOccurrences: 1,
@@ -68,7 +68,58 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/video-captions-track-kind-all
     'video-captions-track-kind-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
-  const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, ['vct_case_01', 'vct_case_02']);
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const ids = (tier) =>
+    rule.occurrences
+      .filter((o) => o.occurrenceOutcome === tier)
+      .map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
+  assert.deepEqual(ids('fail'), ['vct_case_01', 'vct_case_02', 'vct_case_07']);
+  assert.deepEqual(ids('cantTell'), ['vct_case_08']);
+});
+
+// A subtitles track in another language (or with no srclang) may be a
+// translation, which is not a caption track: RGAA 4.3.2 then does not apply.
+test(`${RULE_ID}: subtitles in another language, or without srclang, are asked about`, () => {
+  const fr = (body) =>
+    `<!doctype html><html lang="fr"><head><title>t</title></head><body>${body}</body></html>`;
+  for (const html of [
+    fr(video('kind="subtitles" srclang="en"')),
+    fr(video('kind="subtitles"')),
+    `<!doctype html><html><head><title>t</title></head><body>${video('kind="subtitles" srclang="en"')}</body></html>`
+  ]) {
+    const rule = assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const occ = rule.occurrences[0];
+    assert.equal(occ.data.details.reasonCode, 'subtitlesMayBeTranslation');
+    assert.equal(occ.uncertainty.code, 'judgement-required');
+  }
+  // The video's own lang counts, not only the page's.
+  const scoped = fr(`<div lang="en">${video('kind="subtitles" srclang="en"')}</div>`);
+  assertRule(runa11yCoreOnHtml(scoped, RUN), RULE_ID, 'fail');
+});
+
+test(`${RULE_ID}: a captions track with no src does not count as captions`, () => {
+  const fr = `<!doctype html><html lang="fr"><head><title>t</title></head><body><video controls><track kind="subtitles" srclang="fr" src="fr.vtt"><track kind="captions" src=""></video></body></html>`;
+  assertRule(runa11yCoreOnHtml(fr, RUN), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const alone = page('<video controls><track kind="captions" src=""></video>');
+  assertRule(runa11yCoreOnHtml(alone, RUN), RULE_ID, 'notApplicable');
+});
+
+test(`${RULE_ID}: under the rgaa-4.1.2 profile: translation cantTell, same-language subtitles fail (4.3.2)`, () => {
+  const fr = (body) =>
+    `<!doctype html><html lang="fr"><head><title>t</title></head><body>${body}</body></html>`;
+  const run = (html) => runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
+  const asked = assertRule(run(fr(video('kind="subtitles" srclang="en"'))), RULE_ID, 'cantTell');
+  const tests = asked.meta.normativeMappings
+    .filter((m) => m.standard === 'RGAA')
+    .map((m) => m.requirement);
+  assert.deepEqual(tests, ['4.3.2']);
+  assertRule(run(fr(video('kind="subtitles" srclang="fr"'))), RULE_ID, 'fail');
+  // Opt-in: a WCAG profile does not run it.
+  const wcag = runa11yCoreOnHtml(fr(video('kind="subtitles" srclang="fr"')), {
+    engineOptions: { profile: 'wcag22-aa' }
+  });
+  assert.ok(!wcag.checksResults.some((r) => r.ruleId === RULE_ID));
 });

@@ -330,15 +330,26 @@ test(`${RULE_ID}: role="graphics-object" (not one of the three named roles) is n
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: an unlabeled role="graphics-document" <svg> root also fails here (double coverage alongside svg-text-alternative-present, same as the existing role="img" root overlap)`, () => {
-  const html = `<!doctype html><html><body>
-    <svg id="s1" xmlns="http://www.w3.org/2000/svg" role="graphics-document">
-      <circle cx="50" cy="50" r="40"></circle>
-    </svg>
-  </body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 's1'));
+test(`${RULE_ID}: an unlabeled <svg> with role img or graphics-document is left to svg-text-alternative-present, so it is reported once`, () => {
+  for (const role of ['img', 'graphics-document', 'graphics-symbol']) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <svg id="s1" xmlns="http://www.w3.org/2000/svg" role="${role}" width="10" height="10">
+        <circle cx="5" cy="5" r="4"></circle>
+      </svg>
+    </body></html>`;
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+      const result = runa11yCoreOnHtml(html, {
+        runOnly: [RULE_ID, 'svg-text-alternative-present'],
+        engineOptions
+      });
+      assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+      const svgRule = assertRule(result, 'svg-text-alternative-present', 'fail', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
+      assert.ok(hasOccurrenceForId(svgRule, 's1'));
+    }
+  }
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-text-alternative-present-all-scenarios.html)`, () => {
@@ -368,6 +379,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-text-alternative-pre
   ];
 
   const expectedNoOccIds = [
+    'roleimg_case_26',
     'roleimg_case_02',
     'roleimg_case_03',
     'roleimg_case_04',

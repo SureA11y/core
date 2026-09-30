@@ -42,6 +42,7 @@ test(`${RULE_ID}: each kind of data table markup fails and is named`, () => {
     ['<tr><th>h</th></tr>', 'th'],
     ['<thead><tr><td>h</td></tr></thead>', 'thead'],
     ['<tfoot><tr><td>f</td></tr></tfoot>', 'tfoot'],
+    ['<colgroup><col></colgroup>', 'colgroup'],
     ['<tr><td role="rowheader">h</td></tr>', 'role="rowheader"'],
     ['<tr><td role="columnheader">h</td></tr>', 'role="columnheader"'],
     ['<tr><td scope="row">h</td></tr>', 'scope'],
@@ -110,13 +111,78 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/layout-table-no-data-markup-a
     'layout-table-no-data-markup-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
-  const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, [
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const ids = (tier) =>
+    rule.occurrences
+      .filter((o) => o.occurrenceOutcome === tier)
+      .map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
+  assert.deepEqual(ids('fail'), [
     'ltn_case_01',
     'ltn_case_02',
     'ltn_case_03',
     'ltn_case_04',
-    'ltn_case_05'
+    'ltn_case_05',
+    'ltn_case_10'
   ]);
+  assert.deepEqual(ids('cantTell'), ['ltn_case_11']);
+});
+
+// RGAA 5.8.1 lists <colgroup> with the other data table markup.
+test(`${RULE_ID}: <colgroup> in a layout table fails`, () => {
+  const html = page(
+    '<table role="presentation"><colgroup><col></colgroup><tr><td>a</td><td>b</td></tr></table>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.deepEqual(rule.occurrences[0].data.details.markup, ['colgroup']);
+});
+
+// 5.8.1 applies to layout tables. A table with a full header row or column
+// over a grid of data may be a data table given the wrong role, which is a
+// different defect, so the rule asks.
+const DATA_LIKE =
+  '<table role="presentation"><tr><th>Item</th><th>Price</th></tr><tr><td>Tea</td><td>2</td></tr><tr><td>Milk</td><td>1</td></tr></table>';
+
+test(`${RULE_ID}: a data-like table marked as layout is asked about, not failed`, () => {
+  const rule = assertRule(runa11yCoreOnHtml(page(DATA_LIKE), RUN), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.equal(occ.data.details.reasonCode, 'dataLikeTableMarkedLayout');
+  assert.deepEqual(occ.data.details.markup, ['th']);
+  assert.equal(occ.uncertainty.code, 'judgement-required');
+  // A header column counts the same way.
+  const column = page(
+    '<table role="none"><tr><th>Tea</th><td>2</td></tr><tr><th>Milk</th><td>1</td></tr></table>'
+  );
+  assertRule(runa11yCoreOnHtml(column, RUN), RULE_ID, 'cantTell');
+});
+
+test(`${RULE_ID}: a layout table with one stray header cell still fails`, () => {
+  for (const body of [
+    '<table role="presentation"><tr><th>Left</th><td>Right</td></tr></table>',
+    '<table role="presentation"><tr><th>Menu</th><td>Content</td></tr><tr><td>a</td><td>b</td></tr></table>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'fail');
+  }
+});
+
+test(`${RULE_ID}: under the rgaa-4.1.2 profile, colgroup fails and a data-like table is asked about (5.8.1)`, () => {
+  const run = (body) => runa11yCoreOnHtml(page(body), { engineOptions: { profile: 'rgaa-4.1.2' } });
+  const failed = assertRule(
+    run('<table role="presentation"><colgroup><col></colgroup><tr><td>a</td></tr></table>'),
+    RULE_ID,
+    'fail'
+  );
+  const tests = failed.meta.normativeMappings
+    .filter((m) => m.standard === 'RGAA')
+    .map((m) => m.requirement);
+  assert.deepEqual(tests, ['5.8.1']);
+  assertRule(run(DATA_LIKE), RULE_ID, 'cantTell');
+  // Opt-in: a WCAG profile does not run it.
+  const wcag = runa11yCoreOnHtml(page(DATA_LIKE), { engineOptions: { profile: 'wcag22-aa' } });
+  assert.ok(!wcag.checksResults.some((r) => r.ruleId === RULE_ID));
 });
