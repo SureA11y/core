@@ -229,7 +229,7 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
 });
 
 // role="img" makes the children presentational: the name comes from the
-// author only (aria-labelledby or aria-label).
+// author only (RGAA 1.1.8 note: aria-labelledby or aria-label).
 test(`${RULE_ID}: role="img" with fallback content only fails`, () => {
   const html = `<!doctype html><html><body><canvas id="c" role="img">Ventes 2024 : 10 k</canvas></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

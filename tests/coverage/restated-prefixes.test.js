@@ -38,3 +38,6 @@ test('without ruleMapped, or without prefixes, there is nothing to pass', () => 
   assert.equal(dataFor({ ruleMapped: true }).restatedPrefixes, undefined);
 });
 
+test('RGAA restates nothing: every RGAA entry is named only for the rules that decided', () => {
+  assert.equal(standardsData().find((s) => s.key === 'rgaa').restatedPrefixes, undefined);
+});

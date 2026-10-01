@@ -33,7 +33,8 @@
  *   audible, so the SC's condition ("plays automatically... audio")
  *   does not apply.
  * - <embed>, <object> and <bgsound> have no `controls` or `muted` to
- *   read, so each one found is asked about. <bgsound> is obsolete
+ *   read, so each one found is asked about. RGAA 4.10.1 lists them as
+ *   sound sources along with <audio> and <video>. <bgsound> is obsolete
  *   and current browsers ignore it, but it still plays in older ones.
  * - Sound started by a script cannot be detected.
  * - Custom (JS-built) controls that don't use the native `controls`

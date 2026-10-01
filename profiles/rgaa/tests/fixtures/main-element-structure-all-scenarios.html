@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>main-element-structure — scenario fixture</title>
+</head>
+<body>
+  <h1>Scenario fixture: <code>main-element-structure</code></h1>
+  <div class="case-title" style="font-weight:700">01 — FAIL: a second &lt;main&gt; hidden by CSS only, with no hidden attribute</div>
+  <p style="font-size:12px;opacity:.85">
+    Whole-document check: one outcome per page. RGAA 9.2.1 step 5 wants every other
+    &lt;main&gt; to carry the hidden attribute; a style alone is not enough. The role="main"
+    page, the page with no main, the hidden attribute, and non-HTML5 doctypes are covered by
+    this rule's inline tests.
+  </p>
+  <main id="mes_main_1"><p>Opening hours.</p></main>
+  <main id="mes_main_2" style="display:none"><p>Old opening hours.</p></main>
+</body>
+</html>

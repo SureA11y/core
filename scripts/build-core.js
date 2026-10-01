@@ -176,7 +176,7 @@ function loadCompositeRulesCatalog() {
     };
   });
 
-  // Rollups a standard defines for itself (one per requirement, say), with the
+  // Rollups a standard defines for itself (RGAA: one per criterion), with the
   // entries they already carry. Opt-in through their meta.tags.
   const own = standardComposites().map((entry) => ({
     id: entry.id,
@@ -371,7 +371,7 @@ function loadRuleModules(dirs = RULES_DIRS) {
     a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
   );
 
-  // A standard mapped rule by rule names rules and requirements by id;
+  // A standard mapped rule by rule (RGAA) names rules and requirements by id;
   // a typo or a mapping to an unrelated criterion fails the build here.
   const problems = validateStandards(
     mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
@@ -1093,7 +1093,7 @@ function applyProfile(selection, requestedProfile) {
 }
 
 // engineOptions.optInRules unlocks opt-in rules outside their standard's
-// profile: 'all' for every opt-in rule tag, or a list of tags. It
+// profile: 'all' for every opt-in rule tag, or a list of tags ('rgaa'). It
 // only opens the gate in ruleMatchesRunOnly; the rest of the selection still
 // decides, so a default run then runs every rule and a WCAG profile still
 // runs WCAG rules only. What it names that is no opt-in tag is kept as
@@ -1201,8 +1201,8 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
-// The opt-in tags each standard's own rollup carries (its standard's rule
-// tag), by rollup id. Naming such a rollup asks for its
+// The opt-in tags each standard's own rollup carries (RGAA's per-criterion
+// rollups carry 'rgaa'), by rollup id. Naming such a rollup asks for its
 // standard, so it unlocks the opt-in rules it groups.
 function buildOptInCompositeTags() {
   const out = Object.create(null);
@@ -1721,11 +1721,11 @@ function toCompositeCatalogEntry(x, tokens) {
   return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
 }
 
-// A standard's own rollup is opt-in like that standard's rules: listed only
-// when the selection names its tag (as the standard's profile does) or its
-// id, or unlocks its tag through engineOptions.optInRules and includes
-// nothing else, so the catalog lists what a scan with the same options would
-// produce.
+// A standard's own rollup (RGAA's per criterion) is opt-in like that
+// standard's rules: listed only when the selection names its tag (as the
+// rgaa-4.1.2 profile does) or its id, or unlocks its tag through
+// engineOptions.optInRules and includes nothing else, so the catalog lists
+// what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
   // An excluded rollup, by the caller or by a profile's exclude, is not
   // produced, so it is not listed.

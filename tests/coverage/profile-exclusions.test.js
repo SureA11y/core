@@ -52,6 +52,7 @@ test('named rules are excluded as they are, and profiles without exclude are abs
   const out = withStandard({ rules: ['other'] }, () => profileExclusions(RULES, ROLLUPS));
   assert.deepEqual(out['stand-in-1'].ruleIds, ['other']);
   assert.deepEqual(out['stand-in-1'].rollupIds, []);
+  assert.equal(out['rgaa-4.1.2'], undefined, 'RGAA excludes nothing');
 });
 
 test('the build refuses an unknown rule or criterion, and excluding a rule it maps', () => {

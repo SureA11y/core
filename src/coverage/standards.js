@@ -13,7 +13,7 @@
  * knows which standards exist; the build, the runner's `engineOptions.mappings`
  * and the reporters all read it. A standard that renumbers WCAG (EN 301 549)
  * is a table of its own plus one entry here. A standard with verdicts of its
- * own is a profile under profiles/, which brings its entry, tables,
+ * own (RGAA) is a profile under profiles/, which brings its entry, tables,
  * rules and tests with it; the registry appends the entries of
  * profiles/index.js after its own.
  *
@@ -29,8 +29,8 @@
  *   version-origin tags it runs and the version of the standard it targets.
  *   A profile switches its own version's mappings on. With `mappedRules`, it
  *   also runs every rule this standard maps for that version, which matters
- *   when the standard checks things WCAG leaves to best practice (heading
- *   hierarchy, say): those rules carry no WCAG tag to select them by.
+ *   when the standard checks things WCAG leaves to best practice (RGAA's
+ *   heading hierarchy, say): those rules carry no WCAG tag to select them by.
  *   A profile may also have `exclude: { rules, criteria }`: rules it does not
  *   run, and WCAG criteria it waives (their WCAG rollups go, and so does a rule
  *   whose every criterion is waived). See profileExclusions below.
@@ -42,15 +42,15 @@
  *   per-criterion view can tell which entries belong under which criterion.
  *   It is empty for a requirement WCAG does not make; a per-criterion view
  *   then shows the entry under every criterion of the rule that names it. A
- *   standard may add fields of its own (a `criterion`, say).
+ *   standard may add fields of its own (RGAA adds `criterion`).
  * - ruleTag: optional; a tag that marks rules checking this standard's own
- *   requirements, ones WCAG does not make (a doctype or presentational
+ *   requirements, ones WCAG does not make (RGAA's doctype or presentational
  *   attributes, say). A rule carrying it is opt-in: it runs only when a
  *   selection asks for it by that tag or by id, typically through one of this
  *   standard's profiles, so a scan that targets WCAG never reports a failure
  *   WCAG does not define. Must not be a WCAG tag.
  * - ruleMapped: optional; true when the standard's entries come from each
- *   rule rather than from the WCAG criterion. A rollup then names only
+ *   rule rather than from the WCAG criterion (RGAA). A rollup then names only
  *   the entries of the rules that produced its outcome; a standard that
  *   restates the criterion itself (EN 301 549) names the same entry
  *   whichever rule decided.
@@ -62,14 +62,14 @@
  * - composites(): optional; rollups of the standard's own, shaped like the
  *   entries of src/catalogs/composites.wcag.js and carrying the standard's
  *   ruleTag in meta.tags so only a run that asks for the standard produces
- *   them (one per requirement, say).
+ *   them (RGAA: one per criterion).
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
  * - report: optional; how the HTML report shows the standard's own rollups.
  *   `noteKey` is a dictionary key for the note above their table, and
  *   `titleLang` the language their titles are written in when that is not
- *   the scan's (titles written in French whatever the locale, say).
+ *   the scan's (RGAA's are French whatever the locale).
  *
  * Mappings state a correspondence between published documents, nothing more:
  * which standard or version applies to whom is not an engine question.

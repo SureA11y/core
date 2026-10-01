@@ -390,7 +390,7 @@ function validateTags(meta) {
     // another standard's own requirement carries that standard's rule tag instead.
     assert.ok(
       tags.has('best-practice') || isOptInRule(meta.tags),
-      'meta.tags must include "best-practice" (or a standard\'s rule tag) for a rule with no wcagSc'
+      'meta.tags must include "best-practice" (or a standard\'s rule tag, e.g. "rgaa") for a rule with no wcagSc'
     );
     return;
   }

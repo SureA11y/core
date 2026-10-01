@@ -682,7 +682,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
-  // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
+  // defaults to WCAG's 14pt; RGAA 3.2.2/3.2.4 use 18.5px. Omitted or not a
   // finite number, the WCAG threshold applies, so existing callers are
   // unchanged.
   function isLargeText(fontSizePx, fontWeightNum, boldLargeMinPx) {

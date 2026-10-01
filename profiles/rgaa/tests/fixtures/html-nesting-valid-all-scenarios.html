@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>html-nesting-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>html-nesting-valid</code> (RGAA 8.2.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>hnv_case_NN</code>. Every FAIL
+    case is an error of the W3C validator (Nu checker 26.9.27); every PASS case has none. Hidden
+    content counts, as it does for the validator.
+  </p>
+
+  <h2>A. Lists (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: a div with role=listitem directly in a ul</div>
+    <ul><li>Apples</li><div id="hnv_case_01" role="listitem">Pears</div></ul>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: a hidden input directly in a ul</div>
+    <ul><li>Apples</li><input id="hnv_case_02" type="hidden" name="fruit" value="1"></ul>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: an li in a div with role=list</div>
+    <div role="list"><li id="hnv_case_03">Apples</li></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: a p directly in an ol, inside a hidden container</div>
+    <div hidden><ol><li>One</li><p id="hnv_case_04">Two</p></ol></div>
+  </div>
+
+  <h2>B. Description lists (FAIL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: a dd before its dt</div>
+    <dl id="hnv_case_05"><dd>Fruit</dd><dt>Apple</dt></dl>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: a style element directly in a dl</div>
+    <dl><style id="hnv_case_06"></style><dt>Apple</dt><dd>Fruit</dd></dl>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: a dt in a div outside any dl</div>
+    <div><dt id="hnv_case_07">Apple</dt></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: div groups mixed with bare dt and dd</div>
+    <dl id="hnv_case_08"><div><dt>Apple</dt><dd>Fruit</dd></div><dt>Leek</dt><dd>Vegetable</dd></dl>
+  </div>
+
+  <h2>C. Links, buttons and image maps (FAIL)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: a disabled button inside a link</div>
+    <a href="/basket">Basket <button id="hnv_case_09" disabled>Empty</button></a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: a span with tabindex inside a link</div>
+    <a href="/basket">Basket <span id="hnv_case_10" tabindex="0">3 items</span></a>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: an img with ismap and no link around it</div>
+    <img id="hnv_case_11" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Map" ismap>
+  </div>
+
+  <h2>D. Main elements (FAIL)</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: a second main hidden by CSS only</div>
+    <main><p>Opening hours.</p></main>
+    <main id="hnv_case_12" style="display:none"><p>Old opening hours.</p></main>
+  </div>
+
+  <h2>E. Valid nesting (PASS)</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: a ul used as a listbox, with li options</div>
+    <ul id="hnv_case_13" role="listbox" aria-label="Fruit"><li role="option" aria-selected="false">Apples</li></ul>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: dt and dd groups wrapped in divs</div>
+    <dl id="hnv_case_14"><div><dt>Apple</dt><dd>Fruit</dd></div><div><dt>Leek</dt><dd>Vegetable</dd></div></dl>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: a link inside a div with role=button (ARIA-only nesting is a validator warning)</div>
+    <div role="button" tabindex="0"><a id="hnv_case_15" href="/help">Help</a></div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: an img with ismap inside a link</div>
+    <a href="/map"><img id="hnv_case_16" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Map" ismap></a>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: a second main with the hidden attribute</div>
+    <main id="hnv_case_17" hidden><p>Holiday hours.</p></main>
+  </div>
+</body>
+</html>

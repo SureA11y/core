@@ -370,7 +370,7 @@ function renderWcagRollup(rulesResults, ui) {
   return sections;
 }
 
-// A registered standard's own rollups (one per requirement, say), present only
+// A registered standard's own rollups (RGAA: one per criterion), present only
 // when the scan produced them. `standard.report` supplies the note above the
 // table and the language of the titles when it is not the scan's.
 function renderStandardRollup(standard, results, ui) {

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>embed-image-role-img — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>embed-image-role-img</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>eiri_case_NN</code>. <code>&lt;embed type="image/…"&gt;</code> elements are checked (RGAA 1.1.7).
+  </p>
+
+  <h2>A. No alternative (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: nothing</div>
+    <embed type="image/svg+xml" src="chart.svg" id="eiri_case_01">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role img without a name</div>
+    <embed type="image/png" src="chart.png" role="img" id="eiri_case_02">
+  </div>
+
+  <h2>B. Needs review (CANTTELL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: title without role img</div>
+    <embed type="image/svg+xml" src="chart.svg" title="Ventes 2024" id="eiri_case_03">
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: followed by a paragraph that starts with a link</div>
+    <embed type="image/svg+xml" src="chart.svg" id="eiri_case_04"><p><a href="/ventes-2024">Description du graphique</a></p>
+  </div>
+
+  <h2>C. role="img" and a text alternative (PASS)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role img and aria-label</div>
+    <embed type="image/svg+xml" src="chart.svg" role="img" aria-label="Ventes 2024" id="eiri_case_05">
+  </div>
+
+  <h2>D. Not checked</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: no type attribute</div>
+    <embed src="chart.svg" id="eiri_case_06">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: video type</div>
+    <embed type="video/mp4" src="clip.mp4" id="eiri_case_07">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: role presentation</div>
+    <embed type="image/png" src="deco.png" role="presentation" id="eiri_case_08">
+  </div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>focus-indicator-contrast — scenario fixture</title>
+  <style>
+    html, body { background: #ffffff; color: #000000; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+
+    #fic_case_01:focus { outline: none; box-shadow: 0 0 0 2px #eeeeee; }
+    #fic_case_02:focus { outline: 2px solid #cccccc; }
+    #fic_case_03 { border: 1px solid #767676; background: #ffffff; }
+    #fic_case_03:focus { outline: none; border-color: #eeeeee; }
+    #fic_case_04:focus { outline: 2px solid #000000; }
+    #fic_case_05 { outline: none; }
+    #fic_case_05:focus-visible { box-shadow: inset 0 0 0 2px #333333; }
+    #fic_case_06_bg { background: url(pattern.png) #ffffff; }
+    #fic_case_06:focus { outline: 2px solid #cccccc; }
+    #fic_case_07:focus { outline: 2px solid var(--focus-color); }
+    #fic_case_08 { background: #000000; color: #ffffff; }
+    #fic_case_08:focus { outline: 2px solid #ffffff; }
+    #fic_case_09:focus { outline: none; background: #ffff00; }
+    #fic_case_10:focus { box-shadow: 0 0 0 2px #eeeeee; }
+    #fic_case_11:focus { outline: none; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>focus-indicator-contrast</code> (RGAA 10.7.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>fic_case_NN</code>.
+    RGAA 10.7.1 step 2 asks that an author focus indicator has a contrast
+    ratio of at least 3:1. The page background is white.
+  </p>
+
+  <h2>A. Below 3:1 (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: outline removed, light grey box-shadow (1.16:1)</div>
+    <a id="fic_case_01" href="/one">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: light grey outline (1.61:1)</div>
+    <a id="fic_case_02" href="/two">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: outline removed, border turns light grey on focus</div>
+    <button id="fic_case_03" type="button">Search</button>
+  </div>
+
+  <h2>B. At least 3:1 (PASS)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: black outline on white</div>
+    <a id="fic_case_04" href="/four">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: dark inset box-shadow</div>
+    <a id="fic_case_05" href="/five">Opening hours</a>
+  </div>
+
+  <h2>C. Contrast not settled (CANTTELL)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: background image behind the link</div>
+    <div id="fic_case_06_bg"><a id="fic_case_06" href="/six">Opening hours</a></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: outline color from a CSS variable</div>
+    <a id="fic_case_07" href="/seven">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: white outline on a black link, 3:1 against one side only</div>
+    <a id="fic_case_08" href="/eight">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: outline removed, background turns yellow</div>
+    <a id="fic_case_09" href="/nine">Opening hours</a>
+  </div>
+
+  <h2>D. Not in scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NOT APPLICABLE: the browser outline is kept</div>
+    <a id="fic_case_10" href="/ten">Opening hours</a>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NOT APPLICABLE: outline removed with nothing in its place</div>
+    <a id="fic_case_11" href="/eleven">Opening hours</a>
+  </div>
+</body>
+</html>

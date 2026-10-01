@@ -1254,18 +1254,17 @@ function createDomHelpers(opts) {
   // context scope, excludeSelectors) but with no hidden-content filter:
   // elements inside `hidden`, `display:none`, closed <details> and the like
   // are returned whatever includeHiddenElements says. For rules that judge
-  // the markup itself rather than what is rendered (validity, presentational
-  // markup). <template> content is not part of the DOM tree and stays out,
-  // as it does for the W3C validator.
+  // the markup itself rather than what is rendered (RGAA's "code source
+  // généré" tests: 8.2.1, 10.1.1, 10.1.2). <template> content is not part
+  // of the DOM tree and stays out, as it does for the W3C validator.
   function queryAllSource(sel) {
     const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
 
-  // The document's doctype, classified. Verdicts that depend on the HTML
-  // version (a requirement that applies to HTML5 only, lang read as lang or
-  // xml:lang by version, an element presentational only before HTML5) read
-  // `kind`:
+  // The document's doctype, classified. RGAA verdicts that depend on the HTML
+  // version (9.2 does not apply outside HTML5; 8.3.1 reads lang or xml:lang
+  // by version; 10.1.1 counts <u> only before HTML5) read `kind`:
   //   'html5'   name html, no public id, no system id or about:legacy-compat
   //   'xhtml10' a public id of XHTML 1.0 (strict, transitional, frameset)
   //   'xhtml11' any other W3C XHTML public id: 1.1, Basic, 1.1 plus MathML
@@ -4855,7 +4854,7 @@ function createDomHelpers(opts) {
 
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
   // contenu", "Zum Inhalt"...), in the languages the engine ships and the
-  // phrasings French sites use ("liens d'évitement"). One list for
+  // phrasings French sites use (RGAA's "liens d'évitement"). One list for
   // every rule that looks for a skip link, so they recognise the same ones.
   const SKIP_LINK_WORDING = [
     /skip/i,

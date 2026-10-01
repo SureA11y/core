@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>html-elements-attributes-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>html-elements-attributes-valid</code> (RGAA 8.2.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>heav_case_NN</code>. Every FAIL
+    case is an error of the W3C validator (Nu checker 26.9.27); every PASS case has none. Hidden
+    content counts, as it does for the validator.
+  </p>
+
+  <h2>A. Elements (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: a marquee element</div>
+    <marquee id="heav_case_01">Sale today</marquee>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: a center element inside a hidden container</div>
+    <div hidden><center id="heav_case_02">Welcome</center></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: an element HTML does not define</div>
+    <foo id="heav_case_03">Text</foo>
+  </div>
+
+  <h2>B. Attribute values (FAIL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: dir with spaces around the value</div>
+    <p id="heav_case_04" dir=" RTL " lang="ar">مرحبا</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: an id with a trailing space</div>
+    <p id="heav_case_05 ">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: a lang value that is not a well-formed language tag</div>
+    <p id="heav_case_06" lang="en-US_x">Hello</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: a th scope value with spaces</div>
+    <table><tr><th id="heav_case_07" scope=" col ">Price</th></tr><tr><td>10</td></tr></table>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: headers pointing to a td</div>
+    <table><tr><td id="heav_h08">Price</td><td id="heav_case_08" headers="heav_h08">10</td></tr></table>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: an optgroup with no label attribute</div>
+    <select aria-label="Fruit"><optgroup id="heav_case_09"><option>Apple</option></optgroup></select>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: an image button with an empty alt</div>
+    <input id="heav_case_10" type="image" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" aria-label="Search">
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: an invalid autocomplete value on a disabled field</div>
+    <input id="heav_case_11" disabled autocomplete="nom" aria-label="Name">
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: an email field name on a number input</div>
+    <input id="heav_case_12" type="number" autocomplete="email" aria-label="Quantity">
+  </div>
+
+  <h2>C. Valid markup (PASS)</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: dir, lang and scope written in capitals</div>
+    <table><tr><th id="heav_case_13" scope="COL" dir="LTR" lang="EN-gb">Price</th></tr><tr><td>10</td></tr></table>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: headers pointing to a th of the same table</div>
+    <table><tr><th id="heav_h14">Price</th><td id="heav_case_14" headers="heav_h14">10</td></tr></table>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: a valid autocomplete value</div>
+    <input id="heav_case_15" type="email" autocomplete="shipping email" aria-label="Email">
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: a custom element</div>
+    <my-widget id="heav_case_16">Text</my-widget>
+  </div>
+</body>
+</html>

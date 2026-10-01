@@ -425,20 +425,20 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 ```
 
 `wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
-the WCAG Level A and AA rules of the version they build on; the result records
-the one used in `engine.profile`. A profile only chooses which rules
-run; it does not certify conformance. A standard with verdicts of its own
-comes as a profile under [`profiles/`](./profiles/README.md), with its own
-rules, which run only when a scan targets it; to run every rule instead, pass
-`optInRules: 'all'` with no profile; the result records it in
-`engine.optInRules`.
+the WCAG Level A and AA rules of the version they build on, and `rgaa-4.1.2`
+adds the rules RGAA tests beyond WCAG; the result records the one used in
+`engine.profile`. A profile only chooses which rules
+run; it does not certify conformance. To run every rule instead, including
+those only RGAA requires, pass `optInRules: 'all'` with no profile; the
+result records it in `engine.optInRules`.
 
 An EN 301 549 profile also maps every WCAG criterion in the result to the
 clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
 the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
 without the profile, or for both versions, pass
 `mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
-WCAG only. See
+WCAG only. `'rgaa'` adds the RGAA 4.1.2 tests each rule checks, alone or
+with EN 301 549 (see [`profiles/rgaa/docs/RGAA_MAPPING.md`](./profiles/rgaa/docs/RGAA_MAPPING.md)). See
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
 [`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
 
@@ -538,7 +538,7 @@ contributing to it:
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, in `profiles/<key>/docs/RULE_CATALOG.md`. |
+| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, as RGAA's are in `profiles/rgaa/docs/RULE_CATALOG.md`. |
 | `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
 | `docs/POLICY.md` | Built-in policy contracts and customization. |
 | `docs/I18N.md` | Translation support and localization. |
@@ -611,8 +611,8 @@ src/
   explain/                 # Occurrence grouping, internal
 
 profiles/
-  index.js                 # The profiles built into the engine (none yet)
-  README.md                # What a profile holds and how to add one
+  index.js                 # The profiles built into the engine
+  rgaa/                    # RGAA 4.1.2: its criteria, rule mapping, rollups, own rules and their messages, data, scripts, tests and its entry point (@surea11y/core/rgaa)
 
 scripts/
   build-core.js            # Generates src/core.js

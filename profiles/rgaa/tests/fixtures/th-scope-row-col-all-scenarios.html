@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>th-scope-row-col — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    th, td { border: 1px solid #999; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>th-scope-row-col</code> (RGAA 5.7.2, 5.7.3)</h1>
+
+  <p class="note">
+    Each target header has a stable <code>id</code> of the form <code>tsrc_case_NN</code>.
+    RGAA wants <code>scope="row"</code> or <code>"col"</code> on a header over a whole row or
+    column, and no <code>scope</code> on one over part of it. Which applies is for a person.
+  </p>
+
+  <h2>A. Group scope (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: th with scope="colgroup" over two columns</div>
+    <table>
+      <tr><td></td><th id="tsrc_case_01" scope="colgroup" colspan="2">2025</th></tr>
+      <tr><td></td><th scope="col">Q1</th><th scope="col">Q2</th></tr>
+      <tr><th scope="row">North</th><td>1</td><td>2</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: th with scope="ROWGROUP" (any case)</div>
+    <table>
+      <tr><th scope="col">Region</th><th scope="col">City</th><th scope="col">Sales</th></tr>
+      <tr><th id="tsrc_case_02" scope="ROWGROUP" rowspan="2">North</th><th scope="row">Lille</th><td>3</td></tr>
+      <tr><th scope="row">Amiens</th><td>4</td></tr>
+    </table>
+  </div>
+
+  <h2>B. Out of scope</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: th with scope="col"</div>
+    <table>
+      <tr><th id="tsrc_case_03" scope="col">Name</th></tr>
+      <tr><td>Ada</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: scope="colgroup" in a table with role="presentation"</div>
+    <table role="presentation">
+      <tr><th id="tsrc_case_04" scope="colgroup">Layout</th></tr>
+      <tr><td>Content</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: td with scope="colgroup" (not a th)</div>
+    <table>
+      <tr><td id="tsrc_case_05" scope="colgroup">Cell</td></tr>
+    </table>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

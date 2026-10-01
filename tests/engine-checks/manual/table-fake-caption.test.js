@@ -91,7 +91,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-fake-caption-all-scenar
 });
 
 // A layout table needs no caption, and a table named by aria-label,
-// aria-labelledby or title already has a title.
+// aria-labelledby or title already has a title (RGAA 5.4.1 step 2).
 test(`${RULE_ID}: a table whose role is not table, grid or treegrid is left out`, () => {
   for (const role of ['presentation', 'none']) {
     const html = `<!doctype html><html><body><table role="${role}"><tr><td>Bienvenue</td></tr><tr><td>Menu</td><td>Contenu</td></tr></table></body></html>`;

@@ -125,9 +125,9 @@ test(`${RULE_ID}: an enabled role="presentation" image button is still reviewed`
   assert.ok(hasOccurrenceForId(rule, 's1'));
 });
 
-// Every text-alternative source is reviewed, not only alt (alt, title,
-// aria-label and aria-labelledby; WCAG 1.1.1 judges whatever names the
-// control).
+// Every text-alternative source is reviewed, not only alt (RGAA 1.3.3 lists
+// alt, title, aria-label and aria-labelledby; WCAG 1.1.1 judges whatever
+// names the control).
 
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body><form>${body}</form></body></html>`;

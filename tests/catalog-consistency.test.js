@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core');
 
-// A standard's own rollups (meta.standard set) follow that standard, not
-// WCAG, so the WCAG invariants below apply to the WCAG rollups only.
+// RGAA's per-criterion rollups (meta.standard 'RGAA') follow RGAA, not WCAG,
+// so the WCAG invariants below apply to the WCAG rollups only.
 const WCAG_COMPOSITES = (core.COMPOSITE_RULES || []).filter((c) => !(c.meta && c.meta.standard));
 
 test('composite catalog references only known atomic checks', () => {

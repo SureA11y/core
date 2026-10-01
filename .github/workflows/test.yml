@@ -29,3 +29,5 @@ jobs:
       - run: npm run fixtures:markers:check
       - run: npm run docs:rule-catalog:check
       - run: npm run rule-examples:coverage:check
+      - run: npm run rgaa-map:check
+      - run: npm run rgaa-mapping-doc:check

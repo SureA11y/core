@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>img-decorative-no-alternative — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>img-decorative-no-alternative</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>idna_case_NN</code>. <code>&lt;img&gt;</code> elements marked decorative are checked (RGAA 1.2.1).
+  </p>
+
+  <h2>A. Hidden image with an alternative (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: aria-hidden with aria-label</div>
+    <img src="deco.png" alt="" aria-hidden="true" aria-label="Décor" id="idna_case_01">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-hidden with title</div>
+    <img src="deco.png" aria-hidden="true" title="Filet" id="idna_case_02">
+  </div>
+
+  <h2>B. Needs review (CANTTELL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: empty alt with title</div>
+    <img src="logo.png" alt="" title="Logo" id="idna_case_03">
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: role presentation with aria-labelledby</div>
+    <span id="idna_l">Carte</span><img src="map.png" role="presentation" aria-labelledby="idna_l" id="idna_case_04">
+  </div>
+
+  <h2>C. Correctly ignored (PASS)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: empty alt only</div>
+    <img src="deco.png" alt="" id="idna_case_05">
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: aria-hidden with a non-empty alt</div>
+    <img src="deco.png" alt="Filet" aria-hidden="true" id="idna_case_06">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: empty title attribute</div>
+    <img src="deco.png" alt="" title="" id="idna_case_07">
+  </div>
+
+  <h2>D. Not checked</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: informative image</div>
+    <img src="logo.png" alt="Logo" title="Logo" id="idna_case_08">
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: in a figure with a caption</div>
+    <figure><img src="photo.jpg" alt="" title="Photo" id="idna_case_09"><figcaption>Photo : A. Martin</figcaption></figure>
+  </div>
+</body>
+</html>

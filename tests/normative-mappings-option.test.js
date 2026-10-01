@@ -105,6 +105,22 @@ test('a profile that did not apply implies no mappings', () => {
   assert.deepEqual(standards(atomic(value)), ['WCAG']);
 });
 
+test("naming rgaa adds each rule's RGAA tests, with their criterion", () => {
+  const result = scan({ mappings: ['rgaa'] });
+  assert.deepEqual(result.engine.mappings, ['rgaa']);
+  const rgaa = atomic(result).meta.normativeMappings.filter((m) => m.standard === 'RGAA');
+  assert.ok(rgaa.length > 0);
+  for (const m of rgaa) {
+    assert.equal(m.version, '4.1.2');
+    assert.match(m.requirement, /^\d+\.\d+\.\d+$/);
+    assert.ok(m.requirement.startsWith(`${m.criterion}.`));
+    assert.deepEqual(m.wcagSc, ['1.1.1']);
+  }
+  assert.ok(composite(result).meta.normativeMappings.some((m) => m.standard === 'RGAA'));
+  // EN 301 549 stays off unless asked for too.
+  assert.ok(!atomic(result).meta.normativeMappings.some((m) => m.standard === 'EN 301 549'));
+});
+
 test('an unknown standard or version is ignored with a warning', () => {
   const { value, warnings } = captureWarnings(() =>
     scan({ mappings: ['bitv', 'en301549:V9.9.9', 'en301549:V3.2.1'] })
@@ -147,7 +163,11 @@ const OPTION_SETS = [
   { locale: 'en' },
   { mappings: 'en301549' },
   { mappings: 'en301549:V3.2.1' },
+  { mappings: ['rgaa'] },
+  { mappings: ['en301549', 'rgaa'] },
   { profile: 'en301549-v4.1.1' },
+  { profile: 'rgaa-4.1.2' },
+  { profile: 'rgaa-4.1.2', mappings: 'en301549:V4.1.1' },
   { profile: 'wcag22-aa' }
 ];
 
@@ -189,10 +209,11 @@ test('a profile switches its standard on in the catalog, and only when it would 
   const img = (options, runOnly) =>
     core.getChecksForRunOnly(runOnly || null, options).find((r) => r.ruleId === 'img-alt-present');
 
+  assert.deepEqual(standards(img({ profile: 'rgaa-4.1.2' })), ['WCAG', 'RGAA']);
   assert.deepEqual(standards(img({ profile: 'en301549-v3.2.1' })), ['WCAG', 'EN 301 549']);
   // An include overrides the profile in a scan, so it switches nothing on here either.
   assert.deepEqual(
-    standards(img({ profile: 'en301549-v3.2.1' }, { includeRuleIds: ['img-alt-present'] })),
+    standards(img({ profile: 'rgaa-4.1.2' }, { includeRuleIds: ['img-alt-present'] })),
     ['WCAG']
   );
 });
@@ -201,9 +222,7 @@ test("composite catalog entries filter their rules' other-standard entries the s
   const byStandard = (entry) => [...new Set(entry.meta.standardMappings.map((m) => m.standard))];
   const id = 'wcag-1.1.1-non-text-content';
   assert.deepEqual(byStandard(core.getCompositeRuleById(id)), []);
-  assert.deepEqual(byStandard(core.getCompositeRuleById(id, { mappings: 'en301549' })), [
-    'EN 301 549'
-  ]);
+  assert.deepEqual(byStandard(core.getCompositeRuleById(id, { mappings: 'rgaa' })), ['RGAA']);
   const fromCatalog = core.getRulesCatalog({ profile: 'en301549-v4.1.1' }).find((c) => c.id === id);
   assert.deepEqual(
     fromCatalog.meta.standardMappings.map((m) => `${m.standard} ${m.version}`),

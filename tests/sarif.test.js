@@ -594,9 +594,9 @@ test('renderSarifReport: the run records the WCAG target and profile as properti
 
 test('renderSarifReport: the run records the opt-in rules a scan added', () => {
   const result = makeScanResult([makeCheckResult({})]);
-  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['sample'] };
+  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['rgaa'] };
   const run = parse(renderSarifReport(result, {})).runs[0];
-  assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', optInRules: ['sample'] });
+  assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', optInRules: ['rgaa'] });
 });
 
 test('renderSarifReport: a result from an older engine gets no run properties', () => {

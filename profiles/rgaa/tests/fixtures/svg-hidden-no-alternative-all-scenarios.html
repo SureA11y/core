@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>svg-hidden-no-alternative — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>svg-hidden-no-alternative</code></h1>
+
+  <p class="note">
+    Each failing target has a stable <code>id</code> of the form <code>shn_case_NN</code>. An outer <code>&lt;svg&gt;</code> with <code>aria-hidden="true"</code> is checked.
+  </p>
+
+  <h2>A. Hidden SVGs with a text alternative (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: aria-label</div>
+    <svg aria-hidden="true" aria-label="Star" width="16" height="16" id="shn_case_01"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: title element</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_02"><title>Star</title><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: desc element in a group</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_03"><g><desc>A yellow star</desc><circle cx="8" cy="8" r="6"/></g></svg>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: title attribute</div>
+    <svg aria-hidden="true" title="Star" width="16" height="16" id="shn_case_04"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <svg style="display:none">
+    <symbol id="shn_icon_cart" viewBox="0 0 16 16"><title>Cart</title><circle cx="8" cy="8" r="6"/></symbol>
+    <symbol id="shn_icon_plain" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></symbol>
+  </svg>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: use pointing at a symbol with a title element</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_09"><use href="#shn_icon_cart"/></svg>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: no alternative</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_05"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: empty title element</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_06"><title> </title><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: not hidden</div>
+    <svg role="img" aria-label="Star" width="16" height="16" id="shn_case_07"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: aria-hidden="false"</div>
+    <svg aria-hidden="false" aria-label="Star" width="16" height="16" id="shn_case_08"><circle cx="8" cy="8" r="6"/></svg>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: use pointing at a symbol with no text alternative</div>
+    <svg aria-hidden="true" width="16" height="16" id="shn_case_10"><use href="#shn_icon_plain"/></svg>
+  </div>
+</body>
+</html>

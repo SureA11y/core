@@ -15,8 +15,8 @@
  *   individual regions to assistive technology.
  * @expectation
  *   Each server-side image map is reported as cantTell: 2.1.1 is met when
- *   the same destinations are also offered as links a keyboard can reach,
- *   which the rule cannot verify.
+ *   the same destinations are also offered as links a keyboard can reach
+ *   (RGAA 1.1.4 step 2 asks the same), which the rule cannot verify.
  *   Client-side image maps (<map>/<area>) are not flagged.
  *   A scope with no <img ismap> passes. One whose only <img ismap> elements
  *   are outside a link is notApplicable: ismap does nothing there, so there

@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>surea11y Fixture Index</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; max-width: 1100px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .meta { font-size: 12px; opacity: 0.75; margin: 0 0 20px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+  input[type="search"] { font-size: 14px; padding: 6px 10px; border-radius: 6px; border: 1px solid #8888; min-width: 260px; background: transparent; color: inherit; }
+  .count { font-size: 13px; opacity: 0.75; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #8884; padding: 6px 10px; text-align: left; }
+  th { position: sticky; top: 0; background: Canvas; cursor: default; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.muted { opacity: 0.7; }
+  td.pass { color: #1a7f37; }
+  td.fail { color: #cf222e; }
+  td.canttell { color: #9a6700; }
+  tr[hidden] { display: none; }
+  a { color: #0969da; }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>surea11y Fixture Index</h1>
+  <p class="meta">69/69 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+
+  <div class="toolbar">
+    <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
+    <span class="count" id="count"></span>
+  </div>
+
+  <table id="fixtureTable">
+    <thead>
+      <tr>
+        <th>Rule ID (opens fixture)</th>
+        <th>Type</th>
+        <th>Title</th>
+        <th>Cases</th>
+        <th>PASS</th>
+        <th>FAIL</th>
+        <th>CANTTELL</th>
+        <th>OTHER</th>
+      </tr>
+    </thead>
+    <tbody>
+<tr data-search="area-alt-source linked image-map areas are named by alt or aria-label">
+      <td><a href="area-alt-source-all-scenarios.html" target="_blank" rel="noopener">area-alt-source</a></td>
+      <td class="muted">automatic</td>
+      <td>Linked image-map areas are named by alt or aria-label</td>
+      <td class="num">7</td>
+      <td class="num pass">2</td>
+      <td class="num fail">2</td>
+      <td class="num canttell"></td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="aria-attribute-conformance aria-* attributes are valid for the w3c validator">
+      <td><a href="aria-attribute-conformance-all-scenarios.html" target="_blank" rel="noopener">aria-attribute-conformance</a></td>
+      <td class="muted">automatic</td>
+      <td>aria-* attributes are valid for the W3C validator</td>
+      <td class="num">19</td>
+      <td class="num pass">5</td>
+      <td class="num fail">14</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="aria-list-item-roles aria lists use role=&quot;listitem&quot; for their items">
+      <td><a href="aria-list-item-roles-all-scenarios.html" target="_blank" rel="noopener">aria-list-item-roles</a></td>
+      <td class="muted">automatic</td>
+      <td>ARIA lists use role=&quot;listitem&quot; for their items</td>
+      <td class="num">6</td>
+      <td class="num pass">1</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="aria-role-conformance role attributes are valid for the w3c validator">
+      <td><a href="aria-role-conformance-all-scenarios.html" target="_blank" rel="noopener">aria-role-conformance</a></td>
+      <td class="muted">automatic</td>
+      <td>Role attributes are valid for the W3C validator</td>
+      <td class="num">20</td>
+      <td class="num pass">5</td>
+      <td class="num fail">14</td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="canvas-decorative-aria-hidden decorative &lt;canvas&gt; images have aria-hidden=&quot;true&quot; and no alternative">
+      <td><a href="canvas-decorative-aria-hidden-all-scenarios.html" target="_blank" rel="noopener">canvas-decorative-aria-hidden</a></td>
+      <td class="muted">automatic</td>
+      <td>Decorative &lt;canvas&gt; images have aria-hidden=&quot;true&quot; and no alternative</td>
+      <td class="num">8</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">1</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="canvas-role-img &lt;canvas&gt; images have role=&quot;img&quot; with an aria name, or fallback content">
+      <td><a href="canvas-role-img-all-scenarios.html" target="_blank" rel="noopener">canvas-role-img</a></td>
+      <td class="muted">automatic</td>
+      <td>&lt;canvas&gt; images have role=&quot;img&quot; with an ARIA name, or fallback content</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">4</td>
+      <td class="num canttell">1</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="complex-table-summary complex data tables have a summary">
+      <td><a href="complex-table-summary-all-scenarios.html" target="_blank" rel="noopener">complex-table-summary</a></td>
+      <td class="muted">manual</td>
+      <td>Complex data tables have a summary</td>
+      <td class="num">8</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">8</td>
+    </tr>
+<tr data-search="complex-table-summary-quality complex data table summaries are relevant">
+      <td><a href="complex-table-summary-quality-all-scenarios.html" target="_blank" rel="noopener">complex-table-summary-quality</a></td>
+      <td class="muted">manual</td>
+      <td>Complex data table summaries are relevant</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">4</td>
+    </tr>
+<tr data-search="contrast-minimum-rgaa text meets rgaa minimum color contrast">
+      <td><a href="contrast-minimum-rgaa-all-scenarios.html" target="_blank" rel="noopener">contrast-minimum-rgaa</a></td>
+      <td class="muted">automatic</td>
+      <td>Text meets RGAA minimum color contrast</td>
+      <td class="num">7</td>
+      <td class="num pass">4</td>
+      <td class="num fail">3</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="data-table-headers-review tables with no header cells are checked for unmarked headers">
+      <td><a href="data-table-headers-review-all-scenarios.html" target="_blank" rel="noopener">data-table-headers-review</a></td>
+      <td class="muted">manual</td>
+      <td>Tables with no header cells are checked for unmarked headers</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">4</td>
+    </tr>
+<tr data-search="dir-attribute-valid dir attributes are ltr or rtl">
+      <td><a href="dir-attribute-valid-all-scenarios.html" target="_blank" rel="noopener">dir-attribute-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>dir attributes are ltr or rtl</td>
+      <td class="num">8</td>
+      <td class="num pass">2</td>
+      <td class="num fail">4</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="doctype-position the doctype comes before the &lt;html&gt; tag">
+      <td><a href="doctype-position-all-scenarios.html" target="_blank" rel="noopener">doctype-position</a></td>
+      <td class="muted">automatic</td>
+      <td>The doctype comes before the &lt;html&gt; tag</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="doctype-present page declares a doctype">
+      <td><a href="doctype-present-all-scenarios.html" target="_blank" rel="noopener">doctype-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Page declares a doctype</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="doctype-valid declared doctype is valid">
+      <td><a href="doctype-valid-all-scenarios.html" target="_blank" rel="noopener">doctype-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>Declared doctype is valid</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="embed-image-role-img embedded images have role=&quot;img&quot; and a text alternative">
+      <td><a href="embed-image-role-img-all-scenarios.html" target="_blank" rel="noopener">embed-image-role-img</a></td>
+      <td class="muted">automatic</td>
+      <td>Embedded images have role=&quot;img&quot; and a text alternative</td>
+      <td class="num">8</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell">2</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="embedded-refresh-review embedded content that may refresh itself lets the user control the refresh">
+      <td><a href="embedded-refresh-review-all-scenarios.html" target="_blank" rel="noopener">embedded-refresh-review</a></td>
+      <td class="muted">manual</td>
+      <td>Embedded content that may refresh itself lets the user control the refresh</td>
+      <td class="num">6</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">4</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="fake-list text laid out as a list uses list markup">
+      <td><a href="fake-list-all-scenarios.html" target="_blank" rel="noopener">fake-list</a></td>
+      <td class="muted">manual</td>
+      <td>Text laid out as a list uses list markup</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">7</td>
+    </tr>
+<tr data-search="field-group-legend groups of form fields have a legend">
+      <td><a href="field-group-legend-all-scenarios.html" target="_blank" rel="noopener">field-group-legend</a></td>
+      <td class="muted">manual</td>
+      <td>Groups of form fields have a legend</td>
+      <td class="num">10</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">10</td>
+    </tr>
+<tr data-search="field-label-in-name-sources every label source of a form field contains its visible label">
+      <td><a href="field-label-in-name-sources-all-scenarios.html" target="_blank" rel="noopener">field-label-in-name-sources</a></td>
+      <td class="muted">automatic</td>
+      <td>Every label source of a form field contains its visible label</td>
+      <td class="num">11</td>
+      <td class="num pass">3</td>
+      <td class="num fail">4</td>
+      <td class="num canttell">1</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="field-label-listed-source form fields have a label from a source rgaa lists">
+      <td><a href="field-label-listed-source-all-scenarios.html" target="_blank" rel="noopener">field-label-listed-source</a></td>
+      <td class="muted">automatic</td>
+      <td>Form fields have a label from a source RGAA lists</td>
+      <td class="num">15</td>
+      <td class="num pass">4</td>
+      <td class="num fail">7</td>
+      <td class="num canttell">3</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="figure-caption-structure images with a caption use the figure structure rgaa describes">
+      <td><a href="figure-caption-structure-all-scenarios.html" target="_blank" rel="noopener">figure-caption-structure</a></td>
+      <td class="muted">automatic</td>
+      <td>Images with a caption use the figure structure RGAA describes</td>
+      <td class="num">8</td>
+      <td class="num pass">2</td>
+      <td class="num fail">4</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="focus-indicator-contrast author focus indicators have a contrast ratio of at least 3:1">
+      <td><a href="focus-indicator-contrast-all-scenarios.html" target="_blank" rel="noopener">focus-indicator-contrast</a></td>
+      <td class="muted">automatic</td>
+      <td>Author focus indicators have a contrast ratio of at least 3:1</td>
+      <td class="num">11</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">4</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="form-button-label-in-name-sources the accessible name of a button in a form contains its visible label">
+      <td><a href="form-button-label-in-name-sources-all-scenarios.html" target="_blank" rel="noopener">form-button-label-in-name-sources</a></td>
+      <td class="muted">automatic</td>
+      <td>The accessible name of a button in a form contains its visible label</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">2</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="form-button-name-present buttons in a form have a label">
+      <td><a href="form-button-name-present-all-scenarios.html" target="_blank" rel="noopener">form-button-name-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Buttons in a form have a label</td>
+      <td class="num">9</td>
+      <td class="num pass">3</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">2</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="frame-title-attribute-present frames have a title attribute">
+      <td><a href="frame-title-attribute-present-all-scenarios.html" target="_blank" rel="noopener">frame-title-attribute-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Frames have a title attribute</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">4</td>
+      <td class="num canttell"></td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="frame-title-not-empty frame titles are not empty">
+      <td><a href="frame-title-not-empty-all-scenarios.html" target="_blank" rel="noopener">frame-title-not-empty</a></td>
+      <td class="muted">automatic</td>
+      <td>Frame titles are not empty</td>
+      <td class="num">5</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="heading-content-present headings have content">
+      <td><a href="heading-content-present-all-scenarios.html" target="_blank" rel="noopener">heading-content-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Headings have content</td>
+      <td class="num">11</td>
+      <td class="num pass">3</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">4</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="heading-role-level-present aria headings have an aria-level attribute">
+      <td><a href="heading-role-level-present-all-scenarios.html" target="_blank" rel="noopener">heading-role-level-present</a></td>
+      <td class="muted">automatic</td>
+      <td>ARIA headings have an aria-level attribute</td>
+      <td class="num">6</td>
+      <td class="num pass">1</td>
+      <td class="num fail">3</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="html-elements-attributes-valid html elements and attribute values are valid">
+      <td><a href="html-elements-attributes-valid-all-scenarios.html" target="_blank" rel="noopener">html-elements-attributes-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>HTML elements and attribute values are valid</td>
+      <td class="num">16</td>
+      <td class="num pass">4</td>
+      <td class="num fail">12</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="html-lang-code-valid default language code is valid">
+      <td><a href="html-lang-code-valid-all-scenarios.html" target="_blank" rel="noopener">html-lang-code-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>Default language code is valid</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="html-nesting-valid html elements are nested as html allows">
+      <td><a href="html-nesting-valid-all-scenarios.html" target="_blank" rel="noopener">html-nesting-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>HTML elements are nested as HTML allows</td>
+      <td class="num">17</td>
+      <td class="num pass">5</td>
+      <td class="num fail">12</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="image-alt-long text alternatives of images are short">
+      <td><a href="image-alt-long-all-scenarios.html" target="_blank" rel="noopener">image-alt-long</a></td>
+      <td class="muted">manual</td>
+      <td>Text alternatives of images are short</td>
+      <td class="num">6</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">6</td>
+    </tr>
+<tr data-search="img-decorative-no-alternative decorative images have no aria-labelledby, aria-label or title">
+      <td><a href="img-decorative-no-alternative-all-scenarios.html" target="_blank" rel="noopener">img-decorative-no-alternative</a></td>
+      <td class="muted">automatic</td>
+      <td>Decorative images have no aria-labelledby, aria-label or title</td>
+      <td class="num">9</td>
+      <td class="num pass">3</td>
+      <td class="num fail">2</td>
+      <td class="num canttell">2</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="keyboard-only-event-handlers keyboard-only inline event handlers should have a pointer equivalent">
+      <td><a href="keyboard-only-event-handlers-all-scenarios.html" target="_blank" rel="noopener">keyboard-only-event-handlers</a></td>
+      <td class="muted">manual</td>
+      <td>Keyboard-only inline event handlers should have a pointer equivalent</td>
+      <td class="num">10</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">4</td>
+      <td class="num">6</td>
+    </tr>
+<tr data-search="label-for-target-valid labels point to a form field">
+      <td><a href="label-for-target-valid-all-scenarios.html" target="_blank" rel="noopener">label-for-target-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>Labels point to a form field</td>
+      <td class="num">8</td>
+      <td class="num pass">3</td>
+      <td class="num fail">4</td>
+      <td class="num canttell"></td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="layout-table-no-data-markup layout tables use no data table markup">
+      <td><a href="layout-table-no-data-markup-all-scenarios.html" target="_blank" rel="noopener">layout-table-no-data-markup</a></td>
+      <td class="muted">automatic</td>
+      <td>Layout tables use no data table markup</td>
+      <td class="num">11</td>
+      <td class="num pass">3</td>
+      <td class="num fail">6</td>
+      <td class="num canttell">1</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="letters-spaced-with-spaces letters of a word are not spaced out with spaces">
+      <td><a href="letters-spaced-with-spaces-all-scenarios.html" target="_blank" rel="noopener">letters-spaced-with-spaces</a></td>
+      <td class="muted">manual</td>
+      <td>Letters of a word are not spaced out with spaces</td>
+      <td class="num">8</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">8</td>
+    </tr>
+<tr data-search="link-content-label-present links have a label in their content">
+      <td><a href="link-content-label-present-all-scenarios.html" target="_blank" rel="noopener">link-content-label-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Links have a label in their content</td>
+      <td class="num">9</td>
+      <td class="num pass">3</td>
+      <td class="num fail">4</td>
+      <td class="num canttell">1</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="link-context-review generic links whose only context is outside rgaa's list are reviewed">
+      <td><a href="link-context-review-all-scenarios.html" target="_blank" rel="noopener">link-context-review</a></td>
+      <td class="muted">manual</td>
+      <td>Generic links whose only context is outside RGAA's list are reviewed</td>
+      <td class="num">6</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="link-label-in-name-sources every name source of a link contains its visible label">
+      <td><a href="link-label-in-name-sources-all-scenarios.html" target="_blank" rel="noopener">link-label-in-name-sources</a></td>
+      <td class="muted">automatic</td>
+      <td>Every name source of a link contains its visible label</td>
+      <td class="num">13</td>
+      <td class="num pass">3</td>
+      <td class="num fail">4</td>
+      <td class="num canttell">3</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="link-state-colors-review link states shown by color alone contrast 3:1 with the surrounding text">
+      <td><a href="link-state-colors-review-all-scenarios.html" target="_blank" rel="noopener">link-state-colors-review</a></td>
+      <td class="muted">automatic</td>
+      <td>Link states shown by color alone contrast 3:1 with the surrounding text</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">4</td>
+    </tr>
+<tr data-search="listbox-option-groups-absent aria listboxes do not group options">
+      <td><a href="listbox-option-groups-absent-all-scenarios.html" target="_blank" rel="noopener">listbox-option-groups-absent</a></td>
+      <td class="muted">automatic</td>
+      <td>ARIA listboxes do not group options</td>
+      <td class="num">4</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell"></td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="main-element-structure main content uses one visible &lt;main&gt; element">
+      <td><a href="main-element-structure-all-scenarios.html" target="_blank" rel="noopener">main-element-structure</a></td>
+      <td class="muted">automatic</td>
+      <td>Main content uses one visible &lt;main&gt; element</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="markup-validation-review the generated source code passes the w3c validator">
+      <td><a href="markup-validation-review-all-scenarios.html" target="_blank" rel="noopener">markup-validation-review</a></td>
+      <td class="muted">automatic</td>
+      <td>The generated source code passes the W3C validator</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="media-transcript-adjacent audio and video have an adjacent transcript or a link to one">
+      <td><a href="media-transcript-adjacent-all-scenarios.html" target="_blank" rel="noopener">media-transcript-adjacent</a></td>
+      <td class="muted">automatic</td>
+      <td>Audio and video have an adjacent transcript or a link to one</td>
+      <td class="num">9</td>
+      <td class="num pass">3</td>
+      <td class="num fail"></td>
+      <td class="num canttell">5</td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="meta-redirect-immediate meta redirects are immediate">
+      <td><a href="meta-redirect-immediate-all-scenarios.html" target="_blank" rel="noopener">meta-redirect-immediate</a></td>
+      <td class="muted">automatic</td>
+      <td>Meta redirects are immediate</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="meta-refresh-no-url-timing meta refresh waits 20 hours or more">
+      <td><a href="meta-refresh-no-url-timing-all-scenarios.html" target="_blank" rel="noopener">meta-refresh-no-url-timing</a></td>
+      <td class="muted">automatic</td>
+      <td>Meta refresh waits 20 hours or more</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="object-image-role-img image objects have role=&quot;img&quot; and a text alternative">
+      <td><a href="object-image-role-img-all-scenarios.html" target="_blank" rel="noopener">object-image-role-img</a></td>
+      <td class="muted">automatic</td>
+      <td>Image objects have role=&quot;img&quot; and a text alternative</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">2</td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="office-document-link downloadable office documents are accessible or have an accessible version">
+      <td><a href="office-document-link-all-scenarios.html" target="_blank" rel="noopener">office-document-link</a></td>
+      <td class="muted">manual</td>
+      <td>Downloadable office documents are accessible or have an accessible version</td>
+      <td class="num">10</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">10</td>
+    </tr>
+<tr data-search="optgroup-label-not-empty option group labels are not empty">
+      <td><a href="optgroup-label-not-empty-all-scenarios.html" target="_blank" rel="noopener">optgroup-label-not-empty</a></td>
+      <td class="muted">automatic</td>
+      <td>Option group labels are not empty</td>
+      <td class="num">4</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell"></td>
+      <td class="num">1</td>
+    </tr>
+<tr data-search="optgroup-label-present option groups have a label">
+      <td><a href="optgroup-label-present-all-scenarios.html" target="_blank" rel="noopener">optgroup-label-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Option groups have a label</td>
+      <td class="num">3</td>
+      <td class="num pass">2</td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="orientation-content-parity content stays the same in portrait and landscape">
+      <td><a href="orientation-content-parity-all-scenarios.html" target="_blank" rel="noopener">orientation-content-parity</a></td>
+      <td class="muted">automatic</td>
+      <td>Content stays the same in portrait and landscape</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">4</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="page-language-present page gives a default language">
+      <td><a href="page-language-present-all-scenarios.html" target="_blank" rel="noopener">page-language-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Page gives a default language</td>
+      <td class="num">1</td>
+      <td class="num pass">1</td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="page-title-unique page titles are unique across the site">
+      <td><a href="page-title-unique-all-scenarios.html" target="_blank" rel="noopener">page-title-unique</a></td>
+      <td class="muted">automatic</td>
+      <td>Page titles are unique across the site</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="page-zones-reachable each area of the page can be reached or skipped">
+      <td><a href="page-zones-reachable-all-scenarios.html" target="_blank" rel="noopener">page-zones-reachable</a></td>
+      <td class="muted">automatic</td>
+      <td>Each area of the page can be reached or skipped</td>
+      <td class="num">6</td>
+      <td class="num pass">2</td>
+      <td class="num fail"></td>
+      <td class="num canttell">4</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="presentational-attributes-absent page uses no presentational attributes">
+      <td><a href="presentational-attributes-absent-all-scenarios.html" target="_blank" rel="noopener">presentational-attributes-absent</a></td>
+      <td class="muted">automatic</td>
+      <td>Page uses no presentational attributes</td>
+      <td class="num">11</td>
+      <td class="num pass"></td>
+      <td class="num fail">8</td>
+      <td class="num canttell"></td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="presentational-elements-absent page uses no presentational elements">
+      <td><a href="presentational-elements-absent-all-scenarios.html" target="_blank" rel="noopener">presentational-elements-absent</a></td>
+      <td class="muted">automatic</td>
+      <td>Page uses no presentational elements</td>
+      <td class="num">9</td>
+      <td class="num pass"></td>
+      <td class="num fail">7</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="radio-group-present radio buttons sharing a name are grouped">
+      <td><a href="radio-group-present-all-scenarios.html" target="_blank" rel="noopener">radio-group-present</a></td>
+      <td class="muted">manual</td>
+      <td>Radio buttons sharing a name are grouped</td>
+      <td class="num">6</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">6</td>
+    </tr>
+<tr data-search="role-img-aria-name elements with role=&quot;img&quot; are named with aria-labelledby or aria-label">
+      <td><a href="role-img-aria-name-all-scenarios.html" target="_blank" rel="noopener">role-img-aria-name</a></td>
+      <td class="muted">automatic</td>
+      <td>Elements with role=&quot;img&quot; are named with aria-labelledby or aria-label</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">1</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="scripted-components-review scripted components are compatible with assistive technologies">
+      <td><a href="scripted-components-review-all-scenarios.html" target="_blank" rel="noopener">scripted-components-review</a></td>
+      <td class="muted">manual</td>
+      <td>Scripted components are compatible with assistive technologies</td>
+      <td class="num">12</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell"></td>
+      <td class="num">12</td>
+    </tr>
+<tr data-search="skip-link-placement skip links are visible and at the same place on every page">
+      <td><a href="skip-link-placement-all-scenarios.html" target="_blank" rel="noopener">skip-link-placement</a></td>
+      <td class="muted">automatic</td>
+      <td>Skip links are visible and at the same place on every page</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="skip-link-present pages have a skip link to the main content">
+      <td><a href="skip-link-present-all-scenarios.html" target="_blank" rel="noopener">skip-link-present</a></td>
+      <td class="muted">automatic</td>
+      <td>Pages have a skip link to the main content</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="svg-hidden-no-alternative hidden decorative svgs carry no text alternative">
+      <td><a href="svg-hidden-no-alternative-all-scenarios.html" target="_blank" rel="noopener">svg-hidden-no-alternative</a></td>
+      <td class="muted">automatic</td>
+      <td>Hidden decorative SVGs carry no text alternative</td>
+      <td class="num">10</td>
+      <td class="num pass">3</td>
+      <td class="num fail">5</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="svg-role-img svgs with a text alternative have role=&quot;img&quot;">
+      <td><a href="svg-role-img-all-scenarios.html" target="_blank" rel="noopener">svg-role-img</a></td>
+      <td class="muted">automatic</td>
+      <td>SVGs with a text alternative have role=&quot;img&quot;</td>
+      <td class="num">9</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">1</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="th-scope-row-col table headers use scope=&quot;row&quot; or scope=&quot;col&quot;">
+      <td><a href="th-scope-row-col-all-scenarios.html" target="_blank" rel="noopener">th-scope-row-col</a></td>
+      <td class="muted">manual</td>
+      <td>Table headers use scope=&quot;row&quot; or scope=&quot;col&quot;</td>
+      <td class="num">5</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">2</td>
+      <td class="num">3</td>
+    </tr>
+<tr data-search="title-placeholder-identical a form field's title and placeholder are identical">
+      <td><a href="title-placeholder-identical-all-scenarios.html" target="_blank" rel="noopener">title-placeholder-identical</a></td>
+      <td class="muted">automatic</td>
+      <td>A form field's title and placeholder are identical</td>
+      <td class="num">7</td>
+      <td class="num pass">2</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="video-captions-track-kind video caption tracks use kind=&quot;captions&quot;">
+      <td><a href="video-captions-track-kind-all-scenarios.html" target="_blank" rel="noopener">video-captions-track-kind</a></td>
+      <td class="muted">automatic</td>
+      <td>Video caption tracks use kind=&quot;captions&quot;</td>
+      <td class="num">8</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell">1</td>
+      <td class="num">2</td>
+    </tr>
+<tr data-search="viewport-zoom-review text can reach 200% zoom despite a viewport meta tag that limits zoom">
+      <td><a href="viewport-zoom-review-all-scenarios.html" target="_blank" rel="noopener">viewport-zoom-review</a></td>
+      <td class="muted">manual</td>
+      <td>Text can reach 200% zoom despite a viewport meta tag that limits zoom</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="widget-label-in-name the accessible name of a scripted component contains its visible label">
+      <td><a href="widget-label-in-name-all-scenarios.html" target="_blank" rel="noopener">widget-label-in-name</a></td>
+      <td class="muted">automatic</td>
+      <td>The accessible name of a scripted component contains its visible label</td>
+      <td class="num">6</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell">1</td>
+      <td class="num">2</td>
+    </tr>
+    </tbody>
+  </table>
+
+
+<script>
+(function () {
+  var input = document.getElementById('filter');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#fixtureTable tbody tr'));
+  var count = document.getElementById('count');
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    var visible = 0;
+    rows.forEach(function (tr) {
+      var match = !q || tr.getAttribute('data-search').indexOf(q) !== -1;
+      if (match) { tr.removeAttribute('hidden'); visible++; }
+      else { tr.setAttribute('hidden', ''); }
+    });
+    count.textContent = visible + ' / ' + rows.length + ' shown';
+  }
+  input.addEventListener('input', apply);
+  apply();
+})();
+</script>
+</body>
+</html>

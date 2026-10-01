@@ -3,8 +3,8 @@
 /**
  * validateProfileIndependence (src/coverage/standards.js): a standard maps
  * core's rules and its own, and derives variants from them, never from
- * another standard's opt-in rules. Two stand-in standards are registered for
- * each test and removed after it.
+ * another standard's opt-in rules. A stand-in standard is registered for each
+ * test and removed after it.
  */
 
 const test = require('node:test');
@@ -17,15 +17,12 @@ const {
 
 const RULES = [
   { ruleId: 'core-rule', wcagSc: ['1.1.1'], tags: ['wcag2a'] },
-  { ruleId: 'other-only', wcagSc: [], tags: ['other'] },
+  { ruleId: 'rgaa-only', wcagSc: [], tags: ['rgaa'] },
   { ruleId: 'own-rule', wcagSc: [], tags: ['stand-in'] }
 ];
 
-// A second standard owns other-only: the rules tagged with its ruleTag.
-const OTHER = { key: 'other', standard: 'Other', versions: ['1'], ruleTag: 'other', mappingsFor: () => [] };
-
 function withStandard(mapped, fn) {
-  NORMATIVE_STANDARDS.push(OTHER, {
+  NORMATIVE_STANDARDS.push({
     key: 'stand-in',
     standard: 'Stand-in',
     versions: ['1'],
@@ -38,7 +35,7 @@ function withStandard(mapped, fn) {
   try {
     return fn();
   } finally {
-    NORMATIVE_STANDARDS.splice(-2);
+    NORMATIVE_STANDARDS.pop();
   }
 }
 
@@ -53,19 +50,19 @@ test("mapping core's rules and its own is fine", () => {
 
 test("mapping another standard's opt-in rule is refused, naming it", () => {
   assert.deepEqual(
-    withStandard(['other-only'], () => mine(validateProfileIndependence(RULES))),
-    ['stand-in maps other-only, a rule of the standard tagged other: map a core rule or one of its own']
+    withStandard(['rgaa-only'], () => mine(validateProfileIndependence(RULES))),
+    ['stand-in maps rgaa-only, a rule of the standard tagged rgaa: map a core rule or one of its own']
   );
 });
 
 test("a variant of another standard's rule is refused", () => {
   const rules = RULES.concat([
-    { ruleId: 'own-variant', wcagSc: [], tags: ['stand-in'], variantOf: 'other-only' },
+    { ruleId: 'own-variant', wcagSc: [], tags: ['stand-in'], variantOf: 'rgaa-only' },
     { ruleId: 'fine-variant', wcagSc: [], tags: ['stand-in'], variantOf: 'core-rule' }
   ]);
   assert.deepEqual(
     withStandard([], () => mine(validateProfileIndependence(rules))),
-    ["stand-in's own-variant is a variant of other-only, a rule of the standard tagged other"]
+    ["stand-in's own-variant is a variant of rgaa-only, a rule of the standard tagged rgaa"]
   );
 });
 

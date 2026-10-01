@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>link-context-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>link-context-review</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lcr_case_NN</code>. RGAA's glossary entry
+    "Contexte du lien" lists the sentence, the paragraph, the list item, the preceding heading and the table
+    cells, not aria-describedby, <code>&lt;dd&gt;</code>, <code>&lt;dt&gt;</code>, <code>&lt;blockquote&gt;</code>
+    or <code>&lt;figcaption&gt;</code>.
+  </p>
+
+  <h2>A. Only context outside RGAA's list (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: generic link whose context is an aria-describedby text</div>
+    <div><a href="/rapport" aria-describedby="lcr_desc_01" id="lcr_case_01">En savoir plus</a> <span id="lcr_desc_01">sur le rapport annuel 2025</span></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: generic link inside a dd</div>
+    <dl><dt>Rapport</dt><dd>Le rapport annuel : <a href="/rapport" id="lcr_case_02">en savoir plus</a></dd></dl>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: bare format link inside a figcaption</div>
+    <figure><figcaption>Graphique des ventes <a href="/ventes.pdf" id="lcr_case_03">PDF</a></figcaption></figure>
+  </div>
+
+  <h2>B. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: context from the paragraph</div>
+    <p>Rapport annuel 2025 : <a href="/rapport" id="lcr_case_04">en savoir plus</a></p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: no context at all (link-name-quality asks)</div>
+    <div><a href="/rapport" id="lcr_case_05">en savoir plus</a></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: descriptive link text</div>
+    <div><a href="/rapport" aria-describedby="lcr_desc_06" id="lcr_case_06">Rapport annuel 2025</a> <span id="lcr_desc_06">PDF, 2 Mo</span></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>link-state-colors-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; color: #000; background: #fff; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .plain { text-decoration: none; color: #b00000; }
+    .visited:visited { color: #555; }
+    .hover:hover, .hover:focus { color: #700000; }
+    .nocolor { text-decoration: none; }
+    .underlined { color: #b00000; text-decoration: underline; }
+    .underlined:hover { color: #700000; }
+    .rich:hover { color: #700000; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>link-state-colors-review</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lscr_case_NN</code>. RGAA 10.6.1 step 3 checks the
+    3:1 contrast of a link shown only by color in its visited, active, hover and focus states too.
+  </p>
+
+  <h2>A. States shown by another color (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: a :visited rule changes the color</div>
+    <p>Lire <a href="/a" class="plain visited" id="lscr_case_01">la suite</a> de l’article.</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: :hover and :focus rules change the color</div>
+    <p>Lire <a href="/b" class="plain hover" id="lscr_case_02">le rapport</a> complet.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: no author color, so the browser's visited color applies</div>
+    <p>Voir <a href="/c" class="nocolor" id="lscr_case_03">la page</a> suivante.</p>
+  </div>
+
+  <h2>B. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: underlined link</div>
+    <p>Voir <a href="/d" class="underlined" id="lscr_case_04">la page</a> suivante.</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: colored link whose states keep the same color</div>
+    <p>Voir <a href="/e" class="plain" id="lscr_case_05">la page</a> suivante.</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: the hover rule also underlines</div>
+    <p>Voir <a href="/f" class="plain rich" id="lscr_case_06">la page</a> suivante.</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: not inside a run of text</div>
+    <nav><a href="/g" class="plain hover" id="lscr_case_07">Accueil</a></nav>
+  </div>
+</body>
+</html>

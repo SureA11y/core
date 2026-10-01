@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>keyboard-only-event-handlers — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>keyboard-only-event-handlers</code> (RGAA 7.3.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>koh_case_NN</code>.
+    RGAA 7.3.1 asks that an element with a scripted handler works with the
+    keyboard and with any pointing device. The rule asks about key handlers
+    with no click or pointer handler beside them.
+  </p>
+
+  <h2>A. Key handler, no pointer handler (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: focusable div with onkeydown only</div>
+    <div id="koh_case_01" tabindex="0" onkeydown="go(event)">Go</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: role="button" span with onkeyup only</div>
+    <span id="koh_case_02" role="button" tabindex="0" onkeyup="toggle(event)">Toggle</span>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: link with no href and onkeypress</div>
+    <a id="koh_case_03" tabindex="0" onkeypress="open(event)">Open</a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: key handler with a hover handler only</div>
+    <div id="koh_case_04" tabindex="0" onkeydown="show()" onmouseover="show()">Details</div>
+  </div>
+
+  <h2>B. Pointer handler present (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: onkeydown with onclick</div>
+    <div id="koh_case_05" tabindex="0" onkeydown="go(event)" onclick="go(event)">Go</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: onkeyup with onpointerdown</div>
+    <div id="koh_case_06" tabindex="0" onkeyup="go(event)" onpointerdown="go(event)">Go</div>
+  </div>
+
+  <h2>C. Native interactive elements (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: button with onkeydown</div>
+    <button id="koh_case_07" type="button" onkeydown="go(event)">Go</button>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: text field with onkeyup</div>
+    <label for="koh_case_08">Search</label>
+    <input id="koh_case_08" type="text" onkeyup="suggest(this.value)" />
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: link with href and onkeydown</div>
+    <a id="koh_case_09" href="/next" onkeydown="track(event)">Next</a>
+  </div>
+
+  <h2>D. Hidden content (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NOT APPLICABLE: hidden with display:none</div>
+    <div id="koh_case_10" style="display:none" tabindex="0" onkeydown="go(event)">Go</div>
+  </div>
+</body>
+</html>

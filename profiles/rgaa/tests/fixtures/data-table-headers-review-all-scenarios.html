@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>data-table-headers-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>data-table-headers-review</code> (RGAA 5.6.1, 5.6.2)</h1>
+
+  <p class="note">
+    Each target table has an id of the form <code>dthr_case_NN</code>. The rule
+    asks about a table with no header cell at all; only a person can say
+    whether it is a data table whose headers are missing.
+  </p>
+
+  <h2>A. No header cell (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: the first row reads as headers but uses &lt;td&gt;</div>
+    <table id="dthr_case_01">
+      <tr><td>Day</td><td>Opening hours</td></tr>
+      <tr><td>Monday</td><td>9:00–17:00</td></tr>
+      <tr><td>Saturday</td><td>10:00–13:00</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: an ARIA table whose cells are all role="cell"</div>
+    <div role="table" id="dthr_case_02" aria-label="Prices">
+      <div role="row"><div role="cell">Adult</div><div role="cell">12 €</div></div>
+      <div role="row"><div role="cell">Child</div><div role="cell">6 €</div></div>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: a two-column table that may only be used for layout</div>
+    <table id="dthr_case_03">
+      <tr><td>Contact us by phone.</td><td>Or write to us.</td></tr>
+      <tr><td>01 23 45 67 89</td><td>contact@example.test</td></tr>
+    </table>
+  </div>
+
+  <h2>B. Not asked about (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NOT APPLICABLE: the column headers are &lt;th&gt;</div>
+    <table id="dthr_case_04">
+      <tr><th>Day</th><th>Opening hours</th></tr>
+      <tr><td>Monday</td><td>9:00–17:00</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NOT APPLICABLE: a layout table with role="presentation"</div>
+    <table id="dthr_case_05" role="presentation">
+      <tr><td>Left column</td><td>Right column</td></tr>
+      <tr><td>More text</td><td>More text</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NOT APPLICABLE: a single row</div>
+    <table id="dthr_case_06">
+      <tr><td>Total</td><td>42</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: the row headers use role="rowheader"</div>
+    <table id="dthr_case_07">
+      <tr><td role="rowheader">Adult</td><td>12 €</td></tr>
+      <tr><td role="rowheader">Child</td><td>6 €</td></tr>
+    </table>
+  </div>
+</body>
+</html>

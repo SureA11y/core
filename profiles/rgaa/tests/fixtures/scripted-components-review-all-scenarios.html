@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>scripted-components-review — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>scripted-components-review</code></h1>
+
+  <p class="note">
+    Each listed candidate has a stable <code>id</code> of the form <code>scr_case_NN</code>. This rule is manual: on a page with script it asks a question (cantTell) and never passes or fails. The inline handlers below are the page's script. The rule also reports one occurrence on <code>&lt;html&gt;</code> for the whole page, which belongs to no case.
+  </p>
+
+  <h2>A. Candidates (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: widget role on a div (widgetRole)</div>
+    <div id="scr_case_01" role="tab" aria-selected="true">Details</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: link given the button role (widgetRole)</div>
+    <a id="scr_case_02" href="#" role="button">Print</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FLAGGED: div made focusable with tabindex="0" (focusableNonNative)</div>
+    <div id="scr_case_03" tabindex="0">Product card</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FLAGGED: inline onclick on a span (inlineHandler)</div>
+    <span id="scr_case_04" onclick="this.classList.toggle('open')">More</span>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FLAGGED: editable div (contentEditable)</div>
+    <div id="scr_case_05" contenteditable="true">Type your message</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FLAGGED: native button with aria-expanded (stateAttribute)</div>
+    <button id="scr_case_06" type="button" aria-expanded="false" aria-controls="scr_panel">Menu</button>
+    <ul id="scr_panel"><li>Home</li></ul>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: several reasons, listed once under the first (widgetRole)</div>
+    <div id="scr_case_07" role="switch" aria-checked="false" tabindex="0" onclick="this.setAttribute('aria-checked', 'true')">Dark mode</div>
+  </div>
+
+  <h2>B. Not listed</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: native button restating its own role</div>
+    <button id="scr_case_08" type="button" role="button">Save</button>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: native link with an inline handler</div>
+    <a id="scr_case_09" href="/help" onclick="return true">Help</a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: native checkbox with an inline handler</div>
+    <label><input id="scr_case_10" type="checkbox" onchange="void 0"> Remember me</label>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: hidden menu (hidden content is skipped)</div>
+    <div id="scr_case_11" role="menu" hidden>Closed menu</div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: tabindex="-1" on a div</div>
+    <div id="scr_case_12" tabindex="-1">Focus target</div>
+  </div>
+</body>
+</html>

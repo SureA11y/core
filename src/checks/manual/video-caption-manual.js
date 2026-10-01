@@ -24,7 +24,8 @@
  *   only text tracks are subtitles (`kind="subtitles"`, or no `kind`,
  *   which HTML treats as subtitles) gets its own question: subtitles may
  *   be a translation of the dialogue only, without the speaker and sound
- *   information captions carry.
+ *   information captions carry (RGAA's glossary "Sous-titres synchronisés"
+ *   makes the same distinction).
  * @implementation-notes
  * - Does not attempt to verify the referenced track file's content,
  *   only that a captions track is declared with a non-empty `src`.

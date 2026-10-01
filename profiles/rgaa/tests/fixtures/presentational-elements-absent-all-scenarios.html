@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>presentational-elements-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>presentational-elements-absent</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>pel_case_NN</code>. This page has
+    the HTML5 doctype, so <code>&lt;u&gt;</code> is not flagged here; the rule's inline tests
+    cover <code>&lt;u&gt;</code> without it.
+  </p>
+
+  <h2>A. Presentational elements (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: font</div>
+    <font id="pel_case_01">Red text</font>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: center</div>
+    <center id="pel_case_02">Centred text</center>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: big</div>
+    <big id="pel_case_03">Big text</big>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: s, listed by RGAA although HTML5 keeps it</div>
+    <s id="pel_case_04">Old price</s>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: tt</div>
+    <tt id="pel_case_05">monospace</tt>
+  </div>
+
+  <h2>B. Not presentational (not flagged)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: u under the HTML5 doctype</div>
+    <u id="pel_case_06">Misspelt</u>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: strong and em</div>
+    <strong id="pel_case_07">Important</strong> and <em>stressed</em>
+  </div>
+
+  <h2>C. Hidden content (FAIL)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: center inside a hidden subtree, still in the generated source</div>
+    <div hidden><center id="pel_case_08">Hidden text</center></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: font hidden with display:none</div>
+    <font id="pel_case_09" style="display:none">Not displayed</font>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

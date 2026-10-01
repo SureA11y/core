@@ -161,8 +161,8 @@ test(`${RULE_ID}: punctuation and emoji on either side do not affect the compari
 });
 
 // Accented letters stay whole: NFKD used to split "Déposer" at its combining
-// accent into "de" + "poser". Accents are not folded either: only punctuation
-// and capitals are excused.
+// accent into "de" + "poser". Accents are not folded either (RGAA excuses only
+// punctuation and capitals).
 test(`${RULE_ID}: accented words are compared whole, without folding accents`, () => {
   const pass = `<!doctype html><html><body>
     <button aria-label="Déposer une annonce">Déposer</button>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>canvas-decorative-aria-hidden — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>canvas-decorative-aria-hidden</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>cdah_case_NN</code>. <code>&lt;canvas&gt;</code> elements marked decorative are checked (RGAA 1.2.5).
+  </p>
+
+  <h2>A. Decorative canvas not correctly ignored (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role presentation without aria-hidden</div>
+    <canvas role="presentation" width="40" height="20" id="cdah_case_01"></canvas>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-hidden with aria-label</div>
+    <canvas aria-hidden="true" aria-label="Fond" width="40" height="20" id="cdah_case_02"></canvas>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-hidden with fallback text</div>
+    <canvas aria-hidden="true" width="40" height="20" id="cdah_case_03">Motif décoratif</canvas>
+  </div>
+
+  <h2>B. Needs review (CANTTELL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: role none with fallback content</div>
+    <canvas role="none" width="40" height="20" id="cdah_case_04">Ventes 2024 : 10 000</canvas>
+  </div>
+
+  <h2>C. Correctly ignored (PASS)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: aria-hidden and nothing else</div>
+    <canvas aria-hidden="true" width="40" height="20" id="cdah_case_05"></canvas>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: role presentation and aria-hidden</div>
+    <canvas role="presentation" aria-hidden="true" width="40" height="20" id="cdah_case_06"></canvas>
+  </div>
+
+  <h2>D. Not checked</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: not marked decorative</div>
+    <canvas role="img" aria-label="Ventes" width="40" height="20" id="cdah_case_07"></canvas>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: in a figure with a caption</div>
+    <figure><canvas role="presentation" width="40" height="20" id="cdah_case_08"></canvas><figcaption>Photo : A. Martin</figcaption></figure>
+  </div>
+</body>
+</html>

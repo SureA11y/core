@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>heading-role-level-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>heading-role-level-present</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>hrl_case_NN</code>. RGAA 9.1.3 accepts an
+    <code>&lt;hx&gt;</code> element, or <code>role="heading"</code> with an <code>aria-level</code> attribute.
+  </p>
+
+  <h2>A. role="heading" without a usable aria-level (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role="heading" with no aria-level (WAI-ARIA's default level 2 does not count)</div>
+    <div role="heading" id="hrl_case_01">Latest news</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-level is not a number</div>
+    <div role="heading" aria-level="two" id="hrl_case_02">Opening hours</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: empty aria-level</div>
+    <p role="heading" aria-level="" id="hrl_case_03">Contact</p>
+  </div>
+
+  <h2>B. Headings RGAA accepts</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role="heading" with aria-level</div>
+    <div role="heading" aria-level="3" id="hrl_case_04">Our team</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: a native heading needs no aria-level</div>
+    <h3 role="heading" id="hrl_case_05">Services</h3>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: hidden with display:none, not in the accessibility tree</div>
+    <div role="heading" style="display:none" id="hrl_case_06">Hidden</div>
+  </div>
+</body>
+</html>

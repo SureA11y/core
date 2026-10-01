@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aria-list-item-roles — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>aria-list-item-roles</code> (RGAA 9.3.1, 9.3.2)</h1>
+
+  <p class="note">
+    Each target list has a stable <code>id</code> of the form <code>alir_case_NN</code>.
+    RGAA accepts <code>&lt;ul&gt;</code>/<code>&lt;ol&gt;</code> with <code>&lt;li&gt;</code>, or
+    <code>role="list"</code> with <code>role="listitem"</code>. Whether the content is visually a
+    list, ordered or not, is left to a person, so the rule asks.
+  </p>
+
+  <h2>A. Items without role="listitem" (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: role="list" holding &lt;li&gt; elements</div>
+    <div role="list" id="alir_case_01">
+      <li>Apples</li>
+      <li>Pears</li>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: role="list" holding plain &lt;div&gt; elements</div>
+    <div role="list" id="alir_case_02">
+      <div>Step one</div>
+      <div>Step two</div>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: one item has role="listitem", the other has none</div>
+    <div role="list" id="alir_case_03">
+      <div role="listitem">Red</div>
+      <span>Blue</span>
+    </div>
+  </div>
+
+  <h2>B. Items with role="listitem" (PASS)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: role="list" and role="listitem"</div>
+    <div role="list" id="alir_case_04">
+      <div role="listitem">Home</div>
+      <div role="listitem">Contact</div>
+      <script>/* ignored */</script>
+    </div>
+  </div>
+
+  <h2>C. Out of scope</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: &lt;ul role="list"&gt; with &lt;li&gt; (an HTML list)</div>
+    <ul role="list" id="alir_case_05">
+      <li>One</li>
+    </ul>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: role="list" with no child element</div>
+    <div role="list" id="alir_case_06">Text only</div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

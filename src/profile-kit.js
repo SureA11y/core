@@ -20,8 +20,8 @@
  * - ruleMap[version][ruleId]: { requirements: [id, ...], note }, the
  *   requirements a rule checks: a core rule or one of the profile's own.
  *
- * A standard whose mapping needs more (tests grouped into criteria, related
- * to WCAG many to many, say) writes its own functions instead.
+ * A standard whose mapping needs more, as RGAA's does (tests grouped into
+ * criteria, related to WCAG many to many), writes its own functions instead.
  *
  * It loads no engine code, so a profile's own files may require it
  * (profiles/README.md, "What a profile may use").

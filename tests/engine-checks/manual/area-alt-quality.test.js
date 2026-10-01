@@ -120,8 +120,9 @@ test(`${RULE_ID}: a tabindex on a role="presentation" area changes nothing`, () 
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-// Every text-alternative source is reviewed, not only alt (alt, title,
-// aria-label and aria-labelledby; WCAG 1.1.1 judges whatever names the area).
+// Every text-alternative source is reviewed, not only alt (RGAA 1.3.2 lists
+// alt, title, aria-label and aria-labelledby; WCAG 1.1.1 judges whatever
+// names the area).
 
 function mapPage(area, extra = '') {
   return `<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png" usemap="#m" alt="Map"><map name="m">${area}</map>${extra}</body></html>`;

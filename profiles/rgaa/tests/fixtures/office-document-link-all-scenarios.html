@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>office-document-link — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>office-document-link</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>odl_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Links to office documents (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: PDF</div>
+    <a id="odl_case_01" href="/files/annual-report.pdf">Annual report</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: Word document with a query string</div>
+    <a id="odl_case_02" href="/files/form.DOCX?v=3">Application form</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FLAGGED: OpenDocument spreadsheet</div>
+    <a id="odl_case_03" href="prices.ods">Price list</a>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FLAGGED: the document is named in the query string</div>
+    <a id="odl_case_06" href="/get?file=rapport-annuel.pdf">Rapport annuel</a>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: the download attribute names a Word file</div>
+    <a id="odl_case_07" href="/dl/123" download="rapport.docx">Download the report</a>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: macro-enabled Word document</div>
+    <a id="odl_case_08" href="/files/budget.docm">Budget template</a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FLAGGED: a form whose action downloads a PDF</div>
+    <form id="odl_case_09" action="/files/certificate.pdf">
+      <button type="submit">Download the certificate</button>
+    </form>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: HTML page</div>
+    <a id="odl_case_04" href="/report.html">Report</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: folder named pdf</div>
+    <a id="odl_case_05" href="/pdf/">Documents</a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: CSV data file, not an office document format in RGAA's list</div>
+    <a id="odl_case_10" href="/files/prices.csv">Price list (CSV)</a>
+  </div>
+</body>
+</html>

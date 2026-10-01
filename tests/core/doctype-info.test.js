@@ -2,7 +2,8 @@
 
 /**
  * helpers.getDoctypeInfo(): the document's doctype, classified by HTML
- * version, for rules whose verdict depends on it.
+ * version, for rules whose verdict depends on it (RGAA 9.2 applies only to
+ * HTML5, 8.3.1 reads lang or xml:lang by version).
  */
 
 const test = require('node:test');
@@ -10,6 +11,7 @@ const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
 
 const { createDomHelpers } = require('../../src/core/dom-helpers.js');
+const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
 const DOCTYPES = [
   ['<!doctype html>', 'html5'],
@@ -86,4 +88,17 @@ test('getDoctypeInfo returns the doctype values as declared', () => {
     systemId: 'http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd'
   });
   assert.deepEqual(infoOf(''), { kind: 'none', name: '', publicId: '', systemId: '' });
+});
+
+// presentational-elements-absent has its own HTML5 test for <u>; the helper
+// must agree with it on every doctype.
+test('getDoctypeInfo agrees with presentational-elements-absent on <u>', () => {
+  const RUN = { runOnly: { includeRuleIds: ['presentational-elements-absent'] } };
+  for (const [doctype, kind] of DOCTYPES) {
+    const html = `${doctype}<html lang="en"><head><title>t</title></head><body><p><u>x</u></p></body></html>`;
+    const rule = runa11yCoreOnHtml(html, RUN).checksResults.find(
+      (r) => r.ruleId === 'presentational-elements-absent'
+    );
+    assert.equal(rule.outcome, kind === 'html5' ? 'pass' : 'fail', doctype || '(none)');
+  }
 });

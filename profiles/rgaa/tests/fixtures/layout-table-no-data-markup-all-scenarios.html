@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>layout-table-no-data-markup — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>layout-table-no-data-markup</code></h1>
+
+  <p class="note">
+    Each failing target has a stable <code>id</code> of the form <code>ltn_case_NN</code>. Only tables with role="presentation" or role="none" are checked.
+  </p>
+
+  <h2>A. Layout tables with data table markup (FAIL, or CANTTELL when the table looks like a data table)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: caption</div>
+    <table role="presentation" id="ltn_case_01">
+      <caption>Layout</caption>
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: th cells</div>
+    <table role="presentation" id="ltn_case_02">
+      <tr><th>Left</th><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: summary attribute</div>
+    <table role="none" summary="Page layout" id="ltn_case_03">
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: scope and headers on td</div>
+    <table role="presentation" id="ltn_case_04">
+      <tr><td id="h1" scope="col">Left</td><td headers="h1">Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: thead and tfoot</div>
+    <table role="presentation" id="ltn_case_05">
+      <thead><tr><td>Top</td></tr></thead>
+      <tbody><tr><td>Middle</td></tr></tbody>
+      <tfoot><tr><td>Bottom</td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: colgroup</div>
+    <table role="presentation" id="ltn_case_10">
+      <colgroup><col><col></colgroup>
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: marked as layout but looks like a data table (full header row over data)</div>
+    <table role="presentation" id="ltn_case_11">
+      <tr><th>Item</th><th>Price</th></tr>
+      <tr><td>Tea</td><td>2</td></tr>
+      <tr><td>Milk</td><td>1</td></tr>
+    </table>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: plain layout table</div>
+    <table role="presentation" id="ltn_case_06">
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: empty summary attribute</div>
+    <table role="presentation" summary=" " id="ltn_case_07">
+      <tr><td>Left</td><td>Right</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: a data table nested in a layout table keeps its headers</div>
+    <table role="presentation" id="ltn_case_08">
+      <tr><td>
+        <table id="ltn_case_08_inner">
+          <caption>Prices</caption>
+          <tr><th scope="col">Item</th><th scope="col">Price</th></tr>
+          <tr><td>Tea</td><td>2</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: data table, not a layout table</div>
+    <table id="ltn_case_09">
+      <caption>Prices</caption>
+      <tr><th scope="col">Item</th></tr>
+      <tr><td>Tea</td></tr>
+    </table>
+  </div>
+</body>
+</html>

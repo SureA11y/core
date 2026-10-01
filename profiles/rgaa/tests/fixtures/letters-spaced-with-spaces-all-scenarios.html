@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>letters-spaced-with-spaces — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>letters-spaced-with-spaces</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>lss_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Letters spaced out with spaces (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: heading spaced with spaces</div>
+    <h2 id="lss_case_01">S O L D E S</h2>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: no-break spaces</div>
+    <p id="lss_case_02">Our W&nbsp;I&nbsp;N&nbsp;T&nbsp;E&nbsp;R sale</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: three capitals that make up the whole heading</div>
+    <h2 id="lss_case_07">T O P</h2>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: letters split across spans, read as one run on the paragraph</div>
+    <p id="lss_case_08"><span>S</span> <span>O</span> <span>L</span> <span>D</span></p>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: three letters only</div>
+    <p id="lss_case_03">Vote for A B C</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: letters in a list with commas</div>
+    <p id="lss_case_04">Choose a, b, c or d</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: code</div>
+    <p><code id="lss_case_05">a b c d</code></p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: spacing done with CSS</div>
+    <p id="lss_case_06" style="letter-spacing: 0.5em">SOLDES</p>
+  </div>
+</body>
+</html>

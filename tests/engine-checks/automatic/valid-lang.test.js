@@ -36,7 +36,8 @@ test(`${RULE_ID}: fail when the lang value is syntactically invalid`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ELEMENT_LANG_INVALID');
 });
 
-// ACT de46e4 judges the primary language subtag.
+// ACT de46e4 judges the primary language subtag; the RGAA glossary "Code de
+// langue" reads only "la partie [code] avant le tiret".
 test(`${RULE_ID}: a malformed later subtag passes; an unknown primary subtag fails`, () => {
   const ok = `<!doctype html><html lang="fr"><body><p lang="en-US_x">Hello</p><p lang="de-DE-!!">Hallo</p></body></html>`;
   for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
