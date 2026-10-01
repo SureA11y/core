@@ -29,7 +29,7 @@ profiles/
 - `rule-map.js`: the RGAA tests each rule checks, with the reason for each.
 - `mappings.js`: the entries and the per-criterion rollups built from those two tables, and the checks the build runs on them.
 - `index.js`: the registry entry, with the `rgaa-4.1.2` profile and the `rgaa` rule tag.
-- `rules/`: the opt-in rules for requirements RGAA makes and WCAG does not, all tagged `rgaa` (see [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rules-for-another-standards-own-requirements)).
+- `rules/`: the opt-in rules for requirements RGAA makes and WCAG does not, all tagged `rgaa`, one of them (`contrast-minimum-rgaa`) a variant of core's `contrast-minimum` (see [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rules-for-another-standards-own-requirements)).
 - `i18n/`: their messages in every locale, and the note the HTML report shows above RGAA's rollups (`report.noteKey`).
 - `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](../docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
 
@@ -47,7 +47,7 @@ writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an em
 
 - `requirements.js`: the standard's requirements per version, each with its title and the WCAG criteria it corresponds to;
 - `rule-map.js`: which requirements each rule checks, core's rules or the profile's own, with the reason;
-- `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`, each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
+- `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`; where a requirement is a core rule with other thresholds, a variant of it rather than a copy ([`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rule-variants)), each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
 - `i18n/en.json`: their messages, then `npm run i18n:sync`.
 
 From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
@@ -61,7 +61,7 @@ A profile depends on core only through what core already publishes, so it never 
 - **Its entry.** `index.js` exports only `standard`, `rulesDir` and `i18nDir`, and both folders sit inside the profile. `standard` follows ENTRY SHAPE in `src/coverage/standards.js`.
 - **Its own files.** The entry and its tables (`*.js` at the profile's root) require only each other and Node built-ins: nothing from `src/` or `scripts/`.
 - **Its rules.** A rule follows the custom-rule contract, which semver covers ([`docs/API_STABILITY.md`](../docs/API_STABILITY.md)):
-  - it requires nothing, since `runInPage` is serialized into the page;
+  - it requires nothing, since `runInPage` is serialized into the page; or it is a variant of a core rule (`from`), which has no code of its own;
   - it reads only the `ctx` fields [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md) section 8.2 lists: `document`, `window`, `root`, `rule`, `config`, `standard`, `helpers`, `engineOptions`, `inputs` and `contextSelector`. A rule whose behaviour differs between versions of its standard reads `ctx.standard`;
   - it calls only the helpers [`docs/RULE_HELPERS.md`](../docs/RULE_HELPERS.md) documents. A helper a profile needs that is not documented there is a change to core's public API: document it there first;
   - it carries the standard's `ruleTag`, so no WCAG scan runs it.
