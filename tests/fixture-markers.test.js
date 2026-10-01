@@ -8,9 +8,14 @@ const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'scripts', 'generate-fixture-markers.js');
-const RECORD = path.join(ROOT, 'scripts', 'data', 'fixture-markers.json');
+const { ruleSources } = require('../scripts/lib/rule-dirs');
 
-const committed = JSON.parse(fs.readFileSync(RECORD, 'utf8')).disagreements;
+// Core's record and each profile's.
+const committed = ruleSources().flatMap(
+  (src) =>
+    JSON.parse(fs.readFileSync(path.join(src.dataDir, 'fixture-markers.json'), 'utf8'))
+      .disagreements
+);
 
 test('no fixture marker disagrees with the engine beyond the recorded set', () => {
   try {
