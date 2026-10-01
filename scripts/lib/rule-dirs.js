@@ -10,6 +10,10 @@
  * Their tests and scenario pages follow the same split: core's in
  * tests/engine-checks/ and tests/fixtures/, a profile's in its tests/rules/
  * and tests/fixtures/, so a test reaches its page at ../../fixtures either way.
+ *
+ * So do the docs and records generated from them (ruleSources): core's
+ * describe core's rules only, and a profile's sit in its own folder, laid out
+ * as core's are at the repository root.
  */
 
 const fs = require('fs');
@@ -32,20 +36,60 @@ function ruleTypeDirs(type) {
     .filter((dir) => fs.existsSync(dir));
 }
 
-// The rule tests and scenario pages of every rules folder, core's first:
-// [{ testsDir, fixturesDir }].
-function ruleTestDirs() {
+function source(key, root, rulesDir, testsDir) {
+  return {
+    key,
+    root,
+    rulesDir,
+    testsDir,
+    fixturesDir: path.join(root, 'tests', 'fixtures'),
+    docsDir: path.join(root, 'docs'),
+    dataDir: path.join(root, 'scripts', 'data')
+  };
+}
+
+// Every set of rules with its own tests, docs and records, core's first, then
+// each profile with rules, in registry order: { key, root, rulesDir, testsDir,
+// fixturesDir, docsDir, dataDir }. A profile's paths are its folder's, in the
+// same places under it as core's are under the repository root.
+function ruleSources() {
   return [
-    {
-      testsDir: path.join(ROOT_DIR, 'tests', 'engine-checks'),
-      fixturesDir: path.join(ROOT_DIR, 'tests', 'fixtures')
-    }
+    source('core', ROOT_DIR, CORE_RULES_DIR, path.join(ROOT_DIR, 'tests', 'engine-checks'))
   ].concat(
     PROFILES.filter((p) => p.rulesDir).map((p) => {
-      const tests = path.join(path.dirname(p.rulesDir), 'tests');
-      return { testsDir: path.join(tests, 'rules'), fixturesDir: path.join(tests, 'fixtures') };
+      const root = path.dirname(p.rulesDir);
+      return source(p.standard.key, root, p.rulesDir, path.join(root, 'tests', 'rules'));
     })
   );
 }
 
-module.exports = { ROOT_DIR, CORE_RULES_DIR, ruleDirs, ruleTypeDirs, ruleTestDirs };
+// The rule tests and scenario pages of every rules folder, core's first:
+// [{ testsDir, fixturesDir }].
+function ruleTestDirs() {
+  return ruleSources().map(({ testsDir, fixturesDir }) => ({ testsDir, fixturesDir }));
+}
+
+// The ids of the rules a source holds (its rules folder's modules), in a Set.
+function ruleIdsOf(src) {
+  const ids = new Set();
+  for (const type of ['automatic', 'manual']) {
+    const dir = path.join(src.rulesDir, type);
+    if (!fs.existsSync(dir)) continue;
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith('.js')) continue;
+      const mod = require(path.join(dir, file));
+      if (mod && typeof mod.id === 'string') ids.add(mod.id);
+    }
+  }
+  return ids;
+}
+
+module.exports = {
+  ROOT_DIR,
+  CORE_RULES_DIR,
+  ruleDirs,
+  ruleTypeDirs,
+  ruleTestDirs,
+  ruleSources,
+  ruleIdsOf
+};

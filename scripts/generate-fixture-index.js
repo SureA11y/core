@@ -9,8 +9,10 @@
  *   node scripts/generate-fixture-index.js
  *   node scripts/generate-fixture-index.js --checksDir src/checks --fixturesDir tests/fixtures --testsDir tests/engine-checks --out tests/fixtures/INDEX.md --json tests/fixtures/index.json
  *
- * Without --checksDir, --testsDir and --fixturesDir, it reads every rules
- * folder and its tests and fixtures: core's and each profile's.
+ * Without --checksDir, --testsDir and --fixturesDir, it indexes core's rules
+ * into tests/fixtures/ and each profile's into its own tests/fixtures/
+ * (scripts/lib/rule-dirs.js ruleSources), with paths relative to the
+ * repository root or the profile's folder.
  *
  * Output:
  * - Markdown index (tests/fixtures/INDEX.md): one row per rule, whether it
@@ -37,18 +39,17 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ruleDirs, ruleTestDirs } = require('./lib/rule-dirs');
+const { ruleSources } = require('./lib/rule-dirs');
 
 function parseArgs(argv) {
   const args = {
-    checksDirs: [], // every rule folder when empty (scripts/lib/rule-dirs.js)
-    // A test folder and the fixture folder its tests read; every rules
-    // folder's pair when not given (scripts/lib/rule-dirs.js).
+    checksDirs: [], // every source's, each indexed on its own, when empty
+    // A test folder and the fixture folder its tests read.
     fixturesDir: null,
     testsDir: null,
-    out: 'tests/fixtures/INDEX.md',
-    json: 'tests/fixtures/index.json',
-    html: 'tests/fixtures/index.html'
+    out: null,
+    json: null,
+    html: null
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -98,10 +99,7 @@ function safeRequire(file) {
 }
 
 /** Load the rule catalog: ruleId (prefixed) -> { title, type, file } */
-function loadRuleCatalog(repoRoot, checksDirArgs) {
-  const checksDirsAbs = checksDirArgs.length
-    ? checksDirArgs.map((dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir)))
-    : ruleDirs();
+function loadRuleCatalog(repoRoot, checksDirsAbs) {
   const files = checksDirsAbs.flatMap((dir) => listFilesRecursive(dir, isRuleFileName));
 
   const rules = new Map(); // ruleId -> {title, type, file}
@@ -321,24 +319,13 @@ ${missingSection}
 `;
 }
 
-function main() {
-  const args = parseArgs(process.argv);
-  const repoRoot = findRepoRoot(process.cwd());
-
-  const rules = loadRuleCatalog(repoRoot, args.checksDirs);
-  const abs = (dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir));
-  const testDirs =
-    args.testsDir || args.fixturesDir
-      ? [
-          {
-            testsDir: abs(args.testsDir || 'tests/engine-checks'),
-            fixturesDir: abs(args.fixturesDir || 'tests/fixtures')
-          }
-        ]
-      : ruleTestDirs();
+// Build one index: the rules in checksDirs, their tests and fixtures in
+// testDirs, paths relative to root. Returns the three files' contents.
+function buildIndex(root, checksDirs, testDirs, htmlPath, isCore) {
+  const rules = loadRuleCatalog(root, checksDirs);
   const testInfo = new Map();
   for (const { testsDir, fixturesDir } of testDirs) {
-    scanTestFiles(repoRoot, testsDir, fixturesDir, testInfo);
+    scanTestFiles(root, testsDir, fixturesDir, testInfo);
   }
 
   const rows = [];
@@ -350,7 +337,7 @@ function main() {
     if (t && t.fixtureFile) {
       const fixtureAbs = path.join(t.fixturesDir, t.fixtureFile);
       if (fs.existsSync(fixtureAbs)) {
-        fixtureRel = path.relative(repoRoot, fixtureAbs);
+        fixtureRel = path.relative(root, fixtureAbs);
         caseInfo = parseFixtureCases(fixtureAbs);
       }
     }
@@ -377,7 +364,9 @@ function main() {
   // No timestamp: these files are committed, so a generation time would make
   // every run a diff and hide the drift worth seeing.
   let md = `# Fixture Index\n\n`;
-  md += `Every implemented rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/engine-checks/**/<rule>.test.js\` asserting the exact expected ids. A profile's rules keep both in the profile, under \`profiles/<name>/tests/fixtures/\` and \`profiles/<name>/tests/rules/\`. See \`docs/RULE_AUTHORING.md\`.\n\n`;
+  md += isCore
+    ? `Every implemented rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/engine-checks/**/<rule>.test.js\` asserting the exact expected ids. A profile's rules keep both in the profile, under \`profiles/<name>/tests/fixtures/\` and \`profiles/<name>/tests/rules/\`, with an index of their own there. See \`docs/RULE_AUTHORING.md\`.\n\n`
+    : `This profile's rules and their scenario pages. Every rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/rules/**/<rule>.test.js\` asserting the exact expected ids. Paths are relative to the profile's folder. Core's rules have their own index, in core's \`tests/fixtures/INDEX.md\`.\n\n`;
   md += `## Summary\n\n`;
   md += `Total rules: **${rows.length}**. With fixture: **${withFixture.length}**. Without fixture: **${withoutFixture.length}**.\n\n`;
 
@@ -418,39 +407,87 @@ function main() {
     2
   );
 
-  const html = renderHtmlIndex(
-    rows,
-    path.dirname(path.relative(repoRoot, path.resolve(repoRoot, args.html)))
-  );
+  const html = renderHtmlIndex(rows, path.dirname(path.relative(root, htmlPath)));
+  return { md, json, html, summary: `${withFixture.length}/${rows.length} rules have a fixture` };
+}
 
-  const mdPath = path.resolve(repoRoot, args.out);
-  const jsonPath = path.resolve(repoRoot, args.json);
-  const htmlPath = path.resolve(repoRoot, args.html);
+function main() {
+  const args = parseArgs(process.argv);
+  const repoRoot = findRepoRoot(process.cwd());
+  const abs = (dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir));
+
+  // One index per source, or the single one the arguments describe.
+  const explicit = args.checksDirs.length || args.testsDir || args.fixturesDir;
+  const jobs = explicit
+    ? [
+        {
+          root: repoRoot,
+          isCore: true,
+          checksDirs: args.checksDirs.length
+            ? args.checksDirs.map(abs)
+            : [path.join(repoRoot, 'src', 'checks')],
+          testDirs: [
+            {
+              testsDir: abs(args.testsDir || 'tests/engine-checks'),
+              fixturesDir: abs(args.fixturesDir || 'tests/fixtures')
+            }
+          ],
+          dir: path.join(repoRoot, 'tests', 'fixtures')
+        }
+      ]
+    : ruleSources().map((src) => ({
+        root: src.root,
+        isCore: src.key === 'core',
+        checksDirs: [src.rulesDir],
+        testDirs: [{ testsDir: src.testsDir, fixturesDir: src.fixturesDir }],
+        dir: src.fixturesDir
+      }));
+
+  const stale = [];
+  for (const job of jobs) {
+    const mdPath = args.out ? abs(args.out) : path.join(job.dir, 'INDEX.md');
+    const jsonPath = args.json ? abs(args.json) : path.join(job.dir, 'index.json');
+    const htmlPath = args.html ? abs(args.html) : path.join(job.dir, 'index.html');
+    const { md, json, html, summary } = buildIndex(
+      job.root,
+      job.checksDirs,
+      job.testDirs,
+      htmlPath,
+      job.isCore
+    );
+    const shown = (file) => path.relative(repoRoot, file);
+
+    if (process.argv.includes('--check')) {
+      const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
+      if (
+        readOrNull(mdPath) !== md ||
+        readOrNull(jsonPath) !== json ||
+        readOrNull(htmlPath) !== html
+      ) {
+        stale.push(shown(mdPath));
+      }
+      continue;
+    }
+
+    fs.mkdirSync(path.dirname(mdPath), { recursive: true });
+    fs.writeFileSync(mdPath, md, 'utf8');
+    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
+    fs.writeFileSync(jsonPath, json, 'utf8');
+    fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
+    fs.writeFileSync(htmlPath, html, 'utf8');
+
+    console.log(
+      `[fixture-index] wrote ${shown(mdPath)}, ${shown(jsonPath)}, ${shown(htmlPath)} — ${summary}`
+    );
+  }
 
   if (process.argv.includes('--check')) {
-    const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
-
-    if (
-      readOrNull(mdPath) !== md ||
-      readOrNull(jsonPath) !== json ||
-      readOrNull(htmlPath) !== html
-    ) {
-      console.error('Fixture index is stale. Run: npm run fixtures:index');
+    if (stale.length) {
+      console.error(`Fixture index is stale (${stale.join(', ')}). Run: npm run fixtures:index`);
       process.exit(1);
     }
     console.log('[fixture-index] index is up to date.');
-    return;
   }
-
-  fs.mkdirSync(path.dirname(mdPath), { recursive: true });
-  fs.writeFileSync(mdPath, md, 'utf8');
-  fs.writeFileSync(jsonPath, json, 'utf8');
-  fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
-  fs.writeFileSync(htmlPath, html, 'utf8');
-
-  console.log(
-    `[fixture-index] wrote ${args.out}, ${args.json}, ${args.html} — ${withFixture.length}/${rows.length} rules have a fixture`
-  );
 }
 
 main();
