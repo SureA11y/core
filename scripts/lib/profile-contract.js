@@ -20,14 +20,15 @@ const ROOT_DIR = path.join(__dirname, '..', '..');
 // What a profile's index.js may export.
 const PROFILE_EXPORTS = ['standard', 'rulesDir', 'i18nDir'];
 
-// The `ctx` fields a rule may read: the ones core's own rules read, plus
-// `window` and `config` (engineOptions.rules[ruleId], ENGINE_OPTIONS.md).
+// The `ctx` fields a rule may read, as docs/RULE_AUTHORING.md section 8.2
+// lists them.
 const RULE_CONTEXT = [
   'document',
   'window',
   'root',
   'rule',
   'config',
+  'standard',
   'helpers',
   'engineOptions',
   'inputs',

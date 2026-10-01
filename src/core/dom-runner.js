@@ -15,13 +15,14 @@
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
- *   rollupInProfileVersion (a standard's rollups under one of its profiles).
+ *   rollupInProfileVersion (a standard's rollups under one of its profiles),
+ *   profileStandardOf (ctx.standard: the standard a profile targets).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS, rollupInProfileVersion */
+   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS, rollupInProfileVersion, profileStandardOf */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -759,6 +760,9 @@ function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -896,6 +900,8 @@ function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
