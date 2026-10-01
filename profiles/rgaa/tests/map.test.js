@@ -23,22 +23,12 @@ const {
   rgaaCriteriaForSc
 } = require('../map');
 const { buildTables, renderModule, formatted, plainText } = require('../scripts/generate-map');
-const { FACETS } = require('../../../src/coverage/wcag-facets');
-const { introducedInVersion, removedInVersion } = require('../../../src/coverage/wcag-version-map');
+const { wcagCriteria } = require('../../../src/wcag');
 
 const V = '4.1.2';
-const VERSION_ORDER = ['2.0', '2.1', '2.2'];
-
-// Same helper as tests/coverage/en301549-map.test.js.
-function wcagAAFor(wcagVersion) {
-  const max = VERSION_ORDER.indexOf(wcagVersion);
-  return Object.keys(FACETS).filter((sc) => {
-    if (FACETS[sc].level === 'AAA') return false;
-    if (VERSION_ORDER.indexOf(introducedInVersion(sc)) > max) return false;
-    const removed = removedInVersion(sc);
-    return !(removed && VERSION_ORDER.indexOf(removed) <= max);
-  });
-}
+// The WCAG Level A and AA criteria that make up a given WCAG version.
+const wcagAAFor = (wcagVersion) =>
+  wcagCriteria(wcagVersion, { levels: ['A', 'AA'] }).map((c) => c.sc);
 
 // --- generated, not hand-edited ------------------------------------------------
 

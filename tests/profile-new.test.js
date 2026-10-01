@@ -27,6 +27,11 @@ function makeRoot() {
     "'use strict';\n\nmodule.exports = [require('./rgaa')];\n"
   );
   fs.mkdirSync(path.join(root, 'src', 'i18n'), { recursive: true });
+  // The one core module a profile's own files may require: the real one.
+  fs.writeFileSync(
+    path.join(root, 'src', 'wcag.js'),
+    `module.exports = require(${JSON.stringify(path.join(__dirname, '..', 'src', 'wcag.js'))});\n`
+  );
   for (const locale of ['en', 'fr']) {
     fs.writeFileSync(path.join(root, 'src', 'i18n', `${locale}.json`), '{}\n');
   }
@@ -152,4 +157,31 @@ test('it refuses a bad, reserved or existing key, and writes nothing', async () 
   }
   assert.equal(fs.readFileSync(path.join(root, 'profiles', 'index.js'), 'utf8'), before);
   assert.deepEqual(fs.readdirSync(path.join(root, 'profiles')).sort(), ['index.js', 'rgaa']);
+});
+
+test('a version names the WCAG version it is built on, which sets its tags and criteria', async () => {
+  const root = makeRoot();
+  await createProfile({ key: 'acme-std', name: 'ACME Standard', root });
+  const dir = path.join(root, 'profiles', 'acme-std');
+  const fill = (file, from, to) => {
+    const p = path.join(dir, file);
+    fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(from, to));
+  };
+  fill('requirements.js', "wcagVersion: '2.2'", "wcagVersion: '2.1'");
+  fill(
+    'requirements.js',
+    "'1.0': {}",
+    "'1.0': { P: { title: 'Parsing', wcagSc: ['4.1.1'] }, T: { title: 'Target', wcagSc: ['2.5.8'] } }"
+  );
+  const { standard } = require(dir);
+
+  assert.deepEqual(standard.profiles['acme-std-1.0'].tags, [
+    'wcag2a',
+    'wcag2aa',
+    'wcag21a',
+    'wcag21aa',
+    'acme-std'
+  ]);
+  // 4.1.1 is a criterion of 2.1; 2.5.8 arrived in 2.2.
+  assert.deepEqual(standard.validate([]), ['1.0 T: WCAG 2.1 has no criterion 2.5.8']);
 });

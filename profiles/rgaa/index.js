@@ -16,11 +16,13 @@
 
 const path = require('path');
 
+const { wcagTags } = require('../../src/wcag.js');
 const { RGAA_VERSIONS } = require('./map');
 const { rgaaMappingsFor, rgaaComposites, validateRgaaRuleTests } = require('./mappings');
 
-// RGAA 4.1.2 is built on WCAG 2.1 A and AA.
-const WCAG21_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+// The WCAG A and AA tags of the WCAG version an RGAA version is built on.
+const wcagTagsOf = (version) =>
+  wcagTags(RGAA_VERSIONS.find((v) => v.version === version).wcagVersion);
 
 const standard = {
   key: 'rgaa',
@@ -30,7 +32,7 @@ const standard = {
   profiles: {
     'rgaa-4.1.2': {
       version: '4.1.2',
-      tags: WCAG21_AA_TAGS.concat(['rgaa']),
+      tags: wcagTagsOf('4.1.2').concat(['rgaa']),
       mappedRules: true
     }
   },

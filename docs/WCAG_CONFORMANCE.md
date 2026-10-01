@@ -230,6 +230,8 @@ The rest is optional, and the comment at the top of the registry describes each 
 - `report`: the dictionary key of the note above that section (`noteKey`), and the language of the rollup titles when it is not the scan's (`titleLang`).
 - `validate(rules)`: checks the standard's own tables against the rules that exist. The build fails on any problem it returns.
 
+A standard built on a WCAG version reads that version from `@surea11y/core/wcag` (`src/wcag.js`) rather than keeping its own copy: `wcagCriteria('2.1', { levels: ['A', 'AA'] })` lists the criteria in force in 2.1 with their 2.1 titles and levels (4.1.1 Parsing is Level A there, and gone in 2.2), `wcagCriterion(sc, version)` looks one up, and `wcagTags('2.1')` gives the rule tags a profile on 2.1 A and AA selects, as EN 301 549's and RGAA's profiles do. It is the one core module a profile's own tables may require (see [`profiles/README.md`](../profiles/README.md#what-a-profile-may-use)).
+
 `tests/coverage/standards.test.js` holds every registered standard to the contract. What stays per standard is its table, its tests, its rules, and a public export if tools need the reverse view, as `@surea11y/core/en301549` and `@surea11y/core/rgaa` do.
 
 A standard is compiled into the engine. At run time, a custom rule (`engineOptions.customRules`) can name any standard in its own `normativeMappings`, and the result keeps those entries as written, but only registered standards get a profile, a `mappings` switch, opt-in rules, rollups, or a place in SARIF, JUnit and the HTML report.

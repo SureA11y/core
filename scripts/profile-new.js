@@ -9,9 +9,9 @@
  * writes profiles/<key>/ with a working, empty standard, and adds it to
  * profiles/index.js:
  *
- * - index.js         the registry entry: one version, 1.0, and one profile,
- *                    `<key>-1.0`, on WCAG 2.2 A and AA plus the standard's
- *                    own rules (tag `<key>`)
+ * - index.js         the registry entry: one version, 1.0, built on WCAG 2.2,
+ *                    and one profile, `<key>-1.0`, on WCAG 2.2 A and AA plus
+ *                    the standard's own rules (tag `<key>`)
  * - requirements.js  the standard's requirements, per version
  * - rule-map.js      which requirements each rule checks, per version
  * - mappings.js      the result entries and per-requirement rollups built from
@@ -76,11 +76,12 @@ function indexJs({ key, name }) {
 
 const path = require('path');
 
+const { wcagTags } = require('../../src/wcag.js');
 const { VERSIONS } = require('./requirements');
 const { mappingsFor, composites, validate } = require('./mappings');
 
-// The WCAG version a profile builds on, as the tags of its A and AA rules.
-const WCAG22_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'];
+// The WCAG A and AA tags of the WCAG version a version is built on.
+const wcagTagsOf = (version) => wcagTags(VERSIONS.find((v) => v.version === version).wcagVersion);
 
 const standard = {
   key: ${JSON.stringify(key)},
@@ -91,7 +92,7 @@ const standard = {
   profiles: {
     ${JSON.stringify(`${key}-1.0`)}: {
       version: '1.0',
-      tags: WCAG22_AA_TAGS.concat([${JSON.stringify(key)}]),
+      tags: wcagTagsOf('1.0').concat([${JSON.stringify(key)}]),
       mappedRules: true
     }
   },
@@ -121,14 +122,17 @@ function requirementsJs({ name }) {
 /**
  * ${name}'s requirements, per version, as the standard publishes them.
  *
- * - VERSIONS: [{ version }], oldest first. A version needs a key in
- *   REQUIREMENTS and a profile in index.js.
+ * - VERSIONS: [{ version, wcagVersion }], oldest first: the standard's
+ *   version and the WCAG version it is built on ('2.0', '2.1' or '2.2'). A
+ *   version needs a key in REQUIREMENTS and a profile in index.js, which
+ *   runs that WCAG version's A and AA rules.
  * - REQUIREMENTS[version][id]: { title, wcagSc }. \`id\` is the standard's own
  *   number ('1.2', 'B4'...), \`title\` its wording, and \`wcagSc\` the WCAG
- *   criteria the requirement corresponds to, if any (['1.4.3']).
+ *   criteria the requirement corresponds to, if any (['1.4.3']), each one a
+ *   criterion of the version's WCAG version.
  */
 
-const VERSIONS = [{ version: '1.0' }];
+const VERSIONS = [{ version: '1.0', wcagVersion: '2.2' }];
 
 const REQUIREMENTS = {
   '1.0': {}
@@ -172,6 +176,7 @@ function mappingsJs({ key, name }) {
  * build runs on its tables (index.js passes them to the registry).
  */
 
+const { WCAG_VERSIONS, wcagCriterion } = require('../../src/wcag.js');
 const { VERSIONS, REQUIREMENTS } = require('./requirements');
 const { RULE_REQUIREMENTS } = require('./rule-map');
 
@@ -250,8 +255,23 @@ function validate(rules) {
   const known = new Set(rules.map((r) => r.ruleId));
   const problems = [];
   const versions = VERSIONS.map((v) => v.version);
-  for (const version of versions) {
-    if (!REQUIREMENTS[version]) problems.push(\`version \${version} has no requirements table\`);
+  for (const { version, wcagVersion } of VERSIONS) {
+    if (!REQUIREMENTS[version]) {
+      problems.push(\`version \${version} has no requirements table\`);
+      continue;
+    }
+    if (!WCAG_VERSIONS.includes(wcagVersion)) {
+      problems.push(\`version \${version}: wcagVersion must be one of \${WCAG_VERSIONS.join(', ')}\`);
+      continue;
+    }
+    // A requirement corresponds to criteria of the WCAG version it is built on.
+    for (const [id, req] of Object.entries(REQUIREMENTS[version])) {
+      for (const sc of (req && req.wcagSc) || []) {
+        if (!wcagCriterion(sc, wcagVersion)) {
+          problems.push(\`\${version} \${id}: WCAG \${wcagVersion} has no criterion \${sc}\`);
+        }
+      }
+    }
   }
   for (const [version, table] of Object.entries(RULE_REQUIREMENTS)) {
     if (!versions.includes(version)) {
@@ -336,7 +356,7 @@ ${name} as a profile of the engine. Created by \`npm run profile:new\`; see [\`p
 3. **Its own rules**, for requirements no core rule checks, in \`rules/automatic/\` or \`rules/manual/\`. Each one follows [\`docs/RULE_AUTHORING.md\`](../../docs/RULE_AUTHORING.md), carries the tag \`${key}\` (which makes it run only under this standard), and has a test in \`tests/rules/\` with its scenario page in \`tests/fixtures/\`.
 4. **Their messages** in \`i18n/en.json\`, then \`npm run i18n:sync\` for the other locales. The files in \`i18n/\` are the profile's languages: \`npm run i18n:new -- <locale> --profile ${key}\` adds one, and deleting a file drops one, whose messages then show in English.
 5. **Their docs and records**: an example pair per rule in \`docs/RULE_EXAMPLES.md\`, then \`npm run docs:rule-catalog\`, \`fixtures:index\`, \`fixtures:markers\`, \`rule-examples:coverage\` and \`finding-ids\`, which write this profile's catalog, fixture index and records here, beside core's.
-6. **Its versions and profiles**, if it has more than 1.0: \`VERSIONS\` in \`requirements.js\` and \`profiles\` in \`index.js\`.
+6. **Its versions and profiles**, if it has more than 1.0, or is built on another WCAG version than 2.2: \`VERSIONS\` in \`requirements.js\` (each version with the WCAG version it is built on) and \`profiles\` in \`index.js\`.
 
 \`npm run build && npm test\` builds the engine with it and runs its tests with everyone else's. \`tests/profile-boundary.test.js\` checks it uses only what core publishes.
 `;
