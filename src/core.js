@@ -2922,7 +2922,17 @@ const CHECK_DEFS = [
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "boldLargeMinPx": 18.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "contrastMinimumRgaa"
+      }
+    }
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -17330,7 +17340,7 @@ const RULE_IMPLS = {
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
   "contrast-minimum": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
-  "contrast-minimum-rgaa": { run: require("../profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js").runInPage, applicability: require("../profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js").applicability || null },
+  "contrast-minimum-rgaa": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
   "css-focus-indicator-suppressed": { run: require("./checks/manual/css-focus-indicator-suppressed-manual.js").runInPage, applicability: require("./checks/manual/css-focus-indicator-suppressed-manual.js").applicability || null },
   "css-hidden-focus": { run: require("./checks/manual/css-hidden-focus.js").runInPage, applicability: require("./checks/manual/css-hidden-focus.js").applicability || null },
   "css-orientation-lock": { run: require("./checks/automatic/css-orientation-lock.js").runInPage, applicability: require("./checks/automatic/css-orientation-lock.js").applicability || null },
@@ -24905,6 +24915,11 @@ const RULE_MAPPED_STANDARDS = [
   "RGAA"
 ];
 
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {};
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -25046,6 +25061,11 @@ const PROFILE_RULES = {
   ]
 };
 
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -25057,6 +25077,53 @@ const PROFILE_MAPPINGS = {
     "rgaa:4.1.2"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  },
+  "rgaa-4.1.2": {
+    "key": "rgaa",
+    "standard": "RGAA",
+    "version": "4.1.2"
+  }
+};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -25159,6 +25226,16 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
     }
     selection.profile = requestedProfile;
   }
@@ -34040,6 +34117,11 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
 
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
+
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
       // rollup metrics (stable order)
@@ -34172,8 +34254,16 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
         rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
-          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
         );
       }
 
@@ -34501,6 +34591,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -34616,12 +34709,19 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A variant runs its base rule with settings of its own. They are its
+    // standard's, so they win over a caller's value for the same name; the
+    // caller's other settings (excludeSelectors) still apply.
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    const ruleConfig =
+      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -34638,6 +34738,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -34714,6 +34816,26 @@ const runCore = (function runCore(
       if (ruleTimings)
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
+    }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
     }
     if (!result.engineOptions) {
       result.engineOptions = {
@@ -34806,6 +34928,10 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
@@ -35078,9 +35204,13 @@ function toCompositeCatalogEntry(x, tokens) {
 // engineOptions.optInRules and includes nothing else, so the catalog lists
 // what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
+  // An excluded rollup, by the caller or by a profile's exclude, is not
+  // produced, so it is not listed.
+  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
+  if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
   // Unlocked alone does not select it: like the run, an include of other
   // tags or ids (a WCAG profile's, say) still leaves it out.
   const includesNothing =
@@ -38063,7 +38193,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "boldLargeMinPx": 18.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "contrastMinimumRgaa"
+      }
+    }
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -61833,6 +61973,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
+
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
       ? helpers.contrast.sharedCache
@@ -61850,8 +62005,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCache || (__contrastSharedCache.__elFontCache = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
@@ -61892,7 +62048,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -62046,9 +62205,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheAA)
-        __contrastSharedCache.__elAnalysisCacheAA = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAA;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -62140,7 +62300,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -62334,9 +62499,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "contrast-minimum-rgaa": { run: (function runInPage(ctx) {
   const { helpers, rule, engineOptions } = ctx;
 
-  // RGAA 3.2.2/3.2.4: bold text is large from 18.5px.
-  const BOLD_LARGE_MIN_PX = 18.5;
-
   function toElement(node) {
     try {
       if (!node) return null;
@@ -62347,6 +62509,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     }
   }
+
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
 
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
@@ -62365,16 +62542,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
-  // Not the shared __elFontCache: its entries carry WCAG's large-text verdict.
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCacheRgaa ||
-      (__contrastSharedCache.__elFontCacheRgaa = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
     try {
       if (!el || el.nodeType !== 1) return null;
 
+      if (helpers && typeof helpers.computedStyle === 'function') {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      }
       const view =
         el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
@@ -62405,7 +62585,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -62457,11 +62640,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       occurrences.push({
         selector: '',
-        summary: 'All computable text meets the RGAA 3.2 contrast threshold.',
+        summary: 'All computable text meets the minimum (AA) contrast threshold.',
         hint: '',
         html: '',
         i18n: {
-          summaryKey: 'contrastMinimumRgaa_pass_allAboveThreshold',
+          summaryKey: 'contrastMinimum_pass_allAboveThreshold',
           hintKey: '',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
@@ -62511,8 +62694,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: '',
         hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: 'contrastMinimumRgaa_fail_belowThreshold',
-          hintKey: 'contrastMinimumRgaa_hint_fail',
+          summaryKey: 'contrastMinimum_fail_belowThreshold',
+          hintKey: 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
@@ -62559,9 +62742,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheRgaa)
-        __contrastSharedCache.__elAnalysisCacheRgaa = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheRgaa;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -62653,7 +62837,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -62775,7 +62964,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
             html: '',
             i18n: {
-              summaryKey: 'contrastMinimumRgaa_cantTell_engineFailure',
+              summaryKey: 'contrastMinimum_cantTell_engineFailure',
               hintKey: 'contrast_hint_cantTell_manual',
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
@@ -62811,7 +63000,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hint: '',
           html: '',
           i18n: {
-            summaryKey: 'contrastMinimumRgaa_notApplicable_noComputableText',
+            summaryKey: 'contrastMinimum_notApplicable_noComputableText',
             hintKey: '',
             params: { eligibleTextCount: String(eligibleTextCount) }
           },
@@ -101682,6 +101871,11 @@ const RULE_MAPPED_STANDARDS = [
   "RGAA"
 ];
 
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {};
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -101823,6 +102017,11 @@ const PROFILE_RULES = {
   ]
 };
 
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -101834,6 +102033,53 @@ const PROFILE_MAPPINGS = {
     "rgaa:4.1.2"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  },
+  "rgaa-4.1.2": {
+    "key": "rgaa",
+    "standard": "RGAA",
+    "version": "4.1.2"
+  }
+};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -101936,6 +102182,16 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
     }
     selection.profile = requestedProfile;
   }
@@ -110817,6 +111073,11 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
 
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
+
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
       // rollup metrics (stable order)
@@ -110949,8 +111210,16 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
         rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
-          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
         );
       }
 
@@ -111278,6 +111547,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -111393,12 +111665,19 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A variant runs its base rule with settings of its own. They are its
+    // standard's, so they win over a caller's value for the same name; the
+    // caller's other settings (excludeSelectors) still apply.
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    const ruleConfig =
+      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -111415,6 +111694,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -111491,6 +111772,26 @@ const runCore = (function runCore(
       if (ruleTimings)
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
+    }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
     }
     if (!result.engineOptions) {
       result.engineOptions = {
@@ -111583,6 +111884,10 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
