@@ -54,6 +54,11 @@
  *   the entries of the rules that produced its outcome; a standard that
  *   restates the criterion itself (EN 301 549) names the same entry
  *   whichever rule decided.
+ * - restatedPrefixes: optional, with ruleMapped; the prefixes of requirement
+ *   ids that restate a WCAG criterion one for one (['A.'] for a standard whose
+ *   part A renumbers WCAG). A rollup names those entries whatever rule decided
+ *   its outcome, as it names a standard's that is not rule-mapped (EN 301
+ *   549), and the others only for the rules that decided it.
  * - composites(): optional; rollups of the standard's own, shaped like the
  *   entries of src/catalogs/composites.wcag.js and carrying the standard's
  *   ruleTag in meta.tags so only a run that asks for the standard produces
@@ -170,7 +175,10 @@ function standardsData() {
       ])
     ),
     ...(s.ruleTag ? { ruleTag: s.ruleTag } : {}),
-    ...(s.ruleMapped ? { ruleMapped: true } : {})
+    ...(s.ruleMapped ? { ruleMapped: true } : {}),
+    ...(s.ruleMapped && Array.isArray(s.restatedPrefixes) && s.restatedPrefixes.length
+      ? { restatedPrefixes: s.restatedPrefixes.map(String) }
+      : {})
   }));
 }
 
