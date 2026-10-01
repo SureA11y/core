@@ -468,7 +468,8 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
   asserts nothing, for a case whose outcome the fixture does not state.
 - `npm run fixtures:markers:check` replays every fixture and fails when a marker no
   longer matches what the rule reports; `scripts/data/fixture-markers.json` records the
-  cases that already disagree, so that set can only shrink.
+  cases that already disagree, so that set can only shrink. A profile's rules have
+  their record in the profile's own `scripts/data/fixture-markers.json`.
 
 ### 11.2 Known, acceptable exceptions to "one fixture, many cases"
 
@@ -544,7 +545,9 @@ npm run fixtures:index
 This writes `tests/fixtures/INDEX.md` (human-readable), `tests/fixtures/index.json`
 (machine-readable — every rule, its fixture path, and parsed pass/fail/cantTell case
 counts, for external tooling to enumerate and load fixtures directly) and
-`tests/fixtures/index.html` (the same listing as a browsable page). Commit all three
+`tests/fixtures/index.html` (the same listing as a browsable page). A profile's rules
+get the same three files in the profile's `tests/fixtures/`, with paths relative to the
+profile's folder. Commit all three
 alongside the fixture and test changes. A rule shipped without its fixture is treated
 the same as a rule shipped without tests — not done. `npm run fixtures:check` reports
 a stale index without rewriting it, and CI fails on one.

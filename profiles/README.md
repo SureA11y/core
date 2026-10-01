@@ -17,10 +17,14 @@ profiles/
     rules/            # automatic/ and manual/, like src/checks/: rules for the standard's own requirements
     i18n/             # <locale>.json, like src/i18n/: the messages of those rules
     data/             # The published source the tables are generated from, with its provenance
+    docs/             # Like docs/: RULE_CATALOG.md (generated) and RULE_EXAMPLES.md for its rules
     scripts/          # Generators for the tables and the docs, each with --check
+      data/           # Like scripts/data/: the records of its rules (finding-ids.json,
+                      # fixture-markers.json, rule-examples-coverage.json), generated
     tests/            # The profile's own tests; scripts/run-tests.js runs them with the rest
       rules/          # automatic/ and manual/, like tests/engine-checks/: a test per rule
-      fixtures/       # The rules' scenario pages, like tests/fixtures/
+      fixtures/       # The rules' scenario pages, like tests/fixtures/, and their index
+                      # (INDEX.md, index.json, index.html), generated
 ```
 
 `profiles/rgaa/` is the example:
@@ -31,11 +35,12 @@ profiles/
 - `index.js`: the registry entry, with the `rgaa-4.1.2` profile and the `rgaa` rule tag.
 - `rules/`: the opt-in rules for requirements RGAA makes and WCAG does not, all tagged `rgaa`, one of them (`contrast-minimum-rgaa`) a variant of core's `contrast-minimum` (see [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rules-for-another-standards-own-requirements)).
 - `i18n/`: their messages in every locale, and the note the HTML report shows above RGAA's rollups (`report.noteKey`).
-- `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](../docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
+- `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](./rgaa/docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
+- `docs/RULE_CATALOG.md`, `docs/RULE_EXAMPLES.md`, `scripts/data/` and the index in `tests/fixtures/`: the catalog, examples and records of its rules.
 
 `src/rgaa.js` stays the public entry point (`@surea11y/core/rgaa`) and reads its tables from here.
 
-The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators and generated docs read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:new`, `i18n:report`) cover every dictionary folder.
+The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The generated docs and records are written per source (`ruleSources()` there): core's describe core's rules only, and a profile's go in its own folder, in the same places under it as core's are under the repository root. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` write both, and their checks compare both, so a profile's rules never change core's files. The WCAG coverage report (`npm run coverage`) reads core's rules only. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:new`, `i18n:report`) cover every dictionary folder.
 
 ## Adding a profile
 
@@ -48,7 +53,8 @@ writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an em
 - `requirements.js`: the standard's requirements per version, each with its title and the WCAG criteria it corresponds to;
 - `rule-map.js`: which requirements each rule checks, core's rules or the profile's own, with the reason;
 - `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`; where a requirement is a core rule with other thresholds, a variant of it rather than a copy ([`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rule-variants)), each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
-- `i18n/en.json`: their messages, then `npm run i18n:sync`.
+- `i18n/en.json`: their messages, then `npm run i18n:sync`;
+- `docs/RULE_EXAMPLES.md`: an example pair per rule. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` then write the profile's catalog, fixture index and records in its folder. Until the profile has a rule of its own they write nothing for it.
 
 From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
 

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Generate docs/RGAA_MAPPING.md from profiles/rgaa/rule-map.js: every
+ * Generate profiles/rgaa/docs/RGAA_MAPPING.md from profiles/rgaa/rule-map.js: every
  * rule's RGAA tests with the reason for each, then every RGAA criterion with
  * the rules that speak to it, so a reviewer can check the mapping and a user
  * can see which criteria a scan never touches.
@@ -15,7 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT_DIR = path.join(__dirname, '..', '..', '..');
-const OUTPUT_FILE = path.join(ROOT_DIR, 'docs', 'RGAA_MAPPING.md');
+const OUTPUT_FILE = path.join(__dirname, '..', 'docs', 'RGAA_MAPPING.md');
 
 // A row's note, followed by the reason for each test it links outside RGAA's
 // own WCAG correspondence.
@@ -38,7 +38,7 @@ function renderDoc({ rules, versions, themes, criteria, tests, ruleTests }) {
   );
   out.push('');
   out.push(
-    "Which RGAA tests each rule checks, and which rules speak to each RGAA criterion. A scan names these tests on its results when asked (`engineOptions.mappings: ['rgaa']`, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)); [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#rgaa) explains how the mapping is made."
+    "Which RGAA tests each rule checks, and which rules speak to each RGAA criterion. A scan names these tests on its results when asked (`engineOptions.mappings: ['rgaa']`, see [`ENGINE_OPTIONS.md`](../../../docs/ENGINE_OPTIONS.md#other-standards-mappings)); [`WCAG_CONFORMANCE.md`](../../../docs/WCAG_CONFORMANCE.md#rgaa) explains how the mapping is made."
   );
   out.push('');
   out.push(

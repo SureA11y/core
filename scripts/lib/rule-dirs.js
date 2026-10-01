@@ -51,15 +51,18 @@ function source(key, root, rulesDir, testsDir) {
 // Every set of rules with its own tests, docs and records, core's first, then
 // each profile with rules, in registry order: { key, root, rulesDir, testsDir,
 // fixturesDir, docsDir, dataDir }. A profile's paths are its folder's, in the
-// same places under it as core's are under the repository root.
+// same places under it as core's are under the repository root. A profile
+// whose rules folder holds no rule yet, as profile:new leaves it, has none.
 function ruleSources() {
   return [
     source('core', ROOT_DIR, CORE_RULES_DIR, path.join(ROOT_DIR, 'tests', 'engine-checks'))
   ].concat(
-    PROFILES.filter((p) => p.rulesDir).map((p) => {
-      const root = path.dirname(p.rulesDir);
-      return source(p.standard.key, root, p.rulesDir, path.join(root, 'tests', 'rules'));
-    })
+    PROFILES.filter((p) => p.rulesDir)
+      .map((p) => {
+        const root = path.dirname(p.rulesDir);
+        return source(p.standard.key, root, p.rulesDir, path.join(root, 'tests', 'rules'));
+      })
+      .filter((src) => ruleIdsOf(src).size > 0)
   );
 }
 

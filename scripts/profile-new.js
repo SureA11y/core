@@ -332,7 +332,8 @@ ${name} as a profile of the engine. Created by \`npm run profile:new\`; see [\`p
 2. **Which rules check them**, in \`rule-map.js\`: any core rule, or one of the profile's own, with the reason.
 3. **Its own rules**, for requirements no core rule checks, in \`rules/automatic/\` or \`rules/manual/\`. Each one follows [\`docs/RULE_AUTHORING.md\`](../../docs/RULE_AUTHORING.md), carries the tag \`${key}\` (which makes it run only under this standard), and has a test in \`tests/rules/\` with its scenario page in \`tests/fixtures/\`.
 4. **Their messages** in \`i18n/en.json\`, then \`npm run i18n:sync\` for the other locales.
-5. **Its versions and profiles**, if it has more than 1.0: \`VERSIONS\` in \`requirements.js\` and \`profiles\` in \`index.js\`.
+5. **Their docs and records**: an example pair per rule in \`docs/RULE_EXAMPLES.md\`, then \`npm run docs:rule-catalog\`, \`fixtures:index\`, \`fixtures:markers\`, \`rule-examples:coverage\` and \`finding-ids\`, which write this profile's catalog, fixture index and records here, beside core's.
+6. **Its versions and profiles**, if it has more than 1.0: \`VERSIONS\` in \`requirements.js\` and \`profiles\` in \`index.js\`.
 
 \`npm run build && npm test\` builds the engine with it and runs its tests with everyone else's. \`tests/profile-boundary.test.js\` checks it uses only what core publishes.
 `;
