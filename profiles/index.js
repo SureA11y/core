@@ -11,4 +11,4 @@
  * folder of its dictionaries, which the build adds to core's.
  */
 
-module.exports = [require('./rgaa')];
+module.exports = [require('./rgaa'), require('./acme')];

@@ -1,7 +1,8 @@
 {
   "rulesDirs": [
     "src/checks",
-    "profiles/rgaa/rules"
+    "profiles/rgaa/rules",
+    "profiles/acme/rules"
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {

@@ -2,7 +2,7 @@
 
 RGAA is the profile the structure grew around, so it fits by construction. ACME is a made-up "company standard" written to stress that structure: each of its requirements touches something RGAA never needed. The aim is not a useful standard. It is a list of findings: what holds, what breaks, what is awkward, each with a proposed fix.
 
-ACME must never ship. It is test-only (see [Where it lives](#where-it-lives)).
+ACME must never ship. It lives on the `acme-profile-stress-test` branch only (see [Where it lives](#where-it-lives)).
 
 ## The standard
 
@@ -37,7 +37,7 @@ Each row is a hypothesis to confirm or refute by building it. "Expect" is my gue
 
 | # | Stress | Exercised by | Expect |
 |---|---|---|---|
-| 1 | **A profile outside `profiles/`.** The registry and the build know only what `profiles/index.js` lists, and that list ships. | Where ACME lives | Breaks. There is no way to add a profile that is not built in. This is the packaging question in small. |
+| 1 | **Creating a profile from scratch.** | `npm run profile:new` | Holds: ACME was created with the scaffold, and its tests and the boundary check pass before anything is filled in. |
 | 2 | **Two versions of one profile.** A rule that behaves differently per version (44 vs 24 px). | AAS-B1 | Breaks. A rule cannot tell which profile or version is running it: `ctx` carries neither. Workarounds (two rules, or `ctx.config`) are awkward. |
 | 3 | **A stricter variant of a core rule.** | AAS-B1 | Holds, at a cost. A rule cannot call another rule, and the target-size logic is not a helper, so it is copied (as `contrast-minimum-rgaa` copied `contrast-minimum`). |
 | 4 | **A variant built only from documented helpers.** | AAS-B2 | Holds. The test that `helpers.contrast` is now fully documented, including `sharedCache`. |
@@ -55,30 +55,30 @@ Each row is a hypothesis to confirm or refute by building it. "Expect" is my gue
 
 ## Where it lives
 
-ACME must not ship, and must not run in a user's scan. Today the only way in is `profiles/index.js`, which ships (stress 1). Options:
+In `profiles/acme/`, created with `npm run profile:new -- acme --name ACME`, like any profile. It is never merged: it would be built into the engine and shipped. What it leads to (the scaffold, fixes to core, documentation) is committed separately and can go to `working-progress` without it.
 
-- **A. A build option for extra profiles.** `examples/profiles/acme/` holds the profile; `SUREA11Y_EXTRA_PROFILES=examples/profiles/acme npm run build` builds an engine that includes it. A separate test command (and CI job) builds that way and runs ACME's tests; the normal build never sees it. This is the "build-time composition" option for packaging, tried out on a test profile first.
-- **B. A runtime registration test.** ACME registers itself at run time (`engine.use(acme)`). This needs the runtime registration API first, which is the larger of the two packaging options.
-- **C. Built in, hidden.** List ACME in `profiles/index.js` behind a test-only flag. Least work, but it ships and teaches nothing about packaging.
-
-I recommend **A**. It is the smaller packaging option, it answers stress 1 for real, and it leaves B open.
+Profiles stay in this repository for now, organized so that one could move out later. ACME tests that organization; whether profiles are later published separately (a profile package added at run time, or a package built on top of core) is a later decision, which these findings feed.
 
 ## Plan
 
-One stress point per commit, each recording its finding in the table below as it is learned:
+One stress point per step, each recording its finding below:
 
-1. The extra-profile build option (A) with an empty ACME: entry only, Part A mapping. Covers stress 1, 9, 11 and 14.
-2. AAS-B4 and B5: mapped core and RGAA rules (6, 7).
-3. AAS-B2: the contrast variant (4).
-4. AAS-B1: the versioned target-size variant (2, 3).
-5. AAS-B3: the configurable statement link (5).
-6. AAS-B6: the waiver (8).
-7. Messages in two languages (10), and the negative tests (12, 13).
+1. The scaffold, `npm run profile:new` (foundation). Done.
+2. ACME's entry and Part A, two versions. Done: stress points 1, 9, 11 and 14.
+3. AAS-B4 and B5: mapped core and RGAA rules (6, 7).
+4. AAS-B2: the contrast variant (4).
+5. AAS-B1: the versioned target-size variant (2, 3, 8b).
+6. AAS-B3: the configurable statement link (5).
+7. AAS-B6: the waiver (8).
+8. Messages in two languages (10), and the negative tests (12, 13).
 
-Each step either fixes what it finds in core, if the fix is small and clearly right, or records it with a proposed fix for you to decide.
+Each step either fixes what it finds in core, when the fix is small and clearly right, or records it with a proposed fix to decide.
 
 ## Findings
 
 | # | Finding | Severity | Proposed fix | Status |
 |---|---|---|---|---|
-| | *(filled in while building)* | | | |
+| F1 | A profile's own files may not require core, so a standard that restates WCAG cannot read WCAG's criteria at run time. EN 301 549 never hit this: it lives inside core. ACME generates its own copy (`scripts/generate-part-a.js`, which may read core's tables) and commits it, as RGAA does with its source data. | Low | Accept the generated copy as the pattern, or publish WCAG's criteria as an entry point (`@surea11y/core/wcag`) that a profile's files may require. | Open |
+| F2 | Core's WCAG table describes WCAG 2.2 only: 4.1.1 has no level and is titled "Parsing (Obsolete and removed)". A standard built on 2.1 must special-case it (the generator does; RGAA's test excludes only AAA, which keeps it by accident). | Low | Give the table each criterion's level and title per WCAG version, or a `criteriaOf(wcagVersion)` that both RGAA and ACME use. | Open |
+| F3 | `ruleMapped` is one flag per standard. ACME needs it for Part B, so on a `notApplicable` WCAG rollup its Part A requirement is not named, while EN 301 549, which restates WCAG the same way, names its clause. On a failing or passing rollup both agree. Pinned by a test in `tests/part-a.test.js`. | Medium: a report shows ACME and EN differently for the same thing | Decide per requirement, not per standard. Either (a) an entry field, such as `restatesCriterion: true`, which the runner keeps whatever decided (an additive field in results), or (b) a registry field naming which requirements are rule-mapped, such as a list of prefixes, embedded as data in the generated core. (b) changes no result shape. | Open, to decide |
+| F4 | The scaffold's mapping (`requirements.js`, `rule-map.js`, `mappings.js`) is a copy each profile carries, so a fix to it reaches no existing profile, and RGAA has its own, richer one. | Medium, grows with each profile | Once a third profile needs it, publish the mapping code as a library profiles may require (`@surea11y/core/profile-kit`), and have RGAA and new profiles use it. | Open |

@@ -1,6 +1,6 @@
 # WCAG Coverage Report
 
-Rules directories: `src/checks`, `profiles/rgaa/rules`
+Rules directories: `src/checks`, `profiles/rgaa/rules`, `profiles/acme/rules`
 Facets: `src/coverage/wcag-facets.js`
 
 ## Summary

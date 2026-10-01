@@ -102,6 +102,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -183,6 +201,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.2",
         "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -305,6 +341,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -468,6 +522,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -538,6 +610,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -614,6 +704,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -684,6 +792,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -794,6 +920,42 @@ const CHECK_DEFS = [
         "requirement": "10.8.1",
         "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
         "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -908,6 +1070,42 @@ const CHECK_DEFS = [
         "requirement": "10.8.1",
         "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
         "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1042,6 +1240,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1112,6 +1328,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -1188,6 +1422,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1261,6 +1513,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1331,6 +1601,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -1477,6 +1765,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1547,6 +1853,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1661,6 +1985,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -1731,6 +2073,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -1816,6 +2176,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.5"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.5",
+        "title": "Identify Input Purpose",
+        "wcagSc": [
+          "1.3.5"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.5",
+        "title": "Identify Input Purpose",
+        "wcagSc": [
+          "1.3.5"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1898,6 +2276,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.12"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -1971,6 +2367,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -2050,6 +2464,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2119,6 +2551,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.4.1",
         "title": "Bypass blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.1",
+        "title": "Bypass Blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.1",
+        "title": "Bypass Blocks",
         "wcagSc": [
           "2.4.1"
         ]
@@ -2294,6 +2744,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2387,6 +2855,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -2458,6 +2944,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -2682,6 +3186,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.3"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -2814,6 +3336,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.4.3",
         "title": "Contrast (minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
         "wcagSc": [
           "1.4.3"
         ]
@@ -2981,6 +3521,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -3065,6 +3623,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -3144,6 +3720,24 @@ const CHECK_DEFS = [
         "requirement": "13.9.1",
         "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
         "criterion": "13.9",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.4",
+        "title": "Orientation",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.4",
+        "title": "Orientation",
         "wcagSc": [
           "1.3.4"
         ]
@@ -3288,6 +3882,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -3357,6 +3969,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.2.2",
         "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.2.2",
+        "title": "Pause, Stop, Hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.2.2",
+        "title": "Pause, Stop, Hide",
         "wcagSc": [
           "2.2.2"
         ]
@@ -3441,6 +4071,24 @@ const CHECK_DEFS = [
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -3572,6 +4220,24 @@ const CHECK_DEFS = [
         "requirement": "9.3.3",
         "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
         "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -3793,6 +4459,15 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.1",
+        "title": "Parsing",
+        "wcagSc": [
+          "4.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -3863,6 +4538,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -3988,6 +4681,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -4068,6 +4779,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.5",
         "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -4740,6 +5469,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -4867,6 +5614,60 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -4967,6 +5768,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -5036,6 +5855,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.3.3.2",
         "title": "Labels or instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
         "wcagSc": [
           "3.3.2"
         ]
@@ -5323,6 +6160,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -5494,6 +6349,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.3.1.1",
         "title": "Language of page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
         "wcagSc": [
           "3.1.1"
         ]
@@ -5677,6 +6550,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "3.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -5748,6 +6639,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -5879,6 +6788,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -5950,6 +6877,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -6034,6 +6979,24 @@ const CHECK_DEFS = [
         "requirement": "2.2.1",
         "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
         "criterion": "2.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -6239,6 +7202,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -6332,6 +7313,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -6412,6 +7411,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.1",
         "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -6547,6 +7564,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -6630,6 +7665,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -6710,6 +7763,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.3",
         "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -6884,6 +7955,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.5.3",
         "title": "Label in name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.5.3",
+        "title": "Label in Name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.5.3",
+        "title": "Label in Name",
         "wcagSc": [
           "2.5.3"
         ]
@@ -7614,6 +8703,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.1",
+        "title": "Use of Color",
+        "wcagSc": [
+          "1.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.1",
+        "title": "Use of Color",
+        "wcagSc": [
+          "1.4.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -7766,6 +8873,42 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -7879,6 +9022,24 @@ const CHECK_DEFS = [
         "requirement": "6.1.4",
         "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
         "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
         "wcagSc": [
           "2.4.4"
         ]
@@ -8025,6 +9186,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -8096,6 +9275,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -8237,6 +9434,24 @@ const CHECK_DEFS = [
         "requirement": "9.3.2",
         "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
         "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -8473,6 +9688,60 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.3",
+        "title": "Focus Order",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.3",
+        "title": "Focus Order",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -8586,6 +9855,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.2.1",
         "title": "Audio-only and video-only (pre-recorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.2.1",
+        "title": "Audio-only and Video-only (Prerecorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.2.1",
+        "title": "Audio-only and Video-only (Prerecorded)",
         "wcagSc": [
           "1.2.1"
         ]
@@ -8742,6 +10029,24 @@ const CHECK_DEFS = [
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -8981,6 +10286,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.2.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.2.1",
+        "title": "Timing Adjustable",
+        "wcagSc": [
+          "2.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.2.1",
+        "title": "Timing Adjustable",
+        "wcagSc": [
+          "2.2.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -9090,6 +10413,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.4"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.4",
+        "title": "Resize Text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.4",
+        "title": "Resize Text",
+        "wcagSc": [
+          "1.4.4"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -9160,6 +10501,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -9245,6 +10604,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -9314,6 +10691,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -9396,6 +10791,24 @@ const CHECK_DEFS = [
         "requirement": "4.10.1",
         "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
         "criterion": "4.10",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.2",
+        "title": "Audio Control",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.2",
+        "title": "Audio Control",
         "wcagSc": [
           "1.4.2"
         ]
@@ -9521,6 +10934,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -9601,6 +11032,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.4",
         "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -9838,6 +11287,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -9966,6 +11433,24 @@ const CHECK_DEFS = [
         "requirement": "9.1.3",
         "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
         "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -10138,6 +11623,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -10218,6 +11721,24 @@ const CHECK_DEFS = [
         "requirement": "8.5.1",
         "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
         "criterion": "8.5",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
         "wcagSc": [
           "2.4.2"
         ]
@@ -10386,6 +11907,15 @@ const CHECK_DEFS = [
         "wcagSc": [
           "3.3.8"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "wcagSc": [
+          "3.3.8"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -10547,6 +12077,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -10666,6 +12214,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -10879,6 +12445,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -11081,6 +12665,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -11155,6 +12757,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -11238,6 +12858,24 @@ const CHECK_DEFS = [
         "requirement": "1.1.4",
         "title": "Chaque zone cliquable d’une image réactive côté serveur est-elle doublée d’un mécanisme utilisable quel que soit le dispositif de pointage utilisé et permettant d’accéder à la même destination ?",
         "criterion": "1.1",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
         "wcagSc": [
           "2.1.1"
         ]
@@ -11480,6 +13118,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -11554,6 +13210,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -11624,6 +13298,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -11761,6 +13453,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -11894,6 +13604,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -11974,6 +13702,24 @@ const CHECK_DEFS = [
         "requirement": "1.3.6",
         "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -12058,6 +13804,24 @@ const CHECK_DEFS = [
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -12230,6 +13994,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -12313,6 +14095,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -12386,6 +14186,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -12450,6 +14268,15 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.2.5.8",
         "title": "Target size (minimum)",
+        "wcagSc": [
+          "2.5.8"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.5.8",
+        "title": "Target Size (Minimum)",
         "wcagSc": [
           "2.5.8"
         ]
@@ -12522,6 +14349,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -12607,6 +14452,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "1.4.12"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -12678,6 +14541,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -12863,6 +14744,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -12944,6 +14843,24 @@ const CHECK_DEFS = [
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -13030,6 +14947,24 @@ const CHECK_DEFS = [
         "wcagSc": [
           "3.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.2",
+        "title": "Language of Parts",
+        "wcagSc": [
+          "3.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.2",
+        "title": "Language of Parts",
+        "wcagSc": [
+          "3.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -13110,6 +15045,24 @@ const CHECK_DEFS = [
         "requirement": "4.3.1",
         "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
         "criterion": "4.3",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.2.2",
+        "title": "Captions (Prerecorded)",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.2.2",
+        "title": "Captions (Prerecorded)",
         "wcagSc": [
           "1.2.2"
         ]
@@ -13231,6 +15184,24 @@ const CHECK_DEFS = [
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -13558,6 +15529,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.1.1",
+          "title": "Non-text Content",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.1.1",
+          "title": "Non-text Content",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -13591,6 +15580,24 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.1.2.1",
           "title": "Audio-only and video-only (pre-recorded)",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.2.1",
+          "title": "Audio-only and Video-only (Prerecorded)",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.2.1",
+          "title": "Audio-only and Video-only (Prerecorded)",
           "wcagSc": [
             "1.2.1"
           ]
@@ -13637,6 +15644,24 @@ const COMPOSITE_RULES = [
           "requirement": "4.3.1",
           "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
           "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.2.2",
+          "title": "Captions (Prerecorded)",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.2.2",
+          "title": "Captions (Prerecorded)",
           "wcagSc": [
             "1.2.2"
           ]
@@ -13749,6 +15774,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.3.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.1",
+          "title": "Info and Relationships",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.1",
+          "title": "Info and Relationships",
+          "wcagSc": [
+            "1.3.1"
+          ]
         }
       ]
     }
@@ -13795,6 +15838,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.4.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.1",
+          "title": "Use of Color",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.1",
+          "title": "Use of Color",
+          "wcagSc": [
+            "1.4.1"
+          ]
         }
       ]
     }
@@ -13838,6 +15899,24 @@ const COMPOSITE_RULES = [
           "requirement": "4.10.1",
           "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
           "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.2",
+          "title": "Audio Control",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.2",
+          "title": "Audio Control",
           "wcagSc": [
             "1.4.2"
           ]
@@ -13915,6 +15994,24 @@ const COMPOSITE_RULES = [
           "requirement": "3.2.4",
           "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
           "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.3",
+          "title": "Contrast (Minimum)",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.3",
+          "title": "Contrast (Minimum)",
           "wcagSc": [
             "1.4.3"
           ]
@@ -14006,6 +16103,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.1.1",
+          "title": "Keyboard",
+          "wcagSc": [
+            "2.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.1.1",
+          "title": "Keyboard",
+          "wcagSc": [
+            "2.1.1"
+          ]
         }
       ]
     }
@@ -14059,6 +16174,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.2.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.2.2",
+          "title": "Pause, Stop, Hide",
+          "wcagSc": [
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.2.2",
+          "title": "Pause, Stop, Hide",
+          "wcagSc": [
+            "2.2.2"
+          ]
         }
       ]
     }
@@ -14092,6 +16225,24 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.4.1",
           "title": "Bypass blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.1",
+          "title": "Bypass Blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.1",
+          "title": "Bypass Blocks",
           "wcagSc": [
             "2.4.1"
           ]
@@ -14152,6 +16303,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.2",
+          "title": "Page Titled",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.2",
+          "title": "Page Titled",
+          "wcagSc": [
+            "2.4.2"
+          ]
         }
       ]
     }
@@ -14195,6 +16364,24 @@ const COMPOSITE_RULES = [
           "requirement": "12.8.1",
           "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
           "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.3",
+          "title": "Focus Order",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.3",
+          "title": "Focus Order",
           "wcagSc": [
             "2.4.3"
           ]
@@ -14275,6 +16462,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.4",
+          "title": "Link Purpose (In Context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.4",
+          "title": "Link Purpose (In Context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
         }
       ]
     }
@@ -14342,6 +16547,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.6"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.6",
+          "title": "Headings and Labels",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.6",
+          "title": "Headings and Labels",
+          "wcagSc": [
+            "2.4.6"
+          ]
         }
       ]
     }
@@ -14388,6 +16611,24 @@ const COMPOSITE_RULES = [
           "requirement": "10.7.1",
           "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
           "criterion": "10.7",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.7",
+          "title": "Focus Visible",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.7",
+          "title": "Focus Visible",
           "wcagSc": [
             "2.4.7"
           ]
@@ -14444,6 +16685,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.5.3"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.5.3",
+          "title": "Label in Name",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.5.3",
+          "title": "Label in Name",
+          "wcagSc": [
+            "2.5.3"
+          ]
         }
       ]
     }
@@ -14468,6 +16727,15 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.5.8",
           "title": "Target size (minimum)",
+          "wcagSc": [
+            "2.5.8"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.5.8",
+          "title": "Target Size (Minimum)",
           "wcagSc": [
             "2.5.8"
           ]
@@ -14518,6 +16786,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "3.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.1.1",
+          "title": "Language of Page",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.1.1",
+          "title": "Language of Page",
+          "wcagSc": [
+            "3.1.1"
+          ]
         }
       ]
     }
@@ -14561,6 +16847,24 @@ const COMPOSITE_RULES = [
           "requirement": "8.8.1",
           "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
           "criterion": "8.8",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.1.2",
+          "title": "Language of Parts",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.1.2",
+          "title": "Language of Parts",
           "wcagSc": [
             "3.1.2"
           ]
@@ -14610,6 +16914,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.3.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.4",
+          "title": "Orientation",
+          "wcagSc": [
+            "1.3.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.4",
+          "title": "Orientation",
+          "wcagSc": [
+            "1.3.4"
+          ]
         }
       ]
     }
@@ -14653,6 +16975,24 @@ const COMPOSITE_RULES = [
           "requirement": "11.13.1",
           "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
           "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.5",
+          "title": "Identify Input Purpose",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.5",
+          "title": "Identify Input Purpose",
           "wcagSc": [
             "1.3.5"
           ]
@@ -14700,6 +17040,24 @@ const COMPOSITE_RULES = [
           "requirement": "10.12.1",
           "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
           "criterion": "10.12",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.12",
+          "title": "Text Spacing",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.12",
+          "title": "Text Spacing",
           "wcagSc": [
             "1.4.12"
           ]
@@ -14771,6 +17129,15 @@ const COMPOSITE_RULES = [
           "requirement": "8.2.1",
           "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
           "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.1",
+          "title": "Parsing",
           "wcagSc": [
             "4.1.1"
           ]
@@ -14903,6 +17270,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -14951,6 +17336,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -14987,6 +17390,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "1.4.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.4",
+          "title": "Resize Text",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.4",
+          "title": "Resize Text",
+          "wcagSc": [
+            "1.4.4"
+          ]
         }
       ]
     }
@@ -15020,6 +17441,24 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.2.2.1",
           "title": "Timing adjustable",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.2.1",
+          "title": "Timing Adjustable",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.2.1",
+          "title": "Timing Adjustable",
           "wcagSc": [
             "2.2.1"
           ]
@@ -15060,6 +17499,24 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "3.3.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.3.2",
+          "title": "Labels or Instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.3.2",
+          "title": "Labels or Instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
         }
       ]
     }
@@ -15084,6 +17541,15 @@ const COMPOSITE_RULES = [
           "version": "V4.1.1",
           "requirement": "9.3.3.8",
           "title": "Accessible authentication (minimum)",
+          "wcagSc": [
+            "3.3.8"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.3.8",
+          "title": "Accessible Authentication (Minimum)",
           "wcagSc": [
             "3.3.8"
           ]
@@ -18874,7 +21340,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
-    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist."
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -20248,7 +22715,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Check with assistive technologies that this editing area exposes a relevant role, name and state, and that its changes are rendered (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
-    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme."
+    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -21622,7 +24090,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Comprobar con tecnologías de asistencia que esta zona de edición expone un rol, un nombre y un estado pertinentes, y que sus cambios se transmiten (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
-    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme."
+    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -22996,7 +25465,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
-    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme."
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -24370,7 +26840,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
-    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。"
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   }
 };
 
@@ -24865,6 +27336,22 @@ const CONFORMANCE_PROFILES = {
     "wcag21a",
     "wcag21aa",
     "rgaa"
+  ],
+  "acme-1.0": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "acme"
+  ],
+  "acme-2.0": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22a",
+    "wcag22aa",
+    "acme"
   ]
 }
 };
@@ -24893,6 +27380,13 @@ const NORMATIVE_MAPPING_STANDARDS = {
     "versions": [
       "4.1.2"
     ]
+  },
+  "acme": {
+    "standard": "ACME",
+    "versions": [
+      "1.0",
+      "2.0"
+    ]
   }
 };
 
@@ -24902,7 +27396,8 @@ const NORMATIVE_MAPPING_STANDARDS = {
 // by the name their entries carry. A rollup keeps only the entries of the
 // rules that produced its outcome (rollupCompositeResults).
 const RULE_MAPPED_STANDARDS = [
-  "RGAA"
+  "RGAA",
+  "ACME"
 ];
 
 // Rules tagged with one of these check a standard's own requirements, ones
@@ -24910,7 +27405,8 @@ const RULE_MAPPED_STANDARDS = [
 // ruleMatchesRunOnly selects them only when the selection names the tag or
 // the rule itself, which a standard's profile does.
 const OPT_IN_RULE_TAGS = [
-  "rgaa"
+  "rgaa",
+  "acme"
 ];
 
 // Rules a profile also runs by id, whatever their tags: every rule its
@@ -25043,6 +27539,215 @@ const PROFILE_RULES = {
     "video-captions-track-kind",
     "viewport-zoom-review",
     "widget-label-in-name"
+  ],
+  "acme-1.0": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-braille-equivalent",
+    "aria-checked-state-mismatch",
+    "aria-conditional-attr",
+    "aria-deprecated-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-attr",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "duplicate-id",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "form-control-single-label",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-focusable-content",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-decorative",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-in-name",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "meter-name-present",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "option-name-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "presentational-children-focusable-absent",
+    "progressbar-name-present",
+    "role-img-text-alternative-present",
+    "scrollable-region-focusable",
+    "searchbox-name-present",
+    "server-side-image-map-absent",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "summary-name-present",
+    "svg-image-text-alternative-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "table-th-has-data-cells",
+    "td-has-header",
+    "text-spacing-content-loss",
+    "textbox-name-present",
+    "tooltip-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption",
+    "video-poster-text-alternative-present"
+  ],
+  "acme-2.0": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-braille-equivalent",
+    "aria-checked-state-mismatch",
+    "aria-conditional-attr",
+    "aria-deprecated-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-attr",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "form-control-single-label",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-focusable-content",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-decorative",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-in-name",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "meter-name-present",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "option-name-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "password-paste-enabled",
+    "presentational-children-focusable-absent",
+    "progressbar-name-present",
+    "role-img-text-alternative-present",
+    "scrollable-region-focusable",
+    "searchbox-name-present",
+    "server-side-image-map-absent",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "summary-name-present",
+    "svg-image-text-alternative-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "table-th-has-data-cells",
+    "target-size-minimum",
+    "td-has-header",
+    "text-spacing-content-loss",
+    "textbox-name-present",
+    "tooltip-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption",
+    "video-poster-text-alternative-present"
   ]
 };
 
@@ -25055,6 +27760,12 @@ const PROFILE_MAPPINGS = {
   ],
   "rgaa-4.1.2": [
     "rgaa:4.1.2"
+  ],
+  "acme-1.0": [
+    "acme:1.0"
+  ],
+  "acme-2.0": [
+    "acme:2.0"
   ]
 };
 
@@ -35243,6 +37954,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -35324,6 +38053,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.2",
         "title": "Pour chaque zone (balise <area>) d’une image réactive porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -35446,6 +38193,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -35609,6 +38374,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35679,6 +38462,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -35755,6 +38556,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35825,6 +38644,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -35935,6 +38772,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "10.8.1",
         "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
         "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -36049,6 +38922,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "10.8.1",
         "title": "Dans chaque page web, chaque contenu caché vérifie-t-il une de ces conditions ?",
         "criterion": "10.8",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -36183,6 +39092,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36253,6 +39180,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -36329,6 +39274,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36402,6 +39365,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36472,6 +39453,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -36618,6 +39617,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36688,6 +39705,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -36802,6 +39837,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36872,6 +39925,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -36957,6 +40028,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.5"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.5",
+        "title": "Identify Input Purpose",
+        "wcagSc": [
+          "1.3.5"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.5",
+        "title": "Identify Input Purpose",
+        "wcagSc": [
+          "1.3.5"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -37039,6 +40128,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.12"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -37112,6 +40219,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -37191,6 +40316,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37260,6 +40403,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.4.1",
         "title": "Bypass blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.1",
+        "title": "Bypass Blocks",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.1",
+        "title": "Bypass Blocks",
         "wcagSc": [
           "2.4.1"
         ]
@@ -37435,6 +40596,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37528,6 +40707,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -37599,6 +40796,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -37823,6 +41038,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.3"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37955,6 +41188,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.4.3",
         "title": "Contrast (minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.3",
+        "title": "Contrast (Minimum)",
         "wcagSc": [
           "1.4.3"
         ]
@@ -38122,6 +41373,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38206,6 +41475,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.7"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38285,6 +41572,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "13.9.1",
         "title": "Dans chaque page web, chaque contenu vérifie-t-il ces conditions (hors cas particuliers) ?",
         "criterion": "13.9",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.4",
+        "title": "Orientation",
+        "wcagSc": [
+          "1.3.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.4",
+        "title": "Orientation",
         "wcagSc": [
           "1.3.4"
         ]
@@ -38429,6 +41734,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38498,6 +41821,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.2.2",
         "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.2.2",
+        "title": "Pause, Stop, Hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.2.2",
+        "title": "Pause, Stop, Hide",
         "wcagSc": [
           "2.2.2"
         ]
@@ -38582,6 +41923,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -38713,6 +42072,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "9.3.3",
         "title": "Dans chaque page web, les informations regroupées sous forme de liste de description utilisent-elles les balises <dl> et <dt>/<dd> ?",
         "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -38934,6 +42311,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.1",
+        "title": "Parsing",
+        "wcagSc": [
+          "4.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -39004,6 +42390,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -39129,6 +42533,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39209,6 +42631,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.5",
         "title": "Pour chaque image embarquée (balise <embed> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -39881,6 +43321,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -40008,6 +43466,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40108,6 +43620,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -40177,6 +43707,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.3.3.2",
         "title": "Labels or instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
+        "wcagSc": [
+          "3.3.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.2",
+        "title": "Labels or Instructions",
         "wcagSc": [
           "3.3.2"
         ]
@@ -40464,6 +44012,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.6"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.6",
+        "title": "Headings and Labels",
+        "wcagSc": [
+          "2.4.6"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -40635,6 +44201,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.3.1.1",
         "title": "Language of page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
         "wcagSc": [
           "3.1.1"
         ]
@@ -40818,6 +44402,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "3.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.1",
+        "title": "Language of Page",
+        "wcagSc": [
+          "3.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40889,6 +44491,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -41020,6 +44640,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -41091,6 +44729,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -41175,6 +44831,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.2.1",
         "title": "Pour chaque cadre (balise <iframe> ou <frame>) ayant un attribut title, le contenu de cet attribut est-il pertinent ?",
         "criterion": "2.2",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -41380,6 +45054,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -41473,6 +45165,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41553,6 +45263,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.1",
         "title": "Chaque image (balise <img> ou balise possédant l’attribut WAI-ARIA role=\"img\") porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -41688,6 +45416,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -41771,6 +45517,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41851,6 +45615,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.3",
         "title": "Pour chaque bouton de type image (balise <input> avec l’attribut type=\"image\"), ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -42025,6 +45807,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.5.3",
         "title": "Label in name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.5.3",
+        "title": "Label in Name",
+        "wcagSc": [
+          "2.5.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.5.3",
+        "title": "Label in Name",
         "wcagSc": [
           "2.5.3"
         ]
@@ -42755,6 +46555,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.1",
+        "title": "Use of Color",
+        "wcagSc": [
+          "1.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.1",
+        "title": "Use of Color",
+        "wcagSc": [
+          "1.4.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42907,6 +46725,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43020,6 +46874,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "6.1.4",
         "title": "Chaque lien SVG vérifie-t-il une de ces conditions (hors cas particuliers) ?",
         "criterion": "6.1",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.4",
+        "title": "Link Purpose (In Context)",
         "wcagSc": [
           "2.4.4"
         ]
@@ -43166,6 +47038,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43237,6 +47127,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -43378,6 +47286,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "9.3.2",
         "title": "Dans chaque page web, les informations regroupées visuellement sous forme de liste ordonnée vérifient-elles une de ces conditions ?",
         "criterion": "9.3",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -43614,6 +47540,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.3",
+        "title": "Focus Order",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.3",
+        "title": "Focus Order",
+        "wcagSc": [
+          "2.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.7",
+        "title": "Focus Visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -43727,6 +47707,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.2.1",
         "title": "Audio-only and video-only (pre-recorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.2.1",
+        "title": "Audio-only and Video-only (Prerecorded)",
+        "wcagSc": [
+          "1.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.2.1",
+        "title": "Audio-only and Video-only (Prerecorded)",
         "wcagSc": [
           "1.2.1"
         ]
@@ -43883,6 +47881,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -44122,6 +48138,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.2.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.2.1",
+        "title": "Timing Adjustable",
+        "wcagSc": [
+          "2.2.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.2.1",
+        "title": "Timing Adjustable",
+        "wcagSc": [
+          "2.2.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44231,6 +48265,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.4"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.4",
+        "title": "Resize Text",
+        "wcagSc": [
+          "1.4.4"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.4",
+        "title": "Resize Text",
+        "wcagSc": [
+          "1.4.4"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44301,6 +48353,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -44386,6 +48456,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -44455,6 +48543,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -44537,6 +48643,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.10.1",
         "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
         "criterion": "4.10",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.2",
+        "title": "Audio Control",
+        "wcagSc": [
+          "1.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.2",
+        "title": "Audio Control",
         "wcagSc": [
           "1.4.2"
         ]
@@ -44662,6 +48786,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44742,6 +48884,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.4",
         "title": "Pour chaque image objet (balise <object> avec l’attribut type=\"image/…\") porteuse d’information, ayant une alternative textuelle ou un contenu alternatif, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -44979,6 +49139,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -45107,6 +49285,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "9.1.3",
         "title": "Dans chaque page web, chaque passage de texte constituant un titre est-il structuré à l’aide d’une balise <hx> ou d’une balise possédant un attribut WAI-ARIA role=\"heading\" associé à un attribut WAI-ARIA aria-level ?",
         "criterion": "9.1",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -45279,6 +49475,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -45359,6 +49573,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "8.5.1",
         "title": "Chaque page web a-t-elle un titre de page (balise <title>) ?",
         "criterion": "8.5",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.4.2",
+        "title": "Page Titled",
         "wcagSc": [
           "2.4.2"
         ]
@@ -45527,6 +49759,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "3.3.8"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.3.8",
+        "title": "Accessible Authentication (Minimum)",
+        "wcagSc": [
+          "3.3.8"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -45688,6 +49929,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -45807,6 +50066,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -46020,6 +50297,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -46222,6 +50517,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -46296,6 +50609,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -46379,6 +50710,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.1.4",
         "title": "Chaque zone cliquable d’une image réactive côté serveur est-elle doublée d’un mécanisme utilisable quel que soit le dispositif de pointage utilisé et permettant d’accéder à la même destination ?",
         "criterion": "1.1",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.1.1",
+        "title": "Keyboard",
         "wcagSc": [
           "2.1.1"
         ]
@@ -46621,6 +50970,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -46695,6 +51062,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -46765,6 +51150,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -46902,6 +51305,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -47035,6 +51456,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -47115,6 +51554,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "1.3.6",
         "title": "Pour chaque image vectorielle (balise <svg>) porteuse d’information, ayant une alternative textuelle, cette alternative est-elle pertinente (hors cas particuliers) ?",
         "criterion": "1.3",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -47199,6 +51656,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -47371,6 +51846,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -47454,6 +51947,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -47527,6 +52038,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.3.1"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -47591,6 +52120,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.2.5.8",
         "title": "Target size (minimum)",
+        "wcagSc": [
+          "2.5.8"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.2.5.8",
+        "title": "Target Size (Minimum)",
         "wcagSc": [
           "2.5.8"
         ]
@@ -47663,6 +52201,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.3.1",
         "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.3.1",
+        "title": "Info and Relationships",
         "wcagSc": [
           "1.3.1"
         ]
@@ -47748,6 +52304,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.4.12"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.4.12",
+        "title": "Text Spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -47819,6 +52393,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.4.1.2",
         "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -48004,6 +52596,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -48085,6 +52695,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "7.1.1",
         "title": "Chaque script qui génère ou contrôle un composant d’interface vérifie-t-il, si nécessaire, une de ces conditions ?",
         "criterion": "7.1",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.4.1.2",
+        "title": "Name, Role, Value",
         "wcagSc": [
           "4.1.2"
         ]
@@ -48171,6 +52799,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "3.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.3.1.2",
+        "title": "Language of Parts",
+        "wcagSc": [
+          "3.1.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.3.1.2",
+        "title": "Language of Parts",
+        "wcagSc": [
+          "3.1.2"
+        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -48251,6 +52897,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "4.3.1",
         "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
         "criterion": "4.3",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.2.2",
+        "title": "Captions (Prerecorded)",
+        "wcagSc": [
+          "1.2.2"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.2.2",
+        "title": "Captions (Prerecorded)",
         "wcagSc": [
           "1.2.2"
         ]
@@ -48372,6 +53036,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "version": "V4.1.1",
         "requirement": "9.1.1.1",
         "title": "Non-text content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
+        "wcagSc": [
+          "1.1.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "A.1.1.1",
+        "title": "Non-text Content",
         "wcagSc": [
           "1.1.1"
         ]
@@ -48699,6 +53381,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.1.1",
+          "title": "Non-text Content",
+          "wcagSc": [
+            "1.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.1.1",
+          "title": "Non-text Content",
+          "wcagSc": [
+            "1.1.1"
+          ]
         }
       ]
     }
@@ -48732,6 +53432,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.1.2.1",
           "title": "Audio-only and video-only (pre-recorded)",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.2.1",
+          "title": "Audio-only and Video-only (Prerecorded)",
+          "wcagSc": [
+            "1.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.2.1",
+          "title": "Audio-only and Video-only (Prerecorded)",
           "wcagSc": [
             "1.2.1"
           ]
@@ -48778,6 +53496,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "4.3.1",
           "title": "Chaque média temporel synchronisé pré-enregistré vérifie-t-il, si nécessaire, l’une de ces conditions (hors cas particuliers) ?",
           "criterion": "4.3",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.2.2",
+          "title": "Captions (Prerecorded)",
+          "wcagSc": [
+            "1.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.2.2",
+          "title": "Captions (Prerecorded)",
           "wcagSc": [
             "1.2.2"
           ]
@@ -48890,6 +53626,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.3.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.1",
+          "title": "Info and Relationships",
+          "wcagSc": [
+            "1.3.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.1",
+          "title": "Info and Relationships",
+          "wcagSc": [
+            "1.3.1"
+          ]
         }
       ]
     }
@@ -48936,6 +53690,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.4.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.1",
+          "title": "Use of Color",
+          "wcagSc": [
+            "1.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.1",
+          "title": "Use of Color",
+          "wcagSc": [
+            "1.4.1"
+          ]
         }
       ]
     }
@@ -48979,6 +53751,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "4.10.1",
           "title": "Chaque séquence sonore déclenchée automatiquement via une balise <object>, <video>, <audio>, <embed>, <bgsound> ou un code JavaScript vérifie-t-elle une de ces conditions ?",
           "criterion": "4.10",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.2",
+          "title": "Audio Control",
+          "wcagSc": [
+            "1.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.2",
+          "title": "Audio Control",
           "wcagSc": [
             "1.4.2"
           ]
@@ -49056,6 +53846,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "3.2.4",
           "title": "Dans chaque page web, le texte et le texte en image en gras d’une taille restituée supérieure ou égale à 18,5px vérifient-ils une de ces conditions (hors cas particuliers) ?",
           "criterion": "3.2",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.3",
+          "title": "Contrast (Minimum)",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.3",
+          "title": "Contrast (Minimum)",
           "wcagSc": [
             "1.4.3"
           ]
@@ -49147,6 +53955,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.1.1",
+          "title": "Keyboard",
+          "wcagSc": [
+            "2.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.1.1",
+          "title": "Keyboard",
+          "wcagSc": [
+            "2.1.1"
+          ]
         }
       ]
     }
@@ -49200,6 +54026,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.2.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.2.2",
+          "title": "Pause, Stop, Hide",
+          "wcagSc": [
+            "2.2.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.2.2",
+          "title": "Pause, Stop, Hide",
+          "wcagSc": [
+            "2.2.2"
+          ]
         }
       ]
     }
@@ -49233,6 +54077,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.4.1",
           "title": "Bypass blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.1",
+          "title": "Bypass Blocks",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.1",
+          "title": "Bypass Blocks",
           "wcagSc": [
             "2.4.1"
           ]
@@ -49293,6 +54155,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.2",
+          "title": "Page Titled",
+          "wcagSc": [
+            "2.4.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.2",
+          "title": "Page Titled",
+          "wcagSc": [
+            "2.4.2"
+          ]
         }
       ]
     }
@@ -49336,6 +54216,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "12.8.1",
           "title": "Dans chaque page web, l’ordre de tabulation dans le contenu est-il cohérent ?",
           "criterion": "12.8",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.3",
+          "title": "Focus Order",
+          "wcagSc": [
+            "2.4.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.3",
+          "title": "Focus Order",
           "wcagSc": [
             "2.4.3"
           ]
@@ -49416,6 +54314,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.4",
+          "title": "Link Purpose (In Context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.4",
+          "title": "Link Purpose (In Context)",
+          "wcagSc": [
+            "2.4.4"
+          ]
         }
       ]
     }
@@ -49483,6 +54399,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.6"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.6",
+          "title": "Headings and Labels",
+          "wcagSc": [
+            "2.4.6"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.6",
+          "title": "Headings and Labels",
+          "wcagSc": [
+            "2.4.6"
+          ]
         }
       ]
     }
@@ -49529,6 +54463,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "10.7.1",
           "title": "Pour chaque élément recevant le focus, la prise de focus vérifie-t-elle une de ces conditions ?",
           "criterion": "10.7",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.4.7",
+          "title": "Focus Visible",
+          "wcagSc": [
+            "2.4.7"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.4.7",
+          "title": "Focus Visible",
           "wcagSc": [
             "2.4.7"
           ]
@@ -49585,6 +54537,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.5.3"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.5.3",
+          "title": "Label in Name",
+          "wcagSc": [
+            "2.5.3"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.5.3",
+          "title": "Label in Name",
+          "wcagSc": [
+            "2.5.3"
+          ]
         }
       ]
     }
@@ -49609,6 +54579,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.5.8",
           "title": "Target size (minimum)",
+          "wcagSc": [
+            "2.5.8"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.5.8",
+          "title": "Target Size (Minimum)",
           "wcagSc": [
             "2.5.8"
           ]
@@ -49659,6 +54638,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "3.1.1"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.1.1",
+          "title": "Language of Page",
+          "wcagSc": [
+            "3.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.1.1",
+          "title": "Language of Page",
+          "wcagSc": [
+            "3.1.1"
+          ]
         }
       ]
     }
@@ -49702,6 +54699,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "8.8.1",
           "title": "Pour chaque page web, le code de langue de chaque changement de langue vérifie-t-il ces conditions ?",
           "criterion": "8.8",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.1.2",
+          "title": "Language of Parts",
+          "wcagSc": [
+            "3.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.1.2",
+          "title": "Language of Parts",
           "wcagSc": [
             "3.1.2"
           ]
@@ -49751,6 +54766,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.3.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.4",
+          "title": "Orientation",
+          "wcagSc": [
+            "1.3.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.4",
+          "title": "Orientation",
+          "wcagSc": [
+            "1.3.4"
+          ]
         }
       ]
     }
@@ -49794,6 +54827,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "11.13.1",
           "title": "Chaque champ de formulaire dont l’objet se rapporte à une information concernant l’utilisateur vérifie-t-il ces conditions ?",
           "criterion": "11.13",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.3.5",
+          "title": "Identify Input Purpose",
+          "wcagSc": [
+            "1.3.5"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.3.5",
+          "title": "Identify Input Purpose",
           "wcagSc": [
             "1.3.5"
           ]
@@ -49841,6 +54892,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "10.12.1",
           "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
           "criterion": "10.12",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.12",
+          "title": "Text Spacing",
+          "wcagSc": [
+            "1.4.12"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.12",
+          "title": "Text Spacing",
           "wcagSc": [
             "1.4.12"
           ]
@@ -49912,6 +54981,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "requirement": "8.2.1",
           "title": "Pour chaque déclaration de type de document, le code source généré de la page vérifie-t-il ces conditions ?",
           "criterion": "8.2",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.1",
+          "title": "Parsing",
           "wcagSc": [
             "4.1.1"
           ]
@@ -50044,6 +55122,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -50092,6 +55188,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "4.1.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.4.1.2",
+          "title": "Name, Role, Value",
+          "wcagSc": [
+            "4.1.2"
+          ]
         }
       ]
     }
@@ -50128,6 +55242,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "1.4.4"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.1.4.4",
+          "title": "Resize Text",
+          "wcagSc": [
+            "1.4.4"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.1.4.4",
+          "title": "Resize Text",
+          "wcagSc": [
+            "1.4.4"
+          ]
         }
       ]
     }
@@ -50161,6 +55293,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.2.2.1",
           "title": "Timing adjustable",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.2.2.1",
+          "title": "Timing Adjustable",
+          "wcagSc": [
+            "2.2.1"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.2.2.1",
+          "title": "Timing Adjustable",
           "wcagSc": [
             "2.2.1"
           ]
@@ -50201,6 +55351,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "3.3.2"
           ]
+        },
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "A.3.3.2",
+          "title": "Labels or Instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.3.2",
+          "title": "Labels or Instructions",
+          "wcagSc": [
+            "3.3.2"
+          ]
         }
       ]
     }
@@ -50225,6 +55393,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "V4.1.1",
           "requirement": "9.3.3.8",
           "title": "Accessible authentication (minimum)",
+          "wcagSc": [
+            "3.3.8"
+          ]
+        },
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "A.3.3.8",
+          "title": "Accessible Authentication (Minimum)",
           "wcagSc": [
             "3.3.8"
           ]
@@ -95651,7 +100828,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
-    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist."
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -97025,7 +102203,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Check with assistive technologies that this editing area exposes a relevant role, name and state, and that its changes are rendered (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
-    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme."
+    "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -98399,7 +103578,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Comprobar con tecnologías de asistencia que esta zona de edición expone un rol, un nombre y un estado pertinentes, y que sus cambios se transmiten (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
-    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme."
+    "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -99773,7 +104953,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
-    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme."
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -101147,7 +106328,8 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
-    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。"
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
   }
 };
 
@@ -101642,6 +106824,22 @@ const CONFORMANCE_PROFILES = {
     "wcag21a",
     "wcag21aa",
     "rgaa"
+  ],
+  "acme-1.0": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "acme"
+  ],
+  "acme-2.0": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22a",
+    "wcag22aa",
+    "acme"
   ]
 }
 };
@@ -101670,6 +106868,13 @@ const NORMATIVE_MAPPING_STANDARDS = {
     "versions": [
       "4.1.2"
     ]
+  },
+  "acme": {
+    "standard": "ACME",
+    "versions": [
+      "1.0",
+      "2.0"
+    ]
   }
 };
 
@@ -101679,7 +106884,8 @@ const NORMATIVE_MAPPING_STANDARDS = {
 // by the name their entries carry. A rollup keeps only the entries of the
 // rules that produced its outcome (rollupCompositeResults).
 const RULE_MAPPED_STANDARDS = [
-  "RGAA"
+  "RGAA",
+  "ACME"
 ];
 
 // Rules tagged with one of these check a standard's own requirements, ones
@@ -101687,7 +106893,8 @@ const RULE_MAPPED_STANDARDS = [
 // ruleMatchesRunOnly selects them only when the selection names the tag or
 // the rule itself, which a standard's profile does.
 const OPT_IN_RULE_TAGS = [
-  "rgaa"
+  "rgaa",
+  "acme"
 ];
 
 // Rules a profile also runs by id, whatever their tags: every rule its
@@ -101820,6 +107027,215 @@ const PROFILE_RULES = {
     "video-captions-track-kind",
     "viewport-zoom-review",
     "widget-label-in-name"
+  ],
+  "acme-1.0": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-braille-equivalent",
+    "aria-checked-state-mismatch",
+    "aria-conditional-attr",
+    "aria-deprecated-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-attr",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "duplicate-id",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "form-control-single-label",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-focusable-content",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-decorative",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-in-name",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "meter-name-present",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "option-name-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "presentational-children-focusable-absent",
+    "progressbar-name-present",
+    "role-img-text-alternative-present",
+    "scrollable-region-focusable",
+    "searchbox-name-present",
+    "server-side-image-map-absent",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "summary-name-present",
+    "svg-image-text-alternative-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "table-th-has-data-cells",
+    "td-has-header",
+    "text-spacing-content-loss",
+    "textbox-name-present",
+    "tooltip-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption",
+    "video-poster-text-alternative-present"
+  ],
+  "acme-2.0": [
+    "area-alt-present",
+    "area-alt-quality",
+    "aria-allowed-attr",
+    "aria-braille-equivalent",
+    "aria-checked-state-mismatch",
+    "aria-conditional-attr",
+    "aria-deprecated-role",
+    "aria-hidden-body",
+    "aria-hidden-focus",
+    "aria-prohibited-attr",
+    "aria-prohibited-children",
+    "aria-required-attr",
+    "aria-required-children",
+    "aria-required-parent",
+    "aria-role-name-present",
+    "aria-roles-valid",
+    "aria-valid-attr",
+    "aria-valid-attr-value",
+    "autocomplete-valid",
+    "avoid-inline-spacing",
+    "binary-control-name-present",
+    "button-name-present",
+    "bypass-blocks-present",
+    "canvas-text-alternative-present",
+    "canvas-text-alternative-quality",
+    "combobox-name-present",
+    "contrast-computable",
+    "contrast-minimum",
+    "css-focus-indicator-suppressed",
+    "css-hidden-focus",
+    "css-orientation-lock",
+    "definition-list-children-valid",
+    "deprecated-elements-not-used",
+    "dialog-name-present",
+    "dlitem-parent-valid",
+    "duplicate-id-aria",
+    "embed-text-alternative-present",
+    "embed-text-alternative-quality",
+    "form-control-label-quality",
+    "form-control-programmatic-label-present",
+    "form-control-programmatic-label-quality",
+    "form-control-single-label",
+    "heading-quality",
+    "html-lang-attr-present",
+    "html-xml-lang-mismatch",
+    "identical-iframes-same-purpose",
+    "iframe-focusable-content",
+    "iframe-name-present",
+    "iframe-title-unique",
+    "img-alt-decorative",
+    "img-alt-present",
+    "img-alt-quality",
+    "input-image-alt-decorative",
+    "input-image-alt-present",
+    "input-image-alt-quality",
+    "label-in-name",
+    "link-in-text-block",
+    "link-name-present",
+    "link-name-quality",
+    "list-children-valid",
+    "listbox-name-present",
+    "listitem-parent-valid",
+    "manual-review",
+    "media-alternative-transcript-evidence",
+    "menuitem-name-present",
+    "meta-refresh-timing-absent",
+    "meta-viewport-zoom-enabled",
+    "meter-name-present",
+    "mouse-only-event-handlers",
+    "nested-interactive-controls-absent",
+    "no-autoplay-audio",
+    "object-text-alternative-present",
+    "object-text-alternative-quality",
+    "option-name-present",
+    "p-as-heading",
+    "page-title-patterns",
+    "page-title-present",
+    "password-paste-enabled",
+    "presentational-children-focusable-absent",
+    "progressbar-name-present",
+    "role-img-text-alternative-present",
+    "scrollable-region-focusable",
+    "searchbox-name-present",
+    "server-side-image-map-absent",
+    "slider-name-present",
+    "spinbutton-name-present",
+    "summary-name-present",
+    "svg-image-text-alternative-present",
+    "svg-text-alternative-present",
+    "svg-text-alternative-quality",
+    "tab-name-present",
+    "table-fake-caption",
+    "table-headers-attr-valid",
+    "table-th-has-data-cells",
+    "target-size-minimum",
+    "td-has-header",
+    "text-spacing-content-loss",
+    "textbox-name-present",
+    "tooltip-name-present",
+    "treeitem-name-present",
+    "valid-lang",
+    "video-caption",
+    "video-poster-text-alternative-present"
   ]
 };
 
@@ -101832,6 +107248,12 @@ const PROFILE_MAPPINGS = {
   ],
   "rgaa-4.1.2": [
     "rgaa:4.1.2"
+  ],
+  "acme-1.0": [
+    "acme:1.0"
+  ],
+  "acme-2.0": [
+    "acme:2.0"
   ]
 };
 
