@@ -18,7 +18,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT_DIR = path.join(__dirname, '..', '..', '..');
 const PROFILE_DIR = path.join(__dirname, '..');
 const DATA_DIR = path.join(PROFILE_DIR, 'data');
 const OUTPUT_FILE = path.join(PROFILE_DIR, 'map.js');
@@ -164,7 +163,7 @@ async function main() {
     const actual = fs.existsSync(OUTPUT_FILE) ? fs.readFileSync(OUTPUT_FILE, 'utf8') : '';
     if (actual !== expected) {
       console.error(
-        `[generate-rgaa-map] ${path.relative(ROOT_DIR, OUTPUT_FILE)} is out of date; run npm run rgaa-map`
+        `[generate-rgaa-map] ${path.relative(process.cwd(), OUTPUT_FILE)} is out of date; run npm run rgaa-map`
       );
       process.exit(1);
     }
@@ -172,7 +171,7 @@ async function main() {
     return;
   }
   fs.writeFileSync(OUTPUT_FILE, expected, 'utf8');
-  console.log(`[generate-rgaa-map] wrote ${path.relative(ROOT_DIR, OUTPUT_FILE)}`);
+  console.log(`[generate-rgaa-map] wrote ${path.relative(process.cwd(), OUTPUT_FILE)}`);
 }
 
 module.exports = { SOURCES, plainText, buildTables, renderModule, formatted };

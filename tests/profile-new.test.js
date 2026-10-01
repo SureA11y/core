@@ -24,7 +24,7 @@ function makeRoot() {
   // profiles the repository has.
   fs.writeFileSync(
     path.join(root, 'profiles', 'index.js'),
-    "'use strict';\n\nmodule.exports = [require('./rgaa')];\n"
+    "'use strict';\n\nmodule.exports = [require('./existing')];\n"
   );
   fs.mkdirSync(path.join(root, 'src', 'i18n'), { recursive: true });
   // The core modules a profile's own files may require: the real ones.
@@ -37,10 +37,10 @@ function makeRoot() {
   for (const locale of ['en', 'fr']) {
     fs.writeFileSync(path.join(root, 'src', 'i18n', `${locale}.json`), '{}\n');
   }
-  fs.mkdirSync(path.join(root, 'profiles', 'rgaa'));
+  fs.mkdirSync(path.join(root, 'profiles', 'existing'));
   fs.writeFileSync(
-    path.join(root, 'profiles', 'rgaa', 'index.js'),
-    "module.exports = { standard: { key: 'rgaa' } };\n"
+    path.join(root, 'profiles', 'existing', 'index.js'),
+    "module.exports = { standard: { key: 'existing' } };\n"
   );
   return root;
 }
@@ -65,7 +65,7 @@ test('it writes a complete profile and adds it to profiles/index.js', async () =
   const list = require(path.join(root, 'profiles', 'index.js'));
   assert.deepEqual(
     list.map((p) => p.standard.key),
-    ['rgaa', 'acme-std']
+    ['existing', 'acme-std']
   );
 });
 
@@ -153,11 +153,11 @@ test('its tables turn into entries, rollups and build checks', async () => {
 test('it refuses a bad, reserved or existing key, and writes nothing', async () => {
   const root = makeRoot();
   const before = fs.readFileSync(path.join(root, 'profiles', 'index.js'), 'utf8');
-  for (const key of ['', 'Acme', '1acme', 'acme_std', 'wcag22', 'en301549', 'rgaa']) {
+  for (const key of ['', 'Acme', '1acme', 'acme_std', 'wcag22', 'en301549', 'existing']) {
     await assert.rejects(() => createProfile({ key, root }), undefined, key);
   }
   assert.equal(fs.readFileSync(path.join(root, 'profiles', 'index.js'), 'utf8'), before);
-  assert.deepEqual(fs.readdirSync(path.join(root, 'profiles')).sort(), ['index.js', 'rgaa']);
+  assert.deepEqual(fs.readdirSync(path.join(root, 'profiles')).sort(), ['existing', 'index.js']);
 });
 
 test('a version names the WCAG version it is built on, which sets its tags and criteria', async () => {

@@ -14,7 +14,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT_DIR = path.join(__dirname, '..', '..', '..');
 const OUTPUT_FILE = path.join(__dirname, '..', 'docs', 'RGAA_MAPPING.md');
 
 // A row's note, followed by the reason for each test it links outside RGAA's
@@ -141,7 +140,7 @@ async function main() {
   const check = process.argv.includes('--check');
   let stale = false;
   for (const [file, expected] of Object.entries(pages)) {
-    const rel = path.relative(ROOT_DIR, file);
+    const rel = path.relative(process.cwd(), file);
     if (check) {
       const actual = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
       if (actual !== expected) {

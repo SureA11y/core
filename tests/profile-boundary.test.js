@@ -173,6 +173,29 @@ for (const name of PROFILE_FOLDERS) {
     assert.deepEqual(found, []);
   });
 
+  test(`${name}: its tests and scripts build no path out of the profile`, () => {
+    // Core's files are read through the package, as a profile outside this
+    // repository would (require.resolve('@surea11y/core/browser')): a path
+    // that climbs out of the profile reaches files only this repository has.
+    // The shared test harness (tests/helpers/) is the one exception.
+    const call = /path\.(?:join|resolve)\(\s*__dirname((?:\s*,\s*(['"])[^'"]*\2)+)\s*\)/g;
+    const files = walk(path.join(dir, 'tests')).concat(walk(path.join(dir, 'scripts')));
+    const found = files.flatMap((file) =>
+      [...fs.readFileSync(file, 'utf8').matchAll(call)]
+        .map((m) => [
+          m[0],
+          path.resolve(
+            path.dirname(file),
+            ...[...m[1].matchAll(/(['"])([^'"]*)\1/g)].map((x) => x[2])
+          )
+        ])
+        .filter(([, abs]) => !inProfile(abs))
+        .filter(([, abs]) => !CORE_MODULE_DIRS.some((d) => `${rel(abs)}/`.startsWith(d)))
+        .map(([text]) => `${rel(file)}: ${text}`)
+    );
+    assert.deepEqual(found, []);
+  });
+
   test(`${name}: its dictionaries hold only the messages of its rules and its entry`, () => {
     if (!profile.i18nDir) return;
     const prefixes = ruleFiles
@@ -191,13 +214,13 @@ for (const name of PROFILE_FOLDERS) {
   });
 }
 
+// Core's own files: its source, its tests and its scripts.
+const CORE_FILES = ['src', 'tests', 'scripts'].flatMap((d) => walk(path.join(ROOT, d)));
+
 test('core reaches a profile only through profiles/index.js', () => {
-  // src/rgaa.js is the one exception: RGAA's public entry point
-  // (@surea11y/core/rgaa) reads the profile's table, and would move with the
-  // profile if it became a package of its own. src/core.js is generated and
-  // requires every rule, the profiles' included.
-  const EXCEPTIONS = new Set(['src/rgaa.js', 'src/core.js']);
-  const files = walk(path.join(ROOT, 'src')).filter((f) => !EXCEPTIONS.has(rel(f)));
+  // src/core.js is generated and requires every rule, the profiles' included.
+  const EXCEPTIONS = new Set(['src/core.js']);
+  const files = CORE_FILES.filter((f) => !EXCEPTIONS.has(rel(f)));
   const found = files.flatMap((file) =>
     requiresOf(fs.readFileSync(file, 'utf8'))
       .filter((spec) => spec.startsWith('.'))
@@ -205,6 +228,28 @@ test('core reaches a profile only through profiles/index.js', () => {
       .filter(([, abs]) => abs.startsWith(PROFILES_DIR + path.sep))
       .filter(([, abs]) => abs !== path.join(PROFILES_DIR, 'index.js'))
       .map(([spec]) => `${rel(file)}: ${spec}`)
+  );
+  assert.deepEqual(found, []);
+});
+
+// Paths into a profile's folder that a source builds from string literals,
+// written inline (profiles/<name>/...) or as path segments (..., profiles,
+// <name>), as [text, profile] pairs.
+function profilePathsIn(source) {
+  const names = PROFILE_FOLDERS.join('|');
+  const joined = new RegExp(`(['"\`])profiles\\1\\s*,\\s*(['"\`])(${names})\\2`, 'g');
+  const inline = new RegExp(`(['"\`])[^'"\`\\n]*\\bprofiles/(${names})\\b`, 'g');
+  return [
+    ...[...source.matchAll(joined)].map((m) => [m[0], m[3]]),
+    ...[...source.matchAll(inline)].map((m) => [m[0], m[2]])
+  ];
+}
+
+test("core's source, tests and scripts never read a profile's files", () => {
+  // A test of a profile's behaviour belongs to the profile, and a guarantee
+  // core makes for every profile is tested over all of them (ruleSources).
+  const found = CORE_FILES.filter((f) => rel(f) !== 'src/core.js').flatMap((file) =>
+    profilePathsIn(fs.readFileSync(file, 'utf8')).map(([text]) => `${rel(file)}: ${text}`)
   );
   assert.deepEqual(found, []);
 });
