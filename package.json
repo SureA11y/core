@@ -114,6 +114,7 @@
     "validate:manual-rules": "npm run build && node scripts/validate-all-rules.js src/checks/manual profiles/*/rules/manual",
     "validate:rules": "npm run build && node scripts/validate-all-rules.js",
     "i18n:new": "node scripts/i18n-scaffold.js",
+    "profile:new": "node scripts/profile-new.js",
     "i18n:sync": "node scripts/i18n-sync.js",
     "rgaa-map": "node profiles/rgaa/scripts/generate-map.js",
     "rgaa-map:check": "node profiles/rgaa/scripts/generate-map.js --check",

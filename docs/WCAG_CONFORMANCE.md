@@ -214,7 +214,7 @@ The table is generated from the criteria file DINUM publishes (`RGAA/criteres.js
 EN 301 549 and RGAA are entries in a registry, `src/coverage/standards.js`. The build, the runner, the rule catalog and the reporters read it, so a new standard goes the same way. Where its entry lives depends on the standard:
 
 - A standard that restates WCAG one criterion at a time, as EN 301 549 does, only renumbers WCAG's verdicts. Its table goes in `src/coverage/<name>-map.js` and its entry in `NORMATIVE_STANDARDS`, next to EN 301 549's.
-- A standard with verdicts of its own, as RGAA has, is a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js`. The registry appends each profile's entry after its own. See [`profiles/README.md`](../profiles/README.md) and `profiles/rgaa/` for the layout.
+- A standard with verdicts of its own, as RGAA has, is a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js`. The registry appends each profile's entry after its own. `npm run profile:new -- <key>` creates one, working and empty, to fill in. See [`profiles/README.md`](../profiles/README.md) and `profiles/rgaa/` for the layout.
 
 Either way, the entry needs:
 
