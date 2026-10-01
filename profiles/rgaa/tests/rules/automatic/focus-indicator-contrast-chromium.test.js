@@ -44,7 +44,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'focus-indicator-contrast';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../../../surea11y.browser.js'), 'utf8');
+const BUNDLE = fs.readFileSync(require.resolve('@surea11y/core/browser'), 'utf8');
 const FIXTURE = fs.readFileSync(
   path.join(__dirname, '../../fixtures', `${RULE_ID}-all-scenarios.html`),
   'utf8'

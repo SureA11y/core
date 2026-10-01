@@ -9,8 +9,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { resolveVariants } = require('../scripts/lib/rule-variants');
+const { ruleDirs, ruleSources } = require('../scripts/lib/rule-dirs');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 const runInPage = () => ({ outcome: 'pass', occurrences: [] });
@@ -110,5 +113,55 @@ test("a caller's config cannot change a rule's declared settings", () => {
       'notApplicable',
       `${ruleId}: excludeSelectors still applies`
     );
+  }
+});
+
+// A variant shares its base's code and, through the helpers, its caches. Its
+// settings must stay its own: for every variant the build has, the base rule
+// gives the same result over its own scenario page whether or not the variant
+// runs in the same scan, in either order.
+test("every variant leaves its base rule's results unchanged", () => {
+  const variants = ruleDirs()
+    .flatMap((dir) =>
+      ['automatic', 'manual']
+        .map((type) => path.join(dir, type))
+        .filter((d) => fs.existsSync(d))
+        .flatMap((d) => fs.readdirSync(d).map((f) => path.join(d, f)))
+    )
+    .map((file) => require(file))
+    .filter((mod) => mod && typeof mod.from === 'string');
+  assert.ok(variants.length > 0);
+
+  const pageOf = new Map(
+    ruleSources().flatMap((src) => {
+      const index = path.join(src.fixturesDir, 'index.json');
+      if (!fs.existsSync(index)) return [];
+      return JSON.parse(fs.readFileSync(index, 'utf8'))
+        .rows.filter((r) => r.fixtureFile)
+        .map((r) => [r.ruleId, path.join(src.root, r.fixtureFile)]);
+    })
+  );
+
+  const summary = (result, id) =>
+    JSON.stringify(
+      result.checksResults
+        .filter((r) => r.ruleId === id)
+        .map((r) => ({
+          outcome: r.outcome,
+          occurrences: (r.occurrences || []).map((o) => [o.selector, o.data && o.data.details])
+        }))
+    );
+
+  for (const { id, from } of variants) {
+    assert.ok(pageOf.has(from), `${from} has a scenario page`);
+    const html = fs.readFileSync(pageOf.get(from), 'utf8');
+    const run = (ids) =>
+      runa11yCoreOnHtml(html, {
+        engineOptions: { optInRules: 'all' },
+        runOnly: { includeRuleIds: ids }
+      });
+    const alone = summary(run([from]), from);
+    assert.equal(summary(run([from, id]), from), alone, `${id} after ${from}`);
+    assert.equal(summary(run([id, from]), from), alone, `${id} before ${from}`);
   }
 });

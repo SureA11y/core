@@ -14,7 +14,6 @@ const {
 
 const RULE_ID = 'scripted-components-review';
 const RUN = { runOnly: { includeRuleIds: [RULE_ID] } };
-const ROOT = path.join(__dirname, '../../../../..');
 
 function page(body, head = '') {
   return `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body>${body}</body></html>`;
@@ -88,9 +87,14 @@ test(`${RULE_ID}: a script inside an open shadow root counts`, () => {
 });
 
 test(`${RULE_ID}: the engine's own files are not counted as page script`, () => {
-  const bundleHead = fs.readFileSync(path.join(ROOT, 'surea11y.browser.js'), 'utf8').slice(0, 800);
-  const localeHead = fs.readFileSync(path.join(ROOT, 'surea11y.i18n.fr.js'), 'utf8').slice(0, 400);
-  const core = fs.readFileSync(path.join(ROOT, 'src/core.js'), 'utf8');
+  // Read as a consumer reads them, through the package.
+  const read = (specifier) => fs.readFileSync(require.resolve(specifier), 'utf8');
+  const bundleHead = read('@surea11y/core/browser').slice(0, 800);
+  const localeHead = read('@surea11y/core/i18n/fr').slice(0, 400);
+  const core = fs.readFileSync(
+    path.join(path.dirname(require.resolve('@surea11y/core')), 'core.js'),
+    'utf8'
+  );
   const chunkStart = core.indexOf('// SELF-CONTAINED in-page runner');
   assert.ok(chunkStart > 0);
   const chunkHead = core.slice(chunkStart, chunkStart + 400);

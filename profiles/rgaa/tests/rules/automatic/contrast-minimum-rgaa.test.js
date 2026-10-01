@@ -13,8 +13,6 @@ const WCAG_RULE = 'contrast-minimum';
 const RUN = { runOnly: { includeRuleIds: [RULE_ID] } };
 const RGAA = { engineOptions: { profile: 'rgaa-4.1.2' } };
 const FIXTURES = path.join(__dirname, '../..', 'fixtures');
-// contrast-minimum's scenario page, in core's fixtures.
-const CORE_FIXTURES = path.join(__dirname, '../../../../..', 'tests', 'fixtures');
 
 function page(style, text = 'Opening hours') {
   return `<!doctype html><html lang="en"><head><title>t</title><style>html,body{background:#fff;color:#000}</style></head><body><main><p id="t" style="${style}">${text}</p></main></body></html>`;
@@ -144,7 +142,8 @@ test(`${RULE_ID}: WCAG 1.4.3 and RGAA 3.2 agree outside the 18.5px band`, () => 
 
 // contrast-minimum is unchanged: running the RGAA rule beside it, in either
 // order and under any profile, leaves its result as it was. The two share the
-// colour caches but not the font or result caches.
+// colour caches but not the font or result caches. Core's variant test checks
+// the same over contrast-minimum's own scenario page.
 test(`${WCAG_RULE} gives the same result whether or not ${RULE_ID} runs in the same scan`, () => {
   const strip = (r) =>
     JSON.stringify({
@@ -157,7 +156,6 @@ test(`${WCAG_RULE} gives the same result whether or not ${RULE_ID} runs in the s
       }))
     });
   const htmls = [
-    fs.readFileSync(path.join(CORE_FIXTURES, 'contrast-all-scenarios.html'), 'utf8'),
     fs.readFileSync(path.join(FIXTURES, `${RULE_ID}-all-scenarios.html`), 'utf8'),
     page(`font-size:18.5px;font-weight:700;${GREY}`)
   ];
