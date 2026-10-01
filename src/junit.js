@@ -160,6 +160,10 @@ function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+function needReview(n) {
+  return `${plural(n, 'occurrence')} ${n === 1 ? 'needs' : 'need'} manual review`;
+}
+
 function renderTestcase(entry, classname, indent) {
   const { check, status, failing, undecided, baselined } = entry;
   const open = `${indent}<testcase classname="${xmlText(classname)}" name="${xmlText(check.ruleId)}" time="0"`;
@@ -171,16 +175,13 @@ function renderTestcase(entry, classname, indent) {
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText(failing.map(describeOccurrence).join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
-    const message = undecided.length
-      ? `${plural(undecided.length, 'occurrence')} need manual review`
-      : 'Needs manual review';
+    const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
     inner.push(
       `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText(undecided.map(describeOccurrence).join('\n'))}</failure>`
     );
   } else if (status === 'skipped') {
     const parts = [];
-    if (undecided.length)
-      parts.push(`${plural(undecided.length, 'occurrence')} need manual review`);
+    if (undecided.length) parts.push(needReview(undecided.length));
     else if (check.outcome === 'cantTell' && !baselined) parts.push('Needs manual review');
     if (baselined) parts.push(`${plural(baselined, 'known failure')} recorded in the baseline`);
     inner.push(`${indent}  <skipped message="${xmlText(parts.join('; '))}"/>`);
@@ -236,12 +237,14 @@ function renderJunitReport(result, options = {}) {
       const own = criteria.find((m) => String(m.requirement) === key);
       if (own && !suite.level) suite.level = own.conformanceLevel || own.level || null;
       // Another standard's entry goes under the criteria it corresponds to
-      // (its `wcagSc`); one without that field belongs to every criterion of
-      // its rule.
+      // (its `wcagSc`); one that names none (no field, or an empty list, for a
+      // requirement outside WCAG) belongs to every criterion of its rule, and
+      // a rule with no criterion keeps all of its entries.
       for (const m of mappings) {
         const standard = standardOfEntry(m);
         if (!standard) continue;
-        if (Array.isArray(m.wcagSc) && !m.wcagSc.map(String).includes(key)) continue;
+        const named = Array.isArray(m.wcagSc) && m.wcagSc.length ? m.wcagSc.map(String) : null;
+        if (key !== OTHER_SUITE && named && !named.includes(key)) continue;
         if (!suite.standards.has(standard.key)) suite.standards.set(standard.key, new Set());
         suite.standards.get(standard.key).add(String(m.requirement));
       }
@@ -259,6 +262,7 @@ function renderJunitReport(result, options = {}) {
     ['schemaVersion', engine.schemaVersion],
     ['wcagVersion', engine.wcagVersion],
     ['profile', engine.profile],
+    ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
     ['locale', engine.locale && engine.locale.resolved],
     ['url', result && result.url]
   ].filter(([, v]) => v != null && v !== '');

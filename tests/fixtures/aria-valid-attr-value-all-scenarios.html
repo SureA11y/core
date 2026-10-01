@@ -91,14 +91,20 @@
     <div aria-labelledby="" id="avav_case_10"></div>
   </div>
 
-  <div class="case" id="case_14">
-    <div class="case-title">14 — FAIL: idref-list references only a non-existent id (dangling)</div>
-    <div aria-labelledby="avav_case_14_does_not_exist" id="avav_case_14"></div>
-  </div>
 
   <div class="case" id="case_15">
     <div class="case-title">15 — FAIL: single-idref attribute (aria-activedescendant) references a non-existent id</div>
     <div role="listbox" aria-activedescendant="avav_case_15_does_not_exist" id="avav_case_15"></div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL: aria-level="0", below the minimum of 1</div>
+    <div role="heading" aria-level="0" id="avav_case_18">Title</div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL: aria-setsize="-2", neither at least 1 nor -1</div>
+    <ul><li aria-setsize="-2" id="avav_case_19">Item</li></ul>
   </div>
 
   <h2>C. Needs review</h2>
@@ -106,6 +112,16 @@
   <div class="case" id="case_17">
     <div class="case-title">17 — CANTTELL: aria-controls target does not exist and the element is not in a collapsed state</div>
     <button aria-controls="avav_case_17_panel" id="avav_case_17">Show details</button>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — CANTTELL: idref-list references only a non-existent id (dangling); the element keeps its other name sources</div>
+    <div aria-labelledby="avav_case_14_does_not_exist" id="avav_case_14"></div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — PASS: aria-setsize="-1" (unknown set size)</div>
+    <ul><li aria-setsize="-1" aria-posinset="3" id="avav_case_20">Item</li></ul>
   </div>
 
   <h2>D. Not applicable (skipped, not counted)</h2>

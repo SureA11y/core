@@ -33,3 +33,5 @@ function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
 }
 ```
+
+A core rule's test checks the rule, by default and under core's own profiles (`wcag22-aa`, `section508`, EN 301 549's). It names no profile's standard (its key, its profiles, its rollups): which of a standard's requirements a core rule checks is that standard's decision, tested in its profile. How core treats a profile's standard (mappings, opt-in rules, rollups, variants) is tested against the sample profile in `tests/fixtures/profiles/sample/`, built into a copy of the engine by `tests/helpers/sampleEngine.js`, in `tests/sample-profile/`. That a profile never changes a rule's outcome is checked for every rule and every profile in `tests/profile-outcomes.test.js`, so a rule's test need not loop over profiles to show it. `tests/profile-boundary.test.js` fails on a rule test that names a profile's standard.

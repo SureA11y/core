@@ -31,7 +31,11 @@
  *   to non-empty text, or a non-empty title. Every role in the set is
  *   name-from-author-only, so descendant text is not accepted:
  *   a labelled child inside a composite widget would otherwise pass the
- *   container that has no name of its own.
+ *   container that has no name of its own. The name the HTML host element
+ *   gives itself counts too, since the browser still computes it under the
+ *   role: the first child <legend> of a <fieldset>, the first child
+ *   <caption> of a <table>, and an associated <label> on a labelable
+ *   element such as <progress> or <meter>.
  */
 
 const id = 'aria-role-name-present';
@@ -186,7 +190,20 @@ function runInPage(ctx) {
 
     const title = ariaLabel || labelled ? '' : getAttr(el, 'title');
 
-    const ok = !!(ariaLabel || labelled || title);
+    // The host's own HTML naming still applies under the role: the first
+    // <legend> of <fieldset role="radiogroup">, the <caption> of
+    // <table role="grid">, a <label> of <progress role="progressbar">.
+    let hostName = '';
+    if (!(ariaLabel || labelled || title) && helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx);
+        hostName = host && host.present ? host.value : '';
+      } catch {
+        hostName = '';
+      }
+    }
+
+    const ok = !!(ariaLabel || labelled || title || hostName);
     if (ok) continue;
 
     const eligInfo = getEligibilityInfo

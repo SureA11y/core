@@ -48,6 +48,11 @@
     <dl id="dlv_case_08"><div></div></dl>
   </div>
 
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: two dt then two dd, and a term split from its definition across two divs</div>
+    <dl id="dlv_case_14"><dt>A</dt><dt>B</dt><dd>1</dd><dd>2</dd><div><dt>C</dt></div><div><dd>3</dd></div></dl>
+  </div>
+
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_03">
@@ -68,6 +73,21 @@
   <div class="case" id="case_10">
     <div class="case-title">10 — FAIL: dd present with no matching dt (unbalanced pairing)</div>
     <dl id="dlv_case_10"><dd>Definition</dd></dl>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: dd before the first dt</div>
+    <dl id="dlv_case_11"><dd>Definition</dd><dt>Term</dt></dl>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: trailing dt with no dd after it</div>
+    <dl id="dlv_case_12"><dt>Term</dt><dd>Definition</dd><dt>Orphan term</dt></dl>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: text directly inside the dl</div>
+    <dl id="dlv_case_13">hello</dl>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

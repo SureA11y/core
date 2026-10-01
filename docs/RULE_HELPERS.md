@@ -40,6 +40,33 @@ open shadow roots are in scope and let this helper honor the caller's choice.
 const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
 ```
 
+### `queryAllSource(selector)` → `Element[]`
+The same query as `queryAllSmart` (shadow roots per `includeShadowDom`, context scope,
+`excludeSelectors`) with no hidden-content filter: elements inside `hidden`,
+`display:none`, closed `<details>` and the like are returned whatever
+`includeHiddenElements` says. Only for rules that judge the markup itself rather than
+what is rendered, such as a standard's tests on the generated source.
+`<template>` content is not in the DOM tree and stays out. A WCAG rule should not use
+it: hidden content is not presented to users.
+
+### `getDoctypeInfo()` → `{ kind, name, publicId, systemId }`
+The document's doctype, classified by HTML version. `kind` is one of:
+
+| `kind` | Doctype |
+|---|---|
+| `'html5'` | name `html`, no public id, and no system id or `about:legacy-compat` |
+| `'xhtml10'` | a public id of XHTML 1.0 (strict, transitional or frameset) |
+| `'xhtml11'` | any other W3C XHTML public id: XHTML 1.1, XHTML Basic, XHTML 1.1 plus MathML (and SVG), XHTML+RDFa |
+| `'html4'` | a W3C or IETF HTML public id: HTML 2.0, 3.2, 4.0, 4.01, HTML 4.01+RDFa |
+| `'other'` | any other doctype, including one whose name is not `html` |
+| `'none'` | no doctype |
+
+Public ids are compared without regard to case, as the HTML parser does. `name`,
+`publicId` and `systemId` are the doctype's own values (empty strings when there is
+none). For rules whose verdict depends on the HTML version: a requirement that
+applies to HTML5 only, or `lang` read as `lang` or `xml:lang` by version. Whether a
+doctype is valid at all is not this helper's question.
+
 ### `composedParent(node)` → `Node | null`
 One step up the *flat tree*: `assignedSlot` first (a slotted node's rendered parent is
 its slot, not its light-DOM `parentNode`), then `parentNode`, then `.host` once you're
@@ -176,7 +203,9 @@ a name exists.
 Recursive "name from content" (accname step 2F): walks children using each child's
 *own* accessible name (not just literal text), so `<a href="…"><img alt="Company
 Name"></a>` and `<button><span aria-label="Close"></span></button>` both name correctly.
-A plain `TreeWalker(SHOW_TEXT)` walk misses both.
+A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
+speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
+`aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
 Real `<label>` element(s) associated with `el` — a `<label for="id">` pointing at it,
@@ -185,6 +214,15 @@ native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 `.labels` is an expensive whole-document walk per element (`.control` resolution is
 another one), which used to dominate whole-engine runtime on form-heavy pages. Use this
 whenever a rule needs the actual label element(s), not just a yes/no.
+
+### `getNativeHostNameInfo(el, ctx, opts)` → `{ present, value, mechanism }`
+The name an element gets from its HTML host markup rather than from ARIA: an associated
+`<label>` on a labelable element, the first child `<legend>` of a `<fieldset>`, the first
+child `<caption>` of a `<table>`, and, only with `opts.placeholder: true`, the
+`placeholder` of a text-like `<input>` or a `<textarea>` (HTML-AAM's last name source).
+`mechanism` is `'label'`, `'legend'`, `'caption'`, `'placeholder'` or `'none'`. For rules
+on name-from-author-only roles (`role="textbox"`, `"slider"`, `"radiogroup"`, …) whose
+ARIA check does not read host markup, although the browser still computes it.
 
 ### `labelContributesAccessibleName(labelEl)` → `boolean`
 Whether a `<label>` element itself carries text that would name its control: own
@@ -267,6 +305,13 @@ subtag (the registry only lists a three-letter subtag when no two-letter one exi
 so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
 
+### `hasSkipLinkWording(text)` → `boolean`
+Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
+"Zum Inhalt", "Saltar al contenido", "本文へ"...), in the languages the engine ships.
+One list for every rule that looks for a skip link, core's `skip-link` and any a
+profile brings, so they recognise the same links; add a phrasing here, not in a
+rule.
+
 ### `reportOccurrence(node, partial)` → occurrence object
 **Use this to build every occurrence.** Attaches the element so the engine fills in
 `selector`, `html`, and `structuralPath` centrally — see `RULE_AUTHORING.md` §4.3/§9 for
@@ -307,11 +352,23 @@ flat `helpers.*` list above:
 Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba`,
 `relativeLuminance`, `contrastRatio`, `requiredRatio`, `isLargeText`,
 `computeEffectiveForeground`/`computeEffectiveBackground`, `getComputabilityBlocker`,
+`hasBackgroundImageOrGradient`, `hasBlendMode`, `hasFilter`, `computeOpacityProduct`,
 `getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
-(`clamp01`, `round2`, `toHex2`, `pxToPt`, `fontWeightLabel`, …). Backs the
-`contrast-*` rule family (`contrast-minimum`, `contrast-enhanced`,
-`contrast-computable`) — see `src/core/contrast-helpers.js` if you're extending that
-family specifically.
+(`clamp01`, `clamp255`, `round2`, `toHex2`, `rgbToHex`, `rgbaToString`, `parsePx`,
+`normalizeFontWeight`, `pxToPt`, `fontWeightLabel`). That is the whole namespace,
+apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
+rules reuse per-element work. Treat it as an optimisation, never as data a rule
+depends on: a key may be absent, and a rule stores only under keys of its own unless
+it computes exactly what that key's other users compute (`contrast-minimum`,
+`contrast-enhanced` and `contrast-computable`, and `contrast-minimum`'s variants,
+share `__elBgCache`, `__elFgCache` and `__elBlockerCache`,
+WeakMaps of each element's effective background, foreground and computability blocker;
+a variant with other thresholds keeps its own font and analysis caches, keyed by them). Backs the
+`contrast-*` rule family (`contrast-minimum` and its variants, `contrast-enhanced`,
+`contrast-computable`) — see `src/core/contrast-helpers.js`
+if you're extending that family specifically. `isLargeText(fontSizePx, fontWeightNum,
+boldLargeMinPx)` takes an optional third argument, the size from which bold text is large:
+WCAG's 14pt when it is left out, 18.5 for a standard that puts it there.
 
 ### `helpers.aria.*`
 ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,

@@ -161,9 +161,19 @@ test('validateAttrValue: tristate', () => {
 test('validateAttrValue: integer', () => {
   const { helpers } = helpersFor('<div></div>');
   assert.equal(helpers.validateAttrValue('aria-level', '3').valid, true);
-  assert.equal(helpers.validateAttrValue('aria-level', '-3').valid, true);
   assert.equal(helpers.validateAttrValue('aria-level', '3.5').valid, false);
   assert.equal(helpers.validateAttrValue('aria-level', 'three').valid, false);
+  // WAI-ARIA 1.2 lower bounds: aria-level at least 1, aria-setsize at least 1
+  // or -1, aria-rowspan at least 0. Integers without a bound stay unbounded.
+  assert.deepEqual(helpers.validateAttrValue('aria-level', '-3'), {
+    valid: false,
+    reason: 'integer-out-of-range'
+  });
+  assert.equal(helpers.validateAttrValue('aria-level', '0').valid, false);
+  assert.equal(helpers.validateAttrValue('aria-setsize', '-1').valid, true);
+  assert.equal(helpers.validateAttrValue('aria-setsize', '-2').valid, false);
+  assert.equal(helpers.validateAttrValue('aria-rowspan', '0').valid, true);
+  assert.equal(helpers.validateAttrValue('aria-colcount', '-1').valid, true);
 });
 
 test('validateAttrValue: number', () => {

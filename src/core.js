@@ -121,8 +121,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "area-alt-quality",
-    "title": "<area> alt text must be appropriate (manual review)",
-    "description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
+    "title": "<area> text alternative must be appropriate (manual review)",
+    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
     "i18n": {
       "titleKey": "area_altQuality_title",
       "descriptionKey": "area_altQuality_description"
@@ -2302,12 +2302,17 @@ const CHECK_DEFS = [
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "settings": [
+      "boldLargeMinPx",
+      "largeTextRatio",
+      "normalTextRatio"
+    ]
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
     "title": "Focus indicator must not be removed without a replacement",
-    "description": "Flags elements in the tab order whose focus outline is removed by a :focus/:focus-visible rule with no replacement indicator (border, box-shadow, background, ...) in any other focus rule matching them.",
+    "description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
     "i18n": {
       "titleKey": "cssFocusIndicatorSuppressed_title",
       "descriptionKey": "cssFocusIndicatorSuppressed_description"
@@ -2455,7 +2460,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "css-orientation-lock",
     "title": "CSS must not lock the page to a single orientation",
-    "description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
+    "description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
     "i18n": {
       "titleKey": "cssOrientationLock_title",
       "descriptionKey": "cssOrientationLock_description"
@@ -2599,8 +2604,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "deprecated-elements-not-used",
-    "title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
-    "description": "Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.",
+    "title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
+    "description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
     "i18n": {
       "titleKey": "deprecatedElements_title",
       "descriptionKey": "deprecatedElements_description"
@@ -2672,7 +2677,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "dialog-name-present",
     "title": "Dialogs have an accessible name",
-    "description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "description": "Checks that dialogs (elements with role=\"dialog\" or role=\"alertdialog\", and native <dialog> elements) expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "dialogNamePresent_title",
       "descriptionKey": "dialogNamePresent_description"
@@ -4103,7 +4108,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "iframe-title-unique",
     "title": "Frame titles must be unique",
-    "description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
+    "description": "Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -4579,8 +4584,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "input-image-alt-quality",
-    "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
-    "description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
+    "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
+    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
     "i18n": {
       "titleKey": "inputImage_altQuality_title",
       "descriptionKey": "inputImage_altQuality_description"
@@ -5105,7 +5110,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "link-in-text-block",
     "title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
+    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
     "i18n": {
       "titleKey": "linkInTextBlock_title",
       "descriptionKey": "linkInTextBlock_description"
@@ -5189,6 +5194,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag244",
       "wcag412",
       "navigation",
       "atomic",
@@ -5198,15 +5204,41 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.4",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.4.4",
+        "title": "Link Purpose (In Context)",
+        "conformanceLevel": "A"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -5232,6 +5264,9 @@ const CHECK_DEFS = [
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "2.4.4": [
+          "link-name-present"
+        ],
         "4.1.2": [
           "link-name-present"
         ]
@@ -5475,7 +5510,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "listitem-parent-valid",
     "title": "List items must be inside a list container",
-    "description": "Checks that <li> elements are contained by <ul>, <ol>, or an element with role=\"list\".",
+    "description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
     "i18n": {
       "titleKey": "listitemParentValid_title",
       "descriptionKey": "listitemParentValid_description"
@@ -5842,8 +5877,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
-    "title": "Page must not use a meta refresh at all (AAA)",
-    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "title": "Page must not use a timed meta refresh (AAA)",
+    "description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "i18n": {
       "titleKey": "metaRefreshNoExceptions_title",
       "descriptionKey": "metaRefreshNoExceptions_description"
@@ -6307,7 +6342,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "no-autoplay-audio",
     "title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "i18n": {
       "titleKey": "noAutoplayAudio_title",
       "descriptionKey": "noAutoplayAudio_description"
@@ -6598,8 +6633,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "p-as-heading",
-    "title": "A <p> styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "title": "Text styled to look like a heading should probably be a real heading",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -7413,8 +7448,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "server-side-image-map-absent",
-    "title": "Images must not use a server-side image map",
-    "description": "Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).",
+    "title": "Server-side image maps must have a keyboard-operable alternative",
+    "description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
     "i18n": {
       "titleKey": "serverSideImageMapAbsent_title",
       "descriptionKey": "serverSideImageMapAbsent_description"
@@ -8472,6 +8507,78 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "text-spacing-content-loss",
+    "title": "Text stays readable when the user increases text spacing",
+    "description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "i18n": {
+      "titleKey": "textSpacingContentLoss_title",
+      "descriptionKey": "textSpacingContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1412",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.12",
+        "title": "Text Spacing",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.12": [
+          "text-spacing-content-loss"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "textbox-name-present",
     "title": "Textboxes have an accessible name",
     "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
@@ -8768,7 +8875,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "video-caption",
     "title": "Prerecorded video should provide a captions track",
-    "description": "Flags <video> elements with no <track kind=\"captions\"|\"subtitles\"> child, for manual review of whether the video has an audio track that needs captions.",
+    "description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
     "i18n": {
       "titleKey": "videoCaption_title",
       "descriptionKey": "videoCaption_description"
@@ -9427,13 +9534,14 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-2.4.4-link-purpose-in-context",
     "checksIds": [
+      "link-name-present",
       "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
       "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
-      "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+      "description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
         "2.4.4"
       ],
@@ -9764,13 +9872,14 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-1.4.12-text-spacing",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
       "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
-      "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+      "description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "wcagSc": [
         "1.4.12"
       ],
@@ -10231,6 +10340,7 @@ const RULE_IMPLS = {
   "table-th-has-data-cells": { run: require("./checks/automatic/table-th-has-data-cells.js").runInPage, applicability: require("./checks/automatic/table-th-has-data-cells.js").applicability || null },
   "target-size-minimum": { run: require("./checks/automatic/target-size-minimum.js").runInPage, applicability: require("./checks/automatic/target-size-minimum.js").applicability || null },
   "td-has-header": { run: require("./checks/automatic/td-has-header.js").runInPage, applicability: require("./checks/automatic/td-has-header.js").applicability || null },
+  "text-spacing-content-loss": { run: require("./checks/automatic/text-spacing-content-loss.js").runInPage, applicability: require("./checks/automatic/text-spacing-content-loss.js").applicability || null },
   "textbox-name-present": { run: require("./checks/automatic/textbox-name-present.js").runInPage, applicability: require("./checks/automatic/textbox-name-present.js").applicability || null },
   "tooltip-name-present": { run: require("./checks/automatic/tooltip-name-present.js").runInPage, applicability: require("./checks/automatic/tooltip-name-present.js").applicability || null },
   "treeitem-name-present": { run: require("./checks/automatic/treeitem-name-present.js").runInPage, applicability: require("./checks/automatic/treeitem-name-present.js").applicability || null },
@@ -10262,8 +10372,8 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
-    "inputImage_altPresent_summary_defaultName": "Der zugängliche Name ist der Browser-Standard für eine Bildschaltfläche und sagt nichts aus.",
-    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "Der zugängliche Name entspricht dem Browser-Standard für eine Bildschaltfläche; prüfen Sie, ob er die Aktion der Schaltfläche beschreibt.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Wenn der Name nicht sagt, was die Schaltfläche tut, ersetzen Sie ihn durch Text, der es sagt, zum Beispiel \"Suchen\".",
     "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> lässt das Steuerelement ohne Namen.",
     "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
@@ -10274,6 +10384,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Prüft, ob <canvas>-Elemente eine Textalternative über Ersatzinhalt oder einen zugänglichen Namen bereitstellen.",
     "canvas_textAltPresent_summary_fail": "Fehlende Textalternative für <canvas>.",
     "canvas_textAltPresent_hint_fail": "Stellen Sie einen Ersatztext innerhalb von <canvas> oder einen zugänglichen Namen bereit (z. B. aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Dieses <canvas role=\"img\"> hat keinen zugänglichen Namen; mit role=\"img\" zählt sein Fallback-Inhalt nicht.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Benennen Sie es mit aria-label oder aria-labelledby, oder entfernen Sie role=\"img\", damit sein Fallback-Inhalt als Textalternative dienen kann.",
     "svg_textAltPresent_title": "<svg> muss eine Textalternative bereitstellen",
     "svg_textAltPresent_description": "Prüft, ob inline eingebundene <svg>-Elemente eine Textalternative über ein <title>-Element oder einen ARIA-Namen bereitstellen (ein <desc>-Element allein zählt nicht).",
     "svg_textAltPresent_summary_fail": "Fehlende Textalternative für <svg>.",
@@ -10294,14 +10406,14 @@ const I18N = {
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
     "img_altDecorative_hint_cantTell": "Bestätigen Sie, dass das Element rein dekorativ ist. Falls es Information oder Funktion vermittelt, geben Sie ihm einen echten Alternativtext (oder einen zugänglichen Namen), statt es auszuschließen.",
-    "area_altQuality_title": "<area>-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
-    "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
-    "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
-    "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
-    "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
+    "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
+    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "area_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <area> ({{sources}}) auf Genauigkeit und Angemessenheit.",
+    "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
+    "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
+    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "inputImage_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <input type=\"image\"> ({{sources}}) auf Genauigkeit und Angemessenheit.",
+    "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
     "inputImage_altDecorative_title": "<input type=\"image\"> mit alt=\"\" muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altDecorative_description": "Markiert <input type=\"image\">-Elemente mit leerem alt zur manuellen Überprüfung (in der Regel bei funktionalen Formularelementen nicht angemessen).",
     "inputImage_altDecorative_summary_cantTell": "Überprüfen Sie <input type=\"image\"> mit alt=\"\".",
@@ -10476,7 +10588,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} enthält {{focusableCount}} fokussierbare(s) Element(e), während ein modaler Dialog geöffnet ist. Wenn der Dialog den Tastaturfokus gefangen hält, sind sie möglicherweise nicht erreichbar; prüfen Sie, dass der Fokus nicht auf ihnen landen kann.",
     "ariaHidden_focus_hint_cantTell_modal": "Ein modaler Dialog scheint geöffnet zu sein. Machen Sie den Hintergrund vorzugsweise inert (oder verwenden Sie ein natives <dialog>, das mit showModal() geöffnet wird), damit er die Tab-Reihenfolge verlässt, und prüfen Sie dann, dass der Tastaturfokus im Dialog bleibt.",
     "cssFocusIndicatorSuppressed_title": "Fokusindikator darf nicht ohne Ersatz entfernt werden",
-    "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel entfernt wird, ohne dass eine andere passende Fokusregel einen Ersatzindikator (Rahmen, Schlagschatten, Hintergrund, …) zeichnet.",
+    "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel oder durch eine Regel ohne Zustand wie a { outline: none } entfernt wird, ohne dass eine passende Fokusregel einen Ersatzindikator (Rahmen, Schlagschatten, Hintergrund, …) zeichnet.",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Dieses Element erhält einen Tabstopp, und „{{selectors}}“ entfernt seinen Fokusumriss, ohne dass eine andere passende Fokusregel einen Ersatzindikator zeichnet.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (sichtbarer Umriss, Rahmen, Schlagschatten oder Hintergrundwechsel) oder verzichten Sie auf das Zurücksetzen des Umrisses. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, dass er für Tastaturnutzende erscheint.",
     "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
@@ -10502,7 +10614,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Diese Combobox hat keinen zugänglichen Namen.",
     "comboboxNamePresent_hint_fail": "Stellen Sie aria-label, aria-labelledby oder ein title-Attribut bereit — sichtbarer Textinhalt wird bei dieser Combobox nicht als zugänglicher Name ausgegeben.",
     "dialogNamePresent_title": "Dialoge haben einen zugänglichen Namen",
-    "dialogNamePresent_description": "Prüft, ob Elemente mit role=\"dialog\" oder role=\"alertdialog\" einen nicht leeren zugänglichen Namen aufweisen.",
+    "dialogNamePresent_description": "Prüft, ob Dialoge (Elemente mit role=\"dialog\" oder role=\"alertdialog\" sowie native <dialog>-Elemente) einen nicht leeren zugänglichen Namen aufweisen.",
     "dialogNamePresent_summary_fail": "Dieser Dialog hat keinen zugänglichen Namen.",
     "dialogNamePresent_hint_fail": "Stellen Sie aria-labelledby (bevorzugt) oder aria-label bereit, damit assistive Technologien den Dialog ansagen können.",
     "menuitemNamePresent_title": "Menüeinträge haben einen zugänglichen Namen",
@@ -10575,7 +10687,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
     "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links ohne zugänglichen Namen markieren oder Links, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
     "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
@@ -10595,7 +10707,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
     "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
-    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
     "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
     "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
@@ -10648,6 +10760,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Verwenden Sie einen Wert, der dem erwarteten Typ des Attributs entspricht (siehe WAI-ARIA-Spezifikation für dieses Attribut).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die derzeit kein Element trägt; diese Referenz lässt sich statisch nicht prüfen.",
     "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das gesteuerte Element beim Öffnen des Widgets erzeugt wird; existiert es nie, entfernen oder korrigieren Sie die Referenz.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Prüfen Sie, ob ein Element mit dieser id später hinzugefügt wird. Falls nicht, korrigieren oder entfernen Sie die Referenz; bis dahin verwendet das Element seine anderen Quellen für Name oder Beschreibung.",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -10690,18 +10803,18 @@ const I18N = {
     "ariaRequiredParent_description": "Prüft, ob Rollen mit einem dokumentierten Eintrag „erforderliche Kontext-Rolle“ (listitem, option, tab, treeitem, row, cell, …) einen Vorfahren oder aria-owns-Eigentümer mit einer zulässigen Kontext-Rolle haben.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" erfordert eine Kontext-Rolle aus: {{requiredRoles}}, die nicht gefunden wurde.",
     "ariaRequiredParent_hint_fail": "Platzieren Sie dieses Element innerhalb eines Elements mit einer zulässigen Kontext-Rolle (oder referenzieren Sie es von dort über aria-owns).",
-    "deprecatedElements_title": "Veraltete, nicht anhaltbare Elemente (<blink>, <marquee>) dürfen nicht verwendet werden",
-    "deprecatedElements_description": "Prüft, ob veraltete, nicht standardisierte HTML-Elemente, deren blinkender/scrollender Inhalt vom Nutzer nicht angehalten, gestoppt oder ausgeblendet werden kann (<blink>, <marquee>), nicht vorhanden sind.",
-    "deprecatedElements_summary_fail": "Der Inhalt von <{{element}}> kann vom Nutzer nicht angehalten, gestoppt oder ausgeblendet werden.",
-    "deprecatedElements_hint_fail": "Entfernen Sie dieses Element; verwenden Sie stattdessen statischen Inhalt oder eine Animation mit einer für den Nutzer zugänglichen Pause-/Stopp-Steuerung.",
+    "deprecatedElements_title": "Scrollender <marquee>-Inhalt muss angehalten, gestoppt oder ausgeblendet werden können",
+    "deprecatedElements_description": "Fragt für jedes veraltete <marquee>-Element, ob die Seite eine Möglichkeit bietet, seinen automatisch scrollenden Inhalt anzuhalten, zu stoppen oder auszublenden, da das Element selbst keine bietet.",
+    "deprecatedElements_summary_cantTell": "Dieses <{{element}}> scrollt seinen Inhalt, und das Element selbst bietet dem Nutzer keine Möglichkeit, ihn anzuhalten, zu stoppen oder auszublenden.",
+    "deprecatedElements_hint_cantTell": "Prüfen Sie, ob die Seite eine Steuerung bietet, die diesen Inhalt anhält, stoppt oder ausblendet. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
     "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
     "iframeTitleUnique_title": "Frame-Titel müssen eindeutig sein",
-    "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
-    "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
-    "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "iframeTitleUnique_description": "Prüft, ob Frames mit demselben title-Attributwert dieselbe Ressource laden; Frames mit unterschiedlichen Quellen und demselben Titel werden zur Prüfung vorgelegt.",
+    "iframeTitleUnique_summary_cantTell": "Der Titel „{{title}}“ dieses <{{element}}> wird mit einem Frame geteilt, der eine andere Ressource lädt.",
+    "iframeTitleUnique_hint_cantTell": "Prüfen Sie, ob diese Frames denselben Inhalt oder Zweck haben. Wenn nicht, geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
     "identicalIframesSamePurpose_title": "Frames mit demselben Namen betten dieselbe Ressource ein",
     "identicalIframesSamePurpose_description": "Prüft, ob <iframe>/<frame>-Elemente, die sich einen zugänglichen Namen teilen, dieselbe Ressource einbetten, da ein Name nur eine Ressource beschreiben kann.",
     "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
@@ -10729,7 +10842,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Verwenden Sie als direkte Kinder von <ul>/<ol> nur <li> (oder <script>/<template>); verschieben Sie anderes Markup in ein <li>.",
     "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
-    "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol> oder einem Element mit role=\"list\" enthalten sind.",
+    "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
     "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
     "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> innerhalb eines <ul>/<ol>, oder geben Sie seinem übergeordneten Element role=\"list\".",
     "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
@@ -10738,6 +10851,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Verwenden Sie innerhalb von <dl> nur <dt>/<dd> (optional in einem einzigen <div> verpackt), <script>, <template> oder <style>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Diese Beschreibungsliste hat keine <dt>/<dd>-Begriff-Definitions-Gruppe.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Fügen Sie mindestens ein <dt>/<dd>-Paar innerhalb dieses <dl> hinzu.",
+    "definitionListChildrenValid_summary_fail_order": "In dieser Beschreibungsliste steht ein <dd> vor jedem <dt>, oder auf das letzte <dt> folgt kein <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordnen Sie jede Gruppe als ein oder mehrere <dt>, gefolgt von einem oder mehreren <dd>.",
     "dlitemParentValid_title": "Beschreibungslisten-Elemente müssen sich innerhalb einer Beschreibungsliste befinden",
     "dlitemParentValid_description": "Prüft, ob <dt>/<dd>-Elemente von einem <dl> enthalten sind, direkt oder über ein umschließendes <div>.",
     "dlitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses <{{element}}> ist keine Beschreibungsliste.",
@@ -10774,10 +10889,10 @@ const I18N = {
     "tooltipNamePresent_description": "Prüft, ob Elemente mit role=\"tooltip\" einen nicht leeren zugänglichen Namen aufweisen.",
     "tooltipNamePresent_summary_fail": "Dieser Tooltip hat keinen zugänglichen Namen.",
     "tooltipNamePresent_hint_fail": "Stellen Sie einen Tooltip-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
-    "serverSideImageMapAbsent_title": "Bilder dürfen keine serverseitige Image-Map verwenden",
-    "serverSideImageMapAbsent_description": "Prüft, ob <img>-Elemente nicht das ismap-Attribut tragen (serverseitige Image-Maps haben kein per Tastatur bedienbares Äquivalent).",
-    "serverSideImageMapAbsent_summary_fail": "Dieses Bild verwendet eine serverseitige Image-Map, die kein per Tastatur bedienbares Äquivalent hat.",
-    "serverSideImageMapAbsent_hint_fail": "Ersetzen Sie die serverseitige Image-Map (ismap) durch eine clientseitige Image-Map (<map>/<area>) oder separate zugängliche Links/Schaltflächen.",
+    "serverSideImageMapAbsent_title": "Serverseitige Image-Maps müssen eine per Tastatur bedienbare Alternative haben",
+    "serverSideImageMapAbsent_description": "Fragt für jedes <img ismap> in einem Link, ob die Seite dieselben Ziele als per Tastatur erreichbare Links anbietet, da eine serverseitige Image-Map keine per Tastatur bedienbaren Bereiche hat.",
+    "serverSideImageMapAbsent_summary_cantTell": "Dieses Bild ist eine serverseitige Image-Map (ismap in einem Link), deren Bereiche nicht per Tastatur erreichbar sind.",
+    "serverSideImageMapAbsent_hint_cantTell": "Prüfen Sie, ob die Seite dieselben Ziele als separate Links anbietet. Besser: Ersetzen Sie die serverseitige Image-Map durch eine clientseitige Image-Map (<map>/<area>) oder separate Links/Schaltflächen.",
     "formControlSingleLabel_title": "Formularelemente dürfen nicht mehrere Beschriftungen haben",
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
@@ -10896,7 +11011,9 @@ const I18N = {
     "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
-    "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping street-address“, „cc-number“).",
+    "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping postal-code“, „cc-number“).",
+    "autocompleteValid_summary_mismatch": "Der Autofill-Feldname „{{fieldName}}“ ist auf einem input vom Typ „{{inputType}}“ nicht zulässig.",
+    "autocompleteValid_hint_mismatch": "Verwenden Sie einen Feldnamen, der zu diesem Steuerelementtyp passt, oder ändern Sie das Steuerelement (street-address erfordert ein textarea; email erfordert ein input vom Typ text, search oder email; bday-day erfordert ein input vom Typ text, search oder number).",
     "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
     "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
     "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -10915,8 +11032,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text scheint nicht umbrechen zu können, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
-    "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
-    "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+    "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
+    "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
+    "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element den Text „{{text}}“ ab.",
+    "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ den Text „{{other}}“.",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
+    "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
     "metaRefreshNoExceptions_hint_fail": "Entfernen Sie den Meta-Refresh; lösen Sie die Weiterleitung/Aktualisierung stattdessen nur als Reaktion auf eine Nutzeraktion aus.",
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
@@ -10924,19 +11053,25 @@ const I18N = {
     "validLang_summary_fail": "Dieser lang-Attributwert („{{value}}“) ist kein syntaktisch gültiges Sprach-Tag.",
     "validLang_hint_fail": "Verwenden Sie ein gültiges BCP-47-Sprach-Tag (z. B. „fr“, „es-MX“).",
     "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
-    "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch Unterstreichung, einen Unterschied in Schriftgewicht/-stil oder einen ausreichenden (>= 3:1) Farbkontrastunterschied visuell vom umgebenden Text unterscheidbar ist — nicht allein durch Farbe.",
+    "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, Schriftgewicht oder -stil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist, und fragt nach Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben und daher auch bei Hover und Fokus ein Merkmal brauchen.",
     "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
-    "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder einen Unterschied in Schriftgewicht/-stil hinzu, oder erhöhen Sie den Farbkontrast zwischen Link und umgebendem Text auf mindestens 3:1.",
+    "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol). Ein Farbkontrast von 3:1 zum umgebenden Text genügt nur, wenn Hover und Fokus auf dem Link ebenfalls ein Merkmal außer der Farbe hinzufügen.",
     "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
-    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder mindestens 3:1 Kontrast zum umgebenden Text aufweist. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
+    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder ein anderes Merkmal außer der Farbe aufweist, oder mindestens 3:1 Kontrast zum umgebenden Text zusammen mit einem Merkmal außer der Farbe bei Hover und Fokus. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
-    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
-    "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\"|\"subtitles\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt.",
-    "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions oder subtitles).",
+    "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
+    "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
     "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Dieses Video hat nur subtitles-Spuren, die den Dialog übersetzen können, ohne die Sprecher- und Geräuschinformationen, die Untertitel (captions) enthalten.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu.",
     "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
     "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
     "scrollableRegionFocusable_summary_cantTell": "Dieses Element deklariert overflow:auto/scroll, hat keinen fokussierbaren Nachfahren und ist selbst nicht per Tastatur fokussierbar.",
@@ -10960,12 +11095,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
     "ariaCheckedStateMismatch_hint_cantTell": "Setzen Sie aria-checked passend zum tatsächlichen Zustand des Elements, oder entfernen Sie es — ein natives Kontrollkästchen/Optionsfeld stellt diesen Zustand bereits ohne dieses Attribut zur Verfügung.",
     "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
-    "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen.",
+    "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
     "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} Stylesheet(s) konnten nicht gelesen werden; daher ließ sich nicht ermitteln, ob diese Seite ihre Ausrichtung fixiert.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -10974,10 +11111,12 @@ const I18N = {
     "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, region, presentation), zur manuellen Überprüfung.",
     "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
     "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn dieses Element nicht interaktiv sein soll, oder verwenden Sie eine interaktive Rolle, die seinem tatsächlichen Verhalten entspricht.",
-    "pAsHeading_title": "Ein <p>, das wie eine Überschrift aussieht, sollte wahrscheinlich eine echte Überschrift sein",
-    "pAsHeading_description": "Markiert kurze <p>-Elemente, deren gesamter Text fett ist und in >= 18px dargestellt wird, zur manuellen Überprüfung, ob stattdessen ein echtes Überschriften-Element verwendet werden sollte.",
+    "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
+    "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
     "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
     "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
+    "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
+    "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
     "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
     "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
     "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -10990,6 +11129,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
     "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
     "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
     "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -11011,6 +11152,7 @@ const I18N = {
     "report_meta_schemaVersion": "Schemaversion",
     "report_meta_target": "Ziel",
     "report_meta_profile": "Profil",
+    "report_meta_optInRules": "Opt-in-Regeln",
     "report_meta_locale": "Sprache",
     "report_meta_localeRequested": "Sprache (angefordert: {{requested}})",
     "report_outcome_fail": "Nicht bestanden",
@@ -11028,6 +11170,8 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
+    "report_heading_standardRollup": "{{standard}}-Zusammenfassung",
+    "report_standardRollup_col_criterion": "Kriterium",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
     "report_heading_occurrences": "Fundstellen",
@@ -11073,8 +11217,8 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
-    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
-    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "The accessible name matches the browser default for an image button; check that it describes what the button does.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "If the name does not say what the button does, replace it with text that does, for example \"Search\".",
     "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
     "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
@@ -11085,6 +11229,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.",
     "canvas_textAltPresent_summary_fail": "Missing text alternative for <canvas>.",
     "canvas_textAltPresent_hint_fail": "Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "This <canvas role=\"img\"> has no accessible name; with role=\"img\" its fallback content does not count.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Name it with aria-label or aria-labelledby, or remove role=\"img\" so that its fallback content can serve as the text alternative.",
     "svg_textAltPresent_title": "<svg> must provide a text alternative",
     "svg_textAltPresent_description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "svg_textAltPresent_summary_fail": "Missing text alternative for <svg>.",
@@ -11105,14 +11251,14 @@ const I18N = {
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
     "img_altDecorative_hint_cantTell": "Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.",
-    "area_altQuality_title": "<area> alt text must be appropriate (manual review)",
-    "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
-    "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
-    "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
-    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
-    "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
-    "inputImage_altQuality_hint_cantTell": "Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.",
+    "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
+    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "area_altQuality_summary_cantTell": "Review the text alternative of this <area> ({{sources}}) for accuracy and appropriateness.",
+    "area_altQuality_hint_cantTell": "Ensure each listed text alternative identifies the destination/action of the image map area in context.",
+    "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
+    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "inputImage_altQuality_summary_cantTell": "Review the text alternative of this <input type=\"image\"> ({{sources}}) for accuracy and appropriateness.",
+    "inputImage_altQuality_hint_cantTell": "Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.",
     "inputImage_altDecorative_title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
     "inputImage_altDecorative_description": "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
     "inputImage_altDecorative_summary_cantTell": "Review <input type=\"image\"> with alt=\"\".",
@@ -11287,7 +11433,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} contains {{focusableCount}} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.",
     "ariaHidden_focus_hint_cantTell_modal": "A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.",
     "cssFocusIndicatorSuppressed_title": "Focus indicator must not be removed without a replacement",
-    "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed by a :focus/:focus-visible rule with no replacement indicator (border, box-shadow, background, ...) in any other focus rule matching them.",
+    "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
     "cssFocusIndicatorSuppressed_summary_cantTell": "This element takes a tab stop, and \"{{selectors}}\" removes its focus outline with no replacement indicator in any other focus rule matching it.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
@@ -11313,7 +11459,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
     "comboboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this combobox's accessible name.",
     "dialogNamePresent_title": "Dialogs have an accessible name",
-    "dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "dialogNamePresent_description": "Checks that dialogs (elements with role=\"dialog\" or role=\"alertdialog\", and native <dialog> elements) expose a non-empty accessible name.",
     "dialogNamePresent_summary_fail": "This dialog has no accessible name.",
     "dialogNamePresent_hint_fail": "Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.",
     "menuitemNamePresent_title": "Menu items have an accessible name",
@@ -11386,7 +11532,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Focus order",
     "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
     "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
@@ -11406,7 +11552,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
     "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
-    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
@@ -11459,6 +11605,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element currently has, so this reference cannot be checked statically.",
     "ariaValidAttrValue_hint_cantTell_idref": "Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -11501,18 +11648,18 @@ const I18N = {
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requires a context role of one of: {{requiredRoles}}, which was not found.",
     "ariaRequiredParent_hint_fail": "Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.",
-    "deprecatedElements_title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
-    "deprecatedElements_description": "Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.",
-    "deprecatedElements_summary_fail": "<{{element}}> content cannot be paused, stopped, or hidden by the user.",
-    "deprecatedElements_hint_fail": "Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.",
+    "deprecatedElements_title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
+    "deprecatedElements_description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
+    "deprecatedElements_summary_cantTell": "This <{{element}}> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.",
+    "deprecatedElements_hint_cantTell": "Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.",
     "iframeNamePresent_title": "Frames have an accessible name",
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
     "iframeTitleUnique_title": "Frame titles must be unique",
-    "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
-    "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
-    "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "iframeTitleUnique_description": "Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.",
+    "iframeTitleUnique_summary_cantTell": "This <{{element}}>'s title \"{{title}}\" is shared with a frame that loads a different resource.",
+    "iframeTitleUnique_hint_cantTell": "Check whether these frames have the same content or purpose. If they do not, give each frame a distinct title describing its specific content or purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -11540,7 +11687,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.",
     "listitemParentValid_title": "List items must be inside a list container",
-    "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, or an element with role=\"list\".",
+    "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
     "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
     "listitemParentValid_hint_fail": "Place this <li> inside a <ul>/<ol>, or give its parent role=\"list\".",
     "definitionListChildrenValid_title": "Description lists must be structured correctly",
@@ -11549,6 +11696,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "This description list has no <dt>/<dd> term-definition group.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Add at least one <dt>/<dd> pair inside this <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "In this description list, a <dd> comes before any <dt>, or the last <dt> has no <dd> after it.",
+    "definitionListChildrenValid_hint_fail_order": "Order each group as one or more <dt> followed by one or more <dd>.",
     "dlitemParentValid_title": "Description-list items must be inside a description list",
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
@@ -11585,10 +11734,10 @@ const I18N = {
     "tooltipNamePresent_description": "Checks that elements with role=\"tooltip\" expose a non-empty accessible name.",
     "tooltipNamePresent_summary_fail": "This tooltip has no accessible name.",
     "tooltipNamePresent_hint_fail": "Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Images must not use a server-side image map",
-    "serverSideImageMapAbsent_description": "Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).",
-    "serverSideImageMapAbsent_summary_fail": "This image uses a server-side image map, which has no keyboard-operable equivalent.",
-    "serverSideImageMapAbsent_hint_fail": "Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.",
+    "serverSideImageMapAbsent_title": "Server-side image maps must have a keyboard-operable alternative",
+    "serverSideImageMapAbsent_description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
+    "serverSideImageMapAbsent_summary_cantTell": "This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.",
+    "serverSideImageMapAbsent_hint_cantTell": "Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.",
     "formControlSingleLabel_title": "Form controls must not have multiple labels",
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
@@ -11707,7 +11856,9 @@ const I18N = {
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
-    "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping street-address\", \"cc-number\").",
+    "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping postal-code\", \"cc-number\").",
+    "autocompleteValid_summary_mismatch": "The autofill field name \"{{fieldName}}\" is not allowed on an input of type \"{{inputType}}\".",
+    "autocompleteValid_hint_mismatch": "Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).",
     "passwordPasteEnabled_title": "Authentication fields must not block pasting",
     "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
     "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -11726,8 +11877,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
-    "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
-    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+    "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
+    "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied, this element cuts off the text \"{{text}}\".",
+    "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" reaches past the edge of this element, which hides what goes past it.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
+    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
     "metaRefreshNoExceptions_hint_fail": "Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.",
     "validLang_title": "Element lang attribute must be syntactically valid",
@@ -11735,19 +11898,25 @@ const I18N = {
     "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
     "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
+    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
-    "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_hint_fail": "Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.",
     "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
-    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
-    "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"|\"subtitles\"> child, for manual review of whether the video has an audio track that needs captions.",
-    "videoCaption_summary_cantTell": "This video has no captions (or subtitles) track.",
+    "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+    "videoCaption_summary_cantTell": "This video has no captions track.",
     "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track.",
     "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
     "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
     "scrollableRegionFocusable_summary_cantTell": "This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.",
@@ -11771,12 +11940,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
     "ariaCheckedStateMismatch_hint_cantTell": "Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.",
     "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
-    "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
+    "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -11785,10 +11956,12 @@ const I18N = {
     "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
     "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.",
-    "pAsHeading_title": "A <p> styled to look like a heading should probably be a real heading",
-    "pAsHeading_description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
+    "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
     "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
+    "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
+    "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
     "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
     "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
     "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -11801,6 +11974,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
     "headingQuality_title": "Heading text should be descriptive, not a placeholder",
     "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -11822,6 +11997,7 @@ const I18N = {
     "report_meta_schemaVersion": "schema version",
     "report_meta_target": "target",
     "report_meta_profile": "profile",
+    "report_meta_optInRules": "opt-in rules",
     "report_meta_locale": "locale",
     "report_meta_localeRequested": "locale (requested {{requested}})",
     "report_outcome_fail": "Fail",
@@ -11839,6 +12015,8 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
+    "report_heading_standardRollup": "{{standard}} rollup",
+    "report_standardRollup_col_criterion": "Criterion",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
     "report_heading_occurrences": "Occurrences",
@@ -11884,8 +12062,8 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
-    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un botón de imagen y no aporta información.",
-    "inputImage_altPresent_hint_defaultName": "Sustituirlo por un texto que describa la acción del botón, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "El nombre accesible coincide con el predeterminado del navegador para un botón de imagen; comprobar que describe la acción del botón.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Si el nombre no dice qué hace el botón, sustituirlo por un texto que lo diga, por ejemplo \"Buscar\".",
     "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacío en <input type=\"image\"> deja el control sin nombre.",
     "inputImage_altPresent_hint_emptyAlt": "Describir la acción en alt, o nombrar el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
@@ -11896,6 +12074,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Comprueba que los elementos <canvas> proporcionen una alternativa textual mediante contenido de reserva o un nombre accesible.",
     "canvas_textAltPresent_summary_fail": "Falta la alternativa textual para <canvas>.",
     "canvas_textAltPresent_hint_fail": "Proporcionar texto de reserva dentro de <canvas> o un nombre accesible (por ejemplo, aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Este <canvas role=\"img\"> no tiene nombre accesible; con role=\"img\" su contenido alternativo no cuenta.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Nombrarlo con aria-label o aria-labelledby, o quitar role=\"img\" para que su contenido alternativo sirva de alternativa textual.",
     "svg_textAltPresent_title": "<svg> debe proporcionar una alternativa textual",
     "svg_textAltPresent_description": "Comprueba que los elementos <svg> en línea proporcionen una alternativa textual mediante un elemento <title> o un nombre ARIA (un elemento <desc> por sí solo no cuenta).",
     "svg_textAltPresent_summary_fail": "Falta la alternativa textual para <svg>.",
@@ -11916,14 +12096,14 @@ const I18N = {
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
     "img_altDecorative_hint_cantTell": "Confirmar que el elemento es puramente decorativo. Si transmite información o función, darle un texto alternativo real (o un nombre accesible) en lugar de excluirlo.",
-    "area_altQuality_title": "El texto alt de <area> debe ser apropiado (revisión manual)",
-    "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
-    "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
-    "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
-    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
-    "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
-    "inputImage_altQuality_hint_cantTell": "Asegurarse de que el texto alt describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
+    "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
+    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "area_altQuality_summary_cantTell": "Revisar la alternativa textual de este <area> ({{sources}}) en cuanto a exactitud e idoneidad.",
+    "area_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada identifique el destino o la acción del área del mapa de imagen en su contexto.",
+    "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
+    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "inputImage_altQuality_summary_cantTell": "Revisar la alternativa textual de este <input type=\"image\"> ({{sources}}) en cuanto a exactitud e idoneidad.",
+    "inputImage_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
     "inputImage_altDecorative_title": "<input type=\"image\"> con alt=\"\" debe ser apropiado (revisión manual)",
     "inputImage_altDecorative_description": "Señala elementos <input type=\"image\"> con alt vacío para su revisión manual (normalmente no es apropiado para controles funcionales).",
     "inputImage_altDecorative_summary_cantTell": "Revisar <input type=\"image\"> con alt=\"\".",
@@ -12098,7 +12278,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "El elemento aria-hidden {{element}} contiene {{focusableCount}} elemento(s) enfocable(s) mientras hay un diálogo modal abierto. Si el modal mantiene atrapado el foco del teclado, pueden ser inalcanzables; verificar que el foco no pueda posarse en ellos.",
     "ariaHidden_focus_hint_cantTell_modal": "Parece que hay un diálogo modal abierto. Es preferible volver inerte el fondo (o usar un <dialog> nativo abierto con showModal()) para que salga del orden de tabulación, y luego verificar que el foco del teclado permanezca dentro del diálogo.",
     "cssFocusIndicatorSuppressed_title": "El indicador de foco no debe eliminarse sin un reemplazo",
-    "cssFocusIndicatorSuppressed_description": "Señala elementos del orden de tabulación cuyo contorno de foco elimina una regla :focus/:focus-visible sin que ninguna otra regla de foco que les afecte dibuje un indicador de reemplazo (borde, sombra, fondo, …).",
+    "cssFocusIndicatorSuppressed_description": "Señala elementos del orden de tabulación cuyo contorno de foco elimina una regla :focus/:focus-visible, o una regla sin estado como a { outline: none }, sin que ninguna regla de foco que les afecte dibuje un indicador de reemplazo (borde, sombra, fondo, …).",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Este elemento recibe una parada de tabulación y «{{selectors}}» elimina su contorno de foco sin que ninguna otra regla de foco que le afecte dibuje un indicador de reemplazo.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Dibujar un indicador de reemplazo en la misma regla (un contorno visible, un borde, una sombra o un cambio de fondo), o no restablecer el contorno. Si el indicador se aplica desde script, confirmar que aparece para quien navega con teclado.",
     "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
@@ -12124,7 +12304,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Este cuadro combinado no tiene nombre accesible.",
     "comboboxNamePresent_hint_fail": "Proporcionar aria-label, aria-labelledby o un atributo title; el contenido de texto visible no se expone como el nombre accesible de este cuadro combinado.",
     "dialogNamePresent_title": "Los diálogos tienen un nombre accesible",
-    "dialogNamePresent_description": "Comprueba que los elementos con role=\"dialog\" o role=\"alertdialog\" expongan un nombre accesible no vacío.",
+    "dialogNamePresent_description": "Comprueba que los diálogos (elementos con role=\"dialog\" o role=\"alertdialog\", y elementos <dialog> nativos) expongan un nombre accesible no vacío.",
     "dialogNamePresent_summary_fail": "Este diálogo no tiene nombre accesible.",
     "dialogNamePresent_hint_fail": "Proporcionar aria-labelledby (preferido) o aria-label para que las tecnologías de asistencia puedan anunciar el diálogo.",
     "menuitemNamePresent_title": "Los elementos de menú tienen un nombre accesible",
@@ -12197,7 +12377,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
     "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces sin nombre accesible o cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
     "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
@@ -12217,7 +12397,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
-    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
     "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
     "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
@@ -12270,6 +12450,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Usar un valor que coincida con el tipo esperado del atributo (consultar la especificación WAI-ARIA para este atributo).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que ningún elemento tiene actualmente, por lo que esta referencia no se puede comprobar de forma estática.",
     "ariaValidAttrValue_hint_cantTell_idref": "Confirmar que el elemento controlado se crea al abrir el widget; si nunca existe, eliminar o corregir la referencia.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -12312,18 +12493,18 @@ const I18N = {
     "ariaRequiredParent_description": "Comprueba que los roles con una entrada documentada de \"rol de contexto obligatorio\" (listitem, option, tab, treeitem, row, cell, ...) tengan un ancestro, o un propietario aria-owns, con un rol de contexto aceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requiere un rol de contexto entre: {{requiredRoles}}, que no se encontró.",
     "ariaRequiredParent_hint_fail": "Colocar este elemento dentro de (o referenciarlo mediante aria-owns desde) un elemento con un rol de contexto aceptable.",
-    "deprecatedElements_title": "No deben usarse elementos obsoletos no detenibles (<blink>, <marquee>)",
-    "deprecatedElements_description": "Comprueba que no estén presentes elementos HTML obsoletos y no estándar cuyo contenido parpadeante o en desplazamiento no pueda ser pausado, detenido u ocultado por el usuario (<blink>, <marquee>).",
-    "deprecatedElements_summary_fail": "El contenido de <{{element}}> no puede ser pausado, detenido ni ocultado por el usuario.",
-    "deprecatedElements_hint_fail": "Eliminar este elemento; usar contenido estático, o una animación con un control de pausa/detención visible para el usuario, en su lugar.",
+    "deprecatedElements_title": "El contenido en desplazamiento de un <marquee> debe poder pausarse, detenerse u ocultarse",
+    "deprecatedElements_description": "Pregunta, para cada elemento obsoleto <marquee>, si la página ofrece una forma de pausar, detener u ocultar su contenido en desplazamiento automático, ya que el propio elemento no ofrece ninguna.",
+    "deprecatedElements_summary_cantTell": "Este <{{element}}> desplaza su contenido, y el propio elemento no da al usuario ninguna forma de pausarlo, detenerlo ni ocultarlo.",
+    "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
     "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
     "iframeTitleUnique_title": "Los títulos de los marcos deben ser únicos",
-    "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
-    "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
-    "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "iframeTitleUnique_description": "Comprueba que los marcos que comparten un mismo valor de atributo title cargan el mismo recurso; los marcos con orígenes distintos y el mismo título se someten a revisión.",
+    "iframeTitleUnique_summary_cantTell": "El título \"{{title}}\" de este <{{element}}> se comparte con un marco que carga un recurso distinto.",
+    "iframeTitleUnique_hint_cantTell": "Comprobar si estos marcos tienen el mismo contenido o propósito. Si no, asignar a cada marco un título distinto que describa su contenido o propósito específico.",
     "identicalIframesSamePurpose_title": "Los marcos con el mismo nombre incrustan el mismo recurso",
     "identicalIframesSamePurpose_description": "Comprueba que los elementos <iframe>/<frame> que comparten un nombre accesible incrusten el mismo recurso, ya que un nombre solo puede describir un recurso.",
     "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
@@ -12351,7 +12532,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Usar únicamente <li> (o <script>/<template>) como hijos directos de <ul>/<ol>; mover el resto del marcado dentro de un <li>.",
     "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
-    "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, o un elemento con role=\"list\".",
+    "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
     "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
     "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul>/<ol>, o asignar a su padre role=\"list\".",
     "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
@@ -12360,6 +12541,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Usar únicamente <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style> dentro de <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Esta lista de descripción no tiene ningún grupo término-definición <dt>/<dd>.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Agregar al menos un par <dt>/<dd> dentro de este <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "En esta lista de descripción, un <dd> aparece antes de cualquier <dt>, o el último <dt> no va seguido de ningún <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordenar cada grupo como uno o más <dt> seguidos de uno o más <dd>.",
     "dlitemParentValid_title": "Los elementos de lista de descripción deben estar dentro de una lista de descripción",
     "dlitemParentValid_description": "Comprueba que los elementos <dt>/<dd> estén contenidos por un <dl>, directamente o mediante un único <div> envolvente.",
     "dlitemParentValid_summary_fail": "El padre (<{{parentElement}}>) de este <{{element}}> no es una lista de descripción.",
@@ -12396,10 +12579,10 @@ const I18N = {
     "tooltipNamePresent_description": "Comprueba que los elementos con role=\"tooltip\" expongan un nombre accesible no vacío.",
     "tooltipNamePresent_summary_fail": "Esta información sobre herramientas no tiene nombre accesible.",
     "tooltipNamePresent_hint_fail": "Proporcionar texto de información sobre herramientas que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Las imágenes no deben usar un mapa de imagen del lado del servidor",
-    "serverSideImageMapAbsent_description": "Comprueba que los elementos <img> no lleven el atributo ismap (los mapas de imagen del lado del servidor no tienen equivalente operable por teclado).",
-    "serverSideImageMapAbsent_summary_fail": "Esta imagen usa un mapa de imagen del lado del servidor, que no tiene equivalente operable por teclado.",
-    "serverSideImageMapAbsent_hint_fail": "Reemplazar el mapa de imagen del lado del servidor (ismap) por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones accesibles independientes.",
+    "serverSideImageMapAbsent_title": "Los mapas de imagen del lado del servidor deben tener una alternativa operable por teclado",
+    "serverSideImageMapAbsent_description": "Pregunta, para cada <img ismap> dentro de un enlace, si la página ofrece los mismos destinos como enlaces alcanzables con el teclado, ya que un mapa de imagen del lado del servidor no tiene zonas operables por teclado.",
+    "serverSideImageMapAbsent_summary_cantTell": "Esta imagen es un mapa de imagen del lado del servidor (ismap dentro de un enlace), cuyas zonas no se pueden alcanzar con el teclado.",
+    "serverSideImageMapAbsent_hint_cantTell": "Comprobar que la página ofrece los mismos destinos como enlaces independientes. Mejor: reemplazar el mapa de imagen del lado del servidor por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones independientes.",
     "formControlSingleLabel_title": "Los controles de formulario no deben tener varias etiquetas",
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
@@ -12518,7 +12701,9 @@ const I18N = {
     "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
-    "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping street-address\", \"cc-number\").",
+    "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping postal-code\", \"cc-number\").",
+    "autocompleteValid_summary_mismatch": "El nombre de campo de autocompletado \"{{fieldName}}\" no está permitido en un input de tipo \"{{inputType}}\".",
+    "autocompleteValid_hint_mismatch": "Usar un nombre de campo adecuado para este tipo de control, o cambiar el control (street-address requiere un textarea; email requiere un input de tipo text, search o email; bday-day requiere un input de tipo text, search o number).",
     "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
     "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
     "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -12537,8 +12722,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto no parece poder saltar de línea, por lo que el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
-    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
-    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+    "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
+    "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado, este elemento recorta el texto «{{text}}».",
+    "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» sobrepasa el borde de este elemento, que oculta lo que sobresale.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» se superpone al texto «{{other}}».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
+    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
     "metaRefreshNoExceptions_hint_fail": "Eliminar el meta refresh; activar la redirección/actualización solo en respuesta a una acción del usuario.",
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
@@ -12546,19 +12743,25 @@ const I18N = {
     "validLang_summary_fail": "Este valor del atributo lang (\"{{value}}\") no es una etiqueta de idioma sintácticamente válida.",
     "validLang_hint_fail": "Usar una etiqueta de idioma BCP47 válida (por ejemplo, \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
-    "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante subrayado, una diferencia de grosor/estilo de fuente, o una diferencia de contraste de color suficiente (>=3:1); no solo por el color.",
+    "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante una señal distinta del color (subrayado, grosor o estilo de fuente, borde, fondo, icono), y pregunta por los enlaces que solo se distinguen por una diferencia de color >= 3:1, que también necesitan una señal al pasar el cursor y al recibir el foco.",
     "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
-    "linkInTextBlock_hint_fail": "Agregar un subrayado, una diferencia de grosor/estilo de fuente, o aumentar el contraste de color entre el enlace y el texto circundante a al menos 3:1.",
+    "linkInTextBlock_hint_fail": "Agregar un subrayado u otra señal distinta del color (una diferencia de grosor o estilo de fuente, un borde, un icono). Aumentar el contraste de color con el texto circundante a 3:1 solo basta si al pasar el cursor y al recibir el foco el enlace también añade una señal distinta del color.",
     "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
-    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente, o al menos un contraste de 3:1 con el texto circundante. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
+    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente u otra marca distinta del color, o al menos un contraste de 3:1 con el texto circundante junto con una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
-    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
+    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
-    "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\"|\"subtitles\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos.",
-    "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos (captions o subtitles).",
+    "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
+    "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
     "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Este video solo tiene pistas subtitles, que pueden traducir los diálogos sin la información sobre hablantes y sonidos que llevan los subtítulos para personas sordas.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions.",
     "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
     "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
     "scrollableRegionFocusable_summary_cantTell": "Este elemento declara overflow:auto/scroll, no tiene ningún descendiente enfocable, y no es enfocable por teclado por sí mismo.",
@@ -12582,12 +12785,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
     "ariaCheckedStateMismatch_hint_cantTell": "Establecer aria-checked para que coincida con el estado real del elemento, o eliminarlo; una casilla/botón de opción nativo ya expone este estado sin necesidad de él.",
     "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
-    "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo.",
+    "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
     "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "No se han podido leer {{count}} hoja(s) de estilo, por lo que no se ha podido determinar si esta página bloquea su orientación.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -12596,10 +12801,12 @@ const I18N = {
     "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, region, presentation), para su revisión manual.",
     "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Eliminar tabindex si este elemento no está pensado para ser interactivo, o usar un rol interactivo que coincida con su comportamiento real.",
-    "pAsHeading_title": "Un <p> con estilo de encabezado probablemente debería ser un encabezado real",
-    "pAsHeading_description": "Señala elementos <p> cortos cuyo texto completo está en negrita y se renderiza a >=18px, para su revisión manual sobre si debería usarse un elemento de encabezado real en su lugar.",
+    "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
+    "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
     "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
     "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
+    "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
+    "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
     "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
     "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un caption falso.",
     "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un caption falso.",
@@ -12612,6 +12819,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
     "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
     "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
     "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
@@ -12633,6 +12842,7 @@ const I18N = {
     "report_meta_schemaVersion": "versión del esquema",
     "report_meta_target": "objetivo",
     "report_meta_profile": "perfil",
+    "report_meta_optInRules": "reglas opcionales",
     "report_meta_locale": "idioma",
     "report_meta_localeRequested": "idioma (solicitado: {{requested}})",
     "report_outcome_fail": "No superada",
@@ -12650,6 +12860,8 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
+    "report_heading_standardRollup": "Resumen {{standard}}",
+    "report_standardRollup_col_criterion": "Criterio",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
     "report_heading_occurrences": "Apariciones",
@@ -12695,8 +12907,8 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
-    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par défaut du navigateur pour un bouton image et n’apporte aucune information.",
-    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte décrivant l’action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "Le nom accessible correspond à celui par défaut du navigateur pour un bouton image ; vérifiez qu’il décrit l’action du bouton.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Si le nom ne dit pas ce que fait le bouton, remplacez-le par un texte qui le dit, par exemple \"Rechercher\".",
     "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le contrôle sans nom.",
     "inputImage_altPresent_hint_emptyAlt": "Décrivez l’action dans alt, ou nommez le contrôle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
@@ -12707,6 +12919,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Vérifie que les éléments <canvas> fournissent une alternative textuelle via un contenu de repli ou un nom accessible.",
     "canvas_textAltPresent_summary_fail": "Alternative textuelle manquante pour <canvas>.",
     "canvas_textAltPresent_hint_fail": "Fournissez un texte de repli dans <canvas> ou un nom accessible (par ex. aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Ce <canvas role=\"img\"> n’a pas de nom accessible ; avec role=\"img\", son contenu alternatif ne compte pas.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Nommez-le avec aria-label ou aria-labelledby, ou retirez role=\"img\" pour que son contenu alternatif serve d’alternative textuelle.",
     "svg_textAltPresent_title": "<svg> doit fournir une alternative textuelle",
     "svg_textAltPresent_description": "Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via un élément <title> ou un nom ARIA (un élément <desc> seul ne suffit pas).",
     "svg_textAltPresent_summary_fail": "Alternative textuelle manquante pour <svg>.",
@@ -12727,14 +12941,14 @@ const I18N = {
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
     "img_altDecorative_hint_cantTell": "Confirmez que l’élément est purement décoratif. S’il transmet une information ou une fonction, donnez-lui un vrai texte alternatif (ou un nom accessible) plutôt que de l’exclure.",
-    "area_altQuality_title": "<area> : texte alt à vérifier (revue manuelle)",
-    "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
-    "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
-    "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
-    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
-    "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
-    "inputImage_altQuality_hint_cantTell": "Assurez-vous que le texte alt décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
+    "area_altQuality_title": "<area> : alternative textuelle à vérifier (revue manuelle)",
+    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "area_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <area> ({{sources}}) (exactitude et pertinence).",
+    "area_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée identifie la destination/l’action de la zone dans son contexte.",
+    "inputImage_altQuality_title": "<input type=\"image\"> : alternative textuelle à vérifier (revue manuelle)",
+    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "inputImage_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <input type=\"image\"> ({{sources}}) (exactitude et pertinence).",
+    "inputImage_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
     "inputImage_altDecorative_title": "<input type=\"image\"> avec alt=\"\" : à vérifier (revue manuelle)",
     "inputImage_altDecorative_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt est vide afin de vérifier manuellement (souvent inadapté pour un contrôle fonctionnel).",
     "inputImage_altDecorative_summary_cantTell": "Vérifiez <input type=\"image\"> avec alt=\"\".",
@@ -12808,7 +13022,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour cet élément <{{element}}> n’est clairement établie sur la page.",
     "mediaTranscriptPresent_hint_cantTell_missing": "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
-    "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
+    "mediaTranscriptPresent_hint_cantTell_unverified": "Assurez-vous qu’une transcription ou une autre alternative textuelle clairement identifiée est disponible et associée au média, visuellement ou par programmation, sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
     "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
@@ -12909,7 +13123,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s) alors qu’une boîte de dialogue modale est ouverte. Si la modale conserve le focus clavier piégé, ils peuvent être inaccessibles ; vérifiez que le focus ne peut pas les atteindre.",
     "ariaHidden_focus_hint_cantTell_modal": "Une boîte de dialogue modale semble ouverte. Préférez rendre l’arrière-plan inerte (ou un <dialog> natif ouvert avec showModal()) afin qu’il quitte l’ordre de tabulation, puis vérifiez que le focus clavier reste dans la boîte de dialogue.",
     "cssFocusIndicatorSuppressed_title": "L’indicateur de focus ne doit pas être supprimé sans remplacement",
-    "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé par une règle :focus/:focus-visible sans qu’aucune autre règle de focus les concernant ne dessine d’indicateur de remplacement (bordure, ombre portée, arrière-plan, …).",
+    "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé, par une règle :focus/:focus-visible ou par une règle sans état comme a { outline: none }, sans qu’aucune règle de focus les concernant ne dessine d’indicateur de remplacement (bordure, ombre portée, arrière-plan, …).",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Cet élément reçoit un arrêt de tabulation, et « {{selectors}} » supprime son contour de focus sans qu’aucune autre règle de focus le concernant ne dessine d’indicateur de remplacement.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Dessinez un indicateur de remplacement dans la même règle (contour visible, bordure, ombre portée ou changement d’arrière-plan), ou renoncez à supprimer le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît pour les personnes naviguant au clavier.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
@@ -12935,7 +13149,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Cette combobox n’a pas de nom accessible.",
     "comboboxNamePresent_hint_fail": "Fournissez aria-label, aria-labelledby ou un attribut title — le contenu textuel visible n’est pas exposé comme nom accessible de cet élément.",
     "dialogNamePresent_title": "Les dialogues ont un nom accessible",
-    "dialogNamePresent_description": "Vérifie que les éléments avec role=\"dialog\" ou role=\"alertdialog\" exposent un nom accessible non vide.",
+    "dialogNamePresent_description": "Vérifie que les dialogues (éléments avec role=\"dialog\" ou role=\"alertdialog\", et éléments <dialog> natifs) exposent un nom accessible non vide.",
     "dialogNamePresent_summary_fail": "Ce dialogue n’a pas de nom accessible.",
     "dialogNamePresent_hint_fail": "Fournissez aria-labelledby (préféré) ou aria-label afin que les technologies d’assistance puissent annoncer le dialogue.",
     "menuitemNamePresent_title": "Les éléments de menu ont un nom accessible",
@@ -13008,7 +13222,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
     "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens sans nom accessible, ou dont le texte seul est une formule générique connue, non descriptive.",
     "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
     "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
@@ -13028,7 +13242,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
-    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
@@ -13081,6 +13295,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" renvoie à un id qu’aucun élément ne porte actuellement ; cette référence ne peut pas être vérifiée statiquement.",
     "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément contrôlé est créé à l’ouverture du composant ; s’il n’existe jamais, supprimez ou corrigez la référence.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Vérifiez si un élément portant cet id est ajouté plus tard. Sinon, corrigez ou supprimez la référence ; en attendant, l’élément utilise ses autres sources de nom ou de description.",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -13123,18 +13338,18 @@ const I18N = {
     "ariaRequiredParent_description": "Vérifie que les rôles disposant d’une entrée documentée « rôle de contexte requis » (listitem, option, tab, treeitem, row, cell, ...) ont un ancêtre, ou un propriétaire aria-owns, ayant un rôle de contexte acceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.",
     "ariaRequiredParent_hint_fail": "Placez cet élément à l’intérieur d’un élément ayant un rôle de contexte acceptable (ou référencez-le depuis celui-ci via aria-owns).",
-    "deprecatedElements_title": "Les éléments obsolètes non interruptibles (<blink>, <marquee>) ne doivent pas être utilisés",
-    "deprecatedElements_description": "Vérifie que les éléments HTML obsolètes et non standards dont le contenu clignotant/défilant ne peut pas être mis en pause, arrêté ou masqué par l’utilisateur (<blink>, <marquee>) ne sont pas présents.",
-    "deprecatedElements_summary_fail": "Le contenu de <{{element}}> ne peut pas être mis en pause, arrêté ou masqué par l’utilisateur.",
-    "deprecatedElements_hint_fail": "Retirez cet élément ; utilisez à la place un contenu statique, ou une animation dotée d’un contrôle de pause/arrêt accessible à l’utilisateur.",
+    "deprecatedElements_title": "Le contenu défilant d’un <marquee> doit pouvoir être mis en pause, arrêté ou masqué",
+    "deprecatedElements_description": "Demande, pour chaque élément obsolète <marquee>, si la page offre un moyen de mettre en pause, d’arrêter ou de masquer son contenu défilant, puisque l’élément lui-même n’en offre aucun.",
+    "deprecatedElements_summary_cantTell": "Ce <{{element}}> fait défiler son contenu, et l’élément lui-même ne donne à l’utilisateur aucun moyen de le mettre en pause, de l’arrêter ou de le masquer.",
+    "deprecatedElements_hint_cantTell": "Vérifiez que la page offre un contrôle qui met en pause, arrête ou masque ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
     "iframeNamePresent_title": "Les cadres ont un nom accessible",
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
     "iframeTitleUnique_title": "Les titres de cadres doivent être uniques",
-    "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
-    "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
-    "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "iframeTitleUnique_description": "Vérifie que les cadres qui partagent une même valeur d’attribut title chargent la même ressource ; des cadres de sources différentes avec le même titre font l’objet d’une question.",
+    "iframeTitleUnique_summary_cantTell": "Le titre « {{title}} » de ce <{{element}}> est partagé avec un cadre qui charge une autre ressource.",
+    "iframeTitleUnique_hint_cantTell": "Vérifiez si ces cadres ont le même contenu ou le même objet. Sinon, donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
     "identicalIframesSamePurpose_title": "Les cadres portant le même nom intègrent la même ressource",
     "identicalIframesSamePurpose_description": "Vérifie que les éléments <iframe>/<frame> partageant un nom accessible intègrent la même ressource, car un nom ne peut décrire qu’une seule ressource.",
     "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
@@ -13162,7 +13377,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "N’utilisez que <li> (ou <script>/<template>) comme enfants directs de <ul>/<ol> ; déplacez tout autre balisage à l’intérieur d’un <li>.",
     "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
-    "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, ou un élément ayant role=\"list\".",
+    "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
     "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
     "listitemParentValid_hint_fail": "Placez ce <li> à l’intérieur d’un <ul>/<ol>, ou donnez à son parent role=\"list\".",
     "definitionListChildrenValid_title": "Les listes de définitions doivent être structurées correctement",
@@ -13171,6 +13386,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "N’utilisez que <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style> à l’intérieur de <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Cette liste de définitions n’a aucun groupe terme/définition <dt>/<dd>.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Ajoutez au moins une paire <dt>/<dd> à l’intérieur de ce <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "Dans cette liste de définitions, un <dd> précède tout <dt>, ou le dernier <dt> n’est suivi d’aucun <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordonnez chaque groupe en un ou plusieurs <dt> suivis d’un ou plusieurs <dd>.",
     "dlitemParentValid_title": "Les éléments d’une liste de définitions doivent se trouver à l’intérieur d’une liste de définitions",
     "dlitemParentValid_description": "Vérifie que les éléments <dt>/<dd> sont contenus par un <dl>, directement ou via un <div> englobant.",
     "dlitemParentValid_summary_fail": "Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.",
@@ -13207,10 +13424,10 @@ const I18N = {
     "tooltipNamePresent_description": "Vérifie que les éléments avec role=\"tooltip\" exposent un nom accessible non vide.",
     "tooltipNamePresent_summary_fail": "Cette infobulle n’a pas de nom accessible.",
     "tooltipNamePresent_hint_fail": "Fournissez un texte pour l’infobulle qui ne soit pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Les images ne doivent pas utiliser une carte d’image côté serveur",
-    "serverSideImageMapAbsent_description": "Vérifie que les éléments <img> ne portent pas l’attribut ismap (les cartes d’image côté serveur n’ont pas d’équivalent utilisable au clavier).",
-    "serverSideImageMapAbsent_summary_fail": "Cette image utilise une carte d’image côté serveur, qui n’a pas d’équivalent utilisable au clavier.",
-    "serverSideImageMapAbsent_hint_fail": "Remplacez la carte d’image côté serveur (ismap) par une carte d’image côté client (<map>/<area>) ou par des liens/boutons accessibles distincts.",
+    "serverSideImageMapAbsent_title": "Les cartes d’image côté serveur doivent avoir une alternative utilisable au clavier",
+    "serverSideImageMapAbsent_description": "Demande, pour chaque <img ismap> placé dans un lien, si la page propose les mêmes destinations sous forme de liens accessibles au clavier, puisqu’une carte d’image côté serveur n’a pas de zones utilisables au clavier.",
+    "serverSideImageMapAbsent_summary_cantTell": "Cette image est une carte d’image côté serveur (ismap dans un lien), dont les zones ne peuvent pas être atteintes au clavier.",
+    "serverSideImageMapAbsent_hint_cantTell": "Vérifiez que la page propose les mêmes destinations sous forme de liens distincts. Mieux : remplacez la carte d’image côté serveur par une carte d’image côté client (<map>/<area>) ou par des liens/boutons distincts.",
     "formControlSingleLabel_title": "Les contrôles de formulaire ne doivent pas avoir plusieurs étiquettes",
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
@@ -13329,7 +13546,9 @@ const I18N = {
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
-    "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping street-address », « cc-number »).",
+    "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping postal-code », « cc-number »).",
+    "autocompleteValid_summary_mismatch": "Le nom de champ d’auto-remplissage « {{fieldName}} » n’est pas autorisé sur un champ input de type « {{inputType}} ».",
+    "autocompleteValid_hint_mismatch": "Utilisez un nom de champ adapté à ce type de champ, ou changez le champ (street-address demande un textarea ; email demande un input de type text, search ou email ; bday-day demande un input de type text, search ou number).",
     "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
     "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
     "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -13348,8 +13567,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte ne semble pas pouvoir revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
-    "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
-    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+    "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
+    "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, cet élément rogne le texte « {{text}} ».",
+    "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » dépasse le bord de cet élément, qui masque ce qui dépasse.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » se superpose au texte « {{other}} ».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
+    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
     "metaRefreshNoExceptions_hint_fail": "Retirez le rafraîchissement meta ; déclenchez la redirection/le rafraîchissement uniquement en réponse à une action de l’utilisateur.",
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
@@ -13357,19 +13588,25 @@ const I18N = {
     "validLang_summary_fail": "Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.",
     "validLang_hint_fail": "Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).",
     "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
-    "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un soulignement, une différence de graisse/style de police, ou un contraste de couleur suffisant (>= 3:1) — pas seulement par la couleur.",
+    "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un indice autre que la couleur (soulignement, graisse ou style de police, bordure, arrière-plan, icône), et pose la question pour les liens distingués seulement par une différence de couleur >= 3:1, qui ont aussi besoin d’un indice au survol et au focus.",
     "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
-    "linkInTextBlock_hint_fail": "Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.",
+    "linkInTextBlock_hint_fail": "Ajoutez un soulignement ou un autre indice que la couleur (une différence de graisse ou de style de police, une bordure, une icône). Porter le contraste de couleur avec le texte environnant à 3:1 ne suffit que si le survol et le focus du lien ajoutent aussi un indice autre que la couleur.",
     "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
-    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police, ou un contraste d'au moins 3:1 avec le texte environnant. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
+    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police ou une autre marque que la couleur, ou un contraste d'au moins 3:1 avec le texte environnant accompagné d’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
-    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
-    "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\"|\"subtitles\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres.",
-    "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres (captions ou subtitles).",
+    "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
+    "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
     "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Cette vidéo n’a que des pistes subtitles, qui peuvent traduire les dialogues sans les informations sur les locuteurs et les sons que portent les sous-titres pour sourds et malentendants.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions.",
     "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
     "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une revue manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
     "scrollableRegionFocusable_summary_cantTell": "Cet élément déclare overflow:auto/scroll, n’a aucun descendant focalisable, et n’est pas lui-même focalisable au clavier.",
@@ -13393,12 +13630,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
     "ariaCheckedStateMismatch_hint_cantTell": "Définissez aria-checked pour qu’il corresponde à l’état réel de l’élément, ou retirez-le — une case à cocher/un bouton radio natif expose déjà cet état sans lui.",
     "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
-    "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil.",
+    "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -13407,10 +13646,12 @@ const I18N = {
     "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, region, presentation), pour une revue manuelle.",
     "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
     "focusOrderSemantics_hint_cantTell": "Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.",
-    "pAsHeading_title": "Un <p> stylé pour ressembler à un titre devrait probablement être un véritable titre",
-    "pAsHeading_description": "Signale les éléments <p> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
+    "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
+    "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
     "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
     "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
+    "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
+    "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
     "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
     "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une revue manuelle visant à déterminer si cette cellule fait office de légende factice.",
     "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -13423,6 +13664,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une revue manuelle.",
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
     "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
     "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
     "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -13444,6 +13687,7 @@ const I18N = {
     "report_meta_schemaVersion": "version du schéma",
     "report_meta_target": "cible",
     "report_meta_profile": "profil",
+    "report_meta_optInRules": "règles optionnelles",
     "report_meta_locale": "langue",
     "report_meta_localeRequested": "langue (demandée : {{requested}})",
     "report_outcome_fail": "Échec",
@@ -13461,6 +13705,8 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
+    "report_heading_standardRollup": "Synthèse {{standard}}",
+    "report_standardRollup_col_criterion": "Critère",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
     "report_heading_occurrences": "Occurrences",
@@ -13506,8 +13752,8 @@ const I18N = {
     "inputImage_altPresent_description": "<input type=\"image\"> 要素に、テキストによる代替を提供するための alt 属性があるかを確認します。",
     "inputImage_altPresent_summary_fail": "<input type=\"image\"> に alt 属性がありません。",
     "inputImage_altPresent_hint_fail": "alt 属性を追加してください (alt=\"\" は別の方法でアクセシブルな名前が提供されている場合にのみ使用します)。",
-    "inputImage_altPresent_summary_defaultName": "アクセシブルな名前が画像ボタンに対するブラウザーの既定値になっており、何も伝わりません。",
-    "inputImage_altPresent_hint_defaultName": "ボタンの機能を説明するテキスト (例:「検索」) に置き換えてください。",
+    "inputImage_altPresent_summary_cantTell_defaultName": "アクセシブルな名前が画像ボタンに対するブラウザーの既定値と一致しています。ボタンの機能を説明しているか確認してください。",
+    "inputImage_altPresent_hint_cantTell_defaultName": "名前がボタンの機能を表していない場合は、機能を説明するテキスト (例:「検索」) に置き換えてください。",
     "inputImage_altPresent_summary_emptyAlt": "<input type=\"image\"> の alt=\"\" が空のため、コントロールに名前がありません。",
     "inputImage_altPresent_hint_emptyAlt": "alt で操作内容を説明するか、aria-label または aria-labelledby でコントロールに名前を付けてください。",
     "ariaHidden_programmaticFocus_review_title": "プログラムでフォーカス可能な aria-hidden 要素の確認",
@@ -13518,6 +13764,8 @@ const I18N = {
     "canvas_textAltPresent_description": "<canvas> 要素に、フォールバックコンテンツまたはアクセシブルな名前によるテキストによる代替があるかを確認します。",
     "canvas_textAltPresent_summary_fail": "<canvas> にテキストによる代替がありません。",
     "canvas_textAltPresent_hint_fail": "<canvas> の中にフォールバックテキストを入れるか、アクセシブルな名前 (aria-label/aria-labelledby など) を指定してください。",
+    "canvas_textAltPresent_summary_fail_roleImg": "この <canvas role=\"img\"> にはアクセシブルな名前がありません。role=\"img\" があると、フォールバックコンテンツは名前になりません。",
+    "canvas_textAltPresent_hint_fail_roleImg": "aria-label か aria-labelledby で名前を付けるか、role=\"img\" を削除してフォールバックコンテンツがテキストによる代替として機能するようにしてください。",
     "svg_textAltPresent_title": "<svg> にはテキストによる代替が必要",
     "svg_textAltPresent_description": "インライン <svg> 要素に、<title> 要素または ARIA による名前でテキストによる代替があるかを確認します (<desc> 要素だけでは対象外です)。",
     "svg_textAltPresent_summary_fail": "<svg> にテキストによる代替がありません。",
@@ -13538,14 +13786,14 @@ const I18N = {
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
     "img_altDecorative_hint_cantTell": "この要素が純粋な装飾であることを確認してください。情報や機能を伝えている場合は、除外せずに適切なテキストによる代替 (またはアクセシブルな名前) を指定してください。",
-    "area_altQuality_title": "<area> の代替テキストが適切であること (手動確認)",
-    "area_altQuality_description": "空でない代替テキストを持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
-    "area_altQuality_summary_cantTell": "<area> の代替テキストが正確かつ適切か、人による確認が必要です。",
-    "area_altQuality_hint_cantTell": "代替テキストが、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
-    "inputImage_altQuality_title": "<input type=\"image\"> の代替テキストが適切であること (手動確認)",
-    "inputImage_altQuality_description": "空でない代替テキストを持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
-    "inputImage_altQuality_summary_cantTell": "<input type=\"image\"> の代替テキストが正確かつ適切か、人による確認が必要です。",
-    "inputImage_altQuality_hint_cantTell": "代替テキストが、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
+    "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
+    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
+    "area_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
+    "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
+    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
+    "inputImage_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
     "inputImage_altDecorative_title": "alt=\"\" の <input type=\"image\"> が適切であること (手動確認)",
     "inputImage_altDecorative_description": "alt が空の <input type=\"image\"> 要素を検出し、人が確認できるようにします (機能を持つコントロールで alt を空にするのは、通常は適切ではありません)。",
     "inputImage_altDecorative_summary_cantTell": "alt=\"\" の <input type=\"image\"> について、人による確認が必要です。",
@@ -13720,7 +13968,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "モーダルダイアログが開いている間、aria-hidden が指定された {{element}} にフォーカス可能な要素が {{focusableCount}} 個含まれています。モーダルがキーボードフォーカスを閉じ込めていれば到達できない可能性がありますが、フォーカスがこれらの要素に移らないことを確認してください。",
     "ariaHidden_focus_hint_cantTell_modal": "モーダルダイアログが開いているようです。背景を inert にする (または showModal() で開くネイティブの <dialog> を使う) ことでタブ順序から外すことを推奨します。そのうえで、キーボードフォーカスがダイアログ内にとどまることを確認してください。",
     "cssFocusIndicatorSuppressed_title": "フォーカスインジケーターを代替なしで削除してはならない",
-    "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルールでフォーカスのアウトラインが削除され、その要素に一致するほかのどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
+    "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルール、または a { outline: none } のような状態を持たないルールでフォーカスのアウトラインが削除され、その要素に一致するどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
     "cssFocusIndicatorSuppressed_summary_cantTell": "この要素はタブ移動で停止しますが、「{{selectors}}」がフォーカスのアウトラインを削除しており、この要素に一致するほかのフォーカス用ルールにも代わりのインジケーターがありません。",
     "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見えるアウトライン、border、box-shadow、背景の変化など) を描画するか、アウトラインのリセットをやめてください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
     "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
@@ -13746,7 +13994,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "このコンボボックスにはアクセシブルな名前がありません。",
     "comboboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性を指定してください。表示されているテキストの内容は、このコンボボックスのアクセシブルな名前にはなりません。",
     "dialogNamePresent_title": "ダイアログにアクセシブルな名前があること",
-    "dialogNamePresent_description": "role=\"dialog\" または role=\"alertdialog\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
+    "dialogNamePresent_description": "ダイアログ (role=\"dialog\" または role=\"alertdialog\" を持つ要素、およびネイティブの <dialog> 要素) が、空でないアクセシブルな名前を公開しているかを確認します。",
     "dialogNamePresent_summary_fail": "このダイアログにはアクセシブルな名前がありません。",
     "dialogNamePresent_hint_fail": "支援技術がダイアログを読み上げられるよう、aria-labelledby (推奨) または aria-label を指定してください。",
     "menuitemNamePresent_title": "メニュー項目にアクセシブルな名前があること",
@@ -13819,7 +14067,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
     "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "アクセシブルな名前がないリンク、またはテキストだけを見ると説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
     "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
     "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
@@ -13839,7 +14087,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
     "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
     "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
-    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
     "catalog.rules.wcag_224_interruptions.title": "割り込み",
     "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
     "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
@@ -13892,6 +14140,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "属性が想定する型に合った値を使用してください (この属性については WAI-ARIA 仕様を参照してください)。",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" は、現時点でどの要素も持っていない id を参照しているため、静的にはこの参照を確認できません。",
     "ariaValidAttrValue_hint_cantTell_idref": "ウィジェットを開いたときに、制御対象の要素が生成されるか確認してください。その要素が存在しない場合は、参照を削除または修正してください。",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "この id を持つ要素が後から追加されるか確認してください。追加されない場合は、参照を修正または削除してください。それまでは、要素はほかの名前や説明のソースを使用します。",
     "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
     "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
     "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -13934,18 +14183,18 @@ const I18N = {
     "ariaRequiredParent_description": "「必須のコンテキストロール」が定められているロール (listitem、option、tab、treeitem、row、cell など) に、許容されるコンテキストロールを持つ祖先要素または aria-owns による所有者があるかを確認します。",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" に必要なコンテキストロール ({{requiredRoles}} のいずれか) が見つかりませんでした。",
     "ariaRequiredParent_hint_fail": "この要素を、許容されるコンテキストロールを持つ要素の中に配置する (またはその要素から aria-owns で参照する) ようにしてください。",
-    "deprecatedElements_title": "停止できない廃止要素 (<blink>、<marquee>) を使用してはならない",
-    "deprecatedElements_description": "点滅やスクロールするコンテンツを利用者が一時停止、停止、非表示にできない、廃止された非標準の HTML 要素 (<blink>、<marquee>) が存在しないかを確認します。",
-    "deprecatedElements_summary_fail": "<{{element}}> のコンテンツは、利用者が一時停止、停止、非表示にできません。",
-    "deprecatedElements_hint_fail": "この要素を削除してください。代わりに静的なコンテンツか、利用者が一時停止/停止できるコントロールを備えたアニメーションを使用してください。",
+    "deprecatedElements_title": "スクロールする <marquee> のコンテンツは、一時停止、停止、非表示にできなければならない",
+    "deprecatedElements_description": "廃止された <marquee> 要素ごとに、要素自体にはその手段がないため、自動スクロールするコンテンツを一時停止、停止、非表示にする手段をページが提供しているかを確認します。",
+    "deprecatedElements_summary_cantTell": "この <{{element}}> はコンテンツをスクロールさせますが、要素自体には利用者がそれを一時停止、停止、非表示にする手段がありません。",
+    "deprecatedElements_hint_cantTell": "このコンテンツを一時停止、停止、非表示にするコントロールがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
     "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
     "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
     "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
     "iframeNamePresent_hint_fail": "フレームの内容や目的を説明する title 属性 (または aria-label/aria-labelledby) を追加してください。",
     "iframeTitleUnique_title": "フレームのタイトルは一意であること",
-    "iframeTitleUnique_description": "対象範囲内の <iframe>/<frame> 要素で、同じ title 属性の値を持つものがないかを確認します。",
-    "iframeTitleUnique_summary_fail": "この <{{element}}> のタイトル「{{title}}」は、このページのフレームの中で一意ではありません。",
-    "iframeTitleUnique_hint_fail": "各フレームに、それぞれの内容や目的を説明する異なるタイトルを付けてください。",
+    "iframeTitleUnique_description": "同じ title 属性の値を持つフレームが同じリソースを読み込んでいるかを確認します。読み込むリソースが異なり、タイトルが同じフレームは確認対象として示します。",
+    "iframeTitleUnique_summary_cantTell": "この <{{element}}> のタイトル「{{title}}」は、別のリソースを読み込むフレームと共有されています。",
+    "iframeTitleUnique_hint_cantTell": "これらのフレームの内容や目的が同じかを確認してください。同じでない場合は、各フレームに、それぞれの内容や目的を説明する異なるタイトルを付けてください。",
     "identicalIframesSamePurpose_title": "同じ名前のフレームが同じリソースを埋め込んでいること",
     "identicalIframesSamePurpose_description": "1 つの名前で説明できるのは 1 つのリソースだけなので、同じアクセシブルな名前を持つ <iframe>/<frame> 要素が同じリソースを埋め込んでいるかを確認します。",
     "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
@@ -13973,7 +14222,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
     "listChildrenValid_hint_fail": "<ul>/<ol> の直接の子には <li> (または <script>/<template>) のみを使用し、それ以外のマークアップは <li> の中に移動してください。",
     "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
-    "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、または role=\"list\" を持つ要素に含まれているかを確認します。",
+    "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
     "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
     "listitemParentValid_hint_fail": "この <li> を <ul>/<ol> の中に配置するか、親要素に role=\"list\" を指定してください。",
     "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
@@ -13982,6 +14231,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "<dl> の中では、<dt>/<dd> (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみを使用してください。",
     "definitionListChildrenValid_summary_fail_noDtDd": "この記述リストには、用語と説明の <dt>/<dd> グループがありません。",
     "definitionListChildrenValid_hint_fail_noDtDd": "この <dl> の中に、<dt>/<dd> の組を少なくとも 1 つ追加してください。",
+    "definitionListChildrenValid_summary_fail_order": "この記述リストでは、<dd> がどの <dt> よりも前にあるか、最後の <dt> の後に <dd> がありません。",
+    "definitionListChildrenValid_hint_fail_order": "各グループを、1 つ以上の <dt> の後に 1 つ以上の <dd> が続く順序にしてください。",
     "dlitemParentValid_title": "記述リストの項目は記述リスト内にあること",
     "dlitemParentValid_description": "<dt>/<dd> 要素が、直接または 1 つの <div> を介して <dl> に含まれているかを確認します。",
     "dlitemParentValid_summary_fail": "この <{{element}}> の親 (<{{parentElement}}>) は記述リストではありません。",
@@ -14018,10 +14269,10 @@ const I18N = {
     "tooltipNamePresent_description": "role=\"tooltip\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
     "tooltipNamePresent_summary_fail": "このツールチップにはアクセシブルな名前がありません。",
     "tooltipNamePresent_hint_fail": "支援技術から隠されていないツールチップのテキストを用意するか、aria-label または aria-labelledby を指定してください。",
-    "serverSideImageMapAbsent_title": "画像でサーバーサイドイメージマップを使用してはならない",
-    "serverSideImageMapAbsent_description": "<img> 要素に ismap 属性が指定されていないかを確認します (サーバーサイドイメージマップには、キーボードで操作できる代替手段がありません)。",
-    "serverSideImageMapAbsent_summary_fail": "この画像はサーバーサイドイメージマップを使用しており、キーボードで操作できる代替手段がありません。",
-    "serverSideImageMapAbsent_hint_fail": "サーバーサイドイメージマップ (ismap) を、クライアントサイドイメージマップ (<map>/<area>) か、個別のアクセシブルなリンクやボタンに置き換えてください。",
+    "serverSideImageMapAbsent_title": "サーバーサイドイメージマップには、キーボードで操作できる代替手段がなければならない",
+    "serverSideImageMapAbsent_description": "リンク内の <img ismap> ごとに、同じリンク先をキーボードで到達できるリンクとしてページが提供しているかを確認します。サーバーサイドイメージマップ自体には、キーボードで操作できる領域がないためです。",
+    "serverSideImageMapAbsent_summary_cantTell": "この画像はサーバーサイドイメージマップ (リンク内の ismap) であり、その領域にはキーボードで到達できません。",
+    "serverSideImageMapAbsent_hint_cantTell": "同じリンク先が個別のリンクとしてページにあるか確認してください。より良い方法: サーバーサイドイメージマップを、クライアントサイドイメージマップ (<map>/<area>) か、個別のリンクやボタンに置き換えてください。",
     "formControlSingleLabel_title": "フォームコントロールに複数のラベルがあってはならない",
     "formControlSingleLabel_description": "フォームコントロールに関連付けられた <label> (囲む形式または label[for] による) が 1 つ以下であるかを確認します。",
     "formControlSingleLabel_summary_fail": "この <{{element}}> には {{labelCount}} 個のラベルが関連付けられています。",
@@ -14140,7 +14391,9 @@ const I18N = {
     "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
-    "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping street-address\"、\"cc-number\") を使用してください。",
+    "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping postal-code\"、\"cc-number\") を使用してください。",
+    "autocompleteValid_summary_mismatch": "自動入力のフィールド名 \"{{fieldName}}\" は、type が \"{{inputType}}\" の input では使用できません。",
+    "autocompleteValid_hint_mismatch": "このコントロールの種類に合うフィールド名を使用するか、コントロールを変更してください (street-address には textarea、email には type が text、search、email の input、bday-day には type が text、search、number の input が必要です)。",
     "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
     "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
     "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
@@ -14159,8 +14412,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "この値が基準値 (line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em) を満たしているか人の手で確認するか、要素の算出フォントサイズに対してエンジンが解決できる単位で指定してください。",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが折り返せないようなので、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
-    "metaRefreshNoExceptions_title": "ページで meta refresh を一切使用してはならない (AAA)",
-    "metaRefreshNoExceptions_description": "遅延時間にかかわらず、<meta http-equiv=\"refresh\"> がまったく存在しないかを確認します。正の遅延のみを対象とするレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
+    "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
+    "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+    "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
+    "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
+    "textSpacingContentLoss_summary_fail_clipped": "WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります。",
+    "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端からはみ出し、はみ出した部分が隠れます。",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
+    "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
+    "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
     "metaRefreshNoExceptions_hint_fail": "meta refresh を削除し、リダイレクトや再読み込みは利用者の操作に応じてのみ実行するようにしてください。",
     "validLang_title": "要素の lang 属性は構文上有効であること",
@@ -14168,19 +14433,25 @@ const I18N = {
     "validLang_summary_fail": "この lang 属性の値 (「{{value}}」) は、構文上有効な言語タグではありません。",
     "validLang_hint_fail": "有効な BCP47 言語タグを使用してください (例:「ja」「en-US」)。",
     "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
-    "linkInTextBlock_description": "文中にあるリンクが、色だけでなく、下線、フォントの太さやスタイルの違い、または十分な (3:1 以上の) 色のコントラストの差によって、周囲のテキストと視覚的に区別できるかを確認します。",
+    "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、フォントの太さやスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",
     "linkInTextBlock_summary_fail": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っています。",
-    "linkInTextBlock_hint_fail": "下線を付けるか、フォントの太さやスタイルに違いを持たせるか、リンクと周囲のテキストとの色のコントラストを 3:1 以上にしてください。",
+    "linkInTextBlock_hint_fail": "下線、または色以外の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けてください。周囲のテキストとの色のコントラストを 3:1 にするだけで十分なのは、リンクのホバー時とフォーカス時にも色以外の手がかりが加わる場合に限られます。",
     "linkInTextBlock_summary_cantTell": "このリンクが色以外の手段で周囲のテキストと区別できるかは判定できませんでした。",
-    "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、または周囲のテキストとの 3:1 以上のコントラストがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
+    "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、その他の色以外の目印があるか、または周囲のテキストとの 3:1 以上のコントラストに加えてホバー時とフォーカス時に色以外の手がかりがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
     "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
-    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
+    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
+    "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
-    "videoCaption_description": "子要素に <track kind=\"captions\"|\"subtitles\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。",
-    "videoCaption_summary_cantTell": "この動画にはキャプション (または字幕) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
+    "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
+    "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
     "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。",
+    "videoCaption_summary_cantTell_subtitlesOnly": "この動画には字幕 (subtitles) のトラックしかありません。字幕は、キャプションが含む話者や音の情報を含まず、台詞を翻訳しているだけの場合があります。",
+    "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。",
     "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
     "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
     "scrollableRegionFocusable_summary_cantTell": "この要素は overflow:auto/scroll を宣言していますが、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできません。",
@@ -14204,12 +14475,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
     "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を要素の実際の状態に合わせるか、削除してください。ネイティブのチェックボックス/ラジオボタンは、aria-checked がなくてもこの状態を公開します。",
     "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
-    "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。",
+    "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
     "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
     "cssOrientationLock_summary_fail_unknownSelector": "「{{mediaText}}」のメディアクエリが、セレクターを読み取れない要素を回転させており、ページが 1 つの向きに固定されています。",
     "cssOrientationLock_hint_fail": "表示の向きのメディアクエリから rotate() の transform を削除してください。見た目を強制的に回転させるのではなく、端末の向きに合わせてページが自然に表示されるようにします。",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} 個のスタイルシートを読み取れなかったため、このページが表示の向きを固定しているかは判定できませんでした。",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "クロスオリジンのスタイルシートは、ページからは検査できません。サードパーティの CSS に rotate() の transform を含む表示の向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンで配信した状態で再度スキャンしてください。",
+    "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
+    "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
     "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
     "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",
@@ -14218,10 +14491,12 @@ const I18N = {
     "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、region、presentation など) である要素を検出し、人が確認できるようにします。",
     "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
     "focusOrderSemantics_hint_cantTell": "この要素を操作可能にする意図がなければ tabindex を削除し、そうでなければ実際の動作に合ったインタラクティブなロールを使用してください。",
-    "pAsHeading_title": "見出しのように装飾された <p> は、本来の見出し要素にすることが望ましい場合がある",
-    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示されている短い <p> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
+    "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
+    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
     "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
     "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
+    "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
+    "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
     "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
     "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
     "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -14234,6 +14509,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
     "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
     "mouseOnlyEventHandlers_hint_cantTell": "この機能をキーボードでも利用できるよう、onkeydown/onkeyup/onkeypress (ホバーで動作するものには onfocus/onblur) を追加してください。",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
     "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
     "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
     "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -14255,6 +14532,7 @@ const I18N = {
     "report_meta_schemaVersion": "スキーマバージョン",
     "report_meta_target": "対象",
     "report_meta_profile": "プロファイル",
+    "report_meta_optInRules": "オプトインルール",
     "report_meta_locale": "ロケール",
     "report_meta_localeRequested": "ロケール (要求: {{requested}})",
     "report_outcome_fail": "不合格",
@@ -14272,6 +14550,8 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
+    "report_heading_standardRollup": "{{standard}} の集約結果",
+    "report_standardRollup_col_criterion": "基準",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
     "report_heading_occurrences": "検出箇所",
@@ -14303,6 +14583,11 @@ const I18N = {
     "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。"
   }
 };
+
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = {};
 
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
@@ -14431,7 +14716,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
@@ -14727,11 +15015,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -14809,6 +15103,31 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Standards whose entries come from each rule (ruleMapped in the registry),
+// by the name their entries carry. A rollup keeps only the entries of the
+// rules that produced its outcome (rollupCompositeResults).
+const RULE_MAPPED_STANDARDS = [];
+
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {};
+
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = [];
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = {};
+
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -14817,6 +15136,48 @@ const PROFILE_MAPPINGS = {
     "en301549:V3.2.1"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  }
+};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -14915,8 +15276,48 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
+    }
     selection.profile = requestedProfile;
   }
+  return selection;
+}
+
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags. It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
   return selection;
 }
 
@@ -14937,7 +15338,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -14964,7 +15370,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -14999,6 +15405,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (its standard's rule
+// tag), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -15015,6 +15438,26 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;
@@ -15257,7 +15700,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   return out;
 }
 
-function toCatalogEntry(r, engineOptions) {
+// The standards a catalog entry names for these options, chosen exactly as for
+// a scan result: engineOptions.mappings, plus what a profile adds when it
+// would apply to this selection. With no options that is WCAG alone.
+function catalogMappingTokens(engineOptions, runOnly) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+}
+
+function toCatalogEntry(r, engineOptions, mappingTokens) {
+  const tokens = Array.isArray(mappingTokens) ? mappingTokens : catalogMappingTokens(engineOptions, null);
   return {
     ruleId: r.ruleId,
     title: (r && r.i18n ? t(r.i18n.titleKey, r.title, null, engineOptions) : r.title),
@@ -15266,7 +15718,9 @@ function toCatalogEntry(r, engineOptions) {
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
     wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
-    normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
+    normativeMappings: Array.isArray(r.normativeMappings)
+      ? filterNormativeMappings(r.normativeMappings, tokens).map((o) => ({ ...o }))
+      : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -15970,11 +16424,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
-  function isLargeText(fontSizePx, fontWeightNum) {
+  // `boldLargeMinPx` overrides the size from which bold text is large. It
+  // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
+  // finite number, the WCAG threshold applies, so existing callers are
+  // unchanged.
+  function isLargeText(fontSizePx, fontWeightNum, boldLargeMinPx) {
     const size = parseFloat(fontSizePx);
     const w = Number(fontWeightNum);
     if (!Number.isFinite(size)) return false;
     if (size >= 24) return true;
+    if (typeof boldLargeMinPx === 'number' && Number.isFinite(boldLargeMinPx)) {
+      return size >= boldLargeMinPx && Number.isFinite(w) && w >= 700;
+    }
     // WCAG's bold-large threshold is 14pt. Derived via parsePx('14pt')
     // rather than a hardcoded decimal (e.g. "18.6667") or a hand-written
     // reconversion: floating-point multiplication/division isn't
@@ -17745,12 +18206,20 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // is permitted, but restating the native listbox role is always
     // allowed via the native-role fallback.
     'select[multiple]': [],
-    // <table> permits any role. <td>/<th>/<tr> are spec'd as context-
-    // dependent (restricted only when the ancestor <table> is exposed as
-    // role=table/grid/treegrid); that conditional isn't implemented here,
-    // so they're left unconstrained rather than guessing at ancestor-role
-    // resolution.
+    // No role other than its own 'main' is permitted on <main> (ARIA in
+    // HTML), and that one via the native-role fallback below.
+    main: [],
+    // <table> permits any role. <td>/<th>/<tr> are context-dependent: when
+    // the ancestor <table> is exposed as role=table, grid or treegrid (no
+    // explicit role, or one of those three) they permit no role other than
+    // their own, which is cell or gridcell for <td>, columnheader, rowheader,
+    // cell or gridcell for <th>, and row for <tr> (see getElementRoleKey's
+    // td[table]/th[table]/tr[table] split). Outside such a table they
+    // permit any role.
     table: null,
+    'td[table]': ['cell', 'gridcell'],
+    'th[table]': ['columnheader', 'rowheader', 'cell', 'gridcell'],
+    'tr[table]': [],
     td: null,
     th: null,
     tr: null
@@ -17799,7 +18268,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'input[type=email]': 'textbox',
     select: 'combobox',
     'select[multiple]': 'listbox',
+    main: 'main',
     table: 'table',
+    'td[table]': 'cell',
+    'th[table]': 'columnheader',
+    'tr[table]': 'row',
     td: 'cell',
     th: 'columnheader',
     tr: 'row'
@@ -17961,6 +18434,20 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // decide, statically, whether it is wrong (see aria-controls below).
   // `el` is optional; without it the few element-state-dependent branches
   // fall back to their element-agnostic answer.
+  // Lower bounds WAI-ARIA 1.2 sets on integer values ("an integer greater
+  // than or equal to ..."). aria-setsize also accepts -1; aria-colcount and
+  // aria-rowcount (-1 or at least the number of columns/rows in the DOM)
+  // are left to the plain integer check.
+  const INTEGER_ATTR_MIN = {
+    'aria-level': 1,
+    'aria-posinset': 1,
+    'aria-setsize': 1,
+    'aria-colindex': 1,
+    'aria-rowindex': 1,
+    'aria-colspan': 1,
+    'aria-rowspan': 0
+  };
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -17991,7 +18478,17 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       }
       case 'integer': {
         const ok = /^-?\d+$/.test(v);
-        return { valid: ok, reason: ok ? '' : 'expected-integer' };
+        if (!ok) return { valid: false, reason: 'expected-integer' };
+        // WAI-ARIA 1.2 bounds some integers: a level, position, index or
+        // column span starts at 1, a row span at 0, and a set size is at
+        // least 1 or -1 (unknown). A value outside the range exposes no
+        // meaningful level or position.
+        const n = Number(v);
+        const min = INTEGER_ATTR_MIN[lower(name)];
+        if (min === undefined) return { valid: true, reason: '' };
+        if (n >= min) return { valid: true, reason: '' };
+        if (lower(name) === 'aria-setsize' && n === -1) return { valid: true, reason: '' };
+        return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
         const ok = Number.isFinite(Number(v));
@@ -18044,7 +18541,12 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
           return { valid: false, review: true, reason: 'idref-controls-not-found' };
         }
 
-        return { valid: false, reason: 'idref-list-none-found' };
+        // Any other list (aria-labelledby, aria-describedby, aria-owns,
+        // aria-flowto, aria-details) that resolves to nothing is asked
+        // about rather than failed: the element falls back to its other
+        // name or description sources, and whether anything was lost
+        // depends on what the reference was meant to add.
+        return { valid: false, review: true, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:
@@ -18146,6 +18648,28 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
       return 'input[type=' + type + ']';
+    }
+
+    if (tag === 'td' || tag === 'th' || tag === 'tr') {
+      // Constrained only inside a <table> exposed as a table, grid or
+      // treegrid: one with no explicit role, or with one of those three.
+      // A layout table (role=none/presentation) or any other role leaves
+      // its cells and rows free (ARIA in HTML).
+      let table;
+      try {
+        table = el.closest ? el.closest('table') : null;
+      } catch {
+        table = null;
+      }
+      if (!table) return tag;
+      const tableRole = getExplicitRole(table);
+      const exposedAsTable =
+        !tableRole ||
+        !isValidConcreteRole(tableRole) ||
+        tableRole === 'table' ||
+        tableRole === 'grid' ||
+        tableRole === 'treegrid';
+      return exposedAsTable ? tag + '[table]' : tag;
     }
 
     if (tag === 'select') {
@@ -19482,6 +20006,48 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+  }
+
+  // Same deep query as queryAllSmart (shadow roots when includeShadowDom,
+  // context scope, excludeSelectors) but with no hidden-content filter:
+  // elements inside `hidden`, `display:none`, closed <details> and the like
+  // are returned whatever includeHiddenElements says. For rules that judge
+  // the markup itself rather than what is rendered (validity, presentational
+  // markup). <template> content is not part of the DOM tree and stays out,
+  // as it does for the W3C validator.
+  function queryAllSource(sel) {
+    const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+    return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+  }
+
+  // The document's doctype, classified. Verdicts that depend on the HTML
+  // version (a requirement that applies to HTML5 only, lang read as lang or
+  // xml:lang by version, an element presentational only before HTML5) read
+  // `kind`:
+  //   'html5'   name html, no public id, no system id or about:legacy-compat
+  //   'xhtml10' a public id of XHTML 1.0 (strict, transitional, frameset)
+  //   'xhtml11' any other W3C XHTML public id: 1.1, Basic, 1.1 plus MathML
+  //             (and SVG), XHTML+RDFa
+  //   'html4'   a W3C or IETF HTML public id: 2.0, 3.2, 4.0, 4.01, 4.01+RDFa
+  //   'other'   any other doctype, including a name other than html
+  //   'none'    no doctype
+  // Public ids are compared case-insensitively, as HTML's parser does.
+  function getDoctypeInfo() {
+    const doctype = document ? document.doctype : null;
+    if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
+    const name = String(doctype.name || '');
+    const publicId = String(doctype.publicId || '');
+    const systemId = String(doctype.systemId || '');
+    const pub = publicId.trim().toUpperCase();
+    let kind = 'other';
+    if (name.toLowerCase() === 'html') {
+      if (!publicId && (!systemId || systemId === 'about:legacy-compat')) kind = 'html5';
+      else if (pub.startsWith('-//W3C//DTD XHTML 1.0 ')) kind = 'xhtml10';
+      else if (pub.startsWith('-//W3C//DTD XHTML')) kind = 'xhtml11';
+      else if (pub.startsWith('-//W3C//DTD HTML ') || pub.startsWith('-//IETF//DTD HTML'))
+        kind = 'html4';
+    }
+    return { kind, name, publicId, systemId };
   }
 
   // -------------------------------------------------------------------------
@@ -21660,6 +22226,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
+  // Text of an SVG element's first <title> child, the name source SVG-AAM
+  // uses after aria-labelledby and aria-label. '' when the element is not in
+  // the SVG namespace, has no such child, or carries role none/presentation
+  // (which a <title> does not override: it is not a global ARIA attribute).
+  function getSvgTitleChildText(node) {
+    try {
+      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
+      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      if (role === 'none' || role === 'presentation') return '';
+      const kids = node.children ? Array.from(node.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
+          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        }
+      }
+    } catch {}
+    return '';
+  }
+
   // C.1) "Name from content": recursive accname-aligned content-name computation.
   //
   // Rationale: the accname spec's "name from content" step (2F) is recursive:
@@ -21851,6 +22436,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
+      }
+
+      // An SVG element is named by its first <title> child (SVG-AAM), after
+      // aria-labelledby and aria-label. The <title> itself is never rendered,
+      // so the walk below would skip it: <button><svg><title>Search</title>
+      // </svg></button> is named "Search" in browsers.
+      const svgTitle = getSvgTitleChildText(node);
+      if (svgTitle) {
+        const ariaName = getAriaNameInfo(node, _ctx, opts);
+        if (ariaName && ariaName.present && ariaName.value) {
+          parts.push(ariaName.value);
+          if (flags.indexOf('descendant-name-used:svg-aria') === -1)
+            flags.push('descendant-name-used:svg-aria');
+          return;
+        }
+        parts.push(svgTitle);
+        if (flags.indexOf('descendant-name-used:svg-title') === -1)
+          flags.push('descendant-name-used:svg-title');
+        return;
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
@@ -22764,6 +23368,76 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   }
 
+  // Input types whose placeholder HTML-AAM uses as the last name source.
+  const PLACEHOLDER_NAMED_INPUT_TYPES = new Set([
+    'text',
+    'password',
+    'number',
+    'search',
+    'tel',
+    'email',
+    'url'
+  ]);
+
+  // The name an element gets from its own HTML host markup rather than from
+  // ARIA: an associated <label> on a labelable element, the first child
+  // <legend> of a <fieldset>, the first child <caption> of a <table>, and,
+  // only when opts.placeholder is true, the placeholder of a text-like
+  // <input> or a <textarea> (HTML-AAM's last source). For the
+  // name-from-author-only role rules (role="textbox", "slider",
+  // "radiogroup", ...), whose ARIA check does not look at host markup: the
+  // browser still computes these for the native host whatever role it
+  // carries. Returns { present, value, mechanism } with mechanism one of
+  // 'label', 'legend', 'caption', 'placeholder' or 'none'.
+  function getNativeHostNameInfo(el, _ctx, opts) {
+    const none = { present: false, value: '', mechanism: 'none' };
+    if (!isElement(el)) return none;
+    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
+    const tag = lower(el.localName || el.tagName);
+
+    try {
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          return { present: true, value: info.value, mechanism: 'label' };
+        }
+      }
+    } catch {}
+
+    const firstChildOfType = (childTag) => {
+      const kids = el.children ? Array.from(el.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === childTag) return kid;
+      }
+      return null;
+    };
+    const contentOf = (child, mechanism) => {
+      if (!child) return null;
+      const info = getContentNameInfo(child, _ctx, opts);
+      const value = info && info.present ? trim(info.value) : '';
+      return value ? { present: true, value, mechanism } : null;
+    };
+
+    if (tag === 'fieldset') {
+      const r = contentOf(firstChildOfType('legend'), 'legend');
+      if (r) return r;
+    }
+    if (tag === 'table') {
+      const r = contentOf(firstChildOfType('caption'), 'caption');
+      if (r) return r;
+    }
+
+    if (opts && opts.placeholder) {
+      const type = tag === 'input' ? lower(getAttr(el, 'type') || 'text') : '';
+      if (tag === 'textarea' || (tag === 'input' && PLACEHOLDER_NAMED_INPUT_TYPES.has(type))) {
+        const ph = trim(String(getAttr(el, 'placeholder') || '').replace(/\s+/g, ' '));
+        if (ph) return { present: true, value: ph, mechanism: 'placeholder' };
+      }
+    }
+    return none;
+  }
+
   function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
@@ -22937,6 +23611,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(document.documentElement);
   }
 
+  // Whether a link's text reads as a skip link ("Skip to content", "Aller au
+  // contenu", "Zum Inhalt"...), in the languages the engine ships and the
+  // phrasings French sites use ("liens d'évitement"). One list for
+  // every rule that looks for a skip link, so they recognise the same ones.
+  const SKIP_LINK_WORDING = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+  function hasSkipLinkWording(text) {
+    const s = typeof text === 'string' ? text : '';
+    return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
   return {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
@@ -22945,6 +23641,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    queryAllSource,
+    getDoctypeInfo,
     getOuterHtmlSnippet,
     buildSimpleSelector,
     buildSelector,
@@ -22957,6 +23655,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -23018,6 +23717,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control
     // (own aria-name, else rendered content, else title). Shared so
@@ -23336,6 +24036,18 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (one per requirement, say) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -23436,7 +24148,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -23447,6 +24159,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -23466,13 +24185,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
 
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
@@ -23553,6 +24279,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -23580,9 +24313,39 @@ const rollupCompositeResults = (function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong
@@ -23906,6 +24669,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -23916,6 +24682,27 @@ const runCore = (function runCore(
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
             : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+      );
+    } catch {}
+  }
+
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and a standard's profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
       );
     } catch {}
   }
@@ -23983,6 +24770,16 @@ const runCore = (function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -23990,12 +24787,26 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A rule's declared settings (contrast-minimum's thresholds) are its
+    // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
+    // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
+    // which is another rule under its own id, supplies its own. The caller's
+    // other config (excludeSelectors) still applies.
+    const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
+    let ruleConfig = callerConfig;
+    if (ruleConfig && settingNames.length) {
+      ruleConfig = { ...ruleConfig };
+      for (const name of settingNames) delete ruleConfig[name];
+    }
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -24012,6 +24823,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -24089,6 +24902,26 @@ const runCore = (function runCore(
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
     }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
+    }
     if (!result.engineOptions) {
       result.engineOptions = {
         ...(ctx.engineOptions || {}),
@@ -24137,6 +24970,21 @@ const runCore = (function runCore(
     );
   }
 
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+  }
+
   // Optional perf counters passthrough (only when enabled). Deterministic.
   let perfStats = null;
   try {
@@ -24165,6 +25013,13 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,
@@ -24410,32 +25265,76 @@ function getCheckDefById(ruleId, engineOptions) {
 function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
-  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions));
+  const tokens = catalogMappingTokens(engineOptions, null);
+  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
-function getRulesCatalog() {
+// A composite's catalog entry, with the other-standard entries of its rules
+// filtered the same way as a rule's.
+function toCompositeCatalogEntry(x, tokens) {
+  const meta = x.meta && typeof x.meta === 'object'
+    ? {
+        ...x.meta,
+        standardMappings: Array.isArray(x.meta.standardMappings)
+          ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
+          : []
+      }
+    : x.meta;
+  return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
+}
+
+// A standard's own rollup is opt-in like that standard's rules: listed only
+// when the selection names its tag (as the standard's profile does) or its
+// id, or unlocks its tag through engineOptions.optInRules and includes
+// nothing else, so the catalog lists what a scan with the same options would
+// produce.
+function isCompositeListed(x, selection) {
+  // An excluded rollup, by the caller or by a profile's exclude, is not
+  // produced, so it is not listed.
+  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
+  const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
+  const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (!optIn.length) return true;
+  if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
+  // Unlocked alone does not select it: like the run, an include of other
+  // tags or ids (a WCAG profile's, say) still leaves it out.
+  const includesNothing =
+    !selection.tags.length && !selection.includeRuleIds.length && !selection.includeTestIds.length;
+  const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
+  return (
+    unlocked ||
+    optIn.some((t) => selection.tags.includes(t)) ||
+    selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
+  );
+}
+
+function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
-  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => ({ ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [] })) : [];
+  const tokens = catalogMappingTokens(engineOptions, null);
+  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  return Array.isArray(COMPOSITE_RULES)
+    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) => toCompositeCatalogEntry(x, tokens))
+    : [];
 }
 
-function getCompositeRuleById(ruleId) {
+function getCompositeRuleById(ruleId, engineOptions) {
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
-  return { ...found, checksIds: Array.isArray(found.checksIds) ? found.checksIds.slice() : [] };
+  return toCompositeCatalogEntry(found, catalogMappingTokens(engineOptions, null));
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  const tokens = catalogMappingTokens(engineOptions, runOnly);
   return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+    .filter((r) => ruleMatchesRunOnly(r, selection, ENGINE_TAG))
+    .map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {
   // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
-  return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+  return getChecksForRunOnly(runOnly, engineOptions);
 }
 
 /**
@@ -24578,8 +25477,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "area-alt-quality",
-    "title": "<area> alt text must be appropriate (manual review)",
-    "description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
+    "title": "<area> text alternative must be appropriate (manual review)",
+    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
     "i18n": {
       "titleKey": "area_altQuality_title",
       "descriptionKey": "area_altQuality_description"
@@ -26759,12 +27658,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "settings": [
+      "boldLargeMinPx",
+      "largeTextRatio",
+      "normalTextRatio"
+    ]
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
     "title": "Focus indicator must not be removed without a replacement",
-    "description": "Flags elements in the tab order whose focus outline is removed by a :focus/:focus-visible rule with no replacement indicator (border, box-shadow, background, ...) in any other focus rule matching them.",
+    "description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
     "i18n": {
       "titleKey": "cssFocusIndicatorSuppressed_title",
       "descriptionKey": "cssFocusIndicatorSuppressed_description"
@@ -26912,7 +27816,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "css-orientation-lock",
     "title": "CSS must not lock the page to a single orientation",
-    "description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
+    "description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
     "i18n": {
       "titleKey": "cssOrientationLock_title",
       "descriptionKey": "cssOrientationLock_description"
@@ -27056,8 +27960,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "deprecated-elements-not-used",
-    "title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
-    "description": "Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.",
+    "title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
+    "description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
     "i18n": {
       "titleKey": "deprecatedElements_title",
       "descriptionKey": "deprecatedElements_description"
@@ -27129,7 +28033,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "dialog-name-present",
     "title": "Dialogs have an accessible name",
-    "description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "description": "Checks that dialogs (elements with role=\"dialog\" or role=\"alertdialog\", and native <dialog> elements) expose a non-empty accessible name.",
     "i18n": {
       "titleKey": "dialogNamePresent_title",
       "descriptionKey": "dialogNamePresent_description"
@@ -28560,7 +29464,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "iframe-title-unique",
     "title": "Frame titles must be unique",
-    "description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
+    "description": "Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.",
     "i18n": {
       "titleKey": "iframeTitleUnique_title",
       "descriptionKey": "iframeTitleUnique_description"
@@ -29036,8 +29940,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "input-image-alt-quality",
-    "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
-    "description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
+    "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
+    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
     "i18n": {
       "titleKey": "inputImage_altQuality_title",
       "descriptionKey": "inputImage_altQuality_description"
@@ -29562,7 +30466,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "link-in-text-block",
     "title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
+    "description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
     "i18n": {
       "titleKey": "linkInTextBlock_title",
       "descriptionKey": "linkInTextBlock_description"
@@ -29646,6 +30550,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag244",
       "wcag412",
       "navigation",
       "atomic",
@@ -29655,15 +30560,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.4",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.4.4",
+        "title": "Link Purpose (In Context)",
+        "conformanceLevel": "A"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.4",
+        "title": "Link purpose (in context)",
+        "wcagSc": [
+          "2.4.4"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -29689,6 +30620,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "2.4.4": [
+          "link-name-present"
+        ],
         "4.1.2": [
           "link-name-present"
         ]
@@ -29932,7 +30866,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "listitem-parent-valid",
     "title": "List items must be inside a list container",
-    "description": "Checks that <li> elements are contained by <ul>, <ol>, or an element with role=\"list\".",
+    "description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
     "i18n": {
       "titleKey": "listitemParentValid_title",
       "descriptionKey": "listitemParentValid_description"
@@ -30299,8 +31233,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
-    "title": "Page must not use a meta refresh at all (AAA)",
-    "description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "title": "Page must not use a timed meta refresh (AAA)",
+    "description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "i18n": {
       "titleKey": "metaRefreshNoExceptions_title",
       "descriptionKey": "metaRefreshNoExceptions_description"
@@ -30764,7 +31698,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "no-autoplay-audio",
     "title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "i18n": {
       "titleKey": "noAutoplayAudio_title",
       "descriptionKey": "noAutoplayAudio_description"
@@ -31055,8 +31989,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "p-as-heading",
-    "title": "A <p> styled to look like a heading should probably be a real heading",
-    "description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "title": "Text styled to look like a heading should probably be a real heading",
+    "description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "i18n": {
       "titleKey": "pAsHeading_title",
       "descriptionKey": "pAsHeading_description"
@@ -31870,8 +32804,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "server-side-image-map-absent",
-    "title": "Images must not use a server-side image map",
-    "description": "Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).",
+    "title": "Server-side image maps must have a keyboard-operable alternative",
+    "description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
     "i18n": {
       "titleKey": "serverSideImageMapAbsent_title",
       "descriptionKey": "serverSideImageMapAbsent_description"
@@ -32929,6 +33863,78 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null
   },
   {
+    "ruleId": "text-spacing-content-loss",
+    "title": "Text stays readable when the user increases text spacing",
+    "description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "i18n": {
+      "titleKey": "textSpacingContentLoss_title",
+      "descriptionKey": "textSpacingContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1412",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.12",
+        "title": "Text Spacing",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.12": [
+          "text-spacing-content-loss"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "textbox-name-present",
     "title": "Textboxes have an accessible name",
     "description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
@@ -33225,7 +34231,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "video-caption",
     "title": "Prerecorded video should provide a captions track",
-    "description": "Flags <video> elements with no <track kind=\"captions\"|\"subtitles\"> child, for manual review of whether the video has an audio track that needs captions.",
+    "description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
     "i18n": {
       "titleKey": "videoCaption_title",
       "descriptionKey": "videoCaption_description"
@@ -33884,13 +34890,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.4.4-link-purpose-in-context",
     "checksIds": [
+      "link-name-present",
       "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_244_link_purpose_in_context.title",
       "descriptionKey": "catalog.rules.wcag_244_link_purpose_in_context.description",
       "title": "Link Purpose (In Context)",
-      "description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+      "description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
       "wcagSc": [
         "2.4.4"
       ],
@@ -34221,13 +35228,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-1.4.12-text-spacing",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
       "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
-      "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+      "description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "wcagSc": [
         "1.4.12"
       ],
@@ -34980,6 +35988,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !focusable;
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  // Every non-empty text-alternative source on the element, in accessible-name
+  // order: aria-labelledby (when it resolves to text), aria-label, alt, title.
+  // aria-labelledby wins over aria-label in the name, but a present aria-label
+  // is still listed, so each attribute present is asked about.
+  function collectTextAlternativeSources(el) {
+    const attr = (name) => {
+      try {
+        const v = el.getAttribute(name);
+        return v == null ? '' : String(v).trim();
+      } catch {
+        return '';
+      }
+    };
+    const sources = [];
+    let name = '';
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      name = String(aria.value).trim();
+      sources.push(aria.mechanism);
+      if (aria.mechanism === 'aria-labelledby' && attr('aria-label')) sources.push('aria-label');
+    } else if (!getAriaNameInfo && attr('aria-label')) {
+      name = attr('aria-label');
+      sources.push('aria-label');
+    }
+    const altText = attr('alt');
+    if (altText) {
+      sources.push('alt');
+      if (!name) name = altText;
+    }
+    const titleText = attr('title');
+    if (titleText) {
+      sources.push('title');
+      if (!name) name = titleText;
+    }
+    return { sources, name, alt: altText };
+  }
+
   const els = (() => {
     try {
       return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
@@ -35040,38 +36095,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (isRolePresentationExcluded(el)) continue;
 
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    let alt;
-    try {
-      alt = el.getAttribute('alt');
-    } catch {
-      alt = null;
-    }
-    if (alt === null) continue;
-    if (String(alt).trim() === '') continue; // only non-empty alt is applicable here
+    // Applies when any text-alternative source gives the area a non-empty
+    // name; each present source is listed so the reviewer checks all of them.
+    const alt = collectTextAlternativeSources(el);
+    if (!alt.sources.length) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
 
-    let altVal;
-    try {
-      altVal = String(el.getAttribute('alt') || '');
-    } catch {
-      altVal = '';
-    }
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
 
     const baseOccurrence = {
-      summary: 'Review alt text on <area> for accuracy and appropriateness.',
-      hint: 'Ensure the alt text identifies the destination/action of the image map area in context.',
+      summary: `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
       i18n: {
         summaryKey: 'area_altQuality_summary_cantTell',
         hintKey: 'area_altQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { alt: altVal.trim() } // optional but useful for manual review
+        details
       }
     };
 
@@ -36964,8 +38011,68 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // DOM-visibility gate to avoid false positives:
   // Exclude structural/CSS hidden cases that prevent focus (display:none, visibility:hidden, hidden attr, etc.).
   // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
+  // Style-only visibility gate. opacity:0 does not count as hidden: the
+  // element can still take focus.
+  function isRenderedForFocus(el) {
+    if (!isDomVisibleEligible) return true;
+    try {
+      const vis = isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      if (vis && vis.eligible === false) {
+        const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
+        const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
+        if (nonOpacity.length) return false;
+      }
+    } catch {
+      // ignore
+    }
+    return true;
+  }
+
+  // <area href> generates no box of its own (browsers give it display:none),
+  // so the visibility gate cannot be applied to it. It takes focus when its
+  // <map> is used by an <img usemap> that is rendered and not inert; judge it
+  // by that image instead.
+  function isFocusableArea(el) {
+    if (!trim(el.getAttribute('href'))) return false;
+    let map;
+    try {
+      map = el.closest ? el.closest('map') : null;
+    } catch {
+      map = null;
+    }
+    if (!map) return false;
+    const name = trim(map.getAttribute('name') || map.getAttribute('id'));
+    if (!name) return false;
+    const scope = el.getRootNode ? el.getRootNode() : document;
+    if (!scope || typeof scope.querySelectorAll !== 'function') return false;
+    let imgs;
+    try {
+      imgs = Array.from(scope.querySelectorAll('img[usemap]'));
+    } catch {
+      imgs = [];
+    }
+    const want = name.toLowerCase();
+    for (const img of imgs) {
+      const usemap = lower(img.getAttribute('usemap')).replace(/^#/, '');
+      if (usemap !== want) continue;
+      if (hasInertAncestor(img)) continue;
+      if (isRenderedForFocus(img)) return true;
+    }
+    return false;
+  }
+
   function isActuallyFocusable(el) {
     if (!el || !el.getAttribute) return false;
+
+    // An explicit negative tabindex takes the area out of the tab order too.
+    if (lower(el.tagName || '') === 'area') {
+      const ti = trim(el.getAttribute('tabindex'));
+      if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
+      return isFocusableArea(el);
+    }
 
     // Hard blockers that should always win (even if fallback logic would say "focusable")
     if (hasInertAncestor(el)) return false;
@@ -37003,7 +38110,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = lower(el.tagName || '');
     let fallbackFocusable = false;
 
-    if (tag === 'a' || tag === 'area') {
+    if (tag === 'a') {
       const href = trim(el.getAttribute('href'));
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
@@ -37040,23 +38147,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // 2) exclude non-rendered / non-visible-by-style blockers
     // IMPORTANT: Do NOT exclude opacity-based invisibility; opacity:0 remains in-scope.
-    if (isDomVisibleEligible) {
-      try {
-        const vis = isDomVisibleEligible(el, ctx, {
-          visibilityMode: 'styleOnly',
-          disableGeometry: true
-        });
-        if (vis && vis.eligible === false) {
-          const rs = Array.isArray(vis.reasons) ? vis.reasons : [];
-          const nonOpacity = rs.filter((r) => String(r) !== 'opacityZero');
-          if (nonOpacity.length) return false;
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    return true;
+    return isRenderedForFocus(el);
   }
 
   function hasInertAncestor(el) {
@@ -37074,6 +38165,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isDisabledFormControl(el) {
+    try {
+      // :disabled also covers a control disabled by an ancestor
+      // <fieldset disabled> (outside its first <legend>), which the
+      // `disabled` IDL attribute does not reflect.
+      if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+    } catch {
+      // ignore
+    }
     try {
       // Covers button/input/select/textarea/option/optgroup/fieldset etc.
       if (typeof el.disabled === 'boolean' && el.disabled) return true;
@@ -37389,14 +38488,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // --- Tier 1: explicit, valid role from the naming-prohibited set ---
 
+  // A native <caption> has the caption role without saying so, and is judged
+  // the same way as role="caption"; only one that carries a naming attribute
+  // needs visiting.
+  const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
   const roleNodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role]')
-    : helpers.queryAll('[role]');
+    ? helpers.queryAllSmart(tier1Selector)
+    : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
     if (!el || !el.getAttribute) continue;
 
-    const role = ariaHelpers.getExplicitRole(el);
+    const explicitRole = ariaHelpers.getExplicitRole(el);
+    let role = explicitRole;
+    if (
+      (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
+      String(el.localName || '').toLowerCase() === 'caption'
+    ) {
+      role = 'caption';
+    }
     if (!role || !ROLES_PROHIBITING_NAME.has(role)) continue;
 
     applicableCount += 1;
@@ -37976,6 +39086,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const CHECKABLE_ROLES = new Set([
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitemcheckbox',
+    'menuitemradio'
+  ]);
+
+  function isNativeCheckable(el) {
+    if (String(el.localName || '').toLowerCase() !== 'input') return false;
+    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
+    const type = String(el.getAttribute('type') || '')
+      .trim()
+      .toLowerCase();
+    return type === 'checkbox' || type === 'radio';
+  }
+
   function isMarkedBusy(el) {
     const v = el.getAttribute('aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
@@ -38005,6 +39132,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const required = ariaHelpers.getRequiredAttrsForRole(role).slice();
 
+    // A native checkbox or radio exposes its own checked state whatever
+    // checkable role it carries (HTML-AAM maps the checkedness; ARIA in HTML
+    // tells authors not to set aria-checked on it), so aria-checked is
+    // supplied on <input type="checkbox" role="switch"> and the like.
+    const nativeChecked = isNativeCheckable(el) && CHECKABLE_ROLES.has(role);
+
     // combobox's aria-controls is required only once the popup is actually
     // displayed (aria-expanded="true") -- see this file's header comment.
     if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
@@ -38027,6 +39160,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const missing = [];
     for (const attr of required) {
       const v = el.getAttribute(attr);
+      if (attr === 'aria-checked' && nativeChecked) continue;
       if (v == null || String(v).trim() === '') missing.push(attr);
     }
 
@@ -38658,7 +39792,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const title = ariaLabel || labelled ? '' : getAttr(el, 'title');
 
-    const ok = !!(ariaLabel || labelled || title);
+    // The host's own HTML naming still applies under the role: the first
+    // <legend> of <fieldset role="radiogroup">, the <caption> of
+    // <table role="grid">, a <label> of <progress role="progressbar">.
+    let hostName = '';
+    if (!(ariaLabel || labelled || title) && helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx);
+        hostName = host && host.present ? host.value : '';
+      } catch {
+        hostName = '';
+      }
+    }
+
+    const ok = !!(ariaLabel || labelled || title || hostName);
     if (ok) continue;
 
     const eligInfo = getEligibilityInfo
@@ -39044,19 +40191,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     for (const item of review || []) {
+      const controls = item.name === 'aria-controls';
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
             'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
-          hint: 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.',
+          hint: controls
+            ? 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.'
+            : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
-            hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
+            hintKey: controls
+              ? 'ariaValidAttrValue_hint_cantTell_idref'
+              : 'ariaValidAttrValue_hint_cantTell_idrefList',
             params: { attr: item.name, value: item.value }
           },
           uncertainty: {
             code: 'runtime-dependent',
-            needed: 'Whether the widget creates the referenced element when it opens.',
+            needed: controls
+              ? 'Whether the widget creates the referenced element when it opens.'
+              : 'Whether the referenced element is added later, and whether its absence loses a name, description or relationship.',
             evidence: {
               attribute: item.name,
               referencedId: item.value,
@@ -39143,18 +40297,78 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'tel-national',
     'tel-area-code',
     'tel-local',
+    'tel-local-prefix',
+    'tel-local-suffix',
     'tel-extension',
     'email',
     'impp',
     'url',
     'photo'
   ]);
-  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager', 'impp']);
+  const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
-  function isValidAutocomplete(raw) {
+  // Control group of each field name that is not in the Text group (HTML
+  // Standard, autofill field table).
+  const FIELD_GROUP = {
+    username: 'username',
+    'new-password': 'password',
+    'current-password': 'password',
+    'one-time-code': 'password',
+    'street-address': 'multiline',
+    'cc-exp': 'month',
+    'cc-exp-month': 'numeric',
+    'cc-exp-year': 'numeric',
+    'transaction-amount': 'numeric',
+    bday: 'date',
+    'bday-day': 'numeric',
+    'bday-month': 'numeric',
+    'bday-year': 'numeric',
+    url: 'url',
+    photo: 'url',
+    impp: 'url',
+    tel: 'tel',
+    email: 'email'
+  };
+  // Groups accepted by input types other than text and search. text and
+  // search accept every group except multiline.
+  const GROUPS_BY_INPUT_TYPE = {
+    password: ['password'],
+    email: ['email', 'username'],
+    url: ['url'],
+    tel: ['tel'],
+    number: ['numeric'],
+    month: ['month'],
+    date: ['date']
+  };
+  const KNOWN_INPUT_TYPES = new Set([
+    'hidden',
+    'text',
+    'search',
+    'tel',
+    'url',
+    'email',
+    'password',
+    'date',
+    'month',
+    'week',
+    'time',
+    'datetime-local',
+    'number',
+    'range',
+    'color',
+    'checkbox',
+    'radio',
+    'file',
+    'submit',
+    'image',
+    'reset',
+    'button'
+  ]);
+
+  // Returns the field-name token of a well-formed value, or null.
+  function getFieldName(raw) {
     const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (!tokens.length) return false;
-    if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) return true;
+    if (!tokens.length) return null;
 
     let i = 0;
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
@@ -39166,7 +40380,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const next = tokens[i + 1];
       const isContactField =
         next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
-      if (!isContactField) return false;
+      if (!isContactField) return null;
       i += 1;
     }
 
@@ -39174,8 +40388,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tokens[end - 1] === 'webauthn') end -= 1;
 
     const remaining = tokens.slice(i, end);
-    if (remaining.length !== 1) return false;
-    return FIELD_NAMES.has(remaining[0]);
+    if (remaining.length !== 1) return null;
+    return FIELD_NAMES.has(remaining[0]) ? remaining[0] : null;
+  }
+
+  // True when the field name's control group is allowed on this control.
+  function fieldSuitsControl(el, fieldName) {
+    const tag = String(el.tagName || '').toLowerCase();
+    if (tag !== 'input') return true;
+    let type = String(el.getAttribute('type') || 'text')
+      .trim()
+      .toLowerCase();
+    if (!KNOWN_INPUT_TYPES.has(type)) type = 'text';
+    if (type === 'hidden') return true;
+    const group = FIELD_GROUP[fieldName] || 'text';
+    if (type === 'text' || type === 'search') return group !== 'multiline';
+    const allowed = GROUPS_BY_INPUT_TYPE[type];
+    if (!allowed) return true;
+    return allowed.includes(group);
   }
 
   const nodes = helpers.queryAllSmart
@@ -39205,6 +40435,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (FIXED_VALUE_TYPES.has(type)) return true;
     }
     if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    // A control inside a disabled fieldset (outside its first legend) is
+    // disabled too.
+    try {
+      if (el.matches && el.matches(':disabled')) return true;
+    } catch {
+      /* selector unsupported */
+    }
     if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
     return false;
   }
@@ -39220,21 +40457,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    if (isValidAutocomplete(raw)) continue;
-
+    const fieldName = getFieldName(raw);
     const tag = el.tagName.toLowerCase();
 
+    if (!fieldName) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: 'This autocomplete attribute value is not a valid autofill value.',
+          hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
+          i18n: {
+            summaryKey: 'autocompleteValid_summary_fail',
+            hintKey: 'autocompleteValid_hint_fail',
+            params: { element: tag, value: raw }
+          },
+          data: {
+            details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+          }
+        })
+      );
+      continue;
+    }
+
+    if (fieldSuitsControl(el, fieldName)) continue;
+
+    const inputType = String(el.getAttribute('type') || 'text')
+      .trim()
+      .toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This autocomplete attribute value is not a valid autofill value.',
-        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping street-address", "cc-number").',
+        summary: `The autofill field name "${fieldName}" is not allowed on an input of type "${inputType}".`,
+        hint: 'Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).',
         i18n: {
-          summaryKey: 'autocompleteValid_summary_fail',
-          hintKey: 'autocompleteValid_hint_fail',
-          params: { element: tag, value: raw }
+          summaryKey: 'autocompleteValid_summary_mismatch',
+          hintKey: 'autocompleteValid_hint_mismatch',
+          params: { element: tag, value: raw, fieldName, inputType }
         },
         data: {
-          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+          details: {
+            reasonCode: 'AUTOCOMPLETE_FIELD_CONTROL_MISMATCH',
+            element: tag,
+            value: raw,
+            fieldName,
+            inputType
+          }
         }
       })
     );
@@ -39280,6 +40545,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
   const undecided = [];
   const noWrap = [];
+  const shortText = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -39373,6 +40639,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (overflowX === 'scroll' || overflowX === 'auto') return true;
     }
     return false;
+  }
+
+  // Text with no break opportunity cannot take a soft wrap break: a single
+  // word of a script that separates words with spaces. CJK text can break
+  // between most characters, so it never counts as unbreakable here.
+  const WIDE_CHAR =
+    /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
+  function blockText(el) {
+    return String(el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function hasNoBreakOpportunity(text) {
+    return !!text && !/\s/.test(text) && !WIDE_CHAR.test(text);
+  }
+
+  // Whether the text may fit on one line at the narrowest width WCAG 1.4.10
+  // asks content to reflow to (320 CSS pixels), estimated without layout at
+  // half an em per character and a full em per wide character.
+  const REFLOW_WIDTH_PX = 320;
+  function mayFitOnOneLine(el, text) {
+    const fontSize = fontSizeOf(computedStyleOf(el)) || 16;
+    let ems = 0;
+    for (const ch of text) ems += WIDE_CHAR.test(ch) ? 1 : 0.5;
+    return ems * fontSize <= REFLOW_WIDTH_PX;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -39481,8 +40773,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // A forced value on text that cannot wrap is outside these ACT rules'
     // applicability, and whether it wraps is not decidable here, so it is
     // reported for review rather than failed.
-    if (cannotSoftWrap(el)) {
+    const text = blockText(el);
+    if (cannotSoftWrap(el) || hasNoBreakOpportunity(text)) {
       noWrap.push({ el, props: flagged.slice() });
+      continue;
+    }
+    if (mayFitOnOneLine(el, text)) {
+      shortText.push({ el, props: flagged.slice() });
       continue;
     }
 
@@ -39539,6 +40836,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         }
       })
+    )
+    .concat(
+      shortText.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
+          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.`,
+          hint: 'Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell_shortText',
+            hintKey: 'avoidInlineSpacing_hint_cantTell_shortText',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_SHORT_TEXT'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_SHORT_TEXT',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     )
     .concat(
       undecided.map(({ el, props }) =>
@@ -40306,6 +41636,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.getTextAlternativeInfo
       : null;
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  const getFocusableInfo =
+    helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+
+  function attrText(el, name) {
+    try {
+      const v = el.getAttribute(name);
+      return v == null ? '' : String(v).trim();
+    } catch {
+      return '';
+    }
+  }
+
+  function firstRoleToken(el) {
+    const raw = attrText(el, 'role').toLowerCase();
+    return raw ? raw.split(/\s+/)[0] : '';
+  }
+
+  // ARIA's presentational role conflict: a focusable element, or one with a
+  // global naming attribute, keeps its native role.
+  function isPresentationHonoured(el) {
+    if (attrText(el, 'aria-label') || attrText(el, 'aria-labelledby')) return false;
+    if (getFocusableInfo) {
+      try {
+        const fi = getFocusableInfo(el, ctx);
+        if (fi && fi.focusable) return false;
+      } catch {}
+    } else if (attrText(el, 'tabindex') !== '') {
+      return false;
+    }
+    return true;
+  }
+
+  // role="img": the name comes from the author (aria-labelledby, aria-label,
+  // then title), never from the children.
+  function getRoleImgNameInfo(el) {
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      return { present: true, value: aria.value, mechanism: aria.mechanism };
+    }
+    if (!getAriaNameInfo) {
+      const label = attrText(el, 'aria-label');
+      if (label) return { present: true, value: label, mechanism: 'aria-label' };
+    }
+    const title = attrText(el, 'title');
+    if (title) return { present: true, value: title, mechanism: 'title' };
+    return { present: false, value: '', mechanism: 'none' };
+  }
+
   const canvases = (() => {
     try {
       return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
@@ -40339,16 +41727,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    const role = firstRoleToken(el);
+
+    // A decorative canvas needs no text alternative.
+    if ((role === 'none' || role === 'presentation') && isPresentationHonoured(el)) continue;
+
+    const isRoleImg = role === 'img';
+
     // Expectation: must provide a text alternative.
-    const ti = getTextAlternativeInfo
-      ? (() => {
-          try {
-            return getTextAlternativeInfo(el, ctx);
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+    const ti = isRoleImg
+      ? getRoleImgNameInfo(el)
+      : getTextAlternativeInfo
+        ? (() => {
+            try {
+              return getTextAlternativeInfo(el, ctx);
+            } catch {
+              return null;
+            }
+          })()
+        : null;
 
     const hasTextAlt = !!(ti && ti.present);
 
@@ -40356,14 +41753,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const messages = isRoleImg
+      ? {
+          summary:
+            'This <canvas role="img"> has no accessible name; with role="img" its fallback content does not count.',
+          hint: 'Name it with aria-label or aria-labelledby, or remove role="img" so that its fallback content can serve as the text alternative.',
+          summaryKey: 'canvas_textAltPresent_summary_fail_roleImg',
+          hintKey: 'canvas_textAltPresent_hint_fail_roleImg'
+        }
+      : {
+          summary: 'Missing text alternative for <canvas>.',
+          hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
+          summaryKey: 'canvas_textAltPresent_summary_fail',
+          hintKey: 'canvas_textAltPresent_hint_fail'
+        };
+
     const baseOccurrence = {
       selector: '',
       html: '',
-      summary: 'Missing text alternative for <canvas>.',
-      hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
+      summary: messages.summary,
+      hint: messages.hint,
       i18n: {
-        summaryKey: 'canvas_textAltPresent_summary_fail',
-        hintKey: 'canvas_textAltPresent_hint_fail',
+        summaryKey: messages.summaryKey,
+        hintKey: messages.hintKey,
         params: { element: 'canvas' }
       },
       data: {
@@ -40695,6 +42107,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Native <label> association (e.g. <input role="combobox">).
     const lab = getNativeLabelText(el);
     if (lab) return { ok: true, method: 'label' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
 
     // role="combobox" is name-from-author-only per WAI-ARIA: it must NOT
     // fall back to subtree content. Visible text near/inside a custom
@@ -41669,6 +43091,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
+
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
       ? helpers.contrast.sharedCache
@@ -41686,8 +43123,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCache || (__contrastSharedCache.__elFontCache = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
@@ -41728,7 +43166,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -41882,9 +43323,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheAA)
-        __contrastSharedCache.__elAnalysisCacheAA = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAA;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -41976,7 +43418,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -42361,7 +43808,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(cssRule.selectorText)) {
-      if (!hasFocusPseudo(part)) continue;
+      if (!hasFocusPseudo(part)) {
+        // A rule with no focus state still applies while the element has
+        // focus, and an author declaration beats the user agent's focus
+        // outline. Other states (:hover, :active) never match the static
+        // element, so el.matches() leaves them out below.
+        if (suppresses && !hasPseudoElement(part)) {
+          suppressors.push({ selector: trim(part), base: trim(part) });
+        }
+        continue;
+      }
 
       const compounds = splitCompounds(part);
       let focusIndex = -1;
@@ -42582,9 +44038,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Returns deterministic "visually hidden but can remain focusable" hints.
   function getVisibilityHints(el) {
+    if (!el) return [];
+    return hintsFromStyle(getComputedStyleSafe(el));
+  }
+
+  // The same hints, read off any object carrying the computed-style fields
+  // used below (a CSSStyleDeclaration, or the focused-state overlay).
+  function hintsFromStyle(cs) {
     const out = [];
-    if (!el) return out;
-    const cs = getComputedStyleSafe(el);
 
     // opacity:0
     try {
@@ -42661,6 +44122,177 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     return uniq;
+  }
+
+  // ---- Focused state, worked out from the stylesheets ----
+  const CSS_STYLE_RULE = 1;
+  const MAX_RULE_DEPTH = 10;
+  const FOCUS_STATE = /:focus(?:-visible|-within)?(?![-\w])/g;
+  const OWN_FOCUS_STATE = /:focus(?:-visible)?(?![-\w])/;
+  const NOT_FOCUS_STATE = /:not\(\s*:focus(?:-visible|-within)?\s*\)/g;
+  // Longhand name -> computed-style field read by hintsFromStyle.
+  const HINT_PROPS = {
+    opacity: 'opacity',
+    clip: 'clip',
+    'clip-path': 'clipPath',
+    width: 'width',
+    height: 'height',
+    overflow: 'overflow',
+    position: 'position',
+    left: 'left',
+    top: 'top',
+    'text-indent': 'textIndent'
+  };
+  const INITIAL_VALUES = {
+    opacity: '1',
+    clip: 'auto',
+    'clip-path': 'none',
+    width: 'auto',
+    height: 'auto',
+    overflow: 'visible',
+    position: 'static',
+    left: 'auto',
+    top: 'auto',
+    'text-indent': '0px'
+  };
+
+  function splitTopLevel(text, separators) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of String(text || '')) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && separators.indexOf(ch) !== -1) {
+        parts.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    parts.push(current);
+    return parts.map(trim).filter(Boolean);
+  }
+
+  function hasPseudoElement(part) {
+    return /::[a-z-]+/i.test(part) || /:(before|after)\b/i.test(part);
+  }
+
+  // Selector for the element while it has focus, or null when the rule
+  // cannot apply to it then (`.a:focus .b`: .a cannot have focus while .b
+  // does).
+  function focusedBase(part) {
+    const compounds = splitTopLevel(part, [' ', '>', '+', '~']);
+    for (let i = 0; i < compounds.length - 1; i++) {
+      if (OWN_FOCUS_STATE.test(compounds[i])) return null;
+    }
+    // `:focus` standing alone in a compound becomes `*`, then every focus
+    // state is dropped: while focused, the element matches them all.
+    return trim(part.replace(/(^|[\s>+~(])(?=:focus)/g, '$1*').replace(FOCUS_STATE, '')) || '*';
+  }
+
+  let focusRules = null;
+  function getFocusRules() {
+    if (focusRules) return focusRules;
+    focusRules = [];
+    function consider(cssRule) {
+      const style = cssRule.style;
+      if (!style) return;
+      const props = Object.keys(HINT_PROPS).filter((p) => trim(style.getPropertyValue(p)));
+      if (!props.length) return;
+      for (const part of splitTopLevel(cssRule.selectorText, [','])) {
+        if (hasPseudoElement(part)) continue;
+        NOT_FOCUS_STATE.lastIndex = 0;
+        if (NOT_FOCUS_STATE.test(part)) {
+          const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
+          FOCUS_STATE.lastIndex = 0;
+          if (!FOCUS_STATE.test(base)) focusRules.push({ kind: 'notFocus', base, style, props });
+          continue;
+        }
+        FOCUS_STATE.lastIndex = 0;
+        if (!FOCUS_STATE.test(part)) continue;
+        const base = focusedBase(part);
+        if (base) focusRules.push({ kind: 'focus', base, style, props });
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_RULE_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of document.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          continue; // cross-origin, not inspectable
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      // no readable stylesheets
+    }
+    return focusRules;
+  }
+
+  function matchesSafe(el, selector) {
+    try {
+      return typeof el.matches === 'function' && el.matches(selector);
+    } catch {
+      return false;
+    }
+  }
+
+  // The visibility hints the element would have while focused, or null when
+  // no focus-dependent rule reaches it.
+  function focusedVisibilityHints(el) {
+    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
+    if (!rules.length) return null;
+    const inline = el.style || null;
+    const inlineHas = (p) => {
+      try {
+        return !!(inline && trim(inline.getPropertyValue(p)));
+      } catch {
+        return false;
+      }
+    };
+    const overlay = {};
+    for (const r of rules) {
+      if (r.kind !== 'notFocus') continue;
+      for (const p of r.props) if (!inlineHas(p)) overlay[p] = INITIAL_VALUES[p];
+    }
+    for (const r of rules) {
+      if (r.kind !== 'focus') continue;
+      for (const p of r.props) {
+        const important = String(r.style.getPropertyPriority(p) || '') === 'important';
+        if (inlineHas(p) && !important) continue;
+        overlay[p] = trim(r.style.getPropertyValue(p));
+      }
+    }
+    const cs = getComputedStyleSafe(el);
+    const focused = {};
+    for (const p of Object.keys(HINT_PROPS)) {
+      const field = HINT_PROPS[p];
+      focused[field] = Object.prototype.hasOwnProperty.call(overlay, p)
+        ? overlay[p]
+        : cs
+          ? cs[field]
+          : '';
+    }
+    return hintsFromStyle(focused);
   }
 
   function getFocusableInfoSafe(el) {
@@ -42875,6 +44507,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const hints = getVisibilityHints(el);
     if (!hints.length) continue; // <-- applicability gate
+
+    // Brought back into view when it takes focus: visible while focused.
+    const whenFocused = focusedVisibilityHints(el);
+    if (whenFocused && !whenFocused.length) continue;
 
     const tagName = (() => {
       try {
@@ -43097,17 +44733,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return m.includes('orientation') && (m.includes('portrait') || m.includes('landscape'));
   }
 
-  function scanRuleList(rules, mediaText, findings) {
+  function hidesContent(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    const display = trim(styleDecl.getPropertyValue('display')).toLowerCase();
+    const visibility = trim(styleDecl.getPropertyValue('visibility')).toLowerCase();
+    return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
+  }
+
+  function scanRuleList(rules, mediaText, findings, hidings) {
     if (!rules) return;
     for (const r of rules) {
-      if (!r) continue;
-      if (r.type === CSS_STYLE_RULE && isLockingRotation(r.style)) {
+      if (!r || r.type !== CSS_STYLE_RULE) continue;
+      if (isLockingRotation(r.style)) {
         findings.push({ mediaText, selectorText: trim(r.selectorText) });
+      }
+      if (r.selectorText && hidesContent(r.style)) {
+        hidings.push({ mediaText, selectorText: trim(r.selectorText) });
       }
     }
   }
 
+  // Whether an element hidden by an orientation block holds the page's
+  // content: the root, the body, the main landmark or an ancestor of it, or,
+  // with no main landmark, most of the body's text.
+  function textLength(el) {
+    return String((el && el.textContent) || '').replace(/\s+/g, '').length;
+  }
+  let mainEl = null;
+  try {
+    mainEl = document.querySelector('main, [role="main"]');
+  } catch {
+    mainEl = null;
+  }
+  const bodyTextLength = document.body ? textLength(document.body) : 0;
+
+  function holdsPageContent(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const tag = String(el.localName || '').toLowerCase();
+    if (tag === 'html' || tag === 'body') return true;
+    if (mainEl) return el === mainEl || (typeof el.contains === 'function' && el.contains(mainEl));
+    return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
+  }
+
   const findings = [];
+  const hidings = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
 
@@ -43130,7 +44799,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!rule2 || rule2.type !== CSS_MEDIA_RULE) continue;
         const mediaText = rule2.media ? rule2.media.mediaText : '';
         if (!isOrientationMedia(mediaText)) continue;
-        scanRuleList(rule2.cssRules, mediaText, findings);
+        scanRuleList(rule2.cssRules, mediaText, findings, hidings);
       }
     }
   } catch {
@@ -43139,8 +44808,90 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const scanTarget = document.documentElement || document.body || null;
 
+  function unreadableSheetsOccurrence(count) {
+    return helpers.reportOccurrence(scanTarget, {
+      summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+      hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+        hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
+        params: { count: String(count) }
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed: 'The contents of the stylesheets this scan could not read.',
+        evidence: { unreadableSheetCount: count, reasonCode: 'STYLESHEETS_NOT_READABLE' }
+      },
+      data: {
+        details: {
+          reasonCode: 'STYLESHEETS_NOT_READABLE',
+          unreadableSheetCount: count
+        }
+      }
+    });
+  }
+
+  // Orientation blocks hiding the page's content (F100): one question per
+  // hidden element.
+  const hiddenContent = [];
+  const seenHidden = new Set();
+  for (const h of hidings) {
+    let matched;
+    try {
+      matched = Array.from(document.querySelectorAll(h.selectorText));
+    } catch {
+      matched = [];
+    }
+    for (const el of matched) {
+      if (seenHidden.has(el) || !holdsPageContent(el)) continue;
+      seenHidden.add(el);
+      hiddenContent.push({ el, mediaText: h.mediaText, selectorText: h.selectorText });
+    }
+  }
+  const hiddenContentOccurrences = hiddenContent.map((f) =>
+    helpers.reportOccurrence(f.el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `A "${f.mediaText}" media query hides "${f.selectorText}", which holds the page's main content, so the page may not be usable in that orientation.`,
+      hint: 'Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_hidesContent',
+        hintKey: 'cssOrientationLock_hint_cantTell_hidesContent',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      uncertainty: {
+        code: 'judgement-required',
+        needed:
+          'Whether the page stays usable in that orientation, and whether one orientation is essential.',
+        evidence: {
+          mediaText: f.mediaText,
+          selectorText: f.selectorText,
+          reasonCode: 'ORIENTATION_MEDIA_HIDES_CONTENT'
+        }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_HIDES_CONTENT',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
+      }
+    })
+  );
+
   // A lock found in a readable sheet is still a lock, so `fail` outranks the
   // uncertainty below.
+  if (!findings.length && hiddenContentOccurrences.length) {
+    const unreadable =
+      unreadableSheetCount > 0 ? [unreadableSheetsOccurrence(unreadableSheetCount)] : [];
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: 'low',
+      occurrences: hiddenContentOccurrences.concat(unreadable)
+    };
+  }
+
   if (!findings.length) {
     if (unreadableSheetCount > 0) {
       return {
@@ -43148,28 +44899,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         outcome: 'cantTell',
         severity: rule.defaultSeverity || 'serious',
         confidence: 'low',
-        occurrences: [
-          helpers.reportOccurrence(scanTarget, {
-            summary: `${unreadableSheetCount} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
-            hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
-            i18n: {
-              summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
-              hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
-              params: { count: String(unreadableSheetCount) }
-            },
-            uncertainty: {
-              code: 'not-computable',
-              needed: 'The contents of the stylesheets this scan could not read.',
-              evidence: { unreadableSheetCount, reasonCode: 'STYLESHEETS_NOT_READABLE' }
-            },
-            data: {
-              details: {
-                reasonCode: 'STYLESHEETS_NOT_READABLE',
-                unreadableSheetCount
-              }
-            }
-          })
-        ]
+        occurrences: [unreadableSheetsOccurrence(unreadableSheetCount)]
       };
     }
     if (sheetCount === 0) {
@@ -43202,6 +44932,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })
   );
 
+  if (hiddenContentOccurrences.length) {
+    // See helpers.resolveTieredOutcome: the lock fails, and the hidden-content
+    // questions are kept beside it.
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(
+        occurrences,
+        hiddenContentOccurrences,
+        rule.defaultSeverity || 'serious'
+      )
+    };
+  }
+
   return {
     ruleId: rule.ruleId,
     outcome: 'fail',
@@ -43223,17 +44966,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Non-whitespace text directly inside `parent` (the <dl> or a wrapping
+  // <div>).
+  function hasDirectText(parent) {
+    for (const node of parent.childNodes || []) {
+      if (node && node.nodeType === 3 && /\S/.test(node.nodeValue || '')) return true;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !el.children) continue;
-    if (!el.children.length) continue;
+    const dlHasText = hasDirectText(el);
+    if (!el.children.length && !dlHasText) continue;
 
     applicableCount += 1;
 
     // Flatten one level of wrapping <div> (common dt/dd grouping pattern).
     const flattened = [];
+    let hasText = dlHasText;
     for (const child of el.children) {
       if (!child || !child.tagName) continue;
       if (child.tagName.toLowerCase() === 'div') {
+        if (hasDirectText(child)) hasText = true;
         for (const grandchild of child.children || []) {
           if (grandchild && grandchild.tagName) flattened.push(grandchild);
         }
@@ -43245,50 +45000,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let hasDt = false;
     let hasDd = false;
     const invalidTags = [];
+    // The dt/dd sequence in document order, for the group-order check.
+    const sequence = [];
     for (const node of flattened) {
       const tag = node.tagName.toLowerCase();
       if (tag === 'dt') {
         hasDt = true;
+        sequence.push(tag);
         continue;
       }
       if (tag === 'dd') {
         hasDd = true;
+        sequence.push(tag);
         continue;
       }
       if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
     }
+    if (hasText) invalidTags.push('#text');
     const dedupedInvalidTags = [...new Set(invalidTags)];
+
+    // Groups of one or more dt then one or more dd: the sequence starts
+    // with a dt and ends with a dd.
+    const badOrder =
+      hasDt && hasDd && (sequence[0] !== 'dt' || sequence[sequence.length - 1] !== 'dd');
 
     // The dt/dd pairing is only required "when not empty", a <dl> with
     // NEITHER dt nor dd (whether childless after flattening, only
     // passthrough script/template/style content, or an empty wrapping div)
     // is vacuously fine, not a violation. Only an UNBALANCED pairing (dt
-    // present without any dd, or vice versa) is a real structural problem.
+    // present without any dd, or vice versa) or a misordered one is a
+    // real structural problem.
     const reasonCode = invalidTags.length
       ? 'DL_INVALID_CHILD'
       : (hasDt || hasDd) && !(hasDt && hasDd)
         ? 'DL_NO_DT_DD'
-        : null;
+        : badOrder
+          ? 'DL_DT_DD_ORDER'
+          : null;
     if (!reasonCode) continue;
 
-    const summary = invalidTags.length
-      ? 'This description list contains a direct or wrapped child that is not part of a dt/dd group.'
-      : 'This description list has no <dt>/<dd> term-definition group.';
-    const hint = invalidTags.length
-      ? 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.'
-      : 'Add at least one <dt>/<dd> pair inside this <dl>.';
+    const TEXT = {
+      DL_INVALID_CHILD: {
+        summary:
+          'This description list contains a direct or wrapped child that is not part of a dt/dd group.',
+        hint: 'Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.',
+        key: 'invalidChild'
+      },
+      DL_NO_DT_DD: {
+        summary: 'This description list has no <dt>/<dd> term-definition group.',
+        hint: 'Add at least one <dt>/<dd> pair inside this <dl>.',
+        key: 'noDtDd'
+      },
+      DL_DT_DD_ORDER: {
+        summary:
+          'In this description list, a <dd> comes before any <dt>, or the last <dt> has no <dd> after it.',
+        hint: 'Order each group as one or more <dt> followed by one or more <dd>.',
+        key: 'order'
+      }
+    }[reasonCode];
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary,
-        hint,
+        summary: TEXT.summary,
+        hint: TEXT.hint,
         i18n: {
-          summaryKey: invalidTags.length
-            ? 'definitionListChildrenValid_summary_fail_invalidChild'
-            : 'definitionListChildrenValid_summary_fail_noDtDd',
-          hintKey: invalidTags.length
-            ? 'definitionListChildrenValid_hint_fail_invalidChild'
-            : 'definitionListChildrenValid_hint_fail_noDtDd',
+          summaryKey: `definitionListChildrenValid_summary_fail_${TEXT.key}`,
+          hintKey: `definitionListChildrenValid_hint_fail_${TEXT.key}`,
           params: { invalidChildren: dedupedInvalidTags.join(', ') }
         },
         data: {
@@ -43315,8 +45092,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('blink, marquee')
-    : helpers.queryAll('blink, marquee');
+    ? helpers.queryAllSmart('marquee')
+    : helpers.queryAll('marquee');
 
   const occurrences = [];
 
@@ -43327,29 +45104,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This element’s content cannot be paused, stopped, or hidden by the user.',
-        hint: 'Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.',
+        summary:
+          'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
+        hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'deprecatedElements_summary_fail',
-          hintKey: 'deprecatedElements_hint_fail',
+          summaryKey: 'deprecatedElements_summary_cantTell',
+          hintKey: 'deprecatedElements_hint_cantTell',
           params: { element: tag }
         },
+        uncertainty: {
+          code: 'runtime-dependent',
+          needed:
+            'Whether the page provides a control that pauses, stops, or hides the scrolling content.',
+          evidence: { element: tag }
+        },
         data: {
-          details: { reasonCode: 'DEPRECATED_NON_STOPPABLE_ELEMENT', element: tag }
+          details: { reasonCode: 'MARQUEE_PAUSE_MECHANISM_UNKNOWN', element: tag }
         }
       })
     );
   }
 
-  // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence, and "neither element is present" is
-  // itself the passing case -- there is no separate notApplicable case.
+  // No <marquee> in scope is itself the passing case (see @expectation above).
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
     occurrences
   };
@@ -43420,7 +45203,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="dialog"],[role="alertdialog"]';
+  // Filtered below by the resolved role.
+  const selector = 'dialog,[role]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -43442,12 +45226,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ok: false, method: 'none' };
   }
 
+  // The role the browser uses: the first token of the role attribute that
+  // names a concrete ARIA role, else the element's implicit role (dialog for
+  // a native <dialog>; the others are not in scope here).
+  const aria = helpers && helpers.aria;
+  function resolveRole(el) {
+    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
+    for (const t of tokens) {
+      const concrete =
+        aria && typeof aria.isValidConcreteRole === 'function'
+          ? aria.isValidConcreteRole(t)
+          : t === 'dialog' || t === 'alertdialog';
+      if (concrete) return t;
+    }
+    return String(el.tagName || '').toLowerCase() === 'dialog' ? 'dialog' : '';
+  }
+
   for (const el of nodes) {
     if (!el) continue;
-    if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
+    const role = resolveRole(el);
     if (role !== 'dialog' && role !== 'alertdialog') continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
 
@@ -43598,7 +45398,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of all) {
     if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
-    const value = String(el.getAttribute('id') || '').trim();
+    // Compared as written: "a " and "a" are different ids in the DOM, and
+    // getElementById does not trim. Whitespace inside an id is a separate
+    // validity error, not a duplicate.
+    const value = String(el.getAttribute('id') || '');
     if (!value) continue;
 
     applicableCount += 1;
@@ -45737,7 +47540,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    return m ? parseInt(m[1], 10) : 0;
+    if (!m) return 0;
+    // Browsers expose a valid aria-level on <hx> in place of the tag level.
+    const ariaLevel = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
+      return parseInt(ariaLevel, 10);
+    }
+    return parseInt(m[1], 10);
   }
 
   const nodes = helpers.queryAllSmart
@@ -46279,12 +48088,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Minimal BCP47 primary subtag check
+  // Only the primary subtag is judged (ACT bf051a); the shared helper checks
+  // its shape and that the IANA registry lists it.
   const isValidTag =
     helpers && typeof helpers.isValidLanguageTag === 'function'
       ? helpers.isValidLanguageTag
-      : (v) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(String(v || ''));
-  if (!isValidTag(lang)) {
+      : (v) => /^[a-zA-Z]{2,3}$/.test(String(v || ''));
+  if (!isValidTag(lang.split('-')[0])) {
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
@@ -47146,21 +48956,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // The resource a frame loads: srcdoc wins over src, and src is resolved
+  // against the document base so "w.html" and "/w.html" can match.
+  function resourceKey(el) {
+    if (el.hasAttribute && el.hasAttribute('srcdoc')) {
+      return 'srcdoc:' + String(el.getAttribute('srcdoc'));
+    }
+    const raw = String(el.getAttribute('src') || '').trim();
+    if (!raw) return 'src:about:blank';
+    try {
+      const base = (el.ownerDocument && el.ownerDocument.baseURI) || undefined;
+      return 'src:' + new URL(raw, base).href;
+    } catch {
+      return 'src:' + raw;
+    }
+  }
+
   const occurrences = [];
 
   for (const [title, els] of groups) {
     if (els.length < 2) continue;
+    const keys = els.map(resourceKey);
+    if (new Set(keys).size === 1) continue;
 
     for (const el of els) {
       const tag = el.tagName.toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This frame’s title is not unique among the frames on this page.',
-          hint: 'Give each frame a distinct title describing its specific content or purpose.',
+          summary: `This <${tag}>'s title "${title}" is shared with a frame that loads a different resource.`,
+          hint: 'Check whether these frames have the same content or purpose. If they do not, give each frame a distinct title describing its specific content or purpose.',
           i18n: {
-            summaryKey: 'iframeTitleUnique_summary_fail',
-            hintKey: 'iframeTitleUnique_hint_fail',
+            summaryKey: 'iframeTitleUnique_summary_cantTell',
+            hintKey: 'iframeTitleUnique_hint_cantTell',
             params: { element: tag, title }
+          },
+          uncertainty: {
+            code: 'equivalence-unknown',
+            needed:
+              'Whether frames loading different resources under one title serve the same purpose.',
+            evidence: {
+              element: tag,
+              title,
+              resource: resourceKey(el),
+              otherResources: keys.filter((k) => k !== resourceKey(el)),
+              setSize: els.length
+            }
           },
           data: {
             details: {
@@ -47178,7 +49018,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: 'cantTell',
       severity: rule.defaultSeverity || 'moderate',
       occurrences
     };
@@ -47414,12 +49254,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Presentational exclusion: explicit role="none"/"presentation", or (img
   // only) the native alt="" marker. Both are overridden by focusability, per
   // ARIA conflict resolution (a focusable element is never presentational).
+  // Only a literally empty alt is the marker: HTML-AAM maps an img to
+  // presentation only for alt="", so alt=" " keeps the img role with an
+  // empty name, which img-alt-present fails.
   function isPresentationallyExcluded(el, tag) {
     const role = getExplicitRole(el);
     let presentational = role === 'presentation' || role === 'none';
     if (!presentational && tag === 'img') {
-      const alt = el.getAttribute('alt');
-      presentational = alt != null && trim(alt) === '';
+      presentational = el.getAttribute('alt') === '';
     }
     if (!presentational) return false;
     return !isFocusable(el);
@@ -48128,6 +49970,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of inputs) {
@@ -48147,10 +49990,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    // The browser's own fallback name for an image button carries no
-    // information, so an author-supplied name equal to it is treated as no
-    // name at all (ACT 59796f). Only the English defaults are recognised:
-    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    // An author-supplied name equal to the browser's own fallback name for an
+    // image button ("Submit Query" from HTML-AAM, "Submit" from Chrome) may
+    // be the browser default copied by hand, or may describe a submit button
+    // accurately. It is a name, so ACT 59796f passes it; whether it conveys
+    // the button's purpose is asked, not failed. Only the English defaults
+    // are recognised. With no author name at all the control fails below.
     const effectiveName = (() => {
       let v = '';
       if (getAriaNameInfo) {
@@ -48178,19 +50023,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : null;
       const defaultNameOccurrence = {
         summary:
-          'Accessible name is the browser default for an image button, which conveys nothing.',
-        hint: 'Replace it with text describing what the button does, for example "Search".',
+          'The accessible name matches the browser default for an image button; check that it describes what the button does.',
+        hint: 'If the name does not say what the button does, replace it with text that does, for example "Search".',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'inputImage_altPresent_summary_defaultName',
-          hintKey: 'inputImage_altPresent_hint_defaultName',
+          summaryKey: 'inputImage_altPresent_summary_cantTell_defaultName',
+          hintKey: 'inputImage_altPresent_hint_cantTell_defaultName',
           params: { element: 'input[type=image]' }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed: 'Whether this default-looking name describes what the button does.',
+          evidence: { name: effectiveName }
         },
         data: {
           visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
           details: { reasonCode: 'default_name' }
         }
       };
-      occurrences.push(
+      cantTellOccurrences.push(
         helpers && typeof helpers.reportOccurrence === 'function'
           ? helpers.reportOccurrence(el, defaultNameOccurrence)
           : { selector: '', html: '', ...defaultNameOccurrence }
@@ -48249,16 +50100,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  if (!occurrences.length) {
+  if (!occurrences.length && !cantTellOccurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return {
-    ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'minor',
-    occurrences
-  };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'minor'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "input-image-alt-quality": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -48321,6 +50172,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !focusable;
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  // Every non-empty text-alternative source on the element, in accessible-name
+  // order: aria-labelledby (when it resolves to text), aria-label, alt, title.
+  // aria-labelledby wins over aria-label in the name, but a present aria-label
+  // is still listed, so each attribute present is asked about.
+  function collectTextAlternativeSources(el) {
+    const attr = (name) => {
+      try {
+        const v = el.getAttribute(name);
+        return v == null ? '' : String(v).trim();
+      } catch {
+        return '';
+      }
+    };
+    const sources = [];
+    let name = '';
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      name = String(aria.value).trim();
+      sources.push(aria.mechanism);
+      if (aria.mechanism === 'aria-labelledby' && attr('aria-label')) sources.push('aria-label');
+    } else if (!getAriaNameInfo && attr('aria-label')) {
+      name = attr('aria-label');
+      sources.push('aria-label');
+    }
+    const altText = attr('alt');
+    if (altText) {
+      sources.push('alt');
+      if (!name) name = altText;
+    }
+    const titleText = attr('title');
+    if (titleText) {
+      sources.push('title');
+      if (!name) name = titleText;
+    }
+    return { sources, name, alt: altText };
+  }
+
   const els = (() => {
     try {
       return Array.from(
@@ -48355,24 +50253,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (isRolePresentationExcluded(el)) continue;
 
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() !== '')) continue;
+    // alt="" with another name is input-image-alt-decorative's question, so
+    // it is left there rather than asked twice.
+    let altRaw;
+    try {
+      altRaw = el.getAttribute('alt');
+    } catch {
+      altRaw = null;
+    }
+    if (altRaw != null && String(altRaw).trim() === '') continue;
+
+    // Applies when any text-alternative source gives the control a non-empty
+    // name; each present source is listed so the reviewer checks all of them.
+    const alt = collectTextAlternativeSources(el);
+    if (!alt.sources.length) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
+
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
 
     const baseOccurrence = {
-      summary: 'Review alt text on <input type="image"> for accuracy and appropriateness.',
-      hint: 'Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.',
+      summary: `Review the text alternative of this <input type="image"> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: 'Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.',
       i18n: {
         summaryKey: 'inputImage_altQuality_summary_cantTell',
         hintKey: 'inputImage_altQuality_hint_cantTell',
-        params: { element: 'input[type=image]' }
+        params: { element: 'input[type=image]', sources: sourcesText }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { alt: String(el.getAttribute('alt') || '') } // optional but useful
+        details
       }
     };
 
@@ -48411,20 +50325,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
-  // parenthesised text, case-fold and NFKD-normalise, then reduce every
-  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // parenthesised text, case-fold and NFKC-normalise, then reduce every
+  // character that is not a letter, digit or combining mark to a space.
+  // NFKC folds compatibility forms (ligatures, full-width letters) but keeps
+  // accented letters whole; with NFKD, "déposer" split at its combining
+  // accent into "de" and "poser". `hyphensJoin` deletes hyphens instead of
   // splitting on them, which distinguishes a real mismatch from one that is
   // only a hyphenation difference.
   function tokenize(s, hyphensJoin) {
     let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
     try {
-      v = v.normalize('NFKD');
+      v = v.normalize('NFKC');
     } catch {
       // Realm without String#normalize: the word comparison below still holds.
     }
     if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
     return v
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
       .split(' ')
       .filter(Boolean);
   }
@@ -48454,7 +50371,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function abbreviatedWords(s) {
     const out = new Set();
     for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
-      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      const m = /^([\p{L}\p{N}\p{M}]+)\.$/u.exec(w);
       if (m) out.add(m[1].toLowerCase());
     }
     return out;
@@ -50417,6 +52334,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
+  // The user agent underlines `a[href]`; an element with role="link" has no
+  // default decoration.
+  function uaUnderlines(el) {
+    return (
+      String(el.localName || '').toLowerCase() === 'a' &&
+      typeof el.hasAttribute === 'function' &&
+      el.hasAttribute('href')
+    );
+  }
+
   function resolveUnderlineFromCssom(el) {
     const doc = el && el.ownerDocument ? el.ownerDocument : null;
     if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
@@ -50495,7 +52422,145 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the UA default stands, and for a link that means underlined.
     if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
-    return { underlined: true, resolved: true };
+    return { underlined: uaUnderlines(el), resolved: true };
+  }
+
+  // ---- Non-color cues on the link itself ----
+  const LINE_STYLES = /^(solid|dashed|dotted|double|groove|ridge|inset|outset|auto)$/;
+
+  function isZeroWidth(v) {
+    return /^0(\.0+)?[a-z%]*$/i.test(String(v || '').trim());
+  }
+
+  function hasBorder(cs) {
+    for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+      const style = String(cs['border' + side + 'Style'] || '')
+        .trim()
+        .toLowerCase();
+      if (!style || style === 'none' || style === 'hidden') continue;
+      if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
+    }
+    return false;
+  }
+
+  // Some environments do not expand the `outline` shorthand into its
+  // longhands, so it is read too.
+  function hasOutline(cs) {
+    const style = String(cs.outlineStyle || '')
+      .trim()
+      .toLowerCase();
+    if (style && style !== 'none' && style !== 'hidden') return !isZeroWidth(cs.outlineWidth);
+    const tokens = String((cs.getPropertyValue && cs.getPropertyValue('outline')) || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    return tokens.some((t) => LINE_STYLES.test(t)) && !tokens.some((t) => isZeroWidth(t));
+  }
+
+  function hasBoxShadow(cs) {
+    const v = String(cs.boxShadow || '')
+      .trim()
+      .toLowerCase();
+    return !!v && v !== 'none';
+  }
+
+  function hasBackgroundImage(cs) {
+    const v = String(cs.backgroundImage || '')
+      .trim()
+      .toLowerCase();
+    return !!v && v !== 'none';
+  }
+
+  function hasVisibleImageChild(el) {
+    let imgs;
+    try {
+      imgs = Array.from(el.querySelectorAll('img, svg, picture, canvas, [role="img"]'));
+    } catch {
+      return false;
+    }
+    return imgs.some((img) => {
+      if (!helpers.isDomVisibleEligible) return true;
+      try {
+        const vis = helpers.isDomVisibleEligible(img, ctx, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true
+        });
+        return !(vis && vis.eligible === false);
+      } catch {
+        return true;
+      }
+    });
+  }
+
+  const EMPTY_CONTENT = ['', 'none', 'normal', '""', "''"];
+  let pseudoContentRules = null;
+  // Style rules that put content in a ::before/::after box, by the selector
+  // of the element that box belongs to.
+  function getPseudoContentRules(doc) {
+    if (pseudoContentRules) return pseudoContentRules;
+    pseudoContentRules = [];
+    function consider(cssRule) {
+      const style = cssRule.style;
+      if (!style || typeof style.getPropertyValue !== 'function') return;
+      const content = String(style.getPropertyValue('content') || '').trim();
+      if (EMPTY_CONTENT.indexOf(content.toLowerCase()) !== -1) return;
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        if (!/::?(before|after)\s*$/i.test(part)) continue;
+        if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
+          continue;
+        }
+        pseudoContentRules.push(part.replace(/::?(before|after)\s*$/i, '').trim() || '*');
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of (doc && doc.styleSheets) || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          continue; // cross-origin, not inspectable
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      // no readable stylesheets
+    }
+    return pseudoContentRules;
+  }
+
+  function hasPseudoContent(el) {
+    return getPseudoContentRules(el.ownerDocument).some((base) => {
+      try {
+        return el.matches(base);
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  function hasNonColorMark(el, cs) {
+    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs))) {
+      return true;
+    }
+    return hasVisibleImageChild(el) || hasPseudoContent(el);
   }
 
   function hasSurroundingText(el, parent) {
@@ -50520,13 +52585,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
-  const selector = 'a[href]';
+  const selector = 'a[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
   const occurrences = [];
   const undecided = [];
+  const contrastOnly = [];
   let applicableCount = 0;
   let decidedCount = 0;
 
@@ -50568,6 +52634,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // A border, box-shadow, outline, background image, icon or generated
+    // content marks the link without relying on color.
+    if (hasNonColorMark(el, linkCs)) {
+      decidedCount += 1;
+      continue;
+    }
+
     if (!c) {
       markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
       continue;
@@ -50575,6 +52648,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let flagged = false;
     let computed = false;
+    let backgroundDiffers = false;
     let ratio = null;
     let fgLinkHex = '';
     let fgParentHex = '';
@@ -50610,6 +52684,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
           computed = true;
           if (!(ratio >= 3)) flagged = true;
+
+          // A background color of the link's own, different from the one
+          // behind the surrounding text, marks it like a highlight.
+          const ownBg = String((linkCs && linkCs.backgroundColor) || '').replace(/\s+/g, '');
+          const transparentBg =
+            !ownBg || ownBg === 'transparent' || /^rgba\(\d+,\d+,\d+,0(\.0+)?\)$/.test(ownBg);
+          if (!transparentBg && c.rgbToHex) {
+            const parentBg = c.computeEffectiveBackground(parent, {
+              contrast: { mode, rootCanvasFallback },
+              collectStack: false
+            });
+            if (parentBg && parentBg.ok && parentBg.rgba) {
+              backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+            }
+          }
         }
         // else: not confidently computable, recorded below.
       }
@@ -50623,14 +52712,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    // Contrast alone is an accepted alternative to an underline (G183), so a
-    // link clearing 3:1 is distinguishable regardless of decoration.
-    if (!flagged) {
+    if (backgroundDiffers) {
       decidedCount += 1;
       continue;
     }
 
-    // Below 3:1, an underline is the last remaining cue -- and only now does
+    // An underline is the last remaining non-color cue -- and only now does
     // it matter whether this environment can actually report one.
     const decoration = decorationInfo(linkCs);
     let underlined;
@@ -50650,6 +52737,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // Color is the only cue at rest. At 3:1 or more, G183 also needs a
+    // non-color cue on hover and focus, which a static scan cannot see.
+    if (!flagged) {
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
+      continue;
+    }
+
     decidedCount += 1;
 
     const eligInfo = helpers.getEligibilityInfo
@@ -50662,7 +52756,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.reportOccurrence(el, {
         summary:
           'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
-        hint: 'Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.',
+        hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
           summaryKey: 'linkInTextBlock_summary_fail',
           hintKey: 'linkInTextBlock_hint_fail',
@@ -50689,7 +52783,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrenceOutcome: 'cantTell',
       summary:
         'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
-      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
+      hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
       i18n: {
         summaryKey: 'linkInTextBlock_summary_cantTell',
         hintKey: 'linkInTextBlock_hint_cantTell'
@@ -50709,14 +52803,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })
   );
 
+  const contrastOnlyOccurrences = contrastOnly.map(({ el, ratio, fgLinkHex, fgParentHex }) => {
+    const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
+    return helpers.reportOccurrence(el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
+      hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
+      i18n: {
+        summaryKey: 'linkInTextBlock_summary_cantTell_contrastOnly',
+        hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
+        params: { ratio: String(ratioStr), threshold: '3' }
+      },
+      uncertainty: {
+        code: 'runtime-dependent',
+        needed: 'Whether hovering and focusing the link add a non-color cue.',
+        evidence: { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
+      },
+      data: {
+        visibilityFilter: helpers.getEligibilityInfo
+          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        details: {
+          reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
+          metrics: { ratio, threshold: 3 },
+          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+        }
+      }
+    });
+  });
+
   // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
   // violation outranks an undecided candidate for the rule's own outcome, but
   // never discards it, so an unevaluable link survives a failure elsewhere in
   // the same run.
-  if (occurrences.length || cantTellOccurrences.length) {
+  if (occurrences.length || cantTellOccurrences.length || contrastOnlyOccurrences.length) {
     const resolved = helpers.resolveTieredOutcome(
       occurrences,
-      cantTellOccurrences,
+      contrastOnlyOccurrences.concat(cantTellOccurrences),
       rule.defaultSeverity || 'serious'
     );
     return {
@@ -51254,9 +53377,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The first role token that names a concrete ARIA role, or '' when none
+  // does (the element keeps its native list role).
+  const aria = helpers && helpers.aria;
+  function resolvedExplicitRole(el) {
+    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!aria || typeof aria.isValidConcreteRole !== 'function') return tokens[0] || '';
+    return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
+  }
+
   for (const el of nodes) {
     if (!el || !el.children) continue;
     if (!el.children.length) continue;
+    const listRole = resolvedExplicitRole(el);
+    if (listRole && listRole !== 'list') continue;
 
     applicableCount += 1;
 
@@ -51548,7 +53685,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // direction, see the header comment.
       valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
     } else {
-      valid = parentTag === 'ul' || parentTag === 'ol';
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
 
     if (valid) continue;
@@ -51881,12 +54018,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('audio,video')
-    : helpers.queryAll('audio,video');
+  // Every match in scope, hidden or not (see @implementation-notes).
+  function queryAllUnfiltered(sel) {
+    const engineOptions = ctx.engineOptions || {};
+    const deep =
+      engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
+    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    return typeof helpers.isExcluded === 'function'
+      ? list.filter((el) => !helpers.isExcluded(el))
+      : list;
+  }
+
+  function hiddenByBrowserStylesheet(el) {
+    return (
+      String(el.tagName || '').toLowerCase() === 'audio' &&
+      !(el.hasAttribute && el.hasAttribute('controls'))
+    );
+  }
+
+  // The eligibility that decides whether the media element is in scope.
+  function getMediaEligibility(el) {
+    if (!hiddenByBrowserStylesheet(el)) return getEligibility(el);
+    if (el.hasAttribute('hidden')) {
+      return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
+    }
+    if (
+      String(el.getAttribute('aria-hidden') || '')
+        .trim()
+        .toLowerCase() === 'true'
+    ) {
+      return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
+    }
+    let parent = el.parentElement;
+    if (!parent) {
+      const rootNode = el.getRootNode ? el.getRootNode() : null;
+      parent = rootNode && rootNode.host ? rootNode.host : null;
+    }
+    return parent ? getEligibility(parent) : getEligibility(el);
+  }
+
+  const nodes = queryAllUnfiltered('audio,video');
 
   for (const el of nodes) {
-    const eligInfo = getEligibility(el);
+    const eligInfo = getMediaEligibility(el);
     if (!eligInfo || !eligInfo.eligible) continue;
 
     applicableCount += 1;
@@ -52641,6 +54815,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  const FOCUS_ATTRS = ['onfocus', 'onblur'];
+  const FOCUSABLE_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+
+  function canTakeFocus(el) {
+    if (!helpers.getFocusableInfo) return true;
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Focus and blur fire only on the element that takes focus. Key events are
+  // dispatched to the focused element and bubble, so a key handler also runs
+  // for a focusable descendant.
+  function keyboardCanReach(el, keyboardAttrs) {
+    if (canTakeFocus(el)) return true;
+    if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
+    let descendants;
+    try {
+      descendants = Array.from(el.querySelectorAll(FOCUSABLE_CANDIDATES));
+    } catch {
+      return true;
+    }
+    return descendants.some((d) => canTakeFocus(d));
+  }
+
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
@@ -52662,12 +54865,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const hasKeyboardEquiv = KEYBOARD_EQUIV_ATTRS.some((a) => trim(el.getAttribute(a)));
-    if (hasKeyboardEquiv) continue;
+    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
+    const unreachable = presentKeyboardAttrs.length > 0;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
+
+    if (unreachable) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has ${presentMouseAttrs.join(', ')} and ${presentKeyboardAttrs.join(', ')}, but it cannot take keyboard focus, so the keyboard handlers never run.`,
+          hint: 'Make the element focusable (use a native control, or add tabindex="0"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.',
+          i18n: {
+            summaryKey: 'mouseOnlyEventHandlers_summary_cantTell_notFocusable',
+            hintKey: 'mouseOnlyEventHandlers_hint_cantTell_notFocusable',
+            params: {
+              attrs: presentMouseAttrs.join(', '),
+              keyboardAttrs: presentKeyboardAttrs.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE',
+              mouseAttrs: presentMouseAttrs,
+              keyboardAttrs: presentKeyboardAttrs
+            },
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -52922,9 +55152,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "no-autoplay-audio": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('audio[autoplay], video[autoplay]')
-    : helpers.queryAll('audio[autoplay], video[autoplay]');
+  // Every match in scope, hidden or not (see @implementation-notes).
+  function queryAllUnfiltered(sel) {
+    const engineOptions = ctx.engineOptions || {};
+    const deep =
+      engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
+    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    return typeof helpers.isExcluded === 'function'
+      ? list.filter((el) => !helpers.isExcluded(el))
+      : list;
+  }
+
+  const nodes = queryAllUnfiltered('audio[autoplay], video[autoplay]');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -52954,6 +55193,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         details: { reasonCode: 'AUTOPLAY_NO_CONTROLS_MECHANISM', mediaTag }
+      }
+    };
+
+    if (helpers && typeof helpers.reportOccurrence === 'function') {
+      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
+    } else {
+      occurrences.push(baseOccurrence);
+    }
+  }
+
+  // <embed>, <object> and <bgsound>: no controls or muted attribute to read.
+  const MEDIA_EXT =
+    /\.(mp3|wav|wave|ogg|oga|opus|m4a|aac|flac|wma|mid|midi|mp4|m4v|webm|ogv|mov|avi|wmv|mpg|mpeg|swf)(?:[?#]|$)/i;
+  const PLUGIN_TYPES = /^(application\/x-shockwave-flash|application\/futuresplash)$/i;
+
+  function attr(el, name) {
+    return String(el.getAttribute(name) || '').trim();
+  }
+
+  function mayPlaySound(el, urlAttr) {
+    const type = attr(el, 'type').toLowerCase().split(';')[0].trim();
+    if (type) return /^(audio|video)\//.test(type) || PLUGIN_TYPES.test(type);
+    return MEDIA_EXT.test(attr(el, urlAttr));
+  }
+
+  function startsDisabled(el) {
+    const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
+    if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
+    return Array.from(el.children || []).some((c) => {
+      if ((c.tagName || '').toLowerCase() !== 'param') return false;
+      const name = attr(c, 'name').toLowerCase();
+      return (
+        (name === 'autostart' || name === 'autoplay' || name === 'play') &&
+        isOff(c.getAttribute('value'))
+      );
+    });
+  }
+
+  // The fallback inside an <object> already asked about is the same sound.
+  const askedObjects = [];
+
+  for (const el of queryAllUnfiltered('embed, object, bgsound')) {
+    if (!el || !el.getAttribute) continue;
+    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'embed' && !mayPlaySound(el, 'src')) continue;
+    if (tag === 'object' && !mayPlaySound(el, 'data')) continue;
+    if (tag !== 'bgsound' && startsDisabled(el)) continue;
+
+    applicableCount += 1;
+    if (tag === 'object') askedObjects.push(el);
+
+    const baseOccurrence = {
+      selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      summary: 'This element may play sound as soon as the page loads.',
+      hint: 'Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.',
+      i18n: {
+        summaryKey: 'noAutoplayAudio_summary_cantTell_embedded',
+        hintKey: 'noAutoplayAudio_hint_cantTell_embedded',
+        params: { element: tag }
+      },
+      data: {
+        details: { reasonCode: 'EMBEDDED_SOUND_SOURCE', mediaTag: tag }
       }
     };
 
@@ -53528,65 +55831,101 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  function isEntirelyBold(p, text) {
-    const cs = safeComputedStyle(p);
-    if (isBoldWeight(cs)) return true;
+  // Elements whose text already has a role of its own.
+  const OWN_ROLE_ANCESTORS =
+    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
 
-    // A single <strong>/<b> child that wraps the whole text also counts.
-    const children = Array.from(p.children || []);
-    const boldWrap = children.find((c) => {
-      const tag = (c.tagName || '').toLowerCase();
-      return tag === 'strong' || tag === 'b';
-    });
-    if (boldWrap && children.length === 1) {
-      const wrapText = trim(boldWrap.textContent || '');
-      if (wrapText && wrapText === text) return true;
+  // Anything but text and inline markup makes a <div> a container, not a
+  // passage of text.
+  const NOT_INLINE =
+    'address, article, aside, blockquote, details, dialog, div, dl, fieldset, figure, figcaption, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, hr, li, main, nav, ol, p, pre, section, table, ul, img, svg, picture, video, audio, canvas, iframe, object, embed, input, select, textarea, button';
+
+  function textPieces(el) {
+    const pieces = [];
+    const doc = el.ownerDocument;
+    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    let node = walker.nextNode();
+    while (node) {
+      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      node = walker.nextNode();
     }
-    return false;
+    return pieces;
   }
 
-  function getFontSizePx(p) {
-    const cs = safeComputedStyle(p);
-    if (!cs) return 0;
-    const px = Number.parseFloat(cs.fontSize);
-    return Number.isFinite(px) ? px : 0;
+  // Every piece of text is bold, and the smallest is the size reported.
+  function boldSize(el) {
+    let minPx = Infinity;
+    for (const holder of textPieces(el)) {
+      const cs = safeComputedStyle(holder);
+      if (!isBoldWeight(cs)) return 0;
+      const px = Number.parseFloat(cs.fontSize);
+      if (!Number.isFinite(px)) return 0;
+      minPx = Math.min(minPx, px);
+    }
+    return Number.isFinite(minPx) ? minPx : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
+  function isCandidate(el) {
+    const tag = (el.tagName || '').toLowerCase();
+    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    if (tag === 'p') return true;
+    if (tag !== 'div') return false;
+    if (trim(el.getAttribute('role'))) return false;
+    return !el.querySelector(NOT_INLINE);
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('p, div')
+    : helpers.queryAll('p, div');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+    if (!isCandidate(el)) continue;
 
     const text = trim(el.textContent || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
 
-    if (!isEntirelyBold(el, text)) continue;
-
-    const fontSizePx = getFontSizePx(el);
+    const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
+    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    const baseOccurrence = {
-      selector: stableSelector,
-      html,
-      summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
-      hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
-      i18n: {
-        summaryKey: 'pAsHeading_summary_cantTell',
-        hintKey: 'pAsHeading_hint_cantTell',
-        params: { fontSizePx: String(fontSizePx) }
-      },
-      data: {
-        details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
-      }
-    };
+    const baseOccurrence = isParagraph
+      ? {
+          selector: stableSelector,
+          html,
+          summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell',
+            hintKey: 'pAsHeading_hint_cantTell',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
+          }
+        }
+      : {
+          selector: stableSelector,
+          html,
+          summary: 'This block of text is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a <div> to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell_div',
+            hintKey: 'pAsHeading_hint_cantTell_div',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_DIV', fontSizePx }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -53710,7 +56049,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 1;
 
-  const titleEl = document.querySelector('head > title');
+  // The document's title element, found as page-title-present finds it: the
+  // first HTML-namespace <title> anywhere in the document, since a <title>
+  // the parser leaves in <body> is still what document.title reads. An inline
+  // <svg><title> is not the page title.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
+  // Kept as the stable selector for the usual place; a <title> elsewhere gets
+  // the selector the engine builds for the node.
+  const titleSelector =
+    titleEl && titleEl.parentElement && titleEl.parentElement.localName === 'head'
+      ? 'head > title'
+      : undefined;
   const rawTitle = document.title || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
@@ -53808,7 +56164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             };
 
         const occBase = {
-          selector: 'head > title',
+          selector: titleSelector,
           html: '',
           summary:
             'The set of page titles may not be descriptive enough to distinguish pages by topic or purpose.',
@@ -53953,7 +56309,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? 'pageTitlePatterns_summary_cantTell_veryShort'
           : 'pageTitlePatterns_summary_cantTell_templateLike';
     const occBase = {
-      selector: 'head > title',
+      selector: titleSelector,
       html: '',
       summary:
         'The page title may not be descriptive enough to identify the page topic or purpose.',
@@ -54013,8 +56369,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // after <head> has closed is not re-parented into <head>, yet the browser
   // (and document.title, used below) still recognizes it as the document's
   // title, matching that here avoids a false "missing title" report for a
-  // <title> that legitimately ended up outside <head>.
-  const titleEl = document.querySelector('title');
+  // <title> that legitimately ended up outside <head>. Only an HTML-namespace
+  // <title> counts: an inline <svg><title> names the graphic, not the page,
+  // and document.title ignores it.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
   const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
 
   const missingTitleEl = !titleEl;
@@ -54723,6 +57088,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
+    // An associated <label> on a labelable host
+    // (<progress role="progressbar">, <meter role="progressbar">).
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx);
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
+
     // role="progressbar" is name-from-author-only per WAI-ARIA: aria-label,
     // aria-labelledby, or title, no content-based naming method at all. It
     // must NOT fall back to subtree content: e.g. a <ul role="progressbar">
@@ -55115,8 +57489,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   const imgElements = (() => {
-    // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
+    // <img> and <svg> are left out: each has its own rule
+    // (img-alt-present, svg-text-alternative-present), and counting an
+    // unnamed <svg role="img"> here too would report it twice.
+    const sel =
+      '[role="img" i]:not(img):not(svg), [role="graphics-symbol" i]:not(svg), [role="graphics-document" i]:not(svg)';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
@@ -55630,6 +58007,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const lab = getNativeLabelText(el);
     if (lab) return { ok: true, method: 'label' };
 
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
+
     // role="searchbox" is name-from-author-only per WAI-ARIA: it must NOT
     // fall back to subtree content.
     return { ok: false, method: 'none' };
@@ -55700,15 +58087,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
 
+    // ismap does something only on an image inside a hyperlink.
+    let link;
+    try {
+      link = el.closest ? el.closest('a[href]') : null;
+    } catch {
+      link = null;
+    }
+    if (!link) continue;
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary:
-          'This image uses a server-side image map, which has no keyboard-operable equivalent.',
-        hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
+          'This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.',
+        hint: 'Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'serverSideImageMapAbsent_summary_fail',
-          hintKey: 'serverSideImageMapAbsent_hint_fail',
+          summaryKey: 'serverSideImageMapAbsent_summary_cantTell',
+          hintKey: 'serverSideImageMapAbsent_hint_cantTell',
           params: {}
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed:
+            'Whether the destinations of this image map are also offered as keyboard-operable links.',
+          evidence: { href: link.getAttribute('href') }
         },
         data: {
           details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
@@ -55717,15 +58120,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence, and "no image uses ismap" is itself
-  // the passing case -- there is no separate notApplicable case.
-  if (!occurrences.length) {
+  // No <img ismap> at all is the passing case (see @expectation above);
+  // ismap only outside links means there is no server-side image map.
+  if (!nodes.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
     occurrences
   };
@@ -55784,9 +58189,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
+  // Skip-link wording in the shipped locales, one list for every rule that
+  // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
+  const hasSkipWording = (name) => helpers.hasSkipLinkWording(name);
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('a[href]')
     : helpers.queryAll('a[href]');
+
+  // The page's first link, when it comes before the main landmark, is where a
+  // skip link sits whatever its wording.
+  let positionalSkipLink = null;
+  try {
+    const main = document.querySelector('main, [role="main"]');
+    const first = nodes.length ? nodes[0] : null;
+    if (
+      main &&
+      first &&
+      typeof first.compareDocumentPosition === 'function' &&
+      first.compareDocumentPosition(main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
+    ) {
+      positionalSkipLink = first;
+    }
+  } catch {
+    positionalSkipLink = null;
+  }
 
   const occurrences = [];
   let applicableCount = 0;
@@ -55798,7 +58225,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (href.length < 2 || href.charAt(0) !== '#') continue;
 
     const name = getAccessibleNameText(el);
-    if (!/skip/i.test(name) && !/jump\s*to/i.test(name)) continue;
+    if (el !== positionalSkipLink && !hasSkipWording(name)) continue;
 
     applicableCount += 1;
 
@@ -56061,10 +58488,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    if (kind === 'native-slider') {
-      const lab = getNativeLabelText(el);
-      if (lab) return { ok: true, method: 'label' };
-      return { ok: false, method: 'none' };
+    // An associated <label> names any labelable host, whether it is a
+    // native <input type="range"> or carries role="slider"
+    // (<input type="number" role="slider">); getAssociatedLabelElements
+    // returns nothing for a non-labelable one.
+    const lab = getNativeLabelText(el);
+    if (lab) return { ok: true, method: 'label' };
+    if (kind === 'native-slider') return { ok: false, method: 'none' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
     }
 
     // role="slider" is name-from-author-only per WAI-ARIA (unlike e.g.
@@ -56275,6 +58714,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Native <label> association (e.g. <input role="spinbutton">).
     const lab = getNativeLabelText(el);
     if (lab) return { ok: true, method: 'label' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
 
     // role="spinbutton" is name-from-author-only per WAI-ARIA: it must NOT
     // fall back to subtree content.
@@ -57448,6 +59897,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  const TABLE_ROLES = ['table', 'grid', 'treegrid'];
+
+  function hasOtherRole(table) {
+    const role = trim(table.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    return !!role && !TABLE_ROLES.includes(role);
+  }
+
+  // A name from aria-labelledby, aria-label or title already gives the table
+  // a title that assistive technology announces.
+  function isNamed(table) {
+    if (trim(table.getAttribute('title'))) return true;
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(table, ctx);
+        return !!(aria && aria.present && trim(aria.value));
+      } catch {
+        return false;
+      }
+    }
+    return !!trim(table.getAttribute('aria-label'));
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -57458,6 +59932,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const hasCaption = !!(table.querySelector && table.querySelector('caption'));
     if (hasCaption) continue;
+    if (hasOtherRole(table) || isNamed(table)) continue;
 
     // An aria-hidden row (or cell) isn't part of the AT-perceived table
     // structure at all -- it must not be treated as the table's "first
@@ -58490,6 +60965,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const TABLE_ROLES = ['table', 'grid', 'treegrid'];
+
+  function firstRole(el) {
+    return trim(el.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+  }
+
+  // Content that can carry a name or a value even without text.
+  const NAMED_CONTENT =
+    'img, svg, canvas, input, select, textarea, button, object, embed, video, audio, iframe, meter, progress, [role], [aria-label], [aria-labelledby], [title]';
+
+  function isEmptyCell(cell) {
+    if (trim(cell.textContent)) return false;
+    try {
+      return !cell.querySelector(NAMED_CONTENT);
+    } catch {
+      return false;
+    }
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -58497,6 +60991,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const table of tables) {
     if (!table || !table.rows) continue;
+
+    const tableRole = firstRole(table);
+    if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
     const rows = Array.from(table.rows);
     if (rows.length < MIN_SIZE) continue;
@@ -58521,7 +61018,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // another cell's row/column header, even though it's still structurally
     // a <th>.
     function isHeaderCell(cell) {
-      return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th' && isEligible(cell));
+      if (!cell || !cell.tagName || !isEligible(cell)) return false;
+      const role = firstRole(cell);
+      if (role === 'columnheader' || role === 'rowheader') return true;
+      return cell.tagName.toLowerCase() === 'th' && !role;
     }
 
     // "Was there a <th> above this cell's column" and "was there a <th>
@@ -58553,6 +61053,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         const headersAttr = trim(cell.getAttribute('headers'));
         if (headersAttr) continue;
+
+        // An empty cell holds no data to associate with a header.
+        if (isEmptyCell(cell)) continue;
 
         if (colHasHeaderAbove[c]) continue;
         if (rowHasHeaderBefore) continue;
@@ -58588,6 +61091,476 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "text-spacing-content-loss": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+  const view = document.defaultView || null;
+
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  const SPACING_PROPS = Object.keys(MIN_RATIO);
+  const MAX_TEXT_NODES = 3000;
+  const CSS_STYLE_RULE = 1;
+  const LAYER = 'surea11y-text-spacing';
+
+  function styleOf(el, pseudo) {
+    try {
+      return view.getComputedStyle(el, pseudo || null);
+    } catch {
+      return null;
+    }
+  }
+  function px(v) {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  // A spacing value as a multiple of the font size, or null when it cannot
+  // be read. A computed value is in px; a declared one, which is all a DOM
+  // emulator returns, may be in em, rem or %, or unitless for line-height.
+  function ratioOf(prop, value, fontSize) {
+    const v = String(value == null ? '' : value)
+      .trim()
+      .toLowerCase();
+    if (v === 'normal') return prop === 'line-height' ? 1.2 : 0;
+    const m = /^(-?\d*\.?\d+)(px|em|rem|%)?$/.exec(v);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    const unit = m[2] || '';
+    if (unit === 'px') return n / fontSize;
+    if (unit === 'em') return n;
+    if (unit === 'rem') {
+      const root = px(
+        styleOf(document.documentElement) && styleOf(document.documentElement).fontSize
+      );
+      return (n * (root || 16)) / fontSize;
+    }
+    if (unit === '%') return prop === 'line-height' ? n / 100 : null;
+    return prop === 'line-height' ? n : null;
+  }
+  function textOf(el) {
+    return String(el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 60);
+  }
+
+  // ---- Style sheet rules that force spacing with !important ----
+
+  const importantFindings = [];
+  (function readSheets() {
+    const seen = new Set();
+    function check(cssRule) {
+      const style = cssRule.style;
+      for (const prop of SPACING_PROPS) {
+        let value;
+        let priority;
+        try {
+          value = String(style.getPropertyValue(prop) || '').trim();
+          priority = String(style.getPropertyPriority(prop) || '');
+        } catch {
+          continue;
+        }
+        if (!value || priority !== 'important') continue;
+        if (/^(inherit|initial|unset|revert|revert-layer)$/i.test(value)) continue;
+        let targets;
+        try {
+          targets = helpers.queryAllSmart
+            ? helpers.queryAllSmart(cssRule.selectorText)
+            : helpers.queryAll(cssRule.selectorText);
+        } catch {
+          targets = [];
+        }
+        for (const el of targets) {
+          if (!el || seen.has(el) || !textOf(el)) continue;
+          const cs = styleOf(el);
+          const fontSize = px(cs && cs.fontSize) || 16;
+          const ratio = ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
+          // A value that already meets the metric leaves nothing to override.
+          if (ratio == null ? false : ratio >= MIN_RATIO[prop]) continue;
+          seen.add(el);
+          importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
+          break;
+        }
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > 8) return;
+      for (const r of rules) {
+        if (!r) continue;
+        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) check(r);
+        let nested = null;
+        try {
+          nested = r.cssRules || null;
+        } catch {}
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of document.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          continue;
+        }
+        walk(rules, 0);
+      }
+    } catch {}
+  })();
+
+  // ---- Lines of text, before and after the spacing ----
+
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
+    if (typeof document.createRange !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  const clipped = [];
+  const partly = [];
+  const overlaps = [];
+  let textCount = 0;
+
+  if (hasLayout() && document.body) {
+    const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
+    const nodes = [];
+    const walker = document.createTreeWalker(document.body, 4);
+    for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+      if (!/\S/.test(n.nodeValue || '')) continue;
+      const parent = n.parentElement;
+      if (!parent || SKIP.has(String(parent.localName))) continue;
+      nodes.push(n);
+    }
+
+    const clipCache = new Map();
+    // Ancestors that clip on an axis: [{ el, x, y }]. Past an ancestor that
+    // scrolls on an axis, outer ancestors no longer clip the text on that
+    // axis: what goes past them can be scrolled to.
+    function clippersOf(el) {
+      if (clipCache.has(el)) return clipCache.get(el);
+      const out = [];
+      let scrollX = false;
+      let scrollY = false;
+      for (
+        let a = el;
+        a && a.nodeType === 1 && a !== document.documentElement;
+        a = a.parentElement
+      ) {
+        const cs = styleOf(a);
+        if (!cs) continue;
+        const x = !scrollX && (cs.overflowX === 'hidden' || cs.overflowX === 'clip');
+        const y = !scrollY && (cs.overflowY === 'hidden' || cs.overflowY === 'clip');
+        if (x || y) out.push({ el: a, x, y });
+        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') scrollX = true;
+        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') scrollY = true;
+        if (scrollX && scrollY) break;
+      }
+      clipCache.set(el, out);
+      return out;
+    }
+
+    function shown(el) {
+      try {
+        return typeof el.checkVisibility === 'function'
+          ? el.checkVisibility({ opacityProperty: true, visibilityProperty: true })
+          : true;
+      } catch {
+        return true;
+      }
+    }
+
+    const sx = () => view.scrollX || 0;
+    const sy = () => view.scrollY || 0;
+    function linesOf(node) {
+      const range = document.createRange();
+      try {
+        range.selectNodeContents(node);
+        const out = [];
+        const ox = sx();
+        const oy = sy();
+        for (const r of range.getClientRects()) {
+          if (r.width < 1 || r.height < 1) continue;
+          out.push({
+            left: r.left + ox,
+            top: r.top + oy,
+            right: r.right + ox,
+            bottom: r.bottom + oy
+          });
+        }
+        return out;
+      } catch {
+        return [];
+      } finally {
+        try {
+          range.detach();
+        } catch {}
+      }
+    }
+    function boxOf(el) {
+      const r = el.getBoundingClientRect();
+      const cs = styleOf(el);
+      const bl = px(cs && cs.borderLeftWidth) || 0;
+      const bt = px(cs && cs.borderTopWidth) || 0;
+      const ox = sx();
+      const oy = sy();
+      return {
+        left: r.left + ox + bl,
+        top: r.top + oy + bt,
+        right: r.left + ox + bl + el.clientWidth,
+        bottom: r.top + oy + bt + el.clientHeight
+      };
+    }
+
+    function measure() {
+      const lines = new Map();
+      const boxes = new Map();
+      for (const n of nodes) {
+        lines.set(n, linesOf(n));
+        for (const c of clippersOf(n.parentElement)) {
+          if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
+        }
+      }
+      return { lines, boxes };
+    }
+
+    const scroll = [sx(), sy()];
+    const before = measure();
+    const fontSizes = new Map();
+    for (const n of nodes) {
+      const cs = styleOf(n.parentElement);
+      fontSizes.set(n, px(cs && cs.fontSize) || 16);
+    }
+
+    // Text a person could see before the spacing: rendered, and wholly
+    // inside every ancestor that clips it. Visually hidden text (a 1px box
+    // with overflow hidden), text scrolled out of a carousel or hidden by
+    // opacity or visibility is left out.
+    const visibleBefore = new Set();
+    for (const n of nodes) {
+      const lines = before.lines.get(n) || [];
+      if (!lines.length || !shown(n.parentElement)) continue;
+      const inside = clippersOf(n.parentElement).every((c) => {
+        const b0 = before.boxes.get(c.el);
+        return (
+          !!b0 &&
+          lines.every((l) => {
+            const o = outside(l, b0, c);
+            return o.dx <= 1 && o.dy <= 1;
+          })
+        );
+      });
+      if (inside) visibleBefore.add(n);
+    }
+
+    const sheet = document.createElement('style');
+    sheet.setAttribute('data-surea11y', LAYER);
+    sheet.textContent =
+      `@layer ${LAYER} {` +
+      '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
+      'p { margin-bottom: 2em !important; }' +
+      '}';
+    let after;
+    try {
+      const head = document.head || document.documentElement;
+      head.insertBefore(sheet, head.firstChild);
+      after = measure();
+    } finally {
+      if (sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      try {
+        view.scrollTo(scroll[0], scroll[1]);
+      } catch {}
+    }
+
+    // How far a line sits outside a box, along the axes the box clips.
+    function outside(line, box, c) {
+      const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
+      const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
+      return { dx, dy };
+    }
+
+    const reportedClip = new Set();
+    for (const n of nodes) {
+      const linesAfter = (after && after.lines.get(n)) || [];
+      if (!linesAfter.length || !visibleBefore.has(n)) continue;
+      textCount += 1;
+      const fontSize = fontSizes.get(n);
+      for (const c of clippersOf(n.parentElement)) {
+        if (reportedClip.has(c.el)) continue;
+        const b1 = after.boxes.get(c.el);
+        if (!b1) continue;
+        let worst = null;
+        for (const l of linesAfter) {
+          const o = outside(l, b1, c);
+          const height = l.bottom - l.top;
+          const lost = o.dy >= height / 2 || o.dx >= fontSize / 2;
+          const some = o.dy > 2 || o.dx > 2;
+          if (lost) {
+            worst = 'lost';
+            break;
+          }
+          if (some) worst = 'some';
+        }
+        if (worst) {
+          reportedClip.add(c.el);
+          (worst === 'lost' ? clipped : partly).push({ el: c.el, text: textOf(n.parentElement) });
+          break;
+        }
+      }
+    }
+
+    // Text that comes to overlap text from another element.
+    if (after) {
+      const BAND = 40;
+      const buckets = new Map();
+      const entries = [];
+      for (const n of nodes) {
+        if (!visibleBefore.has(n)) continue;
+        for (const whole of after.lines.get(n) || []) {
+          // Only the part of the line its clipping ancestors still show is
+          // painted; what they cut off is the clipping check's.
+          const l = { ...whole };
+          for (const c of clippersOf(n.parentElement)) {
+            const b = after.boxes.get(c.el);
+            if (!b) continue;
+            if (c.x) {
+              l.left = Math.max(l.left, b.left);
+              l.right = Math.min(l.right, b.right);
+            }
+            if (c.y) {
+              l.top = Math.max(l.top, b.top);
+              l.bottom = Math.min(l.bottom, b.bottom);
+            }
+          }
+          if (l.right - l.left < 1 || l.bottom - l.top < 1) continue;
+          const entry = { n, l };
+          entries.push(entry);
+          for (let b = Math.floor(l.top / BAND); b <= Math.floor(l.bottom / BAND); b++) {
+            if (!buckets.has(b)) buckets.set(b, []);
+            buckets.get(b).push(entry);
+          }
+        }
+      }
+      const intersects = (a, b) => {
+        const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (w <= 0 || h <= 0) return false;
+        const smaller = Math.min(
+          (a.right - a.left) * (a.bottom - a.top),
+          (b.right - b.left) * (b.bottom - b.top)
+        );
+        return w * h > smaller * 0.25;
+      };
+      const overlappedBefore = (n1, n2) =>
+        (before.lines.get(n1) || []).some((a) =>
+          (before.lines.get(n2) || []).some((b) => intersects(a, b))
+        );
+      const reported = new Set();
+      for (const list of buckets.values()) {
+        for (let i = 0; i < list.length; i++) {
+          for (let j = i + 1; j < list.length; j++) {
+            const a = list[i];
+            const b = list[j];
+            const pa = a.n.parentElement;
+            const pb = b.n.parentElement;
+            if (pa === pb || pa.contains(pb) || pb.contains(pa)) continue;
+            if (reported.has(pa) || reported.has(pb)) continue;
+            if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
+            reported.add(pa);
+            overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
+          }
+        }
+      }
+    }
+  }
+
+  // ---- Findings ----
+
+  const MESSAGES = {
+    TEXT_CLIPPED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, this element cuts off the text "${p.text}".`,
+      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
+      key: 'fail_clipped'
+    },
+    TEXT_CLIPPED_PARTLY: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" reaches past the edge of this element, which hides what goes past it.`,
+      hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).',
+      key: 'cantTell_clippedPartly',
+      needed: 'Whether the text that reaches past the edge of the element can still be read.'
+    },
+    TEXT_OVERLAPS: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" comes to overlap the text "${p.other}".`,
+      hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).',
+      key: 'cantTell_overlaps',
+      needed: 'Whether the overlapping texts can still be read.'
+    },
+    STYLESHEET_IMPORTANT: {
+      summary: (p) =>
+        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
+      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).',
+      key: 'cantTell_stylesheetImportant',
+      needed: 'Whether users can still apply their own text spacing to this text.'
+    }
+  };
+
+  const fails = [];
+  const questions = [];
+  function report(reasonCode, el, params, uncertaintyCode) {
+    const msg = MESSAGES[reasonCode];
+    const occ = helpers.reportOccurrence(el, {
+      summary: msg.summary(params),
+      hint: msg.hint,
+      i18n: {
+        summaryKey: `textSpacingContentLoss_summary_${msg.key}`,
+        hintKey: `textSpacingContentLoss_hint_${msg.key}`,
+        params
+      },
+      ...(msg.needed
+        ? { uncertainty: { code: uncertaintyCode, needed: msg.needed, evidence: { reasonCode } } }
+        : {}),
+      data: { details: { reasonCode, ...params } }
+    });
+    (msg.needed ? questions : fails).push(occ);
+  }
+
+  for (const f of clipped) report('TEXT_CLIPPED', f.el, { text: f.text });
+  for (const f of partly) {
+    report('TEXT_CLIPPED_PARTLY', f.el, { text: f.text }, 'judgement-required');
+  }
+  for (const f of overlaps) {
+    report('TEXT_OVERLAPS', f.el, { text: f.text, other: f.other }, 'judgement-required');
+  }
+  for (const f of importantFindings) {
+    report(
+      'STYLESHEET_IMPORTANT',
+      f.el,
+      { selector: f.selector, property: f.prop, value: f.value },
+      'runtime-dependent'
+    );
+  }
+
+  if (fails.length || questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+    };
+  }
+  if (textCount)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(hasLayout() ? {} : { data: { reason: 'noLayout' } })
+  };
 }), applicability: null },
     "textbox-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -58732,6 +61705,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Native <label> association (e.g. <input role="textbox">).
     const lab = getNativeLabelText(el);
     if (lab) return { ok: true, method: 'label' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
 
     // role="textbox" is name-from-author-only per WAI-ARIA: it must NOT
     // fall back to subtree content.
@@ -59087,7 +62070,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
   // primary subtag is checked against the IANA registry via the shared helper.
-  const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
+  // Only the primary subtag is judged (see @expectation).
+  const BCP47_RE = /^[a-zA-Z]{2,3}$/;
   const isValidTag =
     typeof helpers.isValidLanguageTag === 'function'
       ? helpers.isValidLanguageTag
@@ -59189,7 +62173,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A whitespace-only value is in scope and has no primary language tag.
     const raw = String(rawAttr).trim();
-    if (isValidTag(raw)) continue;
+    if (isValidTag(raw.split('-')[0])) continue;
 
     const tag = el.tagName.toLowerCase();
 
@@ -59236,14 +62220,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     let hasCaptionsTrack = false;
+    let hasSubtitlesTrack = false;
     const tracks = el.querySelectorAll('track');
     for (const t of tracks) {
-      const kind = (t.getAttribute('kind') || '').trim().toLowerCase();
+      // A missing kind means subtitles (HTML's missing-value default).
+      const kind = t.hasAttribute('kind')
+        ? (t.getAttribute('kind') || '').trim().toLowerCase()
+        : 'subtitles';
       const src = (t.getAttribute('src') || '').trim();
-      if ((kind === 'captions' || kind === 'subtitles') && src) {
+      if (!src) continue;
+      if (kind === 'captions') {
         hasCaptionsTrack = true;
         break;
       }
+      if (kind === 'subtitles') hasSubtitlesTrack = true;
     }
 
     if (hasCaptionsTrack) continue;
@@ -59251,20 +62241,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    const baseOccurrence = {
-      selector: stableSelector,
-      html,
-      summary: 'This video has no captions (or subtitles) track.',
-      hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content.',
-      i18n: {
-        summaryKey: 'videoCaption_summary_cantTell',
-        hintKey: 'videoCaption_hint_cantTell',
-        params: {}
-      },
-      data: {
-        details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
-      }
-    };
+    const baseOccurrence = hasSubtitlesTrack
+      ? {
+          selector: stableSelector,
+          html,
+          summary:
+            'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
+          hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track.',
+          i18n: {
+            summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
+            hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'SUBTITLES_TRACK_ONLY' }
+          }
+        }
+      : {
+          selector: stableSelector,
+          html,
+          summary: 'This video has no captions track.',
+          hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content.',
+          i18n: {
+            summaryKey: 'videoCaption_summary_cantTell',
+            hintKey: 'videoCaption_hint_cantTell',
+            params: {}
+          },
+          data: {
+            details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -59287,7 +62293,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every <video> already has a captions/subtitles track.
+  // every <video> already has a captions track.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-poster-text-alternative-present": { run: (function runInPage(ctx) {
@@ -59491,8 +62497,8 @@ const I18N = {
     "inputImage_altPresent_description": "Prüft, ob <input type=\"image\">-Elemente ein alt-Attribut bereitstellen, um einen Mechanismus für eine Textalternative zu unterstützen.",
     "inputImage_altPresent_summary_fail": "Fehlendes alt-Attribut auf <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Fügen Sie ein alt-Attribut hinzu (verwenden Sie alt=\"\" nur, wenn ein separater zugänglicher Name bereitgestellt wird).",
-    "inputImage_altPresent_summary_defaultName": "Der zugängliche Name ist der Browser-Standard für eine Bildschaltfläche und sagt nichts aus.",
-    "inputImage_altPresent_hint_defaultName": "Ersetzen Sie ihn durch Text, der die Aktion beschreibt, zum Beispiel \"Suchen\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "Der zugängliche Name entspricht dem Browser-Standard für eine Bildschaltfläche; prüfen Sie, ob er die Aktion der Schaltfläche beschreibt.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Wenn der Name nicht sagt, was die Schaltfläche tut, ersetzen Sie ihn durch Text, der es sagt, zum Beispiel \"Suchen\".",
     "inputImage_altPresent_summary_emptyAlt": "Ein leeres alt=\"\" auf <input type=\"image\"> lässt das Steuerelement ohne Namen.",
     "inputImage_altPresent_hint_emptyAlt": "Beschreiben Sie die Aktion in alt, oder benennen Sie das Steuerelement mit aria-label oder aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Programmatischen Fokus bei aria-hidden überprüfen",
@@ -59503,6 +62509,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Prüft, ob <canvas>-Elemente eine Textalternative über Ersatzinhalt oder einen zugänglichen Namen bereitstellen.",
     "canvas_textAltPresent_summary_fail": "Fehlende Textalternative für <canvas>.",
     "canvas_textAltPresent_hint_fail": "Stellen Sie einen Ersatztext innerhalb von <canvas> oder einen zugänglichen Namen bereit (z. B. aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Dieses <canvas role=\"img\"> hat keinen zugänglichen Namen; mit role=\"img\" zählt sein Fallback-Inhalt nicht.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Benennen Sie es mit aria-label oder aria-labelledby, oder entfernen Sie role=\"img\", damit sein Fallback-Inhalt als Textalternative dienen kann.",
     "svg_textAltPresent_title": "<svg> muss eine Textalternative bereitstellen",
     "svg_textAltPresent_description": "Prüft, ob inline eingebundene <svg>-Elemente eine Textalternative über ein <title>-Element oder einen ARIA-Namen bereitstellen (ein <desc>-Element allein zählt nicht).",
     "svg_textAltPresent_summary_fail": "Fehlende Textalternative für <svg>.",
@@ -59523,14 +62531,14 @@ const I18N = {
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
     "img_altDecorative_hint_cantTell": "Bestätigen Sie, dass das Element rein dekorativ ist. Falls es Information oder Funktion vermittelt, geben Sie ihm einen echten Alternativtext (oder einen zugänglichen Namen), statt es auszuschließen.",
-    "area_altQuality_title": "<area>-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
-    "area_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <area> auf Genauigkeit und Angemessenheit.",
-    "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
-    "inputImage_altQuality_title": "<input type=\"image\">-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
-    "inputImage_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <input type=\"image\"> auf Genauigkeit und Angemessenheit.",
-    "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
+    "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
+    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "area_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <area> ({{sources}}) auf Genauigkeit und Angemessenheit.",
+    "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
+    "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
+    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "inputImage_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <input type=\"image\"> ({{sources}}) auf Genauigkeit und Angemessenheit.",
+    "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
     "inputImage_altDecorative_title": "<input type=\"image\"> mit alt=\"\" muss angemessen sein (manuelle Überprüfung)",
     "inputImage_altDecorative_description": "Markiert <input type=\"image\">-Elemente mit leerem alt zur manuellen Überprüfung (in der Regel bei funktionalen Formularelementen nicht angemessen).",
     "inputImage_altDecorative_summary_cantTell": "Überprüfen Sie <input type=\"image\"> mit alt=\"\".",
@@ -59705,7 +62713,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} enthält {{focusableCount}} fokussierbare(s) Element(e), während ein modaler Dialog geöffnet ist. Wenn der Dialog den Tastaturfokus gefangen hält, sind sie möglicherweise nicht erreichbar; prüfen Sie, dass der Fokus nicht auf ihnen landen kann.",
     "ariaHidden_focus_hint_cantTell_modal": "Ein modaler Dialog scheint geöffnet zu sein. Machen Sie den Hintergrund vorzugsweise inert (oder verwenden Sie ein natives <dialog>, das mit showModal() geöffnet wird), damit er die Tab-Reihenfolge verlässt, und prüfen Sie dann, dass der Tastaturfokus im Dialog bleibt.",
     "cssFocusIndicatorSuppressed_title": "Fokusindikator darf nicht ohne Ersatz entfernt werden",
-    "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel entfernt wird, ohne dass eine andere passende Fokusregel einen Ersatzindikator (Rahmen, Schlagschatten, Hintergrund, …) zeichnet.",
+    "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel oder durch eine Regel ohne Zustand wie a { outline: none } entfernt wird, ohne dass eine passende Fokusregel einen Ersatzindikator (Rahmen, Schlagschatten, Hintergrund, …) zeichnet.",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Dieses Element erhält einen Tabstopp, und „{{selectors}}“ entfernt seinen Fokusumriss, ohne dass eine andere passende Fokusregel einen Ersatzindikator zeichnet.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (sichtbarer Umriss, Rahmen, Schlagschatten oder Hintergrundwechsel) oder verzichten Sie auf das Zurücksetzen des Umrisses. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, dass er für Tastaturnutzende erscheint.",
     "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
@@ -59731,7 +62739,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Diese Combobox hat keinen zugänglichen Namen.",
     "comboboxNamePresent_hint_fail": "Stellen Sie aria-label, aria-labelledby oder ein title-Attribut bereit — sichtbarer Textinhalt wird bei dieser Combobox nicht als zugänglicher Name ausgegeben.",
     "dialogNamePresent_title": "Dialoge haben einen zugänglichen Namen",
-    "dialogNamePresent_description": "Prüft, ob Elemente mit role=\"dialog\" oder role=\"alertdialog\" einen nicht leeren zugänglichen Namen aufweisen.",
+    "dialogNamePresent_description": "Prüft, ob Dialoge (Elemente mit role=\"dialog\" oder role=\"alertdialog\" sowie native <dialog>-Elemente) einen nicht leeren zugänglichen Namen aufweisen.",
     "dialogNamePresent_summary_fail": "Dieser Dialog hat keinen zugänglichen Namen.",
     "dialogNamePresent_hint_fail": "Stellen Sie aria-labelledby (bevorzugt) oder aria-label bereit, damit assistive Technologien den Dialog ansagen können.",
     "menuitemNamePresent_title": "Menüeinträge haben einen zugänglichen Namen",
@@ -59804,7 +62812,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Fokus-Reihenfolge",
     "catalog.rules.wcag_243_focus_order.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Fokus in einer sinnvollen Reihenfolge durch den Inhalt bewegt.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Linkzweck (im Kontext)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links markieren, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Zusammenfassung von Prüfungen, die Links ohne zugänglichen Namen markieren oder Links, deren Text allein eine bekannte nicht aussagekräftige oder allgemeine Formulierung ist.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Überschriften und Beschriftungen",
     "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
     "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
@@ -59824,7 +62832,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
     "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
-    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
     "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
     "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
@@ -59877,6 +62885,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Verwenden Sie einen Wert, der dem erwarteten Typ des Attributs entspricht (siehe WAI-ARIA-Spezifikation für dieses Attribut).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die derzeit kein Element trägt; diese Referenz lässt sich statisch nicht prüfen.",
     "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das gesteuerte Element beim Öffnen des Widgets erzeugt wird; existiert es nie, entfernen oder korrigieren Sie die Referenz.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Prüfen Sie, ob ein Element mit dieser id später hinzugefügt wird. Falls nicht, korrigieren oder entfernen Sie die Referenz; bis dahin verwendet das Element seine anderen Quellen für Name oder Beschreibung.",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
     "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
     "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -59919,18 +62928,18 @@ const I18N = {
     "ariaRequiredParent_description": "Prüft, ob Rollen mit einem dokumentierten Eintrag „erforderliche Kontext-Rolle“ (listitem, option, tab, treeitem, row, cell, …) einen Vorfahren oder aria-owns-Eigentümer mit einer zulässigen Kontext-Rolle haben.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" erfordert eine Kontext-Rolle aus: {{requiredRoles}}, die nicht gefunden wurde.",
     "ariaRequiredParent_hint_fail": "Platzieren Sie dieses Element innerhalb eines Elements mit einer zulässigen Kontext-Rolle (oder referenzieren Sie es von dort über aria-owns).",
-    "deprecatedElements_title": "Veraltete, nicht anhaltbare Elemente (<blink>, <marquee>) dürfen nicht verwendet werden",
-    "deprecatedElements_description": "Prüft, ob veraltete, nicht standardisierte HTML-Elemente, deren blinkender/scrollender Inhalt vom Nutzer nicht angehalten, gestoppt oder ausgeblendet werden kann (<blink>, <marquee>), nicht vorhanden sind.",
-    "deprecatedElements_summary_fail": "Der Inhalt von <{{element}}> kann vom Nutzer nicht angehalten, gestoppt oder ausgeblendet werden.",
-    "deprecatedElements_hint_fail": "Entfernen Sie dieses Element; verwenden Sie stattdessen statischen Inhalt oder eine Animation mit einer für den Nutzer zugänglichen Pause-/Stopp-Steuerung.",
+    "deprecatedElements_title": "Scrollender <marquee>-Inhalt muss angehalten, gestoppt oder ausgeblendet werden können",
+    "deprecatedElements_description": "Fragt für jedes veraltete <marquee>-Element, ob die Seite eine Möglichkeit bietet, seinen automatisch scrollenden Inhalt anzuhalten, zu stoppen oder auszublenden, da das Element selbst keine bietet.",
+    "deprecatedElements_summary_cantTell": "Dieses <{{element}}> scrollt seinen Inhalt, und das Element selbst bietet dem Nutzer keine Möglichkeit, ihn anzuhalten, zu stoppen oder auszublenden.",
+    "deprecatedElements_hint_cantTell": "Prüfen Sie, ob die Seite eine Steuerung bietet, die diesen Inhalt anhält, stoppt oder ausblendet. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
     "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
     "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
     "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
     "iframeNamePresent_hint_fail": "Fügen Sie ein title-Attribut (oder aria-label/aria-labelledby) hinzu, das Inhalt oder Zweck des Frames beschreibt.",
     "iframeTitleUnique_title": "Frame-Titel müssen eindeutig sein",
-    "iframeTitleUnique_description": "Prüft, ob nicht zwei <iframe>/<frame>-Elemente im betrachteten Bereich denselben title-Attributwert teilen.",
-    "iframeTitleUnique_summary_fail": "Der Titel „{{title}}“ dieses <{{element}}> ist unter den Frames dieser Seite nicht eindeutig.",
-    "iframeTitleUnique_hint_fail": "Geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
+    "iframeTitleUnique_description": "Prüft, ob Frames mit demselben title-Attributwert dieselbe Ressource laden; Frames mit unterschiedlichen Quellen und demselben Titel werden zur Prüfung vorgelegt.",
+    "iframeTitleUnique_summary_cantTell": "Der Titel „{{title}}“ dieses <{{element}}> wird mit einem Frame geteilt, der eine andere Ressource lädt.",
+    "iframeTitleUnique_hint_cantTell": "Prüfen Sie, ob diese Frames denselben Inhalt oder Zweck haben. Wenn nicht, geben Sie jedem Frame einen eigenen Titel, der seinen jeweiligen Inhalt oder Zweck beschreibt.",
     "identicalIframesSamePurpose_title": "Frames mit demselben Namen betten dieselbe Ressource ein",
     "identicalIframesSamePurpose_description": "Prüft, ob <iframe>/<frame>-Elemente, die sich einen zugänglichen Namen teilen, dieselbe Ressource einbetten, da ein Name nur eine Ressource beschreiben kann.",
     "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
@@ -59958,7 +62967,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Verwenden Sie als direkte Kinder von <ul>/<ol> nur <li> (oder <script>/<template>); verschieben Sie anderes Markup in ein <li>.",
     "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
-    "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol> oder einem Element mit role=\"list\" enthalten sind.",
+    "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
     "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
     "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> innerhalb eines <ul>/<ol>, oder geben Sie seinem übergeordneten Element role=\"list\".",
     "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
@@ -59967,6 +62976,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Verwenden Sie innerhalb von <dl> nur <dt>/<dd> (optional in einem einzigen <div> verpackt), <script>, <template> oder <style>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Diese Beschreibungsliste hat keine <dt>/<dd>-Begriff-Definitions-Gruppe.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Fügen Sie mindestens ein <dt>/<dd>-Paar innerhalb dieses <dl> hinzu.",
+    "definitionListChildrenValid_summary_fail_order": "In dieser Beschreibungsliste steht ein <dd> vor jedem <dt>, oder auf das letzte <dt> folgt kein <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordnen Sie jede Gruppe als ein oder mehrere <dt>, gefolgt von einem oder mehreren <dd>.",
     "dlitemParentValid_title": "Beschreibungslisten-Elemente müssen sich innerhalb einer Beschreibungsliste befinden",
     "dlitemParentValid_description": "Prüft, ob <dt>/<dd>-Elemente von einem <dl> enthalten sind, direkt oder über ein umschließendes <div>.",
     "dlitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses <{{element}}> ist keine Beschreibungsliste.",
@@ -60003,10 +63014,10 @@ const I18N = {
     "tooltipNamePresent_description": "Prüft, ob Elemente mit role=\"tooltip\" einen nicht leeren zugänglichen Namen aufweisen.",
     "tooltipNamePresent_summary_fail": "Dieser Tooltip hat keinen zugänglichen Namen.",
     "tooltipNamePresent_hint_fail": "Stellen Sie einen Tooltip-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
-    "serverSideImageMapAbsent_title": "Bilder dürfen keine serverseitige Image-Map verwenden",
-    "serverSideImageMapAbsent_description": "Prüft, ob <img>-Elemente nicht das ismap-Attribut tragen (serverseitige Image-Maps haben kein per Tastatur bedienbares Äquivalent).",
-    "serverSideImageMapAbsent_summary_fail": "Dieses Bild verwendet eine serverseitige Image-Map, die kein per Tastatur bedienbares Äquivalent hat.",
-    "serverSideImageMapAbsent_hint_fail": "Ersetzen Sie die serverseitige Image-Map (ismap) durch eine clientseitige Image-Map (<map>/<area>) oder separate zugängliche Links/Schaltflächen.",
+    "serverSideImageMapAbsent_title": "Serverseitige Image-Maps müssen eine per Tastatur bedienbare Alternative haben",
+    "serverSideImageMapAbsent_description": "Fragt für jedes <img ismap> in einem Link, ob die Seite dieselben Ziele als per Tastatur erreichbare Links anbietet, da eine serverseitige Image-Map keine per Tastatur bedienbaren Bereiche hat.",
+    "serverSideImageMapAbsent_summary_cantTell": "Dieses Bild ist eine serverseitige Image-Map (ismap in einem Link), deren Bereiche nicht per Tastatur erreichbar sind.",
+    "serverSideImageMapAbsent_hint_cantTell": "Prüfen Sie, ob die Seite dieselben Ziele als separate Links anbietet. Besser: Ersetzen Sie die serverseitige Image-Map durch eine clientseitige Image-Map (<map>/<area>) oder separate Links/Schaltflächen.",
     "formControlSingleLabel_title": "Formularelemente dürfen nicht mehrere Beschriftungen haben",
     "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
     "formControlSingleLabel_summary_fail": "Dieses <{{element}}> ist mit {{labelCount}} Beschriftungen verknüpft.",
@@ -60125,7 +63136,9 @@ const I18N = {
     "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
-    "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping street-address“, „cc-number“).",
+    "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping postal-code“, „cc-number“).",
+    "autocompleteValid_summary_mismatch": "Der Autofill-Feldname „{{fieldName}}“ ist auf einem input vom Typ „{{inputType}}“ nicht zulässig.",
+    "autocompleteValid_hint_mismatch": "Verwenden Sie einen Feldnamen, der zu diesem Steuerelementtyp passt, oder ändern Sie das Steuerelement (street-address erfordert ein textarea; email erfordert ein input vom Typ text, search oder email; bday-day erfordert ein input vom Typ text, search oder number).",
     "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
     "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
     "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -60144,8 +63157,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Prüfen Sie diesen Wert manuell anhand der Metrik (Zeilenhöhe 1,5; Zeichenabstand 0,12em; Wortabstand 0,16em), oder geben Sie ihn in einer Einheit an, die die Engine gegen die berechnete Schriftgröße des Elements auflösen kann.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text scheint nicht umbrechen zu können, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
-    "metaRefreshNoExceptions_title": "Die Seite darf überhaupt keinen Meta-Refresh verwenden (AAA)",
-    "metaRefreshNoExceptions_description": "Prüft, ob <meta http-equiv=\"refresh\"> unabhängig von der Verzögerung überhaupt nicht vorhanden ist — das strengere AAA-Gegenstück zur A-Prüfung, die nur positive Verzögerungen betrachtet.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+    "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
+    "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
+    "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element den Text „{{text}}“ ab.",
+    "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ den Text „{{other}}“.",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
+    "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
     "metaRefreshNoExceptions_hint_fail": "Entfernen Sie den Meta-Refresh; lösen Sie die Weiterleitung/Aktualisierung stattdessen nur als Reaktion auf eine Nutzeraktion aus.",
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
@@ -60153,19 +63178,25 @@ const I18N = {
     "validLang_summary_fail": "Dieser lang-Attributwert („{{value}}“) ist kein syntaktisch gültiges Sprach-Tag.",
     "validLang_hint_fail": "Verwenden Sie ein gültiges BCP-47-Sprach-Tag (z. B. „fr“, „es-MX“).",
     "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
-    "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch Unterstreichung, einen Unterschied in Schriftgewicht/-stil oder einen ausreichenden (>= 3:1) Farbkontrastunterschied visuell vom umgebenden Text unterscheidbar ist — nicht allein durch Farbe.",
+    "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, Schriftgewicht oder -stil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist, und fragt nach Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben und daher auch bei Hover und Fokus ein Merkmal brauchen.",
     "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
-    "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder einen Unterschied in Schriftgewicht/-stil hinzu, oder erhöhen Sie den Farbkontrast zwischen Link und umgebendem Text auf mindestens 3:1.",
+    "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol). Ein Farbkontrast von 3:1 zum umgebenden Text genügt nur, wenn Hover und Fokus auf dem Link ebenfalls ein Merkmal außer der Farbe hinzufügen.",
     "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
-    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder mindestens 3:1 Kontrast zum umgebenden Text aufweist. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
+    "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder ein anderes Merkmal außer der Farbe aufweist, oder mindestens 3:1 Kontrast zum umgebenden Text zusammen mit einem Merkmal außer der Farbe bei Hover und Fokus. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
     "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
-    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
-    "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\"|\"subtitles\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt.",
-    "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions oder subtitles).",
+    "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
+    "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
     "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Dieses Video hat nur subtitles-Spuren, die den Dialog übersetzen können, ohne die Sprecher- und Geräuschinformationen, die Untertitel (captions) enthalten.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu.",
     "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
     "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
     "scrollableRegionFocusable_summary_cantTell": "Dieses Element deklariert overflow:auto/scroll, hat keinen fokussierbaren Nachfahren und ist selbst nicht per Tastatur fokussierbar.",
@@ -60189,12 +63220,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
     "ariaCheckedStateMismatch_hint_cantTell": "Setzen Sie aria-checked passend zum tatsächlichen Zustand des Elements, oder entfernen Sie es — ein natives Kontrollkästchen/Optionsfeld stellt diesen Zustand bereits ohne dieses Attribut zur Verfügung.",
     "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
-    "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen.",
+    "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
     "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
     "cssOrientationLock_summary_fail_unknownSelector": "Eine \"{{mediaText}}\"-Media-Query dreht ein Element ohne lesbaren Selektor und sperrt die Seite auf eine Ausrichtung.",
     "cssOrientationLock_hint_fail": "Entfernen Sie die rotate()-Transformation aus der Ausrichtungs-Media-Query; lassen Sie die Seite stattdessen natürlich auf die Geräteausrichtung reagieren, anstatt eine visuelle Drehung zu erzwingen.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} Stylesheet(s) konnten nicht gelesen werden; daher ließ sich nicht ermitteln, ob diese Seite ihre Ausrichtung fixiert.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -60203,10 +63236,12 @@ const I18N = {
     "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, region, presentation), zur manuellen Überprüfung.",
     "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
     "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn dieses Element nicht interaktiv sein soll, oder verwenden Sie eine interaktive Rolle, die seinem tatsächlichen Verhalten entspricht.",
-    "pAsHeading_title": "Ein <p>, das wie eine Überschrift aussieht, sollte wahrscheinlich eine echte Überschrift sein",
-    "pAsHeading_description": "Markiert kurze <p>-Elemente, deren gesamter Text fett ist und in >= 18px dargestellt wird, zur manuellen Überprüfung, ob stattdessen ein echtes Überschriften-Element verwendet werden sollte.",
+    "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
+    "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
     "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
     "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
+    "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
+    "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
     "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
     "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
     "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -60219,6 +63254,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
     "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Fügen Sie onkeydown/onkeyup/onkeypress (oder onfocus/onblur für durch Hover ausgelöstes Verhalten) hinzu, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
     "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
     "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
     "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -60240,6 +63277,7 @@ const I18N = {
     "report_meta_schemaVersion": "Schemaversion",
     "report_meta_target": "Ziel",
     "report_meta_profile": "Profil",
+    "report_meta_optInRules": "Opt-in-Regeln",
     "report_meta_locale": "Sprache",
     "report_meta_localeRequested": "Sprache (angefordert: {{requested}})",
     "report_outcome_fail": "Nicht bestanden",
@@ -60257,6 +63295,8 @@ const I18N = {
     "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
     "report_heading_worthReviewing": "Zu prüfen",
     "report_heading_wcagRollup": "WCAG-Zusammenfassung",
+    "report_heading_standardRollup": "{{standard}}-Zusammenfassung",
+    "report_standardRollup_col_criterion": "Kriterium",
     "report_techDetails": "Vollständige technische Daten — Übersicht, durchsuchbare Liste der Fundstellen",
     "report_heading_scorecard": "Übersicht",
     "report_heading_occurrences": "Fundstellen",
@@ -60302,8 +63342,8 @@ const I18N = {
     "inputImage_altPresent_description": "Checks that <input type=\"image\"> elements provide an alt attribute to support a text alternative mechanism.",
     "inputImage_altPresent_summary_fail": "Missing alt attribute on <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Add an alt attribute (use alt=\"\" only when a separate accessible name is provided).",
-    "inputImage_altPresent_summary_defaultName": "Accessible name is the browser default for an image button, which conveys nothing.",
-    "inputImage_altPresent_hint_defaultName": "Replace it with text describing what the button does, for example \"Search\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "The accessible name matches the browser default for an image button; check that it describes what the button does.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "If the name does not say what the button does, replace it with text that does, for example \"Search\".",
     "inputImage_altPresent_summary_emptyAlt": "Empty alt=\"\" on <input type=\"image\"> leaves the control unnamed.",
     "inputImage_altPresent_hint_emptyAlt": "Describe the action in alt, or name the control with aria-label or aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Review aria-hidden programmatic focus",
@@ -60314,6 +63354,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.",
     "canvas_textAltPresent_summary_fail": "Missing text alternative for <canvas>.",
     "canvas_textAltPresent_hint_fail": "Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "This <canvas role=\"img\"> has no accessible name; with role=\"img\" its fallback content does not count.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Name it with aria-label or aria-labelledby, or remove role=\"img\" so that its fallback content can serve as the text alternative.",
     "svg_textAltPresent_title": "<svg> must provide a text alternative",
     "svg_textAltPresent_description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
     "svg_textAltPresent_summary_fail": "Missing text alternative for <svg>.",
@@ -60334,14 +63376,14 @@ const I18N = {
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
     "img_altDecorative_hint_cantTell": "Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.",
-    "area_altQuality_title": "<area> alt text must be appropriate (manual review)",
-    "area_altQuality_description": "Flags <area> elements with non-empty alt text for human review of appropriateness.",
-    "area_altQuality_summary_cantTell": "Review alt text on <area> for accuracy and appropriateness.",
-    "area_altQuality_hint_cantTell": "Ensure the alt text identifies the destination/action of the image map area in context.",
-    "inputImage_altQuality_title": "<input type=\"image\"> alt text must be appropriate (manual review)",
-    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with non-empty alt text for human review of appropriateness.",
-    "inputImage_altQuality_summary_cantTell": "Review alt text on <input type=\"image\"> for accuracy and appropriateness.",
-    "inputImage_altQuality_hint_cantTell": "Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.",
+    "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
+    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "area_altQuality_summary_cantTell": "Review the text alternative of this <area> ({{sources}}) for accuracy and appropriateness.",
+    "area_altQuality_hint_cantTell": "Ensure each listed text alternative identifies the destination/action of the image map area in context.",
+    "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
+    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "inputImage_altQuality_summary_cantTell": "Review the text alternative of this <input type=\"image\"> ({{sources}}) for accuracy and appropriateness.",
+    "inputImage_altQuality_hint_cantTell": "Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.",
     "inputImage_altDecorative_title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
     "inputImage_altDecorative_description": "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
     "inputImage_altDecorative_summary_cantTell": "Review <input type=\"image\"> with alt=\"\".",
@@ -60516,7 +63558,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "aria-hidden {{element}} contains {{focusableCount}} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.",
     "ariaHidden_focus_hint_cantTell_modal": "A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.",
     "cssFocusIndicatorSuppressed_title": "Focus indicator must not be removed without a replacement",
-    "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed by a :focus/:focus-visible rule with no replacement indicator (border, box-shadow, background, ...) in any other focus rule matching them.",
+    "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
     "cssFocusIndicatorSuppressed_summary_cantTell": "This element takes a tab stop, and \"{{selectors}}\" removes its focus outline with no replacement indicator in any other focus rule matching it.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
     "cssHidden_focus_title": "Focusable elements must not be visually hidden",
@@ -60542,7 +63584,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "This combobox has no accessible name.",
     "comboboxNamePresent_hint_fail": "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this combobox's accessible name.",
     "dialogNamePresent_title": "Dialogs have an accessible name",
-    "dialogNamePresent_description": "Checks that elements with role=\"dialog\" or role=\"alertdialog\" expose a non-empty accessible name.",
+    "dialogNamePresent_description": "Checks that dialogs (elements with role=\"dialog\" or role=\"alertdialog\", and native <dialog> elements) expose a non-empty accessible name.",
     "dialogNamePresent_summary_fail": "This dialog has no accessible name.",
     "dialogNamePresent_hint_fail": "Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.",
     "menuitemNamePresent_title": "Menu items have an accessible name",
@@ -60615,7 +63657,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Focus order",
     "catalog.rules.wcag_243_focus_order.description": "Rollup of checks ensuring focus moves through content in a meaningful order.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Link Purpose (In Context)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Headings and Labels",
     "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
     "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
@@ -60635,7 +63677,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
     "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
-    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
@@ -60688,6 +63730,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element currently has, so this reference cannot be checked statically.",
     "ariaValidAttrValue_hint_cantTell_idref": "Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
     "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
     "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -60730,18 +63773,18 @@ const I18N = {
     "ariaRequiredParent_description": "Checks that roles with a documented \"required context role\" entry (listitem, option, tab, treeitem, row, cell, ...) have an ancestor or aria-owns owner with an acceptable context role.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requires a context role of one of: {{requiredRoles}}, which was not found.",
     "ariaRequiredParent_hint_fail": "Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.",
-    "deprecatedElements_title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
-    "deprecatedElements_description": "Checks that deprecated, non-standard HTML elements whose blinking/scrolling content cannot be paused, stopped, or hidden by the user (<blink>, <marquee>) are not present.",
-    "deprecatedElements_summary_fail": "<{{element}}> content cannot be paused, stopped, or hidden by the user.",
-    "deprecatedElements_hint_fail": "Remove this element; use static content, or an animation with a user-facing pause/stop control, instead.",
+    "deprecatedElements_title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
+    "deprecatedElements_description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
+    "deprecatedElements_summary_cantTell": "This <{{element}}> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.",
+    "deprecatedElements_hint_cantTell": "Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.",
     "iframeNamePresent_title": "Frames have an accessible name",
     "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
     "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
     "iframeNamePresent_hint_fail": "Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.",
     "iframeTitleUnique_title": "Frame titles must be unique",
-    "iframeTitleUnique_description": "Checks that no two <iframe>/<frame> elements in scope share the same title attribute value.",
-    "iframeTitleUnique_summary_fail": "This <{{element}}>'s title \"{{title}}\" is not unique among the frames on this page.",
-    "iframeTitleUnique_hint_fail": "Give each frame a distinct title describing its specific content or purpose.",
+    "iframeTitleUnique_description": "Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.",
+    "iframeTitleUnique_summary_cantTell": "This <{{element}}>'s title \"{{title}}\" is shared with a frame that loads a different resource.",
+    "iframeTitleUnique_hint_cantTell": "Check whether these frames have the same content or purpose. If they do not, give each frame a distinct title describing its specific content or purpose.",
     "identicalIframesSamePurpose_title": "Frames with the same name embed the same resource",
     "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
@@ -60769,7 +63812,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.",
     "listitemParentValid_title": "List items must be inside a list container",
-    "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, or an element with role=\"list\".",
+    "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
     "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
     "listitemParentValid_hint_fail": "Place this <li> inside a <ul>/<ol>, or give its parent role=\"list\".",
     "definitionListChildrenValid_title": "Description lists must be structured correctly",
@@ -60778,6 +63821,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Only use <dt>/<dd> (optionally wrapped in one <div>), <script>, <template>, or <style> inside <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "This description list has no <dt>/<dd> term-definition group.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Add at least one <dt>/<dd> pair inside this <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "In this description list, a <dd> comes before any <dt>, or the last <dt> has no <dd> after it.",
+    "definitionListChildrenValid_hint_fail_order": "Order each group as one or more <dt> followed by one or more <dd>.",
     "dlitemParentValid_title": "Description-list items must be inside a description list",
     "dlitemParentValid_description": "Checks that <dt>/<dd> elements are contained by a <dl>, directly or via one wrapping <div>.",
     "dlitemParentValid_summary_fail": "This <{{element}}>'s parent (<{{parentElement}}>) is not a description list.",
@@ -60814,10 +63859,10 @@ const I18N = {
     "tooltipNamePresent_description": "Checks that elements with role=\"tooltip\" expose a non-empty accessible name.",
     "tooltipNamePresent_summary_fail": "This tooltip has no accessible name.",
     "tooltipNamePresent_hint_fail": "Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Images must not use a server-side image map",
-    "serverSideImageMapAbsent_description": "Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).",
-    "serverSideImageMapAbsent_summary_fail": "This image uses a server-side image map, which has no keyboard-operable equivalent.",
-    "serverSideImageMapAbsent_hint_fail": "Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.",
+    "serverSideImageMapAbsent_title": "Server-side image maps must have a keyboard-operable alternative",
+    "serverSideImageMapAbsent_description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
+    "serverSideImageMapAbsent_summary_cantTell": "This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.",
+    "serverSideImageMapAbsent_hint_cantTell": "Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.",
     "formControlSingleLabel_title": "Form controls must not have multiple labels",
     "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "formControlSingleLabel_summary_fail": "This <{{element}}> is associated with {{labelCount}} labels.",
@@ -60936,7 +63981,9 @@ const I18N = {
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
-    "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping street-address\", \"cc-number\").",
+    "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping postal-code\", \"cc-number\").",
+    "autocompleteValid_summary_mismatch": "The autofill field name \"{{fieldName}}\" is not allowed on an input of type \"{{inputType}}\".",
+    "autocompleteValid_hint_mismatch": "Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).",
     "passwordPasteEnabled_title": "Authentication fields must not block pasting",
     "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
     "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -60955,8 +64002,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "This element's inline style forces {{properties}} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
-    "metaRefreshNoExceptions_title": "Page must not use a meta refresh at all (AAA)",
-    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+    "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
+    "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied, this element cuts off the text \"{{text}}\".",
+    "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" reaches past the edge of this element, which hides what goes past it.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
+    "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
     "metaRefreshNoExceptions_hint_fail": "Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.",
     "validLang_title": "Element lang attribute must be syntactically valid",
@@ -60964,19 +64023,25 @@ const I18N = {
     "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
     "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
-    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by underline, a font-weight/style difference, or a sufficient (>=3:1) color-contrast difference, not by color alone.",
+    "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
     "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
-    "linkInTextBlock_hint_fail": "Add an underline, a font-weight/style difference, or increase the color contrast between the link and surrounding text to at least 3:1.",
+    "linkInTextBlock_hint_fail": "Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.",
     "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
-    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference, or at least 3:1 contrast against the surrounding text. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
+    "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
     "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
-    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, for manual review against the 3-second exemption in WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
-    "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"|\"subtitles\"> child, for manual review of whether the video has an audio track that needs captions.",
-    "videoCaption_summary_cantTell": "This video has no captions (or subtitles) track.",
+    "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+    "videoCaption_summary_cantTell": "This video has no captions track.",
     "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track.",
     "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
     "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
     "scrollableRegionFocusable_summary_cantTell": "This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.",
@@ -61000,12 +64065,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
     "ariaCheckedStateMismatch_hint_cantTell": "Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.",
     "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
-    "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation.",
+    "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
     "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
     "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -61014,10 +64081,12 @@ const I18N = {
     "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
     "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.",
-    "pAsHeading_title": "A <p> styled to look like a heading should probably be a real heading",
-    "pAsHeading_description": "Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
+    "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
+    "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
     "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
     "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
+    "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
+    "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
     "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
     "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
     "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -61030,6 +64099,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
     "mouseOnlyEventHandlers_hint_cantTell": "Add onkeydown/onkeyup/onkeypress (or onfocus/onblur for hover-triggered behavior) so this functionality is also reachable by keyboard.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
     "headingQuality_title": "Heading text should be descriptive, not a placeholder",
     "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
     "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -61051,6 +64122,7 @@ const I18N = {
     "report_meta_schemaVersion": "schema version",
     "report_meta_target": "target",
     "report_meta_profile": "profile",
+    "report_meta_optInRules": "opt-in rules",
     "report_meta_locale": "locale",
     "report_meta_localeRequested": "locale (requested {{requested}})",
     "report_outcome_fail": "Fail",
@@ -61068,6 +64140,8 @@ const I18N = {
     "report_hero_none": "No applicable checks ran for this scan.",
     "report_heading_worthReviewing": "Worth reviewing",
     "report_heading_wcagRollup": "WCAG rollup",
+    "report_heading_standardRollup": "{{standard}} rollup",
+    "report_standardRollup_col_criterion": "Criterion",
     "report_techDetails": "Full technical data — scorecard, searchable occurrence browser",
     "report_heading_scorecard": "Scorecard",
     "report_heading_occurrences": "Occurrences",
@@ -61113,8 +64187,8 @@ const I18N = {
     "inputImage_altPresent_description": "Comprueba que los elementos <input type=\"image\"> incluyan un atributo alt para ofrecer un mecanismo de alternativa textual.",
     "inputImage_altPresent_summary_fail": "Falta el atributo alt en <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Agregar un atributo alt (usar alt=\"\" solo cuando se proporcione un nombre accesible por separado).",
-    "inputImage_altPresent_summary_defaultName": "El nombre accesible es el predeterminado del navegador para un botón de imagen y no aporta información.",
-    "inputImage_altPresent_hint_defaultName": "Sustituirlo por un texto que describa la acción del botón, por ejemplo \"Buscar\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "El nombre accesible coincide con el predeterminado del navegador para un botón de imagen; comprobar que describe la acción del botón.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Si el nombre no dice qué hace el botón, sustituirlo por un texto que lo diga, por ejemplo \"Buscar\".",
     "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vacío en <input type=\"image\"> deja el control sin nombre.",
     "inputImage_altPresent_hint_emptyAlt": "Describir la acción en alt, o nombrar el control con aria-label o aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Revisar el foco programático en aria-hidden",
@@ -61125,6 +64199,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Comprueba que los elementos <canvas> proporcionen una alternativa textual mediante contenido de reserva o un nombre accesible.",
     "canvas_textAltPresent_summary_fail": "Falta la alternativa textual para <canvas>.",
     "canvas_textAltPresent_hint_fail": "Proporcionar texto de reserva dentro de <canvas> o un nombre accesible (por ejemplo, aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Este <canvas role=\"img\"> no tiene nombre accesible; con role=\"img\" su contenido alternativo no cuenta.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Nombrarlo con aria-label o aria-labelledby, o quitar role=\"img\" para que su contenido alternativo sirva de alternativa textual.",
     "svg_textAltPresent_title": "<svg> debe proporcionar una alternativa textual",
     "svg_textAltPresent_description": "Comprueba que los elementos <svg> en línea proporcionen una alternativa textual mediante un elemento <title> o un nombre ARIA (un elemento <desc> por sí solo no cuenta).",
     "svg_textAltPresent_summary_fail": "Falta la alternativa textual para <svg>.",
@@ -61145,14 +64221,14 @@ const I18N = {
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
     "img_altDecorative_hint_cantTell": "Confirmar que el elemento es puramente decorativo. Si transmite información o función, darle un texto alternativo real (o un nombre accesible) en lugar de excluirlo.",
-    "area_altQuality_title": "El texto alt de <area> debe ser apropiado (revisión manual)",
-    "area_altQuality_description": "Señala elementos <area> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
-    "area_altQuality_summary_cantTell": "Revisar el texto alt de <area> en cuanto a exactitud e idoneidad.",
-    "area_altQuality_hint_cantTell": "Asegurarse de que el texto alt identifique el destino o la acción del área del mapa de imagen en su contexto.",
-    "inputImage_altQuality_title": "El texto alt de <input type=\"image\"> debe ser apropiado (revisión manual)",
-    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
-    "inputImage_altQuality_summary_cantTell": "Revisar el texto alt de <input type=\"image\"> en cuanto a exactitud e idoneidad.",
-    "inputImage_altQuality_hint_cantTell": "Asegurarse de que el texto alt describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
+    "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
+    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "area_altQuality_summary_cantTell": "Revisar la alternativa textual de este <area> ({{sources}}) en cuanto a exactitud e idoneidad.",
+    "area_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada identifique el destino o la acción del área del mapa de imagen en su contexto.",
+    "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
+    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "inputImage_altQuality_summary_cantTell": "Revisar la alternativa textual de este <input type=\"image\"> ({{sources}}) en cuanto a exactitud e idoneidad.",
+    "inputImage_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
     "inputImage_altDecorative_title": "<input type=\"image\"> con alt=\"\" debe ser apropiado (revisión manual)",
     "inputImage_altDecorative_description": "Señala elementos <input type=\"image\"> con alt vacío para su revisión manual (normalmente no es apropiado para controles funcionales).",
     "inputImage_altDecorative_summary_cantTell": "Revisar <input type=\"image\"> con alt=\"\".",
@@ -61327,7 +64403,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "El elemento aria-hidden {{element}} contiene {{focusableCount}} elemento(s) enfocable(s) mientras hay un diálogo modal abierto. Si el modal mantiene atrapado el foco del teclado, pueden ser inalcanzables; verificar que el foco no pueda posarse en ellos.",
     "ariaHidden_focus_hint_cantTell_modal": "Parece que hay un diálogo modal abierto. Es preferible volver inerte el fondo (o usar un <dialog> nativo abierto con showModal()) para que salga del orden de tabulación, y luego verificar que el foco del teclado permanezca dentro del diálogo.",
     "cssFocusIndicatorSuppressed_title": "El indicador de foco no debe eliminarse sin un reemplazo",
-    "cssFocusIndicatorSuppressed_description": "Señala elementos del orden de tabulación cuyo contorno de foco elimina una regla :focus/:focus-visible sin que ninguna otra regla de foco que les afecte dibuje un indicador de reemplazo (borde, sombra, fondo, …).",
+    "cssFocusIndicatorSuppressed_description": "Señala elementos del orden de tabulación cuyo contorno de foco elimina una regla :focus/:focus-visible, o una regla sin estado como a { outline: none }, sin que ninguna regla de foco que les afecte dibuje un indicador de reemplazo (borde, sombra, fondo, …).",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Este elemento recibe una parada de tabulación y «{{selectors}}» elimina su contorno de foco sin que ninguna otra regla de foco que le afecte dibuje un indicador de reemplazo.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Dibujar un indicador de reemplazo en la misma regla (un contorno visible, un borde, una sombra o un cambio de fondo), o no restablecer el contorno. Si el indicador se aplica desde script, confirmar que aparece para quien navega con teclado.",
     "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
@@ -61353,7 +64429,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Este cuadro combinado no tiene nombre accesible.",
     "comboboxNamePresent_hint_fail": "Proporcionar aria-label, aria-labelledby o un atributo title; el contenido de texto visible no se expone como el nombre accesible de este cuadro combinado.",
     "dialogNamePresent_title": "Los diálogos tienen un nombre accesible",
-    "dialogNamePresent_description": "Comprueba que los elementos con role=\"dialog\" o role=\"alertdialog\" expongan un nombre accesible no vacío.",
+    "dialogNamePresent_description": "Comprueba que los diálogos (elementos con role=\"dialog\" o role=\"alertdialog\", y elementos <dialog> nativos) expongan un nombre accesible no vacío.",
     "dialogNamePresent_summary_fail": "Este diálogo no tiene nombre accesible.",
     "dialogNamePresent_hint_fail": "Proporcionar aria-labelledby (preferido) o aria-label para que las tecnologías de asistencia puedan anunciar el diálogo.",
     "menuitemNamePresent_title": "Los elementos de menú tienen un nombre accesible",
@@ -61426,7 +64502,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Orden del foco",
     "catalog.rules.wcag_243_focus_order.description": "Agrupación de comprobaciones que garantizan que el foco recorra el contenido en un orden significativo.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Propósito de los enlaces (en contexto)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Agrupación de comprobaciones que señalan enlaces sin nombre accesible o cuyo texto por sí solo es una frase genérica conocida y poco descriptiva.",
     "catalog.rules.wcag_246_headings_and_labels.title": "Encabezados y etiquetas",
     "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un marcador de posición en lugar de una descripción del contenido que sigue.",
     "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
@@ -61446,7 +64522,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
-    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
     "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
     "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
@@ -61499,6 +64575,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Usar un valor que coincida con el tipo esperado del atributo (consultar la especificación WAI-ARIA para este atributo).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que ningún elemento tiene actualmente, por lo que esta referencia no se puede comprobar de forma estática.",
     "ariaValidAttrValue_hint_cantTell_idref": "Confirmar que el elemento controlado se crea al abrir el widget; si nunca existe, eliminar o corregir la referencia.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
     "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
     "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -61541,18 +64618,18 @@ const I18N = {
     "ariaRequiredParent_description": "Comprueba que los roles con una entrada documentada de \"rol de contexto obligatorio\" (listitem, option, tab, treeitem, row, cell, ...) tengan un ancestro, o un propietario aria-owns, con un rol de contexto aceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" requiere un rol de contexto entre: {{requiredRoles}}, que no se encontró.",
     "ariaRequiredParent_hint_fail": "Colocar este elemento dentro de (o referenciarlo mediante aria-owns desde) un elemento con un rol de contexto aceptable.",
-    "deprecatedElements_title": "No deben usarse elementos obsoletos no detenibles (<blink>, <marquee>)",
-    "deprecatedElements_description": "Comprueba que no estén presentes elementos HTML obsoletos y no estándar cuyo contenido parpadeante o en desplazamiento no pueda ser pausado, detenido u ocultado por el usuario (<blink>, <marquee>).",
-    "deprecatedElements_summary_fail": "El contenido de <{{element}}> no puede ser pausado, detenido ni ocultado por el usuario.",
-    "deprecatedElements_hint_fail": "Eliminar este elemento; usar contenido estático, o una animación con un control de pausa/detención visible para el usuario, en su lugar.",
+    "deprecatedElements_title": "El contenido en desplazamiento de un <marquee> debe poder pausarse, detenerse u ocultarse",
+    "deprecatedElements_description": "Pregunta, para cada elemento obsoleto <marquee>, si la página ofrece una forma de pausar, detener u ocultar su contenido en desplazamiento automático, ya que el propio elemento no ofrece ninguna.",
+    "deprecatedElements_summary_cantTell": "Este <{{element}}> desplaza su contenido, y el propio elemento no da al usuario ninguna forma de pausarlo, detenerlo ni ocultarlo.",
+    "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
     "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
     "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
     "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
     "iframeNamePresent_hint_fail": "Agregar un atributo title (o aria-label/aria-labelledby) que describa el contenido o el propósito del marco.",
     "iframeTitleUnique_title": "Los títulos de los marcos deben ser únicos",
-    "iframeTitleUnique_description": "Comprueba que dos elementos <iframe>/<frame> no compartan, dentro del alcance, el mismo valor de atributo title.",
-    "iframeTitleUnique_summary_fail": "El título \"{{title}}\" de este <{{element}}> no es único entre los marcos de esta página.",
-    "iframeTitleUnique_hint_fail": "Asignar a cada marco un título distinto que describa su contenido o propósito específico.",
+    "iframeTitleUnique_description": "Comprueba que los marcos que comparten un mismo valor de atributo title cargan el mismo recurso; los marcos con orígenes distintos y el mismo título se someten a revisión.",
+    "iframeTitleUnique_summary_cantTell": "El título \"{{title}}\" de este <{{element}}> se comparte con un marco que carga un recurso distinto.",
+    "iframeTitleUnique_hint_cantTell": "Comprobar si estos marcos tienen el mismo contenido o propósito. Si no, asignar a cada marco un título distinto que describa su contenido o propósito específico.",
     "identicalIframesSamePurpose_title": "Los marcos con el mismo nombre incrustan el mismo recurso",
     "identicalIframesSamePurpose_description": "Comprueba que los elementos <iframe>/<frame> que comparten un nombre accesible incrusten el mismo recurso, ya que un nombre solo puede describir un recurso.",
     "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
@@ -61580,7 +64657,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "Usar únicamente <li> (o <script>/<template>) como hijos directos de <ul>/<ol>; mover el resto del marcado dentro de un <li>.",
     "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
-    "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, o un elemento con role=\"list\".",
+    "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
     "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
     "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul>/<ol>, o asignar a su padre role=\"list\".",
     "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
@@ -61589,6 +64666,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "Usar únicamente <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style> dentro de <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Esta lista de descripción no tiene ningún grupo término-definición <dt>/<dd>.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Agregar al menos un par <dt>/<dd> dentro de este <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "En esta lista de descripción, un <dd> aparece antes de cualquier <dt>, o el último <dt> no va seguido de ningún <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordenar cada grupo como uno o más <dt> seguidos de uno o más <dd>.",
     "dlitemParentValid_title": "Los elementos de lista de descripción deben estar dentro de una lista de descripción",
     "dlitemParentValid_description": "Comprueba que los elementos <dt>/<dd> estén contenidos por un <dl>, directamente o mediante un único <div> envolvente.",
     "dlitemParentValid_summary_fail": "El padre (<{{parentElement}}>) de este <{{element}}> no es una lista de descripción.",
@@ -61625,10 +64704,10 @@ const I18N = {
     "tooltipNamePresent_description": "Comprueba que los elementos con role=\"tooltip\" expongan un nombre accesible no vacío.",
     "tooltipNamePresent_summary_fail": "Esta información sobre herramientas no tiene nombre accesible.",
     "tooltipNamePresent_hint_fail": "Proporcionar texto de información sobre herramientas que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Las imágenes no deben usar un mapa de imagen del lado del servidor",
-    "serverSideImageMapAbsent_description": "Comprueba que los elementos <img> no lleven el atributo ismap (los mapas de imagen del lado del servidor no tienen equivalente operable por teclado).",
-    "serverSideImageMapAbsent_summary_fail": "Esta imagen usa un mapa de imagen del lado del servidor, que no tiene equivalente operable por teclado.",
-    "serverSideImageMapAbsent_hint_fail": "Reemplazar el mapa de imagen del lado del servidor (ismap) por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones accesibles independientes.",
+    "serverSideImageMapAbsent_title": "Los mapas de imagen del lado del servidor deben tener una alternativa operable por teclado",
+    "serverSideImageMapAbsent_description": "Pregunta, para cada <img ismap> dentro de un enlace, si la página ofrece los mismos destinos como enlaces alcanzables con el teclado, ya que un mapa de imagen del lado del servidor no tiene zonas operables por teclado.",
+    "serverSideImageMapAbsent_summary_cantTell": "Esta imagen es un mapa de imagen del lado del servidor (ismap dentro de un enlace), cuyas zonas no se pueden alcanzar con el teclado.",
+    "serverSideImageMapAbsent_hint_cantTell": "Comprobar que la página ofrece los mismos destinos como enlaces independientes. Mejor: reemplazar el mapa de imagen del lado del servidor por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones independientes.",
     "formControlSingleLabel_title": "Los controles de formulario no deben tener varias etiquetas",
     "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
     "formControlSingleLabel_summary_fail": "Este <{{element}}> está asociado a {{labelCount}} etiquetas.",
@@ -61747,7 +64826,9 @@ const I18N = {
     "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
-    "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping street-address\", \"cc-number\").",
+    "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping postal-code\", \"cc-number\").",
+    "autocompleteValid_summary_mismatch": "El nombre de campo de autocompletado \"{{fieldName}}\" no está permitido en un input de tipo \"{{inputType}}\".",
+    "autocompleteValid_hint_mismatch": "Usar un nombre de campo adecuado para este tipo de control, o cambiar el control (street-address requiere un textarea; email requiere un input de tipo text, search o email; bday-day requiere un input de tipo text, search o number).",
     "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
     "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
     "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -61766,8 +64847,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Compruebe este valor manualmente con la métrica (interlineado 1,5; espaciado entre letras 0,12em; espaciado entre palabras 0,16em), o exprésalo en una unidad que el motor pueda resolver respecto al tamaño de fuente calculado del elemento.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto no parece poder saltar de línea, por lo que el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
-    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh en absoluto (AAA)",
-    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no esté presente en absoluto, independientemente del retraso; es la contraparte más estricta de nivel AAA de la comprobación de nivel A que solo se aplica a los retrasos positivos.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+    "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
+    "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado, este elemento recorta el texto «{{text}}».",
+    "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» sobrepasa el borde de este elemento, que oculta lo que sobresale.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» se superpone al texto «{{other}}».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
+    "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
     "metaRefreshNoExceptions_hint_fail": "Eliminar el meta refresh; activar la redirección/actualización solo en respuesta a una acción del usuario.",
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
@@ -61775,19 +64868,25 @@ const I18N = {
     "validLang_summary_fail": "Este valor del atributo lang (\"{{value}}\") no es una etiqueta de idioma sintácticamente válida.",
     "validLang_hint_fail": "Usar una etiqueta de idioma BCP47 válida (por ejemplo, \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
-    "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante subrayado, una diferencia de grosor/estilo de fuente, o una diferencia de contraste de color suficiente (>=3:1); no solo por el color.",
+    "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante una señal distinta del color (subrayado, grosor o estilo de fuente, borde, fondo, icono), y pregunta por los enlaces que solo se distinguen por una diferencia de color >= 3:1, que también necesitan una señal al pasar el cursor y al recibir el foco.",
     "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
-    "linkInTextBlock_hint_fail": "Agregar un subrayado, una diferencia de grosor/estilo de fuente, o aumentar el contraste de color entre el enlace y el texto circundante a al menos 3:1.",
+    "linkInTextBlock_hint_fail": "Agregar un subrayado u otra señal distinta del color (una diferencia de grosor o estilo de fuente, un borde, un icono). Aumentar el contraste de color con el texto circundante a 3:1 solo basta si al pasar el cursor y al recibir el foco el enlace también añade una señal distinta del color.",
     "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
-    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente, o al menos un contraste de 3:1 con el texto circundante. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
+    "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente u otra marca distinta del color, o al menos un contraste de 3:1 con el texto circundante junto con una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
     "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
-    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
+    "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
-    "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\"|\"subtitles\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos.",
-    "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos (captions o subtitles).",
+    "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
+    "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
     "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Este video solo tiene pistas subtitles, que pueden traducir los diálogos sin la información sobre hablantes y sonidos que llevan los subtítulos para personas sordas.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions.",
     "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
     "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
     "scrollableRegionFocusable_summary_cantTell": "Este elemento declara overflow:auto/scroll, no tiene ningún descendiente enfocable, y no es enfocable por teclado por sí mismo.",
@@ -61811,12 +64910,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
     "ariaCheckedStateMismatch_hint_cantTell": "Establecer aria-checked para que coincida con el estado real del elemento, o eliminarlo; una casilla/botón de opción nativo ya expone este estado sin necesidad de él.",
     "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
-    "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo.",
+    "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
     "cssOrientationLock_summary_fail": "Una media query \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
     "cssOrientationLock_summary_fail_unknownSelector": "Una consulta de medios \"{{mediaText}}\" rota un elemento sin selector legible y bloquea la página en una sola orientación.",
     "cssOrientationLock_hint_fail": "Eliminar la transformación rotate() de la media query de orientación; dejar que la página responda de forma natural a la orientación del dispositivo en lugar de forzar una rotación visual.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "No se han podido leer {{count}} hoja(s) de estilo, por lo que no se ha podido determinar si esta página bloquea su orientación.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -61825,10 +64926,12 @@ const I18N = {
     "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, region, presentation), para su revisión manual.",
     "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
     "focusOrderSemantics_hint_cantTell": "Eliminar tabindex si este elemento no está pensado para ser interactivo, o usar un rol interactivo que coincida con su comportamiento real.",
-    "pAsHeading_title": "Un <p> con estilo de encabezado probablemente debería ser un encabezado real",
-    "pAsHeading_description": "Señala elementos <p> cortos cuyo texto completo está en negrita y se renderiza a >=18px, para su revisión manual sobre si debería usarse un elemento de encabezado real en su lugar.",
+    "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
+    "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
     "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
     "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
+    "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
+    "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
     "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
     "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un caption falso.",
     "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un caption falso.",
@@ -61841,6 +64944,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
     "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
     "mouseOnlyEventHandlers_hint_cantTell": "Agregar onkeydown/onkeyup/onkeypress (o onfocus/onblur para comportamiento activado por hover) para que esta funcionalidad también sea alcanzable por teclado.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
     "headingQuality_title": "El texto del encabezado debe ser descriptivo, no un marcador de posición",
     "headingQuality_description": "Señala encabezados cuyo nombre accesible es un marcador de posición en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
     "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un marcador de posición, no una descripción del contenido que introduce.",
@@ -61862,6 +64967,7 @@ const I18N = {
     "report_meta_schemaVersion": "versión del esquema",
     "report_meta_target": "objetivo",
     "report_meta_profile": "perfil",
+    "report_meta_optInRules": "reglas opcionales",
     "report_meta_locale": "idioma",
     "report_meta_localeRequested": "idioma (solicitado: {{requested}})",
     "report_outcome_fail": "No superada",
@@ -61879,6 +64985,8 @@ const I18N = {
     "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
     "report_heading_worthReviewing": "Para revisar",
     "report_heading_wcagRollup": "Resumen WCAG",
+    "report_heading_standardRollup": "Resumen {{standard}}",
+    "report_standardRollup_col_criterion": "Criterio",
     "report_techDetails": "Datos técnicos completos — resumen, lista de apariciones con búsqueda",
     "report_heading_scorecard": "Resumen de resultados",
     "report_heading_occurrences": "Apariciones",
@@ -61924,8 +65032,8 @@ const I18N = {
     "inputImage_altPresent_description": "Vérifie que les éléments <input type=\"image\"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.",
     "inputImage_altPresent_summary_fail": "Attribut alt manquant sur <input type=\"image\">.",
     "inputImage_altPresent_hint_fail": "Ajoutez un attribut alt (utilisez alt=\"\" uniquement lorsqu’un nom accessible séparé est fourni).",
-    "inputImage_altPresent_summary_defaultName": "Le nom accessible est celui par défaut du navigateur pour un bouton image et n’apporte aucune information.",
-    "inputImage_altPresent_hint_defaultName": "Remplacez-le par un texte décrivant l’action du bouton, par exemple \"Rechercher\".",
+    "inputImage_altPresent_summary_cantTell_defaultName": "Le nom accessible correspond à celui par défaut du navigateur pour un bouton image ; vérifiez qu’il décrit l’action du bouton.",
+    "inputImage_altPresent_hint_cantTell_defaultName": "Si le nom ne dit pas ce que fait le bouton, remplacez-le par un texte qui le dit, par exemple \"Rechercher\".",
     "inputImage_altPresent_summary_emptyAlt": "Un alt=\"\" vide sur <input type=\"image\"> laisse le contrôle sans nom.",
     "inputImage_altPresent_hint_emptyAlt": "Décrivez l’action dans alt, ou nommez le contrôle avec aria-label ou aria-labelledby.",
     "ariaHidden_programmaticFocus_review_title": "Vérifier le focus programmatique avec aria-hidden",
@@ -61936,6 +65044,8 @@ const I18N = {
     "canvas_textAltPresent_description": "Vérifie que les éléments <canvas> fournissent une alternative textuelle via un contenu de repli ou un nom accessible.",
     "canvas_textAltPresent_summary_fail": "Alternative textuelle manquante pour <canvas>.",
     "canvas_textAltPresent_hint_fail": "Fournissez un texte de repli dans <canvas> ou un nom accessible (par ex. aria-label/aria-labelledby).",
+    "canvas_textAltPresent_summary_fail_roleImg": "Ce <canvas role=\"img\"> n’a pas de nom accessible ; avec role=\"img\", son contenu alternatif ne compte pas.",
+    "canvas_textAltPresent_hint_fail_roleImg": "Nommez-le avec aria-label ou aria-labelledby, ou retirez role=\"img\" pour que son contenu alternatif serve d’alternative textuelle.",
     "svg_textAltPresent_title": "<svg> doit fournir une alternative textuelle",
     "svg_textAltPresent_description": "Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via un élément <title> ou un nom ARIA (un élément <desc> seul ne suffit pas).",
     "svg_textAltPresent_summary_fail": "Alternative textuelle manquante pour <svg>.",
@@ -61956,14 +65066,14 @@ const I18N = {
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
     "img_altDecorative_hint_cantTell": "Confirmez que l’élément est purement décoratif. S’il transmet une information ou une fonction, donnez-lui un vrai texte alternatif (ou un nom accessible) plutôt que de l’exclure.",
-    "area_altQuality_title": "<area> : texte alt à vérifier (revue manuelle)",
-    "area_altQuality_description": "Signale les éléments <area> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
-    "area_altQuality_summary_cantTell": "Vérifiez le texte alt de <area> (exactitude et pertinence).",
-    "area_altQuality_hint_cantTell": "Assurez-vous que le texte alt identifie la destination/l’action de la zone dans son contexte.",
-    "inputImage_altQuality_title": "<input type=\"image\"> : texte alt à vérifier (revue manuelle)",
-    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
-    "inputImage_altQuality_summary_cantTell": "Vérifiez le texte alt de <input type=\"image\"> (exactitude et pertinence).",
-    "inputImage_altQuality_hint_cantTell": "Assurez-vous que le texte alt décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
+    "area_altQuality_title": "<area> : alternative textuelle à vérifier (revue manuelle)",
+    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "area_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <area> ({{sources}}) (exactitude et pertinence).",
+    "area_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée identifie la destination/l’action de la zone dans son contexte.",
+    "inputImage_altQuality_title": "<input type=\"image\"> : alternative textuelle à vérifier (revue manuelle)",
+    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "inputImage_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <input type=\"image\"> ({{sources}}) (exactitude et pertinence).",
+    "inputImage_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
     "inputImage_altDecorative_title": "<input type=\"image\"> avec alt=\"\" : à vérifier (revue manuelle)",
     "inputImage_altDecorative_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt est vide afin de vérifier manuellement (souvent inadapté pour un contrôle fonctionnel).",
     "inputImage_altDecorative_summary_cantTell": "Vérifiez <input type=\"image\"> avec alt=\"\".",
@@ -62037,7 +65147,7 @@ const I18N = {
     "mediaTranscriptPresent_summary_cantTell_missing": "Aucune transcription ou autre alternative textuelle pour cet élément <{{element}}> n’est clairement établie sur la page.",
     "mediaTranscriptPresent_hint_cantTell_missing": "Fournir une transcription ou une autre alternative textuelle clairement identifiée pour les médias préenregistrés audio seuls ou vidéo seuls, par exemple une section ou un lien « Transcription » visible.",
     "mediaTranscriptPresent_summary_cantTell_unverified": "Une transcription ou une autre alternative textuelle peut être disponible pour ce média temporel, mais elle n’a pas pu être vérifiée à partir du contenu de la page.",
-    "mediaTranscriptPresent_hint_cantTell_unverified": "Aucune transcription ou autre alternative textuelle pour cet élément {element} n’est clairement établie sur la page.",
+    "mediaTranscriptPresent_hint_cantTell_unverified": "Assurez-vous qu’une transcription ou une autre alternative textuelle clairement identifiée est disponible et associée au média, visuellement ou par programmation, sur la page.",
     "pageTitlePresent_title": "La page possède un titre non vide",
     "pageTitlePresent_description": "Vérifie que la page contient un élément <title> non vide.",
     "pageTitlePresent_summary_fail": "La page ne possède pas de titre non vide.",
@@ -62138,7 +65248,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "L’élément aria-hidden {{element}} contient {{focusableCount}} élément(s) focalisable(s) alors qu’une boîte de dialogue modale est ouverte. Si la modale conserve le focus clavier piégé, ils peuvent être inaccessibles ; vérifiez que le focus ne peut pas les atteindre.",
     "ariaHidden_focus_hint_cantTell_modal": "Une boîte de dialogue modale semble ouverte. Préférez rendre l’arrière-plan inerte (ou un <dialog> natif ouvert avec showModal()) afin qu’il quitte l’ordre de tabulation, puis vérifiez que le focus clavier reste dans la boîte de dialogue.",
     "cssFocusIndicatorSuppressed_title": "L’indicateur de focus ne doit pas être supprimé sans remplacement",
-    "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé par une règle :focus/:focus-visible sans qu’aucune autre règle de focus les concernant ne dessine d’indicateur de remplacement (bordure, ombre portée, arrière-plan, …).",
+    "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé, par une règle :focus/:focus-visible ou par une règle sans état comme a { outline: none }, sans qu’aucune règle de focus les concernant ne dessine d’indicateur de remplacement (bordure, ombre portée, arrière-plan, …).",
     "cssFocusIndicatorSuppressed_summary_cantTell": "Cet élément reçoit un arrêt de tabulation, et « {{selectors}} » supprime son contour de focus sans qu’aucune autre règle de focus le concernant ne dessine d’indicateur de remplacement.",
     "cssFocusIndicatorSuppressed_hint_cantTell": "Dessinez un indicateur de remplacement dans la même règle (contour visible, bordure, ombre portée ou changement d’arrière-plan), ou renoncez à supprimer le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît pour les personnes naviguant au clavier.",
     "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
@@ -62164,7 +65274,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "Cette combobox n’a pas de nom accessible.",
     "comboboxNamePresent_hint_fail": "Fournissez aria-label, aria-labelledby ou un attribut title — le contenu textuel visible n’est pas exposé comme nom accessible de cet élément.",
     "dialogNamePresent_title": "Les dialogues ont un nom accessible",
-    "dialogNamePresent_description": "Vérifie que les éléments avec role=\"dialog\" ou role=\"alertdialog\" exposent un nom accessible non vide.",
+    "dialogNamePresent_description": "Vérifie que les dialogues (éléments avec role=\"dialog\" ou role=\"alertdialog\", et éléments <dialog> natifs) exposent un nom accessible non vide.",
     "dialogNamePresent_summary_fail": "Ce dialogue n’a pas de nom accessible.",
     "dialogNamePresent_hint_fail": "Fournissez aria-labelledby (préféré) ou aria-label afin que les technologies d’assistance puissent annoncer le dialogue.",
     "menuitemNamePresent_title": "Les éléments de menu ont un nom accessible",
@@ -62237,7 +65347,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "Parcours du focus",
     "catalog.rules.wcag_243_focus_order.description": "Regroupe les contrôles garantissant que le focus parcourt le contenu dans un ordre logique.",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "Fonction du lien (selon le contexte)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens dont le texte seul est une formule générique connue, non descriptive.",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "Regroupe les contrôles signalant les liens sans nom accessible, ou dont le texte seul est une formule générique connue, non descriptive.",
     "catalog.rules.wcag_246_headings_and_labels.title": "En-têtes et étiquettes",
     "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
     "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
@@ -62257,7 +65367,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
-    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
@@ -62310,6 +65420,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "Utilisez une valeur correspondant au type attendu de l’attribut (consultez la spécification WAI-ARIA pour cet attribut).",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" renvoie à un id qu’aucun élément ne porte actuellement ; cette référence ne peut pas être vérifiée statiquement.",
     "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément contrôlé est créé à l’ouverture du composant ; s’il n’existe jamais, supprimez ou corrigez la référence.",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "Vérifiez si un élément portant cet id est ajouté plus tard. Sinon, corrigez ou supprimez la référence ; en attendant, l’élément utilise ses autres sources de nom ou de description.",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
     "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
     "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -62352,18 +65463,18 @@ const I18N = {
     "ariaRequiredParent_description": "Vérifie que les rôles disposant d’une entrée documentée « rôle de contexte requis » (listitem, option, tab, treeitem, row, cell, ...) ont un ancêtre, ou un propriétaire aria-owns, ayant un rôle de contexte acceptable.",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" exige un rôle de contexte parmi : {{requiredRoles}}, qui n’a pas été trouvé.",
     "ariaRequiredParent_hint_fail": "Placez cet élément à l’intérieur d’un élément ayant un rôle de contexte acceptable (ou référencez-le depuis celui-ci via aria-owns).",
-    "deprecatedElements_title": "Les éléments obsolètes non interruptibles (<blink>, <marquee>) ne doivent pas être utilisés",
-    "deprecatedElements_description": "Vérifie que les éléments HTML obsolètes et non standards dont le contenu clignotant/défilant ne peut pas être mis en pause, arrêté ou masqué par l’utilisateur (<blink>, <marquee>) ne sont pas présents.",
-    "deprecatedElements_summary_fail": "Le contenu de <{{element}}> ne peut pas être mis en pause, arrêté ou masqué par l’utilisateur.",
-    "deprecatedElements_hint_fail": "Retirez cet élément ; utilisez à la place un contenu statique, ou une animation dotée d’un contrôle de pause/arrêt accessible à l’utilisateur.",
+    "deprecatedElements_title": "Le contenu défilant d’un <marquee> doit pouvoir être mis en pause, arrêté ou masqué",
+    "deprecatedElements_description": "Demande, pour chaque élément obsolète <marquee>, si la page offre un moyen de mettre en pause, d’arrêter ou de masquer son contenu défilant, puisque l’élément lui-même n’en offre aucun.",
+    "deprecatedElements_summary_cantTell": "Ce <{{element}}> fait défiler son contenu, et l’élément lui-même ne donne à l’utilisateur aucun moyen de le mettre en pause, de l’arrêter ou de le masquer.",
+    "deprecatedElements_hint_cantTell": "Vérifiez que la page offre un contrôle qui met en pause, arrête ou masque ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
     "iframeNamePresent_title": "Les cadres ont un nom accessible",
     "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
     "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
     "iframeNamePresent_hint_fail": "Ajoutez un attribut title (ou aria-label/aria-labelledby) décrivant le contenu ou l’objet du cadre.",
     "iframeTitleUnique_title": "Les titres de cadres doivent être uniques",
-    "iframeTitleUnique_description": "Vérifie qu’aucun <iframe>/<frame> dans le périmètre analysé ne partage la même valeur d’attribut title qu’un autre.",
-    "iframeTitleUnique_summary_fail": "Le titre « {{title}} » de ce <{{element}}> n’est pas unique parmi les cadres de cette page.",
-    "iframeTitleUnique_hint_fail": "Donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
+    "iframeTitleUnique_description": "Vérifie que les cadres qui partagent une même valeur d’attribut title chargent la même ressource ; des cadres de sources différentes avec le même titre font l’objet d’une question.",
+    "iframeTitleUnique_summary_cantTell": "Le titre « {{title}} » de ce <{{element}}> est partagé avec un cadre qui charge une autre ressource.",
+    "iframeTitleUnique_hint_cantTell": "Vérifiez si ces cadres ont le même contenu ou le même objet. Sinon, donnez à chaque cadre un titre distinct décrivant son contenu ou son objet spécifique.",
     "identicalIframesSamePurpose_title": "Les cadres portant le même nom intègrent la même ressource",
     "identicalIframesSamePurpose_description": "Vérifie que les éléments <iframe>/<frame> partageant un nom accessible intègrent la même ressource, car un nom ne peut décrire qu’une seule ressource.",
     "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
@@ -62391,7 +65502,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
     "listChildrenValid_hint_fail": "N’utilisez que <li> (ou <script>/<template>) comme enfants directs de <ul>/<ol> ; déplacez tout autre balisage à l’intérieur d’un <li>.",
     "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
-    "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, ou un élément ayant role=\"list\".",
+    "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
     "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
     "listitemParentValid_hint_fail": "Placez ce <li> à l’intérieur d’un <ul>/<ol>, ou donnez à son parent role=\"list\".",
     "definitionListChildrenValid_title": "Les listes de définitions doivent être structurées correctement",
@@ -62400,6 +65511,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "N’utilisez que <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style> à l’intérieur de <dl>.",
     "definitionListChildrenValid_summary_fail_noDtDd": "Cette liste de définitions n’a aucun groupe terme/définition <dt>/<dd>.",
     "definitionListChildrenValid_hint_fail_noDtDd": "Ajoutez au moins une paire <dt>/<dd> à l’intérieur de ce <dl>.",
+    "definitionListChildrenValid_summary_fail_order": "Dans cette liste de définitions, un <dd> précède tout <dt>, ou le dernier <dt> n’est suivi d’aucun <dd>.",
+    "definitionListChildrenValid_hint_fail_order": "Ordonnez chaque groupe en un ou plusieurs <dt> suivis d’un ou plusieurs <dd>.",
     "dlitemParentValid_title": "Les éléments d’une liste de définitions doivent se trouver à l’intérieur d’une liste de définitions",
     "dlitemParentValid_description": "Vérifie que les éléments <dt>/<dd> sont contenus par un <dl>, directement ou via un <div> englobant.",
     "dlitemParentValid_summary_fail": "Le parent (<{{parentElement}}>) de ce <{{element}}> n’est pas une liste de définitions.",
@@ -62436,10 +65549,10 @@ const I18N = {
     "tooltipNamePresent_description": "Vérifie que les éléments avec role=\"tooltip\" exposent un nom accessible non vide.",
     "tooltipNamePresent_summary_fail": "Cette infobulle n’a pas de nom accessible.",
     "tooltipNamePresent_hint_fail": "Fournissez un texte pour l’infobulle qui ne soit pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
-    "serverSideImageMapAbsent_title": "Les images ne doivent pas utiliser une carte d’image côté serveur",
-    "serverSideImageMapAbsent_description": "Vérifie que les éléments <img> ne portent pas l’attribut ismap (les cartes d’image côté serveur n’ont pas d’équivalent utilisable au clavier).",
-    "serverSideImageMapAbsent_summary_fail": "Cette image utilise une carte d’image côté serveur, qui n’a pas d’équivalent utilisable au clavier.",
-    "serverSideImageMapAbsent_hint_fail": "Remplacez la carte d’image côté serveur (ismap) par une carte d’image côté client (<map>/<area>) ou par des liens/boutons accessibles distincts.",
+    "serverSideImageMapAbsent_title": "Les cartes d’image côté serveur doivent avoir une alternative utilisable au clavier",
+    "serverSideImageMapAbsent_description": "Demande, pour chaque <img ismap> placé dans un lien, si la page propose les mêmes destinations sous forme de liens accessibles au clavier, puisqu’une carte d’image côté serveur n’a pas de zones utilisables au clavier.",
+    "serverSideImageMapAbsent_summary_cantTell": "Cette image est une carte d’image côté serveur (ismap dans un lien), dont les zones ne peuvent pas être atteintes au clavier.",
+    "serverSideImageMapAbsent_hint_cantTell": "Vérifiez que la page propose les mêmes destinations sous forme de liens distincts. Mieux : remplacez la carte d’image côté serveur par une carte d’image côté client (<map>/<area>) ou par des liens/boutons distincts.",
     "formControlSingleLabel_title": "Les contrôles de formulaire ne doivent pas avoir plusieurs étiquettes",
     "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
     "formControlSingleLabel_summary_fail": "Ce <{{element}}> est associé à {{labelCount}} étiquettes.",
@@ -62558,7 +65671,9 @@ const I18N = {
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
-    "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping street-address », « cc-number »).",
+    "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping postal-code », « cc-number »).",
+    "autocompleteValid_summary_mismatch": "Le nom de champ d’auto-remplissage « {{fieldName}} » n’est pas autorisé sur un champ input de type « {{inputType}} ».",
+    "autocompleteValid_hint_mismatch": "Utilisez un nom de champ adapté à ce type de champ, ou changez le champ (street-address demande un textarea ; email demande un input de type text, search ou email ; bday-day demande un input de type text, search ou number).",
     "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
     "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
     "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -62577,8 +65692,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "Vérifiez cette valeur manuellement par rapport à la métrique (hauteur de ligne 1,5 ; espacement des lettres 0,12em ; espacement des mots 0,16em), ou exprimez-la dans une unité que le moteur peut résoudre par rapport à la taille de police calculée de l'élément.",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte ne semble pas pouvoir revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
-    "metaRefreshNoExceptions_title": "La page ne doit utiliser aucun rafraîchissement meta (AAA)",
-    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> n’est présent en aucun cas, quel que soit le délai — la variante plus stricte, de niveau AAA, de la vérification de niveau A qui ne porte que sur les délais positifs.",
+    "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
+    "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+    "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
+    "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, cet élément rogne le texte « {{text}} ».",
+    "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » dépasse le bord de cet élément, qui masque ce qui dépasse.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » se superpose au texte « {{other}} ».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
+    "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
+    "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
     "metaRefreshNoExceptions_hint_fail": "Retirez le rafraîchissement meta ; déclenchez la redirection/le rafraîchissement uniquement en réponse à une action de l’utilisateur.",
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
@@ -62586,19 +65713,25 @@ const I18N = {
     "validLang_summary_fail": "Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.",
     "validLang_hint_fail": "Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).",
     "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
-    "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un soulignement, une différence de graisse/style de police, ou un contraste de couleur suffisant (>= 3:1) — pas seulement par la couleur.",
+    "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un indice autre que la couleur (soulignement, graisse ou style de police, bordure, arrière-plan, icône), et pose la question pour les liens distingués seulement par une différence de couleur >= 3:1, qui ont aussi besoin d’un indice au survol et au focus.",
     "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
-    "linkInTextBlock_hint_fail": "Ajoutez un soulignement, une différence de graisse/style de police, ou augmentez le contraste de couleur entre le lien et le texte environnant à au moins 3:1.",
+    "linkInTextBlock_hint_fail": "Ajoutez un soulignement ou un autre indice que la couleur (une différence de graisse ou de style de police, une bordure, une icône). Porter le contraste de couleur avec le texte environnant à 3:1 ne suffit que si le survol et le focus du lien ajoutent aussi un indice autre que la couleur.",
     "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
-    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police, ou un contraste d'au moins 3:1 avec le texte environnant. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
+    "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police ou une autre marque que la couleur, ou un contraste d'au moins 3:1 avec le texte environnant accompagné d’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
     "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
-    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
+    "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
+    "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
-    "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\"|\"subtitles\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres.",
-    "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres (captions ou subtitles).",
+    "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une revue manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
+    "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
     "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré.",
+    "videoCaption_summary_cantTell_subtitlesOnly": "Cette vidéo n’a que des pistes subtitles, qui peuvent traduire les dialogues sans les informations sur les locuteurs et les sons que portent les sous-titres pour sourds et malentendants.",
+    "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions.",
     "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
     "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une revue manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
     "scrollableRegionFocusable_summary_cantTell": "Cet élément déclare overflow:auto/scroll, n’a aucun descendant focalisable, et n’est pas lui-même focalisable au clavier.",
@@ -62622,12 +65755,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
     "ariaCheckedStateMismatch_hint_cantTell": "Définissez aria-checked pour qu’il corresponde à l’état réel de l’élément, ou retirez-le — une case à cocher/un bouton radio natif expose déjà cet état sans lui.",
     "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
-    "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil.",
+    "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
     "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
     "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
     "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation ; laissez la page répondre naturellement à l’orientation de l’appareil au lieu de forcer une rotation visuelle.",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
+    "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
+    "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -62636,10 +65771,12 @@ const I18N = {
     "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, region, presentation), pour une revue manuelle.",
     "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
     "focusOrderSemantics_hint_cantTell": "Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.",
-    "pAsHeading_title": "Un <p> stylé pour ressembler à un titre devrait probablement être un véritable titre",
-    "pAsHeading_description": "Signale les éléments <p> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
+    "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
+    "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une revue manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
     "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
     "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
+    "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
+    "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
     "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
     "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une revue manuelle visant à déterminer si cette cellule fait office de légende factice.",
     "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -62652,6 +65789,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une revue manuelle.",
     "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
     "mouseOnlyEventHandlers_hint_cantTell": "Ajoutez onkeydown/onkeyup/onkeypress (ou onfocus/onblur pour un comportement déclenché au survol) afin que cette fonctionnalité soit aussi accessible au clavier.",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
     "headingQuality_title": "Le texte du titre doit être descriptif, pas un texte de remplacement",
     "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
     "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -62673,6 +65812,7 @@ const I18N = {
     "report_meta_schemaVersion": "version du schéma",
     "report_meta_target": "cible",
     "report_meta_profile": "profil",
+    "report_meta_optInRules": "règles optionnelles",
     "report_meta_locale": "langue",
     "report_meta_localeRequested": "langue (demandée : {{requested}})",
     "report_outcome_fail": "Échec",
@@ -62690,6 +65830,8 @@ const I18N = {
     "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
     "report_heading_worthReviewing": "À examiner",
     "report_heading_wcagRollup": "Synthèse WCAG",
+    "report_heading_standardRollup": "Synthèse {{standard}}",
+    "report_standardRollup_col_criterion": "Critère",
     "report_techDetails": "Données techniques complètes — tableau de bord, liste des occurrences avec recherche",
     "report_heading_scorecard": "Tableau de bord",
     "report_heading_occurrences": "Occurrences",
@@ -62735,8 +65877,8 @@ const I18N = {
     "inputImage_altPresent_description": "<input type=\"image\"> 要素に、テキストによる代替を提供するための alt 属性があるかを確認します。",
     "inputImage_altPresent_summary_fail": "<input type=\"image\"> に alt 属性がありません。",
     "inputImage_altPresent_hint_fail": "alt 属性を追加してください (alt=\"\" は別の方法でアクセシブルな名前が提供されている場合にのみ使用します)。",
-    "inputImage_altPresent_summary_defaultName": "アクセシブルな名前が画像ボタンに対するブラウザーの既定値になっており、何も伝わりません。",
-    "inputImage_altPresent_hint_defaultName": "ボタンの機能を説明するテキスト (例:「検索」) に置き換えてください。",
+    "inputImage_altPresent_summary_cantTell_defaultName": "アクセシブルな名前が画像ボタンに対するブラウザーの既定値と一致しています。ボタンの機能を説明しているか確認してください。",
+    "inputImage_altPresent_hint_cantTell_defaultName": "名前がボタンの機能を表していない場合は、機能を説明するテキスト (例:「検索」) に置き換えてください。",
     "inputImage_altPresent_summary_emptyAlt": "<input type=\"image\"> の alt=\"\" が空のため、コントロールに名前がありません。",
     "inputImage_altPresent_hint_emptyAlt": "alt で操作内容を説明するか、aria-label または aria-labelledby でコントロールに名前を付けてください。",
     "ariaHidden_programmaticFocus_review_title": "プログラムでフォーカス可能な aria-hidden 要素の確認",
@@ -62747,6 +65889,8 @@ const I18N = {
     "canvas_textAltPresent_description": "<canvas> 要素に、フォールバックコンテンツまたはアクセシブルな名前によるテキストによる代替があるかを確認します。",
     "canvas_textAltPresent_summary_fail": "<canvas> にテキストによる代替がありません。",
     "canvas_textAltPresent_hint_fail": "<canvas> の中にフォールバックテキストを入れるか、アクセシブルな名前 (aria-label/aria-labelledby など) を指定してください。",
+    "canvas_textAltPresent_summary_fail_roleImg": "この <canvas role=\"img\"> にはアクセシブルな名前がありません。role=\"img\" があると、フォールバックコンテンツは名前になりません。",
+    "canvas_textAltPresent_hint_fail_roleImg": "aria-label か aria-labelledby で名前を付けるか、role=\"img\" を削除してフォールバックコンテンツがテキストによる代替として機能するようにしてください。",
     "svg_textAltPresent_title": "<svg> にはテキストによる代替が必要",
     "svg_textAltPresent_description": "インライン <svg> 要素に、<title> 要素または ARIA による名前でテキストによる代替があるかを確認します (<desc> 要素だけでは対象外です)。",
     "svg_textAltPresent_summary_fail": "<svg> にテキストによる代替がありません。",
@@ -62767,14 +65911,14 @@ const I18N = {
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
     "img_altDecorative_hint_cantTell": "この要素が純粋な装飾であることを確認してください。情報や機能を伝えている場合は、除外せずに適切なテキストによる代替 (またはアクセシブルな名前) を指定してください。",
-    "area_altQuality_title": "<area> の代替テキストが適切であること (手動確認)",
-    "area_altQuality_description": "空でない代替テキストを持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
-    "area_altQuality_summary_cantTell": "<area> の代替テキストが正確かつ適切か、人による確認が必要です。",
-    "area_altQuality_hint_cantTell": "代替テキストが、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
-    "inputImage_altQuality_title": "<input type=\"image\"> の代替テキストが適切であること (手動確認)",
-    "inputImage_altQuality_description": "空でない代替テキストを持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
-    "inputImage_altQuality_summary_cantTell": "<input type=\"image\"> の代替テキストが正確かつ適切か、人による確認が必要です。",
-    "inputImage_altQuality_hint_cantTell": "代替テキストが、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
+    "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
+    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
+    "area_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
+    "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
+    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
+    "inputImage_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
     "inputImage_altDecorative_title": "alt=\"\" の <input type=\"image\"> が適切であること (手動確認)",
     "inputImage_altDecorative_description": "alt が空の <input type=\"image\"> 要素を検出し、人が確認できるようにします (機能を持つコントロールで alt を空にするのは、通常は適切ではありません)。",
     "inputImage_altDecorative_summary_cantTell": "alt=\"\" の <input type=\"image\"> について、人による確認が必要です。",
@@ -62949,7 +66093,7 @@ const I18N = {
     "ariaHidden_focus_summary_cantTell_modal": "モーダルダイアログが開いている間、aria-hidden が指定された {{element}} にフォーカス可能な要素が {{focusableCount}} 個含まれています。モーダルがキーボードフォーカスを閉じ込めていれば到達できない可能性がありますが、フォーカスがこれらの要素に移らないことを確認してください。",
     "ariaHidden_focus_hint_cantTell_modal": "モーダルダイアログが開いているようです。背景を inert にする (または showModal() で開くネイティブの <dialog> を使う) ことでタブ順序から外すことを推奨します。そのうえで、キーボードフォーカスがダイアログ内にとどまることを確認してください。",
     "cssFocusIndicatorSuppressed_title": "フォーカスインジケーターを代替なしで削除してはならない",
-    "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルールでフォーカスのアウトラインが削除され、その要素に一致するほかのどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
+    "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルール、または a { outline: none } のような状態を持たないルールでフォーカスのアウトラインが削除され、その要素に一致するどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
     "cssFocusIndicatorSuppressed_summary_cantTell": "この要素はタブ移動で停止しますが、「{{selectors}}」がフォーカスのアウトラインを削除しており、この要素に一致するほかのフォーカス用ルールにも代わりのインジケーターがありません。",
     "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見えるアウトライン、border、box-shadow、背景の変化など) を描画するか、アウトラインのリセットをやめてください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
     "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
@@ -62975,7 +66119,7 @@ const I18N = {
     "comboboxNamePresent_summary_fail": "このコンボボックスにはアクセシブルな名前がありません。",
     "comboboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性を指定してください。表示されているテキストの内容は、このコンボボックスのアクセシブルな名前にはなりません。",
     "dialogNamePresent_title": "ダイアログにアクセシブルな名前があること",
-    "dialogNamePresent_description": "role=\"dialog\" または role=\"alertdialog\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
+    "dialogNamePresent_description": "ダイアログ (role=\"dialog\" または role=\"alertdialog\" を持つ要素、およびネイティブの <dialog> 要素) が、空でないアクセシブルな名前を公開しているかを確認します。",
     "dialogNamePresent_summary_fail": "このダイアログにはアクセシブルな名前がありません。",
     "dialogNamePresent_hint_fail": "支援技術がダイアログを読み上げられるよう、aria-labelledby (推奨) または aria-label を指定してください。",
     "menuitemNamePresent_title": "メニュー項目にアクセシブルな名前があること",
@@ -63048,7 +66192,7 @@ const I18N = {
     "catalog.rules.wcag_243_focus_order.title": "フォーカス順序",
     "catalog.rules.wcag_243_focus_order.description": "フォーカスが意味のある順序でコンテンツ内を移動するかを確認するチェックの集約です。",
     "catalog.rules.wcag_244_link_purpose_in_context.title": "リンクの目的 (コンテキスト内)",
-    "catalog.rules.wcag_244_link_purpose_in_context.description": "テキストだけを見ると、説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
+    "catalog.rules.wcag_244_link_purpose_in_context.description": "アクセシブルな名前がないリンク、またはテキストだけを見ると説明的でない汎用的な語句として知られているリンクを検出するチェックの集約です。",
     "catalog.rules.wcag_246_headings_and_labels.title": "見出し及びラベル",
     "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
     "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
@@ -63068,7 +66212,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
     "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
     "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
-    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
     "catalog.rules.wcag_224_interruptions.title": "割り込み",
     "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
     "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
@@ -63121,6 +66265,7 @@ const I18N = {
     "ariaValidAttrValue_hint_fail": "属性が想定する型に合った値を使用してください (この属性については WAI-ARIA 仕様を参照してください)。",
     "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" は、現時点でどの要素も持っていない id を参照しているため、静的にはこの参照を確認できません。",
     "ariaValidAttrValue_hint_cantTell_idref": "ウィジェットを開いたときに、制御対象の要素が生成されるか確認してください。その要素が存在しない場合は、参照を削除または修正してください。",
+    "ariaValidAttrValue_hint_cantTell_idrefList": "この id を持つ要素が後から追加されるか確認してください。追加されない場合は、参照を修正または削除してください。それまでは、要素はほかの名前や説明のソースを使用します。",
     "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
     "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
     "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -63163,18 +66308,18 @@ const I18N = {
     "ariaRequiredParent_description": "「必須のコンテキストロール」が定められているロール (listitem、option、tab、treeitem、row、cell など) に、許容されるコンテキストロールを持つ祖先要素または aria-owns による所有者があるかを確認します。",
     "ariaRequiredParent_summary_fail": "role=\"{{role}}\" に必要なコンテキストロール ({{requiredRoles}} のいずれか) が見つかりませんでした。",
     "ariaRequiredParent_hint_fail": "この要素を、許容されるコンテキストロールを持つ要素の中に配置する (またはその要素から aria-owns で参照する) ようにしてください。",
-    "deprecatedElements_title": "停止できない廃止要素 (<blink>、<marquee>) を使用してはならない",
-    "deprecatedElements_description": "点滅やスクロールするコンテンツを利用者が一時停止、停止、非表示にできない、廃止された非標準の HTML 要素 (<blink>、<marquee>) が存在しないかを確認します。",
-    "deprecatedElements_summary_fail": "<{{element}}> のコンテンツは、利用者が一時停止、停止、非表示にできません。",
-    "deprecatedElements_hint_fail": "この要素を削除してください。代わりに静的なコンテンツか、利用者が一時停止/停止できるコントロールを備えたアニメーションを使用してください。",
+    "deprecatedElements_title": "スクロールする <marquee> のコンテンツは、一時停止、停止、非表示にできなければならない",
+    "deprecatedElements_description": "廃止された <marquee> 要素ごとに、要素自体にはその手段がないため、自動スクロールするコンテンツを一時停止、停止、非表示にする手段をページが提供しているかを確認します。",
+    "deprecatedElements_summary_cantTell": "この <{{element}}> はコンテンツをスクロールさせますが、要素自体には利用者がそれを一時停止、停止、非表示にする手段がありません。",
+    "deprecatedElements_hint_cantTell": "このコンテンツを一時停止、停止、非表示にするコントロールがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
     "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
     "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
     "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
     "iframeNamePresent_hint_fail": "フレームの内容や目的を説明する title 属性 (または aria-label/aria-labelledby) を追加してください。",
     "iframeTitleUnique_title": "フレームのタイトルは一意であること",
-    "iframeTitleUnique_description": "対象範囲内の <iframe>/<frame> 要素で、同じ title 属性の値を持つものがないかを確認します。",
-    "iframeTitleUnique_summary_fail": "この <{{element}}> のタイトル「{{title}}」は、このページのフレームの中で一意ではありません。",
-    "iframeTitleUnique_hint_fail": "各フレームに、それぞれの内容や目的を説明する異なるタイトルを付けてください。",
+    "iframeTitleUnique_description": "同じ title 属性の値を持つフレームが同じリソースを読み込んでいるかを確認します。読み込むリソースが異なり、タイトルが同じフレームは確認対象として示します。",
+    "iframeTitleUnique_summary_cantTell": "この <{{element}}> のタイトル「{{title}}」は、別のリソースを読み込むフレームと共有されています。",
+    "iframeTitleUnique_hint_cantTell": "これらのフレームの内容や目的が同じかを確認してください。同じでない場合は、各フレームに、それぞれの内容や目的を説明する異なるタイトルを付けてください。",
     "identicalIframesSamePurpose_title": "同じ名前のフレームが同じリソースを埋め込んでいること",
     "identicalIframesSamePurpose_description": "1 つの名前で説明できるのは 1 つのリソースだけなので、同じアクセシブルな名前を持つ <iframe>/<frame> 要素が同じリソースを埋め込んでいるかを確認します。",
     "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
@@ -63202,7 +66347,7 @@ const I18N = {
     "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
     "listChildrenValid_hint_fail": "<ul>/<ol> の直接の子には <li> (または <script>/<template>) のみを使用し、それ以外のマークアップは <li> の中に移動してください。",
     "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
-    "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、または role=\"list\" を持つ要素に含まれているかを確認します。",
+    "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
     "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
     "listitemParentValid_hint_fail": "この <li> を <ul>/<ol> の中に配置するか、親要素に role=\"list\" を指定してください。",
     "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
@@ -63211,6 +66356,8 @@ const I18N = {
     "definitionListChildrenValid_hint_fail_invalidChild": "<dl> の中では、<dt>/<dd> (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみを使用してください。",
     "definitionListChildrenValid_summary_fail_noDtDd": "この記述リストには、用語と説明の <dt>/<dd> グループがありません。",
     "definitionListChildrenValid_hint_fail_noDtDd": "この <dl> の中に、<dt>/<dd> の組を少なくとも 1 つ追加してください。",
+    "definitionListChildrenValid_summary_fail_order": "この記述リストでは、<dd> がどの <dt> よりも前にあるか、最後の <dt> の後に <dd> がありません。",
+    "definitionListChildrenValid_hint_fail_order": "各グループを、1 つ以上の <dt> の後に 1 つ以上の <dd> が続く順序にしてください。",
     "dlitemParentValid_title": "記述リストの項目は記述リスト内にあること",
     "dlitemParentValid_description": "<dt>/<dd> 要素が、直接または 1 つの <div> を介して <dl> に含まれているかを確認します。",
     "dlitemParentValid_summary_fail": "この <{{element}}> の親 (<{{parentElement}}>) は記述リストではありません。",
@@ -63247,10 +66394,10 @@ const I18N = {
     "tooltipNamePresent_description": "role=\"tooltip\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
     "tooltipNamePresent_summary_fail": "このツールチップにはアクセシブルな名前がありません。",
     "tooltipNamePresent_hint_fail": "支援技術から隠されていないツールチップのテキストを用意するか、aria-label または aria-labelledby を指定してください。",
-    "serverSideImageMapAbsent_title": "画像でサーバーサイドイメージマップを使用してはならない",
-    "serverSideImageMapAbsent_description": "<img> 要素に ismap 属性が指定されていないかを確認します (サーバーサイドイメージマップには、キーボードで操作できる代替手段がありません)。",
-    "serverSideImageMapAbsent_summary_fail": "この画像はサーバーサイドイメージマップを使用しており、キーボードで操作できる代替手段がありません。",
-    "serverSideImageMapAbsent_hint_fail": "サーバーサイドイメージマップ (ismap) を、クライアントサイドイメージマップ (<map>/<area>) か、個別のアクセシブルなリンクやボタンに置き換えてください。",
+    "serverSideImageMapAbsent_title": "サーバーサイドイメージマップには、キーボードで操作できる代替手段がなければならない",
+    "serverSideImageMapAbsent_description": "リンク内の <img ismap> ごとに、同じリンク先をキーボードで到達できるリンクとしてページが提供しているかを確認します。サーバーサイドイメージマップ自体には、キーボードで操作できる領域がないためです。",
+    "serverSideImageMapAbsent_summary_cantTell": "この画像はサーバーサイドイメージマップ (リンク内の ismap) であり、その領域にはキーボードで到達できません。",
+    "serverSideImageMapAbsent_hint_cantTell": "同じリンク先が個別のリンクとしてページにあるか確認してください。より良い方法: サーバーサイドイメージマップを、クライアントサイドイメージマップ (<map>/<area>) か、個別のリンクやボタンに置き換えてください。",
     "formControlSingleLabel_title": "フォームコントロールに複数のラベルがあってはならない",
     "formControlSingleLabel_description": "フォームコントロールに関連付けられた <label> (囲む形式または label[for] による) が 1 つ以下であるかを確認します。",
     "formControlSingleLabel_summary_fail": "この <{{element}}> には {{labelCount}} 個のラベルが関連付けられています。",
@@ -63369,7 +66516,9 @@ const I18N = {
     "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
-    "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping street-address\"、\"cc-number\") を使用してください。",
+    "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping postal-code\"、\"cc-number\") を使用してください。",
+    "autocompleteValid_summary_mismatch": "自動入力のフィールド名 \"{{fieldName}}\" は、type が \"{{inputType}}\" の input では使用できません。",
+    "autocompleteValid_hint_mismatch": "このコントロールの種類に合うフィールド名を使用するか、コントロールを変更してください (street-address には textarea、email には type が text、search、email の input、bday-day には type が text、search、number の input が必要です)。",
     "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
     "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
     "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
@@ -63388,8 +66537,20 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell": "この値が基準値 (line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em) を満たしているか人の手で確認するか、要素の算出フォントサイズに対してエンジンが解決できる単位で指定してください。",
     "avoidInlineSpacing_summary_cantTell_noSoftWrap": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが折り返せないようなので、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
-    "metaRefreshNoExceptions_title": "ページで meta refresh を一切使用してはならない (AAA)",
-    "metaRefreshNoExceptions_description": "遅延時間にかかわらず、<meta http-equiv=\"refresh\"> がまったく存在しないかを確認します。正の遅延のみを対象とするレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
+    "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
+    "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+    "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
+    "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
+    "textSpacingContentLoss_summary_fail_clipped": "WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります。",
+    "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端からはみ出し、はみ出した部分が隠れます。",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
+    "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
+    "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
     "metaRefreshNoExceptions_hint_fail": "meta refresh を削除し、リダイレクトや再読み込みは利用者の操作に応じてのみ実行するようにしてください。",
     "validLang_title": "要素の lang 属性は構文上有効であること",
@@ -63397,19 +66558,25 @@ const I18N = {
     "validLang_summary_fail": "この lang 属性の値 (「{{value}}」) は、構文上有効な言語タグではありません。",
     "validLang_hint_fail": "有効な BCP47 言語タグを使用してください (例:「ja」「en-US」)。",
     "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
-    "linkInTextBlock_description": "文中にあるリンクが、色だけでなく、下線、フォントの太さやスタイルの違い、または十分な (3:1 以上の) 色のコントラストの差によって、周囲のテキストと視覚的に区別できるかを確認します。",
+    "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、フォントの太さやスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",
     "linkInTextBlock_summary_fail": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っています。",
-    "linkInTextBlock_hint_fail": "下線を付けるか、フォントの太さやスタイルに違いを持たせるか、リンクと周囲のテキストとの色のコントラストを 3:1 以上にしてください。",
+    "linkInTextBlock_hint_fail": "下線、または色以外の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けてください。周囲のテキストとの色のコントラストを 3:1 にするだけで十分なのは、リンクのホバー時とフォーカス時にも色以外の手がかりが加わる場合に限られます。",
     "linkInTextBlock_summary_cantTell": "このリンクが色以外の手段で周囲のテキストと区別できるかは判定できませんでした。",
-    "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、または周囲のテキストとの 3:1 以上のコントラストがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
+    "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、その他の色以外の目印があるか、または周囲のテキストとの 3:1 以上のコントラストに加えてホバー時とフォーカス時に色以外の手がかりがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
+    "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
+    "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
     "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
-    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
+    "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
+    "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
-    "videoCaption_description": "子要素に <track kind=\"captions\"|\"subtitles\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。",
-    "videoCaption_summary_cantTell": "この動画にはキャプション (または字幕) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
+    "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
+    "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
     "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。",
+    "videoCaption_summary_cantTell_subtitlesOnly": "この動画には字幕 (subtitles) のトラックしかありません。字幕は、キャプションが含む話者や音の情報を含まず、台詞を翻訳しているだけの場合があります。",
+    "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。",
     "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
     "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
     "scrollableRegionFocusable_summary_cantTell": "この要素は overflow:auto/scroll を宣言していますが、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできません。",
@@ -63433,12 +66600,14 @@ const I18N = {
     "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
     "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を要素の実際の状態に合わせるか、削除してください。ネイティブのチェックボックス/ラジオボタンは、aria-checked がなくてもこの状態を公開します。",
     "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
-    "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。",
+    "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
     "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
     "cssOrientationLock_summary_fail_unknownSelector": "「{{mediaText}}」のメディアクエリが、セレクターを読み取れない要素を回転させており、ページが 1 つの向きに固定されています。",
     "cssOrientationLock_hint_fail": "表示の向きのメディアクエリから rotate() の transform を削除してください。見た目を強制的に回転させるのではなく、端末の向きに合わせてページが自然に表示されるようにします。",
     "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} 個のスタイルシートを読み取れなかったため、このページが表示の向きを固定しているかは判定できませんでした。",
     "cssOrientationLock_hint_cantTell_unreadableSheets": "クロスオリジンのスタイルシートは、ページからは検査できません。サードパーティの CSS に rotate() の transform を含む表示の向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンで配信した状態で再度スキャンしてください。",
+    "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
+    "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
     "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
     "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",
@@ -63447,10 +66616,12 @@ const I18N = {
     "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、region、presentation など) である要素を検出し、人が確認できるようにします。",
     "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
     "focusOrderSemantics_hint_cantTell": "この要素を操作可能にする意図がなければ tabindex を削除し、そうでなければ実際の動作に合ったインタラクティブなロールを使用してください。",
-    "pAsHeading_title": "見出しのように装飾された <p> は、本来の見出し要素にすることが望ましい場合がある",
-    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示されている短い <p> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
+    "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
+    "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
     "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
     "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
+    "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
+    "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
     "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
     "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
     "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -63463,6 +66634,8 @@ const I18N = {
     "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
     "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
     "mouseOnlyEventHandlers_hint_cantTell": "この機能をキーボードでも利用できるよう、onkeydown/onkeyup/onkeypress (ホバーで動作するものには onfocus/onblur) を追加してください。",
+    "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
+    "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
     "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
     "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
     "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -63484,6 +66657,7 @@ const I18N = {
     "report_meta_schemaVersion": "スキーマバージョン",
     "report_meta_target": "対象",
     "report_meta_profile": "プロファイル",
+    "report_meta_optInRules": "オプトインルール",
     "report_meta_locale": "ロケール",
     "report_meta_localeRequested": "ロケール (要求: {{requested}})",
     "report_outcome_fail": "不合格",
@@ -63501,6 +66675,8 @@ const I18N = {
     "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
     "report_heading_worthReviewing": "確認が必要な項目",
     "report_heading_wcagRollup": "WCAG の集約結果",
+    "report_heading_standardRollup": "{{standard}} の集約結果",
+    "report_standardRollup_col_criterion": "基準",
     "report_techDetails": "詳細な技術データ — スコアカード、検索できる検出箇所の一覧",
     "report_heading_scorecard": "スコアカード",
     "report_heading_occurrences": "検出箇所",
@@ -63532,6 +66708,11 @@ const I18N = {
     "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。"
   }
 };
+
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = {};
 
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
@@ -63660,7 +66841,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
@@ -63956,11 +67140,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -64038,6 +67228,31 @@ const NORMATIVE_MAPPING_STANDARDS = {
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Standards whose entries come from each rule (ruleMapped in the registry),
+// by the name their entries carry. A rollup keeps only the entries of the
+// rules that produced its outcome (rollupCompositeResults).
+const RULE_MAPPED_STANDARDS = [];
+
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {};
+
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = [];
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = {};
+
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -64046,6 +67261,48 @@ const PROFILE_MAPPINGS = {
     "en301549:V3.2.1"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "key": "en301549",
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  }
+};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -64144,8 +67401,48 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
+    }
     selection.profile = requestedProfile;
   }
+  return selection;
+}
+
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags. It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
   return selection;
 }
 
@@ -64166,7 +67463,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -64193,7 +67495,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -64228,6 +67530,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (its standard's rule
+// tag), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -64244,6 +67563,26 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;
@@ -64486,7 +67825,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   return out;
 }
 
-function toCatalogEntry(r, engineOptions) {
+// The standards a catalog entry names for these options, chosen exactly as for
+// a scan result: engineOptions.mappings, plus what a profile adds when it
+// would apply to this selection. With no options that is WCAG alone.
+function catalogMappingTokens(engineOptions, runOnly) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+}
+
+function toCatalogEntry(r, engineOptions, mappingTokens) {
+  const tokens = Array.isArray(mappingTokens) ? mappingTokens : catalogMappingTokens(engineOptions, null);
   return {
     ruleId: r.ruleId,
     title: (r && r.i18n ? t(r.i18n.titleKey, r.title, null, engineOptions) : r.title),
@@ -64495,7 +67843,9 @@ function toCatalogEntry(r, engineOptions) {
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
     wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
-    normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
+    normativeMappings: Array.isArray(r.normativeMappings)
+      ? filterNormativeMappings(r.normativeMappings, tokens).map((o) => ({ ...o }))
+      : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -65199,11 +68549,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
-  function isLargeText(fontSizePx, fontWeightNum) {
+  // `boldLargeMinPx` overrides the size from which bold text is large. It
+  // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
+  // finite number, the WCAG threshold applies, so existing callers are
+  // unchanged.
+  function isLargeText(fontSizePx, fontWeightNum, boldLargeMinPx) {
     const size = parseFloat(fontSizePx);
     const w = Number(fontWeightNum);
     if (!Number.isFinite(size)) return false;
     if (size >= 24) return true;
+    if (typeof boldLargeMinPx === 'number' && Number.isFinite(boldLargeMinPx)) {
+      return size >= boldLargeMinPx && Number.isFinite(w) && w >= 700;
+    }
     // WCAG's bold-large threshold is 14pt. Derived via parsePx('14pt')
     // rather than a hardcoded decimal (e.g. "18.6667") or a hand-written
     // reconversion: floating-point multiplication/division isn't
@@ -66974,12 +70331,20 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // is permitted, but restating the native listbox role is always
     // allowed via the native-role fallback.
     'select[multiple]': [],
-    // <table> permits any role. <td>/<th>/<tr> are spec'd as context-
-    // dependent (restricted only when the ancestor <table> is exposed as
-    // role=table/grid/treegrid); that conditional isn't implemented here,
-    // so they're left unconstrained rather than guessing at ancestor-role
-    // resolution.
+    // No role other than its own 'main' is permitted on <main> (ARIA in
+    // HTML), and that one via the native-role fallback below.
+    main: [],
+    // <table> permits any role. <td>/<th>/<tr> are context-dependent: when
+    // the ancestor <table> is exposed as role=table, grid or treegrid (no
+    // explicit role, or one of those three) they permit no role other than
+    // their own, which is cell or gridcell for <td>, columnheader, rowheader,
+    // cell or gridcell for <th>, and row for <tr> (see getElementRoleKey's
+    // td[table]/th[table]/tr[table] split). Outside such a table they
+    // permit any role.
     table: null,
+    'td[table]': ['cell', 'gridcell'],
+    'th[table]': ['columnheader', 'rowheader', 'cell', 'gridcell'],
+    'tr[table]': [],
     td: null,
     th: null,
     tr: null
@@ -67028,7 +70393,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'input[type=email]': 'textbox',
     select: 'combobox',
     'select[multiple]': 'listbox',
+    main: 'main',
     table: 'table',
+    'td[table]': 'cell',
+    'th[table]': 'columnheader',
+    'tr[table]': 'row',
     td: 'cell',
     th: 'columnheader',
     tr: 'row'
@@ -67190,6 +70559,20 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // decide, statically, whether it is wrong (see aria-controls below).
   // `el` is optional; without it the few element-state-dependent branches
   // fall back to their element-agnostic answer.
+  // Lower bounds WAI-ARIA 1.2 sets on integer values ("an integer greater
+  // than or equal to ..."). aria-setsize also accepts -1; aria-colcount and
+  // aria-rowcount (-1 or at least the number of columns/rows in the DOM)
+  // are left to the plain integer check.
+  const INTEGER_ATTR_MIN = {
+    'aria-level': 1,
+    'aria-posinset': 1,
+    'aria-setsize': 1,
+    'aria-colindex': 1,
+    'aria-rowindex': 1,
+    'aria-colspan': 1,
+    'aria-rowspan': 0
+  };
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -67220,7 +70603,17 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       }
       case 'integer': {
         const ok = /^-?\d+$/.test(v);
-        return { valid: ok, reason: ok ? '' : 'expected-integer' };
+        if (!ok) return { valid: false, reason: 'expected-integer' };
+        // WAI-ARIA 1.2 bounds some integers: a level, position, index or
+        // column span starts at 1, a row span at 0, and a set size is at
+        // least 1 or -1 (unknown). A value outside the range exposes no
+        // meaningful level or position.
+        const n = Number(v);
+        const min = INTEGER_ATTR_MIN[lower(name)];
+        if (min === undefined) return { valid: true, reason: '' };
+        if (n >= min) return { valid: true, reason: '' };
+        if (lower(name) === 'aria-setsize' && n === -1) return { valid: true, reason: '' };
+        return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
         const ok = Number.isFinite(Number(v));
@@ -67273,7 +70666,12 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
           return { valid: false, review: true, reason: 'idref-controls-not-found' };
         }
 
-        return { valid: false, reason: 'idref-list-none-found' };
+        // Any other list (aria-labelledby, aria-describedby, aria-owns,
+        // aria-flowto, aria-details) that resolves to nothing is asked
+        // about rather than failed: the element falls back to its other
+        // name or description sources, and whether anything was lost
+        // depends on what the reference was meant to add.
+        return { valid: false, review: true, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:
@@ -67375,6 +70773,28 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
       return 'input[type=' + type + ']';
+    }
+
+    if (tag === 'td' || tag === 'th' || tag === 'tr') {
+      // Constrained only inside a <table> exposed as a table, grid or
+      // treegrid: one with no explicit role, or with one of those three.
+      // A layout table (role=none/presentation) or any other role leaves
+      // its cells and rows free (ARIA in HTML).
+      let table;
+      try {
+        table = el.closest ? el.closest('table') : null;
+      } catch {
+        table = null;
+      }
+      if (!table) return tag;
+      const tableRole = getExplicitRole(table);
+      const exposedAsTable =
+        !tableRole ||
+        !isValidConcreteRole(tableRole) ||
+        tableRole === 'table' ||
+        tableRole === 'grid' ||
+        tableRole === 'treegrid';
+      return exposedAsTable ? tag + '[table]' : tag;
     }
 
     if (tag === 'select') {
@@ -68711,6 +72131,48 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+  }
+
+  // Same deep query as queryAllSmart (shadow roots when includeShadowDom,
+  // context scope, excludeSelectors) but with no hidden-content filter:
+  // elements inside `hidden`, `display:none`, closed <details> and the like
+  // are returned whatever includeHiddenElements says. For rules that judge
+  // the markup itself rather than what is rendered (validity, presentational
+  // markup). <template> content is not part of the DOM tree and stays out,
+  // as it does for the W3C validator.
+  function queryAllSource(sel) {
+    const list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+    return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
+  }
+
+  // The document's doctype, classified. Verdicts that depend on the HTML
+  // version (a requirement that applies to HTML5 only, lang read as lang or
+  // xml:lang by version, an element presentational only before HTML5) read
+  // `kind`:
+  //   'html5'   name html, no public id, no system id or about:legacy-compat
+  //   'xhtml10' a public id of XHTML 1.0 (strict, transitional, frameset)
+  //   'xhtml11' any other W3C XHTML public id: 1.1, Basic, 1.1 plus MathML
+  //             (and SVG), XHTML+RDFa
+  //   'html4'   a W3C or IETF HTML public id: 2.0, 3.2, 4.0, 4.01, 4.01+RDFa
+  //   'other'   any other doctype, including a name other than html
+  //   'none'    no doctype
+  // Public ids are compared case-insensitively, as HTML's parser does.
+  function getDoctypeInfo() {
+    const doctype = document ? document.doctype : null;
+    if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
+    const name = String(doctype.name || '');
+    const publicId = String(doctype.publicId || '');
+    const systemId = String(doctype.systemId || '');
+    const pub = publicId.trim().toUpperCase();
+    let kind = 'other';
+    if (name.toLowerCase() === 'html') {
+      if (!publicId && (!systemId || systemId === 'about:legacy-compat')) kind = 'html5';
+      else if (pub.startsWith('-//W3C//DTD XHTML 1.0 ')) kind = 'xhtml10';
+      else if (pub.startsWith('-//W3C//DTD XHTML')) kind = 'xhtml11';
+      else if (pub.startsWith('-//W3C//DTD HTML ') || pub.startsWith('-//IETF//DTD HTML'))
+        kind = 'html4';
+    }
+    return { kind, name, publicId, systemId };
   }
 
   // -------------------------------------------------------------------------
@@ -70889,6 +74351,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
+  // Text of an SVG element's first <title> child, the name source SVG-AAM
+  // uses after aria-labelledby and aria-label. '' when the element is not in
+  // the SVG namespace, has no such child, or carries role none/presentation
+  // (which a <title> does not override: it is not a global ARIA attribute).
+  function getSvgTitleChildText(node) {
+    try {
+      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
+      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      if (role === 'none' || role === 'presentation') return '';
+      const kids = node.children ? Array.from(node.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
+          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        }
+      }
+    } catch {}
+    return '';
+  }
+
   // C.1) "Name from content": recursive accname-aligned content-name computation.
   //
   // Rationale: the accname spec's "name from content" step (2F) is recursive:
@@ -71080,6 +74561,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
+      }
+
+      // An SVG element is named by its first <title> child (SVG-AAM), after
+      // aria-labelledby and aria-label. The <title> itself is never rendered,
+      // so the walk below would skip it: <button><svg><title>Search</title>
+      // </svg></button> is named "Search" in browsers.
+      const svgTitle = getSvgTitleChildText(node);
+      if (svgTitle) {
+        const ariaName = getAriaNameInfo(node, _ctx, opts);
+        if (ariaName && ariaName.present && ariaName.value) {
+          parts.push(ariaName.value);
+          if (flags.indexOf('descendant-name-used:svg-aria') === -1)
+            flags.push('descendant-name-used:svg-aria');
+          return;
+        }
+        parts.push(svgTitle);
+        if (flags.indexOf('descendant-name-used:svg-title') === -1)
+          flags.push('descendant-name-used:svg-title');
+        return;
       }
 
       const ownName = getAccessibleNameInfo(node, _ctx, opts);
@@ -71993,6 +75493,76 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   }
 
+  // Input types whose placeholder HTML-AAM uses as the last name source.
+  const PLACEHOLDER_NAMED_INPUT_TYPES = new Set([
+    'text',
+    'password',
+    'number',
+    'search',
+    'tel',
+    'email',
+    'url'
+  ]);
+
+  // The name an element gets from its own HTML host markup rather than from
+  // ARIA: an associated <label> on a labelable element, the first child
+  // <legend> of a <fieldset>, the first child <caption> of a <table>, and,
+  // only when opts.placeholder is true, the placeholder of a text-like
+  // <input> or a <textarea> (HTML-AAM's last source). For the
+  // name-from-author-only role rules (role="textbox", "slider",
+  // "radiogroup", ...), whose ARIA check does not look at host markup: the
+  // browser still computes these for the native host whatever role it
+  // carries. Returns { present, value, mechanism } with mechanism one of
+  // 'label', 'legend', 'caption', 'placeholder' or 'none'.
+  function getNativeHostNameInfo(el, _ctx, opts) {
+    const none = { present: false, value: '', mechanism: 'none' };
+    if (!isElement(el)) return none;
+    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
+    const tag = lower(el.localName || el.tagName);
+
+    try {
+      const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
+      for (const labelEl of getAssociatedLabelElements(el)) {
+        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
+        if (info.present && info.value) {
+          return { present: true, value: info.value, mechanism: 'label' };
+        }
+      }
+    } catch {}
+
+    const firstChildOfType = (childTag) => {
+      const kids = el.children ? Array.from(el.children) : [];
+      for (const kid of kids) {
+        if (lower(kid.localName) === childTag) return kid;
+      }
+      return null;
+    };
+    const contentOf = (child, mechanism) => {
+      if (!child) return null;
+      const info = getContentNameInfo(child, _ctx, opts);
+      const value = info && info.present ? trim(info.value) : '';
+      return value ? { present: true, value, mechanism } : null;
+    };
+
+    if (tag === 'fieldset') {
+      const r = contentOf(firstChildOfType('legend'), 'legend');
+      if (r) return r;
+    }
+    if (tag === 'table') {
+      const r = contentOf(firstChildOfType('caption'), 'caption');
+      if (r) return r;
+    }
+
+    if (opts && opts.placeholder) {
+      const type = tag === 'input' ? lower(getAttr(el, 'type') || 'text') : '';
+      if (tag === 'textarea' || (tag === 'input' && PLACEHOLDER_NAMED_INPUT_TYPES.has(type))) {
+        const ph = trim(String(getAttr(el, 'placeholder') || '').replace(/\s+/g, ' '));
+        if (ph) return { present: true, value: ph, mechanism: 'placeholder' };
+      }
+    }
+    return none;
+  }
+
   function getLabelMethod(el, _ctx, _opts) {
     // returns { method, value } where value is best-effort text, deterministically trimmed
     if (!isElement(el)) return { method: 'none', value: null };
@@ -72166,6 +75736,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(document.documentElement);
   }
 
+  // Whether a link's text reads as a skip link ("Skip to content", "Aller au
+  // contenu", "Zum Inhalt"...), in the languages the engine ships and the
+  // phrasings French sites use ("liens d'évitement"). One list for
+  // every rule that looks for a skip link, so they recognise the same ones.
+  const SKIP_LINK_WORDING = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+  function hasSkipLinkWording(text) {
+    const s = typeof text === 'string' ? text : '';
+    return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
   return {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
@@ -72174,6 +75766,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    queryAllSource,
+    getDoctypeInfo,
     getOuterHtmlSnippet,
     buildSimpleSelector,
     buildSelector,
@@ -72186,6 +75780,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -72247,6 +75842,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control
     // (own aria-name, else rendered content, else title). Shared so
@@ -72565,6 +76161,18 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (one per requirement, say) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -72665,7 +76273,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -72676,6 +76284,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -72695,13 +76310,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
 
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
@@ -72782,6 +76404,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -72809,9 +76438,39 @@ const rollupCompositeResults = (function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong
@@ -73135,6 +76794,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -73145,6 +76807,27 @@ const runCore = (function runCore(
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
             : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+      );
+    } catch {}
+  }
+
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and a standard's profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
       );
     } catch {}
   }
@@ -73212,6 +76895,16 @@ const runCore = (function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -73219,12 +76912,26 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A rule's declared settings (contrast-minimum's thresholds) are its
+    // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
+    // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
+    // which is another rule under its own id, supplies its own. The caller's
+    // other config (excludeSelectors) still applies.
+    const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
+    let ruleConfig = callerConfig;
+    if (ruleConfig && settingNames.length) {
+      ruleConfig = { ...ruleConfig };
+      for (const name of settingNames) delete ruleConfig[name];
+    }
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -73241,6 +76948,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -73318,6 +77027,26 @@ const runCore = (function runCore(
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
     }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
+    }
     if (!result.engineOptions) {
       result.engineOptions = {
         ...(ctx.engineOptions || {}),
@@ -73366,6 +77095,21 @@ const runCore = (function runCore(
     );
   }
 
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+  }
+
   // Optional perf counters passthrough (only when enabled). Deterministic.
   let perfStats = null;
   try {
@@ -73394,6 +77138,13 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,

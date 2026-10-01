@@ -254,6 +254,46 @@
     </div>
   </div>
 
+  <div class="case" id="case_26">
+    <div class="case-title">26 — FAIL: <code>role="img"</code> with fallback content only (role img ignores the children)</div>
+    <div class="row">
+      <canvas id="canvas_case_26" role="img">Sales 2024: 10k</canvas>
+      <span>With role="img" the name comes from the author only, so the fallback text is not a name.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: <code>role="img"</code> named by <code>aria-label</code></div>
+    <div class="row">
+      <canvas id="canvas_case_27" role="img" aria-label="Sales 2024 chart"></canvas>
+      <span>aria-label names the role="img" canvas.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — PASS: <code>role="presentation"</code>, decorative</div>
+    <div class="row">
+      <canvas id="canvas_case_28" role="presentation"></canvas>
+      <span>The author marked the canvas decorative, so it needs no text alternative.</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: <code>role="none"</code>, decorative</div>
+    <div class="row">
+      <canvas id="canvas_case_29" role="none"></canvas>
+      <span>role="none" is the same as role="presentation".</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: <code>role="presentation"</code> ignored on a focusable canvas (tabindex=0), no fallback/name</div>
+    <div class="row">
+      <canvas id="canvas_case_30" role="presentation" tabindex="0"></canvas>
+      <span>A focusable element keeps its native role (presentational role conflict), so the canvas still needs a text alternative.</span>
+    </div>
+  </div>
+
 <p class="note">End of fixture.</p>
 </body>
 </html>

@@ -2,6 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
@@ -101,4 +103,15 @@ test(`${RULE_ID}: <object> is out of scope`, () => {
     '<object title="Contributors" data="/one.html"></object><object title="Contributors" data="/two.html"></object>'
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: fixture coverage (tests/fixtures/${RULE_ID}-all-scenarios.html)`, () => {
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', `${RULE_ID}-all-scenarios.html`);
+  const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), {
+    runOnly: [RULE_ID],
+    url: BASE
+  });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+  const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
+  assert.deepEqual(ids, ['iisp_case_04_a', 'iisp_case_04_b', 'iisp_case_05_a', 'iisp_case_05_b']);
 });

@@ -117,7 +117,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
   const expectedFlaggedIds = ['tdh_case_01'];
-  const expectedNoOccIds = ['tdh_case_02', 'tdh_case_03', 'tdh_case_04', 'tdh_case_05'];
+  const expectedNoOccIds = [
+    'tdh_case_02',
+    'tdh_case_03',
+    'tdh_case_04',
+    'tdh_case_05',
+    'tdh_case_06',
+    'tdh_case_07',
+    'tdh_case_08'
+  ];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceUnderTableId(rule, id), `Expected an occurrence under table id="${id}"`);
@@ -128,4 +136,76 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
       `Did not expect an occurrence under table id="${id}"`
     );
   }
+});
+
+const TABLE_4X4_ARIA_COLUMN_HEADERS = `
+  <tr><td role="columnheader">Region</td><td role="columnheader">Q1</td><td role="columnheader">Q2</td><td role="columnheader">Q3</td></tr>
+  <tr><td>North</td><td>1</td><td>2</td><td>3</td></tr>
+  <tr><td>South</td><td>4</td><td>5</td><td>6</td></tr>
+  <tr><td>East</td><td>7</td><td>8</td><td>9</td></tr>
+`;
+
+test(`${RULE_ID}: cells with role="columnheader"/"rowheader" are headers`, () => {
+  const html = `<!doctype html><html><body><table>${TABLE_4X4_ARIA_COLUMN_HEADERS}</table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+  const rows = `
+    <tr><td role="rowheader">A</td><td>1</td><td>2</td><td>3</td></tr>
+    <tr><td role="rowheader">B</td><td>4</td><td>5</td><td>6</td></tr>
+    <tr><td role="rowheader">C</td><td>7</td><td>8</td><td>9</td></tr>
+    <tr><td role="rowheader">D</td><td>1</td><td>2</td><td>3</td></tr>`;
+  const byRow = `<!doctype html><html><body><table>${rows}</table></body></html>`;
+  assertRule(runa11yCoreOnHtml(byRow, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+});
+
+// role="cell" makes a <th> a data cell, so it needs a header itself.
+test(`${RULE_ID}: a <th> given another role is not a header`, () => {
+  const html = `<!doctype html><html><body><table>
+    <tr><th role="cell">a</th><th role="cell">b</th><th role="cell">c</th><th role="cell">d</th></tr>
+    <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+    <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+    <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 16,
+    maxOccurrences: 16
+  });
+});
+
+test(`${RULE_ID}: a table whose role is not table, grid or treegrid is left out`, () => {
+  for (const role of ['presentation', 'none']) {
+    const html = `<!doctype html><html><body><table role="${role}">${TABLE_4X4_NO_HEADERS}</table></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+  }
+  const grid = `<!doctype html><html><body><table role="grid">${TABLE_4X4_NO_HEADERS}</table></body></html>`;
+  assertRule(runa11yCoreOnHtml(grid, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+});
+
+test(`${RULE_ID}: an empty cell needs no header; one holding an image does`, () => {
+  const corner = `<!doctype html><html><body><table>
+    <tr><td id="corner"></td><th>Q1</th><th>Q2</th><th>Q3</th></tr>
+    <tr><th>North</th><td>1</td><td>2</td><td>3</td></tr>
+    <tr><th>South</th><td>4</td><td>5</td><td>6</td></tr>
+    <tr><th>East</th><td>7</td><td>8</td><td>9</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(corner, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+  const image = corner.replace(
+    '<td id="corner"></td>',
+    '<td id="corner"><img src="l.png" alt="Logo"></td>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(image, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(rule.occurrences[0].html.includes('id="corner"'));
+});
+
+test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  const run = (body) => runa11yCoreOnHtml(page(body), { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(run(`<table>${TABLE_4X4_ARIA_COLUMN_HEADERS}</table>`), RULE_ID, 'pass');
+  assertRule(
+    run(`<table role="presentation">${TABLE_4X4_NO_HEADERS}</table>`),
+    RULE_ID,
+    'notApplicable'
+  );
+  assertRule(run(`<table>${TABLE_4X4_WELL_HEADED}</table>`), RULE_ID, 'pass');
 });

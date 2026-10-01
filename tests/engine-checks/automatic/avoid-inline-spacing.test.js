@@ -10,6 +10,11 @@ const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'avoid-inline-spacing';
 
+// Long enough to wrap at a 320px reflow width, so a forced value on it fails.
+// Shorter text may fit on one line and is reviewed instead (see the
+// short-text tests below).
+const LONG = 'The toy brought back fond memories of being lost in the rain forest.';
+
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some(
     (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
@@ -38,7 +43,7 @@ test(`${RULE_ID}: pass when the forced value already meets the metric`, () => {
 });
 
 test(`${RULE_ID}: fail when letter-spacing is forced below 0.12em`, () => {
-  const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">text</p></body></html>`;
+  const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -46,7 +51,7 @@ test(`${RULE_ID}: fail when letter-spacing is forced below 0.12em`, () => {
 });
 
 test(`${RULE_ID}: fail lists all forced properties together`, () => {
-  const html = `<!doctype html><html><body><p id="a" style="line-height:1.2 !important; word-spacing:1px !important">text</p></body></html>`;
+  const html = `<!doctype html><html><body><p id="a" style="line-height:1.2 !important; word-spacing:1px !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.deepStrictEqual(rule.occurrences[0].data.details.properties, [
@@ -82,13 +87,13 @@ test(`${RULE_ID}: notApplicable when the forced value is inherit or unset`, () =
 });
 
 test(`${RULE_ID}: initial resolves to a concrete value and stays in scope`, () => {
-  const html = `<!doctype html><html><body><p id="a" style="line-height:initial !important">text</p></body></html>`;
+  const html = `<!doctype html><html><body><p id="a" style="line-height:initial !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
-  const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">text</p></body></html>`;
+  const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Inline style must not force text spacing below the WCAG metric');
@@ -104,13 +109,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scen
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // Six, not three: the undecided elements are cantTell-tier occurrences
+  // Seven, not three: the undecided elements are cantTell-tier occurrences
   // reported alongside the confident fails rather than discarded by them.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
   for (const id of ['ais_case_04', 'ais_case_05', 'ais_case_06']) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
   }
-  for (const id of ['ais_case_10', 'ais_case_11', 'ais_case_12']) {
+  for (const id of ['ais_case_10', 'ais_case_11', 'ais_case_12', 'ais_case_13']) {
     const occ = (rule.occurrences || []).find(
       (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
     );
@@ -146,7 +151,7 @@ test(`${RULE_ID}: cantTell, not pass, when an !important spacing value cannot be
 test(`${RULE_ID}: an unresolvable value does not mask a proven failure elsewhere`, () => {
   const html = `<!doctype html><html><body>
     <p id="unresolved" style="letter-spacing: calc(1vw - 2ex) !important">Some text.</p>
-    <p id="tooTight" style="letter-spacing: 0.01em !important">Some text.</p>
+    <p id="tooTight" style="letter-spacing: 0.01em !important">${LONG}</p>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
@@ -181,4 +186,47 @@ test(`${RULE_ID}: text that cannot wrap is reviewed, but ordinary text still fai
   );
   assert.ok(noWrap, 'the element that cannot wrap is still reported');
   assert.strictEqual(noWrap.occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: a short single-line text is reviewed, not failed`, () => {
+  // ACT 78fd32 applies only to text with a soft wrap break. "OK" has no break
+  // opportunity, and a short phrase fits on one line at a 320px width.
+  const html = `<!doctype html><html><body>
+    <p id="ok" style="line-height:1 !important">OK</p>
+    <p id="short" style="line-height:1 !important">Opening hours</p>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+    const byId = (id) =>
+      rule.occurrences.find((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+    assert.strictEqual(byId('ok').data.details.reasonCode, 'INLINE_SPACING_NO_SOFT_WRAP');
+    assert.strictEqual(byId('short').data.details.reasonCode, 'INLINE_SPACING_SHORT_TEXT');
+    assert.strictEqual(
+      byId('short').i18n.summaryKey,
+      'avoidInlineSpacing_summary_cantTell_shortText'
+    );
+    assert.strictEqual(byId('short').uncertainty.code, 'not-computable');
+  }
+});
+
+test(`${RULE_ID}: a long paragraph still fails under every profile`, () => {
+  const html = `<!doctype html><html><body><p id="long" style="line-height:1 !important">${LONG}</p></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'INLINE_SPACING_IMPORTANT');
+  }
+});
+
+test(`${RULE_ID}: the one-line estimate follows the font size and counts wide characters`, () => {
+  // 30 characters: 15em. At 16px that is 240px and fits; at 24px, 360px does not.
+  const phrase = 'Library opening hours by week';
+  const small = `<!doctype html><html><body><p style="line-height:1 !important; font-size:16px">${phrase}</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(small, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const large = `<!doctype html><html><body><p style="line-height:1 !important; font-size:24px">${phrase}</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(large, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  // 25 Japanese characters take 25em, 400px at 16px, so the text can wrap.
+  const ja = `<!doctype html><html lang="ja"><body><p style="line-height:1 !important">図書館の開館時間は曜日によって異なりますのでご注意ください</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(ja, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
 });

@@ -2,12 +2,11 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
-const I18N_DIR = path.join(__dirname, '..', '..', 'src', 'i18n');
+const { loadDictionaries } = require('../../scripts/lib/dictionaries');
 
-const enDict = JSON.parse(fs.readFileSync(path.join(I18N_DIR, 'en.json'), 'utf8'));
+// English as the engine sees it: core's dictionary and each profile's.
+const enDict = loadDictionaries().en;
 
 const PLACEHOLDER_SOURCE = '\\{\\{[#^/]?\\s*[\\w.]+\\s*\\}\\}';
 

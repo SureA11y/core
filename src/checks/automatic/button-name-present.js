@@ -22,7 +22,8 @@
  *   "Submit"/"Reset" default, which is why those two are never nameless.
  *   Failing both, a button whose role is name-from-content falls back to its
  *   subtree text, counting each descendant's own name (an <img alt>,
- *   aria-label or title) rather than only text nodes.
+ *   aria-label, an <svg>'s <title> child, or title) rather than only text
+ *   nodes.
  */
 
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.

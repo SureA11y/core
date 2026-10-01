@@ -5,14 +5,16 @@
 /**
  * @check dialog-name-present
  * @atomic true
- * @summary Elements with role="dialog"/"alertdialog" must have an accessible name
+ * @summary Dialogs (role="dialog"/"alertdialog" or a native <dialog>) must have an accessible name
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="dialog" or role="alertdialog" (the
- *   attribute must name one of those roles alone, not a fallback list) that
- *   are included in the accessibility tree. A native <dialog> without an
- *   explicit role is out of scope.
+ *   Applies to elements included in the accessibility tree whose role is
+ *   dialog or alertdialog: an element whose role attribute resolves to one
+ *   of those roles (the first token that names a concrete ARIA role wins,
+ *   so role="alertdialog dialog" is an alertdialog), and a native <dialog>
+ *   whose role attribute is absent or names no concrete role (its implicit
+ *   role is dialog). A closed <dialog> is hidden and so not in scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title. Both
@@ -25,7 +27,7 @@ const id = 'dialog-name-present';
 const meta = {
   title: 'Dialogs have an accessible name',
   description:
-    'Checks that elements with role="dialog" or role="alertdialog" expose a non-empty accessible name.',
+    'Checks that dialogs (elements with role="dialog" or role="alertdialog", and native <dialog> elements) expose a non-empty accessible name.',
   i18n: {
     titleKey: 'dialogNamePresent_title',
     descriptionKey: 'dialogNamePresent_description'
@@ -115,7 +117,8 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="dialog"],[role="alertdialog"]';
+  // Filtered below by the resolved role.
+  const selector = 'dialog,[role]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -137,12 +140,28 @@ function runInPage(ctx) {
     return { ok: false, method: 'none' };
   }
 
+  // The role the browser uses: the first token of the role attribute that
+  // names a concrete ARIA role, else the element's implicit role (dialog for
+  // a native <dialog>; the others are not in scope here).
+  const aria = helpers && helpers.aria;
+  function resolveRole(el) {
+    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
+    for (const t of tokens) {
+      const concrete =
+        aria && typeof aria.isValidConcreteRole === 'function'
+          ? aria.isValidConcreteRole(t)
+          : t === 'dialog' || t === 'alertdialog';
+      if (concrete) return t;
+    }
+    return String(el.tagName || '').toLowerCase() === 'dialog' ? 'dialog' : '';
+  }
+
   for (const el of nodes) {
     if (!el) continue;
-    if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
+    const role = resolveRole(el);
     if (role !== 'dialog' && role !== 'alertdialog') continue;
+    if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
 

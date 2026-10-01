@@ -30,6 +30,11 @@
     .reset-sibling:focus { outline: none; }
     .reset-sibling:focus + .indicator { background: navy; }
 
+    /* Suppression by a rule with no focus state, which applies while focused too. */
+    .plain-reset { outline: none; }
+    .plain-reset-restored { outline: 0; }
+    .plain-reset-restored:focus-visible { outline: 2px solid navy; }
+
     /* Not a suppression of the element's own indicator. */
     .parent-focus:focus .child-link { outline: none; }
     .within-only:focus-within { outline: none; }
@@ -91,6 +96,18 @@
   <div class="case" id="case_09">
     <div class="case-title">09 — PASS: replacement painted on a sibling element</div>
     <a class="reset-sibling" id="cfis_case_09" href="/status">Status</a><span class="indicator"></span>
+  </div>
+
+  <h2>D. Outline removed by a rule with no focus state</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — CANTTELL: outline: none with no :focus in the selector, and no focus rule restores an indicator</div>
+    <a class="plain-reset" id="cfis_case_13" href="/news">News</a>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: outline: 0 with no focus state, restored by a :focus-visible rule</div>
+    <a class="plain-reset-restored" id="cfis_case_14" href="/events">Events</a>
   </div>
 
   <h2>C. Not this rule's concern</h2>

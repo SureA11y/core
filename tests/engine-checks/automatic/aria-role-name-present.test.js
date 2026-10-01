@@ -457,6 +457,27 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: the host's own legend, caption or label names it under the role`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body>
+    <fieldset role="radiogroup"><legend>Civilité</legend><label><input type="radio" name="c"> Madame</label></fieldset>
+    <table role="grid"><caption>Planning</caption><tr role="row"><td role="gridcell">Lundi</td></tr></table>
+    <label for="p">Chargement</label><progress id="p" role="progressbar" value="5" max="10"></progress>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an empty legend or caption, or one on a div host, does not name it`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body>
+    <fieldset role="radiogroup" id="a"><legend></legend><label><input type="radio" name="c"> Madame</label></fieldset>
+    <div role="grid" id="b"><div role="caption">Planning</div><div role="row"><div role="gridcell">Lundi</div></div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -472,9 +493,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
+    'role_case_30',
     'role_case_01',
     'role_case_03',
     'role_case_05',
@@ -488,6 +510,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
   ];
 
   const expectedNoOccIds = [
+    'role_case_28',
+    'role_case_29',
     'role_case_02',
     'role_case_04',
     'role_case_06',

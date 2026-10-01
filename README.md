@@ -425,9 +425,13 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 ```
 
 `wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
-the WCAG Level A and AA rules of the version they build on, and the result
-records the one used in `engine.profile`. A profile only chooses which rules
-run; it does not certify conformance.
+the WCAG Level A and AA rules of the version they build on; the result records
+the one used in `engine.profile`. A profile only chooses which rules
+run; it does not certify conformance. A standard with verdicts of its own
+comes as a profile under [`profiles/`](./profiles/README.md), with its own
+rules, which run only when a scan targets it; to run every rule instead, pass
+`optInRules: 'all'` with no profile; the result records it in
+`engine.optInRules`.
 
 An EN 301 549 profile also maps every WCAG criterion in the result to the
 clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
@@ -534,7 +538,7 @@ contributing to it:
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule. |
+| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, in `profiles/<key>/docs/RULE_CATALOG.md`. |
 | `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
 | `docs/POLICY.md` | Built-in policy contracts and customization. |
 | `docs/I18N.md` | Translation support and localization. |
@@ -592,6 +596,8 @@ src/
   junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
+  wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
 
   checks/
     automatic/             # Deterministic automated rules
@@ -603,6 +609,10 @@ src/
   coverage/                # WCAG coverage definitions
   catalogs/                # Composite rule catalogs
   explain/                 # Occurrence grouping, internal
+
+profiles/
+  index.js                 # The profiles built into the engine (none yet)
+  README.md                # What a profile holds and how to add one
 
 scripts/
   build-core.js            # Generates src/core.js

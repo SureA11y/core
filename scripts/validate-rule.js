@@ -15,7 +15,8 @@
  * - runs rule through engine (runOnly) on probe HTML
  * - asserts allowed outcomes + occurrence invariants
  * - checks determinism (deep equality over JSON-clone)
- * - verifies required i18n keys exist in src/i18n/en*.js
+ * - verifies required i18n keys exist in the English dictionary (src/i18n/en.json
+ *   and each profile's en.json)
  * - enforces expected tag conventions (atomic + type + wcag sc tags)
  *
  * - Rule validation policy:
@@ -38,6 +39,34 @@ const path = require('node:path');
 // Adjust these imports to match your repo layout if needed
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
+const { CORE_I18N_DIR, i18nDirs, loadDictionaries } = require('./lib/dictionaries');
+const { isOptInRule, runOnlyForRule } = require('./lib/rule-run-selection.js');
+const { ruleDirs } = require('./lib/rule-dirs');
+const { isVariant, resolveVariants } = require('./lib/rule-variants');
+
+// The file of the rule with this id, in any rules folder.
+function findRuleFile(id) {
+  const walk = (dir) =>
+    fs.existsSync(dir)
+      ? fs
+          .readdirSync(dir, { withFileTypes: true })
+          .flatMap((e) =>
+            e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]
+          )
+          .filter((f) => f.endsWith('.js'))
+      : [];
+  return (
+    ruleDirs()
+      .flatMap(walk)
+      .find((file) => {
+        try {
+          return require(file).id === id;
+        } catch {
+          return false;
+        }
+      }) || null
+  );
+}
 const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 
 function loadWcagFacetsRegistry(repoRoot) {
@@ -164,6 +193,8 @@ function expectedLevelTagFromMappings(mappings, informativeReferences, wcagSc) {
   return `${prefix}a`;
 }
 
+// The English dictionary the engine is built with: src/i18n/en.json and
+// each profile's en.json (scripts/lib/dictionaries.js).
 function loadEnDictionary(repoRoot) {
   const dir = path.join(repoRoot, 'src', 'i18n');
   assert.ok(fs.existsSync(dir), `Expected i18n directory at ${dir}`);
@@ -171,13 +202,9 @@ function loadEnDictionary(repoRoot) {
   const enPath = path.join(dir, 'en.json');
   assert.ok(fs.existsSync(enPath), `No English dictionary found at ${enPath}`);
 
-  const dict = JSON.parse(fs.readFileSync(enPath, 'utf8'));
-  assert.ok(
-    dict && typeof dict === 'object' && !Array.isArray(dict),
-    `English dictionary must be a JSON object: ${enPath}`
-  );
-
-  return { dict, enPath };
+  const dirs = [dir].concat(i18nDirs().filter((d) => d !== CORE_I18N_DIR));
+  const enPaths = dirs.map((d) => path.join(d, 'en.json')).filter((p) => fs.existsSync(p));
+  return { dict: loadDictionaries(dirs).en, enPaths };
 }
 
 function validateI18nKeyExists(dict, key, context) {
@@ -293,7 +320,8 @@ function validateMeta(meta) {
   // automatic rules and not only to advisory ones.
   assert.ok(Array.isArray(meta.wcagSc), 'meta.wcagSc must be an array');
   const claimsNoCriterion =
-    Array.isArray(meta.tags) && meta.tags.map(String).includes('best-practice');
+    Array.isArray(meta.tags) &&
+    (meta.tags.map(String).includes('best-practice') || isOptInRule(meta.tags));
   if (meta.type === 'automatic' && !claimsNoCriterion) {
     assert.ok(meta.wcagSc.length > 0, 'meta.wcagSc must be non-empty array for automatic checks');
   }
@@ -358,10 +386,11 @@ function validateTags(meta) {
 
   if (meta.wcagSc.length === 0) {
     // Tier 1b: a pure "Best Practice" advisory rule with no WCAG SC at all carries
-    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag.
+    // 'best-practice' instead of any wcag2*/wcag21*/wcag22* level tag. A rule for
+    // another standard's own requirement carries that standard's rule tag instead.
     assert.ok(
-      tags.has('best-practice'),
-      'meta.tags must include "best-practice" for a rule with no wcagSc (Tier 1b advisory)'
+      tags.has('best-practice') || isOptInRule(meta.tags),
+      'meta.tags must include "best-practice" (or a standard\'s rule tag) for a rule with no wcagSc'
     );
     return;
   }
@@ -492,14 +521,17 @@ function validateOutcomeOccurrenceInvariants(ruleResult, isAutomatic) {
   const occCount = (ruleResult.occurrences || []).length;
 
   if (isAutomatic) {
-    const ok = new Set(['pass', 'fail', 'notApplicable']);
+    // An automatic rule may ask (cantTell) where it cannot decide, as
+    // RULE_AUTHORING.md's outcome contract allows, always with the
+    // occurrences that need review.
+    const ok = new Set(['pass', 'fail', 'cantTell', 'notApplicable']);
     assert.ok(
       ok.has(ruleResult.outcome),
       `automatic rule outcome must be one of ${Array.from(ok).join(', ')}`
     );
 
-    if (ruleResult.outcome === 'fail') {
-      assert.ok(occCount >= 1, 'fail outcome must include >= 1 occurrence');
+    if (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell') {
+      assert.ok(occCount >= 1, `${ruleResult.outcome} outcome must include >= 1 occurrence`);
     } else {
       // In this ruleset, pass and notApplicable are expected to carry no occurrences
       assert.ok(occCount === 0, `${ruleResult.outcome} outcome must include 0 occurrences`);
@@ -591,25 +623,58 @@ function main() {
   const repoRoot = process.cwd();
 
   // Load module
-  const mod = require(ruleAbsPath);
+  let mod = require(ruleAbsPath);
+  assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
+
+  // A variant (scripts/lib/rule-variants.js) has no code of its own: it is
+  // checked as its base rule's code run under its own id, meta and messages.
+  let codePath = ruleAbsPath;
+  let ownKey = (key) => key;
+  if (isVariant(mod)) {
+    const extra = Object.keys(mod)
+      .filter((k) => !['id', 'from', 'config', 'meta'].includes(k))
+      .sort();
+    assert.deepStrictEqual(
+      extra,
+      [],
+      `a variant exports only id, from, config, meta (got: ${extra.join(', ')})`
+    );
+    const baseFile = findRuleFile(mod.from);
+    assert.ok(baseFile, `variant ${mod.id}: from names ${mod.from}, which is no rule`);
+    const { modules, problems } = resolveVariants([
+      { file: baseFile, mod: require(baseFile) },
+      { file: ruleAbsPath, mod }
+    ]);
+    assert.deepStrictEqual(problems, [], `variant ${mod.id}: ${problems.join('; ')}`);
+    mod = modules[1].mod;
+    codePath = baseFile;
+    const { from, to } = mod.variant.messages;
+    ownKey = (key) => (key.startsWith(from + '_') ? to + key.slice(from.length) : key);
+  }
 
   // Exports
-  assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
   for (const k of ['id', 'meta', 'runInPage']) {
     assert.ok(hasOwn(mod, k), `module missing export: ${k}`);
   }
 
-  // applicability is an optional part of the contract; anything else is a typo
-  // or a helper that should live inside runInPage.
-  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability']);
+  // applicability and settings (the names a variant may change) are optional
+  // parts of the contract; anything else is a typo or a helper that should
+  // live inside runInPage.
+  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability', 'settings', 'variant']);
   const unexpected = Object.keys(mod)
     .filter((k) => !allowed.has(k))
     .sort();
   assert.deepStrictEqual(
     unexpected,
     [],
-    `module exports more than id, meta, runInPage, applicability (got: ${unexpected.join(', ')})`
+    `module exports more than id, meta, runInPage, applicability, settings (got: ${unexpected.join(', ')})`
   );
+  if (hasOwn(mod, 'settings')) {
+    assert.ok(
+      mod.settings && typeof mod.settings === 'object' && !Array.isArray(mod.settings),
+      'settings, when exported, must be an object of setting names and defaults'
+    );
+  }
 
   if (hasOwn(mod, 'applicability')) {
     assert.ok(
@@ -646,7 +711,7 @@ function main() {
   validateRunInPageSerialization(mod.runInPage);
 
   // i18n dictionary loading
-  const { dict: enDict, enPath } = loadEnDictionary(repoRoot);
+  const { dict: enDict, enPaths } = loadEnDictionary(repoRoot);
 
   // Validate meta i18n keys exist
   validateI18nKeyExists(enDict, mod.meta.i18n.titleKey, 'meta.i18n.titleKey');
@@ -661,13 +726,14 @@ function main() {
   );
 
   // Validate i18n keys referenced in source (static extraction)
-  const { keys: staticKeys } = extractI18nKeysFromSource(ruleAbsPath);
+  // (a variant's: its base's keys, read from the variant's own prefix)
+  const { keys: staticKeys } = extractI18nKeysFromSource(codePath);
   for (const k of staticKeys) {
-    validateI18nKeyExists(enDict, k, 'static i18n key');
+    validateI18nKeyExists(enDict, ownKey(k), 'static i18n key');
   }
 
   // Keep the cantTell vocabulary closed (static extraction)
-  validateUncertaintyCodes(ruleAbsPath);
+  validateUncertaintyCodes(codePath);
 
   // Runtime validation via engine
   const RULE_ID = mod.id;
@@ -691,7 +757,8 @@ function main() {
     '<video id="probe_video" poster="x.png"></video>' +
     '</body></html>';
 
-  const runOn = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const runOn = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: runOnlyForRule(RULE_ID, mod.meta.tags) });
 
   // No-throws + determinism
   validateDeterminism(() => runOn(htmlNoTargets), RULE_ID);
@@ -714,7 +781,7 @@ function main() {
   }
 
   console.log(`✅ Rule validated: ${RULE_ID}`);
-  console.log(`   English dictionary: ${enPath}`);
+  console.log(`   English dictionaries: ${enPaths.join(', ')}`);
 }
 
 main();

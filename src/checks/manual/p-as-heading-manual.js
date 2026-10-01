@@ -5,14 +5,15 @@
 /**
  * @check p-as-heading
  * @atomic true
- * @summary A <p> styled to look like a heading should probably be a real heading
+ * @summary Text styled to look like a heading should probably be a real heading
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   `<p>` elements with short (<=120 char), non-empty trimmed text
- *   content that is entirely bold (the `<p>`'s own computed
- *   `font-weight` >= 700, OR its entire text is wrapped in a single
- *   `<strong>`/`<b>` child) and rendered at >=18px.
+ *   `<p>` elements, and `<div>` elements that hold only text and inline
+ *   markup, with short (<=120 char), non-empty trimmed text in which every
+ *   piece of text is bold (computed `font-weight` >= 700, however it got
+ *   there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`)
+ *   and rendered at >=18px.
  * @expectation
  *   Text styled to visually read as a heading (bold, larger-than-body
  *   size, short) should be marked up with a real heading element
@@ -30,14 +31,22 @@
  *   surrounding text (unlike `link-in-text-block`); it's simpler on
  *   purpose, since "looks like a heading" is closer to an absolute
  *   judgment than a relative-contrast one.
+ * - Weight and size are read from the element that holds each piece of
+ *   text, so `<p><span style="font-weight:bold">` counts and a `<p>` with
+ *   one normal-weight word does not.
+ * - A `<div>` is only considered when it has no block, list, table, form
+ *   control or image inside it, so only the innermost block is asked
+ *   about. A `<div>` with a role, and text inside a heading, button,
+ *   label, legend, caption, table header or `<summary>`, are left out:
+ *   that text already has a role of its own.
  */
 
 const id = 'p-as-heading';
 
 const meta = {
-  title: 'A <p> styled to look like a heading should probably be a real heading',
+  title: 'Text styled to look like a heading should probably be a real heading',
   description:
-    'Flags short <p> elements whose entire text is bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
+    'Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.',
   i18n: {
     titleKey: 'pAsHeading_title',
     descriptionKey: 'pAsHeading_description'
@@ -93,65 +102,101 @@ function runInPage(ctx) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  function isEntirelyBold(p, text) {
-    const cs = safeComputedStyle(p);
-    if (isBoldWeight(cs)) return true;
+  // Elements whose text already has a role of its own.
+  const OWN_ROLE_ANCESTORS =
+    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
 
-    // A single <strong>/<b> child that wraps the whole text also counts.
-    const children = Array.from(p.children || []);
-    const boldWrap = children.find((c) => {
-      const tag = (c.tagName || '').toLowerCase();
-      return tag === 'strong' || tag === 'b';
-    });
-    if (boldWrap && children.length === 1) {
-      const wrapText = trim(boldWrap.textContent || '');
-      if (wrapText && wrapText === text) return true;
+  // Anything but text and inline markup makes a <div> a container, not a
+  // passage of text.
+  const NOT_INLINE =
+    'address, article, aside, blockquote, details, dialog, div, dl, fieldset, figure, figcaption, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, hr, li, main, nav, ol, p, pre, section, table, ul, img, svg, picture, video, audio, canvas, iframe, object, embed, input, select, textarea, button';
+
+  function textPieces(el) {
+    const pieces = [];
+    const doc = el.ownerDocument;
+    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    let node = walker.nextNode();
+    while (node) {
+      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      node = walker.nextNode();
     }
-    return false;
+    return pieces;
   }
 
-  function getFontSizePx(p) {
-    const cs = safeComputedStyle(p);
-    if (!cs) return 0;
-    const px = Number.parseFloat(cs.fontSize);
-    return Number.isFinite(px) ? px : 0;
+  // Every piece of text is bold, and the smallest is the size reported.
+  function boldSize(el) {
+    let minPx = Infinity;
+    for (const holder of textPieces(el)) {
+      const cs = safeComputedStyle(holder);
+      if (!isBoldWeight(cs)) return 0;
+      const px = Number.parseFloat(cs.fontSize);
+      if (!Number.isFinite(px)) return 0;
+      minPx = Math.min(minPx, px);
+    }
+    return Number.isFinite(minPx) ? minPx : 0;
   }
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('p') : helpers.queryAll('p');
+  function isCandidate(el) {
+    const tag = (el.tagName || '').toLowerCase();
+    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    if (tag === 'p') return true;
+    if (tag !== 'div') return false;
+    if (trim(el.getAttribute('role'))) return false;
+    return !el.querySelector(NOT_INLINE);
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('p, div')
+    : helpers.queryAll('p, div');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
+    if (!isCandidate(el)) continue;
 
     const text = trim(el.textContent || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
 
-    if (!isEntirelyBold(el, text)) continue;
-
-    const fontSizePx = getFontSizePx(el);
+    const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
+    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
-    const baseOccurrence = {
-      selector: stableSelector,
-      html,
-      summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
-      hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
-      i18n: {
-        summaryKey: 'pAsHeading_summary_cantTell',
-        hintKey: 'pAsHeading_hint_cantTell',
-        params: { fontSizePx: String(fontSizePx) }
-      },
-      data: {
-        details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
-      }
-    };
+    const baseOccurrence = isParagraph
+      ? {
+          selector: stableSelector,
+          html,
+          summary: 'This paragraph is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a paragraph to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell',
+            hintKey: 'pAsHeading_hint_cantTell',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
+          }
+        }
+      : {
+          selector: stableSelector,
+          html,
+          summary: 'This block of text is entirely bold and rendered at a heading-like size.',
+          hint: 'If this text introduces a new section, use a real heading element (<h1>-<h6> or role="heading") instead of styling a <div> to look like one.',
+          i18n: {
+            summaryKey: 'pAsHeading_summary_cantTell_div',
+            hintKey: 'pAsHeading_hint_cantTell_div',
+            params: { fontSizePx: String(fontSizePx) }
+          },
+          data: {
+            details: { reasonCode: 'BOLD_LARGE_DIV', fontSizePx }
+          }
+        };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

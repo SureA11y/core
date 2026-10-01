@@ -10,7 +10,10 @@
  * @sc 1.3.1
  * @applicability
  *   Applies to <ul>/<ol> elements that have at least one direct element
- *   child.
+ *   child and whose role is list: no role attribute, role="list", or a role
+ *   attribute naming no concrete ARIA role. A <ul>/<ol> given another role
+ *   (listbox, menubar, tablist, none, ...) is not a list, so its children
+ *   follow that role's rules instead.
  * @expectation
  *   Every direct element child is <li>, <script>, or <template>. UNLESS it
  *   has an explicit `role` attribute, in which case the explicit role wins
@@ -96,9 +99,23 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The first role token that names a concrete ARIA role, or '' when none
+  // does (the element keeps its native list role).
+  const aria = helpers && helpers.aria;
+  function resolvedExplicitRole(el) {
+    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!aria || typeof aria.isValidConcreteRole !== 'function') return tokens[0] || '';
+    return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
+  }
+
   for (const el of nodes) {
     if (!el || !el.children) continue;
     if (!el.children.length) continue;
+    const listRole = resolvedExplicitRole(el);
+    if (listRole && listRole !== 'list') continue;
 
     applicableCount += 1;
 

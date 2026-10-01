@@ -17,9 +17,10 @@
  *   aria-hidden-focus and duplicate-id-aria own those separately). Per ACT
  *   7d6734, this reaches any element carrying one of these roles, not only
  *   the <svg> root, e.g. a <circle role="graphics-symbol"> nested inside a
- *   plain <svg>. The <svg> root itself is left to svg-text-alternative-present's
- *   own (already ACT-clean) title/aria-name handling; the <img> tag is
- *   excluded here since it has its own dedicated rule.
+ *   plain <svg>. Every <svg> element itself is left to
+ *   svg-text-alternative-present's own (already ACT-clean) title/aria-name
+ *   handling, so an unnamed <svg role="img"> is reported once, there; the
+ *   <img> tag is excluded here since it has its own dedicated rule.
  * @expectation
  *   Each applicable element has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
@@ -95,8 +96,11 @@ function runInPage(ctx) {
   };
 
   const imgElements = (() => {
-    // do not consider element "img" because it has its own rule
-    const sel = '[role="img" i]:not(img), [role="graphics-symbol" i], [role="graphics-document" i]';
+    // <img> and <svg> are left out: each has its own rule
+    // (img-alt-present, svg-text-alternative-present), and counting an
+    // unnamed <svg role="img"> here too would report it twice.
+    const sel =
+      '[role="img" i]:not(img):not(svg), [role="graphics-symbol" i]:not(svg), [role="graphics-document" i]:not(svg)';
     try {
       return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {

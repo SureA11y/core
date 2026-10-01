@@ -116,7 +116,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/input-image-alt-present-all-s
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+
+  const cantTell = rule.occurrences.filter((o) => o.occurrenceOutcome === 'cantTell');
+  assert.strictEqual(cantTell.length, 1);
+  assert.ok(cantTell[0].html.includes('id="input_image_case_20"'));
 
   const expectedFailIds = [
     'input_image_case_01',
@@ -243,20 +247,25 @@ test('aria-hidden-focus reports the image button this rule skips', () => {
   assertRule(result, 'aria-hidden-focus', 'fail', { minOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail when alt is the HTML-AAM default name`, () => {
+// An author name equal to a browser default is still a name (ACT 59796f). Whether it says what the button does is a
+// question, so it is cantTell rather than fail.
+test(`${RULE_ID}: cantTell when the author alt is the HTML-AAM default name`, () => {
   const html = `<!doctype html><html><body><input id="d" type="image" src="x.png" alt="Submit Query"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'default_name');
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'default_name');
+  assert.strictEqual(occ.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(occ.uncertainty.code, 'judgement-required');
 });
 
 test(`${RULE_ID}: the default-name match ignores case and surrounding space`, () => {
   const html = `<!doctype html><html><body><input type="image" src="x.png" alt="  submit query  "></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail when the default name comes from aria-label or title`, () => {
+test(`${RULE_ID}: cantTell when the default name comes from aria-label or title`, () => {
   for (const markup of [
     `<input type="image" src="x.png" alt="" aria-label="Submit Query">`,
     `<input type="image" src="x.png" title="Submit">`
@@ -264,8 +273,30 @@ test(`${RULE_ID}: fail when the default name comes from aria-label or title`, ()
     const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
       runOnly: [RULE_ID]
     });
-    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   }
+});
+
+test(`${RULE_ID}: a default-looking name next to an unnamed button: fail, with both occurrences`, () => {
+  const html = `<!doctype html><html><body><input id="d" type="image" src="x.png" alt="Submit"><input id="m" type="image" src="x.png"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byCode = Object.fromEntries(
+    rule.occurrences.map((o) => [o.data.details.reasonCode, o.occurrenceOutcome])
+  );
+  assert.deepStrictEqual(byCode, { default_name: 'cantTell', missing_alt: 'fail' });
+});
+
+test(`${RULE_ID}: alt="Submit" is cantTell and no name is fail, under wcag22-aa`, () => {
+  const page = (input) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><form>${input}</form></body></html>`;
+  const engineOptions = { profile: 'wcag22-aa' };
+  const asked = runa11yCoreOnHtml(page('<input type="image" src="a.png" alt="Submit">'), {
+    engineOptions
+  });
+  assertRule(asked, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const failed = runa11yCoreOnHtml(page('<input type="image" src="a.png">'), { engineOptions });
+  assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: a name that merely starts with the default word passes`, () => {

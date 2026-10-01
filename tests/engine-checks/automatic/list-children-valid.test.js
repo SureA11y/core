@@ -99,6 +99,36 @@ test(`${RULE_ID}: fail still reported when an invalid child IS visible, even alo
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
 
+// A ul/ol given another role (menu, listbox, tablist, tree, combobox...) is
+// not a list.
+test(`${RULE_ID}: a ul/ol whose explicit role is not list is out of scope`, () => {
+  for (const body of [
+    '<ul role="menubar" aria-label="m"><li role="none"><a role="menuitem" href="#">a</a></li></ul>',
+    '<ul role="listbox" aria-label="x"><li role="option" aria-selected="false">a</li></ul>',
+    '<ol role="tablist"><li role="tab">a</li></ol>',
+    '<ul role="none"><div>a</div></ul>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    }
+  }
+});
+
+test(`${RULE_ID}: role="list", or a role naming no concrete role, keeps the list in scope`, () => {
+  for (const body of [
+    '<ul id="a" role="list"><div>a</div></ul>',
+    '<ul id="a" role="foo"><div>a</div></ul>',
+    '<ul id="a" role="foo list"><div>a</div></ul>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), body);
+  }
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><ul id="a"><div>wrapper</div></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -134,7 +164,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/list-children-valid-all-scena
     'lcv_case_09',
     'lcv_case_10',
     'lcv_case_11',
-    'lcv_case_14'
+    'lcv_case_14',
+    'lcv_case_15',
+    'lcv_case_16'
   ];
 
   for (const id of expectedFailIds) {

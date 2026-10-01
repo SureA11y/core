@@ -185,6 +185,16 @@
     <button role="presentation" id="btn_case_26"></button>
   </div>
 
+  <div class="case" id="case_34">
+    <div class="case-title">34 — PASS: icon-only button whose svg is named by its &lt;title&gt; child</div>
+    <form><button id="btn_case_34"><svg role="img" width="16" height="16"><title>Search</title><circle cx="8" cy="8" r="6"/></svg></button></form>
+  </div>
+
+  <div class="case" id="case_35">
+    <div class="case-title">35 — FAIL: the svg's &lt;title&gt; does not name it once the svg is aria-hidden</div>
+    <button id="btn_case_35"><svg aria-hidden="true" width="16" height="16"><title>Search</title><circle cx="8" cy="8" r="6"/></svg></button>
+  </div>
+
   <h2>F. Native &lt;label&gt; association</h2>
 
   <div class="case" id="case_27">

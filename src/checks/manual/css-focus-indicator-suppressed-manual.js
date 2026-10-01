@@ -10,15 +10,19 @@
  * @sc 2.4.7
  * @applicability
  *   Elements in sequential focus navigation (tabbable and rendered) on a
- *   page whose accessible stylesheets contain at least one `:focus` or
- *   `:focus-visible` rule. With no focus rule anywhere, every element
- *   keeps the user agent's own indicator and there is nothing to check.
+ *   page whose accessible stylesheets contain at least one rule that
+ *   removes the outline. With no such rule anywhere, every element keeps
+ *   the user agent's own indicator and there is nothing to check.
  * @expectation
- *   No element is matched by a `:focus`/`:focus-visible` rule that removes
- *   the outline (`outline: none`, `outline: 0`, `outline-color:
- *   transparent`, ...) unless some other focus rule matching it draws a
- *   replacement: a border, box-shadow, background, color change, a
- *   positive outline of its own, or a `::before`/`::after` decoration.
+ *   No element is matched by a rule that removes the outline (`outline:
+ *   none`, `outline: 0`, `outline-color: transparent`, ...) unless some
+ *   focus rule matching it draws a replacement: a border, box-shadow,
+ *   background, color change, a positive outline of its own, or a
+ *   `::before`/`::after` decoration. The removing rule is either a
+ *   `:focus`/`:focus-visible` rule, or a rule with no state at all
+ *   (`a { outline: none }`, `* { outline: 0 }`): an author declaration
+ *   outranks the user agent's focus outline whatever its specificity, so
+ *   it removes the indicator in the focused state too (WCAG F78).
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
  *   only one of the ways a page can indicate focus: ACT oj04fd's own
@@ -54,7 +58,7 @@ const id = 'css-focus-indicator-suppressed';
 const meta = {
   title: 'Focus indicator must not be removed without a replacement',
   description:
-    'Flags elements in the tab order whose focus outline is removed by a :focus/:focus-visible rule with no replacement indicator (border, box-shadow, background, ...) in any other focus rule matching them.',
+    'Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.',
   i18n: {
     titleKey: 'cssFocusIndicatorSuppressed_title',
     descriptionKey: 'cssFocusIndicatorSuppressed_description'
@@ -272,7 +276,16 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(cssRule.selectorText)) {
-      if (!hasFocusPseudo(part)) continue;
+      if (!hasFocusPseudo(part)) {
+        // A rule with no focus state still applies while the element has
+        // focus, and an author declaration beats the user agent's focus
+        // outline. Other states (:hover, :active) never match the static
+        // element, so el.matches() leaves them out below.
+        if (suppresses && !hasPseudoElement(part)) {
+          suppressors.push({ selector: trim(part), base: trim(part) });
+        }
+        continue;
+      }
 
       const compounds = splitCompounds(part);
       let focusIndex = -1;

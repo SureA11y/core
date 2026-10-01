@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Build the generated core (src/core.js) from rule modules under src/checks.
+ * Build the generated core (src/core.js) from rule modules under src/checks
+ * and under each profile's rules folder (scripts/lib/rule-dirs.js).
  *
  * IMPORTANT DESIGN GOAL:
  * - The exported `runa11yCoreInPage` MUST be self-contained (no free vars),
@@ -44,7 +45,12 @@ const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const {
   standardMappingsFor,
+  standardComposites,
   withStandardMappings,
+  validateStandards,
+  profileRuleIds,
+  profileExclusions,
+  validateProfileIndependence,
   standardsData
 } = require('../src/coverage/standards');
 const {
@@ -67,6 +73,9 @@ const {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
+const { ruleDirs } = require('./lib/rule-dirs');
+const { resolveVariants } = require('./lib/rule-variants');
+const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -79,15 +88,24 @@ const NORMATIVE_MAPPING_STANDARDS = Object.fromEntries(
   STANDARDS_DATA.map((s) => [s.key, { standard: s.standard, versions: s.versions }])
 );
 const WCAG_PROFILE_NAMES = ['wcag22-aa', 'section508'];
+// Tags of rules that run only when asked for: see ruleTag in the registry.
+const OPT_IN_RULE_TAGS = STANDARDS_DATA.filter((s) => s.ruleTag).map((s) => s.ruleTag);
 const STANDARD_PROFILES = Object.fromEntries(
   STANDARDS_DATA.flatMap((s) =>
     Object.entries(s.profiles).map(([name, p]) => [
       name,
-      { tags: p.tags, mappings: [s.key + ':' + p.version] }
+      {
+        tags: p.tags,
+        mappings: [s.key + ':' + p.version],
+        target: { key: s.key, standard: s.standard, version: p.version }
+      }
     ])
   )
 );
 for (const s of STANDARDS_DATA) {
+  if (s.ruleTag && (!/^[a-z0-9-]+$/.test(s.ruleTag) || /^wcag/.test(s.ruleTag))) {
+    throw new Error(`[build-core] rule tag "${s.ruleTag}" must be lowercase and not a WCAG tag`);
+  }
   if (!/^[a-z0-9-]+$/.test(s.key)) {
     throw new Error(
       `[build-core] standard key "${s.key}" must be lowercase letters, digits or '-'`
@@ -110,22 +128,11 @@ for (const s of STANDARDS_DATA) {
 
 const ROOT_DIR = path.join(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
-const RULES_DIR = path.join(SRC_DIR, 'checks');
+const RULES_DIRS = ruleDirs();
 const OUTPUT_FILE = path.join(SRC_DIR, 'core.js');
-
-const I18N_DIR = path.join(SRC_DIR, 'i18n');
 
 const CATALOGS_DIR = path.join(SRC_DIR, 'catalogs');
 const COMPOSITE_RULES_FILE = path.join(CATALOGS_DIR, 'composites.wcag.js');
-
-function isI18nLocaleFile(name) {
-  // supports en.json, fr.json, pt-BR.json, etc.
-  return typeof name === 'string' && /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(name);
-}
-
-function localeFromFileName(name) {
-  return name.replace(/\.json$/, '');
-}
 
 function loadCompositeRulesCatalog() {
   if (!fs.existsSync(COMPOSITE_RULES_FILE)) return [];
@@ -139,7 +146,7 @@ function loadCompositeRulesCatalog() {
   }
 
   const seen = new Set();
-  return raw.map((entry, idx) => {
+  const wcag = raw.map((entry, idx) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
       throw new Error(`[build-core] composite rule entry at index ${idx} must be an object`);
     }
@@ -163,46 +170,50 @@ function loadCompositeRulesCatalog() {
         entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
           ? {
               ...entry.meta,
-              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc })
+              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc, checksIds })
             }
           : null
     };
   });
+
+  // Rollups a standard defines for itself (one per requirement, say), with the
+  // entries they already carry. Opt-in through their meta.tags.
+  const own = standardComposites().map((entry) => ({
+    id: entry.id,
+    checksIds: entry.checksIds.slice(),
+    meta: { ...entry.meta }
+  }));
+  for (const entry of own) {
+    if (seen.has(entry.id))
+      throw new Error(`[build-core] duplicate composite rule id: ${entry.id}`);
+    seen.add(entry.id);
+  }
+  return wcag.concat(own);
 }
 
+// Core's dictionaries and each profile's, merged per locale
+// (scripts/lib/dictionaries.js). A key two of them define fails the build.
 function loadAllTranslations() {
-  if (!fs.existsSync(I18N_DIR)) return { en: {} };
+  return loadDictionaries();
+}
 
-  const files = fs.readdirSync(I18N_DIR).filter(isI18nLocaleFile);
+// The keys each locale leaves out by a folder's choice, as the generated code
+// reads them: { locale: { key: true } }.
+function leftOutMap(leftOut) {
   const out = {};
-
-  for (const file of files) {
-    const locale = localeFromFileName(file);
-    const abs = path.join(I18N_DIR, file);
-
-    try {
-      const dict = JSON.parse(fs.readFileSync(abs, 'utf8'));
-
-      out[locale] = dict && typeof dict === 'object' && !Array.isArray(dict) ? dict : {};
-    } catch (e) {
-      console.warn(
-        `[build-core] failed to load i18n file ${file}; skipping`,
-        e && e.message ? e.message : e
-      );
-    }
+  for (const [locale, keys] of Object.entries(leftOut || {})) {
+    out[locale] = Object.fromEntries(keys.map((k) => [k, true]));
   }
-
-  if (!out.en) out.en = {};
   return out;
 }
 
 function isRuleFileName(fullPath) {
   const base = path.basename(fullPath);
 
-  // Exclude ONLY the top-level checks index (src/checks/index.*),
+  // Exclude ONLY a rules folder's top-level index (src/checks/index.*),
   // but allow nested index.js (e.g. src/checks/manual-review/index.js)
   const isTopLevelIndex =
-    path.dirname(fullPath) === RULES_DIR &&
+    RULES_DIRS.includes(path.dirname(fullPath)) &&
     (base === 'index.js' || base === 'index.cjs' || base === 'index.mjs');
 
   if (isTopLevelIndex) return false;
@@ -274,13 +285,24 @@ function assertString(name, value) {
   return value.trim();
 }
 
-function loadRuleModules() {
-  const files = listRuleFilesRecursive(RULES_DIR);
+// Every rule module in the given rules folders (core's and each profile's by
+// default). A rule id defined twice fails the build, naming both files: the
+// engine would otherwise list and run both under one id.
+function loadRuleModules(dirs = RULES_DIRS) {
+  const files = dirs.flatMap((dir) => listRuleFilesRecursive(dir));
+  const fileById = new Map();
+
+  // A variant (scripts/lib/rule-variants.js) runs its base rule's code with
+  // settings of its own; resolve each against its base first.
+  const resolved = resolveVariants(
+    files.map((file) => ({ file, mod: unwrapModule(safeRequire(file)) }))
+  );
+  if (resolved.problems.length) {
+    throw new Error(`[build-core] rule variants:\n  ${resolved.problems.join('\n  ')}`);
+  }
 
   const mods = [];
-  for (const file of files) {
-    const mod = unwrapModule(safeRequire(file));
-
+  for (const { file, mod } of resolved.modules) {
     if (!mod || typeof mod !== 'object') {
       throw new Error(`Rule ${file} must export an object (got ${typeof mod})`);
     }
@@ -313,20 +335,59 @@ function loadRuleModules() {
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
 
+    if (fileById.has(ruleId)) {
+      throw new Error(
+        `[build-core] rule id "${ruleId}" is defined twice: ${path.relative(ROOT_DIR, fileById.get(ruleId))} and ${path.relative(ROOT_DIR, file)}`
+      );
+    }
+    fileById.set(ruleId, file);
+
+    // The settings the rule's code reads from ctx.config (the base's, for a
+    // variant). The runner keeps a caller's config from setting them.
+    const codeMod = mod.variant ? unwrapModule(safeRequire(mod.variant.file)) : mod;
+    const settingNames =
+      codeMod && codeMod.settings && typeof codeMod.settings === 'object'
+        ? Object.keys(codeMod.settings)
+        : [];
+
     mods.push({
       file,
+      // The file whose runInPage runs: the base rule's, for a variant.
+      codeFile: mod.variant ? mod.variant.file : file,
+      settings: settingNames,
       id,
       ruleId,
       runFnSource,
       applicabilityFnSource,
       meta: normalizedMeta,
-      data
+      data,
+      variant: mod.variant
+        ? { of: mod.variant.of, config: mod.variant.config, messages: mod.variant.messages }
+        : null
     });
   }
 
   mods.sort((a, b) =>
     a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
   );
+
+  // A standard mapped rule by rule names rules and requirements by id;
+  // a typo or a mapping to an unrelated criterion fails the build here.
+  const problems = validateStandards(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  ).concat(
+    validateProfileIndependence(
+      mods.map((m) => ({
+        ruleId: m.ruleId,
+        wcagSc: m.meta.wcagSc || [],
+        tags: m.meta.tags || [],
+        variantOf: m.variant ? m.variant.of : null
+      }))
+    )
+  );
+  if (problems.length) {
+    throw new Error(`[build-core] normative mappings:\n  ${problems.join('\n  ')}`);
+  }
   return mods;
 }
 
@@ -349,11 +410,26 @@ function assertJsonSerializable(name, value) {
 /**
  * Generate src/core.js as a single CommonJS module.
  */
-function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
+function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, leftOutArg) {
   // Defaults to the inlined set; the browser build inlines only en but still
   // passes the full list, so an omitted table reports dictionary-not-loaded
   // rather than pretending the language does not exist.
   const knownLocales = (knownLocalesArg || Object.keys(i18nAll || { en: {} })).slice().sort();
+
+  // Rules a profile runs by id on top of its tags (see mappedRules in the
+  // registry), computed from the rules actually built.
+  const profileRules = profileRuleIds(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  );
+
+  // What each profile with `exclude` leaves out, as rule and rollup ids
+  // (profileExclusions in the registry); unknown names fail the build.
+  const profileExcludes = profileExclusions(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] })),
+    (Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [])
+      .filter((c) => c && c.meta && !c.meta.standard)
+      .map((c) => ({ id: c.id, wcagSc: (c.meta && c.meta.wcagSc) || [] }))
+  );
 
   const defs = mods.map((m) => ({
     ruleId: m.ruleId,
@@ -385,7 +461,13 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
     expectation: m.meta.expectation,
     references: m.meta.references,
     requirements: m.meta.requirements,
-    mappings: m.meta.mappings
+    mappings: m.meta.mappings,
+
+    // A variant: the base rule it runs, its settings and its message prefix
+    // (scripts/lib/rule-variants.js). The runner reads both.
+    ...(m.variant ? { variant: m.variant } : {}),
+    // The settings the rule's code reads (its own, or its base's).
+    ...(m.settings && m.settings.length ? { settings: m.settings } : {})
   }));
 
   const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
@@ -408,8 +490,9 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
   // Node/runtime implementations (require at runtime in Node, used by checks and server-side use).
   // Normalize to a single shape: { run, applicability }
   const implEntries = mods.map((m) => {
-    const rel = './' + path.relative(SRC_DIR, m.file).replace(/\\/g, '/');
-    return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(rel)}).runInPage, applicability: require(${jsStringify(rel)}).applicability || null }`;
+    const rel = path.relative(SRC_DIR, m.codeFile || m.file).replace(/\\/g, '/');
+    const spec = rel.startsWith('.') ? rel : './' + rel;
+    return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(spec)}).runInPage, applicability: require(${jsStringify(spec)}).applicability || null }`;
   });
 
   // In-page implementations (inline function sources; used ONLY by runa11yCoreInPage).
@@ -428,6 +511,11 @@ const DEFAULT_POLICY = {
 
 // Built-in message catalogs (inlined at build time)
 const I18N = ${jsStringify(i18nAll || { en: {} })};
+
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = ${jsStringify(leftOutMap(leftOutArg))};
 
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
@@ -550,7 +638,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
@@ -761,11 +852,17 @@ function normalizeRunOnly(runOnly) {
     includeRuleIds: [],
     excludeRuleIds: [],
     includeTestIds: [],
-    excludeTestIds: []
+    excludeTestIds: [],
+    optInTags: []
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
+  // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
+  // selection resolveEffectiveRunOnly built.
+  out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -820,7 +917,63 @@ const NORMATIVE_MAPPING_STANDARDS = ${jsStringify(NORMATIVE_MAPPING_STANDARDS)};
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
+// Standards whose entries come from each rule (ruleMapped in the registry),
+// by the name their entries carry. A rollup keeps only the entries of the
+// rules that produced its outcome (rollupCompositeResults).
+const RULE_MAPPED_STANDARDS = ${jsStringify(STANDARDS_DATA.filter((s) => s.ruleMapped).map((s) => s.standard))};
+
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = ${jsStringify(Object.fromEntries(STANDARDS_DATA.filter((s) => s.restatedPrefixes).map((s) => [s.standard, s.restatedPrefixes])))};
+
+// Rules tagged with one of these check a standard's own requirements, ones
+// WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
+// ruleMatchesRunOnly selects them only when the selection names the tag or
+// the rule itself, which a standard's profile does.
+const OPT_IN_RULE_TAGS = ${jsStringify(OPT_IN_RULE_TAGS)};
+
+// Rules a profile also runs by id, whatever their tags: every rule its
+// standard maps for the profile's version (mappedRules in the registry).
+const PROFILE_RULES = ${jsStringify(profileRules)};
+
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = ${jsStringify(profileExcludes)};
+
 const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.target])))};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -919,8 +1072,48 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'overridden';
   } else {
     selection.tags = profileTags.slice();
+    // A profile that also names rules selects a rule matching either.
+    if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
+      selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
+      selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
+    }
     selection.profile = requestedProfile;
   }
+  return selection;
+}
+
+// engineOptions.optInRules unlocks opt-in rules outside their standard's
+// profile: 'all' for every opt-in rule tag, or a list of tags. It
+// only opens the gate in ruleMatchesRunOnly; the rest of the selection still
+// decides, so a default run then runs every rule and a WCAG profile still
+// runs WCAG rules only. What it names that is no opt-in tag is kept as
+// "optInTagsUnknown" for the runner to warn about.
+function applyOptInRules(selection, requested) {
+  if (requested == null || requested === false) return selection;
+  const list = parseCommaList(requested, { lower: true });
+  if (!list.length) {
+    // An empty string or list asks for nothing; any other value is not a tag list.
+    if (typeof requested !== 'string' && !Array.isArray(requested)) {
+      selection.optInTagsUnknown = [String(requested)];
+    }
+    return selection;
+  }
+  const all = list.includes('all');
+  const unknown = list.filter((t) => t !== 'all' && !OPT_IN_RULE_TAGS.includes(t));
+  selection.optInTags = all
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => list.includes(t));
+  if (unknown.length) selection.optInTagsUnknown = unknown;
   return selection;
 }
 
@@ -941,7 +1134,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   const requestedProfile = normalizeProfileName(eo.profile);
 
-  if (hasAnyRunOnlyKeys(runOnly)) return applyProfile(normalizeRunOnly(runOnly), requestedProfile);
+  if (hasAnyRunOnlyKeys(runOnly)) {
+    const selection = normalizeRunOnly(runOnly);
+    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    selection.optInTags = [];
+    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+  }
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
@@ -968,7 +1166,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     excludeTestIds
   };
 
-  return applyProfile(out, requestedProfile);
+  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -1003,6 +1201,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The opt-in tags each standard's own rollup carries (its standard's rule
+// tag), by rollup id. Naming such a rollup asks for its
+// standard, so it unlocks the opt-in rules it groups.
+function buildOptInCompositeTags() {
+  const out = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return out;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
+    if (id && optIn.length) out[id] = optIn;
+  }
+  return out;
+}
+
+const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
+
 function expandCompositeRuleId(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
   if (!id) return null;
@@ -1019,6 +1234,26 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
   const hasTagInclude = norm.tags.length > 0;
+
+  // An opt-in rule runs only when asked for: its tag is among the include
+  // tags, its id is included directly, a rollup of its own standard that
+  // groups it is included by id, or engineOptions.optInRules unlocked its
+  // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
+  // rollup id, so a scan that does not target the standard never reports a
+  // failure only that standard defines.
+  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (optInTags.length) {
+    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
+    const askedById = norm.includeRuleIds
+      .concat(norm.includeTestIds)
+      .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
+    const askedByRollup = norm.includeRuleIds.some((id) => {
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      const expanded = rollupTags ? expandCompositeRuleId(id) : null;
+      return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
+    });
+    if (!askedByTag && !askedById && !askedByRollup) return false;
+  }
 
   let idMatch = true;
   let tagMatch = true;
@@ -1261,7 +1496,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   return out;
 }
 
-function toCatalogEntry(r, engineOptions) {
+// The standards a catalog entry names for these options, chosen exactly as for
+// a scan result: engineOptions.mappings, plus what a profile adds when it
+// would apply to this selection. With no options that is WCAG alone.
+function catalogMappingTokens(engineOptions, runOnly) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+}
+
+function toCatalogEntry(r, engineOptions, mappingTokens) {
+  const tokens = Array.isArray(mappingTokens) ? mappingTokens : catalogMappingTokens(engineOptions, null);
   return {
     ruleId: r.ruleId,
     title: (r && r.i18n ? t(r.i18n.titleKey, r.title, null, engineOptions) : r.title),
@@ -1270,7 +1514,9 @@ function toCatalogEntry(r, engineOptions) {
     helpUrl: r.helpUrl,
     tags: Array.isArray(r.tags) ? r.tags.slice() : [],
     wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.slice() : [],
-    normativeMappings: Array.isArray(r.normativeMappings) ? r.normativeMappings.map((o) => ({ ...o })) : [],
+    normativeMappings: Array.isArray(r.normativeMappings)
+      ? filterNormativeMappings(r.normativeMappings, tokens).map((o) => ({ ...o }))
+      : [],
     defaultSeverity: r.defaultSeverity,
     defaultConfidence: r.defaultConfidence,
     type: r.type,
@@ -1457,32 +1703,76 @@ function getCheckDefById(ruleId, engineOptions) {
 function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
-  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions));
+  const tokens = catalogMappingTokens(engineOptions, null);
+  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
-function getRulesCatalog() {
+// A composite's catalog entry, with the other-standard entries of its rules
+// filtered the same way as a rule's.
+function toCompositeCatalogEntry(x, tokens) {
+  const meta = x.meta && typeof x.meta === 'object'
+    ? {
+        ...x.meta,
+        standardMappings: Array.isArray(x.meta.standardMappings)
+          ? filterNormativeMappings(x.meta.standardMappings, tokens).map((o) => ({ ...o }))
+          : []
+      }
+    : x.meta;
+  return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
+}
+
+// A standard's own rollup is opt-in like that standard's rules: listed only
+// when the selection names its tag (as the standard's profile does) or its
+// id, or unlocks its tag through engineOptions.optInRules and includes
+// nothing else, so the catalog lists what a scan with the same options would
+// produce.
+function isCompositeListed(x, selection) {
+  // An excluded rollup, by the caller or by a profile's exclude, is not
+  // produced, so it is not listed.
+  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
+  const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
+  const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  if (!optIn.length) return true;
+  if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
+  // Unlocked alone does not select it: like the run, an include of other
+  // tags or ids (a WCAG profile's, say) still leaves it out.
+  const includesNothing =
+    !selection.tags.length && !selection.includeRuleIds.length && !selection.includeTestIds.length;
+  const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
+  return (
+    unlocked ||
+    optIn.some((t) => selection.tags.includes(t)) ||
+    selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
+  );
+}
+
+function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
-  return Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES.map((x) => ({ ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [] })) : [];
+  const tokens = catalogMappingTokens(engineOptions, null);
+  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  return Array.isArray(COMPOSITE_RULES)
+    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) => toCompositeCatalogEntry(x, tokens))
+    : [];
 }
 
-function getCompositeRuleById(ruleId) {
+function getCompositeRuleById(ruleId, engineOptions) {
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
-  return { ...found, checksIds: Array.isArray(found.checksIds) ? found.checksIds.slice() : [] };
+  return toCompositeCatalogEntry(found, catalogMappingTokens(engineOptions, null));
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  const tokens = catalogMappingTokens(engineOptions, runOnly);
   return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+    .filter((r) => ruleMatchesRunOnly(r, selection, ENGINE_TAG))
+    .map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {
   // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
-  return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, resolveEffectiveRunOnly(engineOptions, runOnly), ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions));
+  return getChecksForRunOnly(runOnly, engineOptions);
 }
 
 /**
@@ -1550,7 +1840,13 @@ function main() {
 
   const compositeRulesCatalog = loadCompositeRulesCatalog();
 
-  const out = generateCore(mods, i18nAll, compositeRulesCatalog, Object.keys(i18nAll));
+  const out = generateCore(
+    mods,
+    i18nAll,
+    compositeRulesCatalog,
+    Object.keys(i18nAll),
+    keysLeftOut()
+  );
 
   fs.writeFileSync(OUTPUT_FILE, `/* SPDX-License-Identifier: MPL-2.0 */\n\n${out}`, 'utf8');
 
@@ -1558,9 +1854,9 @@ function main() {
 }
 
 module.exports = {
-  I18N_DIR,
   loadRuleModules,
   loadAllTranslations,
+  keysLeftOut,
   loadCompositeRulesCatalog,
   generateCore
 };

@@ -189,6 +189,28 @@ test(`${RULE_ID}: a non-focusable role="separator" needs no aria-valuenow`, () =
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a native checkbox or radio with another checkable role needs no aria-checked`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <label><input type="checkbox" role="switch" id="a"> a</label>
+    <label><input type="checkbox" role="menuitemcheckbox" id="b"> b</label>
+    <label><input type="radio" role="menuitemradio" name="r" id="c"> c</label>
+    <label><input type="checkbox" role="radio" id="d"> d</label>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a non-checkable input with role="switch" still needs aria-checked`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <input type="text" role="switch" id="a" aria-label="x">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -220,7 +242,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
     'ara_case_12',
     'ara_case_13',
     'ara_case_14',
-    'ara_case_16'
+    'ara_case_16',
+    'ara_case_18'
   ];
 
   for (const id of expectedFailIds) {

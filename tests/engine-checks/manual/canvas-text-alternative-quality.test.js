@@ -115,3 +115,11 @@ test(`${RULE_ID}: a focusable role="presentation" canvas is still reviewed`, () 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'canvas1'));
 });
+
+test(`${RULE_ID}: maps to WCAG 1.1.1`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1">Sales 2024: 10k</canvas></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html), RULE_ID, 'cantTell');
+  assert.ok(
+    rule.meta.normativeMappings.some((m) => m.standard === 'WCAG' && m.requirement === '1.1.1')
+  );
+});

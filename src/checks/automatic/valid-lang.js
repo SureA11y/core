@@ -24,18 +24,22 @@
  *     offscreen positioning do NOT exempt text, per ACT's own failed
  *     examples for both, only actual non-rendering does.
  * @expectation
- *   The lang value matches a valid BCP47 language-tag syntax. WCAG 3.1.2
- *   (Language of Parts) requires that when a passage's language differs
- *   from the page's default, it is identified programmatically. An
- *   invalid tag fails to identify a real language at all.
+ *   The primary language subtag of the lang value (the part before the
+ *   first hyphen) is a registered language subtag, as ACT de46e4 requires.
+ *   WCAG 3.1.2 (Language of Parts)
+ *   requires that when a passage's language differs from the page's
+ *   default, it is identified programmatically. A tag whose primary subtag
+ *   is unknown fails to identify a real language at all; a malformed later
+ *   subtag (lang="en-US_x") still identifies English and passes here, since
+ *   it is a markup validity error rather than a missing language.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule covers the root <html> element only, for SC 3.1.1); this rule
  *   covers every other element, for SC 3.1.2.
- * - Same minimal BCP47 *syntax* check as html-lang-attr-present (primary
- *   subtag + optional subtags), not IANA Language Subtag Registry
- *   validation, same documented scope limitation (syntactically
- *   well-formed but unregistered tags like "xx-ZZ" are not flagged).
+ * - Same primary-subtag check as html-lang-attr-present: the shared
+ *   helper checks the subtag's shape and that the IANA Language Subtag
+ *   Registry lists it, so unregistered tags such as "xx-ZZ", "eng" or
+ *   "qaa" fail. Later subtags (region, script, variants) are not checked.
  */
 
 const id = 'valid-lang';
@@ -72,7 +76,8 @@ function runInPage(ctx) {
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
   // primary subtag is checked against the IANA registry via the shared helper.
-  const BCP47_RE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
+  // Only the primary subtag is judged (see @expectation).
+  const BCP47_RE = /^[a-zA-Z]{2,3}$/;
   const isValidTag =
     typeof helpers.isValidLanguageTag === 'function'
       ? helpers.isValidLanguageTag
@@ -174,7 +179,7 @@ function runInPage(ctx) {
 
     // A whitespace-only value is in scope and has no primary language tag.
     const raw = String(rawAttr).trim();
-    if (isValidTag(raw)) continue;
+    if (isValidTag(raw.split('-')[0])) continue;
 
     const tag = el.tagName.toLowerCase();
 

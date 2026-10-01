@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <title>css-hidden-focus fixtures — many combinations</title>
+  <style>
+    .skip { position: absolute; left: -9999px; top: 0; }
+    .skip:focus { left: 8px; }
+    .vh-focusable:not(:focus):not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .half-restored { position: absolute; left: -9999px; top: -9999px; }
+    .half-restored:focus { left: 0; }
+  </style>
 </head>
 <body>
 
@@ -71,6 +78,21 @@
 <input id="case_input_offscreen" type="text" style="position:absolute; left:-9999px; top:0;">
 <select id="case_select_opacity_zero" style="opacity:0"><option>One</option></select>
 <textarea id="case_textarea_clipped" style="position:absolute; clip: rect(0,0,0,0);"></textarea>
+
+<!-- ========================================================= -->
+<!-- 13) NOT FLAGGED: off-screen skip link that a :focus rule brings back on screen -->
+<!-- ========================================================= -->
+<a id="case_skip_link_focus_restored" class="skip" href="#main">Skip to content</a>
+
+<!-- ========================================================= -->
+<!-- 14) NOT FLAGGED: clipped by a rule written :not(:focus), which stops applying on focus -->
+<!-- ========================================================= -->
+<a id="case_not_focus_clip" class="vh-focusable" href="#main">Skip to content</a>
+
+<!-- ========================================================= -->
+<!-- 15) cantTell: the :focus rule restores left but top stays off-screen -->
+<!-- ========================================================= -->
+<a id="case_focus_half_restored" class="half-restored" href="#main">Skip to content</a>
 
 </body>
 </html>

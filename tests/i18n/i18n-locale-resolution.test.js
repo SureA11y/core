@@ -36,7 +36,7 @@ function liftFunction(name) {
 // These close over the inlined I18N table, so they are lifted out of the built
 // engine to be exercised against dictionaries the shipped locales cannot
 // produce.
-function makeResolveLocale(i18n, knownLocales) {
+function makeResolveLocale(i18n, knownLocales, leftOut) {
   const source = [
     'getSuppliedMessages',
     'ownDict',
@@ -52,10 +52,11 @@ function makeResolveLocale(i18n, knownLocales) {
     .concat('return resolveLocale;')
     .join('\n');
 
-  return new Function('I18N', 'KNOWN_LOCALES', 'normalizeLocale', source)(
+  return new Function('I18N', 'KNOWN_LOCALES', 'normalizeLocale', 'I18N_LEFT_OUT', source)(
     i18n,
     knownLocales || Object.keys(i18n || {}),
-    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en')
+    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en'),
+    leftOut || {}
   );
 }
 
@@ -450,4 +451,21 @@ test('resolveLocale counts supplied and built-in keys together for completeness'
     'ok',
     'the supplied key completes the built-in dictionary'
   );
+});
+
+// A profile that does not offer a language leaves its keys out of that
+// locale by choice (scripts/lib/dictionaries.js keysLeftOut): they show in
+// English without making the dictionary look incomplete. A key missing that
+// was not left out still does.
+test('keys a profile leaves out of a locale do not make it partial', () => {
+  const i18n = { en: { core: 'Core', own: 'Own' }, de: { core: 'Kern' } };
+  const resolve = makeResolveLocale(i18n, ['en', 'de'], { de: { own: true } });
+  assert.deepEqual(resolve({ locale: 'de' }), { requested: 'de', resolved: 'de', reason: 'ok' });
+
+  const strict = makeResolveLocale(i18n, ['en', 'de']);
+  assert.deepEqual(strict({ locale: 'de' }), {
+    requested: 'de',
+    resolved: 'de',
+    reason: 'partial-dictionary'
+  });
 });

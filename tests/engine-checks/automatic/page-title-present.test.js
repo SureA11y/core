@@ -139,6 +139,25 @@ test(`page-title-present: notApplicable when contextSelector scopes narrower tha
   });
 });
 
+test(`${RULE_ID}: an inline <svg><title> is not the page title, so the reason is missingTitleElement`, () => {
+  const html =
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body><svg role="img" aria-labelledby="t"><title id="t">Logo</title><rect width="4" height="4"/></svg></body></html>';
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = getFirstOccurrence(rule);
+    assert.strictEqual(occ.data.details.reasonCode, 'missingTitleElement');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_missing');
+  }
+});
+
+test(`${RULE_ID}: an HTML <title> is found after an inline <svg><title>`, () => {
+  const html =
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body><svg><title>Logo</title></svg><title>Acme Contact Support</title></body></html>';
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`page-title-present: notApplicable when engineOptions.fragment is true, even unscoped`, () => {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>Hi</body></html>`;
   const result = runa11yCoreOnHtml(html, {

@@ -5,6 +5,10 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core');
 
+// A standard's own rollups (meta.standard set) follow that standard, not
+// WCAG, so the WCAG invariants below apply to the WCAG rollups only.
+const WCAG_COMPOSITES = (core.COMPOSITE_RULES || []).filter((c) => !(c.meta && c.meta.standard));
+
 test('composite catalog references only known atomic checks', () => {
   assert.equal(typeof core.getChecksCatalog, 'function');
   assert.equal(typeof core.getRulesCatalog, 'function');
@@ -43,7 +47,7 @@ test('every WCAG-mapped atomic test is covered by at least one composite for tha
 
   // Map SC -> set(testId) from composites
   const scToCompositeTests = new Map();
-  for (const c of core.COMPOSITE_RULES) {
+  for (const c of WCAG_COMPOSITES) {
     const scList =
       c && c.meta && Array.isArray(c.meta.wcagSc)
         ? c.meta.wcagSc
@@ -131,7 +135,7 @@ test('every composite testId belongs to the composite SC (no misfiled checks)', 
     if (r && r.ruleId) ruleDefById.set(String(r.ruleId), r);
   }
 
-  for (const c of core.COMPOSITE_RULES) {
+  for (const c of WCAG_COMPOSITES) {
     assert.ok(c && typeof c === 'object', 'Composite entry must be an object');
     assert.ok(c.id, 'Composite entry missing id');
 
@@ -175,7 +179,7 @@ test('WCAG composite membership is exact for every WCAG-mapped atomic test (no m
 
   // Build: SC -> Set(testId) from composites
   const scToCompositeTests = new Map();
-  for (const c of core.COMPOSITE_RULES) {
+  for (const c of WCAG_COMPOSITES) {
     const scList =
       c && c.meta && Array.isArray(c.meta.wcagSc)
         ? c.meta.wcagSc

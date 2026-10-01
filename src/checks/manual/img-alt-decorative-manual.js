@@ -14,7 +14,8 @@
  *   accessibility tree by any of: an aria-hidden ancestor-or-self, an
  *   explicit role="none"/"presentation" not overridden by focusability, an
  *   <img alt=""> (the native decorative marker, same focusability
- *   override), an unlabeled <svg> whose implicit role is graphics-document
+ *   override; only a literally empty alt, so alt=" " is not one), an
+ *   unlabeled <svg> whose implicit role is graphics-document
  *   (no img/graphics-symbol role restatement, aria-name, <title>/<desc>, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
  *   Per ACT e88epe, an element is skipped entirely when any ancestor
@@ -198,12 +199,14 @@ function runInPage(ctx) {
   // Presentational exclusion: explicit role="none"/"presentation", or (img
   // only) the native alt="" marker. Both are overridden by focusability, per
   // ARIA conflict resolution (a focusable element is never presentational).
+  // Only a literally empty alt is the marker: HTML-AAM maps an img to
+  // presentation only for alt="", so alt=" " keeps the img role with an
+  // empty name, which img-alt-present fails.
   function isPresentationallyExcluded(el, tag) {
     const role = getExplicitRole(el);
     let presentational = role === 'presentation' || role === 'none';
     if (!presentational && tag === 'img') {
-      const alt = el.getAttribute('alt');
-      presentational = alt != null && trim(alt) === '';
+      presentational = el.getAttribute('alt') === '';
     }
     if (!presentational) return false;
     return !isFocusable(el);

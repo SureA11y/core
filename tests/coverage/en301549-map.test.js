@@ -19,23 +19,12 @@ const {
   en301549ClausesForSc,
   en301549MappingsForScs
 } = require('../../src/coverage/en301549-map');
-const { FACETS } = require('../../src/coverage/wcag-facets');
-const { introducedInVersion, removedInVersion } = require('../../src/coverage/wcag-version-map');
+const { wcagCriteria } = require('../../src/wcag');
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
-const VERSION_ORDER = ['2.0', '2.1', '2.2'];
-
-// The WCAG Level A and AA criteria that make up a given WCAG version. 4.1.1
-// carries no level in the registry, since 2.2 removed it; it was Level A.
-function wcagAAFor(wcagVersion) {
-  const max = VERSION_ORDER.indexOf(wcagVersion);
-  return Object.keys(FACETS).filter((sc) => {
-    if (FACETS[sc].level === 'AAA') return false;
-    if (VERSION_ORDER.indexOf(introducedInVersion(sc)) > max) return false;
-    const removed = removedInVersion(sc);
-    return !(removed && VERSION_ORDER.indexOf(removed) <= max);
-  });
-}
+// The WCAG Level A and AA criteria that make up a given WCAG version.
+const wcagAAFor = (wcagVersion) =>
+  wcagCriteria(wcagVersion, { levels: ['A', 'AA'] }).map((c) => c.sc);
 
 test('every version has a clause table, and every table a version', () => {
   assert.deepEqual(
@@ -168,9 +157,11 @@ test('@surea11y/core/en301549 exposes the table, frozen', () => {
   }, TypeError);
 });
 
-test('composite entries in the rules catalog carry their EN 301 549 clauses', () => {
+test('composite entries in the rules catalog carry their EN 301 549 clauses when asked for', () => {
   const core = require('../../src/index.js');
-  const composite = core.getRulesCatalog().find((c) => c.id === 'wcag-1.1.1-non-text-content');
+  const composite = core
+    .getRulesCatalog({ mappings: 'en301549' })
+    .find((c) => c.id === 'wcag-1.1.1-non-text-content');
   assert.deepEqual(
     enOf(composite.meta.standardMappings).map((m) => `${m.version} ${m.requirement}`),
     ['V3.2.1 9.1.1.1', 'V4.1.1 9.1.1.1']

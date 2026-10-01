@@ -122,7 +122,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'canvas_case_01',
@@ -131,7 +131,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_12',
     'canvas_case_13',
     'canvas_case_21',
-    'canvas_case_23' // descendant img[alt=""] is empty, not meaningful fallback
+    'canvas_case_23', // descendant img[alt=""] is empty, not meaningful fallback
+    'canvas_case_26', // role="img": fallback content does not name it
+    'canvas_case_30' // role="presentation" ignored on a focusable canvas
   ];
 
   const expectedNoOccIds = [
@@ -152,7 +154,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
     'canvas_case_19', // visibility:hidden ineligible
     'canvas_case_22', // descendant img[alt] non-empty => meaningful fallback
     'canvas_case_24', // descendant area[alt] non-empty => meaningful fallback
-    'canvas_case_25' // descendant [aria-label] non-empty => meaningful fallback
+    'canvas_case_25', // descendant [aria-label] non-empty => meaningful fallback
+    'canvas_case_27', // role="img" named by aria-label
+    'canvas_case_28', // role="presentation": decorative
+    'canvas_case_29' // role="none": decorative
   ];
 
   for (const id of expectedFailIds) {
@@ -164,7 +169,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/canvas-text-alternative-prese
 
   for (const occ of rule.occurrences) {
     assert.ok(
-      typeof occ.summary === 'string' && occ.summary.includes('<canvas>'),
+      typeof occ.summary === 'string' && occ.summary.includes('<canvas'),
       'Expected <canvas> in occurrence.summary'
     );
   }
@@ -221,4 +226,53 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     rule.description,
     'Checks that <canvas> elements provide a text alternative via fallback content or an accessible name.'
   );
+});
+
+// role="img" makes the children presentational: the name comes from the
+// author only (aria-labelledby or aria-label).
+test(`${RULE_ID}: role="img" with fallback content only fails`, () => {
+  const html = `<!doctype html><html><body><canvas id="c" role="img">Ventes 2024 : 10 k</canvas></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'c'));
+  assert.ok(rule.occurrences[0].summary.includes('role="img"'));
+});
+
+test(`${RULE_ID}: role="img" named by aria-label, aria-labelledby or title passes`, () => {
+  for (const markup of [
+    '<canvas role="img" aria-label="Ventes 2024">x</canvas>',
+    '<span id="l">Ventes 2024</span><canvas role="img" aria-labelledby="l"></canvas>',
+    '<canvas role="img" title="Ventes 2024"></canvas>'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: role="presentation" or "none" marks the canvas decorative and passes`, () => {
+  for (const role of ['presentation', 'none', 'none presentation']) {
+    const html = `<!doctype html><html><body><canvas role="${role}"></canvas></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: role="presentation" is ignored on a focusable canvas`, () => {
+  const html = `<!doctype html><html><body><canvas id="c" role="presentation" tabindex="0"></canvas></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  const engineOptions = { profile: 'wcag22-aa' };
+  const failed = runa11yCoreOnHtml(page('<canvas role="img">Ventes</canvas>'), { engineOptions });
+  assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const passed = runa11yCoreOnHtml(page('<canvas role="presentation"></canvas>'), {
+    engineOptions
+  });
+  assertRule(passed, RULE_ID, 'pass', { maxOccurrences: 0 });
 });

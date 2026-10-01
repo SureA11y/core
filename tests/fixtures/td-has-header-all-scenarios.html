@@ -75,6 +75,36 @@
     </table>
   </div>
 
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: 4x4 table whose first row is &lt;td role="columnheader"&gt; (ARIA column headers)</div>
+    <table id="tdh_case_06">
+      <tr><td role="columnheader">Region</td><td role="columnheader">Q1</td><td role="columnheader">Q2</td><td role="columnheader">Q3</td></tr>
+      <tr><td>North</td><td>1</td><td>2</td><td>3</td></tr>
+      <tr><td>South</td><td>4</td><td>5</td><td>6</td></tr>
+      <tr><td>East</td><td>7</td><td>8</td><td>9</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: layout table (role="presentation") has no data cells</div>
+    <table id="tdh_case_07" role="presentation">
+      <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+      <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+      <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr>
+      <tr><td>13</td><td>14</td><td>15</td><td>16</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: empty corner &lt;td&gt; above the row headers holds no data</div>
+    <table id="tdh_case_08">
+      <tr><td></td><th>Q1</th><th>Q2</th><th>Q3</th></tr>
+      <tr><th>North</th><td>1</td><td>2</td><td>3</td></tr>
+      <tr><th>South</th><td>4</td><td>5</td><td>6</td></tr>
+      <tr><th>East</th><td>7</td><td>8</td><td>9</td></tr>
+    </table>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>
