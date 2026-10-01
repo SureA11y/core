@@ -17,6 +17,8 @@ profiles/
     data/             # The published source the tables are generated from, with its provenance
     scripts/          # Generators for the tables and the docs, each with --check
     tests/            # The profile's own tests; scripts/run-tests.js runs them with the rest
+      rules/          # automatic/ and manual/, like tests/engine-checks/: a test per rule
+      fixtures/       # The rules' scenario pages, like tests/fixtures/
 ```
 
 `profiles/rgaa/` is the example:
@@ -36,8 +38,8 @@ The build (`scripts/build-core.js`) compiles a profile's rules into the engine w
 
 1. Create `profiles/<name>/` with an `index.js` that exports `{ standard }`, the registry entry, and `rulesDir` if it has rules of its own. The comment at the top of `src/coverage/standards.js` describes every field, and [`docs/WCAG_CONFORMANCE.md`](../docs/WCAG_CONFORMANCE.md#adding-another-standard) the steps.
 2. Add it to `profiles/index.js`.
-3. Put its tests in `profiles/<name>/tests/`.
+3. Put its tests in `profiles/<name>/tests/`: a test per rule in `tests/rules/automatic/` or `tests/rules/manual/`, reading its scenario page from `tests/fixtures/` as core's rule tests do (`../../fixtures`).
 
 ## Work in progress
 
-The tests and fixtures of RGAA's rules, and RGAA's dictionary entries, still live with the rest of the engine, under `tests/` and `src/i18n/`. They move here next, along with a check that a profile uses only what the engine publishes for profiles.
+RGAA's dictionary entries still live with the rest of the engine, in `src/i18n/`. They move here next, along with a check that a profile uses only what the engine publishes for profiles.

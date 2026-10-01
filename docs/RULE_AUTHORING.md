@@ -153,7 +153,7 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 - another standard's own requirement: `rgaa` (see below)
 
 #### Rules for another standard's own requirements
-A rule that checks something WCAG does not require, but another standard does (RGAA's doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag, `rgaa`. The tag makes it **opt-in**: it runs only under the standard's profile (`rgaa-4.1.2`), a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's profile rather than in `src/checks/`: `profiles/rgaa/rules/automatic/` or `profiles/rgaa/rules/manual/` for RGAA. The build compiles it into the engine like any other rule. Map it to the standard's requirements the usual way (for RGAA, a row in `profiles/rgaa/rule-map.js`). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (RGAA's from `profiles/rgaa/index.js`).
+A rule that checks something WCAG does not require, but another standard does (RGAA's doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag, `rgaa`. The tag makes it **opt-in**: it runs only under the standard's profile (`rgaa-4.1.2`), a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's profile rather than in `src/checks/`: `profiles/rgaa/rules/automatic/` or `profiles/rgaa/rules/manual/` for RGAA. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/rgaa/tests/rules/` and `profiles/rgaa/tests/fixtures/`. Map it to the standard's requirements the usual way (for RGAA, a row in `profiles/rgaa/rule-map.js`). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (RGAA's from `profiles/rgaa/index.js`).
 
 #### `meta.coverage.facetsBySc`
 This is the repo’s explicit **coverage model** for an SC.
@@ -389,7 +389,8 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
 ### 11.1 The fixture file
 
 - Path: `tests/fixtures/<rule-slug>-all-scenarios.html`, where `<rule-slug>` is the rule
-  id itself (e.g. `tab-name-present` → `tab-name-present-all-scenarios.html`).
+  id itself (e.g. `tab-name-present` → `tab-name-present-all-scenarios.html`). A
+  profile's rule keeps it in the profile: `profiles/<name>/tests/fixtures/`.
 - Structure: a real HTML page (`<!doctype html>`, `<title>`, minimal inline `<style>`)
   containing numbered scenario blocks, each:
   ```html

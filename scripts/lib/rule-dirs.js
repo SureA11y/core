@@ -6,6 +6,10 @@
  * Each folder holds an automatic/ and a manual/ subfolder. The build, the
  * validators and the generated docs read every folder this returns, so a
  * profile's rules are built and checked like core's.
+ *
+ * Their tests and scenario pages follow the same split: core's in
+ * tests/engine-checks/ and tests/fixtures/, a profile's in its tests/rules/
+ * and tests/fixtures/, so a test reaches its page at ../../fixtures either way.
  */
 
 const fs = require('fs');
@@ -28,4 +32,20 @@ function ruleTypeDirs(type) {
     .filter((dir) => fs.existsSync(dir));
 }
 
-module.exports = { ROOT_DIR, CORE_RULES_DIR, ruleDirs, ruleTypeDirs };
+// The rule tests and scenario pages of every rules folder, core's first:
+// [{ testsDir, fixturesDir }].
+function ruleTestDirs() {
+  return [
+    {
+      testsDir: path.join(ROOT_DIR, 'tests', 'engine-checks'),
+      fixturesDir: path.join(ROOT_DIR, 'tests', 'fixtures')
+    }
+  ].concat(
+    PROFILES.filter((p) => p.rulesDir).map((p) => {
+      const tests = path.join(path.dirname(p.rulesDir), 'tests');
+      return { testsDir: path.join(tests, 'rules'), fixturesDir: path.join(tests, 'fixtures') };
+    })
+  );
+}
+
+module.exports = { ROOT_DIR, CORE_RULES_DIR, ruleDirs, ruleTypeDirs, ruleTestDirs };

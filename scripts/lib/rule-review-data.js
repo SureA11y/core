@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
 const { runOnlyForRule } = require('./rule-run-selection');
-const { ruleDirs } = require('./rule-dirs');
+const { ruleDirs, ruleTestDirs } = require('./rule-dirs');
 
 const OUTCOMES = ['fail', 'cantTell', 'pass', 'notApplicable'];
 
@@ -48,9 +48,8 @@ function listFilesRecursive(dirAbs, filterFn) {
  * Same convention generate-fixture-index.js uses: each rule's test file
  * declares `const RULE_ID = '...'` and reads its fixture by path.
  */
-function scanTestFiles(repoRoot, testsDir) {
+function scanTestFiles(repoRoot, testsDir, fixturesDir, byRuleId = new Map()) {
   const files = listFilesRecursive(path.resolve(repoRoot, testsDir), (n) => n.endsWith('.test.js'));
-  const byRuleId = new Map();
 
   const ruleIdRe = /const\s+RULE_ID\s*=\s*['"]([^'"]+)['"]/;
   const fixtureRefRe = /fixtures['"]\s*,\s*['"]([\w.-]+\.html)['"]/;
@@ -67,7 +66,10 @@ function scanTestFiles(repoRoot, testsDir) {
     if (!idMatch) continue;
 
     const fm = fixtureRefRe.exec(src) || fixtureRefInlineRe.exec(src);
-    const entry = { testFile: path.relative(repoRoot, file), fixtureFile: fm ? fm[1] : null };
+    const entry = {
+      testFile: path.relative(repoRoot, file),
+      fixtureFile: fm ? path.relative(repoRoot, path.resolve(repoRoot, fixturesDir, fm[1])) : null
+    };
     const prev = byRuleId.get(idMatch[1]);
     if (!prev || (entry.fixtureFile && !prev.fixtureFile)) byRuleId.set(idMatch[1], entry);
   }
@@ -596,7 +598,10 @@ function collect(opts = {}) {
   const types = opts.types || ['automatic', 'manual'];
 
   const messages = JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/en.json'), 'utf8'));
-  const tests = scanTestFiles(repoRoot, 'tests/engine-checks');
+  const tests = new Map();
+  for (const { testsDir, fixturesDir } of ruleTestDirs()) {
+    scanTestFiles(repoRoot, testsDir, fixturesDir, tests);
+  }
   const run = require(path.join(repoRoot, 'tests/helpers/runa11yCoreOnHtml'));
 
   const rules = [];
@@ -607,7 +612,7 @@ function collect(opts = {}) {
     const meta = mod.meta;
     const source = fs.readFileSync(path.join(repoRoot, mod.file), 'utf8');
     const found = tests.get(mod.id) || {};
-    const fixtureFile = found.fixtureFile ? 'tests/fixtures/' + found.fixtureFile : null;
+    const fixtureFile = found.fixtureFile || null;
     const prefix =
       meta.i18n && meta.i18n.titleKey ? meta.i18n.titleKey.replace(/_title$/, '') : null;
 

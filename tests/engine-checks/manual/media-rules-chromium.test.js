@@ -45,6 +45,8 @@ const skip = !chromium
 
 const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
 const FIXTURES = path.join(__dirname, '../../fixtures');
+// media-transcript-adjacent is the RGAA profile's, and so is its scenario page.
+const RGAA_FIXTURES = path.join(__dirname, '../../../profiles/rgaa/tests/fixtures');
 
 const MEDIA_RULES = [
   'no-autoplay-audio',
@@ -129,10 +131,10 @@ test('media rules in Chromium', { skip }, async (t) => {
     'media-transcript-present.html',
     'video-caption-all-scenarios.html',
     'wcag-12x-media-scenarios.html',
-    'media-transcript-adjacent-all-scenarios.html'
+    path.join(RGAA_FIXTURES, 'media-transcript-adjacent-all-scenarios.html')
   ]) {
-    await t.test(`${fixture}: Chromium agrees with jsdom`, async () => {
-      const html = fs.readFileSync(path.join(FIXTURES, fixture), 'utf8');
+    await t.test(`${path.basename(fixture)}: Chromium agrees with jsdom`, async () => {
+      const html = fs.readFileSync(path.resolve(FIXTURES, fixture), 'utf8');
       assert.deepEqual(await chromiumSummary(html), jsdomSummary(html));
     });
   }

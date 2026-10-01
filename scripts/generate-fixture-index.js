@@ -9,6 +9,9 @@
  *   node scripts/generate-fixture-index.js
  *   node scripts/generate-fixture-index.js --checksDir src/checks --fixturesDir tests/fixtures --testsDir tests/engine-checks --out tests/fixtures/INDEX.md --json tests/fixtures/index.json
  *
+ * Without --checksDir, --testsDir and --fixturesDir, it reads every rules
+ * folder and its tests and fixtures: core's and each profile's.
+ *
  * Output:
  * - Markdown index (tests/fixtures/INDEX.md): one row per rule, whether it
  *   has a scenario fixture, the fixture's relative path, and pass/fail/
@@ -34,13 +37,15 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ruleDirs } = require('./lib/rule-dirs');
+const { ruleDirs, ruleTestDirs } = require('./lib/rule-dirs');
 
 function parseArgs(argv) {
   const args = {
     checksDirs: [], // every rule folder when empty (scripts/lib/rule-dirs.js)
-    fixturesDir: 'tests/fixtures',
-    testsDir: 'tests/engine-checks',
+    // A test folder and the fixture folder its tests read; every rules
+    // folder's pair when not given (scripts/lib/rule-dirs.js).
+    fixturesDir: null,
+    testsDir: null,
     out: 'tests/fixtures/INDEX.md',
     json: 'tests/fixtures/index.json',
     html: 'tests/fixtures/index.html'
@@ -149,14 +154,10 @@ function parseFixtureCases(fixtureAbsPath) {
 }
 
 /** Scan test files for RULE_ID + a referenced fixtures/*.html path. */
-function scanTestFiles(repoRoot, testsDirArg) {
-  const testsDirAbs = path.isAbsolute(testsDirArg)
-    ? testsDirArg
-    : path.resolve(repoRoot, testsDirArg);
+function scanTestFiles(repoRoot, testsDirAbs, fixturesDirAbs, byRuleId = new Map()) {
   const files = listFilesRecursive(testsDirAbs, isTestFileName);
 
-  // ruleId -> { testFile, fixtureFile (basename or null) }
-  const byRuleId = new Map();
+  // ruleId -> { testFile, fixtureFile (basename or null), fixturesDir }
 
   const ruleIdRe = /const\s+RULE_ID\s*=\s*['"]([^'"]+)['"]/;
   const fixtureRefRe = /fixtures['"]\s*,\s*['"]([\w.-]+\.html)['"]/;
@@ -183,12 +184,13 @@ function scanTestFiles(repoRoot, testsDirArg) {
     else if (tm) fixtureFile = `${ruleId}${tm[1] || tm[2]}`;
 
     const rel = path.relative(repoRoot, file);
+    const entry = { testFile: rel, fixtureFile, fixturesDir: fixturesDirAbs };
     if (!byRuleId.has(ruleId)) {
-      byRuleId.set(ruleId, { testFile: rel, fixtureFile });
+      byRuleId.set(ruleId, entry);
     } else if (fixtureFile && !byRuleId.get(ruleId).fixtureFile) {
       // Prefer the entry that actually references a fixture, if an
       // earlier same-ruleId test file (e.g. a legacy duplicate) didn't.
-      byRuleId.set(ruleId, { testFile: rel, fixtureFile });
+      byRuleId.set(ruleId, entry);
     }
   }
   return byRuleId;
@@ -202,20 +204,25 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;');
 }
 
-/** Self-contained HTML index: bare relative links to sibling fixture files. */
-function renderHtmlIndex(rows) {
+/**
+ * Self-contained HTML index: relative links to the fixture files, from the
+ * folder the index is written to (sibling files for core's fixtures).
+ */
+function renderHtmlIndex(rows, htmlDir) {
   const withFixture = rows.filter((r) => r.hasFixture);
   const withoutFixture = rows.filter((r) => !r.hasFixture);
 
   const bodyRows = withFixture
     .map((r) => {
       const c = r.caseCounts || { PASS: 0, FAIL: 0, CANTTELL: 0, OTHER: 0 };
-      const basename = r.fixtureFile ? r.fixtureFile.split('/').pop() : '';
+      const href = r.fixtureFile
+        ? path.relative(htmlDir, r.fixtureFile).split(path.sep).join('/')
+        : '';
       const ruleId = escapeHtml(r.ruleId);
       const title = escapeHtml(r.title || '');
       const type = escapeHtml(r.type || '');
       return `<tr data-search="${ruleId.toLowerCase()} ${title.toLowerCase()}">
-      <td><a href="${escapeHtml(basename)}" target="_blank" rel="noopener">${ruleId}</a></td>
+      <td><a href="${escapeHtml(href)}" target="_blank" rel="noopener">${ruleId}</a></td>
       <td class="muted">${type}</td>
       <td>${title}</td>
       <td class="num">${r.totalCases}</td>
@@ -319,10 +326,20 @@ function main() {
   const repoRoot = findRepoRoot(process.cwd());
 
   const rules = loadRuleCatalog(repoRoot, args.checksDirs);
-  const testInfo = scanTestFiles(repoRoot, args.testsDir);
-  const fixturesDirAbs = path.isAbsolute(args.fixturesDir)
-    ? args.fixturesDir
-    : path.resolve(repoRoot, args.fixturesDir);
+  const abs = (dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir));
+  const testDirs =
+    args.testsDir || args.fixturesDir
+      ? [
+          {
+            testsDir: abs(args.testsDir || 'tests/engine-checks'),
+            fixturesDir: abs(args.fixturesDir || 'tests/fixtures')
+          }
+        ]
+      : ruleTestDirs();
+  const testInfo = new Map();
+  for (const { testsDir, fixturesDir } of testDirs) {
+    scanTestFiles(repoRoot, testsDir, fixturesDir, testInfo);
+  }
 
   const rows = [];
   for (const [ruleId, meta] of rules) {
@@ -331,7 +348,7 @@ function main() {
     let caseInfo = null;
 
     if (t && t.fixtureFile) {
-      const fixtureAbs = path.join(fixturesDirAbs, t.fixtureFile);
+      const fixtureAbs = path.join(t.fixturesDir, t.fixtureFile);
       if (fs.existsSync(fixtureAbs)) {
         fixtureRel = path.relative(repoRoot, fixtureAbs);
         caseInfo = parseFixtureCases(fixtureAbs);
@@ -360,7 +377,7 @@ function main() {
   // No timestamp: these files are committed, so a generation time would make
   // every run a diff and hide the drift worth seeing.
   let md = `# Fixture Index\n\n`;
-  md += `Every implemented rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/engine-checks/**/<rule>.test.js\` asserting the exact expected ids. See \`docs/RULE_AUTHORING.md\`.\n\n`;
+  md += `Every implemented rule should have a \`tests/fixtures/<slug>-all-scenarios.html\` scenario page (numbered \`case_NN\` blocks, each marked PASS/FAIL/CANTTELL in its \`.case-title\`) and a "fixture coverage" test in its \`tests/engine-checks/**/<rule>.test.js\` asserting the exact expected ids. A profile's rules keep both in the profile, under \`profiles/<name>/tests/fixtures/\` and \`profiles/<name>/tests/rules/\`. See \`docs/RULE_AUTHORING.md\`.\n\n`;
   md += `## Summary\n\n`;
   md += `Total rules: **${rows.length}**. With fixture: **${withFixture.length}**. Without fixture: **${withoutFixture.length}**.\n\n`;
 
@@ -401,7 +418,10 @@ function main() {
     2
   );
 
-  const html = renderHtmlIndex(rows);
+  const html = renderHtmlIndex(
+    rows,
+    path.dirname(path.relative(repoRoot, path.resolve(repoRoot, args.html)))
+  );
 
   const mdPath = path.resolve(repoRoot, args.out);
   const jsonPath = path.resolve(repoRoot, args.json);
