@@ -1,11 +1,10 @@
 {
   "rulesDirs": [
-    "src/checks",
-    "profiles/rgaa/rules"
+    "src/checks"
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 202,
+    "totalRules": 133,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -91,30 +90,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/area-alt-source.js",
-      "ruleId": "area-alt-source",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Linked image-map areas are named by alt or aria-label",
-      "tags": [
-        "rgaa",
-        "images",
-        "imagemap",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/aria-allowed-attr.js",
       "ruleId": "aria-allowed-attr",
       "wcagScNormative": [
@@ -175,29 +150,6 @@
         "best-practice",
         "aria",
         "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/aria-attribute-conformance.js",
-      "ruleId": "aria-attribute-conformance",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "aria-* attributes are valid for the W3C validator",
-      "tags": [
-        "rgaa",
-        "aria",
         "atomic",
         "automatic"
       ],
@@ -473,29 +425,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/aria-list-item-roles.js",
-      "ruleId": "aria-list-item-roles",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "ARIA lists use role=\"listitem\" for their items",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/aria-prohibited-attr.js",
       "ruleId": "aria-prohibited-attr",
       "wcagScNormative": [
@@ -739,29 +668,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/aria-role-conformance.js",
-      "ruleId": "aria-role-conformance",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Role attributes are valid for the W3C validator",
-      "tags": [
-        "rgaa",
-        "aria",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/aria-role-name-present.js",
@@ -1165,54 +1071,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/canvas-decorative-aria-hidden.js",
-      "ruleId": "canvas-decorative-aria-hidden",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Decorative <canvas> images have aria-hidden=\"true\" and no alternative",
-      "tags": [
-        "rgaa",
-        "images",
-        "canvas",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/canvas-role-img.js",
-      "ruleId": "canvas-role-img",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "<canvas> images have role=\"img\" with an ARIA name, or fallback content",
-      "tags": [
-        "rgaa",
-        "images",
-        "canvas",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/canvas-text-alternative-present.js",
       "ruleId": "canvas-text-alternative-present",
       "wcagScNormative": [
@@ -1432,31 +1290,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js",
-      "ruleId": "contrast-minimum-rgaa",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Text meets RGAA minimum color contrast",
-      "tags": [
-        "rgaa",
-        "contrast",
-        "color",
-        "atomic",
-        "automatic",
-        "dom"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/contrast-minimum.js",
@@ -1709,29 +1542,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/dir-attribute-valid.js",
-      "ruleId": "dir-attribute-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "dir attributes are ltr or rtl",
-      "tags": [
-        "rgaa",
-        "language",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/dlitem-parent-valid.js",
       "ruleId": "dlitem-parent-valid",
       "wcagScNormative": [
@@ -1779,75 +1589,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/doctype-position.js",
-      "ruleId": "doctype-position",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "The doctype comes before the <html> tag",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/doctype-present.js",
-      "ruleId": "doctype-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page declares a doctype",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/doctype-valid.js",
-      "ruleId": "doctype-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Declared doctype is valid",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/duplicate-id-aria.js",
@@ -1948,30 +1689,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/embed-image-role-img.js",
-      "ruleId": "embed-image-role-img",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Embedded images have role=\"img\" and a text alternative",
-      "tags": [
-        "rgaa",
-        "images",
-        "embed",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/embed-text-alternative-present.js",
       "ruleId": "embed-text-alternative-present",
       "wcagScNormative": [
@@ -2019,152 +1736,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/field-label-in-name-sources.js",
-      "ruleId": "field-label-in-name-sources",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Every label source of a form field contains its visible label",
-      "tags": [
-        "rgaa",
-        "forms",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/field-label-listed-source.js",
-      "ruleId": "field-label-listed-source",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Form fields have a label from a source RGAA lists",
-      "tags": [
-        "rgaa",
-        "forms",
-        "labels",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/figure-caption-structure.js",
-      "ruleId": "figure-caption-structure",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Images with a caption use the figure structure RGAA describes",
-      "tags": [
-        "rgaa",
-        "images",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/focus-indicator-contrast.js",
-      "ruleId": "focus-indicator-contrast",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Author focus indicators have a contrast ratio of at least 3:1",
-      "tags": [
-        "rgaa",
-        "focus",
-        "contrast",
-        "css",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/form-button-label-in-name-sources.js",
-      "ruleId": "form-button-label-in-name-sources",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "The accessible name of a button in a form contains its visible label",
-      "tags": [
-        "rgaa",
-        "forms",
-        "buttons",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/form-button-name-present.js",
-      "ruleId": "form-button-name-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Buttons in a form have a label",
-      "tags": [
-        "rgaa",
-        "forms",
-        "buttons",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/form-control-programmatic-label-present.js",
@@ -2274,169 +1845,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/frame-title-attribute-present.js",
-      "ruleId": "frame-title-attribute-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Frames have a title attribute",
-      "tags": [
-        "rgaa",
-        "iframe",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/frame-title-not-empty.js",
-      "ruleId": "frame-title-not-empty",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Frame titles are not empty",
-      "tags": [
-        "rgaa",
-        "iframe",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/heading-content-present.js",
-      "ruleId": "heading-content-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Headings have content",
-      "tags": [
-        "rgaa",
-        "headings",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/heading-role-level-present.js",
-      "ruleId": "heading-role-level-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "ARIA headings have an aria-level attribute",
-      "tags": [
-        "rgaa",
-        "headings",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/html-elements-attributes-valid.js",
-      "ruleId": "html-elements-attributes-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "HTML elements and attribute values are valid",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/html-lang-code-valid.js",
-      "ruleId": "html-lang-code-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Default language code is valid",
-      "tags": [
-        "rgaa",
-        "language",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/html-nesting-valid.js",
-      "ruleId": "html-nesting-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "HTML elements are nested as HTML allows",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/html-xml-lang-mismatch.js",
@@ -2737,29 +2145,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/img-decorative-no-alternative.js",
-      "ruleId": "img-decorative-no-alternative",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Decorative images have no aria-labelledby, aria-label or title",
-      "tags": [
-        "rgaa",
-        "images",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/input-image-alt-present.js",
       "ruleId": "input-image-alt-present",
       "wcagScNormative": [
@@ -2807,30 +2192,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/label-for-target-valid.js",
-      "ruleId": "label-for-target-valid",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Labels point to a form field",
-      "tags": [
-        "rgaa",
-        "forms",
-        "labels",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/label-in-name.js",
@@ -2930,53 +2291,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/layout-table-no-data-markup.js",
-      "ruleId": "layout-table-no-data-markup",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Layout tables use no data table markup",
-      "tags": [
-        "rgaa",
-        "tables",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/link-content-label-present.js",
-      "ruleId": "link-content-label-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Links have a label in their content",
-      "tags": [
-        "rgaa",
-        "links",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/link-in-text-block.js",
       "ruleId": "link-in-text-block",
       "wcagScNormative": [
@@ -3027,30 +2341,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/link-label-in-name-sources.js",
-      "ruleId": "link-label-in-name-sources",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Every name source of a link contains its visible label",
-      "tags": [
-        "rgaa",
-        "links",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/link-name-present.js",
@@ -3107,31 +2397,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/link-state-colors-review.js",
-      "ruleId": "link-state-colors-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Link states shown by color alone contrast 3:1 with the surrounding text",
-      "tags": [
-        "rgaa",
-        "links",
-        "color",
-        "contrast",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/list-children-valid.js",
@@ -3233,29 +2498,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/listbox-option-groups-absent.js",
-      "ruleId": "listbox-option-groups-absent",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "ARIA listboxes do not group options",
-      "tags": [
-        "rgaa",
-        "forms",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/listitem-parent-valid.js",
       "ruleId": "listitem-parent-valid",
       "wcagScNormative": [
@@ -3303,77 +2545,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/main-element-structure.js",
-      "ruleId": "main-element-structure",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Main content uses one visible <main> element",
-      "tags": [
-        "rgaa",
-        "landmarks",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/markup-validation-review.js",
-      "ruleId": "markup-validation-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "The generated source code passes the W3C validator",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/media-transcript-adjacent.js",
-      "ruleId": "media-transcript-adjacent",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Audio and video have an adjacent transcript or a link to one",
-      "tags": [
-        "rgaa",
-        "media",
-        "timebasedmedia",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/menuitem-name-present.js",
@@ -3424,29 +2595,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/meta-redirect-immediate.js",
-      "ruleId": "meta-redirect-immediate",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Meta redirects are immediate",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/meta-refresh-no-exceptions.js",
@@ -3505,29 +2653,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/meta-refresh-no-url-timing.js",
-      "ruleId": "meta-refresh-no-url-timing",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Meta refresh waits 20 hours or more",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/meta-refresh-timing-absent.js",
@@ -3725,30 +2850,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/object-image-role-img.js",
-      "ruleId": "object-image-role-img",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Image objects have role=\"img\" and a text alternative",
-      "tags": [
-        "rgaa",
-        "images",
-        "object",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/object-text-alternative-present.js",
       "ruleId": "object-text-alternative-present",
       "wcagScNormative": [
@@ -3796,52 +2897,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/optgroup-label-not-empty.js",
-      "ruleId": "optgroup-label-not-empty",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Option group labels are not empty",
-      "tags": [
-        "rgaa",
-        "forms",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/optgroup-label-present.js",
-      "ruleId": "optgroup-label-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Option groups have a label",
-      "tags": [
-        "rgaa",
-        "forms",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/option-name-present.js",
@@ -3894,53 +2949,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/orientation-content-parity.js",
-      "ruleId": "orientation-content-parity",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Content stays the same in portrait and landscape",
-      "tags": [
-        "rgaa",
-        "structure",
-        "css",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/page-language-present.js",
-      "ruleId": "page-language-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page gives a default language",
-      "tags": [
-        "rgaa",
-        "language",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/page-title-present.js",
       "ruleId": "page-title-present",
       "wcagScNormative": [
@@ -3988,77 +2996,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/page-title-unique.js",
-      "ruleId": "page-title-unique",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page titles are unique across the site",
-      "tags": [
-        "rgaa",
-        "document",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/page-zones-reachable.js",
-      "ruleId": "page-zones-reachable",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Each area of the page can be reached or skipped",
-      "tags": [
-        "rgaa",
-        "keyboard",
-        "navigation",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/presentational-attributes-absent.js",
-      "ruleId": "presentational-attributes-absent",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page uses no presentational attributes",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/presentational-children-focusable-absent.js",
@@ -4111,29 +3048,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/presentational-elements-absent.js",
-      "ruleId": "presentational-elements-absent",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Page uses no presentational elements",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/progressbar-name-present.js",
       "ruleId": "progressbar-name-present",
       "wcagScNormative": [
@@ -4181,30 +3095,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/role-img-aria-name.js",
-      "ruleId": "role-img-aria-name",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Elements with role=\"img\" are named with aria-labelledby or aria-label",
-      "tags": [
-        "rgaa",
-        "images",
-        "aria",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/role-img-text-alternative-present.js",
@@ -4356,54 +3246,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/skip-link-placement.js",
-      "ruleId": "skip-link-placement",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Skip links are visible and at the same place on every page",
-      "tags": [
-        "rgaa",
-        "keyboard",
-        "navigation",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/skip-link-present.js",
-      "ruleId": "skip-link-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Pages have a skip link to the main content",
-      "tags": [
-        "rgaa",
-        "keyboard",
-        "navigation",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/slider-name-present.js",
       "ruleId": "slider-name-present",
       "wcagScNormative": [
@@ -4553,30 +3395,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/svg-hidden-no-alternative.js",
-      "ruleId": "svg-hidden-no-alternative",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Hidden decorative SVGs carry no text alternative",
-      "tags": [
-        "rgaa",
-        "images",
-        "svg",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/svg-image-text-alternative-present.js",
       "ruleId": "svg-image-text-alternative-present",
       "wcagScNormative": [
@@ -4625,30 +3443,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/svg-role-img.js",
-      "ruleId": "svg-role-img",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "SVGs with a text alternative have role=\"img\"",
-      "tags": [
-        "rgaa",
-        "images",
-        "svg",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/automatic/svg-text-alternative-present.js",
@@ -5051,30 +3845,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/title-placeholder-identical.js",
-      "ruleId": "title-placeholder-identical",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "A form field's title and placeholder are identical",
-      "tags": [
-        "rgaa",
-        "forms",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/tooltip-name-present.js",
       "ruleId": "tooltip-name-present",
       "wcagScNormative": [
@@ -5225,29 +3995,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/automatic/video-captions-track-kind.js",
-      "ruleId": "video-captions-track-kind",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "Video caption tracks use kind=\"captions\"",
-      "tags": [
-        "rgaa",
-        "media",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/automatic/video-poster-text-alternative-present.js",
       "ruleId": "video-poster-text-alternative-present",
       "wcagScNormative": [
@@ -5295,30 +4042,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/automatic/widget-label-in-name.js",
-      "ruleId": "widget-label-in-name",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "automatic",
-      "title": "The accessible name of a scripted component contains its visible label",
-      "tags": [
-        "rgaa",
-        "aria",
-        "name",
-        "atomic",
-        "automatic"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/manual/accesskeys-manual.js",
@@ -5565,52 +4288,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/complex-table-summary-manual.js",
-      "ruleId": "complex-table-summary",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Complex data tables have a summary",
-      "tags": [
-        "rgaa",
-        "tables",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/complex-table-summary-quality-manual.js",
-      "ruleId": "complex-table-summary-quality",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Complex data table summaries are relevant",
-      "tags": [
-        "rgaa",
-        "tables",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
       "ruleId": "css-focus-indicator-suppressed",
       "wcagScNormative": [
@@ -5715,29 +4392,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/data-table-headers-review-manual.js",
-      "ruleId": "data-table-headers-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Tables with no header cells are checked for unmarked headers",
-      "tags": [
-        "rgaa",
-        "tables",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/embed-text-alternative-quality-manual.js",
       "ruleId": "embed-text-alternative-quality",
       "wcagScNormative": [
@@ -5787,29 +4441,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/embedded-refresh-review-manual.js",
-      "ruleId": "embedded-refresh-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Embedded content that may refresh itself lets the user control the refresh",
-      "tags": [
-        "rgaa",
-        "time",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/empty-heading-manual.js",
       "ruleId": "empty-heading",
       "wcagScNormative": [],
@@ -5845,52 +4476,6 @@
         "best-practice",
         "tables",
         "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/fake-list-manual.js",
-      "ruleId": "fake-list",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Text laid out as a list uses list markup",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/field-group-legend-manual.js",
-      "ruleId": "field-group-legend",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Groups of form fields have a legend",
-      "tags": [
-        "rgaa",
-        "forms",
         "atomic",
         "manual"
       ],
@@ -6158,29 +4743,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/image-alt-long-manual.js",
-      "ruleId": "image-alt-long",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Text alternatives of images are short",
-      "tags": [
-        "rgaa",
-        "images",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/image-redundant-alt-manual.js",
       "ruleId": "image-redundant-alt",
       "wcagScNormative": [],
@@ -6399,29 +4961,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/keyboard-only-event-handlers-manual.js",
-      "ruleId": "keyboard-only-event-handlers",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Keyboard-only inline event handlers should have a pointer equivalent",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/manual/label-title-only-manual.js",
@@ -6651,54 +5190,6 @@
         "best-practice",
         "landmarks",
         "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/letters-spaced-with-spaces-manual.js",
-      "ruleId": "letters-spaced-with-spaces",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Letters of a word are not spaced out with spaces",
-      "tags": [
-        "rgaa",
-        "presentation",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/link-context-review-manual.js",
-      "ruleId": "link-context-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Generic links whose only context is outside RGAA's list are reviewed",
-      "tags": [
-        "rgaa",
-        "links",
-        "navigation",
-        "quality",
         "atomic",
         "manual"
       ],
@@ -6978,29 +5469,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/office-document-link-manual.js",
-      "ruleId": "office-document-link",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Downloadable office documents are accessible or have an accessible version",
-      "tags": [
-        "rgaa",
-        "links",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/p-as-heading-manual.js",
       "ruleId": "p-as-heading",
       "wcagScNormative": [
@@ -7198,29 +5666,6 @@
       "coverage": {}
     },
     {
-      "file": "profiles/rgaa/rules/manual/radio-group-present-manual.js",
-      "ruleId": "radio-group-present",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Radio buttons sharing a name are grouped",
-      "tags": [
-        "rgaa",
-        "forms",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/region-manual.js",
       "ruleId": "region",
       "wcagScNormative": [],
@@ -7256,29 +5701,6 @@
         "best-practice",
         "tables",
         "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/scripted-components-review-manual.js",
-      "ruleId": "scripted-components-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Scripted components are compatible with assistive technologies",
-      "tags": [
-        "rgaa",
-        "aria",
         "atomic",
         "manual"
       ],
@@ -7525,29 +5947,6 @@
       }
     },
     {
-      "file": "profiles/rgaa/rules/manual/th-scope-row-col-manual.js",
-      "ruleId": "th-scope-row-col",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Table headers use scope=\"row\" or scope=\"col\"",
-      "tags": [
-        "rgaa",
-        "tables",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/video-caption-manual.js",
       "ruleId": "video-caption",
       "wcagScNormative": [
@@ -7595,29 +5994,6 @@
           ]
         }
       }
-    },
-    {
-      "file": "profiles/rgaa/rules/manual/viewport-zoom-review-manual.js",
-      "ruleId": "viewport-zoom-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Text can reach 200% zoom despite a viewport meta tag that limits zoom",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
     },
     {
       "file": "src/checks/manual-review.js",

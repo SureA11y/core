@@ -1,11 +1,11 @@
 # WCAG Coverage Report
 
-Rules directories: `src/checks`, `profiles/rgaa/rules`
+Rules directories: `src/checks`
 Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **202**
+Total rules (loaded without error): **133**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -641,76 +641,14 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | profiles/rgaa/rules/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
-| aria-attribute-conformance | automatic | aria-* attributes are valid for the W3C validator | profiles/rgaa/rules/automatic/aria-attribute-conformance.js |  |  |
-| aria-list-item-roles | automatic | ARIA lists use role="listitem" for their items | profiles/rgaa/rules/automatic/aria-list-item-roles.js |  |  |
-| aria-role-conformance | automatic | Role attributes are valid for the W3C validator | profiles/rgaa/rules/automatic/aria-role-conformance.js |  |  |
-| canvas-decorative-aria-hidden | automatic | Decorative &lt;canvas&gt; images have aria-hidden="true" and no alternative | profiles/rgaa/rules/automatic/canvas-decorative-aria-hidden.js |  |  |
-| canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | profiles/rgaa/rules/automatic/canvas-role-img.js |  |  |
-| contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js |  |  |
-| dir-attribute-valid | automatic | dir attributes are ltr or rtl | profiles/rgaa/rules/automatic/dir-attribute-valid.js |  |  |
-| doctype-position | automatic | The doctype comes before the &lt;html&gt; tag | profiles/rgaa/rules/automatic/doctype-position.js |  |  |
-| doctype-present | automatic | Page declares a doctype | profiles/rgaa/rules/automatic/doctype-present.js |  |  |
-| doctype-valid | automatic | Declared doctype is valid | profiles/rgaa/rules/automatic/doctype-valid.js |  |  |
-| embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | profiles/rgaa/rules/automatic/embed-image-role-img.js |  |  |
-| field-label-in-name-sources | automatic | Every label source of a form field contains its visible label | profiles/rgaa/rules/automatic/field-label-in-name-sources.js |  |  |
-| field-label-listed-source | automatic | Form fields have a label from a source RGAA lists | profiles/rgaa/rules/automatic/field-label-listed-source.js |  |  |
-| figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | profiles/rgaa/rules/automatic/figure-caption-structure.js |  |  |
-| focus-indicator-contrast | automatic | Author focus indicators have a contrast ratio of at least 3:1 | profiles/rgaa/rules/automatic/focus-indicator-contrast.js |  |  |
-| form-button-label-in-name-sources | automatic | The accessible name of a button in a form contains its visible label | profiles/rgaa/rules/automatic/form-button-label-in-name-sources.js |  |  |
-| form-button-name-present | automatic | Buttons in a form have a label | profiles/rgaa/rules/automatic/form-button-name-present.js |  |  |
-| frame-title-attribute-present | automatic | Frames have a title attribute | profiles/rgaa/rules/automatic/frame-title-attribute-present.js |  |  |
-| frame-title-not-empty | automatic | Frame titles are not empty | profiles/rgaa/rules/automatic/frame-title-not-empty.js |  |  |
-| heading-content-present | automatic | Headings have content | profiles/rgaa/rules/automatic/heading-content-present.js |  |  |
-| heading-role-level-present | automatic | ARIA headings have an aria-level attribute | profiles/rgaa/rules/automatic/heading-role-level-present.js |  |  |
-| html-elements-attributes-valid | automatic | HTML elements and attribute values are valid | profiles/rgaa/rules/automatic/html-elements-attributes-valid.js |  |  |
-| html-lang-code-valid | automatic | Default language code is valid | profiles/rgaa/rules/automatic/html-lang-code-valid.js |  |  |
-| html-nesting-valid | automatic | HTML elements are nested as HTML allows | profiles/rgaa/rules/automatic/html-nesting-valid.js |  |  |
-| img-decorative-no-alternative | automatic | Decorative images have no aria-labelledby, aria-label or title | profiles/rgaa/rules/automatic/img-decorative-no-alternative.js |  |  |
-| label-for-target-valid | automatic | Labels point to a form field | profiles/rgaa/rules/automatic/label-for-target-valid.js |  |  |
-| layout-table-no-data-markup | automatic | Layout tables use no data table markup | profiles/rgaa/rules/automatic/layout-table-no-data-markup.js |  |  |
-| link-content-label-present | automatic | Links have a label in their content | profiles/rgaa/rules/automatic/link-content-label-present.js |  |  |
-| link-label-in-name-sources | automatic | Every name source of a link contains its visible label | profiles/rgaa/rules/automatic/link-label-in-name-sources.js |  |  |
-| link-state-colors-review | automatic | Link states shown by color alone contrast 3:1 with the surrounding text | profiles/rgaa/rules/automatic/link-state-colors-review.js |  |  |
-| listbox-option-groups-absent | automatic | ARIA listboxes do not group options | profiles/rgaa/rules/automatic/listbox-option-groups-absent.js |  |  |
-| main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | profiles/rgaa/rules/automatic/main-element-structure.js |  |  |
-| markup-validation-review | automatic | The generated source code passes the W3C validator | profiles/rgaa/rules/automatic/markup-validation-review.js |  |  |
-| media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | profiles/rgaa/rules/automatic/media-transcript-adjacent.js |  |  |
-| meta-redirect-immediate | automatic | Meta redirects are immediate | profiles/rgaa/rules/automatic/meta-redirect-immediate.js |  |  |
-| meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | profiles/rgaa/rules/automatic/meta-refresh-no-url-timing.js |  |  |
-| object-image-role-img | automatic | Image objects have role="img" and a text alternative | profiles/rgaa/rules/automatic/object-image-role-img.js |  |  |
-| optgroup-label-not-empty | automatic | Option group labels are not empty | profiles/rgaa/rules/automatic/optgroup-label-not-empty.js |  |  |
-| optgroup-label-present | automatic | Option groups have a label | profiles/rgaa/rules/automatic/optgroup-label-present.js |  |  |
-| orientation-content-parity | automatic | Content stays the same in portrait and landscape | profiles/rgaa/rules/automatic/orientation-content-parity.js |  |  |
-| page-language-present | automatic | Page gives a default language | profiles/rgaa/rules/automatic/page-language-present.js |  |  |
-| page-title-unique | automatic | Page titles are unique across the site | profiles/rgaa/rules/automatic/page-title-unique.js |  |  |
-| page-zones-reachable | automatic | Each area of the page can be reached or skipped | profiles/rgaa/rules/automatic/page-zones-reachable.js |  |  |
-| presentational-attributes-absent | automatic | Page uses no presentational attributes | profiles/rgaa/rules/automatic/presentational-attributes-absent.js |  |  |
-| presentational-elements-absent | automatic | Page uses no presentational elements | profiles/rgaa/rules/automatic/presentational-elements-absent.js |  |  |
-| role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | profiles/rgaa/rules/automatic/role-img-aria-name.js |  |  |
-| skip-link-placement | automatic | Skip links are visible and at the same place on every page | profiles/rgaa/rules/automatic/skip-link-placement.js |  |  |
-| skip-link-present | automatic | Pages have a skip link to the main content | profiles/rgaa/rules/automatic/skip-link-present.js |  |  |
-| svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | profiles/rgaa/rules/automatic/svg-hidden-no-alternative.js |  |  |
-| svg-role-img | automatic | SVGs with a text alternative have role="img" | profiles/rgaa/rules/automatic/svg-role-img.js |  |  |
-| title-placeholder-identical | automatic | A form field's title and placeholder are identical | profiles/rgaa/rules/automatic/title-placeholder-identical.js |  |  |
-| video-captions-track-kind | automatic | Video caption tracks use kind="captions" | profiles/rgaa/rules/automatic/video-captions-track-kind.js |  |  |
-| widget-label-in-name | automatic | The accessible name of a scripted component contains its visible label | profiles/rgaa/rules/automatic/widget-label-in-name.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
-| complex-table-summary | manual | Complex data tables have a summary | profiles/rgaa/rules/manual/complex-table-summary-manual.js |  |  |
-| complex-table-summary-quality | manual | Complex data table summaries are relevant | profiles/rgaa/rules/manual/complex-table-summary-quality-manual.js |  |  |
-| data-table-headers-review | manual | Tables with no header cells are checked for unmarked headers | profiles/rgaa/rules/manual/data-table-headers-review-manual.js |  |  |
-| embedded-refresh-review | manual | Embedded content that may refresh itself lets the user control the refresh | profiles/rgaa/rules/manual/embedded-refresh-review-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
-| fake-list | manual | Text laid out as a list uses list markup | profiles/rgaa/rules/manual/fake-list-manual.js |  |  |
-| field-group-legend | manual | Groups of form fields have a legend | profiles/rgaa/rules/manual/field-group-legend-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
-| image-alt-long | manual | Text alternatives of images are short | profiles/rgaa/rules/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
-| keyboard-only-event-handlers | manual | Keyboard-only inline event handlers should have a pointer equivalent | profiles/rgaa/rules/manual/keyboard-only-event-handlers-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -721,21 +659,14 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-no-duplicate-main | manual | Page must not have more than one main landmark | src/checks/manual/landmark-no-duplicate-main-manual.js |  |  |
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
-| letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | profiles/rgaa/rules/manual/letters-spaced-with-spaces-manual.js |  |  |
-| link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | profiles/rgaa/rules/manual/link-context-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
-| office-document-link | manual | Downloadable office documents are accessible or have an accessible version | profiles/rgaa/rules/manual/office-document-link-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
-| radio-group-present | manual | Radio buttons sharing a name are grouped | profiles/rgaa/rules/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
-| scripted-components-review | manual | Scripted components are compatible with assistive technologies | profiles/rgaa/rules/manual/scripted-components-review-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
-| th-scope-row-col | manual | Table headers use scope="row" or scope="col" | profiles/rgaa/rules/manual/th-scope-row-col-manual.js |  |  |
-| viewport-zoom-review | manual | Text can reach 200% zoom despite a viewport meta tag that limits zoom | profiles/rgaa/rules/manual/viewport-zoom-review-manual.js |  |  |
 
 ## SC Coverage (B): Enforced + manual/informative (normativeMappings + informativeReferences)
 
@@ -1346,76 +1277,14 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | profiles/rgaa/rules/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
-| aria-attribute-conformance | automatic | aria-* attributes are valid for the W3C validator | profiles/rgaa/rules/automatic/aria-attribute-conformance.js |  |  |
-| aria-list-item-roles | automatic | ARIA lists use role="listitem" for their items | profiles/rgaa/rules/automatic/aria-list-item-roles.js |  |  |
-| aria-role-conformance | automatic | Role attributes are valid for the W3C validator | profiles/rgaa/rules/automatic/aria-role-conformance.js |  |  |
-| canvas-decorative-aria-hidden | automatic | Decorative &lt;canvas&gt; images have aria-hidden="true" and no alternative | profiles/rgaa/rules/automatic/canvas-decorative-aria-hidden.js |  |  |
-| canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | profiles/rgaa/rules/automatic/canvas-role-img.js |  |  |
-| contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js |  |  |
-| dir-attribute-valid | automatic | dir attributes are ltr or rtl | profiles/rgaa/rules/automatic/dir-attribute-valid.js |  |  |
-| doctype-position | automatic | The doctype comes before the &lt;html&gt; tag | profiles/rgaa/rules/automatic/doctype-position.js |  |  |
-| doctype-present | automatic | Page declares a doctype | profiles/rgaa/rules/automatic/doctype-present.js |  |  |
-| doctype-valid | automatic | Declared doctype is valid | profiles/rgaa/rules/automatic/doctype-valid.js |  |  |
-| embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | profiles/rgaa/rules/automatic/embed-image-role-img.js |  |  |
-| field-label-in-name-sources | automatic | Every label source of a form field contains its visible label | profiles/rgaa/rules/automatic/field-label-in-name-sources.js |  |  |
-| field-label-listed-source | automatic | Form fields have a label from a source RGAA lists | profiles/rgaa/rules/automatic/field-label-listed-source.js |  |  |
-| figure-caption-structure | automatic | Images with a caption use the figure structure RGAA describes | profiles/rgaa/rules/automatic/figure-caption-structure.js |  |  |
-| focus-indicator-contrast | automatic | Author focus indicators have a contrast ratio of at least 3:1 | profiles/rgaa/rules/automatic/focus-indicator-contrast.js |  |  |
-| form-button-label-in-name-sources | automatic | The accessible name of a button in a form contains its visible label | profiles/rgaa/rules/automatic/form-button-label-in-name-sources.js |  |  |
-| form-button-name-present | automatic | Buttons in a form have a label | profiles/rgaa/rules/automatic/form-button-name-present.js |  |  |
-| frame-title-attribute-present | automatic | Frames have a title attribute | profiles/rgaa/rules/automatic/frame-title-attribute-present.js |  |  |
-| frame-title-not-empty | automatic | Frame titles are not empty | profiles/rgaa/rules/automatic/frame-title-not-empty.js |  |  |
-| heading-content-present | automatic | Headings have content | profiles/rgaa/rules/automatic/heading-content-present.js |  |  |
-| heading-role-level-present | automatic | ARIA headings have an aria-level attribute | profiles/rgaa/rules/automatic/heading-role-level-present.js |  |  |
-| html-elements-attributes-valid | automatic | HTML elements and attribute values are valid | profiles/rgaa/rules/automatic/html-elements-attributes-valid.js |  |  |
-| html-lang-code-valid | automatic | Default language code is valid | profiles/rgaa/rules/automatic/html-lang-code-valid.js |  |  |
-| html-nesting-valid | automatic | HTML elements are nested as HTML allows | profiles/rgaa/rules/automatic/html-nesting-valid.js |  |  |
-| img-decorative-no-alternative | automatic | Decorative images have no aria-labelledby, aria-label or title | profiles/rgaa/rules/automatic/img-decorative-no-alternative.js |  |  |
-| label-for-target-valid | automatic | Labels point to a form field | profiles/rgaa/rules/automatic/label-for-target-valid.js |  |  |
-| layout-table-no-data-markup | automatic | Layout tables use no data table markup | profiles/rgaa/rules/automatic/layout-table-no-data-markup.js |  |  |
-| link-content-label-present | automatic | Links have a label in their content | profiles/rgaa/rules/automatic/link-content-label-present.js |  |  |
-| link-label-in-name-sources | automatic | Every name source of a link contains its visible label | profiles/rgaa/rules/automatic/link-label-in-name-sources.js |  |  |
-| link-state-colors-review | automatic | Link states shown by color alone contrast 3:1 with the surrounding text | profiles/rgaa/rules/automatic/link-state-colors-review.js |  |  |
-| listbox-option-groups-absent | automatic | ARIA listboxes do not group options | profiles/rgaa/rules/automatic/listbox-option-groups-absent.js |  |  |
-| main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | profiles/rgaa/rules/automatic/main-element-structure.js |  |  |
-| markup-validation-review | automatic | The generated source code passes the W3C validator | profiles/rgaa/rules/automatic/markup-validation-review.js |  |  |
-| media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | profiles/rgaa/rules/automatic/media-transcript-adjacent.js |  |  |
-| meta-redirect-immediate | automatic | Meta redirects are immediate | profiles/rgaa/rules/automatic/meta-redirect-immediate.js |  |  |
-| meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | profiles/rgaa/rules/automatic/meta-refresh-no-url-timing.js |  |  |
-| object-image-role-img | automatic | Image objects have role="img" and a text alternative | profiles/rgaa/rules/automatic/object-image-role-img.js |  |  |
-| optgroup-label-not-empty | automatic | Option group labels are not empty | profiles/rgaa/rules/automatic/optgroup-label-not-empty.js |  |  |
-| optgroup-label-present | automatic | Option groups have a label | profiles/rgaa/rules/automatic/optgroup-label-present.js |  |  |
-| orientation-content-parity | automatic | Content stays the same in portrait and landscape | profiles/rgaa/rules/automatic/orientation-content-parity.js |  |  |
-| page-language-present | automatic | Page gives a default language | profiles/rgaa/rules/automatic/page-language-present.js |  |  |
-| page-title-unique | automatic | Page titles are unique across the site | profiles/rgaa/rules/automatic/page-title-unique.js |  |  |
-| page-zones-reachable | automatic | Each area of the page can be reached or skipped | profiles/rgaa/rules/automatic/page-zones-reachable.js |  |  |
-| presentational-attributes-absent | automatic | Page uses no presentational attributes | profiles/rgaa/rules/automatic/presentational-attributes-absent.js |  |  |
-| presentational-elements-absent | automatic | Page uses no presentational elements | profiles/rgaa/rules/automatic/presentational-elements-absent.js |  |  |
-| role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | profiles/rgaa/rules/automatic/role-img-aria-name.js |  |  |
-| skip-link-placement | automatic | Skip links are visible and at the same place on every page | profiles/rgaa/rules/automatic/skip-link-placement.js |  |  |
-| skip-link-present | automatic | Pages have a skip link to the main content | profiles/rgaa/rules/automatic/skip-link-present.js |  |  |
-| svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | profiles/rgaa/rules/automatic/svg-hidden-no-alternative.js |  |  |
-| svg-role-img | automatic | SVGs with a text alternative have role="img" | profiles/rgaa/rules/automatic/svg-role-img.js |  |  |
-| title-placeholder-identical | automatic | A form field's title and placeholder are identical | profiles/rgaa/rules/automatic/title-placeholder-identical.js |  |  |
-| video-captions-track-kind | automatic | Video caption tracks use kind="captions" | profiles/rgaa/rules/automatic/video-captions-track-kind.js |  |  |
-| widget-label-in-name | automatic | The accessible name of a scripted component contains its visible label | profiles/rgaa/rules/automatic/widget-label-in-name.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
-| complex-table-summary | manual | Complex data tables have a summary | profiles/rgaa/rules/manual/complex-table-summary-manual.js |  |  |
-| complex-table-summary-quality | manual | Complex data table summaries are relevant | profiles/rgaa/rules/manual/complex-table-summary-quality-manual.js |  |  |
-| data-table-headers-review | manual | Tables with no header cells are checked for unmarked headers | profiles/rgaa/rules/manual/data-table-headers-review-manual.js |  |  |
-| embedded-refresh-review | manual | Embedded content that may refresh itself lets the user control the refresh | profiles/rgaa/rules/manual/embedded-refresh-review-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
-| fake-list | manual | Text laid out as a list uses list markup | profiles/rgaa/rules/manual/fake-list-manual.js |  |  |
-| field-group-legend | manual | Groups of form fields have a legend | profiles/rgaa/rules/manual/field-group-legend-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
-| image-alt-long | manual | Text alternatives of images are short | profiles/rgaa/rules/manual/image-alt-long-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
-| keyboard-only-event-handlers | manual | Keyboard-only inline event handlers should have a pointer equivalent | profiles/rgaa/rules/manual/keyboard-only-event-handlers-manual.js |  |  |
 | label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -1426,19 +1295,12 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-no-duplicate-main | manual | Page must not have more than one main landmark | src/checks/manual/landmark-no-duplicate-main-manual.js |  |  |
 | landmark-one-main | manual | Page should have a main landmark | src/checks/manual/landmark-one-main-manual.js |  |  |
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
-| letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | profiles/rgaa/rules/manual/letters-spaced-with-spaces-manual.js |  |  |
-| link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | profiles/rgaa/rules/manual/link-context-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
-| office-document-link | manual | Downloadable office documents are accessible or have an accessible version | profiles/rgaa/rules/manual/office-document-link-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
-| radio-group-present | manual | Radio buttons sharing a name are grouped | profiles/rgaa/rules/manual/radio-group-present-manual.js |  |  |
 | region | manual | Page content should be inside a landmark region | src/checks/manual/region-manual.js |  |  |
 | scope-attr-valid | manual | scope attribute must have a valid value | src/checks/manual/scope-attr-valid-manual.js |  |  |
-| scripted-components-review | manual | Scripted components are compatible with assistive technologies | profiles/rgaa/rules/manual/scripted-components-review-manual.js |  |  |
 | skip-link | manual | Skip link must have a resolvable, usable target | src/checks/manual/skip-link-manual.js |  |  |
 | tabindex | manual | tabindex should not be greater than 0 | src/checks/manual/tabindex-manual.js |  |  |
 | table-duplicate-name | manual | Table caption must not duplicate its summary attribute | src/checks/manual/table-duplicate-name-manual.js |  |  |
-| th-scope-row-col | manual | Table headers use scope="row" or scope="col" | profiles/rgaa/rules/manual/th-scope-row-col-manual.js |  |  |
-| viewport-zoom-review | manual | Text can reach 200% zoom despite a viewport meta tag that limits zoom | profiles/rgaa/rules/manual/viewport-zoom-review-manual.js |  |  |
 
