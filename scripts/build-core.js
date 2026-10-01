@@ -49,6 +49,7 @@ const {
   withStandardMappings,
   validateStandards,
   profileRuleIds,
+  profileExclusions,
   standardsData
 } = require('../src/coverage/standards');
 const {
@@ -377,6 +378,15 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
   // registry), computed from the rules actually built.
   const profileRules = profileRuleIds(
     mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  );
+
+  // What each profile with `exclude` leaves out, as rule and rollup ids
+  // (profileExclusions in the registry); unknown names fail the build.
+  const profileExcludes = profileExclusions(
+    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] })),
+    (Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [])
+      .filter((c) => c && c.meta && !c.meta.standard)
+      .map((c) => ({ id: c.id, wcagSc: (c.meta && c.meta.wcagSc) || [] }))
   );
 
   const defs = mods.map((m) => ({
@@ -866,6 +876,11 @@ const OPT_IN_RULE_TAGS = ${jsStringify(OPT_IN_RULE_TAGS)};
 // standard maps for the profile's version (mappedRules in the registry).
 const PROFILE_RULES = ${jsStringify(profileRules)};
 
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = ${jsStringify(profileExcludes)};
+
 const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
 
 // The standard and version each standard's profile targets. Under one, that
@@ -1000,6 +1015,16 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
     }
     selection.profile = requestedProfile;
   }
@@ -1641,6 +1666,9 @@ function toCompositeCatalogEntry(x, tokens) {
 // engineOptions.optInRules and includes nothing else, so the catalog lists
 // what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
+  // An excluded rollup, by the caller or by a profile's exclude, is not
+  // produced, so it is not listed.
+  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;

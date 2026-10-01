@@ -223,7 +223,7 @@ Either way, the entry needs:
 
 The rest is optional, and the comment at the top of the registry describes each field:
 
-- `profiles`: named conformance targets. Each gives the WCAG tags it runs and the version it targets, and switches that version's mappings on. With `mappedRules: true` it also runs every rule the standard maps, which matters when the standard requires things WCAG leaves to best practice.
+- `profiles`: named conformance targets. Each gives the WCAG tags it runs and the version it targets, and switches that version's mappings on. With `mappedRules: true` it also runs every rule the standard maps, which matters when the standard requires things WCAG leaves to best practice. With `exclude: { rules, criteria }` it leaves rules out: the rules it names, and the WCAG criteria a standard narrower than WCAG waives (their WCAG rollups, and every rule that checks nothing else). The build refuses an unknown rule or criterion, and a rule the profile both maps and excludes. A standard that replaces a WCAG check with a stricter one of its own excludes the WCAG rule and maps its own.
 - `ruleTag`: a tag for rules that check requirements only this standard makes. Those rules are opt-in (see [`RULE_AUTHORING.md`](./RULE_AUTHORING.md)), so a WCAG scan never runs them. In a profile, they go in its `rules/` folder, which its `index.js` exports as `rulesDir`.
 - `ruleMapped: true`: the entries come from each rule rather than from its WCAG criterion, so a WCAG rollup names only the entries of the rules that decided its outcome.
 - `composites()`: rollups of the standard's own, such as RGAA's one per criterion. They carry the rule tag, so only a run that asks for the standard produces them, and the HTML report shows them in a section of their own.

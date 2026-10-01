@@ -31,6 +31,9 @@
  *   also runs every rule this standard maps for that version, which matters
  *   when the standard checks things WCAG leaves to best practice (RGAA's
  *   heading hierarchy, say): those rules carry no WCAG tag to select them by.
+ *   A profile may also have `exclude: { rules, criteria }`: rules it does not
+ *   run, and WCAG criteria it waives (their WCAG rollups go, and so does a rule
+ *   whose every criterion is waived). See profileExclusions below.
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -158,12 +161,60 @@ function standardsData() {
     profiles: Object.fromEntries(
       Object.entries(s.profiles || {}).map(([name, p]) => [
         name,
-        { version: p.version, tags: p.tags.slice(), ...(p.mappedRules ? { mappedRules: true } : {}) }
+        {
+          version: p.version,
+          tags: p.tags.slice(),
+          ...(p.mappedRules ? { mappedRules: true } : {}),
+          ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {})
+        }
       ])
     ),
     ...(s.ruleTag ? { ruleTag: s.ruleTag } : {}),
     ...(s.ruleMapped ? { ruleMapped: true } : {})
   }));
+}
+
+// A profile's `exclude`, as lists: { rules: [...], criteria: [...] }.
+function normalizeExclude(exclude) {
+  const list = (v) => (Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : []);
+  return { rules: list(exclude && exclude.rules), criteria: list(exclude && exclude.criteria) };
+}
+
+// What each profile with `exclude` leaves out, given every rule
+// ([{ ruleId, wcagSc }]) and every WCAG rollup ([{ id, wcagSc }]):
+// { [profile]: { rules, criteria, ruleIds, rollupIds } }. `rules` and
+// `criteria` are what it declared; `ruleIds` the rules it does not run (the
+// ones it names, and those whose every WCAG criterion it waives) and
+// `rollupIds` the WCAG rollups of the criteria it waives. A rule that also
+// checks a criterion it keeps still runs. Throws, naming every problem, on an
+// unknown rule or criterion, or on a rule the profile excludes and also maps.
+function profileExclusions(rules, rollups) {
+  const known = new Set(rules.map((r) => r.ruleId));
+  const knownSc = new Set(rules.flatMap((r) => r.wcagSc || []).concat(rollups.flatMap((r) => r.wcagSc || [])));
+  const mapped = profileRuleIds(rules);
+  const problems = [];
+  const out = {};
+  for (const s of NORMATIVE_STANDARDS) {
+    for (const [name, p] of Object.entries(s.profiles || {})) {
+      if (!p.exclude) continue;
+      const { rules: ids, criteria } = normalizeExclude(p.exclude);
+      for (const id of ids) {
+        if (!known.has(id)) problems.push(`${name}: exclude.rules names ${id}, which is no rule`);
+        else if ((mapped[name] || []).includes(id)) {
+          problems.push(`${name}: excludes ${id}, which its standard maps for the same version`);
+        }
+      }
+      for (const sc of criteria) {
+        if (!knownSc.has(sc)) problems.push(`${name}: exclude.criteria names ${sc}, which no rule or rollup checks`);
+      }
+      const waived = (list) => list.length > 0 && list.every((sc) => criteria.includes(sc));
+      const ruleIds = [...new Set(ids.concat(rules.filter((r) => waived(r.wcagSc || [])).map((r) => r.ruleId)))].sort();
+      const rollupIds = rollups.filter((r) => waived(r.wcagSc || [])).map((r) => r.id).sort();
+      out[name] = { rules: ids, criteria, ruleIds, rollupIds };
+    }
+  }
+  if (problems.length) throw new Error(`profile exclusions:\n  ${problems.join('\n  ')}`);
+  return out;
 }
 
 // The registered standard an entry belongs to, or null (WCAG itself, or a
@@ -175,6 +226,7 @@ function standardOfEntry(m) {
 
 module.exports = {
   NORMATIVE_STANDARDS,
+  profileExclusions,
   standardMappingsFor,
   withStandardMappings,
   validateStandards,

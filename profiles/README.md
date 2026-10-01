@@ -50,7 +50,7 @@ writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an em
 - `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`, each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
 - `i18n/en.json`: their messages, then `npm run i18n:sync`.
 
-From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`.
+From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
 
 A profile written by hand needs the same: an `index.js` exporting `standard`, and `rulesDir` and `i18nDir` if it has rules; an entry in `profiles/index.js`; and its tests under `tests/`. The comment at the top of `src/coverage/standards.js` describes every field of `standard`. RGAA's mapping is richer than the scaffold's (`profiles/rgaa/mappings.js` relates tests to WCAG criteria and allows documented exceptions), which is the room a hand-written profile has.
 
