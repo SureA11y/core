@@ -305,6 +305,25 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
   ]);
 });
 
+test('renderJunitReport: the opt-in rules a scan added are a run property on every suite', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"><p dir="auto">x</p></main></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { optInRules: 'all' } });
+  const all = suites(parse(renderJunitReport(result)));
+  assert.ok(all.length > 1);
+  for (const suite of all) {
+    const values = Array.from(suite.getElementsByTagName('property'))
+      .filter((p) => attr(p, 'name') === 'optInRules')
+      .map((p) => attr(p, 'value'));
+    // RGAA's tag, and any other registered profile's whose rules ran.
+    assert.equal(values.length, 1, attr(suite, 'name'));
+    assert.ok(values[0].split(',').includes('rgaa'), attr(suite, 'name'));
+    assert.deepStrictEqual(values, [result.engine.optInRules.join(',')], attr(suite, 'name'));
+  }
+  const plain = runa11yCoreOnHtml(html);
+  assert.doesNotMatch(renderJunitReport(plain), /name="optInRules"/);
+});
+
 test("renderJunitReport: another standard's entry goes under the criteria it names in wcagSc", () => {
   const en = (requirement, sc) => ({
     standard: 'EN 301 549',
@@ -327,6 +346,19 @@ test("renderJunitReport: another standard's entry goes under the criteria it nam
       .map((p) => attr(p, 'value'));
   assert.deepStrictEqual(enOfSuite('WCAG 1.3.1'), ['9.1.3.1']);
   assert.deepStrictEqual(enOfSuite('WCAG 4.1.2'), ['9.4.1.2']);
+});
+
+test('renderJunitReport: a rule with no WCAG criterion keeps its other-standard entries', () => {
+  const result = makeScanResult([
+    check('heading-order', 'fail', [
+      { standard: 'RGAA', version: '4.1.2', requirement: '9.1.1', wcagSc: ['1.3.1', '2.4.6'] }
+    ])
+  ]);
+  const suite = suiteNamed(parse(renderJunitReport(result)), 'Other checks');
+  const rgaa = Array.from(suite.getElementsByTagName('property'))
+    .filter((p) => attr(p, 'name') === 'rgaa')
+    .map((p) => attr(p, 'value'));
+  assert.deepStrictEqual(rgaa, ['9.1.1']);
 });
 
 test('renderJunitReport: timestamp appears only when the result carries one', () => {
@@ -428,4 +460,23 @@ test('renderJunitReport: a real scan renders deterministically and parses', () =
   assert.strictEqual(Number(attr(root, 'tests')), sum('tests'));
   assert.strictEqual(Number(attr(root, 'failures')), sum('failures'));
   assert.strictEqual(Number(attr(root, 'skipped')), sum('skipped'));
+});
+
+// A requirement outside WCAG (an entry with an empty wcagSc) belongs to every
+// criterion of the rule that names it, as an entry with no wcagSc does. It
+// used to match no criterion and drop out of the report.
+test('an entry for a requirement outside WCAG stays with its rule', () => {
+  const check = makeCheckResult({ ruleId: 'r', outcome: 'fail' });
+  check.meta = {
+    ...check.meta,
+    wcagSc: ['1.1.1'],
+    normativeMappings: [
+      { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content' },
+      { standard: 'RGAA', version: '4.1.2', requirement: '1.1.1', title: 'a', wcagSc: ['1.1.1'] },
+      { standard: 'RGAA', version: '4.1.2', requirement: '9.9.9', title: 'b', wcagSc: [] }
+    ]
+  };
+  const xml = renderJunitReport(makeScanResult([check]));
+  assert.ok(xml.includes('<property name="rgaa" value="1.1.1"/>'));
+  assert.ok(xml.includes('<property name="rgaa" value="9.9.9"/>'));
 });

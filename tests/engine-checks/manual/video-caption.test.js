@@ -61,7 +61,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/video-caption-all-scenarios.h
 });
 
 // Only kind="captions" is captions: a subtitles track may translate the
-// dialogue without speaker and sound information.
+// dialogue without speaker and sound information (RGAA glossary
+// "Sous-titres synchronisés", note 2).
 test(`${RULE_ID}: a subtitles-only video is asked about with its own reason`, () => {
   for (const track of [
     '<track kind="subtitles" srclang="en" src="en.vtt">',

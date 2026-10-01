@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>page-zones-reachable — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; color: #000; background: #fff; }
+    .case { border: 1px solid #ddd; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <p>
+    RGAA 12.6.1: the header, main navigation, main content, footer and search areas each need a
+    landmark, a heading that says what they hold, a button to hide them, a skip link before them, or
+    a quick-access link to them. Areas are found from their landmark or from a name such as
+    <code>header</code> or <code>footer</code>; since which blocks are areas is a person's call, an
+    area without a landmark is asked about, never failed.
+  </p>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: an area named "header", with no landmark and no other way to reach it</div>
+    <div class="header" id="pzr_case_01"><a href="/">Médiathèque</a></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: an area named "menu", skipped by the link just before it</div>
+    <a href="#after-menu">Passer le menu</a>
+    <div id="pzr_case_02" class="menu"><a href="/a">Agenda</a> <a href="/b">Catalogue</a></div>
+    <p id="after-menu">Suite.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: an area named "footer", opened by a heading</div>
+    <div id="pzr_case_03" class="footer"><h2>Informations pratiques</h2><p>Ouvert du mardi au samedi.</p></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: a navigation landmark</div>
+    <nav id="pzr_case_04"><a href="/c">Contact</a></nav>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: a search form with role="search"</div>
+    <form id="pzr_case_05" role="search"><input type="search" aria-label="Rechercher"></form>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: a search form with no landmark</div>
+    <form id="pzr_case_06"><input type="search" name="q" aria-label="Rechercher"></form>
+  </div>
+
+  <main id="main"><h1>Actualités</h1><p>Contenu principal.</p></main>
+</body>
+</html>

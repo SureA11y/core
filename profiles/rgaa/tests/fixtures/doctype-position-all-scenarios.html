@@ -1,0 +1,19 @@
+<html lang="fr">
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8" />
+  <title>doctype-position — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; color: #000; background: #fff; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="case-title">01 — CANTTELL: the doctype is written after the html tag, and no page.source probe is given</div>
+  <p>
+    The parser drops a doctype that comes after the html tag, so the parsed page has none. Without the
+    page source, the rule cannot tell a misplaced doctype from a missing one, and asks. Given the start
+    of this file as the page.source probe, it fails (RGAA 8.1.3).
+  </p>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aria-role-conformance — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>aria-role-conformance</code> (RGAA 8.2.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>arc_case_NN</code>.
+    Expected outcomes follow the W3C validator 26.9.27: every FAIL case is an
+    error there, every PASS case is not. Hidden content is checked too.
+  </p>
+
+  <h2>A. Role values the validator rejects (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role token that is not a role, on a button</div>
+    <button id="arc_case_01" role="bogus">Save</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: unknown token in a list with a valid fallback</div>
+    <div id="arc_case_02" role="bogus button" tabindex="0">Open</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: role written with capitals</div>
+    <div id="arc_case_03" role="BUTTON" tabindex="0">Open</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: abstract role</div>
+    <div id="arc_case_04" role="widget" tabindex="0">Open</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: empty role attribute</div>
+    <div id="arc_case_05" role="">Text</div>
+  </div>
+
+  <h2>B. Roles not allowed on the element (FAIL)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: role="tab" on a nav</div>
+    <nav id="arc_case_06" role="tab">Tab</nav>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: role="button" on a heading</div>
+    <h3 id="arc_case_07" role="button">Heading</h3>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: any role on a td of a native table</div>
+    <table><tr><td id="arc_case_08" role="button">Cell</td></tr></table>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: a role other than listitem on an li of a ul</div>
+    <ul><li id="arc_case_09" role="button">Item</li></ul>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: a role on the summary of a details</div>
+    <details><summary id="arc_case_10" role="button">More</summary>Content</details>
+  </div>
+
+  <h2>C. Images with a role (FAIL, CANTTELL)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: img with a role and alt=""</div>
+    <img id="arc_case_11" src="a.png" alt="" role="button" />
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: img with a role and no alt, aria-label or aria-labelledby</div>
+    <img id="arc_case_12" src="a.png" role="none" />
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — CANTTELL: img with role="presentation" and alt="", which RGAA 1.2.1 names for decorative images</div>
+    <img id="arc_case_13" src="a.png" alt="" role="presentation" />
+  </div>
+
+  <h2>D. Hidden content (FAIL)</h2>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: unknown role inside a hidden container</div>
+    <div hidden><div id="arc_case_14" role="bogus">Hidden</div></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: role not allowed, inside a display:none container</div>
+    <div style="display:none"><nav id="arc_case_15" role="tab">Hidden tab</nav></div>
+  </div>
+
+  <h2>E. Valid roles (PASS)</h2>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: role="button" on a div</div>
+    <div id="arc_case_16" role="button" tabindex="0">Open</div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: two valid tokens (the second is a fallback)</div>
+    <div id="arc_case_17" role="none presentation">Layout</div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — PASS: role="tab" on an li whose list has role="tablist"</div>
+    <ul role="tablist"><li id="arc_case_18" role="tab" aria-selected="false">Tab</li></ul>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — PASS: role="button" on an img with a text alternative</div>
+    <img id="arc_case_19" src="a.png" alt="Play" role="button" />
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — PASS: role="tab" on a heading, which ARIA in HTML allows</div>
+    <div role="tablist"><h3 id="arc_case_20" role="tab" aria-selected="false">Section</h3></div>
+  </div>
+</body>
+</html>

@@ -38,6 +38,7 @@
     "./junit": "./src/junit.js",
     "./earl": "./src/earl.js",
     "./en301549": "./src/en301549.js",
+    "./rgaa": "./profiles/rgaa/public.js",
     "./wcag": "./src/wcag.js",
     "./browser": "./surea11y.browser.js",
     "./i18n/*": "./surea11y.i18n.*.js",
@@ -131,6 +132,10 @@
     "i18n:new": "node scripts/i18n-scaffold.js",
     "profile:new": "node scripts/profile-new.js",
     "i18n:sync": "node scripts/i18n-sync.js",
+    "rgaa-map": "node profiles/rgaa/scripts/generate-map.js",
+    "rgaa-map:check": "node profiles/rgaa/scripts/generate-map.js --check",
+    "rgaa-mapping-doc": "npm run build && node profiles/rgaa/scripts/generate-mapping-doc.js",
+    "rgaa-mapping-doc:check": "npm run build && node profiles/rgaa/scripts/generate-mapping-doc.js --check",
     "i18n:check": "node scripts/i18n-sync.js --check",
     "i18n:report": "node scripts/i18n-report.js"
   },

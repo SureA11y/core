@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>contrast-minimum-rgaa — scenario fixture</title>
+  <style>
+    html, body { background: #ffffff; color: #000000; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>contrast-minimum-rgaa</code> (RGAA 3.2.1 to 3.2.4)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>cmr_case_NN</code>.
+    RGAA 3.2 asks for 4.5:1, or 3:1 for text of 24px or more and bold text of
+    18.5px or more. #888888 on white is 3.54:1; #aaaaaa on white is 2.32:1.
+  </p>
+
+  <h2>A. Below RGAA's threshold (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: 16px regular text at 3.54:1 (3.2.1 needs 4.5:1)</div>
+    <p id="cmr_case_01" style="font-size:16px;font-weight:400;color:#888888;background:#ffffff">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: 18px bold text at 3.54:1 (3.2.2 needs 4.5:1)</div>
+    <p id="cmr_case_02" style="font-size:18px;font-weight:700;color:#888888;background:#ffffff">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: 18.5px bold text at 2.32:1 (3.2.4 needs 3:1)</div>
+    <p id="cmr_case_03" style="font-size:18.5px;font-weight:700;color:#aaaaaa;background:#ffffff">Opening hours</p>
+  </div>
+
+  <h2>B. At or above RGAA's threshold (PASS)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: 18.5px bold text at 3.54:1 (3.2.4, although WCAG fails it)</div>
+    <p id="cmr_case_04" style="font-size:18.5px;font-weight:700;color:#888888;background:#ffffff">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: 18.67px bold text at 3.54:1</div>
+    <p id="cmr_case_05" style="font-size:18.67px;font-weight:700;color:#888888;background:#ffffff">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: 24px regular text at 3.54:1 (3.2.3)</div>
+    <p id="cmr_case_06" style="font-size:24px;font-weight:400;color:#888888;background:#ffffff">Opening hours</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: 16px regular text at 21:1</div>
+    <p id="cmr_case_07" style="font-size:16px;font-weight:400;color:#000000;background:#ffffff">Opening hours</p>
+  </div>
+</body>
+</html>

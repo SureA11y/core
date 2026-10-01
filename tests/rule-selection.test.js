@@ -246,6 +246,7 @@ test('rule selection: default (no runOnly, no engineOptions) => every check but 
   assertSelection(core, 'default all checks', undefined, undefined);
   const got = gotSelectedRuleIds(core, undefined, undefined);
   const optIn = core.CHECK_DEFS.filter(isOptIn).map((d) => d.ruleId);
+  assert.ok(optIn.length > 0, 'expected at least one opt-in rule');
   assert.equal(got.length, core.CHECK_DEFS.length - optIn.length);
   for (const id of optIn) assert.ok(!got.includes(id), `${id} is opt-in`);
 });
@@ -257,6 +258,33 @@ test('rule selection: optInRules "all" with no other filter => every check', () 
     got,
     core.CHECK_DEFS.map((d) => d.ruleId)
   );
+});
+
+test('rule selection: optInRules only lifts the opt-in gate; the rest of the selection still decides', () => {
+  const optInId = core.CHECK_DEFS.find(isOptIn).ruleId;
+  const plainId = core.CHECK_DEFS.find((d) => !isOptIn(d)).ruleId;
+  const unlocks = ['all', 'rgaa', 'RGAA', ['rgaa'], 'all, nope', 'nope', '', false, null];
+  const selections = [
+    [{}, undefined],
+    [{ tags: { include: 'wcag2a, wcag2aa' } }, undefined],
+    [{ tags: { include: 'forms' } }, undefined],
+    [{ tags: { exclude: 'rgaa' } }, undefined],
+    [{ rules: { include: `${optInId}, ${plainId}` } }, undefined],
+    [{ rules: { exclude: optInId } }, undefined],
+    [{}, { tags: ['forms'] }],
+    [{}, { excludeTags: ['wcag2a'] }],
+    [{}, { includeRuleIds: [plainId] }]
+  ];
+  for (const optInRules of unlocks) {
+    for (const [eo, runOnly] of selections) {
+      assertSelection(
+        core,
+        `optInRules=${JSON.stringify(optInRules)}`,
+        { ...eo, optInRules },
+        runOnly
+      );
+    }
+  }
 });
 
 test('rule selection: engineOptions.checks.include supports comma list + spaces + duplicates + empty tokens', () => {

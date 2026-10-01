@@ -37,8 +37,8 @@
  *   and every character that is not a letter, digit or combining mark
  *   becomes a separator, so punctuation and spacing differences never
  *   decide the outcome. Accents are not folded: "Déposer" stays one word,
- *   and a name that drops an accent ("Deposer") does not contain it. Four
- *   shapes markup cannot
+ *   and a name that drops an accent ("Deposer") does not contain it. RGAA
+ *   likewise excuses only punctuation and capital letters. Four shapes markup cannot
  *   settle are reported as cantTell instead of fail: a word hyphenated
  *   differently in the two places; a visible word the author may have
  *   abbreviated, marked by its trailing period; visible text rendered

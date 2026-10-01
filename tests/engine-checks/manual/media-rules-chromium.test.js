@@ -46,7 +46,8 @@ const skip = !chromium
 const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
 const FIXTURES = path.join(__dirname, '../../fixtures');
 
-// Core's media rules.
+// Core's media rules. The RGAA profile's media-transcript-adjacent has a test
+// of its own in the browser, beside its scenario page.
 const MEDIA_RULES = ['no-autoplay-audio', 'media-alternative-transcript-evidence', 'video-caption'];
 
 function page(body) {

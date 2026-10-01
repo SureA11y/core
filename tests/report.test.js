@@ -604,13 +604,13 @@ test('renderHtmlReport: a result without a target or profile gets no chips for t
 
 test('renderHtmlReport: the meta bar names the opt-in rules a run added, in the report locale', () => {
   const result = makeScanResult([]);
-  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['sample'] };
-  assert.match(renderHtmlReport(result), /<b>sample<\/b>opt-in rules/);
+  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['rgaa'] };
+  assert.match(renderHtmlReport(result), /<b>rgaa<\/b>opt-in rules/);
   const fr = {
     ...result,
     engine: { ...result.engine, locale: { requested: 'fr', resolved: 'fr', reason: 'ok' } }
   };
-  assert.match(renderHtmlReport(fr), /<b>sample<\/b>règles optionnelles/);
+  assert.match(renderHtmlReport(fr), /<b>rgaa<\/b>règles optionnelles/);
   result.engine.optInRules = [];
   assert.doesNotMatch(renderHtmlReport(result), /opt-in rules/);
 });

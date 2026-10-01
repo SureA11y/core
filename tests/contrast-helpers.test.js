@@ -179,8 +179,8 @@ test('isLargeText: >=24px is always large; >=18.6667px is large only when bold (
   assert.strictEqual(isLargeText('not-a-size', 400), false);
 });
 
-// A standard may put the bold threshold elsewhere (18.5px here). The third
-// argument sets it; without it the WCAG threshold (parsePx('14pt')) stays in force.
+// RGAA 3.2.2/3.2.4 put the bold threshold at 18.5px. The third argument sets
+// it; without it the WCAG threshold (parsePx('14pt')) stays in force.
 test('isLargeText: an explicit bold threshold moves only the bold boundary', () => {
   const wcagBold = 14 * (96 / 72);
   for (const size of [18.4, 18.5, 18.6, 18.66, wcagBold, 19, 23.9, 24]) {

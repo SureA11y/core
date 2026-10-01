@@ -125,8 +125,8 @@ test(`${RULE_ID}: hidden autoplaying audio is cantTell under wcag22-aa`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-// <object>, <embed> and <bgsound> are sound sources too, and WCAG 1.4.2
-// covers any audio that plays on its own.
+// RGAA 4.10.1 lists <object>, <embed> and <bgsound> as sound sources too,
+// and WCAG 1.4.2 covers any audio that plays on its own.
 test(`${RULE_ID}: <embed>, <object> and <bgsound> that may play sound are asked about`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;

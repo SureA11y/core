@@ -7,3 +7,8 @@ cross-engine-report/
 # output shape on every rebuild.
 src/core.js
 surea11y.browser.js
+
+# Hand-maintained table, one row per rule so a reviewer can read it as a
+# table (and as a diff). It used to sit under src/coverage/, which the
+# `coverage/` line above also skips.
+profiles/rgaa/rule-map.js

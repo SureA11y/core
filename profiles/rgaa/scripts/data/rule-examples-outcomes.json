@@ -1,0 +1,70 @@
+{
+  "disagreements": [
+    {
+      "ruleId": "doctype-position",
+      "label": "Failed (with the `page.source` probe)",
+      "engine": "unknown label",
+      "example": "<html lang=\"fr\"> <!DOCTYPE html> …</html>"
+    },
+    {
+      "ruleId": "link-context-review",
+      "label": "Flagged (cantTell)",
+      "engine": "notApplicable",
+      "example": "<div> <a href=\"/rapport\" aria-describedby=\"d\">En savoir plus</a> <span id=\"d\">sur le rapport annuel …"
+    },
+    {
+      "ruleId": "link-state-colors-review",
+      "label": "Fails (in a browser)",
+      "engine": "unknown label",
+      "example": "<style> p { color: #000; } p a { color: #b00000; text-decoration: none; } a:visited { color: #555; }…"
+    },
+    {
+      "ruleId": "link-state-colors-review",
+      "label": "Passes (in a browser)",
+      "engine": "unknown label",
+      "example": "<style> p { color: #000; } p a { color: #f60; text-decoration: none; } a:hover, a:focus { color: #09…"
+    },
+    {
+      "ruleId": "markup-validation-review",
+      "label": "Failed (with the `validator.report` probe)",
+      "engine": "unknown label",
+      "example": "<p class=\"intro\" class=\"lead\">Opening hours</p> <!-- probe: { source: \"generated\", messages: [{ type…"
+    },
+    {
+      "ruleId": "orientation-content-parity",
+      "label": "Fails (in a browser)",
+      "engine": "unknown label",
+      "example": "<style>@media (orientation: portrait) { .prices { display: none } }</style> <table class=\"prices\"><t…"
+    },
+    {
+      "ruleId": "orientation-content-parity",
+      "label": "Passes (in a browser)",
+      "engine": "unknown label",
+      "example": "<style> @media (orientation: portrait) { .wide { display: none } } @media (orientation: landscape) {…"
+    },
+    {
+      "ruleId": "orientation-content-parity",
+      "label": "Not applicable",
+      "engine": "pass",
+      "example": "<style>@media (orientation: portrait) { .prices { width: 100% } }</style> <table class=\"prices\"><tr>…"
+    },
+    {
+      "ruleId": "page-title-unique",
+      "label": "Passed (with the `crawl.pageTitles` probe)",
+      "engine": "unknown label",
+      "example": "<title>Horaires – Médiathèque de Lyon</title> <!-- probe: { pages: [{ url: \"/contact\", title: \"Conta…"
+    },
+    {
+      "ruleId": "page-title-unique",
+      "label": "Failed (with the `crawl.pageTitles` probe)",
+      "engine": "unknown label",
+      "example": "<title>Médiathèque de Lyon</title> <!-- probe: { pages: [{ url: \"/contact\", title: \"Médiathèque de L…"
+    },
+    {
+      "ruleId": "skip-link-placement",
+      "label": "Passed (in a browser, with the `crawl.skipLinks` probe)",
+      "engine": "unknown label",
+      "example": "<style> .skip { position: absolute; left: -9999px; } .skip:focus { left: 8px; top: 8px; } </style> <…"
+    }
+  ]
+}

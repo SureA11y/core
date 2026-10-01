@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>skip-link-placement — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; color: #000; background: #fff; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    .skip { position: absolute; left: -9999px; }
+    .skip:focus { left: 8px; top: 8px; background: #fff; }
+  </style>
+</head>
+<body>
+  <a class="skip" id="slp_case_01" href="#main">Aller au contenu</a>
+  <div class="case-title">01 — CANTTELL: a skip link hidden until it takes focus, on the only page available</div>
+  <p>
+    RGAA 12.7.2 asks that the skip link be visible, at least on focus, and sit at the same
+    place on every page. In a browser the link shows on focus, so only its place on the other
+    pages is asked about, since no crawl.skipLinks probe is given. Without a layout its
+    visibility is asked about too.
+  </p>
+  <nav><a href="/accueil">Accueil</a> <a href="/contact">Contact</a></nav>
+  <main id="main"><h1>Titre</h1><p>Contenu de la page.</p></main>
+</body>
+</html>

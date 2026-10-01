@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>presentational-attributes-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>presentational-attributes-absent</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>pat_case_NN</code>. One occurrence
+    per element, naming every presentational attribute it carries.
+  </p>
+
+  <h2>A. Presentational attributes (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: table with border and cellpadding</div>
+    <table id="pat_case_01" border="1" cellpadding="4"><tr><td>Cell</td></tr></table>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: paragraph with align</div>
+    <p id="pat_case_02" align="center">Centred paragraph</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: div with bgcolor</div>
+    <div id="pat_case_03" bgcolor="yellow">Highlighted</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: iframe with width and height, outside RGAA's exceptions</div>
+    <iframe id="pat_case_04" title="Map" src="about:blank" width="300" height="200"></iframe>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: text input with size</div>
+    <label for="pat_case_05">Name</label>
+    <input id="pat_case_05" size="20">
+  </div>
+
+  <h2>B. Allowed (not flagged)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: img with width and height</div>
+    <img id="pat_case_06" src="photo.jpg" alt="A photo" width="40" height="30">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: select with size</div>
+    <select id="pat_case_07" size="2" aria-label="Fruit"><option>Apple</option><option>Pear</option></select>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: SVG shapes with width and height</div>
+    <svg id="pat_case_08" width="20" height="20" aria-hidden="true"><rect width="20" height="20" /></svg>
+  </div>
+
+  <h2>C. Hidden content and basefont (FAIL)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: align inside a hidden subtree, still in the generated source</div>
+    <div hidden><p id="pat_case_09" align="center">Hidden paragraph</p></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: valign on an element hidden with display:none</div>
+    <div id="pat_case_10" style="display:none" valign="top">Not displayed</div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: basefont, listed by RGAA 10.1.2</div>
+    <p id="pat_case_11" basefont="3">Paragraph</p>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

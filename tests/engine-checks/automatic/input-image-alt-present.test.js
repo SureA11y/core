@@ -247,7 +247,8 @@ test('aria-hidden-focus reports the image button this rule skips', () => {
   assertRule(result, 'aria-hidden-focus', 'fail', { minOccurrences: 1 });
 });
 
-// An author name equal to a browser default is still a name (ACT 59796f). Whether it says what the button does is a
+// An author name equal to a browser default is still a name (ACT 59796f;
+// RGAA 1.1.3 accepts any alt). Whether it says what the button does is a
 // question, so it is cantTell rather than fail.
 test(`${RULE_ID}: cantTell when the author alt is the HTML-AAM default name`, () => {
   const html = `<!doctype html><html><body><input id="d" type="image" src="x.png" alt="Submit Query"></body></html>`;

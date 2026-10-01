@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>form-button-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>form-button-name-present</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>fbnp_case_NN</code>. RGAA 11.9.1 covers the
+    buttons inside a <code>&lt;form&gt;</code> or an element with <code>role="form"</code>.
+  </p>
+
+  <h2>A. Button in a form with no label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: empty button in a form</div>
+    <form action="/search"><button id="fbnp_case_01"></button></form>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: input type="button" with no value in a role="form" element</div>
+    <div role="form" aria-label="Filtres"><input type="button" id="fbnp_case_02"></div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: button whose only content is a decorative image</div>
+    <form action="/search"><button id="fbnp_case_03"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""></button></form>
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: image button with no alt</div>
+    <form action="/search"><input type="image" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" id="fbnp_case_04"></form>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: empty button outside the form, joined by its form attribute</div>
+    <form action="/send" id="fbnp_form_05"></form>
+    <button form="fbnp_form_05" id="fbnp_case_05"></button>
+  </div>
+
+  <h2>C. Button in a form with a label (PASS)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: button text</div>
+    <div role="form" aria-label="Connexion"><button id="fbnp_case_06">OK</button></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: button named by an svg title</div>
+    <form action="/search"><button id="fbnp_case_07"><svg role="img" width="10" height="10"><title>Rechercher</title></svg></button></form>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: submit input with no value (browser label)</div>
+    <form action="/send"><input type="submit" id="fbnp_case_08"></form>
+  </div>
+
+  <h2>D. Outside a form (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: empty button outside any form</div>
+    <button onclick="void 0" id="fbnp_case_09"></button>
+  </div>
+</body>
+</html>

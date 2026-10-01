@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>role-img-aria-name — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>role-img-aria-name</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>rian_case_NN</code>. Elements with <code>role="img"</code> other than <code>&lt;img&gt;</code> and an outer <code>&lt;svg&gt;</code> are checked (RGAA 1.1.1 step 4).
+  </p>
+
+  <h2>A. No aria-labelledby or aria-label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: named only by title</div>
+    <div role="img" title="Graphique des ventes" id="rian_case_01">▲▼</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: no text alternative</div>
+    <span role="img" id="rian_case_02">★★★</span>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-labelledby points to nothing, title only</div>
+    <div role="img" aria-labelledby="rian_missing" title="Carte" id="rian_case_03"></div>
+  </div>
+
+  <h2>B. SVG title child (CANTTELL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: SVG group named only by a title child</div>
+    <svg width="20" height="20"><g role="img" id="rian_case_04"><title>Camembert</title><circle cx="10" cy="10" r="8"/></g></svg>
+  </div>
+
+  <h2>C. Named by ARIA (PASS)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: aria-label</div>
+    <div role="img" aria-label="Note : 3 sur 5" id="rian_case_05">★★★</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: aria-labelledby</div>
+    <p id="rian_lbl">Note : 4 sur 5</p><div role="img" aria-labelledby="rian_lbl" id="rian_case_06">★★★★</div>
+  </div>
+
+  <h2>D. Not checked</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NOT APPLICABLE: aria-hidden="true" (decorative)</div>
+    <span role="img" aria-hidden="true" id="rian_case_07">★</span>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: graphics-symbol role</div>
+    <svg width="20" height="20"><circle role="graphics-symbol" cx="10" cy="10" r="8" id="rian_case_08"/></svg>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: outer svg with role img</div>
+    <svg role="img" width="20" height="20" id="rian_case_09"><circle cx="10" cy="10" r="8"/></svg>
+  </div>
+</body>
+</html>

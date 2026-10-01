@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>form-button-label-in-name-sources — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>form-button-label-in-name-sources</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>fblins_case_NN</code>. RGAA 11.9.2 covers the
+    buttons inside a <code>&lt;form&gt;</code> or <code>role="form"</code>. Its methodology checks that the
+    accessible name contains the visible label; other sources that do not are asked about.
+  </p>
+
+  <h2>A. The accessible name does not contain the visible label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: aria-label that replaces the button text</div>
+    <form action="/send"><button id="fblins_case_01" aria-label="Fermer la fenêtre">Valider</button></form>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-label that replaces an input button's value</div>
+    <form action="/send"><input type="submit" value="Envoyer" aria-label="Valider" id="fblins_case_02"></form>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: role="button" in a role="form" element</div>
+    <div role="form" aria-label="Recherche"><span role="button" tabindex="0" aria-label="Lancer" id="fblins_case_03">Rechercher</span></div>
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: title that does not contain the button text</div>
+    <form action="/send"><button id="fblins_case_04" title="Envoyer le formulaire">OK</button></form>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: aria-label that loses to aria-labelledby</div>
+    <form action="/send">
+      <button id="fblins_case_05" aria-labelledby="fblins_ref_05" aria-label="Fermer">Annuler</button>
+      <span id="fblins_ref_05">Annuler la commande</span>
+    </form>
+  </div>
+
+  <h2>C. The accessible name contains the visible label (PASS)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: aria-label that starts with the button text</div>
+    <form action="/send"><button id="fblins_case_06" aria-label="Rechercher sur le site">Rechercher</button></form>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: accented word kept whole</div>
+    <form action="/send"><button id="fblins_case_07" aria-label="Déposer une annonce">Déposer</button></form>
+  </div>
+
+  <h2>D. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NOT APPLICABLE: the same button outside any form</div>
+    <button type="button" id="fblins_case_08" aria-label="Fermer la fenêtre">Valider</button>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: image button, its label is inside the image</div>
+    <form action="/send"><input type="image" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="OK" aria-label="Envoyer" id="fblins_case_09"></form>
+  </div>
+</body>
+</html>

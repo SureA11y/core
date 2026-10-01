@@ -47,6 +47,11 @@ function outcomes(engineOptions, rule) {
 test("a standard's profile gives every rule its standard and version", () => {
   const cases = [
     [
+      { profile: 'rgaa-4.1.2' },
+      ['rgaa', 'wcag2a', 'wcag111'],
+      { key: 'rgaa', name: 'RGAA', version: '4.1.2' }
+    ],
+    [
       { profile: 'en301549-v4.1.1' },
       ['wcag2a', 'wcag111'],
       { key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }
@@ -64,7 +69,8 @@ test("a standard's profile gives every rule its standard and version", () => {
 test('no profile, a WCAG profile, or rules chosen by tag give null', () => {
   const cases = [
     [{}, ['wcag2a', 'wcag111']],
-    [{ profile: 'wcag22-aa' }, ['wcag2a', 'wcag111']]
+    [{ profile: 'wcag22-aa' }, ['wcag2a', 'wcag111']],
+    [{ optInRules: 'rgaa' }, ['rgaa']]
   ];
   for (const [engineOptions, tags] of cases) {
     assert.deepEqual(
@@ -73,4 +79,16 @@ test('no profile, a WCAG profile, or rules chosen by tag give null', () => {
       JSON.stringify(engineOptions)
     );
   }
+});
+
+test('ctx.standard cannot be changed by a rule', () => {
+  const rule = {
+    id: 'probe-standard',
+    meta: { title: 'probe', tags: ['rgaa'], type: 'automatic' },
+    runInPage: `function runInPage(ctx) {
+      try { ctx.standard.version = 'x'; } catch (e) {}
+      return { outcome: ctx.standard.version === '4.1.2' ? 'pass' : 'fail', occurrences: [] };
+    }`
+  };
+  assert.deepEqual(outcomes({ profile: 'rgaa-4.1.2' }, rule), ['pass', 'pass']);
 });

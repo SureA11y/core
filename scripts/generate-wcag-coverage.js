@@ -22,7 +22,7 @@
  * --rulesDir may be given more than once. Without it, the report reads core's
  * rules, src/checks: it is WCAG's coverage by the rules a WCAG scan runs. A
  * profile's rules answer its own standard's requirements, and the profile
- * documents its coverage of them.
+ * documents its coverage of them (RGAA does so in its mapping document).
  *
  * Output:
  * - Markdown report (grouped by SC, with facet coverage when available)

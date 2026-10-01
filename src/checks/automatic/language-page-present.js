@@ -18,7 +18,8 @@
  *   The <html> element has a lang attribute.
  *   The lang attribute is not empty and its primary language subtag (the
  *   part before the first hyphen) is a registered language subtag, as ACT
- *   bf051a requires. A malformed later
+ *   bf051a requires and as the RGAA glossary "Code de langue" reads it
+ *   ("ne concerne que la partie [code] avant le tiret"). A malformed later
  *   subtag (lang="fr-FR-!!") still identifies French, so it passes here;
  *   it is a markup validity error, not a missing language.
  *

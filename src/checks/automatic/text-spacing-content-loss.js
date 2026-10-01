@@ -12,7 +12,7 @@
  *   Applies to a page with visible text. The loss of content needs a layout
  *   (a browser): without one, only the style sheets are read.
  * @expectation
- *   WCAG 1.4.12: with line height at 1.5 times the font
+ *   WCAG 1.4.12 and RGAA 10.12.1: with line height at 1.5 times the font
  *   size, spacing after paragraphs at 2 times, letter spacing at 0.12 times
  *   and word spacing at 0.16 times, no content or functionality is lost.
  *   - In a browser, the spacing is applied as a style sheet that wins over
@@ -754,34 +754,34 @@ function runInPage(ctx) {
     TEXT_CLIPPED: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
-      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
+      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12, RGAA 10.12.1).',
       key: 'fail_clipped'
     },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
-      hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).',
+      hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12, RGAA 10.12.1).',
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
     TEXT_CLIPPED_MOVING: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
-      hint: 'Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).',
+      hint: 'Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12, RGAA 10.12.1). Moving content also needs a way to pause it (WCAG 2.2.2, RGAA 13.8).',
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
-      hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).',
+      hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12, RGAA 10.12.1).',
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
     },
     STYLESHEET_IMPORTANT: {
       summary: (p) =>
         `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
-      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).',
+      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12, RGAA 10.12.1).',
       key: 'cantTell_stylesheetImportant',
       needed: 'Whether users can still apply their own text spacing to this text.'
     }

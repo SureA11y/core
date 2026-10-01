@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>media-transcript-adjacent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>media-transcript-adjacent</code> (RGAA 4.1.1 to 4.1.3)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>mta_case_NN</code>.
+    RGAA 4.1 accepts a transcript, or a link or button to one, placed just
+    before or just after the media in the code. Anything else is asked about.
+  </p>
+
+  <h2>A. No adjacent transcript (CANTTELL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: video with nothing around it</div>
+    <div class="demo">
+      <video id="mta_case_01" controls src="talk.mp4"></video>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: transcript referenced by aria-describedby, further down</div>
+    <div class="demo">
+      <video id="mta_case_02" controls src="talk.mp4" aria-describedby="mta_case_02_tr"></video>
+      <p>Recorded in March.</p>
+      <div id="mta_case_02_tr">Transcript: Hello and welcome to the annual meeting.</div>
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: a paragraph comes between the audio and the transcript link</div>
+    <div class="demo">
+      <audio id="mta_case_03" controls src="podcast.mp3"></audio>
+      <p>Episode 12, 25 minutes.</p>
+      <a href="/podcast/12/transcript">Transcript</a>
+    </div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: autoplaying audio without controls</div>
+    <div class="demo">
+      <audio id="mta_case_04" autoplay loop src="music.mp3"></audio>
+    </div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: the adjacent transcript link is hidden</div>
+    <div class="demo">
+      <video id="mta_case_05" controls src="talk.mp4"></video>
+      <a href="/talk/transcript" style="display:none">Transcript</a>
+    </div>
+  </div>
+
+  <h2>B. Adjacent transcript or link (PASS)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: link to the transcript just after the audio</div>
+    <div class="demo">
+      <audio id="mta_case_06" controls src="podcast.mp3"></audio>
+      <a href="/podcast/13/transcription">Transcription</a>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: button just before the video</div>
+    <div class="demo">
+      <button type="button" aria-controls="mta_case_07_tr">Show transcript</button>
+      <video id="mta_case_07" controls src="talk.mp4"></video>
+      <div id="mta_case_07_tr" hidden>Hello and welcome.</div>
+    </div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: transcript block just after the video</div>
+    <div class="demo">
+      <video id="mta_case_08" controls src="talk.mp4"></video>
+      <details><summary>Transcript</summary><p>Hello and welcome.</p></details>
+    </div>
+  </div>
+
+  <h2>C. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NOT APPLICABLE: video in a hidden container</div>
+    <div class="demo">
+      <div style="display:none"><video id="mta_case_09" controls src="talk.mp4"></video></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>link-label-in-name-sources — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>link-label-in-name-sources</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lins_case_NN</code>. RGAA 6.1.5 checks that the
+    title, the aria-label and the aria-labelledby text of a link each contain its visible label. Punctuation and
+    capital letters are ignored.
+  </p>
+
+  <h2>A. A source does not contain the visible label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: title that does not repeat the link text</div>
+    <a href="/contact" title="Ouvre une nouvelle fenêtre" id="lins_case_01">Contact</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: aria-label that replaces the link text</div>
+    <a href="/contact" aria-label="Nous écrire" id="lins_case_02">Contact</a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-label contains the text, the title does not</div>
+    <a href="/contact" aria-label="Contact, nouvelle fenêtre" title="Nouvelle fenêtre" id="lins_case_03">Contact</a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-labelledby text that does not contain the link text</div>
+    <span id="lins_ref_04">Plan du site</span>
+    <span role="link" tabindex="0" aria-labelledby="lins_ref_04" id="lins_case_04">Accès rapide</span>
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: a single character that may be a symbol</div>
+    <a href="/" aria-label="Fermer le menu" id="lins_case_05">X</a>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: a word the visible label abbreviates</div>
+    <a href="/plan" title="Plan de l’avenue Foch" id="lins_case_06">Plan de l’av. Foch</a>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: the source leaves out the text in parentheses</div>
+    <a href="/rapport.pdf" title="Rapport annuel" id="lins_case_07">Rapport annuel (PDF)</a>
+  </div>
+
+  <h2>C. Every source contains the visible label (PASS)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: title that starts with the link text</div>
+    <a href="/contact" title="Contact - nouvelle fenêtre" id="lins_case_08">Contact</a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: punctuation and capital letters differ</div>
+    <a href="/contact" title="CONTACT !" id="lins_case_09">Contact</a>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: aria-label and title both contain the text</div>
+    <a href="/aide" aria-label="Aide en ligne" title="Aide en ligne, nouvelle fenêtre" id="lins_case_10">Aide</a>
+  </div>
+
+  <h2>D. Out of scope (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NOT APPLICABLE: link named by its text only</div>
+    <a href="/contact" id="lins_case_11">Contact</a>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NOT APPLICABLE: image link, no visible text to read</div>
+    <a href="/" title="Accueil" id="lins_case_12"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Accueil"></a>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NOT APPLICABLE: a button, not a link</div>
+    <button type="button" aria-label="Fermer" id="lins_case_13">Valider</button>
+  </div>
+</body>
+</html>

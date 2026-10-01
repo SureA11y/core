@@ -16,8 +16,8 @@
  *   any case) is anything but table, grid or treegrid, such as a
  *   layout table with role="presentation", which needs no caption; and a
  *   table already named by a non-empty aria-label, an aria-labelledby that
- *   resolves to text, or a non-empty title, which WCAG accepts as the
- *   table's title.
+ *   resolves to text, or a non-empty title, which WCAG and RGAA 5.4.1
+ *   accept as the table's title.
  * @expectation
  *   A single lone cell in the first row, sitting above rows that clearly
  *   have multiple columns, strongly suggests the author is using it as a

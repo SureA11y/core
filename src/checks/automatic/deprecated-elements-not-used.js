@@ -22,7 +22,8 @@
  * @implementation-notes
  * - <blink> is not reported. No current browser makes it blink: it renders
  *   as an unknown inline element, so it holds no blinking content for 2.2.2
- *   to govern.
+ *   to govern. RGAA 10.1.1 lists it as a presentation tag, and
+ *   presentational-elements-absent reports it there.
  * - Not rule-gated on isAccTreeEligible: presence in markup is what the rule
  *   asks about, independent of visibility. Engine-level hidden-subtree
  *   filtering still applies unless engineOptions.includeHiddenElements is

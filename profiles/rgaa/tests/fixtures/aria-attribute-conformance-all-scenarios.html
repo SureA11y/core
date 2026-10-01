@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>aria-attribute-conformance — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>aria-attribute-conformance</code> (RGAA 8.2.1)</h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>aac_case_NN</code>.
+    Expected outcomes follow the W3C validator 26.9.27: every FAIL case is an
+    error there, every PASS case is not. Hidden content is checked too.
+  </p>
+
+  <h2>A. Names and values (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: misspelt attribute name aria-labeledby</div>
+    <span id="aac_lbl">Send</span>
+    <button id="aac_case_01" aria-labeledby="aac_lbl">Send</button>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: empty value for aria-expanded</div>
+    <button id="aac_case_02" aria-expanded="">Menu</button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-level="0", out of range</div>
+    <div id="aac_case_03" role="heading" aria-level="0">News</div>
+  </div>
+
+  <h2>B. Attributes the element or role does not allow (FAIL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-pressed on a link</div>
+    <a id="aac_case_04" href="/news" aria-pressed="true">News</a>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-sort on a td of a native table</div>
+    <table><tr><td id="aac_case_05" aria-sort="ascending">1</td></tr></table>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: aria-expanded on the summary of a details</div>
+    <details><summary id="aac_case_06" aria-expanded="false">More</summary>Content</details>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: aria-label on a div with no role</div>
+    <div id="aac_case_07" aria-label="Menu">Menu</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FAIL: aria-label on a span inside a button</div>
+    <button><span id="aac_case_08" aria-label="Close">X</span></button>
+  </div>
+
+  <h2>C. Conflicts with native attributes (FAIL)</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: aria-checked on a native checkbox, even when it agrees</div>
+    <label><input id="aac_case_09" type="checkbox" checked aria-checked="true"> Remember me</label>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — FAIL: aria-disabled="false" on a disabled button</div>
+    <button id="aac_case_10" disabled aria-disabled="false">Send</button>
+  </div>
+
+  <h2>D. Required attributes (FAIL)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — FAIL: role="heading" without aria-level</div>
+    <div id="aac_case_11" role="heading">News</div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — FAIL: role="combobox" without aria-expanded</div>
+    <div id="aac_case_12" role="combobox" tabindex="0" aria-label="City"></div>
+  </div>
+
+  <h2>E. Hidden content (FAIL)</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — FAIL: invalid value inside a hidden container</div>
+    <div hidden><button id="aac_case_13" aria-expanded="yes">Menu</button></div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — FAIL: aria-checked on a div with no role, inside a display:none container</div>
+    <div style="display:none"><div id="aac_case_14" aria-checked="true">Option</div></div>
+  </div>
+
+  <h2>F. What the validator accepts (PASS)</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: aria-expanded on a heading</div>
+    <h3 id="aac_case_15" aria-expanded="true">Section</h3>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: aria-describedby that points to no element</div>
+    <button id="aac_case_16" aria-describedby="aac_missing">Send</button>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — PASS: native checkbox with role="switch" and no aria-checked</div>
+    <label><input id="aac_case_17" type="checkbox" role="switch"> Wi-Fi</label>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — PASS: role="checkbox" with aria-checked</div>
+    <div id="aac_case_18" role="checkbox" aria-checked="true" tabindex="0">Remember me</div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — PASS: aria-required="true" that repeats required</div>
+    <label for="aac_case_19">Name</label>
+    <input id="aac_case_19" type="text" required aria-required="true">
+  </div>
+</body>
+</html>

@@ -2,30 +2,36 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const path = require('node:path');
 
 const { getLocaleCoverage } = require('../../src/index.js');
 const { computeLocaleReport } = require('../../src/i18n-coverage.js');
-const { generateReport } = require('../../scripts/i18n-report.js');
+const { i18nSources, loadDictionaries } = require('../../scripts/lib/dictionaries.js');
+
+// What the package ships: core's dictionaries with every built-in profile's
+// merged in, as the build does.
+const shipped = loadDictionaries(i18nSources().map((s) => s.dir));
 
 test('getLocaleCoverage reports every shipped locale but English, in order', () => {
   const coverage = getLocaleCoverage();
   assert.equal(coverage.sourceLocale, 'en');
-  const en = require('../../src/i18n/en.json');
-  assert.equal(coverage.totalKeys, Object.keys(en).length);
+  assert.equal(coverage.totalKeys, Object.keys(shipped.en).length);
+  assert.ok(
+    coverage.totalKeys > Object.keys(require('../../src/i18n/en.json')).length,
+    "the profiles' messages count too"
+  );
   const locales = coverage.locales.map((l) => l.locale);
   assert.deepEqual(locales, [...locales].sort());
   assert.ok(!locales.includes('en'));
   for (const name of ['de', 'es', 'fr', 'ja']) assert.ok(locales.includes(name), name);
 });
 
-test("getLocaleCoverage agrees with npm run i18n:report on core's dictionaries", () => {
+test('getLocaleCoverage counts the dictionaries the package ships, core and profiles alike', () => {
   const fromPackage = getLocaleCoverage().locales;
-  const fromScript = generateReport(path.join(__dirname, '../../src/i18n'));
-  assert.deepEqual(
-    fromPackage,
-    [...fromScript].sort((a, b) => a.locale.localeCompare(b.locale))
-  );
+  const expected = Object.keys(shipped)
+    .filter((locale) => locale !== 'en')
+    .sort()
+    .map((locale) => ({ locale, ...computeLocaleReport(shipped.en, shipped[locale]) }));
+  assert.deepEqual(fromPackage, expected);
 });
 
 test('computeLocaleReport counts translated, missing and orphaned keys', () => {

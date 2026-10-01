@@ -52,7 +52,7 @@ The same query as `queryAllSmart` (shadow roots per `includeShadowDom`, context 
 `excludeSelectors`) with no hidden-content filter: elements inside `hidden`,
 `display:none`, closed `<details>` and the like are returned whatever
 `includeHiddenElements` says. Only for rules that judge the markup itself rather than
-what is rendered, such as a standard's tests on the generated source.
+what is rendered, such as RGAA's tests on the generated source (8.2.1, 10.1.1, 10.1.2).
 `<template>` content is not in the DOM tree and stays out. A WCAG rule should not use
 it: hidden content is not presented to users.
 
@@ -70,9 +70,9 @@ The document's doctype, classified by HTML version. `kind` is one of:
 
 Public ids are compared without regard to case, as the HTML parser does. `name`,
 `publicId` and `systemId` are the doctype's own values (empty strings when there is
-none). For rules whose verdict depends on the HTML version: a requirement that
-applies to HTML5 only, or `lang` read as `lang` or `xml:lang` by version. Whether a
-doctype is valid at all is not this helper's question.
+none). For rules whose verdict depends on the HTML version, such as RGAA's: criterion
+9.2 does not apply outside HTML5, and test 8.3.1 reads `lang` or `xml:lang` by version.
+Whether a doctype is valid at all is `doctype-present`'s question, not this helper's.
 
 ### `composedParent(node)` → `Node | null`
 One step up the *flat tree*: `assignedSlot` first (a slotted node's rendered parent is
@@ -468,8 +468,8 @@ so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 ### `hasSkipLinkWording(text)` → `boolean`
 Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
 "Zum Inhalt", "Saltar al contenido", "本文へ"...), in the languages the engine ships.
-One list for every rule that looks for a skip link, core's `skip-link` and any a
-profile brings, so they recognise the same links; add a phrasing here, not in a
+One list for every rule that looks for a skip link, core's `skip-link` and RGAA's
+`skip-link-present`, so they recognise the same links; add a phrasing here, not in a
 rule.
 
 ### `reportOccurrence(node, partial)` → occurrence object
@@ -525,15 +525,15 @@ apart from `sharedCache`: a plain object that lives for one scan and lets the co
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
 it computes exactly what that key's other users compute (`contrast-minimum`,
-`contrast-enhanced` and `contrast-computable`, and `contrast-minimum`'s variants,
-share `__elBgCache`, `__elFgCache` and `__elBlockerCache`,
+`contrast-enhanced` and `contrast-computable`, and `contrast-minimum`'s variants such as
+`contrast-minimum-rgaa`, share `__elBgCache`, `__elFgCache` and `__elBlockerCache`,
 WeakMaps of each element's effective background, foreground and computability blocker;
 a variant with other thresholds keeps its own font and analysis caches, keyed by them). Backs the
-`contrast-*` rule family (`contrast-minimum` and its variants, `contrast-enhanced`,
-`contrast-computable`) — see `src/core/contrast-helpers.js`
+`contrast-*` rule family (`contrast-minimum`, `contrast-minimum-rgaa`, `contrast-enhanced`,
+`contrast-computable`) and `focus-indicator-contrast` — see `src/core/contrast-helpers.js`
 if you're extending that family specifically. `isLargeText(fontSizePx, fontWeightNum,
 boldLargeMinPx)` takes an optional third argument, the size from which bold text is large:
-WCAG's 14pt when it is left out, 18.5 for a standard that puts it there.
+WCAG's 14pt when it is left out, 18.5 for RGAA 3.2.
 
 ### `helpers.aria.*`
 ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,

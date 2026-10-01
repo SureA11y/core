@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>field-label-listed-source — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>field-label-listed-source</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>flls_case_NN</code>. RGAA 11.1.1 accepts
+    aria-labelledby, aria-label, a <code>&lt;label for&gt;</code> and title.
+  </p>
+
+  <h2>A. No listed source (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: placeholder only</div>
+    <input type="text" placeholder="Nom" id="flls_case_01">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role="textbox" named by placeholder only</div>
+    <input role="textbox" placeholder="Rechercher" id="flls_case_02">
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: role="checkbox" named by its own content</div>
+    <div role="checkbox" aria-checked="false" tabindex="0" id="flls_case_03">J’accepte les conditions</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: meter with no label</div>
+    <meter value="0.5" id="flls_case_04"></meter>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: output whose only text is its value</div>
+    <output id="flls_case_05">5</output>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: input with nothing</div>
+    <input type="text" id="flls_case_06">
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FAIL: aria-labelledby pointing to no element</div>
+    <input type="email" aria-labelledby="flls_missing" id="flls_case_07">
+  </div>
+
+  <h2>B. Asked about (CANTTELL)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: wrapping label without for</div>
+    <label>Nom <input type="text" id="flls_case_08"></label>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: label for pointing at a role="listbox" element</div>
+    <label for="flls_case_09">Pays</label>
+    <div role="listbox" id="flls_case_09" tabindex="0"><div role="option" aria-selected="true">France</div></div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — CANTTELL: empty aria-label is the only source</div>
+    <input type="text" aria-label="" id="flls_case_10">
+  </div>
+
+  <h2>C. Listed source present (PASS)</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: label for matching the id</div>
+    <label for="flls_case_11">Nom</label>
+    <input type="text" id="flls_case_11">
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: aria-labelledby pointing to text</div>
+    <span id="flls_label_12">Ville</span>
+    <input type="text" aria-labelledby="flls_label_12" id="flls_case_12">
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: title on a select</div>
+    <select title="Civilité" id="flls_case_13"><option>Madame</option><option>Monsieur</option></select>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: aria-label on a role="switch" element</div>
+    <div role="switch" aria-checked="false" tabindex="0" aria-label="Notifications" id="flls_case_14"></div>
+  </div>
+
+  <h2>D. Not form fields (NOT APPLICABLE)</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — NOT APPLICABLE: submit and hidden inputs are not form fields</div>
+    <input type="submit" value="Envoyer" id="flls_case_15">
+    <input type="hidden" name="token" value="x">
+  </div>
+</body>
+</html>

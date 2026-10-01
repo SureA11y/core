@@ -25,8 +25,9 @@
  *     examples for both, only actual non-rendering does.
  * @expectation
  *   The primary language subtag of the lang value (the part before the
- *   first hyphen) is a registered language subtag, as ACT de46e4 requires.
- *   WCAG 3.1.2 (Language of Parts)
+ *   first hyphen) is a registered language subtag, as ACT de46e4 requires
+ *   and as the RGAA glossary "Code de langue" reads it ("ne concerne que
+ *   la partie [code] avant le tiret"). WCAG 3.1.2 (Language of Parts)
  *   requires that when a passage's language differs from the page's
  *   default, it is identified programmatically. A tag whose primary subtag
  *   is unknown fails to identify a real language at all; a malformed later

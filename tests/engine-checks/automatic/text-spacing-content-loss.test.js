@@ -75,6 +75,7 @@ test(`${RULE_ID}: messages follow the scan locale`, () => {
 });
 
 test(`${RULE_ID}: maps to WCAG 1.4.12 and joins the 1.4.12 rollup`, () => {
+  // Its RGAA test (10.12.1) is checked with RGAA's rollups, in the profile.
   const result = runa11yCoreOnHtml(
     page('p{letter-spacing:0 !important}', '<p>Opening hours today</p>')
   );

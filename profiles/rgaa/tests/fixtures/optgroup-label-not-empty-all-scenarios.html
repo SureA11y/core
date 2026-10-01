@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>optgroup-label-not-empty — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>optgroup-label-not-empty</code> (RGAA 11.8.3)</h1>
+
+  <p class="note">
+    Each target <code>&lt;optgroup&gt;</code> has a stable <code>id</code> of the form
+    <code>ogne_case_NN</code>. An empty label cannot be relevant. Whether a non-empty
+    label is relevant is left to a person.
+  </p>
+
+  <h2>A. Empty label (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: optgroup with label=""</div>
+    <label for="ogne_select_01">Destination</label>
+    <select id="ogne_select_01"><optgroup id="ogne_case_01" label=""><option>Paris</option></optgroup></select>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: optgroup whose label is only spaces</div>
+    <label for="ogne_select_02">Destination</label>
+    <select id="ogne_select_02"><optgroup id="ogne_case_02" label="   "><option>Lima</option></optgroup></select>
+  </div>
+
+  <h2>B. Non-empty label (PASS)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: optgroup with label="Europe"</div>
+    <label for="ogne_select_03">Destination</label>
+    <select id="ogne_select_03"><optgroup id="ogne_case_03" label="Europe"><option>Rome</option></optgroup></select>
+  </div>
+
+  <h2>C. Out of scope</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: optgroup with no label attribute (11.8.2, optgroup-label-present)</div>
+    <label for="ogne_select_04">Destination</label>
+    <select id="ogne_select_04"><optgroup id="ogne_case_04"><option>Tokyo</option></optgroup></select>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

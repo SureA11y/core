@@ -2,7 +2,7 @@
 
 /**
  * helpers.hasSkipLinkWording: the one list of skip-link phrasings every rule
- * that looks for a skip link uses.
+ * that looks for a skip link uses (core's skip-link, RGAA's skip-link-present).
  */
 
 const test = require('node:test');

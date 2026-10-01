@@ -152,7 +152,7 @@ function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
-      // A standard's own rollup (one per requirement, say) carries its rule tag,
+      // A standard's own rollup (RGAA's per criterion) carries its rule tag,
       // which makes it opt-in the same way as that standard's rules.
       if (Array.isArray(metaIn.tags)) {
         for (const t of metaIn.tags) {
@@ -431,7 +431,7 @@ function rollupCompositeResults(
 
       const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
 
-      // A standard mapped rule by rule is named on the rollup only for
+      // A standard mapped rule by rule (RGAA) is named on the rollup only for
       // the rules that produced its outcome: the failing ones for a fail, the
       // undecided ones for cantTell, the passing ones for a pass, none for
       // notApplicable. The rollup's catalog entry lists every rule's tests,
@@ -1112,7 +1112,7 @@ function runCoreSettled(
   // The result names those that added a rule the rest of the selection would
   // not have run (optInRulesRan, filled in the rule loop), so a reader knows
   // the run goes beyond the targeted standard. A WCAG profile unlocks without
-  // running any, and a standard's profile runs its rules without the unlock.
+  // running any, and the RGAA profile runs its rules without the unlock.
   const optInUnlocked =
     runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
   const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;

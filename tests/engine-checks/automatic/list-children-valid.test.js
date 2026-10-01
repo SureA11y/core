@@ -99,8 +99,8 @@ test(`${RULE_ID}: fail still reported when an invalid child IS visible, even alo
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
 
-// A ul/ol given another role (menu, listbox, tablist, tree, combobox...) is
-// not a list.
+// A ul/ol given another role is not a list (the RGAA 9.3 technical note says
+// the same of menu, listbox, tablist, tree and combobox).
 test(`${RULE_ID}: a ul/ol whose explicit role is not list is out of scope`, () => {
   for (const body of [
     '<ul role="menubar" aria-label="m"><li role="none"><a role="menuitem" href="#">a</a></li></ul>',

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>figure-caption-structure — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>figure-caption-structure</code></h1>
+
+  <p class="note">
+    Each failing target has a stable <code>id</code> of the form <code>fcs_case_NN</code>. A figure is checked when it holds an image and a <code>&lt;figcaption&gt;</code> with text.
+  </p>
+
+  <h2>A. Captioned images without the structure (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: no role, no aria-label</div>
+    <figure id="fcs_case_01">
+      <img src="chart.png" alt="Sales chart">
+      <figcaption>Sales in 2025</figcaption>
+    </figure>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role but no aria-label</div>
+    <figure role="figure" id="fcs_case_02">
+      <img src="chart.png" alt="Sales chart">
+      <figcaption>Sales in 2025</figcaption>
+    </figure>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: aria-label differs from the caption</div>
+    <figure role="group" aria-label="Chart" id="fcs_case_03">
+      <img src="chart.png" alt="Sales chart">
+      <figcaption>Sales in 2025</figcaption>
+    </figure>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: SVG image with role="img"</div>
+    <figure aria-label="Our logo" id="fcs_case_04">
+      <svg role="img" aria-label="Logo" width="20" height="20"></svg>
+      <figcaption>Our logo</figcaption>
+    </figure>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — PASS: role="figure" and a matching aria-label</div>
+    <figure role="figure" aria-label="Sales in 2025" id="fcs_case_05">
+      <img src="chart.png" alt="Sales chart">
+      <figcaption>Sales in 2025</figcaption>
+    </figure>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: whitespace differences are ignored</div>
+    <figure role="figure" aria-label="Sales  in 2025" id="fcs_case_06">
+      <img src="chart.png" alt="Sales chart">
+      <figcaption>
+        Sales in 2025
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: figure without a caption</div>
+    <figure id="fcs_case_07">
+      <img src="chart.png" alt="Sales chart">
+    </figure>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: figure with a caption but no image</div>
+    <figure id="fcs_case_08">
+      <pre>npm install</pre>
+      <figcaption>Installing</figcaption>
+    </figure>
+  </div>
+</body>
+</html>

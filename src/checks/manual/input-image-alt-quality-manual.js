@@ -139,7 +139,7 @@ function runInPage(ctx) {
   // Every non-empty text-alternative source on the element, in accessible-name
   // order: aria-labelledby (when it resolves to text), aria-label, alt, title.
   // aria-labelledby wins over aria-label in the name, but a present aria-label
-  // is still listed, so each attribute present is asked about.
+  // is still listed, since RGAA 1.3.3 asks about each attribute present.
   function collectTextAlternativeSources(el) {
     const attr = (name) => {
       try {

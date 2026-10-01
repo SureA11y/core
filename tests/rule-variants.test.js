@@ -3,15 +3,17 @@
 /**
  * Rule variants (scripts/lib/rule-variants.js, docs/RULE_AUTHORING.md "Rule
  * variants"): a rule declared as another rule with different settings. What
- * the build refuses, and that a caller cannot change a rule's settings. How a
- * variant runs is tested with the sample profile's
- * (tests/sample-profile/rule-variants.test.js).
+ * the build refuses, and, through RGAA's contrast-minimum-rgaa, that a
+ * variant runs its base's code with its own settings and messages.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { resolveVariants } = require('../scripts/lib/rule-variants');
+const { ruleDirs, ruleSources } = require('../scripts/lib/rule-dirs');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 const runInPage = () => ({ outcome: 'pass', occurrences: [] });
@@ -72,27 +74,94 @@ test('the build refuses a variant it cannot resolve, saying why', () => {
   );
 });
 
+test("RGAA's contrast variant: its own bold threshold, its own messages", () => {
+  // #888 on #fff is about 3.54:1. Bold 18.6px text is large for RGAA (from
+  // 18.5px) and needs 3:1, but not for WCAG (from 14pt, about 18.67px).
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<p style="font-size:18.6px;font-weight:700;color:#888;background:#fff">Bold grey text</p>' +
+    '<p style="font-size:16px;color:#aaa;background:#fff">Pale text</p></main></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
+  const rule = (id) => result.checksResults.find((r) => r.ruleId === id);
+  const wcag = rule('contrast-minimum').occurrences.map((o) => o.data.details.fontSizePx);
+  const rgaa = rule('contrast-minimum-rgaa').occurrences;
+  assert.equal(wcag.length, 2, 'WCAG fails both');
+  assert.equal(rgaa.length, 1, 'RGAA fails only the pale text');
+  assert.equal(rgaa[0].i18n.summaryKey, 'contrastMinimumRgaa_fail_belowThreshold');
+});
+
 // A rule's declared settings are its standard's: a result naming WCAG 1.4.3
-// is decided at WCAG's thresholds whatever a caller passes. Other caller
-// config (excludeSelectors) still applies. A variant's settings are tested
-// with the sample profile's (tests/sample-profile/rule-variants.test.js).
+// is decided at WCAG's thresholds whatever a caller passes, and a variant's
+// at its own. Other caller config (excludeSelectors) still applies.
 test("a caller's config cannot change a rule's declared settings", () => {
   // #767676 on #fff is about 4.54:1: passes 4.5:1, fails 7:1.
   const html =
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
     '<p id="grey" style="font-size:16px;color:#767676;background:#fff">Grey text</p>' +
     '</main></body></html>';
-  const outcome = (rules) =>
+  const outcome = (ruleId, rules) =>
     runa11yCoreOnHtml(html, {
-      engineOptions: { rules },
-      runOnly: { includeRuleIds: ['contrast-minimum'] }
-    }).checksResults.find((r) => r.ruleId === 'contrast-minimum').outcome;
+      engineOptions: { profile: 'rgaa-4.1.2', rules },
+      runOnly: { includeRuleIds: [ruleId] }
+    }).checksResults.find((r) => r.ruleId === ruleId).outcome;
 
-  assert.equal(outcome({}), 'pass');
-  assert.equal(outcome({ 'contrast-minimum': { normalTextRatio: 7 } }), 'pass');
-  assert.equal(
-    outcome({ 'contrast-minimum': { normalTextRatio: 7, excludeSelectors: ['#grey'] } }),
-    'notApplicable',
-    'excludeSelectors still applies'
+  for (const ruleId of ['contrast-minimum', 'contrast-minimum-rgaa']) {
+    assert.equal(outcome(ruleId, {}), 'pass', ruleId);
+    assert.equal(outcome(ruleId, { [ruleId]: { normalTextRatio: 7 } }), 'pass', ruleId);
+    assert.equal(
+      outcome(ruleId, { [ruleId]: { normalTextRatio: 7, excludeSelectors: ['#grey'] } }),
+      'notApplicable',
+      `${ruleId}: excludeSelectors still applies`
+    );
+  }
+});
+
+// A variant shares its base's code and, through the helpers, its caches. Its
+// settings must stay its own: for every variant the build has, the base rule
+// gives the same result over its own scenario page whether or not the variant
+// runs in the same scan, in either order.
+test("every variant leaves its base rule's results unchanged", () => {
+  const variants = ruleDirs()
+    .flatMap((dir) =>
+      ['automatic', 'manual']
+        .map((type) => path.join(dir, type))
+        .filter((d) => fs.existsSync(d))
+        .flatMap((d) => fs.readdirSync(d).map((f) => path.join(d, f)))
+    )
+    .map((file) => require(file))
+    .filter((mod) => mod && typeof mod.from === 'string');
+  assert.ok(variants.length > 0);
+
+  const pageOf = new Map(
+    ruleSources().flatMap((src) => {
+      const index = path.join(src.fixturesDir, 'index.json');
+      if (!fs.existsSync(index)) return [];
+      return JSON.parse(fs.readFileSync(index, 'utf8'))
+        .rows.filter((r) => r.fixtureFile)
+        .map((r) => [r.ruleId, path.join(src.root, r.fixtureFile)]);
+    })
   );
+
+  const summary = (result, id) =>
+    JSON.stringify(
+      result.checksResults
+        .filter((r) => r.ruleId === id)
+        .map((r) => ({
+          outcome: r.outcome,
+          occurrences: (r.occurrences || []).map((o) => [o.selector, o.data && o.data.details])
+        }))
+    );
+
+  for (const { id, from } of variants) {
+    assert.ok(pageOf.has(from), `${from} has a scenario page`);
+    const html = fs.readFileSync(pageOf.get(from), 'utf8');
+    const run = (ids) =>
+      runa11yCoreOnHtml(html, {
+        engineOptions: { optInRules: 'all' },
+        runOnly: { includeRuleIds: ids }
+      });
+    const alone = summary(run([from]), from);
+    assert.equal(summary(run([from, id]), from), alone, `${id} after ${from}`);
+    assert.equal(summary(run([id, from]), from), alone, `${id} before ${from}`);
+  }
 });

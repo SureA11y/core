@@ -195,7 +195,8 @@ test('pass on registered tags, including three-letter ones with no two-letter fo
   }
 });
 
-// ACT bf051a judges the primary language subtag.
+// ACT bf051a judges the primary language subtag; the RGAA glossary "Code de
+// langue" reads only "la partie [code] avant le tiret".
 test('pass when only a later subtag is malformed (fr-FR-!!, en-US_x)', () => {
   for (const lang of ['fr-FR-!!', 'en-US_x']) {
     const html = `<!doctype html><html lang="${lang}"><head><title>x</title></head><body>Hi</body></html>`;

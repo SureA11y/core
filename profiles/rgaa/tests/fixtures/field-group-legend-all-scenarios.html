@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>field-group-legend — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>field-group-legend</code></h1>
+
+  <p class="note">
+    Each flagged target has a stable <code>id</code> of the form <code>fgl_case_NN</code>. This rule is manual: it asks a question (cantTell) and never passes or fails.
+  </p>
+
+  <h2>A. Groups of fields without a legend (FLAGGED)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FLAGGED: fieldset without legend</div>
+    <fieldset id="fgl_case_01">
+      <label>Street <input name="street"></label>
+      <label>City <input name="city"></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FLAGGED: fieldset with an empty legend</div>
+    <fieldset id="fgl_case_02">
+      <legend> </legend>
+      <label>Day <input name="day"></label>
+      <label>Month <input name="month"></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FLAGGED: role="group" without a name</div>
+    <div role="group" id="fgl_case_03">
+      <label><input type="checkbox" name="news"> News</label>
+      <label><input type="checkbox" name="offers"> Offers</label>
+    </div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — FLAGGED: fieldset named by aria-label, with no legend</div>
+    <fieldset aria-label="Shipping address" id="fgl_case_07">
+      <label>Street <input name="street3"></label>
+      <label>City <input name="city3"></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — FLAGGED: role="group" named only by title</div>
+    <div role="group" title="Shipping address" id="fgl_case_08">
+      <label>Street <input name="street4"></label>
+    </div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FLAGGED: role="radiogroup" without aria-label or aria-labelledby</div>
+    <div role="radiogroup" id="fgl_case_09">
+      <label><input type="radio" name="civ"> Mr</label>
+      <label><input type="radio" name="civ"> Ms</label>
+    </div>
+  </div>
+
+  <h2>B. Not flagged</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: fieldset with a legend</div>
+    <fieldset id="fgl_case_04">
+      <legend>Address</legend>
+      <label>Street <input name="street2"></label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: role="group" named with aria-labelledby</div>
+    <p id="fgl_dob">Date of birth</p>
+    <div role="group" aria-labelledby="fgl_dob" id="fgl_case_05">
+      <label>Year <input name="year"></label>
+    </div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: toolbar group without fields</div>
+    <div role="group" id="fgl_case_06">
+      <button type="button">Bold</button>
+      <button type="button">Italic</button>
+    </div>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: role="radiogroup" named with aria-label</div>
+    <div role="radiogroup" aria-label="Civility" id="fgl_case_10">
+      <label><input type="radio" name="civ2"> Mr</label>
+      <label><input type="radio" name="civ2"> Ms</label>
+    </div>
+  </div>
+</body>
+</html>

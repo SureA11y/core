@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>link-content-label-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>link-content-label-present</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lcl_case_NN</code>. RGAA 6.2.1 asks for a label
+    between <code>&lt;a&gt;</code> and <code>&lt;/a&gt;</code>: text, or an image with a text alternative.
+  </p>
+
+  <h2>A. No label in the content (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: named by aria-label, the content is an SVG hidden with aria-hidden</div>
+    <a href="/" aria-label="Accueil" id="lcl_case_01"><svg aria-hidden="true" width="16" height="16"><rect width="16" height="16"/></svg></a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: named by title, the content is an image with alt=""</div>
+    <a href="/" title="Accueil" id="lcl_case_02"><img src="home.png" alt=""></a>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: empty link, no name at all</div>
+    <a href="/contact" id="lcl_case_03"></a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: role="link" named by aria-labelledby, no content</div>
+    <span role="link" tabindex="0" aria-labelledby="lcl_label" id="lcl_case_04"></span>
+    <span id="lcl_label">Plan du site</span>
+  </div>
+
+  <h2>B. Content that is not plain text (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: text hidden with aria-hidden beside a name from aria-label</div>
+    <a href="/aide" aria-label="Aide" id="lcl_case_05"><span aria-hidden="true">?</span></a>
+  </div>
+
+  <h2>C. A label in the content (PASS)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — PASS: text content</div>
+    <a href="/actualites" id="lcl_case_06">Actualités</a>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — PASS: an image with a text alternative</div>
+    <a href="/" id="lcl_case_07"><img src="logo.png" alt="Accueil"></a>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: an SVG with a title</div>
+    <a href="/recherche" id="lcl_case_08"><svg role="img" width="16" height="16"><title>Recherche</title><rect width="16" height="16"/></svg></a>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: an image map area is judged under 1.1.2, not here</div>
+    <img src="plan.png" alt="Plan" usemap="#lcl_map">
+    <map name="lcl_map"><area href="/nord" shape="rect" coords="0,0,10,10" id="lcl_case_09"></map>
+  </div>
+</body>
+</html>

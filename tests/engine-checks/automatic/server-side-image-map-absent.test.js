@@ -22,8 +22,8 @@ test(`${RULE_ID}: pass when no img[ismap] is present`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// 2.1.1 is met when the map's destinations are also keyboard-operable links,
-// which the rule cannot verify, so it asks.
+// 2.1.1 is met when the map's destinations are also keyboard-operable links
+// (RGAA 1.1.4 step 2), which the rule cannot verify, so it asks.
 test(`${RULE_ID}: cantTell when an img with ismap is inside a link`, () => {
   const html = `<!doctype html><html><body><a href="/map"><img id="a" src="map.png" ismap alt="Map"></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

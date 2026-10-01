@@ -7,7 +7,8 @@ alongside a rule's description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.
 which carries each rule's title, WCAG mapping, applicability, and expectation —
 this file adds one illustrative pair per rule, plus an extra `Flagged (cantTell)`
 example where a rule's outcome is tiered. A profile's rules have theirs in the
-profile.
+profile, as RGAA's do in
+[`profiles/rgaa/docs/RULE_EXAMPLES.md`](../profiles/rgaa/docs/RULE_EXAMPLES.md).
 
 Every example is checked against the built engine in Chromium by
 `npm run rule-examples:outcomes:check`, which CI runs: a snippet without `<html>` is

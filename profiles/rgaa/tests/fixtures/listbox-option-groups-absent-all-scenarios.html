@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>listbox-option-groups-absent — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>listbox-option-groups-absent</code> (RGAA 11.8)</h1>
+
+  <p class="note">
+    Each target listbox has a stable <code>id</code> of the form <code>lbog_case_NN</code>.
+    RGAA 11.8's technical note: options cannot be grouped with ARIA, so a list that needs
+    grouping must be a <code>&lt;select&gt;</code> with <code>&lt;optgroup&gt;</code>.
+  </p>
+
+  <h2>A. Grouped options in an ARIA listbox (FAIL)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role="listbox" with two role="group" children</div>
+    <div role="listbox" id="lbog_case_01" aria-label="City" tabindex="0">
+      <div role="group" aria-label="France">
+        <div role="option" aria-selected="false">Paris</div>
+        <div role="option" aria-selected="false">Lyon</div>
+      </div>
+      <div role="group" aria-label="Italy">
+        <div role="option" aria-selected="false">Rome</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role="listbox" on a list, with a nested role="group"</div>
+    <ul role="listbox" id="lbog_case_02" aria-label="Fruit" tabindex="0">
+      <li role="presentation">
+        <ul role="group" aria-label="Citrus">
+          <li role="option" aria-selected="false">Lemon</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <h2>B. Ungrouped options (PASS)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role="listbox" with options only</div>
+    <div role="listbox" id="lbog_case_03" aria-label="Colour" tabindex="0">
+      <div role="option" aria-selected="true">Red</div>
+      <div role="option" aria-selected="false">Blue</div>
+    </div>
+  </div>
+
+  <h2>C. Out of scope</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: a native select with optgroup (11.8.2 and 11.8.3)</div>
+    <label for="lbog_case_04">Destination</label>
+    <select id="lbog_case_04"><optgroup label="Europe"><option>Paris</option></optgroup></select>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>
