@@ -129,13 +129,6 @@ test(`${RULE_ID}: an enabled role="presentation" image button is still reviewed`
 // alt, title, aria-label and aria-labelledby; WCAG 1.1.1 judges whatever
 // names the control).
 
-function rgaaTests(rule) {
-  return ((rule.meta && rule.meta.normativeMappings) || [])
-    .filter((m) => m.standard === 'RGAA')
-    .map((m) => m.requirement)
-    .sort();
-}
-
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body><form>${body}</form></body></html>`;
 
@@ -170,11 +163,8 @@ test(`${RULE_ID}: alt="" with another name is left to input-image-alt-decorative
   assertRule(result, 'input-image-alt-decorative', 'cantTell', { minOccurrences: 1 });
 });
 
-test(`${RULE_ID}: an aria-label-only image button is asked about under wcag22-aa and rgaa-4.1.2 (1.3.3)`, () => {
+test(`${RULE_ID}: an aria-label-only image button is asked about under wcag22-aa`, () => {
   const html = page('<input id="b" type="image" src="a.png" aria-label="Rechercher">');
   const wcag = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
   assertRule(wcag, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  const rgaa = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
-  const rule = assertRule(rgaa, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.deepStrictEqual(rgaaTests(rule), ['1.3.3']);
 });

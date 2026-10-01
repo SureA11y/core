@@ -130,7 +130,7 @@ test(`${RULE_ID}: an orientation block that hides main behind a "rotate your dev
     '.msg{display:none} @media (orientation: portrait){ main{display:none} .msg{display:block} }',
     '<p class="msg">Tournez votre appareil</p><main id="m"><h1>Tarifs</h1><p>Contenu</p></main>'
   );
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = rule.occurrences[0];

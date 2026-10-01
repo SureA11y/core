@@ -58,7 +58,7 @@ test(`${RULE_ID}: cantTell when color is the only cue, even at >= 3:1 (G183 also
     .nodeco { text-decoration: none; }
     .strong { color: #969696; }
   </style></head><body><p>Read <a href="#" id="a" class="nodeco strong">this link</a> for more.</p></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = rule.occurrences[0];
@@ -83,7 +83,7 @@ test(`${RULE_ID}: a same-colored link marked by a border, shadow, outline, backg
     ['', 'la suite <svg width="8" height="8" aria-hidden="true"><path d="M0 0h8v8z"/></svg>']
   ]) {
     const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">${inner}</a> ici.</p></body></html>`;
-    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
     }

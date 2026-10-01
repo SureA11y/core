@@ -142,7 +142,7 @@ test(`page-title-present: notApplicable when contextSelector scopes narrower tha
 test(`${RULE_ID}: an inline <svg><title> is not the page title, so the reason is missingTitleElement`, () => {
   const html =
     '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body><svg role="img" aria-labelledby="t"><title id="t">Logo</title><rect width="4" height="4"/></svg></body></html>';
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = getFirstOccurrence(rule);

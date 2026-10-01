@@ -117,7 +117,7 @@ test('cantTell for a generic title the parser left in <body>, as for one in <hea
   // the same page).
   const html =
     '<!doctype html><html lang="fr"><head></head><body><title>Accueil</title><p>Bonjour</p></body></html>';
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', {
       minOccurrences: 1,

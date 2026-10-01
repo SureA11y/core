@@ -109,7 +109,7 @@ test(`${RULE_ID}: a ul/ol whose explicit role is not list is out of scope`, () =
     '<ul role="none"><div>a</div></ul>'
   ]) {
     const html = `<!doctype html><html><body>${body}</body></html>`;
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
     }

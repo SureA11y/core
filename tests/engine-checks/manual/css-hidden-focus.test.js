@@ -345,7 +345,7 @@ test(`${RULE_ID}: an off-screen skip link that a :focus rule brings back is not 
     '.sr{position:absolute;left:-9999px}.sr:focus{left:0}',
     '<a class="sr" href="#m">Aller au contenu</a><main id="m">x</main>'
   );
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }

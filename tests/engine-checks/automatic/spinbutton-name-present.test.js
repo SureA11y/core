@@ -69,7 +69,7 @@ test('spinbutton-name-present: fail even with visible text content (role="spinbu
 
 test(`${RULE_ID}: a placeholder names an <input role="spinbutton"> (HTML-AAM's last name source)`, () => {
   const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input type="number" role="spinbutton" placeholder="Quantité" id="a"></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

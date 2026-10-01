@@ -68,7 +68,7 @@ test(`${RULE_ID}: an empty id value is out of scope`, () => {
 // id is a validity error of its own, not a duplicate.
 test(`${RULE_ID}: ids are compared as written, not trimmed`, () => {
   const html = page('<p id="a ">x</p><p id="a">y</p>');
-  for (const engineOptions of [{}, { wcagVersion: '2.1' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { wcagVersion: '2.1' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

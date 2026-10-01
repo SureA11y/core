@@ -463,7 +463,7 @@ test(`${RULE_ID}: the host's own legend, caption or label names it under the rol
     <table role="grid"><caption>Planning</caption><tr role="row"><td role="gridcell">Lundi</td></tr></table>
     <label for="p">Chargement</label><progress id="p" role="progressbar" value="5" max="10"></progress>
   </body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

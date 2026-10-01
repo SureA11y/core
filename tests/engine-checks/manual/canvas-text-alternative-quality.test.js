@@ -116,20 +116,10 @@ test(`${RULE_ID}: a focusable role="presentation" canvas is still reviewed`, () 
   assert.ok(hasOccurrenceForId(rule, 'canvas1'));
 });
 
-// RGAA 1.3.8 asks whether a canvas's fallback content is correctly rendered by
-// assistive technologies, which the same review answers; WCAG stays 1.1.1.
-test(`${RULE_ID}: carries RGAA 1.3.7 and 1.3.8 under rgaa-4.1.2, and WCAG 1.1.1 either way`, () => {
+test(`${RULE_ID}: maps to WCAG 1.1.1`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1">Sales 2024: 10k</canvas></body></html>`;
-  for (const [engineOptions, rgaa] of [
-    [{ profile: 'rgaa-4.1.2' }, ['1.3.7', '1.3.8']],
-    [{}, []]
-  ]) {
-    const rule = assertRule(runa11yCoreOnHtml(html, { engineOptions }), RULE_ID, 'cantTell');
-    const mappings = rule.meta.normativeMappings;
-    assert.deepEqual(
-      mappings.filter((m) => m.standard === 'RGAA').map((m) => m.requirement),
-      rgaa
-    );
-    assert.ok(mappings.some((m) => m.standard === 'WCAG' && m.requirement === '1.1.1'));
-  }
+  const rule = assertRule(runa11yCoreOnHtml(html), RULE_ID, 'cantTell');
+  assert.ok(
+    rule.meta.normativeMappings.some((m) => m.standard === 'WCAG' && m.requirement === '1.1.1')
+  );
 });

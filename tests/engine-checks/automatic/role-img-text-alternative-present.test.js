@@ -337,7 +337,7 @@ test(`${RULE_ID}: an unlabeled <svg> with role img or graphics-document is left 
         <circle cx="5" cy="5" r="4"></circle>
       </svg>
     </body></html>`;
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, {
         runOnly: [RULE_ID, 'svg-text-alternative-present'],
         engineOptions

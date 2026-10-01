@@ -126,7 +126,7 @@ test(`${RULE_ID}: fail when the dt/dd groups are out of order`, () => {
     '<dl id="a"><dt>a</dt><dd>b</dd><dt>c</dt></dl>',
     '<dl id="a"><div><dd>b</dd></div><div><dt>a</dt></div></dl>'
   ]) {
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const html = `<!doctype html><html><body>${markup}</body></html>`;
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -149,7 +149,7 @@ test(`${RULE_ID}: fail for non-whitespace text directly inside the dl or a wrapp
     '<dl id="a"><dt>a</dt>stray<dd>b</dd></dl>',
     '<dl id="a"><div>stray<dt>a</dt><dd>b</dd></div></dl>'
   ]) {
-    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}]) {
       const html = `<!doctype html><html><body>${markup}</body></html>`;
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });

@@ -46,13 +46,13 @@ test(`${RULE_ID}: cantTell when a heading skips a level`, () => {
 // Browsers expose aria-level on <hx> in place of the tag level.
 test(`${RULE_ID}: aria-level on a native heading gives its level`, () => {
   const quiet = `<!doctype html><html><body><h1>S</h1><h4 aria-level="2">N</h4></body></html>`;
-  for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}]) {
     const result = runa11yCoreOnHtml(quiet, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 
   const skip = `<!doctype html><html><body><h1>S</h1><h2 id="a" aria-level="4">N</h2></body></html>`;
-  for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}]) {
     const result = runa11yCoreOnHtml(skip, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     assert.ok(hasOccurrenceForId(rule, 'a'));

@@ -194,18 +194,12 @@ test(`${RULE_ID}: a display:none img is not applicable (not visible at all)`, ()
 // "is it decorative?" here would contradict that failure.
 test(`${RULE_ID}: alt=" " is not treated as decorative; img-alt-present fails it`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><img id="a" src="a.png" alt=" "></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, {
       engineOptions,
       ...(engineOptions.profile ? {} : { runOnly: [RULE_ID, 'img-alt-present'] })
     });
     assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
-    const present = assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
-    if (engineOptions.profile === 'rgaa-4.1.2') {
-      const tests = present.meta.normativeMappings
-        .filter((m) => m.standard === 'RGAA')
-        .map((m) => m.requirement);
-      assert.ok(tests.includes('1.1.1'), tests.join(','));
-    }
+    assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
   }
 });

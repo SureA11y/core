@@ -371,7 +371,7 @@ test(`${RULE_ID}: an svg's <title> child names the button through its content`, 
     '<svg><title>Rechercher</title><path d="M0 0h1"/></svg>'
   ]) {
     const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><form><button id="a">${svg}</button></form></body></html>`;
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
     }

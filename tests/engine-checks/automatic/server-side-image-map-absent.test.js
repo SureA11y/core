@@ -52,24 +52,17 @@ test(`${RULE_ID}: notApplicable when ismap is only on images outside a link`, ()
   }
 });
 
-test(`${RULE_ID}: same outcomes under wcag22-aa and rgaa-4.1.2 (1.1.4)`, () => {
+test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const asked = runa11yCoreOnHtml(
-      page('<a href="/carte"><img alt="Carte" src="map.png" ismap></a><a href="/nord">Nord</a>'),
-      { engineOptions: { profile } }
-    );
-    const rule = assertRule(asked, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-    const tests = rule.meta.normativeMappings
-      .filter((m) => m.standard === 'RGAA')
-      .map((m) => m.requirement);
-    assert.deepEqual(tests, profile === 'rgaa-4.1.2' ? ['1.1.4'] : []);
-    const outside = runa11yCoreOnHtml(page('<img alt="x" src="map.png" ismap>'), {
-      engineOptions: { profile }
-    });
-    assertRule(outside, RULE_ID, 'notApplicable');
-  }
+  const engineOptions = { profile: 'wcag22-aa' };
+  const asked = runa11yCoreOnHtml(
+    page('<a href="/carte"><img alt="Carte" src="map.png" ismap></a><a href="/nord">Nord</a>'),
+    { engineOptions }
+  );
+  assertRule(asked, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const outside = runa11yCoreOnHtml(page('<img alt="x" src="map.png" ismap>'), { engineOptions });
+  assertRule(outside, RULE_ID, 'notApplicable');
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

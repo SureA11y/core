@@ -128,13 +128,6 @@ function mapPage(area, extra = '') {
   return `<!doctype html><html lang="en"><head><title>t</title></head><body><img src="x.png" usemap="#m" alt="Map"><map name="m">${area}</map>${extra}</body></html>`;
 }
 
-function rgaaTests(rule) {
-  return ((rule.meta && rule.meta.normativeMappings) || [])
-    .filter((m) => m.standard === 'RGAA')
-    .map((m) => m.requirement)
-    .sort();
-}
-
 for (const [label, area, extra, sources] of [
   [
     'title',
@@ -186,13 +179,10 @@ test(`${RULE_ID}: aria-labelledby that resolves to nothing is not a source`, () 
   assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: a title-only area is asked about under wcag22-aa and rgaa-4.1.2 (1.3.2)`, () => {
+test(`${RULE_ID}: a title-only area is asked about under wcag22-aa`, () => {
   const html = mapPage(
     '<area id="a1" href="/paris" title="Paris" shape="rect" coords="0,0,10,10">'
   );
   const wcag = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
   assertRule(wcag, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  const rgaa = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
-  const rule = assertRule(rgaa, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.deepStrictEqual(rgaaTests(rule), ['1.3.2']);
 });

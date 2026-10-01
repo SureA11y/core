@@ -175,13 +175,12 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
-  await t.test('WCAG 1.4.12 and RGAA 10.12 fail together under the RGAA profile', async () => {
+  await t.test('the WCAG 1.4.12 rollup fails with it', async () => {
     const result = await scan(
       page('#box{height:20px;overflow:hidden}', `<div class="fit gap" id="box">${TEXT}</div>`),
-      { profile: 'rgaa-4.1.2' }
+      { profile: 'wcag22-aa' }
     );
     const rollup = (id) => result.rulesResults.find((r) => r.ruleId === id).outcome;
     assert.equal(rollup('wcag-1.4.12-text-spacing'), 'fail');
-    assert.equal(rollup('rgaa-4.1.2-10.12'), 'fail');
   });
 });

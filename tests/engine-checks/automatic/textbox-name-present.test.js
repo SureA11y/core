@@ -75,7 +75,7 @@ test('textbox-name-present: hidden-only content => fail', () => {
 
 test(`${RULE_ID}: a placeholder names an <input role="textbox"> (HTML-AAM's last name source)`, () => {
   const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input role="textbox" placeholder="Rechercher" id="a"></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

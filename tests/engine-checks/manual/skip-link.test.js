@@ -95,7 +95,7 @@ test(`${RULE_ID}: French wording with a missing target is asked about`, () => {
   ]) {
     const html = `<!doctype html><html lang="fr"><body><a id="a" href="#contenu">${name}</a><p>Texte</p></body></html>`;
     // A best-practice rule: the default run and the RGAA profile (12.7) run it.
-    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'cantTell', {
         minOccurrences: 1,

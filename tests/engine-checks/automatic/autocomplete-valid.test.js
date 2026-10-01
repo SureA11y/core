@@ -156,7 +156,7 @@ test(`${RULE_ID}: fail when the field name does not suit the input type`, () => 
     '<input id="a" type="password" autocomplete="username">',
     '<input id="a" type="tel" autocomplete="tel-national">'
   ]) {
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const html = `<!doctype html><html><body>${markup}</body></html>`;
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
@@ -195,7 +195,7 @@ test(`${RULE_ID}: pass when the field name suits the control`, () => {
 
 test(`${RULE_ID}: notApplicable for a control disabled by a disabled fieldset`, () => {
   const html = `<!doctype html><html><body><fieldset disabled><label>Nom <input autocomplete="nom"></label></fieldset></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }

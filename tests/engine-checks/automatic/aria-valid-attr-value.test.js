@@ -110,7 +110,7 @@ test(`${RULE_ID}: a dangling aria-describedby or aria-labelledby on a named butt
     <button id="a" aria-describedby="nope">a</button>
     <button id="b" aria-labelledby="nope">b</button>
   </body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
     assert.ok(rule.occurrences.every((o) => o.occurrenceOutcome === 'cantTell'));
@@ -145,7 +145,7 @@ test(`${RULE_ID}: integers outside the range WAI-ARIA sets fail`, () => {
   ];
   for (const [body, attr] of cases) {
     const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
       assert.equal(rule.occurrences[0].data.details.attr, attr);

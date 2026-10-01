@@ -113,7 +113,7 @@ test(`${RULE_ID}: a table already named by aria-label, aria-labelledby or title 
   assertRule(runa11yCoreOnHtml(dangling, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
 });
 
-test(`${RULE_ID}: layout and named tables are notApplicable under wcag22-aa and rgaa-4.1.2`, () => {
+test(`${RULE_ID}: layout and named tables are notApplicable under wcag22-aa`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
   const layout = page(
@@ -122,10 +122,8 @@ test(`${RULE_ID}: layout and named tables are notApplicable under wcag22-aa and 
   const named = page(
     '<table aria-label="Ventes 2025"><tr><td>Ventes 2025</td></tr><tr><td>a</td><td>b</td></tr></table>'
   );
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    for (const html of [layout, named]) {
-      const result = runa11yCoreOnHtml(html, { engineOptions: { profile } });
-      assertRule(result, RULE_ID, 'notApplicable');
-    }
+  for (const html of [layout, named]) {
+    const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+    assertRule(result, RULE_ID, 'notApplicable');
   }
 });

@@ -50,7 +50,7 @@ test(`${RULE_ID}: notApplicable when onmousedown is paired with onkeydown`, () =
 
 test(`${RULE_ID}: onfocus on an element that cannot take focus is not an equivalent`, () => {
   const html = `<!doctype html><html><body><div id="m" onmouseover="show()" onfocus="show()">Menu</div></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = rule.occurrences[0];

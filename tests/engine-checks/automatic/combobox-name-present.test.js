@@ -69,7 +69,7 @@ test('combobox-name-present: fail even with visible text content (role="combobox
 
 test(`${RULE_ID}: a placeholder names an <input role="combobox"> (HTML-AAM's last name source)`, () => {
   const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input role="combobox" aria-expanded="false" placeholder="Ville" id="a"></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

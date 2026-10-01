@@ -40,7 +40,7 @@ test(`${RULE_ID}: cantTell for a global outline reset with no replacement`, () =
 test(`${RULE_ID}: an outline removed by a rule with no focus state is asked about (F78)`, () => {
   for (const css of ['a{outline:none}', '*{outline:0}', 'nav a{outline-style:none}']) {
     const html = page(css, '<nav><a href="/x" id="a">Lien</a></nav>');
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'cantTell', {
         minOccurrences: 1,

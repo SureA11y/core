@@ -159,7 +159,7 @@ test('dialog-name-present: aria-labelledby pointing at an <iframe> falls back to
 
 test(`${RULE_ID}: an open native <dialog> with no name fails; a named one passes`, () => {
   const bad = `<!doctype html><html><body><dialog open id="d"><p>Sure?</p><button>OK</button></dialog></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const rule = assertRule(
       runa11yCoreOnHtml(bad, { runOnly: [RULE_ID], engineOptions }),
       RULE_ID,
@@ -184,7 +184,7 @@ test(`${RULE_ID}: a closed native <dialog> is not applicable`, () => {
 
 test(`${RULE_ID}: the role is the first concrete token of a fallback list`, () => {
   const alert = `<!doctype html><html><body><div role="alertdialog dialog" id="d"></div></body></html>`;
-  for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}]) {
     const rule = assertRule(
       runa11yCoreOnHtml(alert, { runOnly: [RULE_ID], engineOptions }),
       RULE_ID,

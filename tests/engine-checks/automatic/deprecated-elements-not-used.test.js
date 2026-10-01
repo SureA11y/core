@@ -16,13 +16,6 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
-function rgaaTests(rule) {
-  return ((rule.meta && rule.meta.normativeMappings) || [])
-    .filter((m) => m.standard === 'RGAA')
-    .map((m) => m.requirement)
-    .sort();
-}
-
 test(`${RULE_ID}: pass when no <marquee> is present`, () => {
   const html = `<!doctype html><html><body><p id="a">plain text</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -30,7 +23,7 @@ test(`${RULE_ID}: pass when no <marquee> is present`, () => {
 });
 
 // No current browser makes <blink> blink, so it holds no blinking content for
-// 2.2.2. RGAA 10.1.1 gets it from presentational-elements-absent.
+// 2.2.2.
 test(`${RULE_ID}: pass when only <blink> is present`, () => {
   const html = `<!doctype html><html><body><blink id="a">Sale</blink></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -68,17 +61,12 @@ test(`${RULE_ID}: reports multiple occurrences of <marquee>`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
-test(`${RULE_ID}: same outcomes under the wcag22-aa and rgaa-4.1.2 profiles; no RGAA link`, () => {
+test(`${RULE_ID}: same outcomes under the wcag22-aa profile`, () => {
   const blink = `<!doctype html><html lang="en"><head><title>t</title></head><body><blink>Sale</blink></body></html>`;
   const marquee = `<!doctype html><html lang="en"><head><title>t</title></head><body><marquee>News</marquee></body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const run = (html) => runa11yCoreOnHtml(html, { engineOptions: { profile } });
-    assertRule(run(blink), RULE_ID, 'pass', { maxOccurrences: 0 });
-    const rule = assertRule(run(marquee), RULE_ID, 'cantTell', { minOccurrences: 1 });
-    // 10.1.1 comes from presentational-elements-absent only and 8.2.1 from
-    // html-elements-attributes-valid, so the element is counted once in each.
-    assert.deepEqual(rgaaTests(rule), [], profile);
-  }
+  const run = (html) => runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(run(blink), RULE_ID, 'pass', { maxOccurrences: 0 });
+  assertRule(run(marquee), RULE_ID, 'cantTell', { minOccurrences: 1 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

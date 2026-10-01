@@ -119,16 +119,10 @@ test(`${RULE_ID}: excludeSelectors and the scan scope still apply`, () => {
   );
 });
 
-test(`${RULE_ID}: hidden autoplaying audio is cantTell under wcag22-aa and rgaa-4.1.2 (4.10.1)`, () => {
+test(`${RULE_ID}: hidden autoplaying audio is cantTell under wcag22-aa`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div style="display:none"><audio autoplay loop src="m.mp3"></audio></div></body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const result = runa11yCoreOnHtml(html, { engineOptions: { profile } });
-    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-    const tests = rule.meta.normativeMappings
-      .filter((m) => m.standard === 'RGAA')
-      .map((m) => m.requirement);
-    assert.deepEqual(tests, profile === 'rgaa-4.1.2' ? ['4.10.1'] : []);
-  }
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 // RGAA 4.10.1 lists <object>, <embed> and <bgsound> as sound sources too,
@@ -146,7 +140,7 @@ test(`${RULE_ID}: <embed>, <object> and <bgsound> that may play sound are asked 
     '<bgsound id="a" src="tune.mid">',
     '<div hidden><embed id="a" src="welcome.wav"></div>'
   ]) {
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'cantTell', {
         minOccurrences: 1,

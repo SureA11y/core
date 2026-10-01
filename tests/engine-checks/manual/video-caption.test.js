@@ -80,14 +80,8 @@ test(`${RULE_ID}: a captions track next to a subtitles track silences the questi
   assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
 });
 
-test(`${RULE_ID}: a subtitles-only video is cantTell under wcag22-aa and rgaa-4.1.2 (4.3.1)`, () => {
+test(`${RULE_ID}: a subtitles-only video is cantTell under wcag22-aa`, () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><video controls src="a.mp4"><track kind="subtitles" srclang="en" src="en.vtt"></video></body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const result = runa11yCoreOnHtml(html, { engineOptions: { profile } });
-    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-    const tests = rule.meta.normativeMappings
-      .filter((m) => m.standard === 'RGAA')
-      .map((m) => m.requirement);
-    assert.deepEqual(tests, profile === 'rgaa-4.1.2' ? ['4.3.1'] : []);
-  }
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });

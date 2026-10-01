@@ -200,7 +200,7 @@ test('pass on registered tags, including three-letter ones with no two-letter fo
 test('pass when only a later subtag is malformed (fr-FR-!!, en-US_x)', () => {
   for (const lang of ['fr-FR-!!', 'en-US_x']) {
     const html = `<!doctype html><html lang="${lang}"><head><title>x</title></head><body>Hi</body></html>`;
-    for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
     }
@@ -210,7 +210,7 @@ test('pass when only a later subtag is malformed (fr-FR-!!, en-US_x)', () => {
 test('fail when the primary subtag itself is malformed (en_US, x-klingon)', () => {
   for (const lang of ['en_US', 'x-klingon', '-en']) {
     const html = `<!doctype html><html lang="${lang}"><head><title>x</title></head><body>Hi</body></html>`;
-    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
       assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'lang-invalid-bcp47');

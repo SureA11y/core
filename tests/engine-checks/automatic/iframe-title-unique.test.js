@@ -38,7 +38,7 @@ test(`${RULE_ID}: pass when multiple frames have distinct titles`, () => {
 // sources and one title are a question (ACT 4b1c6c), never a fail.
 test(`${RULE_ID}: cantTell when two frames with different sources share the same title`, () => {
   const html = `<!doctype html><html><body><iframe id="a" title="Widget" src="a.html"></iframe><iframe id="b" title="Widget" src="b.html"></iframe></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
     assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -58,7 +58,7 @@ test(`${RULE_ID}: pass when frames sharing a title load the same resource`, () =
     '<iframe title="Note" srcdoc="<p>x</p>"></iframe><iframe title="Note" srcdoc="<p>x</p>"></iframe>'
   ]) {
     const html = `<!doctype html><html><body>${body}</body></html>`;
-    for (const engineOptions of [{}, { profile: 'rgaa-4.1.2' }]) {
+    for (const engineOptions of [{}]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
       assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
     }

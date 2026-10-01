@@ -253,11 +253,9 @@ test(`${RULE_ID}: an <audio> without controls is judged by its container and its
   }
 });
 
-test(`${RULE_ID}: <audio autoplay loop> is cantTell under wcag22-aa and rgaa-4.1.2`, () => {
+test(`${RULE_ID}: <audio autoplay loop> is cantTell under wcag22-aa`, () => {
   const html =
     '<!doctype html><html lang="en"><head><title>t</title></head><body><audio autoplay loop src="m.mp3"></audio></body></html>';
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const result = runa11yCoreOnHtml(html, { engineOptions: { profile } });
-    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  }
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });

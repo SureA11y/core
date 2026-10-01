@@ -108,7 +108,7 @@ test(`${RULE_ID}: still fails when li has an explicit role="listitem" (a no-op r
 // <menu> is a list container with the implicit role list (HTML-AAM).
 test(`${RULE_ID}: pass when li is inside a <menu>`, () => {
   const html = `<!doctype html><html><body><menu><li>a</li><li>b</li></menu></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }

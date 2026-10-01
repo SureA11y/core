@@ -265,17 +265,14 @@ test(`${RULE_ID}: role="presentation" is ignored on a focusable canvas`, () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: same outcomes under wcag22-aa and rgaa-4.1.2`, () => {
+test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const failed = runa11yCoreOnHtml(page('<canvas role="img">Ventes</canvas>'), {
-      engineOptions: { profile }
-    });
-    assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-    const passed = runa11yCoreOnHtml(page('<canvas role="presentation"></canvas>'), {
-      engineOptions: { profile }
-    });
-    assertRule(passed, RULE_ID, 'pass', { maxOccurrences: 0 });
-  }
+  const engineOptions = { profile: 'wcag22-aa' };
+  const failed = runa11yCoreOnHtml(page('<canvas role="img">Ventes</canvas>'), { engineOptions });
+  assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const passed = runa11yCoreOnHtml(page('<canvas role="presentation"></canvas>'), {
+    engineOptions
+  });
+  assertRule(passed, RULE_ID, 'pass', { maxOccurrences: 0 });
 });

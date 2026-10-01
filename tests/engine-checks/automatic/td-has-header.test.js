@@ -197,31 +197,15 @@ test(`${RULE_ID}: an empty cell needs no header; one holding an image does`, () 
   assert.ok(rule.occurrences[0].html.includes('id="corner"'));
 });
 
-test(`${RULE_ID}: same outcomes under wcag22-aa and rgaa-4.1.2`, () => {
+test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
   const page = (body) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const run = (body) => runa11yCoreOnHtml(page(body), { engineOptions: { profile } });
-    assertRule(run(`<table>${TABLE_4X4_ARIA_COLUMN_HEADERS}</table>`), RULE_ID, 'pass');
-    assertRule(
-      run(`<table role="presentation">${TABLE_4X4_NO_HEADERS}</table>`),
-      RULE_ID,
-      'notApplicable'
-    );
-    assertRule(run(`<table>${TABLE_4X4_WELL_HEADED}</table>`), RULE_ID, 'pass');
-  }
-});
-
-// RGAA 5.7.4 covers cells associated with headers that have an id; a cell
-// with no header at all is not one, so the rule no longer reports under 5.7
-// while its WCAG 1.3.1 verdict stays.
-test(`${RULE_ID}: fails WCAG 1.3.1 but not RGAA 5.7 in the same rgaa-4.1.2 run`, () => {
-  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
-  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
-  assertRule(result, RULE_ID, 'fail');
-  const rollup = (id) => result.rulesResults.find((r) => r.ruleId === id);
-  assert.equal(rollup('wcag-1.3.1-info-and-relationships').outcome, 'fail');
-  const r57 = rollup('rgaa-4.1.2-5.7');
-  assert.ok(!r57 || !r57.data.details.checksIds.includes(RULE_ID));
-  assert.ok(!r57 || r57.outcome !== 'fail');
+  const run = (body) => runa11yCoreOnHtml(page(body), { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(run(`<table>${TABLE_4X4_ARIA_COLUMN_HEADERS}</table>`), RULE_ID, 'pass');
+  assertRule(
+    run(`<table role="presentation">${TABLE_4X4_NO_HEADERS}</table>`),
+    RULE_ID,
+    'notApplicable'
+  );
+  assertRule(run(`<table>${TABLE_4X4_WELL_HEADED}</table>`), RULE_ID, 'pass');
 });

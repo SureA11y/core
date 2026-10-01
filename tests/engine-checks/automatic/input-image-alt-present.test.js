@@ -288,27 +288,16 @@ test(`${RULE_ID}: a default-looking name next to an unnamed button: fail, with b
   assert.deepStrictEqual(byCode, { default_name: 'cantTell', missing_alt: 'fail' });
 });
 
-function rgaaTests(rule) {
-  return ((rule.meta && rule.meta.normativeMappings) || [])
-    .filter((m) => m.standard === 'RGAA')
-    .map((m) => m.requirement)
-    .sort();
-}
-
-test(`${RULE_ID}: alt="Submit" is cantTell and no name is fail, under wcag22-aa and rgaa-4.1.2 (1.1.3)`, () => {
+test(`${RULE_ID}: alt="Submit" is cantTell and no name is fail, under wcag22-aa`, () => {
   const page = (input) =>
     `<!doctype html><html lang="en"><head><title>t</title></head><body><form>${input}</form></body></html>`;
-  for (const profile of ['wcag22-aa', 'rgaa-4.1.2']) {
-    const asked = runa11yCoreOnHtml(page('<input type="image" src="a.png" alt="Submit">'), {
-      engineOptions: { profile }
-    });
-    const rule = assertRule(asked, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-    assert.deepStrictEqual(rgaaTests(rule), profile === 'rgaa-4.1.2' ? ['1.1.3'] : []);
-    const failed = runa11yCoreOnHtml(page('<input type="image" src="a.png">'), {
-      engineOptions: { profile }
-    });
-    assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  }
+  const engineOptions = { profile: 'wcag22-aa' };
+  const asked = runa11yCoreOnHtml(page('<input type="image" src="a.png" alt="Submit">'), {
+    engineOptions
+  });
+  assertRule(asked, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const failed = runa11yCoreOnHtml(page('<input type="image" src="a.png">'), { engineOptions });
+  assertRule(failed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: a name that merely starts with the default word passes`, () => {

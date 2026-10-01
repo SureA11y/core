@@ -195,7 +195,7 @@ test(`${RULE_ID}: a short single-line text is reviewed, not failed`, () => {
     <p id="ok" style="line-height:1 !important">OK</p>
     <p id="short" style="line-height:1 !important">Opening hours</p>
   </body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
     const byId = (id) =>
@@ -212,7 +212,7 @@ test(`${RULE_ID}: a short single-line text is reviewed, not failed`, () => {
 
 test(`${RULE_ID}: a long paragraph still fails under every profile`, () => {
   const html = `<!doctype html><html><body><p id="long" style="line-height:1 !important">${LONG}</p></body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'INLINE_SPACING_IMPORTANT');

@@ -602,7 +602,7 @@ test(`${RULE_ID}: a control disabled by an ancestor <fieldset disabled> is not f
         <fieldset disabled><input aria-label="x"><select aria-label="y"><option>a</option></select></fieldset>
       </div>
     </body></html>`;
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
@@ -624,7 +624,7 @@ test(`${RULE_ID}: aria-hidden <area href> of a map an image uses fails; judged b
       <map name="m"><area id="ar" href="/a" alt="P" shape="rect" coords="0,0,10,10" aria-hidden="true"></map>
     </body></html>`;
   const used = page('<img src="a.png" alt="Plan" usemap="#m">');
-  for (const engineOptions of [{}, { profile: 'wcag22-aa' }, { profile: 'rgaa-4.1.2' }]) {
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const result = runa11yCoreOnHtml(used, { runOnly: [RULE_ID], engineOptions });
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     assert.ok(hasOccurrenceForId(rule, 'ar'));
