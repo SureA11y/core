@@ -14,7 +14,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { createProfile } = require('../scripts/profile-new.js');
-const { PROFILE_EXPORTS } = require('../scripts/lib/profile-contract');
+const { PROFILE_EXPORTS, PROFILE_FILE_MODULES } = require('../scripts/lib/profile-contract');
 
 // A root with what the script reads: a profiles/index.js and core's locales.
 function makeRoot() {
@@ -27,11 +27,13 @@ function makeRoot() {
     "'use strict';\n\nmodule.exports = [require('./rgaa')];\n"
   );
   fs.mkdirSync(path.join(root, 'src', 'i18n'), { recursive: true });
-  // The one core module a profile's own files may require: the real one.
-  fs.writeFileSync(
-    path.join(root, 'src', 'wcag.js'),
-    `module.exports = require(${JSON.stringify(path.join(__dirname, '..', 'src', 'wcag.js'))});\n`
-  );
+  // The core modules a profile's own files may require: the real ones.
+  for (const file of PROFILE_FILE_MODULES) {
+    fs.writeFileSync(
+      path.join(root, file),
+      `module.exports = require(${JSON.stringify(path.join(__dirname, '..', file))});\n`
+    );
+  }
   for (const locale of ['en', 'fr']) {
     fs.writeFileSync(path.join(root, 'src', 'i18n', `${locale}.json`), '{}\n');
   }
@@ -51,7 +53,6 @@ test('it writes a complete profile and adds it to profiles/index.js', async () =
     'index.js',
     'requirements.js',
     'rule-map.js',
-    'mappings.js',
     'README.md',
     'tests/entry.test.js',
     'rules/automatic/.gitkeep',

@@ -37,9 +37,10 @@ const RULE_CONTEXT = [
 
 // The core files a profile's own files (its entry and tables) may require:
 // WCAG's criteria per version (@surea11y/core/wcag), which a standard built on
-// WCAG reads its criteria from. It loads no engine code, so the engine can
-// load the profile without a cycle.
-const PROFILE_FILE_MODULES = ['src/wcag.js'];
+// WCAG reads its criteria from, and the mapping of a standard linked to rules
+// requirement by requirement (@surea11y/core/profile-kit). Neither loads
+// engine code, so the engine can load the profile without a cycle.
+const PROFILE_FILE_MODULES = ['src/wcag.js', 'src/profile-kit.js'];
 
 // The core files a profile's tests and scripts may require, relative to the
 // repository: the package's entry points (package.json "main" and "exports"),
@@ -56,7 +57,8 @@ const CORE_MODULES = [
   'src/earl.js',
   'src/en301549.js',
   'src/rgaa.js',
-  'src/wcag.js'
+  'src/wcag.js',
+  'src/profile-kit.js'
 ];
 const CORE_MODULE_DIRS = ['tests/helpers/'];
 

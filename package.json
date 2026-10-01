@@ -36,6 +36,7 @@
     "./en301549": "./src/en301549.js",
     "./rgaa": "./src/rgaa.js",
     "./wcag": "./src/wcag.js",
+    "./profile-kit": "./src/profile-kit.js",
     "./browser": "./surea11y.browser.js",
     "./i18n/*": "./surea11y.i18n.*.js",
     "./package.json": "./package.json"
@@ -69,6 +70,7 @@
     "src/coverage/standards.js",
     "src/rgaa.js",
     "src/wcag.js",
+    "src/profile-kit.js",
     "src/coverage/wcag-facets.js",
     "src/coverage/wcag-version-map.js",
     "profiles/index.js",

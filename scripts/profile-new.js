@@ -11,11 +11,11 @@
  *
  * - index.js         the registry entry: one version, 1.0, built on WCAG 2.2,
  *                    and one profile, `<key>-1.0`, on WCAG 2.2 A and AA plus
- *                    the standard's own rules (tag `<key>`)
+ *                    the standard's own rules (tag `<key>`). The result
+ *                    entries, the per-requirement rollups and the checks the
+ *                    build runs on the tables come from src/profile-kit.js
  * - requirements.js  the standard's requirements, per version
  * - rule-map.js      which requirements each rule checks, per version
- * - mappings.js      the result entries and per-requirement rollups built from
- *                    those two tables, and the checks the build runs on them
  * - rules/           the standard's own rules (automatic/, manual/)
  * - i18n/            their messages, one <locale>.json per locale: the ones
  *                    --locales names (en always among them), or else every
@@ -76,12 +76,19 @@ function indexJs({ key, name }) {
 
 const path = require('path');
 
-const { wcagTags } = require('../../src/wcag.js');
-const { VERSIONS } = require('./requirements');
-const { mappingsFor, composites, validate } = require('./mappings');
+const { ruleMappedStandard } = require('../../src/profile-kit.js');
+const { VERSIONS, REQUIREMENTS } = require('./requirements');
+const { RULE_REQUIREMENTS } = require('./rule-map');
 
-// The WCAG A and AA tags of the WCAG version a version is built on.
-const wcagTagsOf = (version) => wcagTags(VERSIONS.find((v) => v.version === version).wcagVersion);
+// What each result names, one rollup per requirement, and the checks the
+// build runs on the two tables (src/profile-kit.js).
+const { mappingsFor, composites, validate, wcagTagsOf } = ruleMappedStandard({
+  standard: ${JSON.stringify(name)},
+  tag: ${JSON.stringify(key)},
+  versions: VERSIONS,
+  requirements: REQUIREMENTS,
+  ruleMap: RULE_REQUIREMENTS
+});
 
 const standard = {
   key: ${JSON.stringify(key)},
@@ -155,7 +162,7 @@ function ruleMapJs({ name }) {
  * the profile's own (rules/). A rule maps to a requirement when its failure,
  * or for a manual rule the question it raises, is direct evidence about what
  * the requirement asks. \`note\` says why, for review. The build rejects an
- * unknown rule or requirement (mappings.js, validate).
+ * unknown rule or requirement (validate, from src/profile-kit.js).
  */
 
 const RULE_REQUIREMENTS = {
@@ -163,142 +170,6 @@ const RULE_REQUIREMENTS = {
 };
 
 module.exports = { RULE_REQUIREMENTS };
-`;
-}
-
-function mappingsJs({ key, name }) {
-  return `/* SPDX-License-Identifier: MPL-2.0 */
-
-'use strict';
-
-/**
- * ${name}'s entries for a rule or a rollup, its rollups, and the checks the
- * build runs on its tables (index.js passes them to the registry).
- */
-
-const { WCAG_VERSIONS, wcagCriterion } = require('../../src/wcag.js');
-const { VERSIONS, REQUIREMENTS } = require('./requirements');
-const { RULE_REQUIREMENTS } = require('./rule-map');
-
-const STANDARD = ${JSON.stringify(name)};
-const TAG = ${JSON.stringify(key)};
-
-// Requirement ids in their natural order: '1.2' before '1.10'.
-function compareIds(a, b) {
-  return String(a).localeCompare(String(b), 'en', { numeric: true });
-}
-
-function requirementsOf(version, ruleId) {
-  const row = (RULE_REQUIREMENTS[version] || {})[ruleId];
-  return row && Array.isArray(row.requirements) ? row.requirements : [];
-}
-
-function entry(version, id) {
-  const req = REQUIREMENTS[version][id];
-  return {
-    standard: STANDARD,
-    version,
-    requirement: id,
-    title: req.title,
-    wcagSc: Array.isArray(req.wcagSc) ? req.wcagSc.slice() : []
-  };
-}
-
-// The entries for a rule ({ id }) or, given \`checksIds\`, for a rollup: the
-// requirements its rules check, oldest version first.
-function mappingsFor({ id, checksIds }) {
-  const out = [];
-  for (const { version } of VERSIONS) {
-    const ids = new Set();
-    for (const ruleId of Array.isArray(checksIds) ? checksIds : [id]) {
-      for (const req of requirementsOf(version, ruleId)) ids.add(req);
-    }
-    for (const req of [...ids].sort(compareIds)) out.push(entry(version, req));
-  }
-  return out;
-}
-
-// One rollup per requirement a rule checks, grouping those rules. They carry
-// the standard's tag, so only a run that asks for it produces them.
-function composites() {
-  const out = [];
-  for (const { version } of VERSIONS) {
-    const table = RULE_REQUIREMENTS[version] || {};
-    for (const id of Object.keys(REQUIREMENTS[version]).sort(compareIds)) {
-      const ruleIds = Object.keys(table)
-        .filter((ruleId) => requirementsOf(version, ruleId).includes(id))
-        .sort();
-      if (!ruleIds.length) continue;
-      out.push({
-        id: \`\${TAG}-\${version}-\${id}\`,
-        checksIds: ruleIds,
-        meta: {
-          title: REQUIREMENTS[version][id].title,
-          description: '',
-          wcagSc: [],
-          level: null,
-          standard: STANDARD,
-          version,
-          criterion: id,
-          tags: [TAG],
-          standardMappings: [entry(version, id)]
-        }
-      });
-    }
-  }
-  return out;
-}
-
-// Problems with the tables, given every rule ([{ ruleId, wcagSc }]). The build
-// fails on any.
-function validate(rules) {
-  const known = new Set(rules.map((r) => r.ruleId));
-  const problems = [];
-  const versions = VERSIONS.map((v) => v.version);
-  for (const { version, wcagVersion } of VERSIONS) {
-    if (!REQUIREMENTS[version]) {
-      problems.push(\`version \${version} has no requirements table\`);
-      continue;
-    }
-    if (!WCAG_VERSIONS.includes(wcagVersion)) {
-      problems.push(\`version \${version}: wcagVersion must be one of \${WCAG_VERSIONS.join(', ')}\`);
-      continue;
-    }
-    // A requirement corresponds to criteria of the WCAG version it is built on.
-    for (const [id, req] of Object.entries(REQUIREMENTS[version])) {
-      for (const sc of (req && req.wcagSc) || []) {
-        if (!wcagCriterion(sc, wcagVersion)) {
-          problems.push(\`\${version} \${id}: WCAG \${wcagVersion} has no criterion \${sc}\`);
-        }
-      }
-    }
-  }
-  for (const [version, table] of Object.entries(RULE_REQUIREMENTS)) {
-    if (!versions.includes(version)) {
-      problems.push(\`rule-map.js names version \${version}, which VERSIONS does not list\`);
-      continue;
-    }
-    for (const [ruleId, row] of Object.entries(table)) {
-      if (!known.has(ruleId)) problems.push(\`\${version} \${ruleId}: no such rule\`);
-      const reqs = row && Array.isArray(row.requirements) ? row.requirements : null;
-      if (!reqs) {
-        problems.push(\`\${version} \${ruleId}: requirements must be a list\`);
-        continue;
-      }
-      for (const id of reqs) {
-        if (!REQUIREMENTS[version] || !REQUIREMENTS[version][id]) {
-          problems.push(\`\${version} \${ruleId}: no requirement \${id}\`);
-        }
-      }
-      if (new Set(reqs).size !== reqs.length) {
-        problems.push(\`\${version} \${ruleId}: a requirement is listed twice\`);
-      }
-    }
-  }
-  return problems;
-}
-
-module.exports = { mappingsFor, composites, validate };
 `;
 }
 
@@ -421,7 +292,6 @@ async function createProfile({ key, name, locales: askedLocales, root }) {
     await write('index.js', indexJs(opts)),
     await write('requirements.js', requirementsJs(opts)),
     await write('rule-map.js', ruleMapJs(opts)),
-    await write('mappings.js', mappingsJs(opts)),
     await write('tests/entry.test.js', entryTestJs(opts)),
     await write('README.md', readmeMd(opts))
   ];

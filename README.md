@@ -598,6 +598,7 @@ src/
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   rgaa.js                  # RGAA criteria and tests (@surea11y/core/rgaa)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  profile-kit.js           # Mapping for a profile's standard (@surea11y/core/profile-kit)
 
   checks/
     automatic/             # Deterministic automated rules
