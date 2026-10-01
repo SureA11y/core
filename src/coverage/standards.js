@@ -217,6 +217,37 @@ function profileExclusions(rules, rollups) {
   return out;
 }
 
+// A profile depends on core only, never on another profile: the rules a
+// standard maps, and the bases of its rules' variants, are core's or its own,
+// not another standard's opt-in rules. A rule two standards need belongs in
+// core. Given every rule ([{ ruleId, wcagSc, tags, variantOf }]), the problems.
+function validateProfileIndependence(rules) {
+  const byId = new Map(rules.map((r) => [r.ruleId, r]));
+  const ownerTag = (r) =>
+    NORMATIVE_STANDARDS.map((s) => s.ruleTag).find((t) => t && (r.tags || []).includes(t)) || null;
+  const problems = [];
+  for (const s of NORMATIVE_STANDARDS) {
+    for (const r of rules) {
+      const tag = ownerTag(r);
+      if (!tag || tag === s.ruleTag) continue;
+      if (s.mappingsFor({ id: r.ruleId, wcagSc: r.wcagSc || [] }).length) {
+        problems.push(
+          `${s.key} maps ${r.ruleId}, a rule of the standard tagged ${tag}: map a core rule or one of its own`
+        );
+      }
+    }
+    for (const r of rules) {
+      if (!s.ruleTag || !r.variantOf || ownerTag(r) !== s.ruleTag) continue;
+      const base = byId.get(r.variantOf);
+      const tag = base && ownerTag(base);
+      if (tag && tag !== s.ruleTag) {
+        problems.push(`${s.key}'s ${r.ruleId} is a variant of ${base.ruleId}, a rule of the standard tagged ${tag}`);
+      }
+    }
+  }
+  return problems;
+}
+
 // The registered standard an entry belongs to, or null (WCAG itself, or a
 // standard the engine does not know, such as one a custom rule declares).
 function standardOfEntry(m) {
@@ -227,6 +258,7 @@ function standardOfEntry(m) {
 module.exports = {
   NORMATIVE_STANDARDS,
   profileExclusions,
+  validateProfileIndependence,
   standardMappingsFor,
   withStandardMappings,
   validateStandards,
