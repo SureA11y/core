@@ -41,6 +41,9 @@ const standard = {
   },
   ruleTag: 'acme',
   ruleMapped: true,
+  // Part A restates WCAG one criterion at a time, as EN 301 549 does, so a
+  // rollup names it whatever rule decided (finding F3, DESIGN.md).
+  restatedPrefixes: ['A.'],
   mappingsFor,
   composites,
   validate,

@@ -27870,6 +27870,15 @@ const RULE_MAPPED_STANDARDS = [
   "ACME"
 ];
 
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {
+  "ACME": [
+    "A."
+  ]
+};
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -37453,8 +37462,16 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
         rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
-          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
         );
       }
 
@@ -108640,6 +108657,15 @@ const RULE_MAPPED_STANDARDS = [
   "ACME"
 ];
 
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = {
+  "ACME": [
+    "A."
+  ]
+};
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
@@ -118223,8 +118249,16 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
         rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
-          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
         );
       }
 

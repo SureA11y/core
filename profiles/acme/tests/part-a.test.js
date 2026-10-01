@@ -92,15 +92,15 @@ test('a failing WCAG rollup names its Part A requirement', () => {
   assert.deepEqual(ids(rollup(result, 'wcag-1.4.3-contrast-minimum')), ['2.0:A.1.4.3']);
 });
 
-// Finding F3 (DESIGN.md): `ruleMapped` is one flag per standard. ACME needs it
-// for Part B, so a notApplicable rollup names no Part A requirement, while
-// EN 301 549, which restates WCAG the same way, names its clause.
-test('F3, as it stands: a notApplicable rollup names EN 301 549 but not Part A', () => {
+// Finding F3 (DESIGN.md): ACME is mapped rule by rule for Part B, but Part A
+// restates WCAG as EN 301 549 does, so ACME declares restatedPrefixes: ['A.']
+// and a rollup names Part A whatever decided it, notApplicable included.
+test('a notApplicable rollup names Part A, as it names EN 301 549', () => {
   const result = scan({ mappings: ['acme', 'en301549'] });
   const r = rollup(result, 'wcag-1.2.2-captions-prerecorded');
   assert.equal(r.outcome, 'notApplicable');
   assert.ok(r.meta.normativeMappings.some((m) => m.standard === 'EN 301 549'));
-  assert.deepEqual(acme(r), []);
+  assert.deepEqual(ids(r), ['1.0:A.1.2.2', '2.0:A.1.2.2']);
 });
 
 test('a default run names no ACME requirement; RGAA and ACME together each name theirs', () => {
