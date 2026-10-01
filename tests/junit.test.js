@@ -303,7 +303,10 @@ test('renderJunitReport: the opt-in rules a scan added are a run property on eve
     const values = Array.from(suite.getElementsByTagName('property'))
       .filter((p) => attr(p, 'name') === 'optInRules')
       .map((p) => attr(p, 'value'));
-    assert.deepStrictEqual(values, ['rgaa'], attr(suite, 'name'));
+    // RGAA's tag, and any other registered profile's whose rules ran.
+    assert.equal(values.length, 1, attr(suite, 'name'));
+    assert.ok(values[0].split(',').includes('rgaa'), attr(suite, 'name'));
+    assert.deepStrictEqual(values, [result.engine.optInRules.join(',')], attr(suite, 'name'));
   }
   const plain = runa11yCoreOnHtml(html);
   assert.doesNotMatch(renderJunitReport(plain), /name="optInRules"/);

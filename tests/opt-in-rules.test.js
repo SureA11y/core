@@ -15,6 +15,11 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+const { NORMATIVE_STANDARDS } = require('../src/coverage/standards.js');
+
+// Every registered standard's rule tag: what 'all' can unlock. RGAA's is one;
+// other profiles may add theirs.
+const RULE_TAGS = NORMATIVE_STANDARDS.map((s) => s.ruleTag).filter(Boolean);
 
 const HTML =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>x</p></main></body></html>';
@@ -198,7 +203,12 @@ test('excludes still apply to rules optInRules unlocked', () => {
 });
 
 test('engine.optInRules names the unlocked tags only when the unlock added a rule', () => {
-  assert.deepEqual(scan({ optInRules: 'all' }).engine.optInRules, ['rgaa']);
+  const all = scan({ optInRules: 'all' }).engine.optInRules;
+  assert.ok(all.includes('rgaa'), JSON.stringify(all));
+  assert.ok(
+    all.every((t) => RULE_TAGS.includes(t)),
+    JSON.stringify(all)
+  );
   assert.deepEqual(scan({ optInRules: ['RGAA'] }).engine.optInRules, ['rgaa']);
   // Nothing unlocked ran: a WCAG profile selects none of them.
   assert.equal(scan({ optInRules: 'all', profile: 'wcag22-aa' }).engine.optInRules, undefined);
@@ -219,7 +229,9 @@ test('an unknown optInRules value is ignored with a warning naming the valid one
     assert.equal(value.engine.optInRules, undefined, JSON.stringify(optInRules));
     assert.ok(!value.checksResults.some((r) => r.ruleId === RGAA_ONLY.id));
     assert.ok(
-      warnings.some((w) => /engineOptions\.optInRules: ignoring .*"all" or one of: rgaa/.test(w)),
+      warnings.some((w) =>
+        /engineOptions\.optInRules: ignoring .*"all" or one of: .*\brgaa\b/.test(w)
+      ),
       warnings.join('\n')
     );
   }
