@@ -1,3 +1,11 @@
 {
-  "disagreements": []
+  "disagreements": [
+    {
+      "ruleId": "acme-statement-link",
+      "caseId": "document",
+      "marked": "fail",
+      "engine": "pass",
+      "label": "FAIL under acme-2.0: the statement link is in the navigation, not the footer"
+    }
+  ]
 }

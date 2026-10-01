@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>acme-statement-link — scenario fixture</title>
+</head>
+<body>
+  <nav><a href="/products">Products</a> <a href="/accessibility">Accessibility statement</a></nav>
+  <main>
+    <h1>Scenario fixture: <code>acme-statement-link</code></h1>
+    <div class="case-title" style="font-weight:700">01 — FAIL under acme-2.0: the statement link is in the navigation, not the footer</div>
+    <p style="font-size:12px;opacity:.85">
+      Whole-document check: one outcome per page. Under acme-1.0 the same page passes, since a
+      link anywhere is enough. A page with no link at all, configured link texts and the
+      notApplicable scoped run are covered by this rule's inline tests.
+    </p>
+  </main>
+  <footer><p>ACME Corporation</p></footer>
+</body>
+</html>

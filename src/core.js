@@ -46,6 +46,58 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "acme-statement-link",
+    "title": "Pages link to the accessibility statement",
+    "description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "i18n": {
+      "titleKey": "acmeStatementLink_title",
+      "descriptionKey": "acmeStatementLink_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "acme",
+      "navigation",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B3",
+        "title": "Every page links to the accessibility statement",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B3",
+        "title": "Every page links to the accessibility statement",
+        "wcagSc": []
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "area-alt-present",
     "title": "<area> must have an accessible name",
     "description": "Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.",
@@ -19800,6 +19852,33 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "acme-1.0-B3",
+    "checksIds": [
+      "acme-statement-link"
+    ],
+    "meta": {
+      "title": "Every page links to the accessibility statement",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B3",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B3",
+          "title": "Every page links to the accessibility statement",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
     "id": "acme-1.0-B4",
     "checksIds": [
       "heading-order",
@@ -19852,6 +19931,33 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.1"
           ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B3",
+    "checksIds": [
+      "acme-statement-link"
+    ],
+    "meta": {
+      "title": "Every page links to the accessibility statement",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B3",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B3",
+          "title": "Every page links to the accessibility statement",
+          "wcagSc": []
         }
       ]
     }
@@ -19918,6 +20024,7 @@ const COMPOSITE_RULES = [
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
   "accesskeys": { run: require("./checks/manual/accesskeys-manual.js").runInPage, applicability: require("./checks/manual/accesskeys-manual.js").applicability || null },
+  "acme-statement-link": { run: require("../profiles/acme/rules/automatic/acme-statement-link.js").runInPage, applicability: require("../profiles/acme/rules/automatic/acme-statement-link.js").applicability || null },
   "area-alt-present": { run: require("./checks/automatic/area-alt-present.js").runInPage, applicability: require("./checks/automatic/area-alt-present.js").applicability || null },
   "area-alt-quality": { run: require("./checks/manual/area-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/area-alt-quality-manual.js").applicability || null },
   "area-alt-source": { run: require("../profiles/rgaa/rules/automatic/area-alt-source.js").runInPage, applicability: require("../profiles/rgaa/rules/automatic/area-alt-source.js").applicability || null },
@@ -21502,7 +21609,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
     "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -22877,7 +22990,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
     "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -24252,7 +24371,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
     "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Las páginas enlazan con la declaración de accesibilidad",
+    "acmeStatementLink_description": "Comprueba que la página enlaza con la declaración de accesibilidad, por el texto o la URL del enlace, y en ACME 2.0 desde su pie de página.",
+    "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
+    "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
+    "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
+    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -25627,7 +25752,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
     "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -27002,7 +27133,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
     "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   }
 };
 
@@ -27702,6 +27839,7 @@ const PROFILE_RULES = {
     "widget-label-in-name"
   ],
   "acme-1.0": [
+    "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
     "aria-allowed-attr",
@@ -27809,6 +27947,7 @@ const PROFILE_RULES = {
     "video-poster-text-alternative-present"
   ],
   "acme-2.0": [
+    "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
     "aria-allowed-attr",
@@ -38093,6 +38232,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "acme-statement-link",
+    "title": "Pages link to the accessibility statement",
+    "description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "i18n": {
+      "titleKey": "acmeStatementLink_title",
+      "descriptionKey": "acmeStatementLink_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "acme",
+      "navigation",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B3",
+        "title": "Every page links to the accessibility statement",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B3",
+        "title": "Every page links to the accessibility statement",
+        "wcagSc": []
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -57864,6 +58055,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "acme-1.0-B3",
+    "checksIds": [
+      "acme-statement-link"
+    ],
+    "meta": {
+      "title": "Every page links to the accessibility statement",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B3",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B3",
+          "title": "Every page links to the accessibility statement",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
     "id": "acme-1.0-B4",
     "checksIds": [
       "heading-order",
@@ -57916,6 +58134,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.1"
           ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B3",
+    "checksIds": [
+      "acme-statement-link"
+    ],
+    "meta": {
+      "title": "Every page links to the accessibility statement",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B3",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B3",
+          "title": "Every page links to the accessibility statement",
+          "wcagSc": []
         }
       ]
     }
@@ -58032,6 +58277,94 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences
   };
 }), applicability: null },
+    "acme-statement-link": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const config = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const list = (value, fallback) =>
+    Array.isArray(value) && value.length
+      ? value.map((v) => String(v).trim().toLowerCase()).filter(Boolean)
+      : fallback;
+  const linkTexts = list(config.linkTexts, [
+    'accessibility statement',
+    'declaración de accesibilidad'
+  ]);
+  const urlPaths = list(config.urlPaths, ['/accessibility']);
+  const profile =
+    ctx.engineOptions && typeof ctx.engineOptions.profile === 'string'
+      ? ctx.engineOptions.profile.trim().toLowerCase()
+      : '';
+  const needsFooter = profile === 'acme-2.0';
+
+  function pathOf(href) {
+    try {
+      return new URL(href, document.baseURI).pathname.toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function textOf(a) {
+    const info = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(a, ctx) : null;
+    const name = info && info.value ? info.value : a.textContent || '';
+    return String(name).replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+  function inFooter(a) {
+    for (let n = a; n; n = helpers.composedParent(n)) {
+      if (n.nodeType !== 1) continue;
+      const role = (n.getAttribute('role') || '').trim().toLowerCase();
+      if (role === 'contentinfo') return true;
+      // <footer> is a contentinfo landmark unless it sits inside sectioning
+      // content or main (HTML-AAM).
+      if (n.localName === 'footer' && !helpers.hasLandmarkScopingAncestor(n, ctx)) return true;
+    }
+    return false;
+  }
+
+  const links = helpers
+    .queryAllSmart('a[href]')
+    .filter(
+      (a) =>
+        linkTexts.some((t) => textOf(a).includes(t)) ||
+        urlPaths.some((p) => pathOf(a.getAttribute('href')).includes(p))
+    );
+
+  if (links.length && (!needsFooter || links.some(inFooter))) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  const missing = !links.length;
+  const occurrence = helpers.reportOccurrence(missing ? document.documentElement : links[0], {
+    ...(missing ? { selector: 'html', html: '<html>' } : {}),
+    summary: missing
+      ? 'The page has no link to the accessibility statement.'
+      : 'The link to the accessibility statement is not in the page footer.',
+    hint: missing
+      ? 'Add a link to the accessibility statement to every page, in its footer.'
+      : 'Move the link, or add one, to the page footer (a contentinfo landmark).',
+    i18n: {
+      summaryKey: missing
+        ? 'acmeStatementLink_summary_fail_missing'
+        : 'acmeStatementLink_summary_fail_notInFooter',
+      hintKey: missing
+        ? 'acmeStatementLink_hint_fail_missing'
+        : 'acmeStatementLink_hint_fail_notInFooter',
+      params: {}
+    },
+    data: {
+      details: { reasonCode: missing ? 'STATEMENT_LINK_MISSING' : 'STATEMENT_LINK_NOT_IN_FOOTER' },
+      visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+    }
+  });
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'fail',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences: [occurrence]
+  };
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "area-alt-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -101202,7 +101535,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
     "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -102577,7 +102916,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "This <{{element}}> has {{attribute}}, which a script usually updates.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Check with assistive technologies that the state this attribute describes is updated and rendered when the component changes (RGAA 7.1).",
     "report_rgaaRollup_note": "One row per RGAA 4.1.2 criterion that a rule is linked to, grouping those rules. The links have not yet been reviewed by an RGAA auditor, and a passing row never means the criterion is conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -103952,7 +104297,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Este <{{element}}> tiene {{attribute}}, que normalmente actualiza un script.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Comprobar con tecnologías de asistencia que el estado que describe este atributo se actualiza y se transmite cuando el componente cambia (RGAA 7.1).",
     "report_rgaaRollup_note": "Una fila por cada criterio del RGAA 4.1.2 al que está vinculada alguna regla, que agrupa esas reglas. Ningún auditor del RGAA ha revisado aún los vínculos, y una fila superada nunca significa que el criterio sea conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Las páginas enlazan con la declaración de accesibilidad",
+    "acmeStatementLink_description": "Comprueba que la página enlaza con la declaración de accesibilidad, por el texto o la URL del enlace, y en ACME 2.0 desde su pie de página.",
+    "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
+    "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
+    "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
+    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -105327,7 +105678,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
     "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -106702,7 +107059,13 @@ const I18N = {
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
     "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+    "acmeStatementLink_title": "Pages link to the accessibility statement",
+    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
   }
 };
 
@@ -107402,6 +107765,7 @@ const PROFILE_RULES = {
     "widget-label-in-name"
   ],
   "acme-1.0": [
+    "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
     "aria-allowed-attr",
@@ -107509,6 +107873,7 @@ const PROFILE_RULES = {
     "video-poster-text-alternative-present"
   ],
   "acme-2.0": [
+    "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
     "aria-allowed-attr",

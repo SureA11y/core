@@ -1,3 +1,9 @@
 {
-  "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+  "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+  "acmeStatementLink_title": "Pages link to the accessibility statement",
+  "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
+  "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
+  "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
+  "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
+  "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
 }

@@ -42,11 +42,12 @@ test('a rollup per requirement, grouping the rules that check it', () => {
   assert.deepEqual(
     rollups.map((r) => [r.ruleId, r.outcome]),
     [
+      ['acme-2.0-B3', 'fail'],
       ['acme-2.0-B4', 'cantTell'],
       ['acme-2.0-B5', 'fail']
     ]
   );
-  const b4 = rollups[0];
+  const b4 = rollups[1];
   assert.equal(b4.title, 'Headings are in order and the page has landmarks');
   assert.deepEqual(
     b4.meta.normativeMappings.filter((m) => m.standard === 'ACME').map((m) => m.requirement),
@@ -58,11 +59,13 @@ test('a rollup per requirement, grouping the rules that check it', () => {
 // tag selected them all.
 test("each profile produces its own version's rollups; optInRules: 'all' every version's", () => {
   const ids = (engineOptions) => acmeRollups(scan(engineOptions)).map((r) => r.ruleId);
-  assert.deepEqual(ids({ profile: 'acme-1.0' }), ['acme-1.0-B4', 'acme-1.0-B5']);
-  assert.deepEqual(ids({ profile: 'acme-2.0' }), ['acme-2.0-B4', 'acme-2.0-B5']);
+  assert.deepEqual(ids({ profile: 'acme-1.0' }), ['acme-1.0-B3', 'acme-1.0-B4', 'acme-1.0-B5']);
+  assert.deepEqual(ids({ profile: 'acme-2.0' }), ['acme-2.0-B3', 'acme-2.0-B4', 'acme-2.0-B5']);
   assert.deepEqual(ids({ optInRules: 'all' }), [
+    'acme-1.0-B3',
     'acme-1.0-B4',
     'acme-1.0-B5',
+    'acme-2.0-B3',
     'acme-2.0-B4',
     'acme-2.0-B5'
   ]);
@@ -72,7 +75,7 @@ test("each profile produces its own version's rollups; optInRules: 'all' every v
       .getRulesCatalog({ profile: 'acme-2.0' })
       .map((r) => r.id)
       .filter((id) => id.startsWith('acme-')),
-    ['acme-2.0-B4', 'acme-2.0-B5'],
+    ['acme-2.0-B3', 'acme-2.0-B4', 'acme-2.0-B5'],
     'the catalog lists what the scan produces'
   );
 });

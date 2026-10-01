@@ -16,6 +16,10 @@
 // B4 makes two of core's best-practice rules mandatory; B5 reuses one of
 // RGAA's own rules (stress points 6 and 7 of DESIGN.md).
 const ROWS = {
+  'acme-statement-link': {
+    requirements: ['B3'],
+    note: "ACME's own rule: a link to the statement, by text or URL, in the footer under 2.0."
+  },
   'heading-order': {
     requirements: ['B4'],
     note: 'Core best-practice rule: heading levels that skip.'

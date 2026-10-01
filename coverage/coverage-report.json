@@ -6,7 +6,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 202,
+    "totalRules": 203,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -41,6 +41,29 @@
     }
   },
   "rows": [
+    {
+      "file": "profiles/acme/rules/automatic/acme-statement-link.js",
+      "ruleId": "acme-statement-link",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Pages link to the accessibility statement",
+      "tags": [
+        "acme",
+        "navigation",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
     {
       "file": "src/checks/automatic/area-alt-present.js",
       "ruleId": "area-alt-present",

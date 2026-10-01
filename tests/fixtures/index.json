@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 202,
-    "withFixture": 202,
+    "total": 203,
+    "withFixture": 203,
     "withoutFixture": 0
   },
   "rows": [
@@ -20,6 +20,23 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 2
+      }
+    },
+    {
+      "ruleId": "acme-statement-link",
+      "title": "Pages link to the accessibility statement",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "profiles/acme/rules/automatic/acme-statement-link.js",
+      "testFile": "profiles/acme/tests/rules/automatic/acme-statement-link.test.js",
+      "hasFixture": true,
+      "fixtureFile": "profiles/acme/tests/fixtures/acme-statement-link-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
       }
     },
     {

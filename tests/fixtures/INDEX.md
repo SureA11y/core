@@ -4,17 +4,18 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **202**. With fixture: **202**. Without fixture: **0**.
+Total rules: **203**. With fixture: **203**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (202)
+## Rules WITH a fixture (203)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
+| acme-statement-link | automatic | `profiles/acme/tests/fixtures/acme-statement-link-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | area-alt-source | automatic | `profiles/rgaa/tests/fixtures/area-alt-source-all-scenarios.html` | 7 | 2 | 2 | 0 | 3 |

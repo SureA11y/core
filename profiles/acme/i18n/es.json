@@ -1,3 +1,9 @@
 {
-  "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules."
+  "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
+  "acmeStatementLink_title": "Las páginas enlazan con la declaración de accesibilidad",
+  "acmeStatementLink_description": "Comprueba que la página enlaza con la declaración de accesibilidad, por el texto o la URL del enlace, y en ACME 2.0 desde su pie de página.",
+  "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
+  "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
+  "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
+  "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
 }

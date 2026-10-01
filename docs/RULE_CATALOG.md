@@ -2,16 +2,17 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**202 rules total: 134 automatic (WCAG-normative, can return `fail`), 68 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
+**203 rules total: 135 automatic (WCAG-normative, can return `fail`), 68 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (134), can return `fail`
+## Automatic rules (135), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
+| [`acme-statement-link`](#acme-statement-link) | Pages link to the accessibility statement | — | — | high | moderate |
 | [`area-alt-present`](#area-alt-present) | &lt;area&gt; must have an accessible name | 1.1.1 | A | high | serious |
 | [`area-alt-source`](#area-alt-source) | Linked image-map areas are named by alt or aria-label | — | — | medium | moderate |
 | [`aria-allowed-attr`](#aria-allowed-attr) | aria-* attributes must be permitted for the element’s role | 4.1.2 | A | medium | moderate |
@@ -276,6 +277,18 @@ Checks that no two elements on the page share the same accesskey attribute value
 **Applies to.** Applies whenever two or more elements share the same non-empty accesskey attribute value (case-insensitive).
 
 **Expectation.** Every accesskey value on the page is unique. Duplicate accesskeys make keyboard-shortcut activation ambiguous: only one of the elements sharing the key can actually be reached by it, and which one is browser/platform-dependent.
+
+### `acme-statement-link`
+
+**Pages link to the accessibility statement**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.
+
+**Applies to.** Applies to a run over a whole document. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable.
+
+**Expectation.** The page has a link to the accessibility statement: a link whose text contains one of the accepted texts, or whose URL path contains one of the accepted paths. Under ACME 2.0 (profile acme-2.0) the link must also sit in the page's footer (a contentinfo landmark); under 1.0 it may be anywhere.
 
 ### `area-alt-present`
 
