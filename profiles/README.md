@@ -39,9 +39,20 @@ The build (`scripts/build-core.js`) compiles a profile's rules into the engine w
 
 ## Adding a profile
 
-1. Create `profiles/<name>/` with an `index.js` that exports `{ standard }`, the registry entry, and `rulesDir` and `i18nDir` if it has rules of its own. The comment at the top of `src/coverage/standards.js` describes every field, and [`docs/WCAG_CONFORMANCE.md`](../docs/WCAG_CONFORMANCE.md#adding-another-standard) the steps.
-2. Add it to `profiles/index.js`.
-3. Put its tests in `profiles/<name>/tests/`: a test per rule in `tests/rules/automatic/` or `tests/rules/manual/`, reading its scenario page from `tests/fixtures/` as core's rule tests do (`../../fixtures`).
+```sh
+npm run profile:new -- <key> --name "<Name>"
+```
+
+writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an empty but working standard: it builds, passes its own tests and the boundary check, and its profile, `<key>-1.0`, runs WCAG 2.2 A and AA. Filling it in is editing tables and adding rules:
+
+- `requirements.js`: the standard's requirements per version, each with its title and the WCAG criteria it corresponds to;
+- `rule-map.js`: which requirements each rule checks, core's rules or the profile's own, with the reason;
+- `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`, each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
+- `i18n/en.json`: their messages, then `npm run i18n:sync`.
+
+From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`.
+
+A profile written by hand needs the same: an `index.js` exporting `standard`, and `rulesDir` and `i18nDir` if it has rules; an entry in `profiles/index.js`; and its tests under `tests/`. The comment at the top of `src/coverage/standards.js` describes every field of `standard`. RGAA's mapping is richer than the scaffold's (`profiles/rgaa/mappings.js` relates tests to WCAG criteria and allows documented exceptions), which is the room a hand-written profile has.
 
 ## What a profile may use
 
