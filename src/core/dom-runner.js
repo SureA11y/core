@@ -14,13 +14,14 @@
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
- *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning).
+ *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
+ *   rollupInProfileVersion (a standard's rollups under one of its profiles).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS */
+   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS, rollupInProfileVersion */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -291,6 +292,11 @@ function rollupCompositeResults(
 
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
