@@ -72,6 +72,7 @@ const {
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
 const { ruleDirs } = require('./lib/rule-dirs');
+const { loadDictionaries } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -123,19 +124,8 @@ const SRC_DIR = path.join(ROOT_DIR, 'src');
 const RULES_DIRS = ruleDirs();
 const OUTPUT_FILE = path.join(SRC_DIR, 'core.js');
 
-const I18N_DIR = path.join(SRC_DIR, 'i18n');
-
 const CATALOGS_DIR = path.join(SRC_DIR, 'catalogs');
 const COMPOSITE_RULES_FILE = path.join(CATALOGS_DIR, 'composites.wcag.js');
-
-function isI18nLocaleFile(name) {
-  // supports en.json, fr.json, pt-BR.json, etc.
-  return typeof name === 'string' && /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(name);
-}
-
-function localeFromFileName(name) {
-  return name.replace(/\.json$/, '');
-}
 
 function loadCompositeRulesCatalog() {
   if (!fs.existsSync(COMPOSITE_RULES_FILE)) return [];
@@ -194,30 +184,10 @@ function loadCompositeRulesCatalog() {
   return wcag.concat(own);
 }
 
+// Core's dictionaries and each profile's, merged per locale
+// (scripts/lib/dictionaries.js). A key two of them define fails the build.
 function loadAllTranslations() {
-  if (!fs.existsSync(I18N_DIR)) return { en: {} };
-
-  const files = fs.readdirSync(I18N_DIR).filter(isI18nLocaleFile);
-  const out = {};
-
-  for (const file of files) {
-    const locale = localeFromFileName(file);
-    const abs = path.join(I18N_DIR, file);
-
-    try {
-      const dict = JSON.parse(fs.readFileSync(abs, 'utf8'));
-
-      out[locale] = dict && typeof dict === 'object' && !Array.isArray(dict) ? dict : {};
-    } catch (e) {
-      console.warn(
-        `[build-core] failed to load i18n file ${file}; skipping`,
-        e && e.message ? e.message : e
-      );
-    }
-  }
-
-  if (!out.en) out.en = {};
-  return out;
+  return loadDictionaries();
 }
 
 function isRuleFileName(fullPath) {
@@ -1742,7 +1712,6 @@ function main() {
 }
 
 module.exports = {
-  I18N_DIR,
   loadRuleModules,
   loadAllTranslations,
   loadCompositeRulesCatalog,

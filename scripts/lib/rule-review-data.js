@@ -18,6 +18,7 @@ const path = require('node:path');
 const { JSDOM } = require('jsdom');
 const { runOnlyForRule } = require('./rule-run-selection');
 const { ruleDirs, ruleTestDirs } = require('./rule-dirs');
+const { loadDictionaries } = require('./dictionaries');
 
 const OUTCOMES = ['fail', 'cantTell', 'pass', 'notApplicable'];
 
@@ -597,7 +598,7 @@ function collect(opts = {}) {
   const repoRoot = opts.repoRoot || findRepoRoot(__dirname);
   const types = opts.types || ['automatic', 'manual'];
 
-  const messages = JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/en.json'), 'utf8'));
+  const messages = loadDictionaries().en;
   const tests = new Map();
   for (const { testsDir, fixturesDir } of ruleTestDirs()) {
     scanTestFiles(repoRoot, testsDir, fixturesDir, tests);

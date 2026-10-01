@@ -48,4 +48,8 @@ const standard = {
 // compiles them into the engine with core's.
 const rulesDir = path.join(__dirname, 'rules');
 
-module.exports = { standard, rulesDir };
+// The messages of those rules and of the entry (report.noteKey), one
+// <locale>.json per locale like src/i18n/. The build adds them to core's.
+const i18nDir = path.join(__dirname, 'i18n');
+
+module.exports = { standard, rulesDir, i18nDir };

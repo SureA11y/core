@@ -15,7 +15,8 @@
  * - runs rule through engine (runOnly) on probe HTML
  * - asserts allowed outcomes + occurrence invariants
  * - checks determinism (deep equality over JSON-clone)
- * - verifies required i18n keys exist in src/i18n/en*.js
+ * - verifies required i18n keys exist in the English dictionary (src/i18n/en.json
+ *   and each profile's en.json)
  * - enforces expected tag conventions (atomic + type + wcag sc tags)
  *
  * - Rule validation policy:
@@ -38,6 +39,7 @@ const path = require('node:path');
 // Adjust these imports to match your repo layout if needed
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
+const { CORE_I18N_DIR, i18nDirs, loadDictionaries } = require('./lib/dictionaries');
 const { isOptInRule, runOnlyForRule } = require('./lib/rule-run-selection.js');
 const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 
@@ -165,6 +167,8 @@ function expectedLevelTagFromMappings(mappings, informativeReferences, wcagSc) {
   return `${prefix}a`;
 }
 
+// The English dictionary the engine is built with: src/i18n/en.json and
+// each profile's en.json (scripts/lib/dictionaries.js).
 function loadEnDictionary(repoRoot) {
   const dir = path.join(repoRoot, 'src', 'i18n');
   assert.ok(fs.existsSync(dir), `Expected i18n directory at ${dir}`);
@@ -172,13 +176,9 @@ function loadEnDictionary(repoRoot) {
   const enPath = path.join(dir, 'en.json');
   assert.ok(fs.existsSync(enPath), `No English dictionary found at ${enPath}`);
 
-  const dict = JSON.parse(fs.readFileSync(enPath, 'utf8'));
-  assert.ok(
-    dict && typeof dict === 'object' && !Array.isArray(dict),
-    `English dictionary must be a JSON object: ${enPath}`
-  );
-
-  return { dict, enPath };
+  const dirs = [dir].concat(i18nDirs().filter((d) => d !== CORE_I18N_DIR));
+  const enPaths = dirs.map((d) => path.join(d, 'en.json')).filter((p) => fs.existsSync(p));
+  return { dict: loadDictionaries(dirs).en, enPaths };
 }
 
 function validateI18nKeyExists(dict, key, context) {
@@ -652,7 +652,7 @@ function main() {
   validateRunInPageSerialization(mod.runInPage);
 
   // i18n dictionary loading
-  const { dict: enDict, enPath } = loadEnDictionary(repoRoot);
+  const { dict: enDict, enPaths } = loadEnDictionary(repoRoot);
 
   // Validate meta i18n keys exist
   validateI18nKeyExists(enDict, mod.meta.i18n.titleKey, 'meta.i18n.titleKey');
@@ -721,7 +721,7 @@ function main() {
   }
 
   console.log(`✅ Rule validated: ${RULE_ID}`);
-  console.log(`   English dictionary: ${enPath}`);
+  console.log(`   English dictionaries: ${enPaths.join(', ')}`);
 }
 
 main();

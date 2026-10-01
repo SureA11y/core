@@ -1,14 +1,8 @@
 'use strict';
 
 const fs = require('node:fs');
-const path = require('node:path');
 
-const ROOT_DIR = path.join(__dirname, '..');
-const I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
-
-function loadLocaleDict(i18nDir, name) {
-  return JSON.parse(fs.readFileSync(path.join(i18nDir, `${name}.json`), 'utf8'));
-}
+const { i18nDirs, loadDictionaries } = require('./lib/dictionaries');
 
 function listLocaleNames(i18nDir) {
   return fs
@@ -48,13 +42,17 @@ function computeLocaleReport(enDict, localeDict) {
   return { total, translated, missing, orphaned, percent };
 }
 
-function generateReport(i18nDir = I18N_DIR) {
-  const enDict = loadLocaleDict(i18nDir, 'en');
-  const locales = listLocaleNames(i18nDir).filter((name) => name !== 'en');
+// One row per locale, over one dictionary folder or several: by default
+// core's and each profile's (scripts/lib/dictionaries.js), counted together
+// as the engine sees them. A locale is listed when core's folder has it.
+function generateReport(i18nDir = i18nDirs()) {
+  const dirs = Array.isArray(i18nDir) ? i18nDir : [i18nDir];
+  const dicts = loadDictionaries(dirs);
+  const locales = listLocaleNames(dirs[0]).filter((name) => name !== 'en');
 
   return locales.map((locale) => ({
     locale,
-    ...computeLocaleReport(enDict, loadLocaleDict(i18nDir, locale))
+    ...computeLocaleReport(dicts.en, dicts[locale] || {})
   }));
 }
 

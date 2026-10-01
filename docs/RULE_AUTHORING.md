@@ -141,8 +141,9 @@ The build/runtime resolves i18n by:
 2) falling back to `en` if missing,
 3) falling back to the literal `title`/`description` strings if still missing.
 
-Add the key and its English text to `src/i18n/en.json`, then run
-`npm run i18n:sync` so every other locale picks it up. `npm test` fails if you
+Add the key and its English text to `src/i18n/en.json` (a profile's rule:
+`profiles/<name>/i18n/en.json`), then run `npm run i18n:sync` so every other
+locale picks it up. `npm test` fails if you
 forget. See [`I18N.md`](./I18N.md).
 
 #### `meta.tags`

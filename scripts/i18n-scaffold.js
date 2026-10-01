@@ -3,6 +3,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { i18nDirs } = require('./lib/dictionaries');
+
 const ROOT_DIR = path.join(__dirname, '..');
 const I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
 
@@ -72,12 +74,16 @@ function main() {
   }
 
   try {
-    const { outPath, keyCount } = scaffoldLocale(locale, { force });
+    // Core's dictionary first, so an existing locale is refused before any
+    // profile's file is written; then each profile's.
+    for (const i18nDir of i18nDirs()) {
+      const { outPath, keyCount } = scaffoldLocale(locale, { i18nDir, force });
+      console.log(
+        `[i18n-scaffold] wrote ${path.relative(ROOT_DIR, outPath)} (${keyCount} keys, seeded with the English text as a placeholder).`
+      );
+    }
     console.log(
-      `[i18n-scaffold] wrote ${path.relative(ROOT_DIR, outPath)} (${keyCount} keys, seeded with the English text as a placeholder).`
-    );
-    console.log(
-      '[i18n-scaffold] translate the values in that file, then run `npm run i18n:report` to check progress.'
+      '[i18n-scaffold] translate the values in those files, then run `npm run i18n:report` to check progress.'
     );
   } catch (e) {
     console.error(`[i18n-scaffold] ${e.message}`);
@@ -86,6 +92,7 @@ function main() {
 }
 
 module.exports = {
+  ROOT_DIR,
   I18N_DIR,
   LOCALE_RE,
   localePath,

@@ -3,18 +3,20 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
-const path = require('node:path');
 
-const I18N_DIR = path.join(__dirname, '..', '..', 'src', 'i18n');
+const { CORE_I18N_DIR, loadDictionaries } = require('../../scripts/lib/dictionaries');
+
+// Each locale as the engine sees it: core's dictionary and each profile's.
+const DICTIONARIES = loadDictionaries();
 
 function loadLocale(name) {
-  return JSON.parse(fs.readFileSync(path.join(I18N_DIR, `${name}.json`), 'utf8'));
+  return DICTIONARIES[name] || {};
 }
 
 const enKeys = new Set(Object.keys(loadLocale('en')));
 
 const localeFiles = fs
-  .readdirSync(I18N_DIR)
+  .readdirSync(CORE_I18N_DIR)
   .filter((f) => f.endsWith('.json') && f !== 'en.json')
   .map((f) => f.replace(/\.json$/, ''));
 

@@ -1,13 +1,16 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
 
+const { CORE_I18N_DIR, i18nDirs } = require('./lib/dictionaries');
 const {
   I18N_DIR,
   localePath,
   listLocales,
   loadDict,
-  serializeLocale
+  serializeLocale,
+  ROOT_DIR
 } = require('./i18n-scaffold.js');
 
 // Existing values are carried over untouched; a key new to English is seeded
@@ -31,28 +34,41 @@ function syncDict(enDict, localeDict) {
   return { dict, added, removed, untranslated };
 }
 
-function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
+// With `create`, a missing locale file is written seeded with the English
+// text (a profile's dictionary for a locale core already has) rather than
+// refused.
+function syncLocale(locale, { i18nDir = I18N_DIR, check = false, create = false } = {}) {
   const filePath = localePath(locale, i18nDir);
+  const exists = fs.existsSync(filePath);
 
-  if (!fs.existsSync(filePath)) {
+  if (!exists && !create) {
     throw new Error(
-      `src/i18n/${locale}.json does not exist — run \`npm run i18n:new ${locale}\` to create it.`
+      `${path.relative(ROOT_DIR, filePath)} does not exist — run \`npm run i18n:new ${locale}\` to create it.`
     );
   }
 
-  const result = syncDict(loadDict(localePath('en', i18nDir)), loadDict(filePath));
+  const result = syncDict(loadDict(localePath('en', i18nDir)), exists ? loadDict(filePath) : {});
   const source = serializeLocale(result.dict);
-  const changed = source !== fs.readFileSync(filePath, 'utf8');
+  const changed = !exists || source !== fs.readFileSync(filePath, 'utf8');
 
   if (changed && !check) fs.writeFileSync(filePath, source, 'utf8');
 
   return { locale, filePath, changed, ...result };
 }
 
-function syncAll({ i18nDir = I18N_DIR, locales, check = false } = {}) {
+function syncAll({ i18nDir = I18N_DIR, locales, check = false, create = false } = {}) {
   const targets = locales && locales.length ? locales : listLocales(i18nDir);
 
-  return targets.map((locale) => syncLocale(locale, { i18nDir, check }));
+  return targets.map((locale) => syncLocale(locale, { i18nDir, check, create }));
+}
+
+// Every dictionary folder (scripts/lib/dictionaries.js). A profile's folder
+// is synced for core's locales, so it can never lack one.
+function syncEveryDir({ locales, check = false } = {}) {
+  const targets = locales && locales.length ? locales : listLocales(CORE_I18N_DIR);
+  return i18nDirs().flatMap((i18nDir) =>
+    syncAll({ i18nDir, locales: targets, check, create: i18nDir !== CORE_I18N_DIR })
+  );
 }
 
 function describe(result, check) {
@@ -63,7 +79,8 @@ function describe(result, check) {
 
   const status = result.changed ? (check ? 'needs sync' : 'updated') : 'unchanged';
   const detail = changes.length ? ` (${changes.join(', ')})` : '';
-  return `${result.locale.padEnd(6)} ${status}${detail}, ${result.untranslated.length} untranslated`;
+  const file = path.relative(ROOT_DIR, result.filePath);
+  return `${file.padEnd(30)} ${status}${detail}, ${result.untranslated.length} untranslated`;
 }
 
 function main() {
@@ -72,7 +89,7 @@ function main() {
   const locales = args.filter((a) => !a.startsWith('--'));
 
   try {
-    const results = syncAll({ locales, check });
+    const results = syncEveryDir({ locales, check });
 
     if (!results.length) {
       console.log('[i18n-sync] no non-English locale files found in src/i18n/.');
@@ -89,7 +106,7 @@ function main() {
     const stale = results.filter((r) => r.changed);
     if (check && stale.length) {
       console.error(
-        `[i18n-sync] ${stale.map((r) => r.locale).join(', ')} out of sync with en.json — run \`npm run i18n:sync\`.`
+        `[i18n-sync] ${stale.map((r) => path.relative(ROOT_DIR, r.filePath)).join(', ')} out of sync with its en.json — run \`npm run i18n:sync\`.`
       );
       process.exitCode = 1;
       return;
@@ -107,7 +124,7 @@ function main() {
   }
 }
 
-module.exports = { syncDict, syncLocale, syncAll };
+module.exports = { syncDict, syncLocale, syncAll, syncEveryDir };
 
 if (require.main === module) {
   main();
