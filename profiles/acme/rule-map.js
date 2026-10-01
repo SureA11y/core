@@ -13,9 +13,26 @@
  * unknown rule or requirement (mappings.js, validate).
  */
 
+// B4 makes two of core's best-practice rules mandatory; B5 reuses one of
+// RGAA's own rules (stress points 6 and 7 of DESIGN.md).
+const ROWS = {
+  'heading-order': {
+    requirements: ['B4'],
+    note: 'Core best-practice rule: heading levels that skip.'
+  },
+  region: {
+    requirements: ['B4'],
+    note: 'Core best-practice rule: content outside every landmark.'
+  },
+  'skip-link-present': {
+    requirements: ['B5'],
+    note: "RGAA's rule (tag rgaa): a page whose navigation comes before its main content has no skip link."
+  }
+};
+
 const RULE_REQUIREMENTS = {
-  '1.0': {},
-  '2.0': {}
+  '1.0': { ...ROWS },
+  '2.0': { ...ROWS }
 };
 
 module.exports = { RULE_REQUIREMENTS };

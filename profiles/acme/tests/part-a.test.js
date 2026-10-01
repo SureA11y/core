@@ -57,20 +57,23 @@ test("mappings: ['acme'] names every version that restates a rule's criteria", (
   });
 });
 
-test("each profile runs its WCAG version's rules and names its own version only", () => {
+test("each profile runs its WCAG version's rules, plus Part B's, and names its own version only", () => {
   const pairs = [
     ['acme-1.0', 'en301549-v3.2.1', '1.0'],
     ['acme-2.0', 'wcag22-aa', '2.0']
   ];
-  for (const [profile, sameRulesAs, version] of pairs) {
+  // The rules Part B maps that no WCAG profile runs (tests/part-b-mapped.test.js).
+  const partB = ['heading-order', 'region', 'skip-link-present'];
+  for (const [profile, sameWcagAs, version] of pairs) {
     const result = scan({ profile });
     assert.equal(result.engine.profile, profile);
     assert.deepEqual(
       result.checksResults.map((r) => r.ruleId).sort(),
-      scan({ profile: sameRulesAs })
+      scan({ profile: sameWcagAs })
         .checksResults.map((r) => r.ruleId)
+        .concat(partB)
         .sort(),
-      `${profile} runs what ${sameRulesAs} runs: Part B adds no rule yet`
+      `${profile} runs what ${sameWcagAs} runs, and Part B's rules`
     );
     assert.deepEqual(ids(check(result, 'contrast-minimum')), [`${version}:A.1.4.3`]);
   }

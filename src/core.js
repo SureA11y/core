@@ -6082,6 +6082,20 @@ const CHECK_DEFS = [
           "2.4.6",
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
       }
     ],
     "defaultSeverity": "minor",
@@ -12329,7 +12343,22 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -13049,6 +13078,24 @@ const CHECK_DEFS = [
           "2.4.1",
           "2.4.3",
           "3.2.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
         ]
       }
     ],
@@ -19747,6 +19794,120 @@ const COMPOSITE_RULES = [
           "criterion": "13.9",
           "wcagSc": [
             "1.3.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-1.0-B4",
+    "checksIds": [
+      "heading-order",
+      "region"
+    ],
+    "meta": {
+      "title": "Headings are in order and the page has landmarks",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B4",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B4",
+          "title": "Headings are in order and the page has landmarks",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-1.0-B5",
+    "checksIds": [
+      "skip-link-present"
+    ],
+    "meta": {
+      "title": "Pages have a skip link",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B5",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B5",
+          "title": "Pages have a skip link",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B4",
+    "checksIds": [
+      "heading-order",
+      "region"
+    ],
+    "meta": {
+      "title": "Headings are in order and the page has landmarks",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B4",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B4",
+          "title": "Headings are in order and the page has landmarks",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B5",
+    "checksIds": [
+      "skip-link-present"
+    ],
+    "meta": {
+      "title": "Pages have a skip link",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B5",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B5",
+          "title": "Pages have a skip link",
+          "wcagSc": [
+            "2.4.1"
           ]
         }
       ]
@@ -27584,6 +27745,7 @@ const PROFILE_RULES = {
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "heading-order",
     "heading-quality",
     "html-lang-attr-present",
     "html-xml-lang-mismatch",
@@ -27621,10 +27783,12 @@ const PROFILE_RULES = {
     "page-title-present",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "region",
     "role-img-text-alternative-present",
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
+    "skip-link-present",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -27687,6 +27851,7 @@ const PROFILE_RULES = {
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "heading-order",
     "heading-quality",
     "html-lang-attr-present",
     "html-xml-lang-mismatch",
@@ -27725,10 +27890,12 @@ const PROFILE_RULES = {
     "password-paste-enabled",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "region",
     "role-img-text-alternative-present",
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
+    "skip-link-present",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -27768,6 +27935,45 @@ const PROFILE_MAPPINGS = {
     "acme:2.0"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  },
+  "rgaa-4.1.2": {
+    "standard": "RGAA",
+    "version": "4.1.2"
+  },
+  "acme-1.0": {
+    "standard": "ACME",
+    "version": "1.0"
+  },
+  "acme-2.0": {
+    "standard": "ACME",
+    "version": "2.0"
+  }
+};
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -36751,6 +36957,11 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
 
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
+
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
       // rollup metrics (stable order)
@@ -37792,6 +38003,7 @@ function isCompositeListed(x, selection) {
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
+  if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
   // Unlocked alone does not select it: like the run, an include of other
   // tags or ids (a WCAG profile's, say) still leaves it out.
   const includesNothing =
@@ -43934,6 +44146,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "2.4.6",
           "4.1.2"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
       }
     ],
     "defaultSeverity": "minor",
@@ -50181,7 +50407,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [],
-    "normativeMappings": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B4",
+        "title": "Headings are in order and the page has landmarks",
+        "wcagSc": []
+      }
+    ],
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
@@ -50901,6 +51142,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "2.4.1",
           "2.4.3",
           "3.2.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
         ]
       }
     ],
@@ -57599,6 +57858,120 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "criterion": "13.9",
           "wcagSc": [
             "1.3.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-1.0-B4",
+    "checksIds": [
+      "heading-order",
+      "region"
+    ],
+    "meta": {
+      "title": "Headings are in order and the page has landmarks",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B4",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B4",
+          "title": "Headings are in order and the page has landmarks",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-1.0-B5",
+    "checksIds": [
+      "skip-link-present"
+    ],
+    "meta": {
+      "title": "Pages have a skip link",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B5",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B5",
+          "title": "Pages have a skip link",
+          "wcagSc": [
+            "2.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B4",
+    "checksIds": [
+      "heading-order",
+      "region"
+    ],
+    "meta": {
+      "title": "Headings are in order and the page has landmarks",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B4",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B4",
+          "title": "Headings are in order and the page has landmarks",
+          "wcagSc": []
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B5",
+    "checksIds": [
+      "skip-link-present"
+    ],
+    "meta": {
+      "title": "Pages have a skip link",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B5",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B5",
+          "title": "Pages have a skip link",
+          "wcagSc": [
+            "2.4.1"
           ]
         }
       ]
@@ -107072,6 +107445,7 @@ const PROFILE_RULES = {
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "heading-order",
     "heading-quality",
     "html-lang-attr-present",
     "html-xml-lang-mismatch",
@@ -107109,10 +107483,12 @@ const PROFILE_RULES = {
     "page-title-present",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "region",
     "role-img-text-alternative-present",
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
+    "skip-link-present",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -107175,6 +107551,7 @@ const PROFILE_RULES = {
     "form-control-programmatic-label-present",
     "form-control-programmatic-label-quality",
     "form-control-single-label",
+    "heading-order",
     "heading-quality",
     "html-lang-attr-present",
     "html-xml-lang-mismatch",
@@ -107213,10 +107590,12 @@ const PROFILE_RULES = {
     "password-paste-enabled",
     "presentational-children-focusable-absent",
     "progressbar-name-present",
+    "region",
     "role-img-text-alternative-present",
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
+    "skip-link-present",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -107256,6 +107635,45 @@ const PROFILE_MAPPINGS = {
     "acme:2.0"
   ]
 };
+
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = {
+  "en301549-v4.1.1": {
+    "standard": "EN 301 549",
+    "version": "V4.1.1"
+  },
+  "en301549-v3.2.1": {
+    "standard": "EN 301 549",
+    "version": "V3.2.1"
+  },
+  "rgaa-4.1.2": {
+    "standard": "RGAA",
+    "version": "4.1.2"
+  },
+  "acme-1.0": {
+    "standard": "ACME",
+    "version": "1.0"
+  },
+  "acme-2.0": {
+    "standard": "ACME",
+    "version": "2.0"
+  }
+};
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
 
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
@@ -116238,6 +116656,11 @@ const rollupCompositeResults = (function rollupCompositeResults(
 
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 

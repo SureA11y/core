@@ -17,9 +17,14 @@
 const { ACME_VERSIONS: VERSIONS } = require('./part-a');
 
 // Part B, ACME's own requirements. Part A, WCAG renumbered, is in part-a.js.
+const PART_B = {
+  B4: { title: 'Headings are in order and the page has landmarks', wcagSc: [] },
+  B5: { title: 'Pages have a skip link', wcagSc: ['2.4.1'] }
+};
+
 const REQUIREMENTS = {
-  '1.0': {},
-  '2.0': {}
+  '1.0': { ...PART_B },
+  '2.0': { ...PART_B }
 };
 
 module.exports = { VERSIONS, REQUIREMENTS };
