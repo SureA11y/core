@@ -878,12 +878,19 @@ function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A variant runs its base rule with settings of its own. They are its
+    // standard's, so they win over a caller's value for the same name; the
+    // caller's other settings (excludeSelectors) still apply.
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    const ruleConfig =
+      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -978,6 +985,26 @@ function runCore(
       if (ruleTimings)
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
+    }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
     }
     if (!result.engineOptions) {
       result.engineOptions = {

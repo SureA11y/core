@@ -20,6 +20,10 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
+ * @implementation-notes
+ * - Its thresholds are settings (`settings` below), so another standard's
+ *   contrast requirement is a variant of this rule rather than a copy
+ *   (docs/RULE_AUTHORING.md, "Rule variants"). Without settings it is WCAG's.
  */
 
 const id = 'contrast-minimum';
@@ -65,6 +69,21 @@ function runInPage(ctx) {
     }
   }
 
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
+
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
       ? helpers.contrast.sharedCache
@@ -82,8 +101,9 @@ function runInPage(ctx) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCache || (__contrastSharedCache.__elFontCache = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
@@ -124,7 +144,10 @@ function runInPage(ctx) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -278,9 +301,10 @@ function runInPage(ctx) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheAA)
-        __contrastSharedCache.__elAnalysisCacheAA = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAA;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -372,7 +396,12 @@ function runInPage(ctx) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -564,4 +593,9 @@ function runInPage(ctx) {
   };
 }
 
-module.exports = { id, meta, runInPage };
+// The thresholds a variant may change (docs/RULE_AUTHORING.md, "Rule
+// variants"), with WCAG 1.4.3's as defaults: the size from which bold text is
+// large (null: WCAG's 14pt), and the ratios large and other text need.
+const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
+
+module.exports = { id, meta, runInPage, settings };

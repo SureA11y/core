@@ -73,6 +73,7 @@ const {
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
 const { ruleDirs } = require('./lib/rule-dirs');
+const { resolveVariants } = require('./lib/rule-variants');
 const { loadDictionaries } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
@@ -280,10 +281,17 @@ function loadRuleModules(dirs = RULES_DIRS) {
   const files = dirs.flatMap((dir) => listRuleFilesRecursive(dir));
   const fileById = new Map();
 
-  const mods = [];
-  for (const file of files) {
-    const mod = unwrapModule(safeRequire(file));
+  // A variant (scripts/lib/rule-variants.js) runs its base rule's code with
+  // settings of its own; resolve each against its base first.
+  const resolved = resolveVariants(
+    files.map((file) => ({ file, mod: unwrapModule(safeRequire(file)) }))
+  );
+  if (resolved.problems.length) {
+    throw new Error(`[build-core] rule variants:\n  ${resolved.problems.join('\n  ')}`);
+  }
 
+  const mods = [];
+  for (const { file, mod } of resolved.modules) {
     if (!mod || typeof mod !== 'object') {
       throw new Error(`Rule ${file} must export an object (got ${typeof mod})`);
     }
@@ -325,12 +333,17 @@ function loadRuleModules(dirs = RULES_DIRS) {
 
     mods.push({
       file,
+      // The file whose runInPage runs: the base rule's, for a variant.
+      codeFile: mod.variant ? mod.variant.file : file,
       id,
       ruleId,
       runFnSource,
       applicabilityFnSource,
       meta: normalizedMeta,
-      data
+      data,
+      variant: mod.variant
+        ? { of: mod.variant.of, config: mod.variant.config, messages: mod.variant.messages }
+        : null
     });
   }
 
@@ -419,7 +432,11 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
     expectation: m.meta.expectation,
     references: m.meta.references,
     requirements: m.meta.requirements,
-    mappings: m.meta.mappings
+    mappings: m.meta.mappings,
+
+    // A variant: the base rule it runs, its settings and its message prefix
+    // (scripts/lib/rule-variants.js). The runner reads both.
+    ...(m.variant ? { variant: m.variant } : {})
   }));
 
   const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
@@ -442,7 +459,7 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
   // Node/runtime implementations (require at runtime in Node, used by checks and server-side use).
   // Normalize to a single shape: { run, applicability }
   const implEntries = mods.map((m) => {
-    const rel = path.relative(SRC_DIR, m.file).replace(/\\/g, '/');
+    const rel = path.relative(SRC_DIR, m.codeFile || m.file).replace(/\\/g, '/');
     const spec = rel.startsWith('.') ? rel : './' + rel;
     return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(spec)}).runInPage, applicability: require(${jsStringify(spec)}).applicability || null }`;
   });

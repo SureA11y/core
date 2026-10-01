@@ -118,14 +118,18 @@ function main() {
   // A rule id is the file's own registered id, not its filename: the two have
   // already drifted apart once (role-img-text-alternative-present).
   const idByFile = new Map();
+  const fromById = new Map();
   for (const file of ruleSourceFiles()) {
     try {
       const mod = require(file);
       if (mod && typeof mod.id === 'string') idByFile.set(file, mod.id);
+      // A variant runs its base rule's code, so its codes are in the base's source.
+      if (mod && typeof mod.from === 'string') fromById.set(mod.id, mod.from);
     } catch {
       // A module that will not load is the rule validator's problem, not this one.
     }
   }
+  const fileById = new Map([...idByFile].map(([file, id]) => [id, file]));
 
   const codesByRule = new Map();
   const add = (ruleId, codes) => {
@@ -135,7 +139,10 @@ function main() {
     codesByRule.set(ruleId, target);
   };
 
-  for (const [file, ruleId] of idByFile) add(ruleId, codesFromSource(file));
+  for (const [file, ruleId] of idByFile) {
+    const base = fromById.has(ruleId) ? fileById.get(fromById.get(ruleId)) : null;
+    add(ruleId, codesFromSource(base || file));
+  }
 
   const fixturesIndex = JSON.parse(
     fs.readFileSync(path.join(ROOT, 'tests', 'fixtures', 'index.json'), 'utf8')

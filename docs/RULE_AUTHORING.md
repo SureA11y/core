@@ -156,6 +156,31 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 #### Rules for another standard's own requirements
 A rule that checks something WCAG does not require, but another standard does (RGAA's doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag, `rgaa`. The tag makes it **opt-in**: it runs only under the standard's profile (`rgaa-4.1.2`), a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's profile rather than in `src/checks/`: `profiles/rgaa/rules/automatic/` or `profiles/rgaa/rules/manual/` for RGAA. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/rgaa/tests/rules/` and `profiles/rgaa/tests/fixtures/`. Map it to the standard's requirements the usual way (for RGAA, a row in `profiles/rgaa/rule-map.js`). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (RGAA's from `profiles/rgaa/index.js`).
 
+#### Rule variants
+When another standard's requirement is a core rule with different thresholds (RGAA's contrast, where bold text is large from 18.5px rather than WCAG's 14pt), write it as a **variant**, not a copy. The core rule declares the thresholds it reads from `ctx.config` as `settings`, with WCAG's values as defaults:
+
+```js
+// src/checks/automatic/contrast-minimum.js
+const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
+module.exports = { id, meta, runInPage, settings };
+```
+
+The variant is data, in the standard's profile:
+
+```js
+// profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js
+module.exports = {
+  id: 'contrast-minimum-rgaa',
+  from: 'contrast-minimum',
+  config: { boldLargeMinPx: 18.5 },
+  meta: { /* its own title, description, i18n, tags... as any rule's */ }
+};
+```
+
+The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config` (over any caller settings of the same name). A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`contrastMinimumRgaa`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
+
+Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are public from then on (see [`API_STABILITY.md`](./API_STABILITY.md)).
+
 #### `meta.coverage.facetsBySc`
 This is the repo’s explicit **coverage model** for an SC.
 Each atomic rule declares which “facet(s)” of an SC it covers.
