@@ -16,8 +16,6 @@ const path = require('node:path');
 const { createProfile } = require('../scripts/profile-new.js');
 const { PROFILE_EXPORTS } = require('../scripts/lib/profile-contract');
 
-const ROOT = path.join(__dirname, '..');
-
 // A root with what the script reads: a profiles/index.js and core's locales.
 function makeRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-profile-new-'));
