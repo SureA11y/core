@@ -272,8 +272,12 @@ function assertString(name, value) {
   return value.trim();
 }
 
-function loadRuleModules() {
-  const files = RULES_DIRS.flatMap((dir) => listRuleFilesRecursive(dir));
+// Every rule module in the given rules folders (core's and each profile's by
+// default). A rule id defined twice fails the build, naming both files: the
+// engine would otherwise list and run both under one id.
+function loadRuleModules(dirs = RULES_DIRS) {
+  const files = dirs.flatMap((dir) => listRuleFilesRecursive(dir));
+  const fileById = new Map();
 
   const mods = [];
   for (const file of files) {
@@ -310,6 +314,13 @@ function loadRuleModules() {
     );
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
+
+    if (fileById.has(ruleId)) {
+      throw new Error(
+        `[build-core] rule id "${ruleId}" is defined twice: ${path.relative(ROOT_DIR, fileById.get(ruleId))} and ${path.relative(ROOT_DIR, file)}`
+      );
+    }
+    fileById.set(ruleId, file);
 
     mods.push({
       file,
