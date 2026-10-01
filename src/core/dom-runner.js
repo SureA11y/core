@@ -14,6 +14,7 @@
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
+ *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets).
@@ -22,7 +23,8 @@
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   RULE_MAPPED_STANDARDS, OPT_IN_RULE_TAGS, rollupInProfileVersion, profileStandardOf */
+   RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
+   profileStandardOf */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -431,8 +433,16 @@ function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
         rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
-          (m) => !m || !ruleMapped.includes(m.standard) || produced.has(keyOf(m))
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
         );
       }
 

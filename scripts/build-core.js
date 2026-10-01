@@ -893,6 +893,11 @@ const NORMATIVE_MAPPING_STANDARDS = ${jsStringify(NORMATIVE_MAPPING_STANDARDS)};
 // rules that produced its outcome (rollupCompositeResults).
 const RULE_MAPPED_STANDARDS = ${jsStringify(STANDARDS_DATA.filter((s) => s.ruleMapped).map((s) => s.standard))};
 
+// For a rule-mapped standard, the prefixes of its requirements that restate a
+// WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
+// those whatever rule decided it.
+const RESTATED_PREFIXES = ${jsStringify(Object.fromEntries(STANDARDS_DATA.filter((s) => s.restatedPrefixes).map((s) => [s.standard, s.restatedPrefixes])))};
+
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
