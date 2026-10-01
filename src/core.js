@@ -27273,6 +27273,60 @@ const I18N = {
   }
 };
 
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = {
+  "de": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  },
+  "fr": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  },
+  "ja": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  }
+};
+
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = [
@@ -27400,7 +27454,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
@@ -108018,6 +108075,60 @@ const I18N = {
   }
 };
 
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = {
+  "de": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  },
+  "fr": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  },
+  "ja": {
+    "acmeContrastUniform_cantTell_engineFailure": true,
+    "acmeContrastUniform_description": true,
+    "acmeContrastUniform_fail_belowThreshold": true,
+    "acmeContrastUniform_hint_fail": true,
+    "acmeContrastUniform_notApplicable_noComputableText": true,
+    "acmeContrastUniform_pass_allAboveThreshold": true,
+    "acmeContrastUniform_title": true,
+    "acmeStatementLink_description": true,
+    "acmeStatementLink_hint_fail_missing": true,
+    "acmeStatementLink_hint_fail_notInFooter": true,
+    "acmeStatementLink_summary_fail_missing": true,
+    "acmeStatementLink_summary_fail_notInFooter": true,
+    "acmeStatementLink_title": true,
+    "report_acmeRollup_note": true
+  }
+};
+
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
 const KNOWN_LOCALES = [
@@ -108145,7 +108256,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
