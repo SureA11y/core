@@ -91,7 +91,11 @@ const STANDARD_PROFILES = Object.fromEntries(
   STANDARDS_DATA.flatMap((s) =>
     Object.entries(s.profiles).map(([name, p]) => [
       name,
-      { tags: p.tags, mappings: [s.key + ':' + p.version] }
+      {
+        tags: p.tags,
+        mappings: [s.key + ':' + p.version],
+        target: { standard: s.standard, version: p.version }
+      }
     ])
   )
 );
@@ -853,6 +857,24 @@ const PROFILE_RULES = ${jsStringify(profileRules)};
 
 const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
 
+// The standard and version each standard's profile targets. Under one, that
+// standard's own rollups are its version's only: a standard with two
+// versions has a rollup per requirement in each.
+const PROFILE_TARGETS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.target])))};
+
+// Whether a standard's own rollup belongs to the version the selection's
+// profile targets. A rollup of another standard, or a selection with no
+// standard's profile, is not concerned.
+function rollupInProfileVersion(standard, version, selection) {
+  const profile = selection && typeof selection.profile === 'string' ? selection.profile : null;
+  const target =
+    profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  if (!target || !standard || standard !== target.standard) return true;
+  return !version || version === target.version;
+}
+
 /**
  * Resolve engineOptions.mappings (an array or comma-separated string of
  * "name" or "name:version", names and versions matched case-insensitively)
@@ -1598,6 +1620,7 @@ function isCompositeListed(x, selection) {
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
+  if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
   // Unlocked alone does not select it: like the run, an include of other
   // tags or ids (a WCAG profile's, say) still leaves it out.
   const includesNothing =
