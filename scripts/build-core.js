@@ -50,6 +50,7 @@ const {
   validateStandards,
   profileRuleIds,
   profileExclusions,
+  validateProfileIndependence,
   standardsData
 } = require('../src/coverage/standards');
 const {
@@ -355,6 +356,15 @@ function loadRuleModules(dirs = RULES_DIRS) {
   // a typo or a mapping to an unrelated criterion fails the build here.
   const problems = validateStandards(
     mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
+  ).concat(
+    validateProfileIndependence(
+      mods.map((m) => ({
+        ruleId: m.ruleId,
+        wcagSc: m.meta.wcagSc || [],
+        tags: m.meta.tags || [],
+        variantOf: m.variant ? m.variant.of : null
+      }))
+    )
   );
   if (problems.length) {
     throw new Error(`[build-core] normative mappings:\n  ${problems.join('\n  ')}`);

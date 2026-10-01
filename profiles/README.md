@@ -66,6 +66,7 @@ A profile depends on core only through what core already publishes, so it never 
   - it calls only the helpers [`docs/RULE_HELPERS.md`](../docs/RULE_HELPERS.md) documents. A helper a profile needs that is not documented there is a change to core's public API: document it there first;
   - it carries the standard's `ruleTag`, so no WCAG scan runs it.
 - **Its tests and scripts.** From core, they require only the package's entry points (`src/index.js`, `src/core.js`, `src/report.js`, `src/rgaa.js` and the others in `package.json` `exports`), WCAG's reference tables (`src/coverage/wcag-facets.js`, `src/coverage/wcag-version-map.js`) and the shared test harness (`tests/helpers/`). npm packages and Node built-ins are fine.
+- **Other profiles.** A profile maps core's rules and its own, and derives variants from them, never from another profile's rules: the build refuses it (`validateProfileIndependence` in `src/coverage/standards.js`). A rule two standards need belongs in core.
 - **Its dictionaries.** They hold only keys of its own rules (each rule's `meta.i18n` prefix) and of its entry (`report.noteKey`). The build refuses a key core also defines.
 
 The other direction holds too: core reaches a profile only through `profiles/index.js`. The exceptions are `src/rgaa.js`, RGAA's public entry point (`@surea11y/core/rgaa`), which reads the profile's table and would move with the profile, and the generated `src/core.js`, which requires every rule.
