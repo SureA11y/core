@@ -69,7 +69,7 @@ test("each profile runs its WCAG version's rules, plus Part B's, and names its o
     'acme-statement-link',
     'heading-order',
     'region',
-    'skip-link-present'
+    'skip-link'
   ];
   for (const [profile, sameWcagAs, version, waived] of pairs) {
     const result = scan({ profile });

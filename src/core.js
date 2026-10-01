@@ -13107,6 +13107,24 @@ const CHECK_DEFS = [
           "2.4.3",
           "3.2.3"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -13208,24 +13226,6 @@ const CHECK_DEFS = [
           "2.4.1",
           "2.4.3",
           "3.2.3"
-        ]
-      },
-      {
-        "standard": "ACME",
-        "version": "1.0",
-        "requirement": "B5",
-        "title": "Pages have a skip link",
-        "wcagSc": [
-          "2.4.1"
-        ]
-      },
-      {
-        "standard": "ACME",
-        "version": "2.0",
-        "requirement": "B5",
-        "title": "Pages have a skip link",
-        "wcagSc": [
-          "2.4.1"
         ]
       }
     ],
@@ -20016,7 +20016,7 @@ const COMPOSITE_RULES = [
   {
     "id": "acme-1.0-B5",
     "checksIds": [
-      "skip-link-present"
+      "skip-link"
     ],
     "meta": {
       "title": "Pages have a skip link",
@@ -20129,7 +20129,7 @@ const COMPOSITE_RULES = [
   {
     "id": "acme-2.0-B5",
     "checksIds": [
-      "skip-link-present"
+      "skip-link"
     ],
     "meta": {
       "title": "Pages have a skip link",
@@ -28099,7 +28099,7 @@ const PROFILE_RULES = {
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
-    "skip-link-present",
+    "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -28208,7 +28208,7 @@ const PROFILE_RULES = {
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
-    "skip-link-present",
+    "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -51569,6 +51569,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "2.4.3",
           "3.2.3"
         ]
+      },
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B5",
+        "title": "Pages have a skip link",
+        "wcagSc": [
+          "2.4.1"
+        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -51670,24 +51688,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "2.4.1",
           "2.4.3",
           "3.2.3"
-        ]
-      },
-      {
-        "standard": "ACME",
-        "version": "1.0",
-        "requirement": "B5",
-        "title": "Pages have a skip link",
-        "wcagSc": [
-          "2.4.1"
-        ]
-      },
-      {
-        "standard": "ACME",
-        "version": "2.0",
-        "requirement": "B5",
-        "title": "Pages have a skip link",
-        "wcagSc": [
-          "2.4.1"
         ]
       }
     ],
@@ -58478,7 +58478,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "acme-1.0-B5",
     "checksIds": [
-      "skip-link-present"
+      "skip-link"
     ],
     "meta": {
       "title": "Pages have a skip link",
@@ -58591,7 +58591,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "acme-2.0-B5",
     "checksIds": [
-      "skip-link-present"
+      "skip-link"
     ],
     "meta": {
       "title": "Pages have a skip link",
@@ -108869,7 +108869,7 @@ const PROFILE_RULES = {
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
-    "skip-link-present",
+    "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",
@@ -108978,7 +108978,7 @@ const PROFILE_RULES = {
     "scrollable-region-focusable",
     "searchbox-name-present",
     "server-side-image-map-absent",
-    "skip-link-present",
+    "skip-link",
     "slider-name-present",
     "spinbutton-name-present",
     "summary-name-present",

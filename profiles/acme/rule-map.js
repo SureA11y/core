@@ -13,8 +13,8 @@
  * unknown rule or requirement (mappings.js, validate).
  */
 
-// B4 makes two of core's best-practice rules mandatory; B5 reuses one of
-// RGAA's own rules (stress points 6 and 7 of DESIGN.md).
+// B4 and B5 make core's best-practice rules mandatory (stress points 6 and 7
+// of DESIGN.md).
 const ROWS = {
   'acme-contrast-uniform': {
     requirements: ['B2'],
@@ -32,9 +32,9 @@ const ROWS = {
     requirements: ['B4'],
     note: 'Core best-practice rule: content outside every landmark.'
   },
-  'skip-link-present': {
+  'skip-link': {
     requirements: ['B5'],
-    note: "RGAA's rule (tag rgaa): a page whose navigation comes before its main content has no skip link."
+    note: "Core's best-practice rule: a skip link with a usable target. A profile maps core's rules and its own, never another profile's (F5)."
   }
 };
 

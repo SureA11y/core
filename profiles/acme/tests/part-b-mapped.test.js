@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * ACME B4 and B5: requirements checked by rules ACME does not own. B4 makes
- * two of core's best-practice rules mandatory, B5 reuses RGAA's own
- * skip-link-present. Stress points 6 and 7 of DESIGN.md, and finding F5.
+ * ACME B4 and B5: requirements checked by rules ACME does not own, core's
+ * best-practice rules. Stress points 6 and 7 of DESIGN.md, and finding F5: a
+ * profile maps core's rules and its own, never another profile's.
  */
 
 const test = require('node:test');
@@ -45,7 +45,7 @@ test('a rollup per requirement, grouping the rules that check it', () => {
       ['acme-2.0-B2', 'notApplicable'],
       ['acme-2.0-B3', 'fail'],
       ['acme-2.0-B4', 'cantTell'],
-      ['acme-2.0-B5', 'fail']
+      ['acme-2.0-B5', 'notApplicable']
     ]
   );
   const b4 = rollups[2];
@@ -90,13 +90,20 @@ test('the HTML report gives ACME its own section, with its note', () => {
   assert.match(html, /One row per ACME requirement that a rule is linked to/);
 });
 
-// Finding F5 (DESIGN.md): naming RGAA's opt-in rule in ACME's table is enough
-// to run it under ACME's profile. ACME now depends on RGAA, and nothing
-// declares it; only the build's table check would notice RGAA going.
-test('F5, as it stands: ACME runs an RGAA rule just by mapping it (stress 7)', () => {
+// Finding F5 (DESIGN.md): B5 maps core's skip-link, not RGAA's
+// skip-link-present, which the build now refuses: a profile depends on core
+// only, so ACME runs no RGAA rule.
+test("B5 is checked by a core rule, and ACME runs none of RGAA's (stress 7)", () => {
   const result = scan({ profile: 'acme-2.0' });
-  assert.equal(outcome(result, 'skip-link-present'), 'fail');
-  const tags = core.getChecksCatalog().find((r) => r.ruleId === 'skip-link-present').tags;
-  assert.ok(tags.includes('rgaa') && !tags.includes('acme'));
-  assert.equal(outcome(scan({}), 'skip-link-present'), null, 'still opt-in elsewhere');
+  assert.notEqual(outcome(result, 'skip-link'), null);
+  const rgaaRules = new Set(
+    core
+      .getChecksCatalog()
+      .filter((r) => r.tags.includes('rgaa'))
+      .map((r) => r.ruleId)
+  );
+  assert.deepEqual(
+    result.checksResults.map((r) => r.ruleId).filter((id) => rgaaRules.has(id)),
+    []
+  );
 });
