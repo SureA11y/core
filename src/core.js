@@ -33574,6 +33574,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(document.documentElement);
   }
 
+  // Whether a link's text reads as a skip link ("Skip to content", "Aller au
+  // contenu", "Zum Inhalt"...), in the languages the engine ships and the
+  // phrasings French sites use (RGAA's "liens d'évitement"). One list for
+  // every rule that looks for a skip link, so they recognise the same ones.
+  const SKIP_LINK_WORDING = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+  function hasSkipLinkWording(text) {
+    const s = typeof text === 'string' ? text : '';
+    return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
   return {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
@@ -33596,6 +33618,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in
@@ -88254,24 +88277,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  // Common skip-link wording in the shipped locales (en, fr, de, es, ja).
-  const SKIP_NAME_PATTERNS = [
-    /skip/i,
-    /jump\s*to/i,
-    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
-    /acc[eè]s\s+(direct|rapide)/i,
-    /[eé]vitement/i,
-    /springen/i,
-    /direkt\s+zu[mr]?\s/i,
-    /zum\s+(haupt)?inhalt/i,
-    /\bsaltar\b/i,
-    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
-    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
-  ];
-
-  function hasSkipWording(name) {
-    return SKIP_NAME_PATTERNS.some((re) => re.test(name));
-  }
+  // Skip-link wording in the shipped locales, one list for every rule that
+  // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
+  const hasSkipWording = (name) => helpers.hasSkipLinkWording(name);
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('a[href]')
@@ -88949,25 +88957,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // Common skip-link wording in the shipped locales (en, fr, de, es, ja).
-  // Keep in step with skip-link (src/checks/manual/skip-link-manual.js).
-  const SKIP_NAME_PATTERNS = [
-    /skip/i,
-    /jump\s*to/i,
-    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
-    /acc[eè]s\s+(direct|rapide)/i,
-    /[eé]vitement/i,
-    /springen/i,
-    /direkt\s+zu[mr]?\s/i,
-    /zum\s+(haupt)?inhalt/i,
-    /\bsaltar\b/i,
-    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
-    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
-  ];
-
-  function hasSkipWording(name) {
-    return SKIP_NAME_PATTERNS.some((re) => re.test(name));
-  }
+  // Skip-link wording in the shipped locales, the same list core's skip-link
+  // rule uses (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
+  const hasSkipWording = (name) => helpers.hasSkipLinkWording(name);
 
   function linkName(el) {
     const al = norm(attr(el, 'aria-label'));
@@ -110555,6 +110547,28 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(document.documentElement);
   }
 
+  // Whether a link's text reads as a skip link ("Skip to content", "Aller au
+  // contenu", "Zum Inhalt"...), in the languages the engine ships and the
+  // phrasings French sites use (RGAA's "liens d'évitement"). One list for
+  // every rule that looks for a skip link, so they recognise the same ones.
+  const SKIP_LINK_WORDING = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+  function hasSkipLinkWording(text) {
+    const s = typeof text === 'string' ? text : '';
+    return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
   return {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
@@ -110577,6 +110591,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in

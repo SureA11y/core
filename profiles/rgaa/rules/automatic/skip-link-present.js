@@ -113,25 +113,9 @@ function runInPage(ctx) {
     }
   }
 
-  // Common skip-link wording in the shipped locales (en, fr, de, es, ja).
-  // Keep in step with skip-link (src/checks/manual/skip-link-manual.js).
-  const SKIP_NAME_PATTERNS = [
-    /skip/i,
-    /jump\s*to/i,
-    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
-    /acc[eè]s\s+(direct|rapide)/i,
-    /[eé]vitement/i,
-    /springen/i,
-    /direkt\s+zu[mr]?\s/i,
-    /zum\s+(haupt)?inhalt/i,
-    /\bsaltar\b/i,
-    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
-    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
-  ];
-
-  function hasSkipWording(name) {
-    return SKIP_NAME_PATTERNS.some((re) => re.test(name));
-  }
+  // Skip-link wording in the shipped locales, the same list core's skip-link
+  // rule uses (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
+  const hasSkipWording = (name) => helpers.hasSkipLinkWording(name);
 
   function linkName(el) {
     const al = norm(attr(el, 'aria-label'));

@@ -4852,6 +4852,28 @@ function createDomHelpers(opts) {
     return roots.includes(document.documentElement);
   }
 
+  // Whether a link's text reads as a skip link ("Skip to content", "Aller au
+  // contenu", "Zum Inhalt"...), in the languages the engine ships and the
+  // phrasings French sites use (RGAA's "liens d'évitement"). One list for
+  // every rule that looks for a skip link, so they recognise the same ones.
+  const SKIP_LINK_WORDING = [
+    /skip/i,
+    /jump\s*to/i,
+    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
+    /acc[eè]s\s+(direct|rapide)/i,
+    /[eé]vitement/i,
+    /springen/i,
+    /direkt\s+zu[mr]?\s/i,
+    /zum\s+(haupt)?inhalt/i,
+    /\bsaltar\b/i,
+    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
+    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
+  ];
+  function hasSkipLinkWording(text) {
+    const s = typeof text === 'string' ? text : '';
+    return SKIP_LINK_WORDING.some((re) => re.test(s));
+  }
+
   return {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
@@ -4874,6 +4896,7 @@ function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in

@@ -305,6 +305,13 @@ subtag (the registry only lists a three-letter subtag when no two-letter one exi
 so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
 
+### `hasSkipLinkWording(text)` → `boolean`
+Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
+"Zum Inhalt", "Saltar al contenido", "本文へ"...), in the languages the engine ships.
+One list for every rule that looks for a skip link, core's `skip-link` and RGAA's
+`skip-link-present`, so they recognise the same links; add a phrasing here, not in a
+rule.
+
 ### `reportOccurrence(node, partial)` → occurrence object
 **Use this to build every occurrence.** Attaches the element so the engine fills in
 `selector`, `html`, and `structuralPath` centrally — see `RULE_AUTHORING.md` §4.3/§9 for

@@ -115,24 +115,9 @@ function runInPage(ctx) {
 
   const geometrySupported = hasReliableGeometrySupport();
 
-  // Common skip-link wording in the shipped locales (en, fr, de, es, ja).
-  const SKIP_NAME_PATTERNS = [
-    /skip/i,
-    /jump\s*to/i,
-    /\b(aller|passer|acc[eé]der)\s+(directement\s+)?(au|aux|à\s+la|a\s+la|à\s+l['’]|a\s+l['’])\s*(contenu|navigation|menu|recherche|pied)/i,
-    /acc[eè]s\s+(direct|rapide)/i,
-    /[eé]vitement/i,
-    /springen/i,
-    /direkt\s+zu[mr]?\s/i,
-    /zum\s+(haupt)?inhalt/i,
-    /\bsaltar\b/i,
-    /\bir\s+(directamente\s+)?(al|a\s+la)\s+(contenido|navegaci[oó]n|men[uú]|b[uú]squeda)/i,
-    /スキップ|本文へ|本文に移動|コンテンツへ移動|メインコンテンツへ/
-  ];
-
-  function hasSkipWording(name) {
-    return SKIP_NAME_PATTERNS.some((re) => re.test(name));
-  }
+  // Skip-link wording in the shipped locales, one list for every rule that
+  // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
+  const hasSkipWording = (name) => helpers.hasSkipLinkWording(name);
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('a[href]')
