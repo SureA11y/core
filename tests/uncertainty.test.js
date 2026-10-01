@@ -16,7 +16,10 @@ const { runa11yCoreInPage, runDomRulesInPage } = require('../src/index.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const AUTOMATIC_DIR = path.join(__dirname, '..', 'src', 'checks', 'automatic');
+const { ruleTypeDirs } = require('../scripts/lib/rule-dirs');
+
+// The automatic rules of src/checks and of each profile.
+const AUTOMATIC_DIRS = ruleTypeDirs('automatic');
 
 // Automatic rules that report cantTell without saying why. This must only ever
 // go down: it is the remaining migration, not an allowance for new rules.
@@ -141,10 +144,12 @@ test('identical-iframes-same-purpose grades unresolved apart from differing', as
 });
 
 test('every automatic rule reporting cantTell says why', () => {
-  const files = fs
-    .readdirSync(AUTOMATIC_DIR)
-    .filter((f) => f.endsWith('.js'))
-    .map((f) => path.join(AUTOMATIC_DIR, f));
+  const files = AUTOMATIC_DIRS.flatMap((dir) =>
+    fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.js'))
+      .map((f) => path.join(dir, f))
+  );
 
   assert.ok(files.length > 50, 'sanity: the rule files were found');
 

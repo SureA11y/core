@@ -1,5 +1,8 @@
 {
-  "rulesDir": "src/checks",
+  "rulesDirs": [
+    "src/checks",
+    "profiles/rgaa/rules"
+  ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
     "totalRules": 202,
@@ -88,7 +91,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/area-alt-source.js",
+      "file": "profiles/rgaa/rules/automatic/area-alt-source.js",
       "ruleId": "area-alt-source",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -185,7 +188,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/aria-attribute-conformance.js",
+      "file": "profiles/rgaa/rules/automatic/aria-attribute-conformance.js",
       "ruleId": "aria-attribute-conformance",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -470,7 +473,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/aria-list-item-roles.js",
+      "file": "profiles/rgaa/rules/automatic/aria-list-item-roles.js",
       "ruleId": "aria-list-item-roles",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -738,7 +741,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/aria-role-conformance.js",
+      "file": "profiles/rgaa/rules/automatic/aria-role-conformance.js",
       "ruleId": "aria-role-conformance",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1162,7 +1165,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/canvas-decorative-aria-hidden.js",
+      "file": "profiles/rgaa/rules/automatic/canvas-decorative-aria-hidden.js",
       "ruleId": "canvas-decorative-aria-hidden",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1186,7 +1189,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/canvas-role-img.js",
+      "file": "profiles/rgaa/rules/automatic/canvas-role-img.js",
       "ruleId": "canvas-role-img",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1431,7 +1434,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/contrast-minimum-rgaa.js",
+      "file": "profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js",
       "ruleId": "contrast-minimum-rgaa",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1706,7 +1709,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/dir-attribute-valid.js",
+      "file": "profiles/rgaa/rules/automatic/dir-attribute-valid.js",
       "ruleId": "dir-attribute-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1778,7 +1781,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/doctype-position.js",
+      "file": "profiles/rgaa/rules/automatic/doctype-position.js",
       "ruleId": "doctype-position",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1801,7 +1804,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/doctype-present.js",
+      "file": "profiles/rgaa/rules/automatic/doctype-present.js",
       "ruleId": "doctype-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1824,7 +1827,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/doctype-valid.js",
+      "file": "profiles/rgaa/rules/automatic/doctype-valid.js",
       "ruleId": "doctype-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -1945,7 +1948,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/embed-image-role-img.js",
+      "file": "profiles/rgaa/rules/automatic/embed-image-role-img.js",
       "ruleId": "embed-image-role-img",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2018,7 +2021,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/field-label-in-name-sources.js",
+      "file": "profiles/rgaa/rules/automatic/field-label-in-name-sources.js",
       "ruleId": "field-label-in-name-sources",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2042,7 +2045,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/field-label-listed-source.js",
+      "file": "profiles/rgaa/rules/automatic/field-label-listed-source.js",
       "ruleId": "field-label-listed-source",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2066,7 +2069,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/figure-caption-structure.js",
+      "file": "profiles/rgaa/rules/automatic/figure-caption-structure.js",
       "ruleId": "figure-caption-structure",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2089,7 +2092,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/focus-indicator-contrast.js",
+      "file": "profiles/rgaa/rules/automatic/focus-indicator-contrast.js",
       "ruleId": "focus-indicator-contrast",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2114,7 +2117,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/form-button-label-in-name-sources.js",
+      "file": "profiles/rgaa/rules/automatic/form-button-label-in-name-sources.js",
       "ruleId": "form-button-label-in-name-sources",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2139,7 +2142,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/form-button-name-present.js",
+      "file": "profiles/rgaa/rules/automatic/form-button-name-present.js",
       "ruleId": "form-button-name-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2273,7 +2276,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/frame-title-attribute-present.js",
+      "file": "profiles/rgaa/rules/automatic/frame-title-attribute-present.js",
       "ruleId": "frame-title-attribute-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2296,7 +2299,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/frame-title-not-empty.js",
+      "file": "profiles/rgaa/rules/automatic/frame-title-not-empty.js",
       "ruleId": "frame-title-not-empty",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2319,7 +2322,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/heading-content-present.js",
+      "file": "profiles/rgaa/rules/automatic/heading-content-present.js",
       "ruleId": "heading-content-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2343,7 +2346,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/heading-role-level-present.js",
+      "file": "profiles/rgaa/rules/automatic/heading-role-level-present.js",
       "ruleId": "heading-role-level-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2367,7 +2370,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/html-elements-attributes-valid.js",
+      "file": "profiles/rgaa/rules/automatic/html-elements-attributes-valid.js",
       "ruleId": "html-elements-attributes-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2390,7 +2393,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/html-lang-code-valid.js",
+      "file": "profiles/rgaa/rules/automatic/html-lang-code-valid.js",
       "ruleId": "html-lang-code-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2413,7 +2416,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/html-nesting-valid.js",
+      "file": "profiles/rgaa/rules/automatic/html-nesting-valid.js",
       "ruleId": "html-nesting-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2734,7 +2737,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/img-decorative-no-alternative.js",
+      "file": "profiles/rgaa/rules/automatic/img-decorative-no-alternative.js",
       "ruleId": "img-decorative-no-alternative",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2806,7 +2809,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/label-for-target-valid.js",
+      "file": "profiles/rgaa/rules/automatic/label-for-target-valid.js",
       "ruleId": "label-for-target-valid",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2927,7 +2930,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/layout-table-no-data-markup.js",
+      "file": "profiles/rgaa/rules/automatic/layout-table-no-data-markup.js",
       "ruleId": "layout-table-no-data-markup",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -2950,7 +2953,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/link-content-label-present.js",
+      "file": "profiles/rgaa/rules/automatic/link-content-label-present.js",
       "ruleId": "link-content-label-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3026,7 +3029,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/link-label-in-name-sources.js",
+      "file": "profiles/rgaa/rules/automatic/link-label-in-name-sources.js",
       "ruleId": "link-label-in-name-sources",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3106,7 +3109,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/link-state-colors-review.js",
+      "file": "profiles/rgaa/rules/automatic/link-state-colors-review.js",
       "ruleId": "link-state-colors-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3230,7 +3233,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/listbox-option-groups-absent.js",
+      "file": "profiles/rgaa/rules/automatic/listbox-option-groups-absent.js",
       "ruleId": "listbox-option-groups-absent",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3302,7 +3305,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/main-element-structure.js",
+      "file": "profiles/rgaa/rules/automatic/main-element-structure.js",
       "ruleId": "main-element-structure",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3326,7 +3329,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/markup-validation-review.js",
+      "file": "profiles/rgaa/rules/automatic/markup-validation-review.js",
       "ruleId": "markup-validation-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3349,7 +3352,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/media-transcript-adjacent.js",
+      "file": "profiles/rgaa/rules/automatic/media-transcript-adjacent.js",
       "ruleId": "media-transcript-adjacent",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3423,7 +3426,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/meta-redirect-immediate.js",
+      "file": "profiles/rgaa/rules/automatic/meta-redirect-immediate.js",
       "ruleId": "meta-redirect-immediate",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3504,7 +3507,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/meta-refresh-no-url-timing.js",
+      "file": "profiles/rgaa/rules/automatic/meta-refresh-no-url-timing.js",
       "ruleId": "meta-refresh-no-url-timing",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3722,7 +3725,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/object-image-role-img.js",
+      "file": "profiles/rgaa/rules/automatic/object-image-role-img.js",
       "ruleId": "object-image-role-img",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3795,7 +3798,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/optgroup-label-not-empty.js",
+      "file": "profiles/rgaa/rules/automatic/optgroup-label-not-empty.js",
       "ruleId": "optgroup-label-not-empty",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3818,7 +3821,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/optgroup-label-present.js",
+      "file": "profiles/rgaa/rules/automatic/optgroup-label-present.js",
       "ruleId": "optgroup-label-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3891,7 +3894,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/orientation-content-parity.js",
+      "file": "profiles/rgaa/rules/automatic/orientation-content-parity.js",
       "ruleId": "orientation-content-parity",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3915,7 +3918,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/page-language-present.js",
+      "file": "profiles/rgaa/rules/automatic/page-language-present.js",
       "ruleId": "page-language-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -3987,7 +3990,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/page-title-unique.js",
+      "file": "profiles/rgaa/rules/automatic/page-title-unique.js",
       "ruleId": "page-title-unique",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4010,7 +4013,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/page-zones-reachable.js",
+      "file": "profiles/rgaa/rules/automatic/page-zones-reachable.js",
       "ruleId": "page-zones-reachable",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4035,7 +4038,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/presentational-attributes-absent.js",
+      "file": "profiles/rgaa/rules/automatic/presentational-attributes-absent.js",
       "ruleId": "presentational-attributes-absent",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4108,7 +4111,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/presentational-elements-absent.js",
+      "file": "profiles/rgaa/rules/automatic/presentational-elements-absent.js",
       "ruleId": "presentational-elements-absent",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4180,7 +4183,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/role-img-aria-name.js",
+      "file": "profiles/rgaa/rules/automatic/role-img-aria-name.js",
       "ruleId": "role-img-aria-name",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4353,7 +4356,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/skip-link-placement.js",
+      "file": "profiles/rgaa/rules/automatic/skip-link-placement.js",
       "ruleId": "skip-link-placement",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4377,7 +4380,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/automatic/skip-link-present.js",
+      "file": "profiles/rgaa/rules/automatic/skip-link-present.js",
       "ruleId": "skip-link-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4550,7 +4553,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/svg-hidden-no-alternative.js",
+      "file": "profiles/rgaa/rules/automatic/svg-hidden-no-alternative.js",
       "ruleId": "svg-hidden-no-alternative",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -4624,7 +4627,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/svg-role-img.js",
+      "file": "profiles/rgaa/rules/automatic/svg-role-img.js",
       "ruleId": "svg-role-img",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5048,7 +5051,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/title-placeholder-identical.js",
+      "file": "profiles/rgaa/rules/automatic/title-placeholder-identical.js",
       "ruleId": "title-placeholder-identical",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5222,7 +5225,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/video-captions-track-kind.js",
+      "file": "profiles/rgaa/rules/automatic/video-captions-track-kind.js",
       "ruleId": "video-captions-track-kind",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5294,7 +5297,7 @@
       }
     },
     {
-      "file": "src/checks/automatic/widget-label-in-name.js",
+      "file": "profiles/rgaa/rules/automatic/widget-label-in-name.js",
       "ruleId": "widget-label-in-name",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5562,7 +5565,7 @@
       }
     },
     {
-      "file": "src/checks/manual/complex-table-summary-manual.js",
+      "file": "profiles/rgaa/rules/manual/complex-table-summary-manual.js",
       "ruleId": "complex-table-summary",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5585,7 +5588,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/complex-table-summary-quality-manual.js",
+      "file": "profiles/rgaa/rules/manual/complex-table-summary-quality-manual.js",
       "ruleId": "complex-table-summary-quality",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5712,7 +5715,7 @@
       }
     },
     {
-      "file": "src/checks/manual/data-table-headers-review-manual.js",
+      "file": "profiles/rgaa/rules/manual/data-table-headers-review-manual.js",
       "ruleId": "data-table-headers-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5784,7 +5787,7 @@
       }
     },
     {
-      "file": "src/checks/manual/embedded-refresh-review-manual.js",
+      "file": "profiles/rgaa/rules/manual/embedded-refresh-review-manual.js",
       "ruleId": "embedded-refresh-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5855,7 +5858,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/fake-list-manual.js",
+      "file": "profiles/rgaa/rules/manual/fake-list-manual.js",
       "ruleId": "fake-list",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -5878,7 +5881,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/field-group-legend-manual.js",
+      "file": "profiles/rgaa/rules/manual/field-group-legend-manual.js",
       "ruleId": "field-group-legend",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -6155,7 +6158,7 @@
       }
     },
     {
-      "file": "src/checks/manual/image-alt-long-manual.js",
+      "file": "profiles/rgaa/rules/manual/image-alt-long-manual.js",
       "ruleId": "image-alt-long",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -6398,7 +6401,7 @@
       }
     },
     {
-      "file": "src/checks/manual/keyboard-only-event-handlers-manual.js",
+      "file": "profiles/rgaa/rules/manual/keyboard-only-event-handlers-manual.js",
       "ruleId": "keyboard-only-event-handlers",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -6661,7 +6664,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/letters-spaced-with-spaces-manual.js",
+      "file": "profiles/rgaa/rules/manual/letters-spaced-with-spaces-manual.js",
       "ruleId": "letters-spaced-with-spaces",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -6684,7 +6687,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/link-context-review-manual.js",
+      "file": "profiles/rgaa/rules/manual/link-context-review-manual.js",
       "ruleId": "link-context-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -6975,7 +6978,7 @@
       }
     },
     {
-      "file": "src/checks/manual/office-document-link-manual.js",
+      "file": "profiles/rgaa/rules/manual/office-document-link-manual.js",
       "ruleId": "office-document-link",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -7195,7 +7198,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/radio-group-present-manual.js",
+      "file": "profiles/rgaa/rules/manual/radio-group-present-manual.js",
       "ruleId": "radio-group-present",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -7266,7 +7269,7 @@
       "coverage": {}
     },
     {
-      "file": "src/checks/manual/scripted-components-review-manual.js",
+      "file": "profiles/rgaa/rules/manual/scripted-components-review-manual.js",
       "ruleId": "scripted-components-review",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -7522,7 +7525,7 @@
       }
     },
     {
-      "file": "src/checks/manual/th-scope-row-col-manual.js",
+      "file": "profiles/rgaa/rules/manual/th-scope-row-col-manual.js",
       "ruleId": "th-scope-row-col",
       "wcagScNormative": [],
       "wcagScAll": [],
@@ -7594,7 +7597,7 @@
       }
     },
     {
-      "file": "src/checks/manual/viewport-zoom-review-manual.js",
+      "file": "profiles/rgaa/rules/manual/viewport-zoom-review-manual.js",
       "ruleId": "viewport-zoom-review",
       "wcagScNormative": [],
       "wcagScAll": [],

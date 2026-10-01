@@ -11,8 +11,10 @@
  * its own parts: the criteria and tests (map.js, generated from data/), the
  * tests each rule checks (rule-map.js), the entries and per-criterion rollups
  * built from them (mappings.js), and opt-in rules for RGAA's own
- * requirements, tagged `rgaa`.
+ * requirements, tagged `rgaa` (rules/).
  */
+
+const path = require('path');
 
 const { RGAA_VERSIONS } = require('./map');
 const { rgaaMappingsFor, rgaaComposites, validateRgaaRuleTests } = require('./mappings');
@@ -42,4 +44,8 @@ const standard = {
   report: { noteKey: 'report_rgaaRollup_note', titleLang: 'fr' }
 };
 
-module.exports = { standard };
+// The profile's rules, in automatic/ and manual/ like src/checks/. The build
+// compiles them into the engine with core's.
+const rulesDir = path.join(__dirname, 'rules');
+
+module.exports = { standard, rulesDir };

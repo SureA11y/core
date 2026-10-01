@@ -34,9 +34,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { ruleDirs } = require('./lib/rule-dirs');
+
 function parseArgs(argv) {
   const args = {
-    checksDir: 'src/checks',
+    checksDirs: [], // every rule folder when empty (scripts/lib/rule-dirs.js)
     fixturesDir: 'tests/fixtures',
     testsDir: 'tests/engine-checks',
     out: 'tests/fixtures/INDEX.md',
@@ -45,7 +47,7 @@ function parseArgs(argv) {
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--checksDir') args.checksDir = argv[++i];
+    if (a === '--checksDir') args.checksDirs.push(argv[++i]);
     else if (a === '--fixturesDir') args.fixturesDir = argv[++i];
     else if (a === '--testsDir') args.testsDir = argv[++i];
     else if (a === '--out') args.out = argv[++i];
@@ -91,11 +93,11 @@ function safeRequire(file) {
 }
 
 /** Load the rule catalog: ruleId (prefixed) -> { title, type, file } */
-function loadRuleCatalog(repoRoot, checksDirArg) {
-  const checksDirAbs = path.isAbsolute(checksDirArg)
-    ? checksDirArg
-    : path.resolve(repoRoot, checksDirArg);
-  const files = listFilesRecursive(checksDirAbs, isRuleFileName);
+function loadRuleCatalog(repoRoot, checksDirArgs) {
+  const checksDirsAbs = checksDirArgs.length
+    ? checksDirArgs.map((dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir)))
+    : ruleDirs();
+  const files = checksDirsAbs.flatMap((dir) => listFilesRecursive(dir, isRuleFileName));
 
   const rules = new Map(); // ruleId -> {title, type, file}
   for (const file of files) {
@@ -316,7 +318,7 @@ function main() {
   const args = parseArgs(process.argv);
   const repoRoot = findRepoRoot(process.cwd());
 
-  const rules = loadRuleCatalog(repoRoot, args.checksDir);
+  const rules = loadRuleCatalog(repoRoot, args.checksDirs);
   const testInfo = scanTestFiles(repoRoot, args.testsDir);
   const fixturesDirAbs = path.isAbsolute(args.fixturesDir)
     ? args.fixturesDir

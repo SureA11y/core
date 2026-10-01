@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Build the generated core (src/core.js) from rule modules under src/checks.
+ * Build the generated core (src/core.js) from rule modules under src/checks
+ * and under each profile's rules folder (scripts/lib/rule-dirs.js).
  *
  * IMPORTANT DESIGN GOAL:
  * - The exported `runa11yCoreInPage` MUST be self-contained (no free vars),
@@ -70,6 +71,7 @@ const {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
+const { ruleDirs } = require('./lib/rule-dirs');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -118,7 +120,7 @@ for (const s of STANDARDS_DATA) {
 
 const ROOT_DIR = path.join(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
-const RULES_DIR = path.join(SRC_DIR, 'checks');
+const RULES_DIRS = ruleDirs();
 const OUTPUT_FILE = path.join(SRC_DIR, 'core.js');
 
 const I18N_DIR = path.join(SRC_DIR, 'i18n');
@@ -221,10 +223,10 @@ function loadAllTranslations() {
 function isRuleFileName(fullPath) {
   const base = path.basename(fullPath);
 
-  // Exclude ONLY the top-level checks index (src/checks/index.*),
+  // Exclude ONLY a rules folder's top-level index (src/checks/index.*),
   // but allow nested index.js (e.g. src/checks/manual-review/index.js)
   const isTopLevelIndex =
-    path.dirname(fullPath) === RULES_DIR &&
+    RULES_DIRS.includes(path.dirname(fullPath)) &&
     (base === 'index.js' || base === 'index.cjs' || base === 'index.mjs');
 
   if (isTopLevelIndex) return false;
@@ -297,7 +299,7 @@ function assertString(name, value) {
 }
 
 function loadRuleModules() {
-  const files = listRuleFilesRecursive(RULES_DIR);
+  const files = RULES_DIRS.flatMap((dir) => listRuleFilesRecursive(dir));
 
   const mods = [];
   for (const file of files) {
@@ -445,8 +447,9 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
   // Node/runtime implementations (require at runtime in Node, used by checks and server-side use).
   // Normalize to a single shape: { run, applicability }
   const implEntries = mods.map((m) => {
-    const rel = './' + path.relative(SRC_DIR, m.file).replace(/\\/g, '/');
-    return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(rel)}).runInPage, applicability: require(${jsStringify(rel)}).applicability || null }`;
+    const rel = path.relative(SRC_DIR, m.file).replace(/\\/g, '/');
+    const spec = rel.startsWith('.') ? rel : './' + rel;
+    return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(spec)}).runInPage, applicability: require(${jsStringify(spec)}).applicability || null }`;
   });
 
   // In-page implementations (inline function sources; used ONLY by runa11yCoreInPage).

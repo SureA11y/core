@@ -233,15 +233,15 @@ test(`${RULE_ID}: with no main, no heading and no anchor, both ask`, () => {
 // runInPage cannot import another rule's code, so the wording list is a copy
 // of skip-link's; the two must stay the same.
 test(`${RULE_ID}: recognises skip links with the same wording list as skip-link`, () => {
-  const src = (file) => fs.readFileSync(path.join(__dirname, '../../../src/checks', file), 'utf8');
+  const src = (file) => fs.readFileSync(path.join(__dirname, '../../..', file), 'utf8');
   const patterns = (text) => {
     const m = text.match(/const SKIP_NAME_PATTERNS = \[([\s\S]*?)\n {2}\];/);
     assert.ok(m, 'SKIP_NAME_PATTERNS not found');
     return m[1].trim();
   };
   assert.equal(
-    patterns(src('automatic/skip-link-present.js')),
-    patterns(src('manual/skip-link-manual.js'))
+    patterns(src('profiles/rgaa/rules/automatic/skip-link-present.js')),
+    patterns(src('src/checks/manual/skip-link-manual.js'))
   );
 });
 

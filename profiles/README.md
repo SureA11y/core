@@ -10,8 +10,10 @@ A standard with verdicts of its own, as RGAA has, is a **profile**: one folder h
 profiles/
   index.js            # The built-in profiles, in registry order
   <name>/
-    index.js          # Exports { standard }: the registry entry (see ENTRY SHAPE in src/coverage/standards.js)
+    index.js          # Exports { standard, rulesDir }: the registry entry (see ENTRY SHAPE in
+                      # src/coverage/standards.js) and the folder of the profile's own rules
     *.js              # The standard's tables and the functions the entry uses
+    rules/            # automatic/ and manual/, like src/checks/: rules for the standard's own requirements
     data/             # The published source the tables are generated from, with its provenance
     scripts/          # Generators for the tables and the docs, each with --check
     tests/            # The profile's own tests; scripts/run-tests.js runs them with the rest
@@ -23,16 +25,19 @@ profiles/
 - `rule-map.js`: the RGAA tests each rule checks, with the reason for each.
 - `mappings.js`: the entries and the per-criterion rollups built from those two tables, and the checks the build runs on them.
 - `index.js`: the registry entry, with the `rgaa-4.1.2` profile and the `rgaa` rule tag.
+- `rules/`: the opt-in rules for requirements RGAA makes and WCAG does not, all tagged `rgaa` (see [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rules-for-another-standards-own-requirements)).
 - `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](../docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
 
 `src/rgaa.js` stays the public entry point (`@surea11y/core/rgaa`) and reads its tables from here.
 
+The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators and generated docs read them too: `scripts/lib/rule-dirs.js` lists every rules folder.
+
 ## Adding a profile
 
-1. Create `profiles/<name>/` with an `index.js` that exports `{ standard }`, the registry entry. The comment at the top of `src/coverage/standards.js` describes every field, and [`docs/WCAG_CONFORMANCE.md`](../docs/WCAG_CONFORMANCE.md#adding-another-standard) the steps.
+1. Create `profiles/<name>/` with an `index.js` that exports `{ standard }`, the registry entry, and `rulesDir` if it has rules of its own. The comment at the top of `src/coverage/standards.js` describes every field, and [`docs/WCAG_CONFORMANCE.md`](../docs/WCAG_CONFORMANCE.md#adding-another-standard) the steps.
 2. Add it to `profiles/index.js`.
 3. Put its tests in `profiles/<name>/tests/`.
 
 ## Work in progress
 
-The RGAA rules (tagged `rgaa`), their tests and fixtures, and RGAA's dictionary entries still live with the rest of the engine, under `src/checks/`, `tests/` and `src/i18n/`. They move here next, along with a check that a profile uses only what the engine publishes for profiles.
+The tests and fixtures of RGAA's rules, and RGAA's dictionary entries, still live with the rest of the engine, under `tests/` and `src/i18n/`. They move here next, along with a check that a profile uses only what the engine publishes for profiles.

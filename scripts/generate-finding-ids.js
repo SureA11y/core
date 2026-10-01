@@ -21,16 +21,15 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const { runDomRulesInPage, getChecksCatalog } = require('../src/index.js');
+const { ruleDirs } = require('./lib/rule-dirs');
 
 const ROOT = path.join(__dirname, '..');
 const OUT_FILE = path.join(ROOT, 'scripts', 'data', 'finding-ids.json');
-const CHECKS_DIR = path.join(ROOT, 'src', 'checks');
 
 function ruleSourceFiles() {
-  return fs
-    .readdirSync(CHECKS_DIR)
-    .flatMap((entry) => {
-      const full = path.join(CHECKS_DIR, entry);
+  return ruleDirs()
+    .flatMap((dir) => fs.readdirSync(dir).map((entry) => path.join(dir, entry)))
+    .flatMap((full) => {
       if (!fs.statSync(full).isDirectory()) return [];
       return fs
         .readdirSync(full)

@@ -17,6 +17,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
 const { runOnlyForRule } = require('./rule-run-selection');
+const { ruleDirs } = require('./rule-dirs');
 
 const OUTCOMES = ['fail', 'cantTell', 'pass', 'notApplicable'];
 
@@ -74,10 +75,10 @@ function scanTestFiles(repoRoot, testsDir) {
 }
 
 /** Type comes from each rule's own meta: not every rule file sits under a directory named for its type. */
-function listRuleModules(repoRoot, checksDir, types) {
-  const dir = path.resolve(repoRoot, checksDir);
+function listRuleModules(repoRoot, checksDirs, types) {
   const out = [];
-  for (const file of listFilesRecursive(dir, (n) => n.endsWith('.js') && !n.endsWith('.test.js'))) {
+  const isRuleFile = (n) => n.endsWith('.js') && !n.endsWith('.test.js');
+  for (const file of checksDirs.flatMap((dir) => listFilesRecursive(dir, isRuleFile))) {
     let mod;
     try {
       mod = require(file);
@@ -587,7 +588,7 @@ function settleCase(c, engine, type) {
 /**
  * @param {object} [opts]
  * @param {string} [opts.repoRoot]
- * @param {string[]} [opts.types] which of src/checks/<type> to include
+ * @param {string[]} [opts.types] which rule types (automatic, manual) to include
  * @returns {{rules: object[], stats: object}}
  */
 function collect(opts = {}) {
@@ -602,7 +603,7 @@ function collect(opts = {}) {
   let replayed = 0;
   let replayErrors = 0;
 
-  for (const mod of listRuleModules(repoRoot, 'src/checks', types)) {
+  for (const mod of listRuleModules(repoRoot, ruleDirs(), types)) {
     const meta = mod.meta;
     const source = fs.readFileSync(path.join(repoRoot, mod.file), 'utf8');
     const found = tests.get(mod.id) || {};

@@ -19,6 +19,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { ruleDirs } = require('./lib/rule-dirs');
 
 function parseArgs(argv) {
   const out = {};
@@ -175,7 +176,7 @@ function main() {
   const core = require(path.join(repoRoot, 'src/core.js'));
   const catalog = core.getChecksCatalog();
   const composites = core.getRulesCatalog();
-  const prose = readRuleProse(path.join(repoRoot, 'src/checks'));
+  const prose = new Map(ruleDirs().flatMap((dir) => [...readRuleProse(dir)]));
 
   const rows = catalog
     .map((r) => ({
