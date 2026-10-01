@@ -18,16 +18,20 @@ const { PROFILE_EXPORTS } = require('../scripts/lib/profile-contract');
 
 const ROOT = path.join(__dirname, '..');
 
-// A root with what the script reads: profiles/index.js and core's locales.
+// A root with what the script reads: a profiles/index.js and core's locales.
 function makeRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-profile-new-'));
   fs.mkdirSync(path.join(root, 'profiles'));
-  fs.copyFileSync(path.join(ROOT, 'profiles', 'index.js'), path.join(root, 'profiles', 'index.js'));
+  // A list in the real file's form, holding one stand-in profile, whatever
+  // profiles the repository has.
+  fs.writeFileSync(
+    path.join(root, 'profiles', 'index.js'),
+    "'use strict';\n\nmodule.exports = [require('./rgaa')];\n"
+  );
   fs.mkdirSync(path.join(root, 'src', 'i18n'), { recursive: true });
   for (const locale of ['en', 'fr']) {
     fs.writeFileSync(path.join(root, 'src', 'i18n', `${locale}.json`), '{}\n');
   }
-  // The real list requires ./rgaa; give the copy a stand-in.
   fs.mkdirSync(path.join(root, 'profiles', 'rgaa'));
   fs.writeFileSync(
     path.join(root, 'profiles', 'rgaa', 'index.js'),
