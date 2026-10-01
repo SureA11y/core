@@ -609,6 +609,10 @@ src/
   catalogs/                # Composite rule catalogs
   explain/                 # Occurrence grouping, internal
 
+profiles/
+  index.js                 # The profiles built into the engine
+  rgaa/                    # RGAA 4.1.2: its criteria, rule mapping, rollups, data, scripts and tests
+
 scripts/
   build-core.js            # Generates src/core.js
   build-browser.js         # Generates the browser bundle and its locale side files

@@ -11,8 +11,11 @@
  * those criteria under their own numbers, and a caller auditing against one of
  * them wants its numbers on each result. This registry is the one place that
  * knows which standards exist; the build, the runner's `engineOptions.mappings`
- * and the reporters all read it, so adding a standard is a table of its own
- * plus one entry here.
+ * and the reporters all read it. A standard that renumbers WCAG (EN 301 549)
+ * is a table of its own plus one entry here. A standard with verdicts of its
+ * own (RGAA) is a profile under profiles/, which brings its entry, tables,
+ * rules and tests with it; the registry appends the entries of
+ * profiles/index.js after its own.
  *
  * ENTRY SHAPE
  * -----------
@@ -63,8 +66,7 @@
  */
 
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
-const { RGAA_VERSIONS } = require('./rgaa-map');
-const { rgaaMappingsFor, rgaaComposites, validateRgaaRuleTests } = require('./rgaa-mappings');
+const PROFILES = require('../../profiles');
 
 const WCAG21_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const WCAG22_AA_TAGS = WCAG21_AA_TAGS.concat(['wcag22a', 'wcag22aa']);
@@ -82,28 +84,9 @@ const NORMATIVE_STANDARDS = [
     },
     mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc)
   },
-  {
-    key: 'rgaa',
-    standard: 'RGAA',
-    versions: RGAA_VERSIONS.map((v) => v.version),
-    // RGAA 4.1.2 is built on WCAG 2.1 A and AA; its profile also runs the
-    // opt-in rules for RGAA's own requirements.
-    profiles: {
-      'rgaa-4.1.2': {
-        version: '4.1.2',
-        tags: WCAG21_AA_TAGS.concat(['rgaa']),
-        mappedRules: true
-      }
-    },
-    ruleTag: 'rgaa',
-    ruleMapped: true,
-    // Mapped rule by rule (src/coverage/rgaa-rule-map.js): RGAA's criteria are
-    // its own, related to WCAG many to many.
-    mappingsFor: rgaaMappingsFor,
-    composites: rgaaComposites,
-    validate: validateRgaaRuleTests,
-    report: { noteKey: 'report_rgaaRollup_note', titleLang: 'fr' }
-  }
+  // The standards that bring their own verdicts, each from its profile
+  // (profiles/).
+  ...PROFILES.map((p) => p.standard)
 ];
 
 // The entries every registered standard gives a rule or composite, in

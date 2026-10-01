@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
-const { RGAA_RULE_TESTS } = require('../../../src/coverage/rgaa-rule-map.js');
+const { RGAA_RULE_TESTS } = require('../../../profiles/rgaa/rule-map.js');
 
 const RULE_ID = 'embedded-refresh-review';
 const RUN = { runOnly: { includeRuleIds: [RULE_ID] } };

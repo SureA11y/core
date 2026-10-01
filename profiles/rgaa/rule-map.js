@@ -29,12 +29,12 @@
  * The build rejects an unknown rule id or test id, a field other than tests,
  * note and outsideCorrespondence, and a rule mapped to WCAG criteria none of
  * which RGAA relates to the test's criterion, unless outsideCorrespondence
- * says why (src/coverage/rgaa-mappings.js). A rule with no WCAG mapping may
+ * says why (profiles/rgaa/mappings.js). A rule with no WCAG mapping may
  * map to any test: RGAA checks some things WCAG leaves to best practice, such
  * as heading hierarchy and landmarks.
  *
  * REVIEW STATUS: drafted from the RGAA 4.1.2 test wording and methodology
- * (scripts/data/rgaa/), then checked row by row against how other RGAA tools
+ * (profiles/rgaa/data/), then checked row by row against how other RGAA tools
  * map and flag the same checks. Not yet reviewed by an RGAA auditor.
  */
 

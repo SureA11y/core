@@ -4,11 +4,11 @@
 
 /**
  * RGAA entries for a rule or composite, shaped as `normativeMappings`
- * entries, for the registry in src/coverage/standards.js.
+ * entries, for the profile's descriptor (profiles/rgaa/index.js).
  */
 
-const { RGAA_VERSIONS, RGAA_CRITERIA, RGAA_TESTS } = require('./rgaa-map');
-const { RGAA_RULE_TESTS } = require('./rgaa-rule-map');
+const { RGAA_VERSIONS, RGAA_CRITERIA, RGAA_TESTS } = require('./map');
+const { RGAA_RULE_TESTS } = require('./rule-map');
 
 function compareIds(a, b) {
   const pa = a.split('.').map(Number);
@@ -98,7 +98,11 @@ function rgaaComposites() {
         .sort();
       if (!ruleIds.length) continue;
       const tests = [
-        ...new Set(ruleIds.flatMap((ruleId) => testsOfRule(version, ruleId)).filter((t) => row.tests.includes(t)))
+        ...new Set(
+          ruleIds
+            .flatMap((ruleId) => testsOfRule(version, ruleId))
+            .filter((t) => row.tests.includes(t))
+        )
       ].sort(compareIds);
       out.push({
         id: `rgaa-${version}-${criterion}`,
@@ -149,7 +153,9 @@ function validateRgaaRuleTests(rules) {
       }
       for (const test of Object.keys(exceptionsOf(version, ruleId))) {
         if (!row.tests.includes(test)) {
-          problems.push(`${version} ${ruleId}: outsideCorrespondence names ${test}, which is not linked`);
+          problems.push(
+            `${version} ${ruleId}: outsideCorrespondence names ${test}, which is not linked`
+          );
         }
       }
       if (new Set(row.tests).size !== row.tests.length) {
@@ -161,7 +167,8 @@ function validateRgaaRuleTests(rules) {
           continue;
         }
         const outside = exceptionsOf(version, ruleId);
-        const related = !(rule.wcagSc || []).length || entry(version, test, rule.wcagSc).wcagSc.length;
+        const related =
+          !(rule.wcagSc || []).length || entry(version, test, rule.wcagSc).wcagSc.length;
         const reason = outside[test];
         if (!related && !(typeof reason === 'string' && reason.trim())) {
           const crit = RGAA_TESTS[version][test].criterion;

@@ -302,8 +302,8 @@ test('contract: rule.wcagSc is derived from WCAG normativeMappings (exact match)
 });
 
 test('RGAA rollups group exactly the rules linked to their criterion, and carry the rgaa tag', () => {
-  const { RGAA_RULE_TESTS } = require('../src/coverage/rgaa-rule-map');
-  const { RGAA_CRITERIA } = require('../src/coverage/rgaa-map');
+  const { RGAA_RULE_TESTS } = require('../profiles/rgaa/rule-map');
+  const { RGAA_CRITERIA } = require('../profiles/rgaa/map');
   const own = core.COMPOSITE_RULES.filter((c) => c.meta && c.meta.standard === 'RGAA');
   assert.ok(own.length > 0);
   for (const c of own) {

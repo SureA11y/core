@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * src/coverage/rgaa-mappings.js: how a rule's RGAA tests (the hand-written
- * table in src/coverage/rgaa-rule-map.js) become normativeMappings entries,
+ * profiles/rgaa/mappings.js: how a rule's RGAA tests (the hand-written
+ * table in profiles/rgaa/rule-map.js) become normativeMappings entries,
  * for rules and composites, and what the build rejects. The table rows used
  * here are added for the test and removed after, so these pin the mechanism
  * whatever the real table says.
@@ -11,10 +11,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { RGAA_RULE_TESTS } = require('../../src/coverage/rgaa-rule-map');
-const { rgaaMappingsFor, validateRgaaRuleTests } = require('../../src/coverage/rgaa-mappings');
-const { RGAA_TESTS } = require('../../src/coverage/rgaa-map');
-const core = require('../../src/core.js');
+const { RGAA_RULE_TESTS } = require('../rule-map');
+const { rgaaMappingsFor, validateRgaaRuleTests } = require('../mappings');
+const { RGAA_TESTS } = require('../map');
+const core = require('../../../src/core.js');
 
 const V = '4.1.2';
 
@@ -49,7 +49,7 @@ test('a rule gets one entry per mapped test, in RGAA order, with its criterion',
   });
 });
 
-test('an entry belongs under the rule\'s criteria that RGAA relates to the test', () => {
+test("an entry belongs under the rule's criteria that RGAA relates to the test", () => {
   // 11.1 relates to 1.3.1, 2.4.6, 3.3.2 and 4.1.2; the rule maps to two of them.
   withRows({ 'probe-label': { tests: ['11.1.1'], note: 'n' } }, () => {
     const [e] = rgaaMappingsFor({ id: 'probe-label', wcagSc: ['4.1.2', '3.3.2', '2.5.3'] });
@@ -57,7 +57,7 @@ test('an entry belongs under the rule\'s criteria that RGAA relates to the test'
   });
 });
 
-test('a rule with no WCAG mapping gets the whole criterion\'s WCAG list', () => {
+test("a rule with no WCAG mapping gets the whole criterion's WCAG list", () => {
   withRows({ 'probe-headings': { tests: ['9.1.2'], note: 'n' } }, () => {
     const [e] = rgaaMappingsFor({ id: 'probe-headings', wcagSc: [] });
     assert.equal(e.criterion, '9.1');
@@ -69,7 +69,7 @@ test('an unmapped rule gets nothing', () => {
   assert.deepEqual(rgaaMappingsFor({ id: 'probe-nothing', wcagSc: ['1.1.1'] }), []);
 });
 
-test('a composite carries its rules\' tests that RGAA relates to its own criterion', () => {
+test("a composite carries its rules' tests that RGAA relates to its own criterion", () => {
   withRows(
     {
       'probe-a': { tests: ['1.1.1', '11.1.1'], note: 'n' },
@@ -130,7 +130,7 @@ test('validate: unknown rule, unknown test, duplicate and missing note are probl
   });
 });
 
-test('validate: a test whose criterion RGAA relates to none of the rule\'s WCAG criteria is a problem', () => {
+test("validate: a test whose criterion RGAA relates to none of the rule's WCAG criteria is a problem", () => {
   withRows({ 'probe-img': { tests: ['3.2.1'], note: 'contrast is not alt text' } }, () => {
     const problems = validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'));
     assert.equal(problems.length, 1);
@@ -145,13 +145,13 @@ test('validate: a row has only tests, note and outsideCorrespondence', () => {
   });
 });
 
-test('the real table is sound against the engine\'s rules', () => {
+test("the real table is sound against the engine's rules", () => {
   const rules = core.getChecksCatalog().map((r) => ({ ruleId: r.ruleId, wcagSc: r.wcagSc }));
   assert.deepEqual(validateRgaaRuleTests(rules), []);
 });
 
 test('the image button, the title-only field and the labelled decorative image name their RGAA tests', () => {
-  const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
+  const { runa11yCoreOnHtml } = require('../../../tests/helpers/runDomRulesOnHtml.js');
   const html =
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
     '<input type="image" src="s.png" alt="" aria-label="Search">' +
@@ -180,7 +180,10 @@ test('validate: a test outside the correspondence needs a reason, and a reason n
       validateRgaaRuleTests(RULES).filter((p) => p.includes('probe-'))
     );
   // 3.2.1 (contrast) is related to other WCAG criteria than the rule's 1.1.1.
-  assert.match(problems({ tests: ['3.2.1'] })[0], /link it only with a reason in outsideCorrespondence/);
+  assert.match(
+    problems({ tests: ['3.2.1'] })[0],
+    /link it only with a reason in outsideCorrespondence/
+  );
   assert.deepEqual(problems({ tests: ['3.2.1'], outsideCorrespondence: { '3.2.1': 'why' } }), []);
   assert.ok(
     problems({ tests: ['3.2.1'], outsideCorrespondence: { '3.2.1': '  ' } }).some((p) =>
@@ -199,14 +202,18 @@ test('validate: a test outside the correspondence needs a reason, and a reason n
   );
 });
 
-test('an entry linked outside the correspondence goes under the rule\'s own criteria, for rules and rollups', () => {
+test("an entry linked outside the correspondence goes under the rule's own criteria, for rules and rollups", () => {
   withRows(
     { 'probe-map': { tests: ['1.1.4'], note: 'n', outsideCorrespondence: { '1.1.4': 'why' } } },
     () => {
       const [own] = rgaaMappingsFor({ id: 'probe-map', wcagSc: ['2.1.1'] });
       assert.equal(own.requirement, '1.1.4');
       assert.deepEqual(own.wcagSc, ['2.1.1']);
-      const rolled = rgaaMappingsFor({ id: 'wcag-2.1.1-x', wcagSc: ['2.1.1'], checksIds: ['probe-map'] });
+      const rolled = rgaaMappingsFor({
+        id: 'wcag-2.1.1-x',
+        wcagSc: ['2.1.1'],
+        checksIds: ['probe-map']
+      });
       assert.deepEqual(
         rolled.map((e) => [e.requirement, e.wcagSc]),
         [['1.1.4', ['2.1.1']]]

@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Direct tests for src/coverage/rgaa-map.js and its public entry point.
+ * Direct tests for profiles/rgaa/map.js and its public entry point.
  *
- * The table is generated from DINUM's own criteres.json (scripts/data/rgaa/),
+ * The table is generated from DINUM's own criteres.json (profiles/rgaa/data/),
  * so these check two things: that the committed module is exactly what the
  * generator makes of that file, and that the result says what RGAA 4.1.2
  * says -- 13 themes, 106 criteria, 258 tests, every criterion related to
@@ -21,10 +21,10 @@ const {
   RGAA_CRITERIA,
   RGAA_TESTS,
   rgaaCriteriaForSc
-} = require('../../src/coverage/rgaa-map');
-const { buildTables, renderModule, formatted, plainText } = require('../../scripts/generate-rgaa-map');
-const { FACETS } = require('../../src/coverage/wcag-facets');
-const { introducedInVersion, removedInVersion } = require('../../src/coverage/wcag-version-map');
+} = require('../map');
+const { buildTables, renderModule, formatted, plainText } = require('../scripts/generate-map');
+const { FACETS } = require('../../../src/coverage/wcag-facets');
+const { introducedInVersion, removedInVersion } = require('../../../src/coverage/wcag-version-map');
 
 const V = '4.1.2';
 const VERSION_ORDER = ['2.0', '2.1', '2.2'];
@@ -44,16 +44,15 @@ function wcagAAFor(wcagVersion) {
 
 test('the committed module is exactly what the generator makes of the source data', async () => {
   const expected = await formatted(renderModule(buildTables()));
-  const actual = fs.readFileSync(
-    path.join(__dirname, '..', '..', 'src', 'coverage', 'rgaa-map.js'),
-    'utf8'
-  );
-  assert.equal(actual, expected, 'run node scripts/generate-rgaa-map.js');
+  const actual = fs.readFileSync(path.join(__dirname, '..', 'map.js'), 'utf8');
+  assert.equal(actual, expected, 'run npm run rgaa-map');
 });
 
 test('plainText: glossary links keep their words, code spans lose their backticks', () => {
   assert.equal(
-    plainText('Chaque [image porteuse d’information](#image-porteuse-d-information) (balise `<img>`) ?'),
+    plainText(
+      'Chaque [image porteuse d’information](#image-porteuse-d-information) (balise `<img>`) ?'
+    ),
     'Chaque image porteuse d’information (balise <img>) ?'
   );
 });
@@ -121,7 +120,7 @@ test('RGAA 4.1.2 relates to every WCAG 2.1 A and AA criterion except 1.2.4 Capti
   );
 });
 
-test('the wording is RGAA\'s own', () => {
+test("the wording is RGAA's own", () => {
   assert.equal(
     RGAA_CRITERIA[V]['1.1'].title,
     'Chaque image porteuse d’information a-t-elle une alternative textuelle ?'
@@ -134,8 +133,14 @@ test('the wording is RGAA\'s own', () => {
 test('rgaaCriteriaForSc: every criterion RGAA relates to the WCAG criterion', () => {
   const found = rgaaCriteriaForSc('1.1.1');
   assert.ok(found.length > 1, 'one WCAG criterion spans several RGAA criteria');
-  assert.ok(found.every((c) => c.version === V && RGAA_CRITERIA[V][c.criterion].wcagSc.includes('1.1.1')));
-  assert.deepEqual(found[0], { version: V, criterion: '1.1', title: RGAA_CRITERIA[V]['1.1'].title });
+  assert.ok(
+    found.every((c) => c.version === V && RGAA_CRITERIA[V][c.criterion].wcagSc.includes('1.1.1'))
+  );
+  assert.deepEqual(found[0], {
+    version: V,
+    criterion: '1.1',
+    title: RGAA_CRITERIA[V]['1.1'].title
+  });
   assert.deepEqual(rgaaCriteriaForSc(' 1.1.1 '), found);
   assert.deepEqual(rgaaCriteriaForSc('1.2.4'), []);
   assert.deepEqual(rgaaCriteriaForSc('1.4.6'), []);
@@ -145,7 +150,7 @@ test('rgaaCriteriaForSc: every criterion RGAA relates to the WCAG criterion', ()
 // --- the public entry point ----------------------------------------------------
 
 test('@surea11y/core/rgaa exposes the tables, frozen', () => {
-  const pub = require('../../src/rgaa.js');
+  const pub = require('../../../src/rgaa.js');
   assert.deepEqual(Object.keys(pub).sort(), [
     'RGAA_CRITERIA',
     'RGAA_TESTS',

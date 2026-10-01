@@ -10,9 +10,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const core = require('../src/core.js');
-const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
-const { renderHtmlReport } = require('../src/report.js');
+const core = require('../../../src/core.js');
+const { runa11yCoreOnHtml } = require('../../../tests/helpers/runDomRulesOnHtml.js');
+const { renderHtmlReport } = require('../../../src/report.js');
 
 const PAGE =
   '<html lang="en"><head><title>Report</title></head><body><main>' +
@@ -112,7 +112,7 @@ test('the HTML report shows RGAA rollups in their own section, only when there a
 // registered standard gets a section of its own and never lands in the WCAG
 // table. The fake standard here borrows the RGAA rollups and renames them.
 test("the HTML report gives any registered standard's rollups their own section", () => {
-  const { NORMATIVE_STANDARDS } = require('../src/coverage/standards.js');
+  const { NORMATIVE_STANDARDS } = require('../../../src/coverage/standards.js');
   const result = scan({ profile: 'rgaa-4.1.2' });
   for (const r of rgaaRollups(result)) {
     r.meta.standard = 'ACME';

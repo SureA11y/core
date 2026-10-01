@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { RGAA_RULE_TESTS } = require('../../../src/coverage/rgaa-rule-map.js');
+const { RGAA_RULE_TESTS } = require('../../../profiles/rgaa/rule-map.js');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 

@@ -1,11 +1,11 @@
 'use strict';
 
-// Collects tests/**/*.test.js manually and passes explicit file paths to
+// Collects tests/**/*.test.js and profiles/*/tests/**/*.test.js manually and passes explicit file paths to
 // `node --test`, instead of a glob string -- Node's test runner only gained
 // native CLI glob support in newer versions, so a glob string that works
 // locally can fail outright on an older (but still supported) Node version.
 
-const { readdirSync, statSync } = require('fs');
+const { existsSync, readdirSync, statSync } = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -22,11 +22,19 @@ function collectTestFiles(dir, out) {
   return out;
 }
 
-const testsDir = path.join(__dirname, '..', 'tests');
+const rootDir = path.join(__dirname, '..');
+const testsDir = path.join(rootDir, 'tests');
 const files = collectTestFiles(testsDir, []);
 
+// Each profile keeps its tests next to it, in profiles/<name>/tests.
+const profilesDir = path.join(rootDir, 'profiles');
+for (const name of readdirSync(profilesDir).sort()) {
+  const dir = path.join(profilesDir, name, 'tests');
+  if (existsSync(dir)) collectTestFiles(dir, files);
+}
+
 if (files.length === 0) {
-  console.error(`No *.test.js files found under ${testsDir}`);
+  console.error(`No *.test.js files found under ${testsDir} or ${profilesDir}`);
   process.exit(1);
 }
 
