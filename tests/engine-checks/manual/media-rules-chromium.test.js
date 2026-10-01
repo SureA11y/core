@@ -45,15 +45,10 @@ const skip = !chromium
 
 const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
 const FIXTURES = path.join(__dirname, '../../fixtures');
-// media-transcript-adjacent is the RGAA profile's, and so is its scenario page.
-const RGAA_FIXTURES = path.join(__dirname, '../../../profiles/rgaa/tests/fixtures');
 
-const MEDIA_RULES = [
-  'no-autoplay-audio',
-  'media-alternative-transcript-evidence',
-  'video-caption',
-  'media-transcript-adjacent'
-];
+// Core's media rules. The RGAA profile's media-transcript-adjacent has a test
+// of its own in the browser, beside its scenario page.
+const MEDIA_RULES = ['no-autoplay-audio', 'media-alternative-transcript-evidence', 'video-caption'];
 
 function page(body) {
   return `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
@@ -111,7 +106,6 @@ test('media rules in Chromium', { skip }, async (t) => {
       outcome: 'cantTell',
       occurrences: 1
     });
-    assert.deepEqual(got['media-transcript-adjacent'], { outcome: 'cantTell', occurrences: 1 });
     assert.deepEqual(got, jsdomSummary(html));
   });
 
@@ -121,7 +115,6 @@ test('media rules in Chromium', { skip }, async (t) => {
     assert.deepEqual(got['no-autoplay-audio'], { outcome: 'cantTell', occurrences: 1 });
     // The transcript question follows the author's hiding, as before.
     assert.equal(got['media-alternative-transcript-evidence'].outcome, 'notApplicable');
-    assert.equal(got['media-transcript-adjacent'].outcome, 'notApplicable');
     assert.deepEqual(got, jsdomSummary(html));
   });
 
@@ -130,8 +123,7 @@ test('media rules in Chromium', { skip }, async (t) => {
     'media-transcript-present-manual-all-scenarios.html',
     'media-transcript-present.html',
     'video-caption-all-scenarios.html',
-    'wcag-12x-media-scenarios.html',
-    path.join(RGAA_FIXTURES, 'media-transcript-adjacent-all-scenarios.html')
+    'wcag-12x-media-scenarios.html'
   ]) {
     await t.test(`${path.basename(fixture)}: Chromium agrees with jsdom`, async () => {
       const html = fs.readFileSync(path.resolve(FIXTURES, fixture), 'utf8');

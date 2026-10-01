@@ -13,6 +13,8 @@ const assert = require('node:assert/strict');
 const core = require('../../../src/core.js');
 const { runa11yCoreOnHtml } = require('../../../tests/helpers/runDomRulesOnHtml.js');
 const { renderHtmlReport } = require('../../../src/report.js');
+const { RGAA_RULE_TESTS } = require('../rule-map');
+const { RGAA_CRITERIA } = require('../map');
 
 const PAGE =
   '<html lang="en"><head><title>Report</title></head><body><main>' +
@@ -118,4 +120,34 @@ test('a refresh of 20 hours or more passes RGAA 13.1', () => {
   const result = runa11yCoreOnHtml(page, { engineOptions: { profile: 'rgaa-4.1.2' } });
   assert.equal(rollup(result, 'rgaa-4.1.2-13.1').outcome, 'pass');
   assert.ok(!result.checksResults.some((r) => r.ruleId === 'meta-refresh-no-exceptions'));
+});
+
+test('RGAA rollups group exactly the rules linked to their criterion, and carry the rgaa tag', () => {
+  const own = core.COMPOSITE_RULES.filter((c) => c.meta && c.meta.standard === 'RGAA');
+  assert.ok(own.length > 0);
+  for (const c of own) {
+    const { version, criterion } = c.meta;
+    assert.equal(c.id, `rgaa-${version}-${criterion}`);
+    assert.deepEqual(c.meta.tags, ['rgaa'], c.id);
+    assert.deepEqual(c.meta.wcagSc, [], c.id);
+    const tests = RGAA_CRITERIA[version][criterion].tests;
+    const expected = Object.entries(RGAA_RULE_TESTS[version])
+      .filter(([, row]) => row.tests.some((t) => tests.includes(t)))
+      .map(([id]) => id)
+      .sort();
+    assert.deepEqual(c.checksIds, expected, c.id);
+    for (const m of c.meta.standardMappings) assert.equal(m.criterion, criterion, c.id);
+  }
+});
+
+test('text-spacing-content-loss, a WCAG rule, reports RGAA 10.12.1 and joins its rollup', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title><style>body{font-size:16px} ' +
+    'p{letter-spacing:0 !important}</style></head><body><p>Opening hours today</p></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'rgaa-4.1.2' } });
+  const check = result.checksResults.find((r) => r.ruleId === 'text-spacing-content-loss');
+  assert.equal(check.outcome, 'cantTell');
+  assert.ok(check.rollupIds.includes('wcag-1.4.12-text-spacing'));
+  assert.ok(check.rollupIds.includes('rgaa-4.1.2-10.12'));
+  assert.deepEqual(RGAA_RULE_TESTS['4.1.2']['text-spacing-content-loss'].tests, ['10.12.1']);
 });

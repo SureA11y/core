@@ -300,23 +300,3 @@ test('contract: rule.wcagSc is derived from WCAG normativeMappings (exact match)
     `Found ${mismatches.length} rule(s) where rule.wcagSc disagrees with WCAG normativeMappings`
   );
 });
-
-test('RGAA rollups group exactly the rules linked to their criterion, and carry the rgaa tag', () => {
-  const { RGAA_RULE_TESTS } = require('../profiles/rgaa/rule-map');
-  const { RGAA_CRITERIA } = require('../profiles/rgaa/map');
-  const own = core.COMPOSITE_RULES.filter((c) => c.meta && c.meta.standard === 'RGAA');
-  assert.ok(own.length > 0);
-  for (const c of own) {
-    const { version, criterion } = c.meta;
-    assert.equal(c.id, `rgaa-${version}-${criterion}`);
-    assert.deepEqual(c.meta.tags, ['rgaa'], c.id);
-    assert.deepEqual(c.meta.wcagSc, [], c.id);
-    const tests = RGAA_CRITERIA[version][criterion].tests;
-    const expected = Object.entries(RGAA_RULE_TESTS[version])
-      .filter(([, row]) => row.tests.some((t) => tests.includes(t)))
-      .map(([id]) => id)
-      .sort();
-    assert.deepEqual(c.checksIds, expected, c.id);
-    for (const m of c.meta.standardMappings) assert.equal(m.criterion, criterion, c.id);
-  }
-});
