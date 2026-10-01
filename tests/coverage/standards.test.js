@@ -35,7 +35,9 @@ test('every standard has a unique lowercase key and a unique display name', () =
   }
 });
 
-test('every entry a standard gives names its standard, a known version and its WCAG criteria', () => {
+// An entry's wcagSc may be empty: a standard can make requirements WCAG does
+// not (a company's, a country's). What it lists must be real criteria.
+test('every entry a standard gives names its standard, a known version and real WCAG criteria', () => {
   const wcagSc = Object.keys(FACETS);
   for (const s of NORMATIVE_STANDARDS) {
     for (const check of core.getChecksCatalog()) {
@@ -44,7 +46,7 @@ test('every entry a standard gives names its standard, a known version and its W
         assert.equal(m.standard, s.standard, where);
         assert.ok(s.versions.includes(m.version), where);
         assert.ok(m.requirement && m.title, where);
-        assert.ok(Array.isArray(m.wcagSc) && m.wcagSc.length, where);
+        assert.ok(Array.isArray(m.wcagSc), where);
         for (const sc of m.wcagSc) assert.ok(wcagSc.includes(sc), `${where} ${sc}`);
       }
     }

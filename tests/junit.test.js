@@ -444,3 +444,22 @@ test('renderJunitReport: a real scan renders deterministically and parses', () =
   assert.strictEqual(Number(attr(root, 'failures')), sum('failures'));
   assert.strictEqual(Number(attr(root, 'skipped')), sum('skipped'));
 });
+
+// A requirement outside WCAG (an entry with an empty wcagSc) belongs to every
+// criterion of the rule that names it, as an entry with no wcagSc does. It
+// used to match no criterion and drop out of the report.
+test('an entry for a requirement outside WCAG stays with its rule', () => {
+  const check = makeCheckResult({ ruleId: 'r', outcome: 'fail' });
+  check.meta = {
+    ...check.meta,
+    wcagSc: ['1.1.1'],
+    normativeMappings: [
+      { standard: 'WCAG', version: '2.2', requirement: '1.1.1', title: 'Non-text Content' },
+      { standard: 'RGAA', version: '4.1.2', requirement: '1.1.1', title: 'a', wcagSc: ['1.1.1'] },
+      { standard: 'RGAA', version: '4.1.2', requirement: '9.9.9', title: 'b', wcagSc: [] }
+    ]
+  };
+  const xml = renderJunitReport(makeScanResult([check]));
+  assert.ok(xml.includes('<property name="rgaa" value="1.1.1"/>'));
+  assert.ok(xml.includes('<property name="rgaa" value="9.9.9"/>'));
+});

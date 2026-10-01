@@ -237,13 +237,14 @@ function renderJunitReport(result, options = {}) {
       const own = criteria.find((m) => String(m.requirement) === key);
       if (own && !suite.level) suite.level = own.conformanceLevel || own.level || null;
       // Another standard's entry goes under the criteria it corresponds to
-      // (its `wcagSc`); one without that field belongs to every criterion of
-      // its rule, and a rule with no criterion keeps all of its entries.
+      // (its `wcagSc`); one that names none (no field, or an empty list, for a
+      // requirement outside WCAG) belongs to every criterion of its rule, and
+      // a rule with no criterion keeps all of its entries.
       for (const m of mappings) {
         const standard = standardOfEntry(m);
         if (!standard) continue;
-        if (key !== OTHER_SUITE && Array.isArray(m.wcagSc) && !m.wcagSc.map(String).includes(key))
-          continue;
+        const named = Array.isArray(m.wcagSc) && m.wcagSc.length ? m.wcagSc.map(String) : null;
+        if (key !== OTHER_SUITE && named && !named.includes(key)) continue;
         if (!suite.standards.has(standard.key)) suite.standards.set(standard.key, new Set());
         suite.standards.get(standard.key).add(String(m.requirement));
       }

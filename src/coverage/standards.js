@@ -36,7 +36,9 @@
  *   passes `checksIds`, its rules. Each entry is
  *   { standard, version, requirement, title, wcagSc, ...extra }, where
  *   `wcagSc` lists the WCAG criteria the requirement corresponds to, so a
- *   per-criterion view can tell which entries belong under which criterion. A
+ *   per-criterion view can tell which entries belong under which criterion.
+ *   It is empty for a requirement WCAG does not make; a per-criterion view
+ *   then shows the entry under every criterion of the rule that names it. A
  *   standard may add fields of its own (RGAA adds `criterion`).
  * - ruleTag: optional; a tag that marks rules checking this standard's own
  *   requirements, ones WCAG does not make (RGAA's doctype or presentational
