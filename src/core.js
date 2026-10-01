@@ -21745,21 +21745,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
-    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -25909,21 +25895,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
-    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -27297,21 +27269,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
-    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。"
   }
 };
 
@@ -102532,21 +102490,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Prüfen Sie mit assistiven Technologien, ob dieser Bearbeitungsbereich eine zutreffende Rolle, einen Namen und einen Zustand bereitstellt und ob seine Änderungen ausgegeben werden (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Dieses <{{element}}> hat {{attribute}}, das normalerweise ein Skript aktualisiert.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Prüfen Sie mit assistiven Technologien, ob der Zustand, den dieses Attribut beschreibt, aktualisiert und ausgegeben wird, wenn sich die Komponente ändert (RGAA 7.1).",
-    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "Eine Zeile pro RGAA-4.1.2-Kriterium, mit dem eine Regel verknüpft ist; sie fasst diese Regeln zusammen. Die Verknüpfungen sind noch nicht von einem RGAA-Auditor geprüft, und eine bestandene Zeile bedeutet nie, dass das Kriterium konform ist."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -106696,21 +106640,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "Vérifiez avec les technologies d’assistance que cette zone d’édition expose un rôle, un nom et un état pertinents, et que ses changements sont restitués (RGAA 7.1).",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "Cet élément <{{element}}> a l’attribut {{attribute}}, qu’un script met généralement à jour.",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "Vérifiez avec les technologies d’assistance que l’état décrit par cet attribut est mis à jour et restitué quand le composant d’interface change (RGAA 7.1).",
-    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme.",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "Une ligne par critère du RGAA 4.1.2 auquel une règle est liée, qui regroupe ces règles. Les liens n’ont pas encore été vérifiés par un auditeur RGAA, et une ligne réussie ne signifie jamais que le critère est conforme."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -108084,21 +108014,7 @@ const I18N = {
     "scriptedComponentsReview_hint_cantTell_contentEditable": "この編集領域が適切な役割、名前、状態を公開し、その変化が伝えられることを支援技術で確認してください (RGAA 7.1)。",
     "scriptedComponentsReview_summary_cantTell_stateAttribute": "この <{{element}}> には {{attribute}} があり、通常はスクリプトで更新されます。",
     "scriptedComponentsReview_hint_cantTell_stateAttribute": "この属性が表す状態が、コンポーネントの変化に応じて更新され、支援技術で伝えられることを確認してください (RGAA 7.1)。",
-    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。",
-    "report_acmeRollup_note": "One row per ACME requirement that a rule is linked to, grouping those rules.",
-    "acmeStatementLink_title": "Pages link to the accessibility statement",
-    "acmeStatementLink_description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
-    "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
-    "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
-    "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
-    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
-    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
-    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
-    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
-    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
-    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
+    "report_rgaaRollup_note": "ルールが関連付けられている RGAA 4.1.2 の基準ごとに 1 行を表示し、それらのルールをまとめます。関連付けはまだ RGAA の監査担当者の確認を受けておらず、合格の行があっても基準に適合していることを意味しません。"
   }
 };
 

@@ -115,7 +115,7 @@ A standard's profile may also leave rules out, when its standard waives a WCAG c
 
 A profile only chooses which rules run. It says nothing about whether passing them meets the standard it is named after: most Success Criteria need human judgement no automated rule covers (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
-An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed, and `rgaa-4.1.2` switches on the RGAA 4.1.2 tests; see the next section. `rgaa-4.1.2` also runs, whatever their tags, the rules RGAA 4.1.2 is mapped to ([`RGAA_MAPPING.md`](./RGAA_MAPPING.md)): the ones with no WCAG mapping, such as `heading-order` and `skip-link`, have no WCAG tag to be selected by.
+An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed, and `rgaa-4.1.2` switches on the RGAA 4.1.2 tests; see the next section. `rgaa-4.1.2` also runs, whatever their tags, the rules RGAA 4.1.2 is mapped to ([`RGAA_MAPPING.md`](../profiles/rgaa/docs/RGAA_MAPPING.md)): the ones with no WCAG mapping, such as `heading-order` and `skip-link`, have no WCAG tag to be selected by.
 
 ### Opt-in rules
 
@@ -151,7 +151,7 @@ Every result's `meta.normativeMappings` names the WCAG Success Criteria it tests
 |---|---|
 | `'en301549'` | The EN 301 549 chapter 9 clause for each criterion, in every version that has it (V3.2.1 and V4.1.1) |
 | `'en301549:V3.2.1'`, `'en301549:V4.1.1'` | The same, for that version only |
-| `'rgaa'` (or `'rgaa:4.1.2'`) | The RGAA tests each rule checks, mapped rule by rule (see [`RGAA_MAPPING.md`](./RGAA_MAPPING.md); not yet reviewed by an RGAA auditor) |
+| `'rgaa'` (or `'rgaa:4.1.2'`) | The RGAA tests each rule checks, mapped rule by rule (see [`RGAA_MAPPING.md`](../profiles/rgaa/docs/RGAA_MAPPING.md); not yet reviewed by an RGAA auditor) |
 
 ```js
 runDomRulesInPage(url, null, { mappings: ['en301549:V3.2.1'] }, null);

@@ -8,15 +8,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../../../tests/helpers/runDomRulesOnHtml.js');
 const { renderHtmlReport } = require('../../../src/report.js');
 const { renderSarifReport } = require('../../../src/sarif.js');
 const { renderJunitReport } = require('../../../src/junit.js');
 const { ACME_PART_A } = require('../part-a');
-const { buildTable, renderModule, formatted } = require('../scripts/generate-part-a');
 
 // Low-contrast text fails 1.4.3; nothing on the page is video, so 1.2.2 is
 // notApplicable.
@@ -29,11 +26,6 @@ const ids = (r) => acme(r).map((m) => `${m.version}:${m.requirement}`);
 const scan = (engineOptions) => runa11yCoreOnHtml(PAGE, { engineOptions });
 const check = (result, id) => result.checksResults.find((r) => r.ruleId === id);
 const rollup = (result, id) => result.rulesResults.find((r) => r.ruleId === id);
-
-test('part-a.js is what the generator makes of WCAG', async () => {
-  const actual = fs.readFileSync(path.join(__dirname, '..', 'part-a.js'), 'utf8');
-  assert.equal(actual, await formatted(renderModule(buildTable())));
-});
 
 test('1.0 restates WCAG 2.1 A and AA, 4.1.1 included; 2.0 restates WCAG 2.2', () => {
   assert.equal(Object.keys(ACME_PART_A['1.0']).length, 50);

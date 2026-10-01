@@ -4,7 +4,9 @@
 
 /**
  * Record the scenario-fixture cases whose PASS/FAIL/CANTTELL marker disagrees
- * with the verdict the engine returns for them (scripts/data/fixture-markers.json).
+ * with the verdict the engine returns for them (scripts/data/fixture-markers.json
+ * for core's rules, and each profile's scripts/data/fixture-markers.json for
+ * its own: scripts/lib/rule-dirs.js ruleSources).
  *
  * A fixture's markers are prose in a `.case-title`: the per-rule "fixture
  * coverage" tests assert which element ids a rule reports, but nothing asserts
@@ -31,18 +33,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { collect, findRepoRoot } = require('./lib/rule-review-data');
+const { ruleSources, ruleIdsOf } = require('./lib/rule-dirs');
 
-const OUT = path.join('scripts', 'data', 'fixture-markers.json');
 const MAX_LABEL = 120;
 
 function parseArgs(argv) {
-  const args = { check: false, out: OUT };
-  for (let i = 2; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--check') args.check = true;
-    else if (a === '--out') args.out = argv[++i];
-  }
-  return args;
+  return { check: argv.slice(2).includes('--check') };
 }
 
 function collectDisagreements(repoRoot) {
@@ -106,31 +102,55 @@ function reportDrift(committed, fresh) {
   return lines.join('\n');
 }
 
+// Each source's record and the disagreements it holds: a profile's, those of
+// its own rules; core's, the rest.
+function splitBySource(fresh) {
+  const sources = ruleSources();
+  const owner = new Map();
+  for (const src of sources.slice(1)) {
+    for (const id of ruleIdsOf(src)) owner.set(id, src.key);
+  }
+  return sources.map((src) => ({
+    file: path.join(src.dataDir, 'fixture-markers.json'),
+    entries: fresh.filter((e) => (owner.get(e.ruleId) || 'core') === src.key)
+  }));
+}
+
 function main() {
   const args = parseArgs(process.argv);
   const repoRoot = findRepoRoot(__dirname);
-  const outPath = path.isAbsolute(args.out) ? args.out : path.resolve(repoRoot, args.out);
-
-  const fresh = collectDisagreements(repoRoot);
+  const records = splitBySource(collectDisagreements(repoRoot));
 
   if (args.check) {
-    if (!fs.existsSync(outPath)) {
-      console.error(`[fixture-markers] ${args.out} is missing -- run \`npm run fixtures:markers\``);
-      process.exit(1);
+    let failed = false;
+    let total = 0;
+    for (const { file, entries } of records) {
+      const shown = path.relative(repoRoot, file);
+      if (!fs.existsSync(file)) {
+        console.error(`[fixture-markers] ${shown} is missing -- run \`npm run fixtures:markers\``);
+        failed = true;
+        continue;
+      }
+      const committed = JSON.parse(fs.readFileSync(file, 'utf8')).disagreements;
+      const drift = reportDrift(committed, entries);
+      if (drift) {
+        console.error(`[fixture-markers] ${shown}: ${drift}`);
+        failed = true;
+      }
+      total += entries.length;
     }
-    const committed = JSON.parse(fs.readFileSync(outPath, 'utf8')).disagreements;
-    const drift = reportDrift(committed, fresh);
-    if (drift) {
-      console.error(`[fixture-markers] ${drift}`);
-      process.exit(1);
-    }
-    console.log(`[fixture-markers] ${fresh.length} recorded disagreement(s), record is current`);
+    if (failed) process.exit(1);
+    console.log(`[fixture-markers] ${total} recorded disagreement(s), records are current`);
     return;
   }
 
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, JSON.stringify({ disagreements: fresh }, null, 2) + '\n');
-  console.log(`[fixture-markers] wrote ${outPath} (${fresh.length} disagreements)`);
+  for (const { file, entries } of records) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({ disagreements: entries }, null, 2) + '\n');
+    console.log(
+      `[fixture-markers] wrote ${path.relative(repoRoot, file)} (${entries.length} disagreements)`
+    );
+  }
 }
 
 main();

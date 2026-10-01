@@ -12,12 +12,7 @@
 const path = require('path');
 
 const { VERSIONS } = require('./requirements');
-const { mappingsFor, composites, validate } = require('./mappings');
-
-// The WCAG version each ACME version builds on, as the tags of its A and AA
-// rules.
-const WCAG21_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-const WCAG22_AA_TAGS = WCAG21_AA_TAGS.concat(['wcag22a', 'wcag22aa']);
+const { mappingsFor, composites, validate, wcagTagsOf } = require('./mappings');
 
 const standard = {
   key: 'acme',
@@ -28,12 +23,12 @@ const standard = {
   profiles: {
     'acme-1.0': {
       version: '1.0',
-      tags: WCAG21_AA_TAGS.concat(['acme']),
+      tags: wcagTagsOf('1.0').concat(['acme']),
       mappedRules: true
     },
     'acme-2.0': {
       version: '2.0',
-      tags: WCAG22_AA_TAGS.concat(['acme']),
+      tags: wcagTagsOf('2.0').concat(['acme']),
       mappedRules: true,
       // B6: ACME 2.0 waives WCAG 3.3.8 for internal tools.
       exclude: { criteria: ['3.3.8'] }

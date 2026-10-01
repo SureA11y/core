@@ -6,8 +6,9 @@
  * ACME's requirements, per version. ACME is a made-up standard that tests
  * the profile model (DESIGN.md); it is never merged.
  *
- * - VERSIONS: [{ version }], oldest first. A version needs a key in
- *   REQUIREMENTS and a profile in index.js.
+ * - VERSIONS: [{ version, wcagVersion }], oldest first: ACME's version and
+ *   the WCAG version it is built on. A version needs a key in REQUIREMENTS and
+ *   a profile in index.js.
  * - REQUIREMENTS[version][id]: { title, wcagSc }. `id` is the standard's own
  *   number ('1.2', 'B4'...), `title` its wording, and `wcagSc` the WCAG
  *   criteria the requirement corresponds to, if any (['1.4.3']).

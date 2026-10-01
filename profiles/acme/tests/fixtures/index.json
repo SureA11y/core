@@ -1,0 +1,43 @@
+{
+  "summary": {
+    "total": 2,
+    "withFixture": 2,
+    "withoutFixture": 0
+  },
+  "rows": [
+    {
+      "ruleId": "acme-contrast-uniform",
+      "title": "All text reaches a contrast ratio of 4.5:1",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "rules/automatic/acme-contrast-uniform.js",
+      "testFile": "tests/rules/automatic/acme-contrast-uniform.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/acme-contrast-uniform-all-scenarios.html",
+      "totalCases": 3,
+      "caseCounts": {
+        "PASS": 1,
+        "FAIL": 2,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "acme-statement-link",
+      "title": "Pages link to the accessibility statement",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "rules/automatic/acme-statement-link.js",
+      "testFile": "tests/rules/automatic/acme-statement-link.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/acme-statement-link-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 1,
+        "CANTTELL": 0,
+        "OTHER": 0
+      }
+    }
+  ]
+}

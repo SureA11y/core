@@ -18,6 +18,7 @@ const PROFILES = require('../profiles');
 const {
   PROFILE_EXPORTS,
   RULE_CONTEXT,
+  PROFILE_FILE_MODULES,
   CORE_MODULES,
   CORE_MODULE_DIRS,
   documentedHelpers,
@@ -93,16 +94,21 @@ for (const name of PROFILE_FOLDERS) {
     }
   });
 
-  test(`${name}: its own files require only each other and Node built-ins`, () => {
+  test(`${name}: its own files require only each other, WCAG's criteria and Node built-ins`, () => {
     // The files the engine loads at run time: the entry and its tables.
     const files = fs
       .readdirSync(dir)
       .filter((f) => f.endsWith('.js'))
       .map((f) => path.join(dir, f));
+    const allowed = new Set(PROFILE_FILE_MODULES.map((m) => path.join(ROOT, m)));
     const outside = files.flatMap((file) =>
       requiresOf(fs.readFileSync(file, 'utf8'))
         .filter((spec) => !isBuiltin(spec))
-        .filter((spec) => isPackage(spec) || !inProfile(resolveSpec(file, spec)))
+        .filter(
+          (spec) =>
+            isPackage(spec) ||
+            (!inProfile(resolveSpec(file, spec)) && !allowed.has(resolveSpec(file, spec)))
+        )
         .map((spec) => `${rel(file)}: ${spec}`)
     );
     assert.deepEqual(outside, []);

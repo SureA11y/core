@@ -438,7 +438,7 @@ the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
 without the profile, or for both versions, pass
 `mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
 WCAG only. `'rgaa'` adds the RGAA 4.1.2 tests each rule checks, alone or
-with EN 301 549 (see [`docs/RGAA_MAPPING.md`](./docs/RGAA_MAPPING.md)). See
+with EN 301 549 (see [`profiles/rgaa/docs/RGAA_MAPPING.md`](./profiles/rgaa/docs/RGAA_MAPPING.md)). See
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
 [`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
 
@@ -538,7 +538,7 @@ contributing to it:
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule. |
+| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, as RGAA's are in `profiles/rgaa/docs/RULE_CATALOG.md`. |
 | `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
 | `docs/POLICY.md` | Built-in policy contracts and customization. |
 | `docs/I18N.md` | Translation support and localization. |
@@ -597,6 +597,8 @@ src/
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   rgaa.js                  # RGAA criteria and tests (@surea11y/core/rgaa)
+  wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  profile-kit.js           # Mapping for a profile's standard (@surea11y/core/profile-kit)
 
   checks/
     automatic/             # Deterministic automated rules

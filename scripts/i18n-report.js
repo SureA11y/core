@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 
-const { i18nDirs, loadDictionaries } = require('./lib/dictionaries');
+const { i18nSources, loadDictionaries } = require('./lib/dictionaries');
 
 function listLocaleNames(i18nDir) {
   return fs
@@ -42,18 +42,26 @@ function computeLocaleReport(enDict, localeDict) {
   return { total, translated, missing, orphaned, percent };
 }
 
-// One row per locale, over one dictionary folder or several: by default
-// core's and each profile's (scripts/lib/dictionaries.js), counted together
-// as the engine sees them. A locale is listed when core's folder has it.
-function generateReport(i18nDir = i18nDirs()) {
-  const dirs = Array.isArray(i18nDir) ? i18nDir : [i18nDir];
-  const dicts = loadDictionaries(dirs);
-  const locales = listLocaleNames(dirs[0]).filter((name) => name !== 'en');
+// One row per locale a dictionary folder has, against that folder's en.json.
+function reportFor(i18nDir) {
+  const dicts = loadDictionaries([i18nDir]);
+  const locales = listLocaleNames(i18nDir).filter((name) => name !== 'en');
 
   return locales.map((locale) => ({
     locale,
     ...computeLocaleReport(dicts.en, dicts[locale] || {})
   }));
+}
+
+// One folder's rows, or by default every folder's (scripts/lib/dictionaries.js),
+// each row naming its folder's source: 'core' or the profile's key. A profile
+// is reported for the languages it has; the ones it has no file for show its
+// messages in English, by choice, and are not counted as untranslated.
+function generateReport(i18nDir) {
+  if (i18nDir) return reportFor(i18nDir);
+  return i18nSources().flatMap(({ key, dir }) =>
+    reportFor(dir).map((row) => ({ source: key, ...row }))
+  );
 }
 
 function main() {
@@ -64,10 +72,10 @@ function main() {
     return;
   }
 
-  console.log('locale  translated/total  coverage  missing  orphaned');
+  console.log('source  locale  translated/total  coverage  missing  orphaned');
   for (const row of rows) {
     console.log(
-      `${row.locale.padEnd(7)} ${`${row.translated}/${row.total}`.padEnd(17)} ${`${row.percent}%`.padEnd(9)} ${String(row.missing).padEnd(8)} ${row.orphaned.length}`
+      `${row.source.padEnd(7)} ${row.locale.padEnd(7)} ${`${row.translated}/${row.total}`.padEnd(17)} ${`${row.percent}%`.padEnd(9)} ${String(row.missing).padEnd(8)} ${row.orphaned.length}`
     );
     if (row.missing > 0) {
       console.log(

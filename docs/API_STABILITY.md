@@ -27,6 +27,8 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
 | `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
 | `@surea11y/core/rgaa` | `src/rgaa.js` | `RGAA_VERSIONS`, `RGAA_THEMES`, `RGAA_CRITERIA`, `RGAA_TESTS`, `rgaaCriteriaForSc()` |
+| `@surea11y/core/wcag` | `src/wcag.js` | `WCAG_VERSIONS`, `wcagCriteria()`, `wcagCriterion()`, `wcagTags()` |
+| `@surea11y/core/profile-kit` | `src/profile-kit.js` | `ruleMappedStandard()`, the mapping a profile made with `npm run profile:new` uses (see [`profiles/README.md`](../profiles/README.md)) |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |
 
 Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, `profiles/*` (the RGAA profile's tables and rules, which `@surea11y/core/rgaa` and the engine read), and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
@@ -79,7 +81,7 @@ So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of t
 - **A rule id, once published, does not change.** Renaming or removing one is a major change. The supported path is to keep the id, mark it `deprecated` with `deprecation.replacedBy` naming the successor, and remove it only after the notice period.
 - **A reason code, once a rule has shipped it, does not change.** This is a deliberate exception to the surrounding "`data.details` is unstable" rule: everything else under `data.details` is free-form, but `reasonCode` is load-bearing for identity, so it is pinned. Adding a new code to a rule is a minor change; changing or dropping an existing one is not, because every stored baseline entry and every open Code Scanning alert keyed on it stops matching.
 
-Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json), regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
+Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json) for core's rules, and in each profile's own `scripts/data/finding-ids.json` for its rules (RGAA's in [`profiles/rgaa/scripts/data/finding-ids.json`](../profiles/rgaa/scripts/data/finding-ids.json)), regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
 
 Note what identity does **not** include: `selector` and `structuralPath` deliberately stay out of the fingerprint, because both change when the surrounding page is edited, which would make every finding look new after an unrelated refactor. `html` is in, so editing the flagged element itself does read as a new finding — that is the intended trade-off, since the element's markup is the thing the finding is about.
 

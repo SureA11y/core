@@ -19,8 +19,10 @@
  *   node scripts/generate-wcag-coverage.js
  *   node scripts/generate-wcag-coverage.js --rulesDir src/checks --out coverage/coverage-report.md --json coverage/coverage-report.json --facets src/coverage/wcag-facets.js
  *
- * --rulesDir may be given more than once. Without it, the report reads every
- * rule folder: src/checks and each profile's (scripts/lib/rule-dirs.js).
+ * --rulesDir may be given more than once. Without it, the report reads core's
+ * rules, src/checks: it is WCAG's coverage by the rules a WCAG scan runs. A
+ * profile's rules answer its own standard's requirements, and the profile
+ * documents its coverage of them (RGAA's in profiles/rgaa/docs/RGAA_MAPPING.md).
  *
  * Output:
  * - Markdown report (grouped by SC, with facet coverage when available)
@@ -44,7 +46,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ruleDirs } = require('./lib/rule-dirs');
+const { CORE_RULES_DIR } = require('./lib/rule-dirs');
 
 function parseArgs(argv) {
   const args = {
@@ -78,7 +80,7 @@ function findRepoRoot(startDir) {
 }
 
 function resolveRulesDirs(repoRoot, rulesDirArgs) {
-  if (!rulesDirArgs.length) return ruleDirs();
+  if (!rulesDirArgs.length) return [CORE_RULES_DIR];
   return rulesDirArgs.map((dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir)));
 }
 

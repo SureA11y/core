@@ -60,3 +60,39 @@ test('every locale side file the exports map can reach is also published', () =>
     'files should publish the locale side files the exports map points at'
   );
 });
+
+// A module entry point loads only files the package publishes: one requiring
+// a file `files` leaves out works here and throws in a consumer's project.
+test('every module entry point loads only published files', () => {
+  const { execFileSync } = require('node:child_process');
+  const packed = JSON.parse(
+    execFileSync('npm', ['pack', '--dry-run', '--json', '--silent'], {
+      cwd: ROOT_DIR,
+      encoding: 'utf8'
+    })
+  )[0].files.map((f) => f.path);
+  const published = new Set(packed);
+
+  const missing = [];
+  for (const [subpath, target] of Object.entries(pkg.exports)) {
+    if (subpath.includes('*') || !target.endsWith('.js') || target.includes('browser')) continue;
+    // A fresh process, so each entry point's own requires are what is loaded.
+    const loaded = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          '-e',
+          `require(${JSON.stringify(path.join(ROOT_DIR, target))});` +
+            'console.log(JSON.stringify(Object.keys(require.cache)))'
+        ],
+        { encoding: 'utf8' }
+      )
+    );
+    for (const file of loaded) {
+      const rel = path.relative(ROOT_DIR, file).split(path.sep).join('/');
+      if (rel.startsWith('..') || rel.startsWith('node_modules/')) continue;
+      if (!published.has(rel)) missing.push(`${subpath}: ${rel}`);
+    }
+  }
+  assert.deepEqual(missing, [], 'add these to package.json "files"');
+});

@@ -76,10 +76,12 @@
  */
 
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
+const { wcagTags } = require('../wcag');
 const PROFILES = require('../../profiles');
 
-const WCAG21_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-const WCAG22_AA_TAGS = WCAG21_AA_TAGS.concat(['wcag22a', 'wcag22aa']);
+// The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
+const en301549Tags = (version) =>
+  wcagTags(EN301549_VERSIONS.find((v) => v.version === version).wcagVersion);
 
 const NORMATIVE_STANDARDS = [
   {
@@ -89,8 +91,8 @@ const NORMATIVE_STANDARDS = [
     // Chapter 9 restates WCAG A and AA: V4.1.1 is built on 2.2, V3.2.1 on 2.1
     // (which keeps 4.1.1 Parsing).
     profiles: {
-      'en301549-v4.1.1': { version: 'V4.1.1', tags: WCAG22_AA_TAGS },
-      'en301549-v3.2.1': { version: 'V3.2.1', tags: WCAG21_AA_TAGS }
+      'en301549-v4.1.1': { version: 'V4.1.1', tags: en301549Tags('V4.1.1') },
+      'en301549-v3.2.1': { version: 'V3.2.1', tags: en301549Tags('V3.2.1') }
     },
     mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc)
   },

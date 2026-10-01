@@ -19,23 +19,12 @@ const {
   en301549ClausesForSc,
   en301549MappingsForScs
 } = require('../../src/coverage/en301549-map');
-const { FACETS } = require('../../src/coverage/wcag-facets');
-const { introducedInVersion, removedInVersion } = require('../../src/coverage/wcag-version-map');
+const { wcagCriteria } = require('../../src/wcag');
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
-const VERSION_ORDER = ['2.0', '2.1', '2.2'];
-
-// The WCAG Level A and AA criteria that make up a given WCAG version. 4.1.1
-// carries no level in the registry, since 2.2 removed it; it was Level A.
-function wcagAAFor(wcagVersion) {
-  const max = VERSION_ORDER.indexOf(wcagVersion);
-  return Object.keys(FACETS).filter((sc) => {
-    if (FACETS[sc].level === 'AAA') return false;
-    if (VERSION_ORDER.indexOf(introducedInVersion(sc)) > max) return false;
-    const removed = removedInVersion(sc);
-    return !(removed && VERSION_ORDER.indexOf(removed) <= max);
-  });
-}
+// The WCAG Level A and AA criteria that make up a given WCAG version.
+const wcagAAFor = (wcagVersion) =>
+  wcagCriteria(wcagVersion, { levels: ['A', 'AA'] }).map((c) => c.sc);
 
 test('every version has a clause table, and every table a version', () => {
   assert.deepEqual(

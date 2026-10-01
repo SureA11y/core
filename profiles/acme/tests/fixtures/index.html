@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>surea11y Fixture Index</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; max-width: 1100px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .meta { font-size: 12px; opacity: 0.75; margin: 0 0 20px; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+  input[type="search"] { font-size: 14px; padding: 6px 10px; border-radius: 6px; border: 1px solid #8888; min-width: 260px; background: transparent; color: inherit; }
+  .count { font-size: 13px; opacity: 0.75; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #8884; padding: 6px 10px; text-align: left; }
+  th { position: sticky; top: 0; background: Canvas; cursor: default; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.muted { opacity: 0.7; }
+  td.pass { color: #1a7f37; }
+  td.fail { color: #cf222e; }
+  td.canttell { color: #9a6700; }
+  tr[hidden] { display: none; }
+  a { color: #0969da; }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>surea11y Fixture Index</h1>
+  <p class="meta">2/2 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+
+  <div class="toolbar">
+    <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
+    <span class="count" id="count"></span>
+  </div>
+
+  <table id="fixtureTable">
+    <thead>
+      <tr>
+        <th>Rule ID (opens fixture)</th>
+        <th>Type</th>
+        <th>Title</th>
+        <th>Cases</th>
+        <th>PASS</th>
+        <th>FAIL</th>
+        <th>CANTTELL</th>
+        <th>OTHER</th>
+      </tr>
+    </thead>
+    <tbody>
+<tr data-search="acme-contrast-uniform all text reaches a contrast ratio of 4.5:1">
+      <td><a href="acme-contrast-uniform-all-scenarios.html" target="_blank" rel="noopener">acme-contrast-uniform</a></td>
+      <td class="muted">automatic</td>
+      <td>All text reaches a contrast ratio of 4.5:1</td>
+      <td class="num">3</td>
+      <td class="num pass">1</td>
+      <td class="num fail">2</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="acme-statement-link pages link to the accessibility statement">
+      <td><a href="acme-statement-link-all-scenarios.html" target="_blank" rel="noopener">acme-statement-link</a></td>
+      <td class="muted">automatic</td>
+      <td>Pages link to the accessibility statement</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail">1</td>
+      <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+    </tbody>
+  </table>
+
+
+<script>
+(function () {
+  var input = document.getElementById('filter');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#fixtureTable tbody tr'));
+  var count = document.getElementById('count');
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    var visible = 0;
+    rows.forEach(function (tr) {
+      var match = !q || tr.getAttribute('data-search').indexOf(q) !== -1;
+      if (match) { tr.removeAttribute('hidden'); visible++; }
+      else { tr.setAttribute('hidden', ''); }
+    });
+    count.textContent = visible + ' / ' + rows.length + ' shown';
+  }
+  input.addEventListener('input', apply);
+  apply();
+})();
+</script>
+</body>
+</html>

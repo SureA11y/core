@@ -17,10 +17,14 @@ profiles/
     rules/            # automatic/ and manual/, like src/checks/: rules for the standard's own requirements
     i18n/             # <locale>.json, like src/i18n/: the messages of those rules
     data/             # The published source the tables are generated from, with its provenance
+    docs/             # Like docs/: RULE_CATALOG.md (generated) and RULE_EXAMPLES.md for its rules
     scripts/          # Generators for the tables and the docs, each with --check
+      data/           # Like scripts/data/: the records of its rules (finding-ids.json,
+                      # fixture-markers.json, rule-examples-coverage.json), generated
     tests/            # The profile's own tests; scripts/run-tests.js runs them with the rest
       rules/          # automatic/ and manual/, like tests/engine-checks/: a test per rule
-      fixtures/       # The rules' scenario pages, like tests/fixtures/
+      fixtures/       # The rules' scenario pages, like tests/fixtures/, and their index
+                      # (INDEX.md, index.json, index.html), generated
 ```
 
 `profiles/rgaa/` is the example:
@@ -31,16 +35,17 @@ profiles/
 - `index.js`: the registry entry, with the `rgaa-4.1.2` profile and the `rgaa` rule tag.
 - `rules/`: the opt-in rules for requirements RGAA makes and WCAG does not, all tagged `rgaa`, one of them (`contrast-minimum-rgaa`) a variant of core's `contrast-minimum` (see [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rules-for-another-standards-own-requirements)).
 - `i18n/`: their messages in every locale, and the note the HTML report shows above RGAA's rollups (`report.noteKey`).
-- `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](../docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
+- `scripts/generate-mapping-doc.js`: writes [`docs/RGAA_MAPPING.md`](./rgaa/docs/RGAA_MAPPING.md) (`npm run rgaa-mapping-doc`).
+- `docs/RULE_CATALOG.md`, `docs/RULE_EXAMPLES.md`, `scripts/data/` and the index in `tests/fixtures/`: the catalog, examples and records of its rules.
 
 `src/rgaa.js` stays the public entry point (`@surea11y/core/rgaa`) and reads its tables from here.
 
-The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators and generated docs read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:new`, `i18n:report`) cover every dictionary folder.
+The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The generated docs and records are written per source (`ruleSources()` there): core's describe core's rules only, and a profile's go in its own folder, in the same places under it as core's are under the repository root. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` write both, and their checks compare both, so a profile's rules never change core's files. The WCAG coverage report (`npm run coverage`) reads core's rules only. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:report`) cover every dictionary folder, each for the locales it has, and `i18n:new` adds a locale to core's or, with `--profile`, to one profile's.
 
 ## Adding a profile
 
 ```sh
-npm run profile:new -- <key> --name "<Name>"
+npm run profile:new -- <key> --name "<Name>" [--locales en,es]
 ```
 
 writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an empty but working standard: it builds, passes its own tests and the boundary check, and its profile, `<key>-1.0`, runs WCAG 2.2 A and AA. Filling it in is editing tables and adding rules:
@@ -48,24 +53,25 @@ writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an em
 - `requirements.js`: the standard's requirements per version, each with its title and the WCAG criteria it corresponds to;
 - `rule-map.js`: which requirements each rule checks, core's rules or the profile's own, with the reason;
 - `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`; where a requirement is a core rule with other thresholds, a variant of it rather than a copy ([`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rule-variants)), each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
-- `i18n/en.json`: their messages, then `npm run i18n:sync`.
+- `i18n/en.json`: their messages, then `npm run i18n:sync`. The files in `i18n/` are the profile's languages: `profile:new` writes one per core locale, or those `--locales en,es` names; `npm run i18n:new -- <locale> --profile <key>` adds one, and deleting a file drops one, whose messages then show in English;
+- `docs/RULE_EXAMPLES.md`: an example pair per rule. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` then write the profile's catalog, fixture index and records in its folder. Until the profile has a rule of its own they write nothing for it.
 
-From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
+From those tables `index.js` gets what each result names, one rollup per requirement, and the checks the build runs on the tables, from `ruleMappedStandard()` in `src/profile-kit.js` (`@surea11y/core/profile-kit`): the code is core's and tested there, so a fix reaches every profile made this way. The profile's own `README.md` lists the same steps. Each version in `VERSIONS` names the WCAG version it is built on (`wcagVersion`, 2.2 to start with): its profile runs that version's A and AA rules (`wcagTags` from `@surea11y/core/wcag`), and the build refuses a requirement that names a criterion that WCAG version does not have. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
 
-A profile written by hand needs the same: an `index.js` exporting `standard`, and `rulesDir` and `i18nDir` if it has rules; an entry in `profiles/index.js`; and its tests under `tests/`. The comment at the top of `src/coverage/standards.js` describes every field of `standard`. RGAA's mapping is richer than the scaffold's (`profiles/rgaa/mappings.js` relates tests to WCAG criteria and allows documented exceptions), which is the room a hand-written profile has.
+A profile written by hand needs the same: an `index.js` exporting `standard`, and `rulesDir` and `i18nDir` if it has rules; an entry in `profiles/index.js`; and its tests under `tests/`. The comment at the top of `src/coverage/standards.js` describes every field of `standard`. RGAA's mapping is richer than the kit's (`profiles/rgaa/mappings.js` groups tests into criteria, relates them to WCAG many to many and allows documented exceptions), so it writes its own functions, which is the room a hand-written profile has.
 
 ## What a profile may use
 
 A profile depends on core only through what core already publishes, so it never breaks when core's internals change, and it could become a package of its own. `scripts/lib/profile-contract.js` states the contract and `tests/profile-boundary.test.js` checks every profile against it:
 
 - **Its entry.** `index.js` exports only `standard`, `rulesDir` and `i18nDir`, and both folders sit inside the profile. `standard` follows ENTRY SHAPE in `src/coverage/standards.js`.
-- **Its own files.** The entry and its tables (`*.js` at the profile's root) require only each other and Node built-ins: nothing from `src/` or `scripts/`.
+- **Its own files.** The entry and its tables (`*.js` at the profile's root) require only each other, Node built-ins, WCAG's criteria per version (`src/wcag.js`, published as `@surea11y/core/wcag`) and the mapping kit (`src/profile-kit.js`, `@surea11y/core/profile-kit`), neither of which loads engine code: nothing else from `src/` or `scripts/`.
 - **Its rules.** A rule follows the custom-rule contract, which semver covers ([`docs/API_STABILITY.md`](../docs/API_STABILITY.md)):
   - it requires nothing, since `runInPage` is serialized into the page; or it is a variant of a core rule (`from`), which has no code of its own;
   - it reads only the `ctx` fields [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md) section 8.2 lists: `document`, `window`, `root`, `rule`, `config`, `standard`, `helpers`, `engineOptions`, `inputs` and `contextSelector`. A rule whose behaviour differs between versions of its standard reads `ctx.standard`;
   - it calls only the helpers [`docs/RULE_HELPERS.md`](../docs/RULE_HELPERS.md) documents. A helper a profile needs that is not documented there is a change to core's public API: document it there first;
   - it carries the standard's `ruleTag`, so no WCAG scan runs it.
-- **Its tests and scripts.** From core, they require only the package's entry points (`src/index.js`, `src/core.js`, `src/report.js`, `src/rgaa.js` and the others in `package.json` `exports`), WCAG's reference tables (`src/coverage/wcag-facets.js`, `src/coverage/wcag-version-map.js`) and the shared test harness (`tests/helpers/`). npm packages and Node built-ins are fine.
+- **Its tests and scripts.** From core, they require only the package's entry points (`src/index.js`, `src/core.js`, `src/report.js`, `src/rgaa.js`, `src/wcag.js`, `src/profile-kit.js` and the others in `package.json` `exports`) and the shared test harness (`tests/helpers/`). npm packages and Node built-ins are fine.
 - **Other profiles.** A profile maps core's rules and its own, and derives variants from them, never from another profile's rules: the build refuses it (`validateProfileIndependence` in `src/coverage/standards.js`). A rule two standards need belongs in core.
 - **Its dictionaries.** They hold only keys of its own rules (each rule's `meta.i18n` prefix) and of its entry (`report.noteKey`). The build refuses a key core also defines.
 
