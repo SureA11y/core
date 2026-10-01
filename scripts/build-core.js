@@ -94,7 +94,7 @@ const STANDARD_PROFILES = Object.fromEntries(
       {
         tags: p.tags,
         mappings: [s.key + ':' + p.version],
-        target: { standard: s.standard, version: p.version }
+        target: { key: s.key, standard: s.standard, version: p.version }
       }
     ])
   )
@@ -872,6 +872,19 @@ const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDAR
 // standard's own rollups are its version's only: a standard with two
 // versions has a rollup per requirement in each.
 const PROFILE_TARGETS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.target])))};
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
 
 // Whether a standard's own rollup belongs to the version the selection's
 // profile targets. A rollup of another standard, or a selection with no

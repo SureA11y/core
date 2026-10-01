@@ -62,7 +62,7 @@ A profile depends on core only through what core already publishes, so it never 
 - **Its own files.** The entry and its tables (`*.js` at the profile's root) require only each other and Node built-ins: nothing from `src/` or `scripts/`.
 - **Its rules.** A rule follows the custom-rule contract, which semver covers ([`docs/API_STABILITY.md`](../docs/API_STABILITY.md)):
   - it requires nothing, since `runInPage` is serialized into the page;
-  - it reads only `ctx.document`, `window`, `root`, `rule`, `config`, `helpers`, `engineOptions`, `inputs` and `contextSelector`;
+  - it reads only the `ctx` fields [`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md) section 8.2 lists: `document`, `window`, `root`, `rule`, `config`, `standard`, `helpers`, `engineOptions`, `inputs` and `contextSelector`. A rule whose behaviour differs between versions of its standard reads `ctx.standard`;
   - it calls only the helpers [`docs/RULE_HELPERS.md`](../docs/RULE_HELPERS.md) documents. A helper a profile needs that is not documented there is a change to core's public API: document it there first;
   - it carries the standard's `ruleTag`, so no WCAG scan runs it.
 - **Its tests and scripts.** From core, they require only the package's entry points (`src/index.js`, `src/core.js`, `src/report.js`, `src/rgaa.js` and the others in `package.json` `exports`), WCAG's reference tables (`src/coverage/wcag-facets.js`, `src/coverage/wcag-version-map.js`) and the shared test harness (`tests/helpers/`). npm packages and Node built-ins are fine.

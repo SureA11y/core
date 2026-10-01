@@ -322,7 +322,23 @@ The rule must return:
 
 Examples:
 
-### 8.2 Outcome conventions used by these rules
+### 8.2 What `ctx` carries
+
+`runInPage(ctx)` and `applicability(ctx)` receive the same object, built-in and custom rules alike:
+
+| Field | What it is |
+|---|---|
+| `document`, `window` | The page being scanned. |
+| `root` | The roots the scan covers: the document, or what `contextSelector` resolved to. |
+| `contextSelector` | The selector that scoped the run, if any. |
+| `rule` | The rule's resolved definition: `ruleId`, `defaultSeverity`, `defaultConfidence`, `type`, `meta`... |
+| `config` | `engineOptions.rules[ruleId]`, this rule's settings, if the caller gave any (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). |
+| `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'rgaa', name: 'RGAA', version: '4.1.2' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. |
+| `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). |
+| `engineOptions` | The scan's options as resolved. |
+| `inputs.probes` | Evidence the host application supplied (`engineOptions.probes`). |
+
+### 8.3 Outcome conventions used by these rules
 
 Automatic:
 - `notApplicable` if no applicable targets
