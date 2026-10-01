@@ -105,6 +105,7 @@
     "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
     "coverage:check": "node scripts/generate-wcag-coverage.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",
+    "finding-ids:release": "node scripts/freeze-finding-ids.js",
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "fixtures:check": "node scripts/generate-fixture-index.js --check",
     "fixtures:markers": "npm run build && node scripts/generate-fixture-markers.js",

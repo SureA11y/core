@@ -79,10 +79,17 @@ So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of t
 
 - **A rule id, once published, does not change.** Renaming or removing one is a major change. The supported path is to keep the id, mark it `deprecated` with `deprecation.replacedBy` naming the successor, and remove it only after the notice period.
 - **A reason code, once a rule has shipped it, does not change.** This is a deliberate exception to the surrounding "`data.details` is unstable" rule: everything else under `data.details` is free-form, but `reasonCode` is load-bearing for identity, so it is pinned. Adding a new code to a rule is a minor change; changing or dropping an existing one is not, because every stored baseline entry and every open Code Scanning alert keyed on it stops matching.
+- **A reason code retires only with the finding it named.** The promise is that a finding the engine still makes keeps its identity, not that a finding is made forever. When a correctness fix (a patch, see [below](#what-triggers-which-version-bump)) changes what a rule reports for an element, the finding the old code named no longer exists, and its code may go with it: a baseline entry or alert for it then closes, as it would for any fixed bug, rather than silently stopping to match a finding that is still there. Renaming a code for a finding that stays, or dropping one the rule still has a case for, is never allowed. A retirement is recorded in `CHANGELOG.md` and, with its reason, under `retired` in `scripts/data/released-finding-ids.json`.
+
+What the last release shipped is frozen in [`scripts/data/released-finding-ids.json`](../scripts/data/released-finding-ids.json), written by `npm run finding-ids:release -- <version>` as part of each release, and `tests/released-finding-ids.test.js` fails when a rule id or reason code from it is missing and not listed under `retired` with its reason. No commit rewrites that file between releases, so an identity cannot be dropped and the inventory regenerated in the same change without the test noticing.
 
 Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json) for core's rules, and in each profile's own `scripts/data/finding-ids.json` for its rules (RGAA's in [`profiles/rgaa/scripts/data/finding-ids.json`](../profiles/rgaa/scripts/data/finding-ids.json)), regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
 
 Note what identity does **not** include: `selector` and `structuralPath` deliberately stay out of the fingerprint, because both change when the surrounding page is edited, which would make every finding look new after an unrelated refactor. `html` is in, so editing the flagged element itself does read as a new finding — that is the intended trade-off, since the element's markup is the thing the finding is about.
+
+### A removal that predates this guard
+
+`area-alt-decorative`, shipped in 1.7.0, was removed afterwards without the deprecation period described [below](#rule-id-deprecation-policy). It asked a human whether an `<area>` with an empty `alt` was decorative, a question with no legitimate "yes": `area-alt-present` now fails that case outright ([`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). The removal was accepted as an exception rather than reverted, and is listed under `retired` in `scripts/data/released-finding-ids.json`. Anything holding its id — a `runOnly` list, a baseline entry — matches nothing from the release after 1.7.0; the empty-`alt` area it asked about is reported by `area-alt-present` instead.
 
 ### A rename that predates this
 
@@ -105,6 +112,8 @@ The version number is the contract — not a measure of how much has changed or 
 - **Major (`X.0.0`)** — a breaking change to a stable field (see above). Rare by design; the entire point of the stable-fields list is to keep these infrequent and well-signposted.
 
 Because every `1.x` release is backward-compatible, a consumer pinned to a `^1.y.0` range is never broken by an upgrade within the line — so a steady stream of patch/minor releases reflects active maintenance and prompt fixes, not instability. Frequency of releases is not a signal of churn; a change to a **major** version is.
+
+Each release freezes the finding identities it ships: run `npm run finding-ids:release -- <version>` and commit `scripts/data/released-finding-ids.json` with the release (see [Finding identity](#finding-identity)).
 
 ## Rule-ID deprecation policy
 
