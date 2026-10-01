@@ -141,8 +141,9 @@ The build/runtime resolves i18n by:
 2) falling back to `en` if missing,
 3) falling back to the literal `title`/`description` strings if still missing.
 
-Add the key and its English text to `src/i18n/en.json`, then run
-`npm run i18n:sync` so every other locale picks it up. `npm test` fails if you
+Add the key and its English text to `src/i18n/en.json` (a profile's rule:
+`profiles/<name>/i18n/en.json`), then run `npm run i18n:sync` so every other
+locale picks it up. `npm test` fails if you
 forget. See [`I18N.md`](./I18N.md).
 
 #### `meta.tags`
@@ -150,6 +151,35 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 - WCAG tagging: `wcag2a`, `wcag111`
 - domain: `nontext`, `images`, plus element-specific tags
 - nature: `atomic`, plus `automatic` or `manual`
+- another standard's own requirement: that standard's rule tag (see below)
+
+#### Rules for another standard's own requirements
+A rule that checks something WCAG does not require, but another standard does (a doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag. The tag makes it **opt-in**: it runs only under the standard's profile, a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's profile rather than in `src/checks/`: `profiles/<key>/rules/automatic/` or `profiles/<key>/rules/manual/`. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/<key>/tests/rules/` and `profiles/<key>/tests/fixtures/`. Map it to the standard's requirements the usual way (a row in the profile's rule map). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (a profile's from its `index.js`). The sample profile core's tests run against, `tests/fixtures/profiles/sample/`, has two such rules.
+
+#### Rule variants
+When another standard's requirement is a core rule with different thresholds (contrast at 7:1, say, or bold text large from 18.5px rather than WCAG's 14pt), write it as a **variant**, not a copy. The core rule declares the thresholds it reads from `ctx.config` as `settings`, with WCAG's values as defaults:
+
+```js
+// src/checks/automatic/contrast-minimum.js
+const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
+module.exports = { id, meta, runInPage, settings };
+```
+
+The variant is data, in the standard's profile:
+
+```js
+// profiles/<key>/rules/automatic/sample-contrast-enhanced.js
+module.exports = {
+  id: 'sample-contrast-enhanced',
+  from: 'contrast-minimum',
+  config: { normalTextRatio: 7, largeTextRatio: 4.5 },
+  meta: { /* its own title, description, i18n, tags... as any rule's */ }
+};
+```
+
+The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
+
+Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers, and stay outside semver until a profile can live outside this repository (see [`API_STABILITY.md`](./API_STABILITY.md#explicitly-unstable-not-covered-by-semver)).
 
 #### `meta.coverage.facetsBySc`
 This is the repo’s explicit **coverage model** for an SC.
@@ -317,7 +347,23 @@ The rule must return:
 
 Examples:
 
-### 8.2 Outcome conventions used by these rules
+### 8.2 What `ctx` carries
+
+`runInPage(ctx)` and `applicability(ctx)` receive the same object, built-in and custom rules alike:
+
+| Field | What it is |
+|---|---|
+| `document`, `window` | The page being scanned. |
+| `root` | The roots the scan covers: the document, or what `contextSelector` resolved to. |
+| `contextSelector` | The selector that scoped the run, if any. |
+| `rule` | The rule's resolved definition: `ruleId`, `defaultSeverity`, `defaultConfidence`, `type`, `meta`... |
+| `config` | `engineOptions.rules[ruleId]`, this rule's settings, if the caller gave any (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). |
+| `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. |
+| `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). |
+| `engineOptions` | The scan's options as resolved. |
+| `inputs.probes` | Evidence the host application supplied (`engineOptions.probes`). |
+
+### 8.3 Outcome conventions used by these rules
 
 Automatic:
 - `notApplicable` if no applicable targets
@@ -385,7 +431,8 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
 ### 11.1 The fixture file
 
 - Path: `tests/fixtures/<rule-slug>-all-scenarios.html`, where `<rule-slug>` is the rule
-  id itself (e.g. `tab-name-present` → `tab-name-present-all-scenarios.html`).
+  id itself (e.g. `tab-name-present` → `tab-name-present-all-scenarios.html`). A
+  profile's rule keeps it in the profile: `profiles/<name>/tests/fixtures/`.
 - Structure: a real HTML page (`<!doctype html>`, `<title>`, minimal inline `<style>`)
   containing numbered scenario blocks, each:
   ```html
@@ -421,7 +468,8 @@ exercised as real pages), not just embedded as strings inside `.test.js` files.
   asserts nothing, for a case whose outcome the fixture does not state.
 - `npm run fixtures:markers:check` replays every fixture and fails when a marker no
   longer matches what the rule reports; `scripts/data/fixture-markers.json` records the
-  cases that already disagree, so that set can only shrink.
+  cases that already disagree, so that set can only shrink. A profile's rules have
+  their record in the profile's own `scripts/data/fixture-markers.json`.
 
 ### 11.2 Known, acceptable exceptions to "one fixture, many cases"
 
@@ -497,7 +545,9 @@ npm run fixtures:index
 This writes `tests/fixtures/INDEX.md` (human-readable), `tests/fixtures/index.json`
 (machine-readable — every rule, its fixture path, and parsed pass/fail/cantTell case
 counts, for external tooling to enumerate and load fixtures directly) and
-`tests/fixtures/index.html` (the same listing as a browsable page). Commit all three
+`tests/fixtures/index.html` (the same listing as a browsable page). A profile's rules
+get the same three files in the profile's `tests/fixtures/`, with paths relative to the
+profile's folder. Commit all three
 alongside the fixture and test changes. A rule shipped without its fixture is treated
 the same as a rule shipped without tests — not done. `npm run fixtures:check` reports
 a stale index without rewriting it, and CI fails on one.

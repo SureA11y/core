@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>text-spacing-content-loss — scenario fixture</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        font-size: 16px;
+        line-height: 20px;
+        margin: 24px;
+        color: #000;
+        background: #fff;
+      }
+      .case {
+        border: 1px solid #ddd;
+        padding: 12px 12px 60px;
+        margin: 10px 0;
+      }
+      .case-title {
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .narrow {
+        width: 19ch;
+        height: 20px;
+      }
+      .clip {
+        overflow: hidden;
+      }
+      .forced {
+        letter-spacing: 0 !important;
+      }
+      .scroll {
+        width: 19ch;
+        height: 20px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>text-spacing-content-loss</code> (WCAG 1.4.12)</h1>
+    <p class="note">
+      Each target has a stable id of the form <code>tscl_case_NN</code>. The rule applies line
+      height 1.5, 2em after paragraphs, letter spacing 0.12em and word spacing 0.16em, then measures
+      the text. Cases 01 and 02 need a layout, so in jsdom they report nothing: their
+      <code>data-outcome-text-spacing-content-loss</code>
+      attribute gives that jsdom verdict, and the browser test checks the one in the title.
+    </p>
+
+    <div
+      class="case"
+      id="case_01"
+      data-outcome-text-spacing-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        01 — FAIL: in a browser, a one-line box with overflow: hidden cuts off the line the spacing
+        pushes down
+      </div>
+      <div class="narrow clip" id="tscl_case_01">Opening hours today</div>
+    </div>
+
+    <div
+      class="case"
+      id="case_02"
+      data-outcome-text-spacing-content-loss="PASS (no layout in jsdom)"
+    >
+      <div class="case-title">
+        02 — CANTTELL: in a browser, a one-line box lets the pushed-down line overlap the text below
+      </div>
+      <div class="narrow" id="tscl_case_02">Opening hours today</div>
+      <div>Closed on Sundays</div>
+    </div>
+
+    <div class="case" id="case_03">
+      <div class="case-title">
+        03 — CANTTELL: a style sheet rule forces letter-spacing: 0 with !important
+      </div>
+      <p class="forced" id="tscl_case_03">Opening hours today</p>
+    </div>
+
+    <div class="case" id="case_04">
+      <div class="case-title">04 — PASS: a paragraph with no fixed size grows with its text</div>
+      <p id="tscl_case_04">Opening hours today, and the rest of the week from nine to five.</p>
+    </div>
+
+    <div class="case" id="case_05">
+      <div class="case-title">
+        05 — PASS: a box that scrolls keeps the pushed-down line reachable
+      </div>
+      <div class="scroll" id="tscl_case_05">Opening hours today</div>
+    </div>
+  </body>
+</html>

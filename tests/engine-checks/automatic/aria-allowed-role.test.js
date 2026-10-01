@@ -126,10 +126,35 @@ test(`${RULE_ID}: pass when any role is set on a <table>`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when any role is set on a <tr>/<td>/<th>`, () => {
-  const html = `<!doctype html><html><body><table><tbody><tr role="listitem" id="a"><td role="button" id="b">x</td></tr></tbody></table></body></html>`;
+test(`${RULE_ID}: any role is permitted on <tr>/<td>/<th> of a table exposed as something other than a table`, () => {
+  const html = `<!doctype html><html><body><table role="presentation"><tbody><tr role="listitem" id="a"><td role="button" id="b">x</td></tr></tbody></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell for a role other than their own on <tr>/<td>/<th> of a native table`, () => {
+  const html = `<!doctype html><html><body><table><tbody><tr role="listitem" id="a"><td role="button" id="b">x</td><th role="link" id="c">y</th></tr></tbody></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const id of ['a', 'b', 'c']) assert.ok(hasOccurrenceForId(rule, id));
+});
+
+test(`${RULE_ID}: a table, grid or treegrid keeps its cells' and rows' own roles permitted`, () => {
+  const html = `<!doctype html><html><body>
+    <table role="grid"><tbody><tr role="row"><th role="rowheader">a</th><td role="gridcell">b</td></tr></tbody></table>
+    <table><tbody><tr role="row"><th role="columnheader">a</th><td role="cell">b</td></tr></tbody></table>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell for any role other than main on <main>`, () => {
+  const html = `<!doctype html><html><body><main role="navigation" id="a"></main><main role="main" id="b" hidden></main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  const restated = `<!doctype html><html><body><main role="main" id="b"></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(restated, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
 });
 
 test(`${RULE_ID}: cantTell when a <label> associated with a labelable control has an explicit role`, () => {
@@ -274,7 +299,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 19, maxOccurrences: 19 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 22, maxOccurrences: 22 });
 
   for (const id of [
     'aar_case_04',
@@ -284,6 +309,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
     'aar_case_13',
     'aar_case_17',
     'aar_case_18',
+    'aar_case_20',
+    'aar_case_21',
+    'aar_case_52',
     'aar_case_23',
     'aar_case_25',
     'aar_case_28',
@@ -312,9 +340,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-role-all-scenari
     'aar_case_15',
     'aar_case_16',
     'aar_case_19',
-    'aar_case_20',
-    'aar_case_21',
     'aar_case_22',
+    'aar_case_51',
+    'aar_case_53',
     'aar_case_24',
     'aar_case_26',
     'aar_case_27',

@@ -13,11 +13,25 @@
  *   via CSS techniques that can leave them in the tab order.
  * @expectation
  *   No element should be tabbable while visually hidden (e.g., opacity:0, clipped, off-screen).
+ *   An element that CSS brings back into view when it takes focus is not
+ *   hidden while focused, and is not flagged: the usual skip-link pattern
+ *   (`.skip { position: absolute; left: -9999px } .skip:focus { left: 0 }`),
+ *   or a hiding rule that stops applying on focus
+ *   (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`).
  *
  * Notes:
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
  * - The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.
+ * - The focused style is worked out from the stylesheets, not by focusing the
+ *   element: a DOM emulator does not restyle `:focus`. Rules whose subject
+ *   carries `:focus`, `:focus-visible` or `:focus-within` (or an ancestor
+ *   carries `:focus-within`) are laid over the computed style in document
+ *   order; a rule written `:not(:focus)` / `:not(:focus-within)` /
+ *   `:not(:focus-visible)` has its declarations reset to their initial values.
+ *   Inline style outranks a stylesheet rule unless the rule is `!important`.
+ *   The overlay ignores specificity among the focus rules, and cross-origin
+ *   stylesheets cannot be read, so their focus rules are not seen.
  */
 
 const id = 'css-hidden-focus';
@@ -106,9 +120,14 @@ function runInPage(ctx) {
 
   // Returns deterministic "visually hidden but can remain focusable" hints.
   function getVisibilityHints(el) {
+    if (!el) return [];
+    return hintsFromStyle(getComputedStyleSafe(el));
+  }
+
+  // The same hints, read off any object carrying the computed-style fields
+  // used below (a CSSStyleDeclaration, or the focused-state overlay).
+  function hintsFromStyle(cs) {
     const out = [];
-    if (!el) return out;
-    const cs = getComputedStyleSafe(el);
 
     // opacity:0
     try {
@@ -185,6 +204,177 @@ function runInPage(ctx) {
       }
     }
     return uniq;
+  }
+
+  // ---- Focused state, worked out from the stylesheets ----
+  const CSS_STYLE_RULE = 1;
+  const MAX_RULE_DEPTH = 10;
+  const FOCUS_STATE = /:focus(?:-visible|-within)?(?![-\w])/g;
+  const OWN_FOCUS_STATE = /:focus(?:-visible)?(?![-\w])/;
+  const NOT_FOCUS_STATE = /:not\(\s*:focus(?:-visible|-within)?\s*\)/g;
+  // Longhand name -> computed-style field read by hintsFromStyle.
+  const HINT_PROPS = {
+    opacity: 'opacity',
+    clip: 'clip',
+    'clip-path': 'clipPath',
+    width: 'width',
+    height: 'height',
+    overflow: 'overflow',
+    position: 'position',
+    left: 'left',
+    top: 'top',
+    'text-indent': 'textIndent'
+  };
+  const INITIAL_VALUES = {
+    opacity: '1',
+    clip: 'auto',
+    'clip-path': 'none',
+    width: 'auto',
+    height: 'auto',
+    overflow: 'visible',
+    position: 'static',
+    left: 'auto',
+    top: 'auto',
+    'text-indent': '0px'
+  };
+
+  function splitTopLevel(text, separators) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const ch of String(text || '')) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && separators.indexOf(ch) !== -1) {
+        parts.push(current);
+        current = '';
+        continue;
+      }
+      current += ch;
+    }
+    parts.push(current);
+    return parts.map(trim).filter(Boolean);
+  }
+
+  function hasPseudoElement(part) {
+    return /::[a-z-]+/i.test(part) || /:(before|after)\b/i.test(part);
+  }
+
+  // Selector for the element while it has focus, or null when the rule
+  // cannot apply to it then (`.a:focus .b`: .a cannot have focus while .b
+  // does).
+  function focusedBase(part) {
+    const compounds = splitTopLevel(part, [' ', '>', '+', '~']);
+    for (let i = 0; i < compounds.length - 1; i++) {
+      if (OWN_FOCUS_STATE.test(compounds[i])) return null;
+    }
+    // `:focus` standing alone in a compound becomes `*`, then every focus
+    // state is dropped: while focused, the element matches them all.
+    return trim(part.replace(/(^|[\s>+~(])(?=:focus)/g, '$1*').replace(FOCUS_STATE, '')) || '*';
+  }
+
+  let focusRules = null;
+  function getFocusRules() {
+    if (focusRules) return focusRules;
+    focusRules = [];
+    function consider(cssRule) {
+      const style = cssRule.style;
+      if (!style) return;
+      const props = Object.keys(HINT_PROPS).filter((p) => trim(style.getPropertyValue(p)));
+      if (!props.length) return;
+      for (const part of splitTopLevel(cssRule.selectorText, [','])) {
+        if (hasPseudoElement(part)) continue;
+        NOT_FOCUS_STATE.lastIndex = 0;
+        if (NOT_FOCUS_STATE.test(part)) {
+          const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
+          FOCUS_STATE.lastIndex = 0;
+          if (!FOCUS_STATE.test(base)) focusRules.push({ kind: 'notFocus', base, style, props });
+          continue;
+        }
+        FOCUS_STATE.lastIndex = 0;
+        if (!FOCUS_STATE.test(part)) continue;
+        const base = focusedBase(part);
+        if (base) focusRules.push({ kind: 'focus', base, style, props });
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > MAX_RULE_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          consider(cssRule);
+          continue;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of document.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          continue; // cross-origin, not inspectable
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      // no readable stylesheets
+    }
+    return focusRules;
+  }
+
+  function matchesSafe(el, selector) {
+    try {
+      return typeof el.matches === 'function' && el.matches(selector);
+    } catch {
+      return false;
+    }
+  }
+
+  // The visibility hints the element would have while focused, or null when
+  // no focus-dependent rule reaches it.
+  function focusedVisibilityHints(el) {
+    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
+    if (!rules.length) return null;
+    const inline = el.style || null;
+    const inlineHas = (p) => {
+      try {
+        return !!(inline && trim(inline.getPropertyValue(p)));
+      } catch {
+        return false;
+      }
+    };
+    const overlay = {};
+    for (const r of rules) {
+      if (r.kind !== 'notFocus') continue;
+      for (const p of r.props) if (!inlineHas(p)) overlay[p] = INITIAL_VALUES[p];
+    }
+    for (const r of rules) {
+      if (r.kind !== 'focus') continue;
+      for (const p of r.props) {
+        const important = String(r.style.getPropertyPriority(p) || '') === 'important';
+        if (inlineHas(p) && !important) continue;
+        overlay[p] = trim(r.style.getPropertyValue(p));
+      }
+    }
+    const cs = getComputedStyleSafe(el);
+    const focused = {};
+    for (const p of Object.keys(HINT_PROPS)) {
+      const field = HINT_PROPS[p];
+      focused[field] = Object.prototype.hasOwnProperty.call(overlay, p)
+        ? overlay[p]
+        : cs
+          ? cs[field]
+          : '';
+    }
+    return hintsFromStyle(focused);
   }
 
   function getFocusableInfoSafe(el) {
@@ -399,6 +589,10 @@ function runInPage(ctx) {
 
     const hints = getVisibilityHints(el);
     if (!hints.length) continue; // <-- applicability gate
+
+    // Brought back into view when it takes focus: visible while focused.
+    const whenFocused = focusedVisibilityHints(el);
+    if (whenFocused && !whenFocused.length) continue;
 
     const tagName = (() => {
       try {

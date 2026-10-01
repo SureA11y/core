@@ -10,7 +10,9 @@
  * @sc 2.4.2
  * @applicability
  *   Applies to a run over a whole document whose <title> resolves to
- *   non-empty text; a missing or empty title is page-title-present's
+ *   non-empty text. The title element is the first HTML <title> anywhere in
+ *   the document, as for document.title, so one the parser left in <body>
+ *   counts; a missing or empty title is page-title-present's
  *   failure, not a pattern to review. A run narrowed by contextSelector or
  *   by engineOptions.fragment is notApplicable, as is a title matching none
  *   of the patterns below.
@@ -78,7 +80,24 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 1;
 
-  const titleEl = document.querySelector('head > title');
+  // The document's title element, found as page-title-present finds it: the
+  // first HTML-namespace <title> anywhere in the document, since a <title>
+  // the parser leaves in <body> is still what document.title reads. An inline
+  // <svg><title> is not the page title.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
+  // Kept as the stable selector for the usual place; a <title> elsewhere gets
+  // the selector the engine builds for the node.
+  const titleSelector =
+    titleEl && titleEl.parentElement && titleEl.parentElement.localName === 'head'
+      ? 'head > title'
+      : undefined;
   const rawTitle = document.title || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
@@ -176,7 +195,7 @@ function runInPage(ctx) {
             };
 
         const occBase = {
-          selector: 'head > title',
+          selector: titleSelector,
           html: '',
           summary:
             'The set of page titles may not be descriptive enough to distinguish pages by topic or purpose.',
@@ -321,7 +340,7 @@ function runInPage(ctx) {
           ? 'pageTitlePatterns_summary_cantTell_veryShort'
           : 'pageTitlePatterns_summary_cantTell_templateLike';
     const occBase = {
-      selector: 'head > title',
+      selector: titleSelector,
       html: '',
       summary:
         'The page title may not be descriptive enough to identify the page topic or purpose.',

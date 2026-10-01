@@ -10,20 +10,25 @@
  * @sc 1.1.1
  * @type manual
  * @applicability
- *   Applies to <input type="image"> elements whose alt attribute is present
- *   and non-empty: an image button whose alt is its label. The element must
- *   be included in the accessibility tree, and role="presentation"/"none"
- *   takes it out of scope unless it is focusable, which restores its role.
+ *   Applies to <input type="image"> elements that get a non-empty text
+ *   alternative from any source: aria-labelledby (resolving to text),
+ *   aria-label, alt or title. An element whose alt is present but empty is
+ *   left to input-image-alt-decorative, which asks about that case. The
+ *   element must be included in the accessibility tree, and
+ *   role="presentation"/"none" takes it out of scope unless it is
+ *   focusable, which restores its role.
  * @expectation
- *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ *   Human review is required to confirm that the provided text alternative is
+ *   accurate and appropriate. Each occurrence lists every source present
+ *   (data.details.sources), so the reviewer checks each one.
  */
 
 const id = 'input-image-alt-quality';
 
 const meta = {
-  title: '<input type="image"> alt text must be appropriate (manual review)',
+  title: '<input type="image"> text alternative must be appropriate (manual review)',
   description:
-    'Flags <input type="image"> elements with non-empty alt text for human review of appropriateness.',
+    'Flags <input type="image"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.',
   i18n: {
     titleKey: 'inputImage_altQuality_title',
     descriptionKey: 'inputImage_altQuality_description'
@@ -112,6 +117,53 @@ function runInPage(ctx) {
     return !focusable;
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  // Every non-empty text-alternative source on the element, in accessible-name
+  // order: aria-labelledby (when it resolves to text), aria-label, alt, title.
+  // aria-labelledby wins over aria-label in the name, but a present aria-label
+  // is still listed, so each attribute present is asked about.
+  function collectTextAlternativeSources(el) {
+    const attr = (name) => {
+      try {
+        const v = el.getAttribute(name);
+        return v == null ? '' : String(v).trim();
+      } catch {
+        return '';
+      }
+    };
+    const sources = [];
+    let name = '';
+    let aria = null;
+    if (getAriaNameInfo) {
+      try {
+        aria = getAriaNameInfo(el, ctx);
+      } catch {
+        aria = null;
+      }
+    }
+    if (aria && aria.present && aria.value) {
+      name = String(aria.value).trim();
+      sources.push(aria.mechanism);
+      if (aria.mechanism === 'aria-labelledby' && attr('aria-label')) sources.push('aria-label');
+    } else if (!getAriaNameInfo && attr('aria-label')) {
+      name = attr('aria-label');
+      sources.push('aria-label');
+    }
+    const altText = attr('alt');
+    if (altText) {
+      sources.push('alt');
+      if (!name) name = altText;
+    }
+    const titleText = attr('title');
+    if (titleText) {
+      sources.push('title');
+      if (!name) name = titleText;
+    }
+    return { sources, name, alt: altText };
+  }
+
   const els = (() => {
     try {
       return Array.from(
@@ -146,24 +198,40 @@ function runInPage(ctx) {
 
     if (isRolePresentationExcluded(el)) continue;
 
-    // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() !== '')) continue;
+    // alt="" with another name is input-image-alt-decorative's question, so
+    // it is left there rather than asked twice.
+    let altRaw;
+    try {
+      altRaw = el.getAttribute('alt');
+    } catch {
+      altRaw = null;
+    }
+    if (altRaw != null && String(altRaw).trim() === '') continue;
+
+    // Applies when any text-alternative source gives the control a non-empty
+    // name; each present source is listed so the reviewer checks all of them.
+    const alt = collectTextAlternativeSources(el);
+    if (!alt.sources.length) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
+
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
 
     const baseOccurrence = {
-      summary: 'Review alt text on <input type="image"> for accuracy and appropriateness.',
-      hint: 'Ensure the alt text describes the control’s action (e.g., “Search”, “Submit order”) in context.',
+      summary: `Review the text alternative of this <input type="image"> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: 'Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.',
       i18n: {
         summaryKey: 'inputImage_altQuality_summary_cantTell',
         hintKey: 'inputImage_altQuality_hint_cantTell',
-        params: { element: 'input[type=image]' }
+        params: { element: 'input[type=image]', sources: sourcesText }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { alt: String(el.getAttribute('alt') || '') } // optional but useful
+        details
       }
     };
 

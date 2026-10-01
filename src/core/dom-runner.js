@@ -12,12 +12,19 @@
  *   normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
  *   resolveContextRoots (src/core/dom-helpers.js -- also used by frame-scan.js),
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
- *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings).
+ *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
+ *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
+ *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
+ *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
+ *   rollupInProfileVersion (a standard's rollups under one of its profiles),
+ *   profileStandardOf (ctx.standard: the standard a profile targets).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
-   resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings */
+   resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
+   RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
+   profileStandardOf */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -130,6 +137,18 @@ function rollupCompositeResults(
       const tags = [];
       tags.push(String(ENGINE_TAG || 'a11ycore').toLowerCase());
       tags.push('composite');
+      // A standard's own rollup (one per requirement, say) carries its rule tag,
+      // which makes it opt-in the same way as that standard's rules.
+      if (Array.isArray(metaIn.tags)) {
+        for (const t of metaIn.tags) {
+          const tag = String(t).trim().toLowerCase();
+          if (tag && !tags.includes(tag)) tags.push(tag);
+        }
+      }
+      const ownStandard =
+        typeof metaIn.standard === 'string' && metaIn.standard.trim()
+          ? metaIn.standard.trim()
+          : null;
 
       // Fixed WCAG-version-introduction lists (2.1 and 2.2 additions only -- every other
       // SC, including all pre-2.1 ones, is WCAG 2.0 baseline). Keep in sync with
@@ -230,7 +249,7 @@ function rollupCompositeResults(
         deprecated: false,
         deprecation: null,
         category: null,
-        standard: null,
+        standard: ownStandard,
         applicability: '',
         expectation: '',
         references: [],
@@ -241,6 +260,13 @@ function rollupCompositeResults(
         data: {
           details: {
             kind: 'compositeRule',
+            ...(ownStandard
+              ? {
+                  standard: ownStandard,
+                  version: metaIn.version || null,
+                  criterion: metaIn.criterion || null
+                }
+              : {}),
             wcagSc,
             level:
               typeof metaIn.level === 'string' && metaIn.level.trim() ? metaIn.level.trim() : null
@@ -260,13 +286,20 @@ function rollupCompositeResults(
       const compositeLevel =
         cDef0 && cDef0.data && cDef0.data.details && normalizeLevel(cDef0.data.details.level);
 
-      if (!isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      // The WCAG level gate applies to WCAG rollups only; a standard's own
+      // rollup has no WCAG level and is selected by its tag instead.
+      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
 
       // Apply same selection logic to composites
       if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
+
+      // Under a standard's profile, that standard's own rollups are the
+      // profile's version only.
+      const details = cDef0.data && cDef0.data.details;
+      if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
       const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
 
@@ -347,6 +380,13 @@ function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            ...(cDef0.standard
+              ? {
+                  standard: cDef0.data.details.standard,
+                  version: cDef0.data.details.version,
+                  criterion: cDef0.data.details.criterion
+                }
+              : {}),
             checksIds: checksIds.slice(),
             contributors,
             metrics: {
@@ -374,9 +414,39 @@ function rollupCompositeResults(
         raw.severity = rolledCantTellSeverity;
       }
 
-      rulesResults.push(
-        normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers)
-      );
+      const rolled = normalizeRuleResult(cDefResolved, raw, SCHEMA_VERSION, policy, sharedHelpers);
+
+      // A standard mapped rule by rule is named on the rollup only for
+      // the rules that produced its outcome: the failing ones for a fail, the
+      // undecided ones for cantTell, the passing ones for a pass, none for
+      // notApplicable. The rollup's catalog entry lists every rule's tests,
+      // most of which say nothing about this page.
+      const deciding = outcome === 'notApplicable' ? null : outcome;
+      const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
+      if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
+        const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
+        const produced = new Set();
+        for (const tid of checksIds) {
+          const child = byRuleId[tid];
+          if (!child || child.outcome !== deciding || !child.meta) continue;
+          for (const m of child.meta.normativeMappings || []) {
+            if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
+          }
+        }
+        // A requirement that restates the WCAG criterion is named whatever decided.
+        const restated = (m) => {
+          const prefixes =
+            RESTATED_PREFIXES && Object.prototype.hasOwnProperty.call(RESTATED_PREFIXES, m.standard)
+              ? RESTATED_PREFIXES[m.standard]
+              : [];
+          return prefixes.some((p) => String(m.requirement).indexOf(p) === 0);
+        };
+        rolled.meta.normativeMappings = rolled.meta.normativeMappings.filter(
+          (m) => !m || !ruleMapped.includes(m.standard) || restated(m) || produced.has(keyOf(m))
+        );
+      }
+
+      rulesResults.push(rolled);
     }
   } catch {
     // no-throws: omit rulesResults if anything goes wrong
@@ -700,6 +770,9 @@ function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -710,6 +783,27 @@ function runCore(
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
             : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+      );
+    } catch {}
+  }
+
+  // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
+  // The result names those that added a rule the rest of the selection would
+  // not have run (optInRulesRan, filled in the rule loop), so a reader knows
+  // the run goes beyond the targeted standard. A WCAG profile unlocks without
+  // running any, and a standard's profile runs its rules without the unlock.
+  const optInUnlocked =
+    runOnly && Array.isArray(runOnly.optInTags) ? runOnly.optInTags.slice() : [];
+  const withoutUnlock = optInUnlocked.length ? { ...runOnly, optInTags: [] } : null;
+  const optInRulesRan = new Set();
+  if (runOnly && Array.isArray(runOnly.optInTagsUnknown) && runOnly.optInTagsUnknown.length) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.optInRules: ignoring ' +
+          runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
+          ', no such opt-in rule tag (use "all" or one of: ' +
+          OPT_IN_RULE_TAGS.join(', ') +
+          ').'
       );
     } catch {}
   }
@@ -777,6 +871,16 @@ function runCore(
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (
+      withoutUnlock &&
+      Array.isArray(defResolved.tags) &&
+      !ruleMatchesRunOnly(defResolved, withoutUnlock, ENGINE_TAG)
+    ) {
+      for (const t of defResolved.tags) {
+        const tag = String(t).toLowerCase();
+        if (optInUnlocked.includes(tag)) optInRulesRan.add(tag);
+      }
+    }
 
     const implEntry = effectiveRuleImpls[defResolved.ruleId];
     const impl = implEntry && typeof implEntry.run === 'function' ? implEntry.run : null;
@@ -784,12 +888,26 @@ function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A rule's declared settings (contrast-minimum's thresholds) are its
+    // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
+    // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
+    // which is another rule under its own id, supplies its own. The caller's
+    // other config (excludeSelectors) still applies.
+    const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
+    let ruleConfig = callerConfig;
+    if (ruleConfig && settingNames.length) {
+      ruleConfig = { ...ruleConfig };
+      for (const name of settingNames) delete ruleConfig[name];
+    }
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -806,6 +924,8 @@ function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -883,6 +1003,26 @@ function runCore(
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
     }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
+    }
     if (!result.engineOptions) {
       result.engineOptions = {
         ...(ctx.engineOptions || {}),
@@ -931,6 +1071,21 @@ function runCore(
     );
   }
 
+  // Each rule result names the rollups that group it in this run. An empty
+  // list means its findings appear in no rollup, so a consumer that reads only
+  // rulesResults would miss them.
+  const rollupIdsByRule = Object.create(null);
+  for (const rolled of rulesResults) {
+    const ids =
+      rolled && rolled.data && rolled.data.details && Array.isArray(rolled.data.details.checksIds)
+        ? rolled.data.details.checksIds
+        : [];
+    for (const tid of ids) (rollupIdsByRule[tid] = rollupIdsByRule[tid] || []).push(rolled.ruleId);
+  }
+  for (const r of checksResults) {
+    if (r && typeof r === 'object') r.rollupIds = (rollupIdsByRule[r.ruleId] || []).slice();
+  }
+
   // Optional perf counters passthrough (only when enabled). Deterministic.
   let perfStats = null;
   try {
@@ -959,6 +1114,13 @@ function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
+      ...(optInRulesRan.size
+        ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
+        : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
     },
     url,

@@ -18,6 +18,7 @@ const {
   standardOfEntry
 } = require('../../src/coverage/standards');
 const core = require('../../src/core.js');
+const { FACETS } = require('../../src/coverage/wcag-facets');
 
 // --- the contract every registered standard keeps ---------------------------
 
@@ -34,8 +35,10 @@ test('every standard has a unique lowercase key and a unique display name', () =
   }
 });
 
-test('every entry a standard gives names its standard, a known version and its WCAG criteria', () => {
-  const wcagSc = core.getRulesCatalog().flatMap((c) => (c.meta && c.meta.wcagSc) || []);
+// An entry's wcagSc may be empty: a standard can make requirements WCAG does
+// not (a company's, a country's). What it lists must be real criteria.
+test('every entry a standard gives names its standard, a known version and real WCAG criteria', () => {
+  const wcagSc = Object.keys(FACETS);
   for (const s of NORMATIVE_STANDARDS) {
     for (const check of core.getChecksCatalog()) {
       for (const m of s.mappingsFor({ id: check.ruleId, wcagSc: check.wcagSc })) {
@@ -43,7 +46,7 @@ test('every entry a standard gives names its standard, a known version and its W
         assert.equal(m.standard, s.standard, where);
         assert.ok(s.versions.includes(m.version), where);
         assert.ok(m.requirement && m.title, where);
-        assert.ok(Array.isArray(m.wcagSc) && m.wcagSc.length, where);
+        assert.ok(Array.isArray(m.wcagSc), where);
         for (const sc of m.wcagSc) assert.ok(wcagSc.includes(sc), `${where} ${sc}`);
       }
     }
@@ -121,4 +124,16 @@ test('withStandardMappings: an entry the rule already declares is not repeated',
 
 test('withStandardMappings: a missing or non-array list yields an empty list', () => {
   for (const v of [null, undefined, 'x', {}]) assert.deepEqual(withStandardMappings(v, 'x'), []);
+});
+
+test('a rule tag is lowercase, not a WCAG tag, and selected by its standard\'s profiles', () => {
+  for (const s of NORMATIVE_STANDARDS) {
+    if (!s.ruleTag) continue;
+    assert.match(s.ruleTag, /^[a-z0-9-]+$/, s.key);
+    assert.doesNotMatch(s.ruleTag, /^wcag/, s.key);
+    // Otherwise the standard's own rules could never run through its profile.
+    for (const [name, p] of Object.entries(s.profiles || {})) {
+      assert.ok(p.tags.includes(s.ruleTag), name);
+    }
+  }
 });

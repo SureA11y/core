@@ -5,32 +5,34 @@
 /**
  * @check server-side-image-map-absent
  * @atomic true
- * @summary <img> must not use a server-side image map (ismap)
+ * @summary A server-side image map (ismap) needs a keyboard-operable alternative
  * @standard WCAG 2.2
  * @sc 2.1.1
  * @applicability
- *   Applies to any scan scope; whether it contains an <img> carrying an
- *   ismap attribute is always an answerable question.
+ *   Applies to any scan scope. An <img ismap> inside an <a href> is a
+ *   server-side image map: the browser sends the click coordinates to the
+ *   link's URL, which has no keyboard-operable equivalent and exposes no
+ *   individual regions to assistive technology.
  * @expectation
- *   No image uses ismap. Server-side image maps depend on the browser
- *   sending click coordinates to the server, which has no keyboard-operable
- *   equivalent, there is no way to determine or expose individual clickable
- *   regions to assistive technology or keyboard users. Client-side image
- *   maps (<map>/<area>, each with real href/alt) are the accessible
- *   alternative and are not flagged by this rule. Presence of ismap is
- *   itself the violation, and absence is itself a pass -- there is no
- *   third, not-applicable case.
+ *   Each server-side image map is reported as cantTell: 2.1.1 is met when
+ *   the same destinations are also offered as links a keyboard can reach,
+ *   which the rule cannot verify.
+ *   Client-side image maps (<map>/<area>) are not flagged.
+ *   A scope with no <img ismap> passes. One whose only <img ismap> elements
+ *   are outside a link is notApplicable: ismap does nothing there, so there
+ *   is no server-side image map (the misplaced attribute is invalid HTML,
+ *   a matter for the validator).
  * @implementation-notes
- * - Presence of ismap is itself the violation (there is no automatable way
- *   to verify a "usable alternative" exists elsewhere on the page).
+ * - There is no automatable way to verify that a usable alternative exists
+ *   elsewhere on the page, so the rule never fails.
  */
 
 const id = 'server-side-image-map-absent';
 
 const meta = {
-  title: 'Images must not use a server-side image map',
+  title: 'Server-side image maps must have a keyboard-operable alternative',
   description:
-    'Checks that <img> elements do not carry the ismap attribute (server-side image maps have no keyboard-operable equivalent).',
+    'Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.',
   i18n: {
     titleKey: 'serverSideImageMapAbsent_title',
     descriptionKey: 'serverSideImageMapAbsent_description'
@@ -66,15 +68,31 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el) continue;
 
+    // ismap does something only on an image inside a hyperlink.
+    let link;
+    try {
+      link = el.closest ? el.closest('a[href]') : null;
+    } catch {
+      link = null;
+    }
+    if (!link) continue;
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary:
-          'This image uses a server-side image map, which has no keyboard-operable equivalent.',
-        hint: 'Replace the server-side image map (ismap) with a client-side image map (<map>/<area>) or separate accessible links/buttons.',
+          'This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.',
+        hint: 'Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'serverSideImageMapAbsent_summary_fail',
-          hintKey: 'serverSideImageMapAbsent_hint_fail',
+          summaryKey: 'serverSideImageMapAbsent_summary_cantTell',
+          hintKey: 'serverSideImageMapAbsent_hint_cantTell',
           params: {}
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed:
+            'Whether the destinations of this image map are also offered as keyboard-operable links.',
+          evidence: { href: link.getAttribute('href') }
         },
         data: {
           details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
@@ -83,15 +101,17 @@ function runInPage(ctx) {
     );
   }
 
-  // Matching the selector is the whole violation (see @expectation above), so
-  // every match becomes an occurrence, and "no image uses ismap" is itself
-  // the passing case -- there is no separate notApplicable case.
-  if (!occurrences.length) {
+  // No <img ismap> at all is the passing case (see @expectation above);
+  // ismap only outside links means there is no server-side image map.
+  if (!nodes.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
     occurrences
   };

@@ -681,11 +681,18 @@ function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
-  function isLargeText(fontSizePx, fontWeightNum) {
+  // `boldLargeMinPx` overrides the size from which bold text is large. It
+  // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
+  // finite number, the WCAG threshold applies, so existing callers are
+  // unchanged.
+  function isLargeText(fontSizePx, fontWeightNum, boldLargeMinPx) {
     const size = parseFloat(fontSizePx);
     const w = Number(fontWeightNum);
     if (!Number.isFinite(size)) return false;
     if (size >= 24) return true;
+    if (typeof boldLargeMinPx === 'number' && Number.isFinite(boldLargeMinPx)) {
+      return size >= boldLargeMinPx && Number.isFinite(w) && w >= 700;
+    }
     // WCAG's bold-large threshold is 14pt. Derived via parsePx('14pt')
     // rather than a hardcoded decimal (e.g. "18.6667") or a hand-written
     // reconversion: floating-point multiplication/division isn't

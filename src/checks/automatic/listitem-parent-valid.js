@@ -11,7 +11,8 @@
  * @applicability
  *   Applies to <li> elements that have a parent element.
  * @expectation
- *   The parent is <ul>/<ol> with no role override, or an element with an
+ *   The parent is <ul>/<ol>/<menu> with no role override (all three have
+ *   the implicit role list), or an element with an
  *   explicit role of "list", "presentation", or "none". An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
@@ -47,7 +48,7 @@ const id = 'listitem-parent-valid';
 const meta = {
   title: 'List items must be inside a list container',
   description:
-    'Checks that <li> elements are contained by <ul>, <ol>, or an element with role="list".',
+    'Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role="list".',
   i18n: {
     titleKey: 'listitemParentValid_title',
     descriptionKey: 'listitemParentValid_description'
@@ -111,7 +112,7 @@ function runInPage(ctx) {
       // direction, see the header comment.
       valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
     } else {
-      valid = parentTag === 'ul' || parentTag === 'ol';
+      valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
 
     if (valid) continue;

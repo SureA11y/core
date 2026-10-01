@@ -21,6 +21,9 @@
  *   accepted: text sitting inside a custom slider widget is not reliably
  *   exposed as its name. On a labelable element (<input role="slider">) an
  *   associated <label> counts as well.
+ *   On a text-like <input> or a <textarea>, the placeholder counts last
+ *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
+ *   question, not a missing name.
  */
 
 const id = 'slider-name-present';
@@ -194,10 +197,22 @@ function runInPage(ctx) {
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
 
-    if (kind === 'native-slider') {
-      const lab = getNativeLabelText(el);
-      if (lab) return { ok: true, method: 'label' };
-      return { ok: false, method: 'none' };
+    // An associated <label> names any labelable host, whether it is a
+    // native <input type="range"> or carries role="slider"
+    // (<input type="number" role="slider">); getAssociatedLabelElements
+    // returns nothing for a non-labelable one.
+    const lab = getNativeLabelText(el);
+    if (lab) return { ok: true, method: 'label' };
+    if (kind === 'native-slider') return { ok: false, method: 'none' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
     }
 
     // role="slider" is name-from-author-only per WAI-ARIA (unlike e.g.

@@ -32,6 +32,13 @@
     <video id="naa_case_02" autoplay src="x.mp4"></video>
   </div>
 
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: autoplaying &lt;audio&gt; in a display:none container (it still plays)</div>
+    <div style="display:none">
+      <audio id="naa_case_06" autoplay loop src="x.mp3"></audio>
+    </div>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_03">
@@ -47,6 +54,33 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — NEUTRAL: no autoplay attribute at all</div>
     <audio id="naa_case_05" src="x.mp3"></audio>
+  </div>
+
+  <h2>Embedded sound sources</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: an &lt;embed&gt; that loads a sound file</div>
+    <embed id="naa_case_07" src="welcome.mp3">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: an &lt;object&gt; that loads a video; its fallback &lt;embed&gt; is the same sound</div>
+    <object id="naa_case_08" data="intro.mp4" type="video/mp4"><embed id="naa_case_08_fallback" src="intro.mp4"></object>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: a &lt;bgsound&gt; (obsolete, still a sound source)</div>
+    <bgsound id="naa_case_09" src="tune.mid">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: an &lt;embed&gt; with autostart="false"</div>
+    <embed id="naa_case_10" src="welcome.mp3" autostart="false">
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: an &lt;object&gt; that shows a PDF</div>
+    <object id="naa_case_11" data="report.pdf" type="application/pdf"></object>
   </div>
 
   <p class="note">End of fixture.</p>

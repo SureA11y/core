@@ -23,6 +23,8 @@
     .sufficientContrast { color: #969696; } /* vs #222222 parent text: ~5.4:1, >= 3:1 */
     .colorOnly { color: #2a2a2a; } /* vs #222222 parent text: ~1.1:1, well under 3:1 */
     .bgImage { background-image: linear-gradient(90deg, #ffffff, #000000); }
+    .sameColor { color: #222222; }
+    .bordered { border-bottom: 1px solid #222222; }
   </style>
 </head>
 <body>
@@ -35,7 +37,7 @@
     comparison varies between cases.
   </p>
 
-  <h2>A. PASS — non-color differentiator present</h2>
+  <h2>A. PASS — non-color differentiator present (and case 04, color only at >= 3:1)</h2>
 
   <div class="case" id="case_01">
     <div class="case-title">01 — PASS: link is underlined (most common real-world case)</div>
@@ -53,7 +55,7 @@
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — PASS: no non-color differentiator, but color contrast vs surrounding text is >= 3:1 (WCAG technique G183)</div>
+    <div class="case-title">04 — CANTTELL: no non-color differentiator, color contrast vs surrounding text is >= 3:1; G183 also needs a non-color cue on hover and focus, which a static scan cannot see &mdash; recorded as undecided, outranked here by the failures</div>
     <p>Read <a href="#" id="litb_case_04" class="nodeco sufficientContrast">this sufficiently-contrasting link</a> for more information.</p>
   </div>
 
@@ -72,8 +74,20 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — CANTTELL: color contrast vs surrounding text not confidently computable (background-image blocker on the link itself) — recorded as undecided, outranked here by case 05&rsquo;s failure</div>
-    <p>Read <a href="#" id="litb_case_07" class="nodeco colorOnly bgImage">this link over a background image</a> for more information.</p>
+    <div class="case-title">07 — CANTTELL: color contrast vs surrounding text not confidently computable (background-image blocker behind the paragraph) — recorded as undecided, outranked here by case 05&rsquo;s failure</div>
+    <p class="bgImage">Read <a href="#" id="litb_case_07" class="nodeco colorOnly">this link over a background image</a> for more information.</p>
+  </div>
+
+  <h2>D. Other link shapes</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: same color as the text, but marked by a bottom border (not a color-only link)</div>
+    <p>Read <a href="#" id="litb_case_08" class="nodeco sameColor bordered">this bordered link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: role="link" element with no underline and contrast vs surrounding text ~1.1:1</div>
+    <p>Read <span role="link" tabindex="0" id="litb_case_09" class="colorOnly">this scripted link</span> for more information.</p>
   </div>
 
   <p class="note">End of fixture.</p>

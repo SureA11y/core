@@ -42,6 +42,7 @@ One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped t
 
 - **Suites follow the criterion**, because that is what people track, and **testcases follow the rule** rather than the occurrence, so a defect repeated forty times on a page is one failing test whose body lists all forty, and test counts stay stable between runs.
 - Suites come from each rule's own WCAG mappings, not from the composites, so every rule that ran is reported even when composites were excluded. The composite, when it ran, supplies the suite's title and the `criterionOutcome` property. A rule mapped to two criteria appears in both suites. A rule mapped to no criterion goes into a final `Other checks` suite with `classname="other"`.
+- The run's `engine`, `schemaVersion`, `wcagVersion`, `profile`, `optInRules` (comma-separated tags, when `engineOptions.optInRules` added rules), `locale` and `url` are repeated as properties on every suite, each only when the result has it.
 - Suites are ordered by criterion, numerically (1.4.3 before 1.4.10), and testcases by rule id.
 - `en301549` properties name the EN 301 549 clause that restates the criterion, where there is one and the scan asked for EN 301 549 clauses (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#en-301-549)).
 

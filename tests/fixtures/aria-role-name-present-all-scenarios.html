@@ -186,6 +186,28 @@
     <div role="scrollbar" id="role_case_27"></div>
   </div>
 
+  <h2>Host element naming kept under the role</h2>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — PASS: &lt;fieldset role="radiogroup"&gt; named by its first &lt;legend&gt;</div>
+    <fieldset role="radiogroup" id="role_case_28"><legend>Civilité</legend>
+      <label><input type="radio" name="civ28"> Madame</label>
+      <label><input type="radio" name="civ28"> Monsieur</label>
+    </fieldset>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: &lt;table role="grid"&gt; named by its &lt;caption&gt;</div>
+    <table role="grid" id="role_case_29"><caption>Planning</caption><tr role="row"><td role="gridcell">Lundi</td></tr></table>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: a &lt;legend&gt; that is not a child of the fieldset does not name it</div>
+    <fieldset role="radiogroup" id="role_case_30"><div><legend>Civilité</legend></div>
+      <label><input type="radio" name="civ30"> Madame</label>
+    </fieldset>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

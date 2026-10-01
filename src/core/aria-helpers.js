@@ -768,12 +768,20 @@ function createAriaHelpers(opts, shared) {
     // is permitted, but restating the native listbox role is always
     // allowed via the native-role fallback.
     'select[multiple]': [],
-    // <table> permits any role. <td>/<th>/<tr> are spec'd as context-
-    // dependent (restricted only when the ancestor <table> is exposed as
-    // role=table/grid/treegrid); that conditional isn't implemented here,
-    // so they're left unconstrained rather than guessing at ancestor-role
-    // resolution.
+    // No role other than its own 'main' is permitted on <main> (ARIA in
+    // HTML), and that one via the native-role fallback below.
+    main: [],
+    // <table> permits any role. <td>/<th>/<tr> are context-dependent: when
+    // the ancestor <table> is exposed as role=table, grid or treegrid (no
+    // explicit role, or one of those three) they permit no role other than
+    // their own, which is cell or gridcell for <td>, columnheader, rowheader,
+    // cell or gridcell for <th>, and row for <tr> (see getElementRoleKey's
+    // td[table]/th[table]/tr[table] split). Outside such a table they
+    // permit any role.
     table: null,
+    'td[table]': ['cell', 'gridcell'],
+    'th[table]': ['columnheader', 'rowheader', 'cell', 'gridcell'],
+    'tr[table]': [],
     td: null,
     th: null,
     tr: null
@@ -822,7 +830,11 @@ function createAriaHelpers(opts, shared) {
     'input[type=email]': 'textbox',
     select: 'combobox',
     'select[multiple]': 'listbox',
+    main: 'main',
     table: 'table',
+    'td[table]': 'cell',
+    'th[table]': 'columnheader',
+    'tr[table]': 'row',
     td: 'cell',
     th: 'columnheader',
     tr: 'row'
@@ -984,6 +996,20 @@ function createAriaHelpers(opts, shared) {
   // decide, statically, whether it is wrong (see aria-controls below).
   // `el` is optional; without it the few element-state-dependent branches
   // fall back to their element-agnostic answer.
+  // Lower bounds WAI-ARIA 1.2 sets on integer values ("an integer greater
+  // than or equal to ..."). aria-setsize also accepts -1; aria-colcount and
+  // aria-rowcount (-1 or at least the number of columns/rows in the DOM)
+  // are left to the plain integer check.
+  const INTEGER_ATTR_MIN = {
+    'aria-level': 1,
+    'aria-posinset': 1,
+    'aria-setsize': 1,
+    'aria-colindex': 1,
+    'aria-rowindex': 1,
+    'aria-colspan': 1,
+    'aria-rowspan': 0
+  };
+
   function validateAttrValue(name, rawValue, el) {
     const type = getAttrValueType(name);
     if (!type) return { valid: true, reason: 'unknown-attr-skip' };
@@ -1014,7 +1040,17 @@ function createAriaHelpers(opts, shared) {
       }
       case 'integer': {
         const ok = /^-?\d+$/.test(v);
-        return { valid: ok, reason: ok ? '' : 'expected-integer' };
+        if (!ok) return { valid: false, reason: 'expected-integer' };
+        // WAI-ARIA 1.2 bounds some integers: a level, position, index or
+        // column span starts at 1, a row span at 0, and a set size is at
+        // least 1 or -1 (unknown). A value outside the range exposes no
+        // meaningful level or position.
+        const n = Number(v);
+        const min = INTEGER_ATTR_MIN[lower(name)];
+        if (min === undefined) return { valid: true, reason: '' };
+        if (n >= min) return { valid: true, reason: '' };
+        if (lower(name) === 'aria-setsize' && n === -1) return { valid: true, reason: '' };
+        return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
         const ok = Number.isFinite(Number(v));
@@ -1067,7 +1103,12 @@ function createAriaHelpers(opts, shared) {
           return { valid: false, review: true, reason: 'idref-controls-not-found' };
         }
 
-        return { valid: false, reason: 'idref-list-none-found' };
+        // Any other list (aria-labelledby, aria-describedby, aria-owns,
+        // aria-flowto, aria-details) that resolves to nothing is asked
+        // about rather than failed: the element falls back to its other
+        // name or description sources, and whether anything was lost
+        // depends on what the reference was meant to add.
+        return { valid: false, review: true, reason: 'idref-list-none-found' };
       }
       case 'string':
       default:
@@ -1169,6 +1210,28 @@ function createAriaHelpers(opts, shared) {
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
       return 'input[type=' + type + ']';
+    }
+
+    if (tag === 'td' || tag === 'th' || tag === 'tr') {
+      // Constrained only inside a <table> exposed as a table, grid or
+      // treegrid: one with no explicit role, or with one of those three.
+      // A layout table (role=none/presentation) or any other role leaves
+      // its cells and rows free (ARIA in HTML).
+      let table;
+      try {
+        table = el.closest ? el.closest('table') : null;
+      } catch {
+        table = null;
+      }
+      if (!table) return tag;
+      const tableRole = getExplicitRole(table);
+      const exposedAsTable =
+        !tableRole ||
+        !isValidConcreteRole(tableRole) ||
+        tableRole === 'table' ||
+        tableRole === 'grid' ||
+        tableRole === 'treegrid';
+      return exposedAsTable ? tag + '[table]' : tag;
     }
 
     if (tag === 'select') {

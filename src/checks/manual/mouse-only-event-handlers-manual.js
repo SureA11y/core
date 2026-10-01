@@ -20,9 +20,14 @@
  *   event equivalents), or `onfocus`/`onblur` (the standard substitute
  *   for hover-triggered behavior: focus/blur are the keyboard-
  *   navigable analog to mouseover/mouseout, per WCAG technique G90).
- *   Otherwise the element's mouse-driven behavior (a hover tooltip, a
- *   custom dropdown, a drag interaction) has no way to be triggered by a
- *   keyboard-only user.
+ *   A handler is reachable only if keyboard events can reach it:
+ *   `onfocus`/`onblur` when the element itself can take focus, and a key
+ *   handler when the element or one of its descendants can (key events
+ *   bubble, focus events do not). Otherwise the element's mouse-driven
+ *   behavior (a hover tooltip, a custom dropdown, a drag interaction) has
+ *   no way to be triggered by a keyboard-only user, and it is flagged with
+ *   a reason saying whether the keyboard handlers are missing or cannot
+ *   run.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), not
  *   `automatic`: this can only see inline `on*="..."` HTML attributes.
@@ -93,6 +98,35 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  const FOCUS_ATTRS = ['onfocus', 'onblur'];
+  const FOCUSABLE_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+
+  function canTakeFocus(el) {
+    if (!helpers.getFocusableInfo) return true;
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return true;
+    }
+  }
+
+  // Focus and blur fire only on the element that takes focus. Key events are
+  // dispatched to the focused element and bubble, so a key handler also runs
+  // for a focusable descendant.
+  function keyboardCanReach(el, keyboardAttrs) {
+    if (canTakeFocus(el)) return true;
+    if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
+    let descendants;
+    try {
+      descendants = Array.from(el.querySelectorAll(FOCUSABLE_CANDIDATES));
+    } catch {
+      return true;
+    }
+    return descendants.some((d) => canTakeFocus(d));
+  }
+
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
@@ -114,12 +148,39 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const hasKeyboardEquiv = KEYBOARD_EQUIV_ATTRS.some((a) => trim(el.getAttribute(a)));
-    if (hasKeyboardEquiv) continue;
+    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
+    const unreachable = presentKeyboardAttrs.length > 0;
 
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
+
+    if (unreachable) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has ${presentMouseAttrs.join(', ')} and ${presentKeyboardAttrs.join(', ')}, but it cannot take keyboard focus, so the keyboard handlers never run.`,
+          hint: 'Make the element focusable (use a native control, or add tabindex="0"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.',
+          i18n: {
+            summaryKey: 'mouseOnlyEventHandlers_summary_cantTell_notFocusable',
+            hintKey: 'mouseOnlyEventHandlers_hint_cantTell_notFocusable',
+            params: {
+              attrs: presentMouseAttrs.join(', '),
+              keyboardAttrs: presentKeyboardAttrs.join(', ')
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE',
+              mouseAttrs: presentMouseAttrs,
+              keyboardAttrs: presentKeyboardAttrs
+            },
+            visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {

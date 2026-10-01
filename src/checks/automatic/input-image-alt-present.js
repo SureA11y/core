@@ -3,7 +3,7 @@
 'use strict';
 
 /**
- * @check inputImage-alt-present
+ * @check input-image-alt-present
  * @atomic true
  * @summary Accessible <input type="image"> elements must have an alt attribute
  * @standard WCAG 2.2
@@ -11,9 +11,12 @@
  * @applicability
  *   Applies to <input type="image"> elements included in the accessibility tree.
  * @expectation
- *   Each applicable <input type="image"> element has an alt attribute, and its
- *   accessible name is not the browser default for an image button.
- *   The alt attribute may be empty (alt="").
+ *   Each applicable <input type="image"> element has a non-empty accessible
+ *   name from aria-labelledby, aria-label, alt or title. An empty name
+ *   fails, whether alt is missing or empty (alt="").
+ *   An author-supplied name that equals a browser default for an image
+ *   button ("Submit", "Submit Query") is not an empty name: it may describe
+ *   the button, so it is reported as cantTell for a person to judge.
  */
 
 const id = 'input-image-alt-present';
@@ -99,6 +102,7 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
 
   for (const el of inputs) {
@@ -118,10 +122,12 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    // The browser's own fallback name for an image button carries no
-    // information, so an author-supplied name equal to it is treated as no
-    // name at all (ACT 59796f). Only the English defaults are recognised:
-    // "Submit Query" from HTML-AAM, "Submit" from Chrome.
+    // An author-supplied name equal to the browser's own fallback name for an
+    // image button ("Submit Query" from HTML-AAM, "Submit" from Chrome) may
+    // be the browser default copied by hand, or may describe a submit button
+    // accurately. It is a name, so ACT 59796f passes it; whether it conveys
+    // the button's purpose is asked, not failed. Only the English defaults
+    // are recognised. With no author name at all the control fails below.
     const effectiveName = (() => {
       let v = '';
       if (getAriaNameInfo) {
@@ -149,19 +155,25 @@ function runInPage(ctx) {
         : null;
       const defaultNameOccurrence = {
         summary:
-          'Accessible name is the browser default for an image button, which conveys nothing.',
-        hint: 'Replace it with text describing what the button does, for example "Search".',
+          'The accessible name matches the browser default for an image button; check that it describes what the button does.',
+        hint: 'If the name does not say what the button does, replace it with text that does, for example "Search".',
+        occurrenceOutcome: 'cantTell',
         i18n: {
-          summaryKey: 'inputImage_altPresent_summary_defaultName',
-          hintKey: 'inputImage_altPresent_hint_defaultName',
+          summaryKey: 'inputImage_altPresent_summary_cantTell_defaultName',
+          hintKey: 'inputImage_altPresent_hint_cantTell_defaultName',
           params: { element: 'input[type=image]' }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed: 'Whether this default-looking name describes what the button does.',
+          evidence: { name: effectiveName }
         },
         data: {
           visibilityFilter: eligInfoDefault || { targetSet: 'acc', accEligible: null, reasons: [] },
           details: { reasonCode: 'default_name' }
         }
       };
-      occurrences.push(
+      cantTellOccurrences.push(
         helpers && typeof helpers.reportOccurrence === 'function'
           ? helpers.reportOccurrence(el, defaultNameOccurrence)
           : { selector: '', html: '', ...defaultNameOccurrence }
@@ -220,16 +232,16 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  if (!occurrences.length) {
+  if (!occurrences.length && !cantTellOccurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
-  return {
-    ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'minor',
-    occurrences
-  };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    cantTellOccurrences,
+    rule.defaultSeverity || 'minor'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

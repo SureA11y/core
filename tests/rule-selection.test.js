@@ -18,6 +18,18 @@ function loadCore() {
   throw new Error(`Could not locate src/core.js. Tried:\n${candidates.join('\n')}`);
 }
 
+// Rules carrying a standard's rule tag are opt-in (src/coverage/standards.js).
+const OPT_IN_RULE_TAGS = require('../src/coverage/standards')
+  .standardsData()
+  .filter((s) => s.ruleTag)
+  .map((s) => s.ruleTag);
+
+function isOptIn(def) {
+  return (Array.isArray(def.tags) ? def.tags : []).some((t) =>
+    OPT_IN_RULE_TAGS.includes(String(t).toLowerCase())
+  );
+}
+
 function uniq(arr) {
   const seen = new Set();
   const out = [];
@@ -81,6 +93,9 @@ function hasAnyRunOnlyKeys(ro) {
  * - includeMode affects only the combination between includeRuleIds and includeTags.
  * - includeTags are ANY-match (intersection within tags is not supported).
  * - excludes always subtract after includes.
+ * - an opt-in rule is selected only when an include names its tag or its id,
+ *   or engineOptions.optInRules unlocks its tag ('all' unlocks every one);
+ *   the rest of the selection then applies as for any rule.
  */
 function referenceSelectedRuleIds(core, engineOptions, runOnly) {
   const defs = Array.isArray(core.CHECK_DEFS) ? core.CHECK_DEFS : [];
@@ -116,10 +131,24 @@ function referenceSelectedRuleIds(core, engineOptions, runOnly) {
     excludeTags = parseCommaString(tags && tags.exclude, { lower: true });
   }
 
+  const eoAll = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const unlockList = parseCommaString(eoAll.optInRules, { lower: true });
+  const unlocked = unlockList.includes('all')
+    ? OPT_IN_RULE_TAGS.slice()
+    : OPT_IN_RULE_TAGS.filter((t) => unlockList.includes(t));
+
   function matches(def) {
     const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
     const hasIdInclude = includeRuleIds.length > 0;
     const hasTagInclude = includeTags.length > 0;
+
+    if (isOptIn(def)) {
+      const askedByTag = defTags.some(
+        (t) => OPT_IN_RULE_TAGS.includes(t) && (includeTags.includes(t) || unlocked.includes(t))
+      );
+      const askedById = includeRuleIds.some((id) => ruleIdMatches(id, def.ruleId, ENGINE_TAG));
+      if (!askedByTag && !askedById) return false;
+    }
 
     let idMatch = true;
     let tagMatch = true;
@@ -213,10 +242,21 @@ test('rule selection: sanity - CHECK_DEFS has content', () => {
   assert.ok(core.CHECK_DEFS.length > 0, 'CHECK_DEFS should not be empty');
 });
 
-test('rule selection: default (no runOnly, no engineOptions) => all checks', () => {
+test('rule selection: default (no runOnly, no engineOptions) => every check but the opt-in ones', () => {
   assertSelection(core, 'default all checks', undefined, undefined);
   const got = gotSelectedRuleIds(core, undefined, undefined);
-  assert.equal(got.length, core.CHECK_DEFS.length);
+  const optIn = core.CHECK_DEFS.filter(isOptIn).map((d) => d.ruleId);
+  assert.equal(got.length, core.CHECK_DEFS.length - optIn.length);
+  for (const id of optIn) assert.ok(!got.includes(id), `${id} is opt-in`);
+});
+
+test('rule selection: optInRules "all" with no other filter => every check', () => {
+  assertSelection(core, 'optInRules all', { optInRules: 'all' }, undefined);
+  const got = gotSelectedRuleIds(core, undefined, { optInRules: 'all' });
+  assert.deepEqual(
+    got,
+    core.CHECK_DEFS.map((d) => d.ruleId)
+  );
 });
 
 test('rule selection: engineOptions.checks.include supports comma list + spaces + duplicates + empty tokens', () => {
@@ -305,7 +345,8 @@ test('rule selection: includeMode=and (default) => intersection between checks.i
 });
 
 test('rule selection: includeMode=or => union between checks.include and tags.include', () => {
-  const defs = core.CHECK_DEFS;
+  // A plain tag include never selects an opt-in rule, so leave them out.
+  const defs = core.CHECK_DEFS.filter((d) => !isOptIn(d));
   const tagIndex = buildTagIndex(defs);
 
   const picked = findSharedNonUniversalTag(defs, tagIndex);

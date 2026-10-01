@@ -246,13 +246,13 @@ module.exports = [
 
   {
     id: 'wcag-2.4.4-link-purpose-in-context',
-    checksIds: ['link-name-quality'],
+    checksIds: ['link-name-present', 'link-name-quality'],
     meta: {
       titleKey: 'catalog.rules.wcag_244_link_purpose_in_context.title',
       descriptionKey: 'catalog.rules.wcag_244_link_purpose_in_context.description',
       title: 'Link Purpose (In Context)',
       description:
-        'Rollup of checks flagging links whose text alone is a known non-descriptive/generic phrase.',
+        'Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase.',
       wcagSc: ['2.4.4'],
       level: 'A'
     }
@@ -387,13 +387,13 @@ module.exports = [
 
   {
     id: 'wcag-1.4.12-text-spacing',
-    checksIds: ['avoid-inline-spacing'],
+    checksIds: ['avoid-inline-spacing', 'text-spacing-content-loss'],
     meta: {
       titleKey: 'catalog.rules.wcag_1412_text_spacing.title',
       descriptionKey: 'catalog.rules.wcag_1412_text_spacing.description',
       title: 'Text Spacing',
       description:
-        'Rollup of checks ensuring inline styles do not block user text-spacing overrides.',
+        'Rollup of checks ensuring text spacing can be increased without losing content.',
       wcagSc: ['1.4.12'],
       level: 'AA'
     }

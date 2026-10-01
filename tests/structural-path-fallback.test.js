@@ -6,24 +6,24 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { ruleDirs } = require('../scripts/lib/rule-dirs');
 
 // An occurrence that reaches the engine without its element makes the engine
 // re-find one with document.querySelector, so a rule reporting many of them
 // costs a document-wide query per occurrence. It also leaves the engine unable
 // to reason about that element later -- the ancestor-walk downgrade in
 // normalizeRuleResult can only act on occurrences that carry a node.
-const CHECKS_DIR = path.join(__dirname, '..', 'src', 'checks');
 const FALLBACK_COUNTER = 'structuralPath.selectorFallback';
 
 // Rules still building occurrences by hand. This must only ever go down: it
 // is the remaining migration, not an allowance for new rules.
 const HAND_BUILDING_RULES = 0;
 
+// Every rule folder: src/checks and each profile's.
 function ruleFiles() {
-  return fs
-    .readdirSync(CHECKS_DIR)
-    .flatMap((dir) => {
-      const full = path.join(CHECKS_DIR, dir);
+  return ruleDirs()
+    .flatMap((root) => fs.readdirSync(root).map((dir) => path.join(root, dir)))
+    .flatMap((full) => {
       if (!fs.statSync(full).isDirectory()) return [];
       return fs
         .readdirSync(full)
@@ -35,7 +35,10 @@ function ruleFiles() {
 
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
   const files = ruleFiles();
-  const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
+  // A variant has no code of its own: it runs its base rule's, counted there.
+  const handBuilt = files
+    .filter((f) => typeof require(f).from !== 'string')
+    .filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
   assert.ok(files.length > 100, 'sanity: the rule files were found');
   assert.ok(

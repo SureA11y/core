@@ -67,6 +67,20 @@ test('spinbutton-name-present: fail even with visible text content (role="spinbu
   assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
+test(`${RULE_ID}: a placeholder names an <input role="spinbutton"> (HTML-AAM's last name source)`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input type="number" role="spinbutton" placeholder="Quantité" id="a"></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a placeholder attribute on an element that is not a text-like input names nothing`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><div role="spinbutton" tabindex="0" placeholder="x" id="a"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test('spinbutton-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden', () => {
   const html = `<!doctype html><html><body>
     <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
@@ -96,9 +110,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
+    'spinbutton_case_25',
     'spinbutton_case_22',
     'spinbutton_case_23',
     'spinbutton_case_01',
@@ -110,6 +125,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/spinbutton-name-present-all-s
   ];
 
   const expectedNoOccIds = [
+    'spinbutton_case_24',
     'spinbutton_case_12',
     'spinbutton_case_13',
     'spinbutton_case_03',

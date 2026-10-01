@@ -20,6 +20,9 @@
  *   accepted: text sitting inside a custom combobox widget is not reliably
  *   exposed as its name. On a labelable element (<input role="combobox">) an
  *   associated <label> counts as well.
+ *   On a text-like <input> or a <textarea>, the placeholder counts last
+ *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
+ *   question, not a missing name.
  */
 
 const id = 'combobox-name-present';
@@ -193,6 +196,16 @@ function runInPage(ctx) {
     // Native <label> association (e.g. <input role="combobox">).
     const lab = getNativeLabelText(el);
     if (lab) return { ok: true, method: 'label' };
+
+    // HTML-AAM's last name source for a text-like <input> or a <textarea>,
+    // after title: the placeholder. A placeholder-only label is a 3.3.2
+    // question, not a missing name.
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx, { placeholder: true });
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
 
     // role="combobox" is name-from-author-only per WAI-ARIA: it must NOT
     // fall back to subtree content. Visible text near/inside a custom

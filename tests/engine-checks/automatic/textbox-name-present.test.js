@@ -73,6 +73,22 @@ test('textbox-name-present: hidden-only content => fail', () => {
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: a placeholder names an <input role="textbox"> (HTML-AAM's last name source)`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input role="textbox" placeholder="Rechercher" id="a"></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const textarea = `<!doctype html><html lang="fr"><head><title>t</title></head><body><textarea role="textbox" placeholder="Message"></textarea></body></html>`;
+  assertRule(runa11yCoreOnHtml(textarea, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+});
+
+test(`${RULE_ID}: a placeholder attribute on an element that is not a text-like input names nothing`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><div role="textbox" tabindex="0" placeholder="x" id="a"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test('textbox-name-present: wrapping <label> has its own aria-label even though its only child content is aria-hidden', () => {
   const html = `<!doctype html><html><body>
     <label aria-label="Toggle Navigation" for="c"><svg aria-hidden="true"><path d="M0 0"/></svg></label>
@@ -102,9 +118,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
+    'textbox_case_25',
     'textbox_case_22',
     'textbox_case_23',
     'textbox_case_01',
@@ -116,6 +133,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   ];
 
   const expectedNoOccIds = [
+    'textbox_case_24',
     'textbox_case_12',
     'textbox_case_13',
     'textbox_case_03',

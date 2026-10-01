@@ -15,8 +15,9 @@
  * @expectation
  *   Each attribute's value conforms to its WAI-ARIA-declared value type:
  *   boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token
- *   from a fixed enumerated set, an integer, a real number, or an ID
- *   reference (list) that resolves to an existing element in the document.
+ *   from a fixed enumerated set, an integer (within the range WAI-ARIA sets
+ *   for it), a real number, or an ID reference (list) that resolves to an
+ *   existing element in the document.
  *   Per ACT 6a7281's own applicability ("any state or property that is
  *   NOT empty"), an explicitly empty value, including a bare boolean-style
  *   attribute with no "=value" at all, e.g. `aria-checked` alone, is out
@@ -27,7 +28,7 @@
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies
  *   unless engineOptions.includeHiddenElements is true.
- * - ID-reference resolution (see aria-helpers.js's idExists) only flags
+ * - ID-reference resolution (see aria-helpers.js's idExists) only considers
  *   idref-list attributes (aria-labelledby, aria-describedby,
  *   aria-controls, aria-owns, etc.) when NONE of the space-separated ids
  *   resolve, a partially-dangling list (some ids exist, some don't) is
@@ -38,16 +39,20 @@
  *   text names it as a non-required property whose target "may be created
  *   in response to an event that may or may not happen" (a validation
  *   error message rendered only once the error actually occurs).
- * - aria-controls is never a fail on a target that doesn't resolve, and
- *   this is the one place the rule reports two tiers. The controlled
- *   element is routinely built when the widget opens, so a static scan
- *   that cannot find it has not found a defect; it has found markup it
- *   cannot decide. A collapsed widget (aria-expanded="false" or
- *   aria-selected="false") passes outright, since the absence is exactly
- *   what that state means; anything else is a `cantTell` for human
- *   review. Every other idref/idref-list attribute keeps its fail: a
- *   dangling aria-labelledby or aria-owns names content that was supposed
- *   to be there already.
+ * - An idref list that resolves to nothing is a `cantTell`, never a fail.
+ *   The element falls back to its other name and description sources (a
+ *   <button aria-describedby="nope">Save</button> is still named "Save"),
+ *   so whether anything was lost depends on what the reference was meant
+ *   to add, and the target may be created later. aria-controls goes one
+ *   step further: a collapsed widget (aria-expanded="false" or
+ *   aria-selected="false") passes outright, since the absence of the
+ *   controlled element is exactly what that state means. A name that goes
+ *   missing because of a dangling aria-labelledby is reported by the name
+ *   rules.
+ * - Integers are also checked against the lower bounds WAI-ARIA 1.2 sets:
+ *   aria-level, aria-posinset, aria-colindex, aria-rowindex and
+ *   aria-colspan at least 1, aria-rowspan at least 0, aria-setsize at
+ *   least 1 or exactly -1.
  * - Two tiers in one run means helpers.resolveTieredOutcome decides the
  *   aggregate: a real fail elsewhere on the page still reports fail, and
  *   the aria-controls occurrences ride along rather than being dropped.
@@ -151,19 +156,26 @@ function runInPage(ctx) {
     }
 
     for (const item of review || []) {
+      const controls = item.name === 'aria-controls';
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
             'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
-          hint: 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.',
+          hint: controls
+            ? 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.'
+            : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
-            hintKey: 'ariaValidAttrValue_hint_cantTell_idref',
+            hintKey: controls
+              ? 'ariaValidAttrValue_hint_cantTell_idref'
+              : 'ariaValidAttrValue_hint_cantTell_idrefList',
             params: { attr: item.name, value: item.value }
           },
           uncertainty: {
             code: 'runtime-dependent',
-            needed: 'Whether the widget creates the referenced element when it opens.',
+            needed: controls
+              ? 'Whether the widget creates the referenced element when it opens.'
+              : 'Whether the referenced element is added later, and whether its absence loses a name, description or relationship.',
             evidence: {
               attribute: item.name,
               referencedId: item.value,

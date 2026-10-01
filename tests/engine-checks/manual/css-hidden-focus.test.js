@@ -290,7 +290,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expectedHintsById = {
     case_opacity_zero: ['opacityZero'],
@@ -301,7 +301,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     case_multi_hint: ['opacityZero', 'offscreen'],
     case_input_offscreen: ['offscreen'],
     case_select_opacity_zero: ['opacityZero'],
-    case_textarea_clipped: ['clipped']
+    case_textarea_clipped: ['clipped'],
+    case_focus_half_restored: ['offscreen']
   };
 
   for (const [id, hints] of Object.entries(expectedHintsById)) {
@@ -322,7 +323,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     'case_visibility_hidden',
     'case_opacity_and_visibility_hidden',
     'case_hidden_attr',
-    'case_tabindex_neg1'
+    'case_tabindex_neg1',
+    'case_skip_link_focus_restored',
+    'case_not_focus_clip'
   ];
 
   for (const id of expectedNoOccIds) {
@@ -330,6 +333,58 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
       !rule.occurrences.some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)),
       `Did not expect occurrence for id="${id}"`
     );
+  }
+});
+
+function withStyle(css, body) {
+  return `<!doctype html><html><head><style>${css}</style></head><body>${body}</body></html>`;
+}
+
+test(`${RULE_ID}: an off-screen skip link that a :focus rule brings back is not asked about`, () => {
+  const html = withStyle(
+    '.sr{position:absolute;left:-9999px}.sr:focus{left:0}',
+    '<a class="sr" href="#m">Aller au contenu</a><main id="m">x</main>'
+  );
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: :focus-visible, :focus-within and :not(:focus) forms are recognised too`, () => {
+  for (const css of [
+    '.sr{position:absolute;left:-9999px}.sr:focus-visible{position:static}',
+    '.sr{position:absolute;left:-9999px}.wrap:focus-within .sr{left:0}',
+    '.sr:not(:focus){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}',
+    '.sr{opacity:0}.sr:focus{opacity:1}'
+  ]) {
+    const html = withStyle(css, '<div class="wrap"><a class="sr" href="#m">Skip</a></div>');
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: still asked about when the focus rule leaves it hidden`, () => {
+  for (const [css, body] of [
+    // left restored, top still off-screen
+    [
+      '.sr{position:absolute;left:-9999px;top:-9999px}.sr:focus{left:0}',
+      '<a id="a" class="sr" href="#m">Skip</a>'
+    ],
+    // inline style outranks the stylesheet's focus rule
+    [
+      '.sr:focus{left:0}',
+      '<a id="a" class="sr" style="position:absolute;left:-9999px" href="#m">Skip</a>'
+    ],
+    // the rule fires on another element's focus
+    [
+      '.sr{position:absolute;left:-9999px}.menu:focus .sr{left:0}',
+      '<div class="menu" tabindex="0"><a id="a" class="sr" href="#m">Skip</a></div>'
+    ]
+  ]) {
+    const result = runa11yCoreOnHtml(withStyle(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'), css);
   }
 });
 

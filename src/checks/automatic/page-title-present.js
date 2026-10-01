@@ -16,8 +16,11 @@
  *   The document has a <title> element, and document.title with whitespace
  *   collapsed is non-empty. The element is looked for anywhere in the
  *   document, not only inside <head>: a <title> the parser leaves outside
- *   <head> is still the document title in every browser. Whether that title
- *   describes the page is page-title-patterns' question.
+ *   <head> is still the document title in every browser. Only an
+ *   HTML-namespace <title> counts; the <title> of an inline <svg> names the
+ *   graphic, so a page whose only <title> is inside an <svg> is missing its
+ *   title element. Whether that title describes the page is
+ *   page-title-patterns' question.
  */
 
 const id = 'page-title-present';
@@ -66,8 +69,17 @@ function runInPage(ctx) {
   // after <head> has closed is not re-parented into <head>, yet the browser
   // (and document.title, used below) still recognizes it as the document's
   // title, matching that here avoids a false "missing title" report for a
-  // <title> that legitimately ended up outside <head>.
-  const titleEl = document.querySelector('title');
+  // <title> that legitimately ended up outside <head>. Only an HTML-namespace
+  // <title> counts: an inline <svg><title> names the graphic, not the page,
+  // and document.title ignores it.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
   const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
 
   const missingTitleEl = !titleEl;

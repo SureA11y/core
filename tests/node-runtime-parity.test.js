@@ -40,10 +40,18 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 const { runDomRulesInPage, runa11yCoreInPage } = require('../src/index.js');
+const { ruleSources } = require('../scripts/lib/rule-dirs');
 
-const fixturesIndex = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'fixtures', 'index.json'), 'utf8')
-);
+// Core's fixture index and each profile's, with each row's paths made
+// absolute: an index's paths are relative to its own source.
+const fixtureRows = ruleSources().flatMap((src) => {
+  const file = path.join(src.fixturesDir, 'index.json');
+  if (!fs.existsSync(file)) return [];
+  return JSON.parse(fs.readFileSync(file, 'utf8')).rows.map((row) => ({
+    ...row,
+    fixtureFile: row.fixtureFile && path.join(src.root, row.fixtureFile)
+  }));
+});
 
 function runViaEntryPoint(entryPointFn, html, ruleId) {
   const dom = new JSDOM(html, { url: 'https://example.test/', pretendToBeVisual: true });
@@ -58,9 +66,9 @@ function runViaEntryPoint(entryPointFn, html, ruleId) {
 
 // A rule with no fixture yet has fixtureFile: null. It is tracked as a gap by
 // tests/fixtures/INDEX.md, so skip it here rather than crashing every run.
-for (const row of fixturesIndex.rows.filter((r) => r.fixtureFile)) {
+for (const row of fixtureRows.filter((r) => r.fixtureFile)) {
   test(`${row.ruleId}: runDomRulesInPage and runa11yCoreInPage agree on its own fixture`, () => {
-    const html = fs.readFileSync(path.join(__dirname, '..', row.fixtureFile), 'utf8');
+    const html = fs.readFileSync(row.fixtureFile, 'utf8');
 
     const nodeResult = runViaEntryPoint(runDomRulesInPage, html, row.ruleId);
     const inPageResult = runViaEntryPoint(runa11yCoreInPage, html, row.ruleId);

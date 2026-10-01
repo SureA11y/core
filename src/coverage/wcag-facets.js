@@ -461,6 +461,11 @@ const FACETS = {
                 "id": "avoid-inline-spacing",
                 "label": "Inline style does not force line-height/letter-spacing/word-spacing with !important",
                 "automation": "full"
+            },
+            {
+                "id": "text-spacing-content-loss",
+                "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+                "automation": "partial"
             }
         ]
     },
@@ -615,6 +620,11 @@ const FACETS = {
         "title": "Link Purpose (In Context)",
         "level": "A",
         "facets": [
+            {
+                "id": "link-name-present",
+                "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+                "automation": "full"
+            },
             {
                 "id": "link-text-descriptive-evidence",
                 "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
