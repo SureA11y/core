@@ -86,3 +86,29 @@ test("RGAA's contrast variant: its own bold threshold, its own messages", () => 
   assert.equal(rgaa.length, 1, 'RGAA fails only the pale text');
   assert.equal(rgaa[0].i18n.summaryKey, 'contrastMinimumRgaa_fail_belowThreshold');
 });
+
+// A rule's declared settings are its standard's: a result naming WCAG 1.4.3
+// is decided at WCAG's thresholds whatever a caller passes, and a variant's
+// at its own. Other caller config (excludeSelectors) still applies.
+test("a caller's config cannot change a rule's declared settings", () => {
+  // #767676 on #fff is about 4.54:1: passes 4.5:1, fails 7:1.
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<p id="grey" style="font-size:16px;color:#767676;background:#fff">Grey text</p>' +
+    '</main></body></html>';
+  const outcome = (ruleId, rules) =>
+    runa11yCoreOnHtml(html, {
+      engineOptions: { profile: 'rgaa-4.1.2', rules },
+      runOnly: { includeRuleIds: [ruleId] }
+    }).checksResults.find((r) => r.ruleId === ruleId).outcome;
+
+  for (const ruleId of ['contrast-minimum', 'contrast-minimum-rgaa']) {
+    assert.equal(outcome(ruleId, {}), 'pass', ruleId);
+    assert.equal(outcome(ruleId, { [ruleId]: { normalTextRatio: 7 } }), 'pass', ruleId);
+    assert.equal(
+      outcome(ruleId, { [ruleId]: { normalTextRatio: 7, excludeSelectors: ['#grey'] } }),
+      'notApplicable',
+      `${ruleId}: excludeSelectors still applies`
+    );
+  }
+});

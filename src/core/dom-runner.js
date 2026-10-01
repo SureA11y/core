@@ -894,13 +894,20 @@ function runCore(
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
-    // A variant runs its base rule with settings of its own. They are its
-    // standard's, so they win over a caller's value for the same name; the
-    // caller's other settings (excludeSelectors) still apply.
+    // A rule's declared settings (contrast-minimum's thresholds) are its
+    // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
+    // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
+    // which is another rule under its own id, supplies its own. The caller's
+    // other config (excludeSelectors) still applies.
+    const settingNames = Array.isArray(defResolved.settings) ? defResolved.settings : [];
+    let ruleConfig = callerConfig;
+    if (ruleConfig && settingNames.length) {
+      ruleConfig = { ...ruleConfig };
+      for (const name of settingNames) delete ruleConfig[name];
+    }
     const variant =
       defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
-    const ruleConfig =
-      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
+    if (variant && variant.config) ruleConfig = { ...(ruleConfig || {}), ...variant.config };
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's

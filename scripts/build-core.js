@@ -342,10 +342,19 @@ function loadRuleModules(dirs = RULES_DIRS) {
     }
     fileById.set(ruleId, file);
 
+    // The settings the rule's code reads from ctx.config (the base's, for a
+    // variant). The runner keeps a caller's config from setting them.
+    const codeMod = mod.variant ? unwrapModule(safeRequire(mod.variant.file)) : mod;
+    const settingNames =
+      codeMod && codeMod.settings && typeof codeMod.settings === 'object'
+        ? Object.keys(codeMod.settings)
+        : [];
+
     mods.push({
       file,
       // The file whose runInPage runs: the base rule's, for a variant.
       codeFile: mod.variant ? mod.variant.file : file,
+      settings: settingNames,
       id,
       ruleId,
       runFnSource,
@@ -456,7 +465,9 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
 
     // A variant: the base rule it runs, its settings and its message prefix
     // (scripts/lib/rule-variants.js). The runner reads both.
-    ...(m.variant ? { variant: m.variant } : {})
+    ...(m.variant ? { variant: m.variant } : {}),
+    // The settings the rule's code reads (its own, or its base's).
+    ...(m.settings && m.settings.length ? { settings: m.settings } : {})
   }));
 
   const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
