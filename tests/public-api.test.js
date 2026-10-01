@@ -63,8 +63,7 @@ test('the internal set is not reachable through a documented entry point', () =>
     './earl',
     './en301549',
     './rgaa',
-    './wcag',
-    './profile-kit'
+    './wcag'
   ]) {
     assert.ok(subpaths.includes(sub), `${sub} is a documented entry point`);
   }

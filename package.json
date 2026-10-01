@@ -36,7 +36,6 @@
     "./en301549": "./src/en301549.js",
     "./rgaa": "./profiles/rgaa/public.js",
     "./wcag": "./src/wcag.js",
-    "./profile-kit": "./src/profile-kit.js",
     "./browser": "./surea11y.browser.js",
     "./i18n/*": "./surea11y.i18n.*.js",
     "./package.json": "./package.json"

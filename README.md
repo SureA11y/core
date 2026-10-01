@@ -597,7 +597,7 @@ src/
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
-  profile-kit.js           # Mapping for a profile's standard (@surea11y/core/profile-kit)
+  profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
 
   checks/
     automatic/             # Deterministic automated rules
