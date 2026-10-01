@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **203**
+Total rules (loaded without error): **204**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -641,6 +641,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| acme-contrast-uniform | automatic | All text reaches a contrast ratio of 4.5:1 | profiles/acme/rules/automatic/acme-contrast-uniform.js |  |  |
 | acme-statement-link | automatic | Pages link to the accessibility statement | profiles/acme/rules/automatic/acme-statement-link.js |  |  |
 | area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | profiles/rgaa/rules/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
@@ -1347,6 +1348,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| acme-contrast-uniform | automatic | All text reaches a contrast ratio of 4.5:1 | profiles/acme/rules/automatic/acme-contrast-uniform.js |  |  |
 | acme-statement-link | automatic | Pages link to the accessibility statement | profiles/acme/rules/automatic/acme-statement-link.js |  |  |
 | area-alt-source | automatic | Linked image-map areas are named by alt or aria-label | profiles/rgaa/rules/automatic/area-alt-source.js |  |  |
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |

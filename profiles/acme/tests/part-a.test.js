@@ -64,7 +64,13 @@ test("each profile runs its WCAG version's rules, plus Part B's, and names its o
     ['acme-2.0', 'wcag22-aa', '2.0', ['password-paste-enabled']]
   ];
   // The rules Part B maps that no WCAG profile runs (tests/part-b-mapped.test.js).
-  const partB = ['acme-statement-link', 'heading-order', 'region', 'skip-link-present'];
+  const partB = [
+    'acme-contrast-uniform',
+    'acme-statement-link',
+    'heading-order',
+    'region',
+    'skip-link-present'
+  ];
   for (const [profile, sameWcagAs, version, waived] of pairs) {
     const result = scan({ profile });
     assert.equal(result.engine.profile, profile);

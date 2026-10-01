@@ -5,5 +5,12 @@
   "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
   "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
   "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
-  "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
+  "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo).",
+  "acmeContrastUniform_title": "Todo el texto alcanza una relación de contraste de 4,5:1",
+  "acmeContrastUniform_description": "Comprueba que el texto visible, incluido el texto grande, tiene una relación de contraste de al menos 4,5:1, cuando el contraste se puede calcular a partir del CSS.",
+  "acmeContrastUniform_fail_belowThreshold": "El texto tiene una relación de contraste de {{ratio}}:1, por debajo del 4,5:1 de ACME (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor: {{fontWeightLabel}}).",
+  "acmeContrastUniform_hint_fail": "Cambia el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
+  "acmeContrastUniform_pass_allAboveThreshold": "Todo el texto calculable alcanza el 4,5:1 de ACME. Nodos de texto elegibles: {{eligibleTextCount}}. Calculables: {{computableTextCount}}.",
+  "acmeContrastUniform_notApplicable_noComputableText": "Ningún texto elegible tenía un contraste calculable (nodos de texto elegibles: {{eligibleTextCount}}). Consulta la regla de calculabilidad del contraste.",
+  "acmeContrastUniform_cantTell_engineFailure": "No se pudo determinar el contraste de ACME por un error interno del motor ({{reasonCode}})."
 }

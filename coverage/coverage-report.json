@@ -6,7 +6,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 203,
+    "totalRules": 204,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -41,6 +41,31 @@
     }
   },
   "rows": [
+    {
+      "file": "profiles/acme/rules/automatic/acme-contrast-uniform.js",
+      "ruleId": "acme-contrast-uniform",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "All text reaches a contrast ratio of 4.5:1",
+      "tags": [
+        "acme",
+        "contrast",
+        "color",
+        "atomic",
+        "automatic",
+        "dom"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
     {
       "file": "profiles/acme/rules/automatic/acme-statement-link.js",
       "ruleId": "acme-statement-link",

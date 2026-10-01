@@ -46,6 +46,74 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "acme-contrast-uniform",
+    "title": "All text reaches a contrast ratio of 4.5:1",
+    "description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "i18n": {
+      "titleKey": "acmeContrastUniform_title",
+      "descriptionKey": "acmeContrastUniform_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "acme",
+      "contrast",
+      "color",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B2",
+        "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B2",
+        "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "largeTextRatio": 4.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "acmeContrastUniform"
+      }
+    }
+  },
+  {
     "ruleId": "acme-statement-link",
     "title": "Pages link to the accessibility statement",
     "description": "Checks that the page links to the accessibility statement, by link text or URL, and under ACME 2.0 from its footer.",
@@ -3514,7 +3582,17 @@ const CHECK_DEFS = [
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "boldLargeMinPx": 18.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "contrastMinimumRgaa"
+      }
+    }
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -19852,6 +19930,35 @@ const COMPOSITE_RULES = [
     }
   },
   {
+    "id": "acme-1.0-B2",
+    "checksIds": [
+      "acme-contrast-uniform"
+    ],
+    "meta": {
+      "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B2",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B2",
+          "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "acme-1.0-B3",
     "checksIds": [
       "acme-statement-link"
@@ -19930,6 +20037,35 @@ const COMPOSITE_RULES = [
           "title": "Pages have a skip link",
           "wcagSc": [
             "2.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B2",
+    "checksIds": [
+      "acme-contrast-uniform"
+    ],
+    "meta": {
+      "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B2",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B2",
+          "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+          "wcagSc": [
+            "1.4.3"
           ]
         }
       ]
@@ -20024,6 +20160,7 @@ const COMPOSITE_RULES = [
 // Node/runtime rule implementations (normalized)
 const RULE_IMPLS = {
   "accesskeys": { run: require("./checks/manual/accesskeys-manual.js").runInPage, applicability: require("./checks/manual/accesskeys-manual.js").applicability || null },
+  "acme-contrast-uniform": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
   "acme-statement-link": { run: require("../profiles/acme/rules/automatic/acme-statement-link.js").runInPage, applicability: require("../profiles/acme/rules/automatic/acme-statement-link.js").applicability || null },
   "area-alt-present": { run: require("./checks/automatic/area-alt-present.js").runInPage, applicability: require("./checks/automatic/area-alt-present.js").applicability || null },
   "area-alt-quality": { run: require("./checks/manual/area-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/area-alt-quality-manual.js").applicability || null },
@@ -20064,7 +20201,7 @@ const RULE_IMPLS = {
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
   "contrast-minimum": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
-  "contrast-minimum-rgaa": { run: require("../profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js").runInPage, applicability: require("../profiles/rgaa/rules/automatic/contrast-minimum-rgaa.js").applicability || null },
+  "contrast-minimum-rgaa": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
   "css-focus-indicator-suppressed": { run: require("./checks/manual/css-focus-indicator-suppressed-manual.js").runInPage, applicability: require("./checks/manual/css-focus-indicator-suppressed-manual.js").applicability || null },
   "css-hidden-focus": { run: require("./checks/manual/css-hidden-focus.js").runInPage, applicability: require("./checks/manual/css-hidden-focus.js").applicability || null },
   "css-orientation-lock": { run: require("./checks/automatic/css-orientation-lock.js").runInPage, applicability: require("./checks/automatic/css-orientation-lock.js").applicability || null },
@@ -21615,7 +21752,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -22996,7 +23140,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -24377,7 +24528,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
     "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
     "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
-    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
+    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo).",
+    "acmeContrastUniform_title": "Todo el texto alcanza una relación de contraste de 4,5:1",
+    "acmeContrastUniform_description": "Comprueba que el texto visible, incluido el texto grande, tiene una relación de contraste de al menos 4,5:1, cuando el contraste se puede calcular a partir del CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "El texto tiene una relación de contraste de {{ratio}}:1, por debajo del 4,5:1 de ACME (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Cambia el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "Todo el texto calculable alcanza el 4,5:1 de ACME. Nodos de texto elegibles: {{eligibleTextCount}}. Calculables: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "Ningún texto elegible tenía un contraste calculable (nodos de texto elegibles: {{eligibleTextCount}}). Consulta la regla de calculabilidad del contraste.",
+    "acmeContrastUniform_cantTell_engineFailure": "No se pudo determinar el contraste de ACME por un error interno del motor ({{reasonCode}})."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -25758,7 +25916,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -27139,7 +27304,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   }
 };
 
@@ -27839,6 +28011,7 @@ const PROFILE_RULES = {
     "widget-label-in-name"
   ],
   "acme-1.0": [
+    "acme-contrast-uniform",
     "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
@@ -27947,6 +28120,7 @@ const PROFILE_RULES = {
     "video-poster-text-alternative-present"
   ],
   "acme-2.0": [
+    "acme-contrast-uniform",
     "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
@@ -37726,12 +37900,19 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A variant runs its base rule with settings of its own. They are its
+    // standard's, so they win over a caller's value for the same name; the
+    // caller's other settings (excludeSelectors) still apply.
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    const ruleConfig =
+      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -37826,6 +38007,26 @@ const runCore = (function runCore(
       if (ruleTimings)
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
+    }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
     }
     if (!result.engineOptions) {
       result.engineOptions = {
@@ -38305,6 +38506,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null
+  },
+  {
+    "ruleId": "acme-contrast-uniform",
+    "title": "All text reaches a contrast ratio of 4.5:1",
+    "description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "i18n": {
+      "titleKey": "acmeContrastUniform_title",
+      "descriptionKey": "acmeContrastUniform_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "acme",
+      "contrast",
+      "color",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "ACME",
+        "version": "1.0",
+        "requirement": "B2",
+        "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      },
+      {
+        "standard": "ACME",
+        "version": "2.0",
+        "requirement": "B2",
+        "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+        "wcagSc": [
+          "1.4.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "largeTextRatio": 4.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "acmeContrastUniform"
+      }
+    }
   },
   {
     "ruleId": "acme-statement-link",
@@ -41775,7 +42044,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "expectation": "",
     "references": [],
     "requirements": null,
-    "mappings": null
+    "mappings": null,
+    "variant": {
+      "of": "contrast-minimum",
+      "config": {
+        "boldLargeMinPx": 18.5
+      },
+      "messages": {
+        "from": "contrastMinimum",
+        "to": "contrastMinimumRgaa"
+      }
+    }
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -58113,6 +58392,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   },
   {
+    "id": "acme-1.0-B2",
+    "checksIds": [
+      "acme-contrast-uniform"
+    ],
+    "meta": {
+      "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "1.0",
+      "criterion": "B2",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "1.0",
+          "requirement": "B2",
+          "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+          "wcagSc": [
+            "1.4.3"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "acme-1.0-B3",
     "checksIds": [
       "acme-statement-link"
@@ -58191,6 +58499,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Pages have a skip link",
           "wcagSc": [
             "2.4.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "acme-2.0-B2",
+    "checksIds": [
+      "acme-contrast-uniform"
+    ],
+    "meta": {
+      "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+      "description": "",
+      "wcagSc": [],
+      "level": null,
+      "standard": "ACME",
+      "version": "2.0",
+      "criterion": "B2",
+      "tags": [
+        "acme"
+      ],
+      "standardMappings": [
+        {
+          "standard": "ACME",
+          "version": "2.0",
+          "requirement": "B2",
+          "title": "All text, large text included, reaches a contrast ratio of 4.5:1",
+          "wcagSc": [
+            "1.4.3"
           ]
         }
       ]
@@ -58332,6 +58669,543 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
+}), applicability: null },
+    "acme-contrast-uniform": { run: (function runInPage(ctx) {
+  const { helpers, rule, engineOptions } = ctx;
+
+  function toElement(node) {
+    try {
+      if (!node) return null;
+      if (node.nodeType === 1) return node; // ELEMENT_NODE
+      if (node.nodeType === 3) return node.parentElement || null; // TEXT_NODE
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
+
+  const __contrastSharedCache =
+    helpers && helpers.contrast && helpers.contrast.sharedCache
+      ? helpers.contrast.sharedCache
+      : null;
+  const __elBlockerCache = __contrastSharedCache
+    ? __contrastSharedCache.__elBlockerCache ||
+      (__contrastSharedCache.__elBlockerCache = new WeakMap())
+    : null;
+
+  const __elBgCache = __contrastSharedCache
+    ? __contrastSharedCache.__elBgCache || (__contrastSharedCache.__elBgCache = new WeakMap())
+    : null;
+
+  const __elFgCache = __contrastSharedCache
+    ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
+    : null;
+
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
+  const __elFontCache = __contrastSharedCache
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
+    : new WeakMap();
+
+  function safeComputedStyle(el) {
+    try {
+      if (!el || el.nodeType !== 1) return null;
+
+      if (helpers && typeof helpers.computedStyle === 'function') {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      }
+      const view =
+        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+      if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
+    } catch {}
+    return null;
+  }
+
+  function getFontInfo(el) {
+    try {
+      if (!el || el.nodeType !== 1) {
+        return {
+          fontSizePx: 0,
+          fontSizePt: '',
+          fontWeightNum: 400,
+          fontWeight: 'normal',
+          isBold: false,
+          isLarge: false,
+          isLargeText: false
+        };
+      }
+
+      const cached = __elFontCache.get(el);
+      if (cached) return cached;
+
+      const cs = safeComputedStyle(el);
+      const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
+      const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
+
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
+      const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+
+      const out = {
+        fontSizePx: sizePx,
+        fontSizePt: helpers.contrast.pxToPt(sizePx),
+        fontWeightNum,
+        fontWeight: helpers.contrast.fontWeightLabel(fontWeightNum),
+        isBold,
+        isLarge,
+        isLargeText: isLarge
+      };
+
+      __elFontCache.set(el, out);
+      return out;
+    } catch {
+      return {
+        fontSizePx: 0,
+        fontSizePt: '',
+        fontWeightNum: 400,
+        fontWeight: 'normal',
+        isBold: false,
+        isLarge: false,
+        isLargeText: false
+      };
+    }
+  }
+
+  const contrast =
+    engineOptions && typeof engineOptions.contrast === 'object' && engineOptions.contrast
+      ? engineOptions.contrast
+      : {};
+
+  const mode = contrast.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance';
+
+  const rootCanvasFallback =
+    typeof contrast.rootCanvasFallback === 'string' && contrast.rootCanvasFallback.trim()
+      ? contrast.rootCanvasFallback.trim()
+      : '#ffffff';
+
+  const MAX_OCCURRENCES = 50;
+
+  const occurrences = [];
+  let eligibleTextCount = 0;
+  let computableTextCount = 0;
+  let failCount = 0;
+
+  const seenFailEls = new Set();
+
+  function pushPassOccurrence(eligibleCount, computableCount) {
+    try {
+      occurrences.push({
+        selector: '',
+        summary: 'All computable text meets the minimum (AA) contrast threshold.',
+        hint: '',
+        html: '',
+        i18n: {
+          summaryKey: 'contrastMinimum_pass_allAboveThreshold',
+          hintKey: '',
+          params: {
+            eligibleTextCount: String(Number(eligibleCount) || 0),
+            computableTextCount: String(Number(computableCount) || 0)
+          }
+        },
+        data: {
+          details: {
+            reasonCode: 'ALL_ABOVE_THRESHOLD',
+            eligibleTextCount: Number(eligibleCount) || 0,
+            computableTextCount: Number(computableCount) || 0,
+            metrics: {
+              eligibleTextCount: Number(eligibleCount) || 0,
+              computableTextCount: Number(computableCount) || 0
+            }
+          }
+        }
+      });
+    } catch {
+      // no-throw
+    }
+  }
+
+  function pushFailOccurrence(el, params, details) {
+    try {
+      if (!el || seenFailEls.has(el)) return;
+      if (occurrences.length >= MAX_OCCURRENCES) return;
+
+      seenFailEls.add(el);
+
+      const det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+
+      // The background is the only input this rule can fail to resolve; every other
+      // reason code here describes a ratio it did compute.
+      const uncertainty =
+        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+          ? {
+              code: 'not-computable',
+              needed: 'The effective background colour behind this text.',
+              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+            }
+          : null;
+
+      const occBase = {
+        selector: '',
+        html: '',
+        summary: '',
+        hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        i18n: {
+          summaryKey: 'contrastMinimum_fail_belowThreshold',
+          hintKey: 'contrastMinimum_hint_fail',
+          params: params && typeof params === 'object' ? params : {}
+        },
+        ...(uncertainty ? { uncertainty } : {}),
+        data: { details: det }
+      };
+
+      // Bind the occurrence to an element deterministically, but still let the engine
+      // attach canonical selector + HTML snippet via reportOccurrence when available.
+      let nodeSelector = '';
+      try {
+        const elementId =
+          el && typeof el.getAttribute === 'function' ? el.getAttribute('id') || '' : '';
+        if (elementId) nodeSelector = `#${elementId}`;
+      } catch {
+        // no-throw
+      }
+      const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+
+      let occ = { ...occBase };
+
+      // IMPORTANT: this populates occ.selector and occ.html (snippet) when available
+      if (helpers && typeof helpers.reportOccurrence === 'function') {
+        try {
+          const reported = helpers.reportOccurrence(el, occBase);
+          if (reported && typeof reported === 'object') occ = reported;
+        } catch {
+          // no-throw
+        }
+      }
+
+      occ.selector = occ.selector || nodeSelector || '';
+
+      occ.data = occ.data || {};
+      occ.data.details = occ.data.details || {};
+      occ.data.details.node = { selector: nodeSelector, tagName };
+
+      occurrences.push(occ);
+    } catch {
+      // no-throw
+    }
+  }
+
+  // perf: per-element analysis cache (per run)
+  let __elAnalysisCache = new WeakMap();
+  if (__contrastSharedCache) {
+    try {
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
+    } catch {
+      __elAnalysisCache = new WeakMap();
+    }
+  }
+
+  // Shared deterministic text scan (computed once per run and reused across contrast checks)
+  let scan;
+  try {
+    scan =
+      helpers && helpers.contrast && typeof helpers.contrast.getTextScan === 'function'
+        ? helpers.contrast.getTextScan(ctx, helpers, engineOptions)
+        : null;
+  } catch {
+    scan = null;
+  }
+
+  // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
+  if (scan && scan.elements && Array.isArray(scan.elements)) {
+    try {
+      eligibleTextCount = Number(scan.eligibleTextCount) || 0;
+
+      for (const rec of scan.elements) {
+        const el = toElement(rec && rec.el);
+        const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
+        if (!el || textCount <= 0) continue;
+
+        // Computability + contrast analysis (cached per element)
+        let analysis = __elAnalysisCache.get(el);
+        if (!analysis) {
+          // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
+          let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
+          if (!blocker) {
+            blocker = helpers.contrast.getComputabilityBlocker(el);
+            blocker = blocker || {
+              ok: true,
+              reasonCode: null,
+              blockerSelector: '',
+              blockerProperty: '',
+              blockerValue: ''
+            };
+            if (__elBlockerCache) __elBlockerCache.set(el, blocker);
+          }
+
+          if (blocker && blocker.ok === false) {
+            analysis = { computable: false };
+          } else {
+            let bg = __elBgCache ? __elBgCache.get(el) : null;
+            if (!bg) {
+              bg = helpers.contrast.computeEffectiveBackground(el, {
+                contrast: { mode, rootCanvasFallback },
+                collectStack: false
+              });
+              bg = bg || {
+                ok: false,
+                reasonCode: 'BACKGROUND_NOT_COMPUTABLE',
+                rgba: null,
+                alpha: 0
+              };
+              if (__elBgCache) __elBgCache.set(el, bg);
+            }
+
+            const bgAssumptionsApplied =
+              bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+                ? bg.assumptionsApplied.slice(0)
+                : null;
+            const bgAssumedRootCanvasColor =
+              bg && typeof bg.assumedRootCanvasColor === 'string'
+                ? bg.assumedRootCanvasColor
+                : null;
+
+            let fg = __elFgCache ? __elFgCache.get(el) : null;
+            if (!fg) {
+              fg = helpers.contrast.computeEffectiveForeground(el);
+              fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+              if (__elFgCache) __elFgCache.set(el, fg);
+            }
+
+            if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
+              analysis = { computable: false };
+            } else {
+              // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
+              const fgOpaque =
+                fg.rgba.a != null && fg.rgba.a < 1
+                  ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
+                  : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+
+              const bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+              const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+              const font = getFontInfo(el);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
+
+              analysis = {
+                computable: true,
+                ratio,
+                bgAssumptionsApplied,
+                bgAssumedRootCanvasColor,
+                ratioStr: helpers.contrast.round2(ratio),
+                threshold,
+                thresholdStr: `${threshold}`,
+                font,
+                fgOpaque,
+                bgOpaque
+              };
+            }
+          }
+          __elAnalysisCache.set(el, analysis);
+        }
+
+        if (!analysis || analysis.computable !== true) continue;
+
+        computableTextCount += textCount;
+
+        const ratio = analysis.ratio;
+        const font = analysis.font;
+        const threshold = analysis.threshold;
+        const ratioStr = analysis.ratioStr;
+        const thresholdStr = analysis.thresholdStr;
+        const fgOpaque = analysis.fgOpaque;
+        const bgOpaque = analysis.bgOpaque;
+
+        if (!(ratio >= threshold)) {
+          failCount += textCount;
+
+          const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
+
+          const bgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(bgOpaque) : '';
+
+          const fontPxNum = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+
+          const fontPtStr =
+            helpers.contrast.pxToPt && Number.isFinite(fontPxNum)
+              ? helpers.contrast.pxToPt(fontPxNum)
+              : '';
+
+          const fwNum = Number(font.fontWeightNum);
+          const fwLabel = font.fontWeight || (font.isBold ? 'bold' : 'normal');
+
+          const fgRgbaStr = helpers.contrast.rgbaToString(fgOpaque);
+          const bgRgbaStr = helpers.contrast.rgbaToString(bgOpaque);
+
+          const params = {
+            reasonCode: 'BELOW_THRESHOLD',
+
+            foreground: fgRgbaStr,
+            background: bgRgbaStr,
+
+            foregroundHex: fgHex,
+            backgroundHex: bgHex,
+            fontSizePt: fontPtStr,
+            fontWeightLabel: fwLabel,
+
+            ratio: ratioStr,
+            threshold: thresholdStr,
+
+            fontSizePx: font.fontSizePx,
+            fontWeight: font.fontWeight,
+            isBold: font.isBold,
+            isLargeText: font.isLargeText
+          };
+
+          const assumptionsApplied =
+            analysis &&
+            Array.isArray(analysis.bgAssumptionsApplied) &&
+            analysis.bgAssumptionsApplied.length
+              ? analysis.bgAssumptionsApplied.slice(0)
+              : null;
+          const assumedRootCanvasColor =
+            analysis && typeof analysis.bgAssumedRootCanvasColor === 'string'
+              ? analysis.bgAssumedRootCanvasColor
+              : null;
+
+          const details = {
+            reasonCode: 'BELOW_THRESHOLD',
+            metrics: { ratio, threshold },
+            typography: {
+              fontSizePx: Number.isFinite(fontPxNum) ? fontPxNum : null,
+              fontSizePt: Number.isFinite(fontPxNum) ? fontPxNum * 0.75 : null,
+              fontWeight: Number.isFinite(fwNum) ? fwNum : null,
+              fontWeightLabel: fwLabel,
+              isBold: !!font.isBold,
+              isLargeText: !!font.isLargeText
+            },
+            colors: {
+              foregroundHex: fgHex,
+              backgroundHex: bgHex,
+              foregroundRgba: fgRgbaStr,
+              backgroundRgba: bgRgbaStr
+            },
+            assumptionsApplied: assumptionsApplied,
+            assumedRootCanvasColor: assumedRootCanvasColor
+          };
+
+          pushFailOccurrence(el, params, details);
+
+          if (occurrences.length >= MAX_OCCURRENCES) break;
+        }
+      }
+    } catch {
+      // No-throw: deterministic cantTell on internal failure
+      return {
+        ruleId: rule.ruleId,
+        outcome: 'cantTell',
+        severity: rule.defaultSeverity || 'serious',
+        confidence: rule.defaultConfidence || 'high',
+        occurrences: [
+          {
+            selector: '',
+            summary: '',
+            hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
+            html: '',
+            i18n: {
+              summaryKey: 'contrastMinimum_cantTell_engineFailure',
+              hintKey: 'contrast_hint_cantTell_manual',
+              params: { reasonCode: 'ENGINE_EXCEPTION' }
+            },
+            data: { details: { reasonCode: 'ENGINE_EXCEPTION' } }
+          }
+        ]
+      };
+    }
+  }
+
+  if (eligibleTextCount === 0) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: rule.defaultConfidence || 'high',
+      occurrences: []
+    };
+  }
+
+  // If there was eligible text but nothing computable, this rule stays notApplicable
+  // because Rule 1 (computability) is responsible for cantTell.
+  if (computableTextCount === 0) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: rule.defaultConfidence || 'high',
+      occurrences: [
+        {
+          selector: '',
+          summary: '',
+          hint: '',
+          html: '',
+          i18n: {
+            summaryKey: 'contrastMinimum_notApplicable_noComputableText',
+            hintKey: '',
+            params: { eligibleTextCount: String(eligibleTextCount) }
+          },
+          data: { details: { eligibleTextCount, computableTextCount } }
+        }
+      ]
+    };
+  }
+
+  if (failCount > 0) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'serious',
+      confidence: rule.defaultConfidence || 'high',
+      occurrences
+    };
+  }
+
+  // All computable text passed
+  if (!occurrences.length) {
+    pushPassOccurrence(eligibleTextCount, computableTextCount);
+  }
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'pass',
+    severity: rule.defaultSeverity || 'serious',
+    confidence: rule.defaultConfidence || 'high',
     occurrences
   };
 }), applicability: null },
@@ -67774,6 +68648,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
+
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
       ? helpers.contrast.sharedCache
@@ -67791,8 +68680,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCache || (__contrastSharedCache.__elFontCache = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
@@ -67833,7 +68723,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -67987,9 +68880,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheAA)
-        __contrastSharedCache.__elAnalysisCacheAA = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheAA;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -68081,7 +68975,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -68275,9 +69174,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "contrast-minimum-rgaa": { run: (function runInPage(ctx) {
   const { helpers, rule, engineOptions } = ctx;
 
-  // RGAA 3.2.2/3.2.4: bold text is large from 18.5px.
-  const BOLD_LARGE_MIN_PX = 18.5;
-
   function toElement(node) {
     try {
       if (!node) return null;
@@ -68288,6 +69184,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     }
   }
+
+  // Thresholds (see `settings` below): WCAG 1.4.3's by default. A variant of
+  // this rule, another standard's contrast requirement, passes its own in
+  // ctx.config (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const setting = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
+  const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
+  const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // The font and analysis caches hold verdicts that depend on those
+  // thresholds, so other thresholds get caches of their own.
+  const SETTINGS_KEY =
+    BOLD_LARGE_MIN_PX === null && LARGE_TEXT_RATIO === 3 && NORMAL_TEXT_RATIO === 4.5
+      ? ''
+      : '|' + [BOLD_LARGE_MIN_PX, LARGE_TEXT_RATIO, NORMAL_TEXT_RATIO].join('|');
 
   const __contrastSharedCache =
     helpers && helpers.contrast && helpers.contrast.sharedCache
@@ -68306,16 +69217,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? __contrastSharedCache.__elFgCache || (__contrastSharedCache.__elFgCache = new WeakMap())
     : null;
 
-  // Not the shared __elFontCache: its entries carry WCAG's large-text verdict.
+  const FONT_CACHE = '__elFontCache' + SETTINGS_KEY;
   const __elFontCache = __contrastSharedCache
-    ? __contrastSharedCache.__elFontCacheRgaa ||
-      (__contrastSharedCache.__elFontCacheRgaa = new WeakMap())
+    ? __contrastSharedCache[FONT_CACHE] || (__contrastSharedCache[FONT_CACHE] = new WeakMap())
     : new WeakMap();
 
   function safeComputedStyle(el) {
     try {
       if (!el || el.nodeType !== 1) return null;
 
+      if (helpers && typeof helpers.computedStyle === 'function') {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      }
       const view =
         el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
@@ -68346,7 +69260,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+      const isLarge =
+        BOLD_LARGE_MIN_PX === null
+          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
+          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
 
       const out = {
         fontSizePx: sizePx,
@@ -68398,11 +69315,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       occurrences.push({
         selector: '',
-        summary: 'All computable text meets the RGAA 3.2 contrast threshold.',
+        summary: 'All computable text meets the minimum (AA) contrast threshold.',
         hint: '',
         html: '',
         i18n: {
-          summaryKey: 'contrastMinimumRgaa_pass_allAboveThreshold',
+          summaryKey: 'contrastMinimum_pass_allAboveThreshold',
           hintKey: '',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
@@ -68452,8 +69369,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: '',
         hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: 'contrastMinimumRgaa_fail_belowThreshold',
-          hintKey: 'contrastMinimumRgaa_hint_fail',
+          summaryKey: 'contrastMinimum_fail_belowThreshold',
+          hintKey: 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
@@ -68500,9 +69417,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
     try {
-      if (!__contrastSharedCache.__elAnalysisCacheRgaa)
-        __contrastSharedCache.__elAnalysisCacheRgaa = new WeakMap();
-      __elAnalysisCache = __contrastSharedCache.__elAnalysisCacheRgaa;
+      const ANALYSIS_CACHE = '__elAnalysisCacheAA' + SETTINGS_KEY;
+      if (!__contrastSharedCache[ANALYSIS_CACHE])
+        __contrastSharedCache[ANALYSIS_CACHE] = new WeakMap();
+      __elAnalysisCache = __contrastSharedCache[ANALYSIS_CACHE];
     } catch {
       __elAnalysisCache = new WeakMap();
     }
@@ -68594,7 +69512,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
               const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AA', font.isLargeText);
+              const threshold =
+                SETTINGS_KEY === ''
+                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+                  : font.isLargeText
+                    ? LARGE_TEXT_RATIO
+                    : NORMAL_TEXT_RATIO;
 
               analysis = {
                 computable: true,
@@ -68716,7 +69639,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hint: "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
             html: '',
             i18n: {
-              summaryKey: 'contrastMinimumRgaa_cantTell_engineFailure',
+              summaryKey: 'contrastMinimum_cantTell_engineFailure',
               hintKey: 'contrast_hint_cantTell_manual',
               params: { reasonCode: 'ENGINE_EXCEPTION' }
             },
@@ -68752,7 +69675,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hint: '',
           html: '',
           i18n: {
-            summaryKey: 'contrastMinimumRgaa_notApplicable_noComputableText',
+            summaryKey: 'contrastMinimum_notApplicable_noComputableText',
             hintKey: '',
             params: { eligibleTextCount: String(eligibleTextCount) }
           },
@@ -101599,7 +102522,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -102980,7 +103910,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -104361,7 +105298,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "La página no tiene ningún enlace a la declaración de accesibilidad.",
     "acmeStatementLink_summary_fail_notInFooter": "El enlace a la declaración de accesibilidad no está en el pie de página.",
     "acmeStatementLink_hint_fail_missing": "Añade a cada página un enlace a la declaración de accesibilidad, en su pie de página.",
-    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo)."
+    "acmeStatementLink_hint_fail_notInFooter": "Mueve el enlace, o añade otro, al pie de página (un punto de referencia contentinfo).",
+    "acmeContrastUniform_title": "Todo el texto alcanza una relación de contraste de 4,5:1",
+    "acmeContrastUniform_description": "Comprueba que el texto visible, incluido el texto grande, tiene una relación de contraste de al menos 4,5:1, cuando el contraste se puede calcular a partir del CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "El texto tiene una relación de contraste de {{ratio}}:1, por debajo del 4,5:1 de ACME (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Cambia el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "Todo el texto calculable alcanza el 4,5:1 de ACME. Nodos de texto elegibles: {{eligibleTextCount}}. Calculables: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "Ningún texto elegible tenía un contraste calculable (nodos de texto elegibles: {{eligibleTextCount}}). Consulta la regla de calculabilidad del contraste.",
+    "acmeContrastUniform_cantTell_engineFailure": "No se pudo determinar el contraste de ACME por un error interno del motor ({{reasonCode}})."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -105742,7 +106686,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -107123,7 +108074,14 @@ const I18N = {
     "acmeStatementLink_summary_fail_missing": "The page has no link to the accessibility statement.",
     "acmeStatementLink_summary_fail_notInFooter": "The link to the accessibility statement is not in the page footer.",
     "acmeStatementLink_hint_fail_missing": "Add a link to the accessibility statement to every page, in its footer.",
-    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark)."
+    "acmeStatementLink_hint_fail_notInFooter": "Move the link, or add one, to the page footer (a contentinfo landmark).",
+    "acmeContrastUniform_title": "All text reaches a contrast ratio of 4.5:1",
+    "acmeContrastUniform_description": "Checks that visible text, large text included, has a contrast ratio of at least 4.5:1, when contrast is computable from CSS.",
+    "acmeContrastUniform_fail_belowThreshold": "Text has a contrast ratio of {{ratio}}:1, below ACME's 4.5:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}).",
+    "acmeContrastUniform_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
+    "acmeContrastUniform_pass_allAboveThreshold": "All computable text reaches ACME's 4.5:1. Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
+    "acmeContrastUniform_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
+    "acmeContrastUniform_cantTell_engineFailure": "ACME's contrast could not be determined due to an internal engine error ({{reasonCode}})."
   }
 };
 
@@ -107823,6 +108781,7 @@ const PROFILE_RULES = {
     "widget-label-in-name"
   ],
   "acme-1.0": [
+    "acme-contrast-uniform",
     "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
@@ -107931,6 +108890,7 @@ const PROFILE_RULES = {
     "video-poster-text-alternative-present"
   ],
   "acme-2.0": [
+    "acme-contrast-uniform",
     "acme-statement-link",
     "area-alt-present",
     "area-alt-quality",
@@ -117710,12 +118670,19 @@ const runCore = (function runCore(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const ruleConfig =
+    const callerConfig =
       engineOptionsResolved &&
       engineOptionsResolved.rules &&
       engineOptionsResolved.rules[defResolved.ruleId]
         ? engineOptionsResolved.rules[defResolved.ruleId]
         : null;
+    // A variant runs its base rule with settings of its own. They are its
+    // standard's, so they win over a caller's value for the same name; the
+    // caller's other settings (excludeSelectors) still apply.
+    const variant =
+      defResolved.variant && typeof defResolved.variant === 'object' ? defResolved.variant : null;
+    const ruleConfig =
+      variant && variant.config ? { ...(callerConfig || {}), ...variant.config } : callerConfig;
 
     // Rule-scoped excludeSelectors (engineOptions.rules[ruleId].excludeSelectors)
     // apply on top of the global excludeSelectors for exactly this rule's
@@ -117810,6 +118777,26 @@ const runCore = (function runCore(
       if (ruleTimings)
         ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
       continue;
+    }
+    // A variant reports in its own words: a message key of its base rule's
+    // reads from the variant's prefix instead.
+    if (variant && variant.messages && variant.messages.from && variant.messages.to) {
+      const from = variant.messages.from + '_';
+      const to = variant.messages.to + '_';
+      const remap = (key) =>
+        typeof key === 'string' && key.indexOf(from) === 0 ? to + key.slice(from.length) : key;
+      for (const o of Array.isArray(result.occurrences) ? result.occurrences : []) {
+        if (o && o.i18n && typeof o.i18n === 'object') {
+          o.i18n.summaryKey = remap(o.i18n.summaryKey);
+          o.i18n.hintKey = remap(o.i18n.hintKey);
+        }
+      }
+      if (result.i18n && typeof result.i18n === 'object') {
+        result.i18n.summaryKey = remap(result.i18n.summaryKey);
+        result.i18n.hintKey = remap(result.i18n.hintKey);
+      }
+      result.summaryKey = remap(result.summaryKey);
+      result.i18nKey = remap(result.i18nKey);
     }
     if (!result.engineOptions) {
       result.engineOptions = {

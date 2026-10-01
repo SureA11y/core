@@ -16,6 +16,10 @@
 // B4 makes two of core's best-practice rules mandatory; B5 reuses one of
 // RGAA's own rules (stress points 6 and 7 of DESIGN.md).
 const ROWS = {
+  'acme-contrast-uniform': {
+    requirements: ['B2'],
+    note: "ACME's variant of contrast-minimum: 4.5:1 for all text."
+  },
   'acme-statement-link': {
     requirements: ['B3'],
     note: "ACME's own rule: a link to the statement, by text or URL, in the footer under 2.0."
