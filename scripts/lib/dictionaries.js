@@ -85,11 +85,32 @@ function loadDictionaries(dirs = i18nDirs()) {
   return out;
 }
 
+// For each locale some folder has, the English keys of the profiles' folders
+// that do not have it: { locale: [key...] }, a locale listed only when it
+// leaves keys out. Those messages show in English in that locale by the
+// profile's choice, so the engine does not count them as missing from its
+// dictionary. Core's keys (the first folder's) are never left out: a locale
+// core lacks is a partial dictionary.
+function keysLeftOut(dirs = i18nDirs()) {
+  const perDir = dirs.map((dir) => ({ dir, locales: localesOf(dir) }));
+  const locales = new Set(perDir.flatMap((d) => d.locales).filter((l) => l !== 'en'));
+  const out = {};
+  for (const locale of [...locales].sort()) {
+    const keys = perDir
+      .slice(1)
+      .filter((d) => !d.locales.includes(locale))
+      .flatMap((d) => Object.keys(loadDictionaries([d.dir]).en));
+    if (keys.length) out[locale] = keys.sort();
+  }
+  return out;
+}
+
 module.exports = {
   CORE_I18N_DIR,
   isLocaleFileName,
   i18nSources,
   i18nDirs,
   localesOf,
-  loadDictionaries
+  loadDictionaries,
+  keysLeftOut
 };

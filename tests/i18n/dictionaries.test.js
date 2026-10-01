@@ -16,7 +16,8 @@ const {
   CORE_I18N_DIR,
   i18nDirs,
   localesOf,
-  loadDictionaries
+  loadDictionaries,
+  keysLeftOut
 } = require('../../scripts/lib/dictionaries');
 const PROFILES = require('../../profiles');
 
@@ -69,4 +70,14 @@ test('the real dictionaries load without a clash, core with the same keys in eve
 test("a profile's locales are the files in its folder, en first", () => {
   const dir = makeDir({ fr: { a: 'b' }, en: { a: 'a' }, es: { a: 'c' } });
   assert.deepEqual(localesOf(dir), ['en', 'es', 'fr']);
+});
+
+test("a locale lists the keys of the profiles that have no file for it, never core's", () => {
+  const core = makeDir({ en: { a: 'A' }, de: { a: 'A-de' }, fr: { a: 'A-fr' } });
+  const profile = makeDir({
+    en: { p2: 'P2', p1: 'P1' },
+    fr: { p1: 'x', p2: 'y' },
+    es: { p1: 'x', p2: 'y' }
+  });
+  assert.deepEqual(keysLeftOut([core, profile]), { de: ['p1', 'p2'] });
 });

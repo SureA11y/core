@@ -75,7 +75,7 @@ const {
 } = require('../src/core/frame-scan');
 const { ruleDirs } = require('./lib/rule-dirs');
 const { resolveVariants } = require('./lib/rule-variants');
-const { loadDictionaries } = require('./lib/dictionaries');
+const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
@@ -195,6 +195,16 @@ function loadCompositeRulesCatalog() {
 // (scripts/lib/dictionaries.js). A key two of them define fails the build.
 function loadAllTranslations() {
   return loadDictionaries();
+}
+
+// The keys each locale leaves out by a folder's choice, as the generated code
+// reads them: { locale: { key: true } }.
+function leftOutMap(leftOut) {
+  const out = {};
+  for (const [locale, keys] of Object.entries(leftOut || {})) {
+    out[locale] = Object.fromEntries(keys.map((k) => [k, true]));
+  }
+  return out;
 }
 
 function isRuleFileName(fullPath) {
@@ -391,7 +401,7 @@ function assertJsonSerializable(name, value) {
 /**
  * Generate src/core.js as a single CommonJS module.
  */
-function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg) {
+function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, leftOutArg) {
   // Defaults to the inlined set; the browser build inlines only en but still
   // passes the full list, so an omitted table reports dictionary-not-loaded
   // rather than pretending the language does not exist.
@@ -490,6 +500,11 @@ const DEFAULT_POLICY = {
 
 // Built-in message catalogs (inlined at build time)
 const I18N = ${jsStringify(i18nAll || { en: {} })};
+
+// Per locale, the keys a dictionary folder leaves out by having no file for
+// that locale (a profile that does not offer the language): they show in
+// English, and do not make the locale's dictionary look incomplete.
+const I18N_LEFT_OUT = ${jsStringify(leftOutMap(leftOutArg))};
 
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
@@ -612,7 +627,10 @@ function resolveLocale(engineOptions) {
     const supplied = ownDict(getSuppliedMessages(engineOptions), matched);
     const builtIn = ownDict(I18N, matched);
 
+    const leftOut = I18N_LEFT_OUT[matched] || {};
+
     for (const key in en) {
+      if (leftOut[key] === true) continue;
       if (!ownString(supplied, key) && !ownString(builtIn, key)) {
         return { requested: requested, resolved: matched, reason: 'partial-dictionary' };
       }
@@ -1811,7 +1829,13 @@ function main() {
 
   const compositeRulesCatalog = loadCompositeRulesCatalog();
 
-  const out = generateCore(mods, i18nAll, compositeRulesCatalog, Object.keys(i18nAll));
+  const out = generateCore(
+    mods,
+    i18nAll,
+    compositeRulesCatalog,
+    Object.keys(i18nAll),
+    keysLeftOut()
+  );
 
   fs.writeFileSync(OUTPUT_FILE, `/* SPDX-License-Identifier: MPL-2.0 */\n\n${out}`, 'utf8');
 
@@ -1821,6 +1845,7 @@ function main() {
 module.exports = {
   loadRuleModules,
   loadAllTranslations,
+  keysLeftOut,
   loadCompositeRulesCatalog,
   generateCore
 };

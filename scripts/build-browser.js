@@ -42,6 +42,7 @@ const esbuild = require('esbuild');
 const {
   loadRuleModules,
   loadAllTranslations,
+  keysLeftOut,
   loadCompositeRulesCatalog,
   generateCore
 } = require('./build-core.js');
@@ -243,7 +244,8 @@ function main() {
     loadRuleModules(),
     { en: i18nAll.en },
     loadCompositeRulesCatalog(),
-    knownLocales
+    knownLocales,
+    keysLeftOut()
   );
   const bundle = minifyBundle(generateBrowserBundle(coreSource), 'the browser bundle');
 
