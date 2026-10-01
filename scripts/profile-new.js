@@ -4,7 +4,7 @@
  * Create a new profile: a standard with verdicts of its own, built into the
  * engine from its own folder (profiles/README.md).
  *
- *   npm run profile:new -- <key> [--name "<Name>"]
+ *   npm run profile:new -- <key> [--name "<Name>"] [--locales en,es]
  *
  * writes profiles/<key>/ with a working, empty standard, and adds it to
  * profiles/index.js:
@@ -17,7 +17,9 @@
  * - mappings.js      the result entries and per-requirement rollups built from
  *                    those two tables, and the checks the build runs on them
  * - rules/           the standard's own rules (automatic/, manual/)
- * - i18n/            their messages, one <locale>.json per locale core has
+ * - i18n/            their messages, one <locale>.json per locale: the ones
+ *                    --locales names (en always among them), or else every
+ *                    locale core has
  * - tests/           the profile's tests, starting with its entry's
  * - README.md        what to fill in, and where
  *
@@ -34,10 +36,11 @@ const KEY_RE = /^[a-z][a-z0-9-]*$/;
 const RESERVED_KEYS = new Set(['wcag', 'en301549', 'best-practice', 'a11ycore']);
 
 function parseArgs(argv) {
-  const args = { key: null, name: null, root: path.join(__dirname, '..') };
+  const args = { key: null, name: null, locales: null, root: path.join(__dirname, '..') };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--name') args.name = argv[++i];
+    else if (a === '--locales') args.locales = String(argv[++i] || '').split(',');
     else if (a === '--root') args.root = path.resolve(argv[++i]);
     else if (!a.startsWith('--') && !args.key) args.key = a;
   }
@@ -331,7 +334,7 @@ ${name} as a profile of the engine. Created by \`npm run profile:new\`; see [\`p
 1. **Its requirements**, per version, in \`requirements.js\`: each requirement's number, title and the WCAG criteria it corresponds to.
 2. **Which rules check them**, in \`rule-map.js\`: any core rule, or one of the profile's own, with the reason.
 3. **Its own rules**, for requirements no core rule checks, in \`rules/automatic/\` or \`rules/manual/\`. Each one follows [\`docs/RULE_AUTHORING.md\`](../../docs/RULE_AUTHORING.md), carries the tag \`${key}\` (which makes it run only under this standard), and has a test in \`tests/rules/\` with its scenario page in \`tests/fixtures/\`.
-4. **Their messages** in \`i18n/en.json\`, then \`npm run i18n:sync\` for the other locales.
+4. **Their messages** in \`i18n/en.json\`, then \`npm run i18n:sync\` for the other locales. The files in \`i18n/\` are the profile's languages: \`npm run i18n:new -- <locale> --profile ${key}\` adds one, and deleting a file drops one, whose messages then show in English.
 5. **Their docs and records**: an example pair per rule in \`docs/RULE_EXAMPLES.md\`, then \`npm run docs:rule-catalog\`, \`fixtures:index\`, \`fixtures:markers\`, \`rule-examples:coverage\` and \`finding-ids\`, which write this profile's catalog, fixture index and records here, beside core's.
 6. **Its versions and profiles**, if it has more than 1.0: \`VERSIONS\` in \`requirements.js\` and \`profiles\` in \`index.js\`.
 
@@ -365,8 +368,26 @@ async function formatted(file, source) {
   return prettier.format(source, { ...options, filepath: file });
 }
 
-async function createProfile({ key, name, root }) {
+// The profile's languages: en, then the ones asked for, or else every
+// locale core has.
+function profileLocales(locales, root) {
+  const asked = locales
+    ? locales.map((l) => String(l).trim()).filter(Boolean)
+    : fs
+        .readdirSync(path.join(root, 'src', 'i18n'))
+        .filter((f) => /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(f))
+        .map((f) => f.replace(/\.json$/, ''));
+  for (const locale of asked) {
+    if (!/^[a-z]{2}(-[A-Za-z0-9]+)?$/.test(locale)) {
+      throw new Error(`"${locale}" is not a locale code, such as es or pt-BR`);
+    }
+  }
+  return ['en', ...[...new Set(asked)].filter((l) => l !== 'en').sort()];
+}
+
+async function createProfile({ key, name, locales: askedLocales, root }) {
   checkKey(key, root);
+  const locales = profileLocales(askedLocales, root);
   const opts = { key, name: name || key.toUpperCase() };
   const dir = path.join(root, 'profiles', key);
   const write = async (rel, content) => {
@@ -389,16 +410,15 @@ async function createProfile({ key, name, root }) {
     written.push(await write(`rules/${type}/.gitkeep`, ''));
   }
 
-  // One dictionary per locale core has, each holding the note above the
-  // profile's rollups in the HTML report, in English until translated.
+  // One dictionary per locale the profile has, each holding the note above
+  // the profile's rollups in the HTML report, in English until translated.
+  // The files are its list of languages (scripts/lib/dictionaries.js).
   const noteKey = `report_${camel(key)}Rollup_note`;
   const note = `One row per ${opts.name} requirement that a rule is linked to, grouping those rules.`;
-  const locales = fs
-    .readdirSync(path.join(root, 'src', 'i18n'))
-    .filter((f) => /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(f))
-    .sort();
-  for (const file of locales) {
-    written.push(await write(`i18n/${file}`, `${JSON.stringify({ [noteKey]: note }, null, 2)}\n`));
+  for (const locale of locales) {
+    written.push(
+      await write(`i18n/${locale}.json`, `${JSON.stringify({ [noteKey]: note }, null, 2)}\n`)
+    );
   }
 
   register(root, key);

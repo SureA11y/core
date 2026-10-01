@@ -12,7 +12,12 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { CORE_I18N_DIR, i18nDirs, loadDictionaries } = require('../../scripts/lib/dictionaries');
+const {
+  CORE_I18N_DIR,
+  i18nDirs,
+  localesOf,
+  loadDictionaries
+} = require('../../scripts/lib/dictionaries');
 const PROFILES = require('../../profiles');
 
 function makeDir(files) {
@@ -51,10 +56,17 @@ test('a file that is not a JSON object is refused', () => {
   assert.throws(() => loadDictionaries([dir]), /must hold a JSON object/);
 });
 
-test('the real dictionaries load without a clash, every locale with the same keys', () => {
+test('the real dictionaries load without a clash, core with the same keys in every locale', () => {
   const dicts = loadDictionaries();
-  const enKeys = Object.keys(dicts.en).sort();
-  for (const [locale, dict] of Object.entries(dicts)) {
-    assert.deepEqual(Object.keys(dict).sort(), enKeys, `${locale} differs from en`);
+  const core = loadDictionaries([CORE_I18N_DIR]);
+  const coreKeys = Object.keys(core.en).sort();
+  for (const [locale, dict] of Object.entries(core)) {
+    assert.deepEqual(Object.keys(dict).sort(), coreKeys, `core's ${locale} differs from its en`);
   }
+  for (const locale of Object.keys(core)) assert.ok(dicts[locale], locale);
+});
+
+test("a profile's locales are the files in its folder, en first", () => {
+  const dir = makeDir({ fr: { a: 'b' }, en: { a: 'a' }, es: { a: 'c' } });
+  assert.deepEqual(localesOf(dir), ['en', 'es', 'fr']);
 });

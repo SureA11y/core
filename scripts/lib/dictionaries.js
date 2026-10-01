@@ -7,6 +7,11 @@
  * en.json being the source the others are synced against. A profile's
  * dictionary holds the keys of its own rules and messages, and nothing else.
  *
+ * A profile chooses its languages: the locale files in its folder are the
+ * list. It has en.json, and any others it translates; core's locales it has
+ * no file for show its messages in English, as the engine does for any key a
+ * locale lacks.
+ *
  * The engine sees one dictionary per locale: core's entries, then each
  * profile's in registry order. A key defined in two folders is an error, so a
  * profile can never change one of core's messages.
@@ -25,11 +30,28 @@ function isLocaleFileName(name) {
   return typeof name === 'string' && /^[a-z]{2}(-[A-Za-z0-9]+)?\.json$/.test(name);
 }
 
+// Every dictionary folder that exists, core's first: [{ key, dir }], key
+// 'core' or the profile's.
+function i18nSources() {
+  return [{ key: 'core', dir: CORE_I18N_DIR }]
+    .concat(PROFILES.filter((p) => p.i18nDir).map((p) => ({ key: p.standard.key, dir: p.i18nDir })))
+    .filter(({ dir }) => fs.existsSync(dir));
+}
+
 // Every dictionary folder that exists, core's first.
 function i18nDirs() {
-  return [CORE_I18N_DIR]
-    .concat(PROFILES.map((p) => p.i18nDir).filter(Boolean))
-    .filter((dir) => fs.existsSync(dir));
+  return i18nSources().map(({ dir }) => dir);
+}
+
+// The locales a dictionary folder has, en first, then the rest sorted.
+function localesOf(dir) {
+  const locales = fs
+    .readdirSync(dir)
+    .filter(isLocaleFileName)
+    .map((file) => file.replace(/\.json$/, ''))
+    .filter((locale) => locale !== 'en')
+    .sort();
+  return ['en', ...locales];
 }
 
 // { locale: dict } for every locale file in every folder, merged in folder
@@ -63,4 +85,11 @@ function loadDictionaries(dirs = i18nDirs()) {
   return out;
 }
 
-module.exports = { CORE_I18N_DIR, isLocaleFileName, i18nDirs, loadDictionaries };
+module.exports = {
+  CORE_I18N_DIR,
+  isLocaleFileName,
+  i18nSources,
+  i18nDirs,
+  localesOf,
+  loadDictionaries
+};

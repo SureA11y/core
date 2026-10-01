@@ -63,6 +63,18 @@ test('it writes a complete profile and adds it to profiles/index.js', async () =
   );
 });
 
+test('it writes a dictionary for each language asked for, and en', async () => {
+  const root = makeRoot();
+  await createProfile({ key: 'acme-std', locales: ['es'], root });
+  const files = fs.readdirSync(path.join(root, 'profiles', 'acme-std', 'i18n')).sort();
+  assert.deepEqual(files, ['en.json', 'es.json']);
+
+  await assert.rejects(
+    () => createProfile({ key: 'other-std', locales: ['Spanish'], root }),
+    /not a locale code/
+  );
+});
+
 test('the profile it writes meets the contract and is an empty, sound standard', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', name: 'ACME Standard', root });

@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { CORE_I18N_DIR, i18nDirs } = require('./lib/dictionaries');
+const { i18nDirs } = require('./lib/dictionaries');
 const {
   I18N_DIR,
   localePath,
@@ -34,41 +34,40 @@ function syncDict(enDict, localeDict) {
   return { dict, added, removed, untranslated };
 }
 
-// With `create`, a missing locale file is written seeded with the English
-// text (a profile's dictionary for a locale core already has) rather than
-// refused.
-function syncLocale(locale, { i18nDir = I18N_DIR, check = false, create = false } = {}) {
+function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
   const filePath = localePath(locale, i18nDir);
   const exists = fs.existsSync(filePath);
 
-  if (!exists && !create) {
+  if (!exists) {
     throw new Error(
       `${path.relative(ROOT_DIR, filePath)} does not exist — run \`npm run i18n:new ${locale}\` to create it.`
     );
   }
 
-  const result = syncDict(loadDict(localePath('en', i18nDir)), exists ? loadDict(filePath) : {});
+  const result = syncDict(loadDict(localePath('en', i18nDir)), loadDict(filePath));
   const source = serializeLocale(result.dict);
-  const changed = !exists || source !== fs.readFileSync(filePath, 'utf8');
+  const changed = source !== fs.readFileSync(filePath, 'utf8');
 
   if (changed && !check) fs.writeFileSync(filePath, source, 'utf8');
 
   return { locale, filePath, changed, ...result };
 }
 
-function syncAll({ i18nDir = I18N_DIR, locales, check = false, create = false } = {}) {
+function syncAll({ i18nDir = I18N_DIR, locales, check = false } = {}) {
   const targets = locales && locales.length ? locales : listLocales(i18nDir);
 
-  return targets.map((locale) => syncLocale(locale, { i18nDir, check, create }));
+  return targets.map((locale) => syncLocale(locale, { i18nDir, check }));
 }
 
-// Every dictionary folder (scripts/lib/dictionaries.js). A profile's folder
-// is synced for core's locales, so it can never lack one.
+// Every dictionary folder (scripts/lib/dictionaries.js), each for the locales
+// it has: a profile chooses its languages by the files in its folder, so a
+// locale it has no file for is left out rather than created.
 function syncEveryDir({ locales, check = false } = {}) {
-  const targets = locales && locales.length ? locales : listLocales(CORE_I18N_DIR);
-  return i18nDirs().flatMap((i18nDir) =>
-    syncAll({ i18nDir, locales: targets, check, create: i18nDir !== CORE_I18N_DIR })
-  );
+  return i18nDirs().flatMap((i18nDir) => {
+    const own = listLocales(i18nDir);
+    const targets = locales && locales.length ? locales.filter((l) => own.includes(l)) : own;
+    return syncAll({ i18nDir, locales: targets, check });
+  });
 }
 
 function describe(result, check) {

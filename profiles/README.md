@@ -40,12 +40,12 @@ profiles/
 
 `src/rgaa.js` stays the public entry point (`@surea11y/core/rgaa`) and reads its tables from here.
 
-The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The generated docs and records are written per source (`ruleSources()` there): core's describe core's rules only, and a profile's go in its own folder, in the same places under it as core's are under the repository root. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` write both, and their checks compare both, so a profile's rules never change core's files. The WCAG coverage report (`npm run coverage`) reads core's rules only. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:new`, `i18n:report`) cover every dictionary folder.
+The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The generated docs and records are written per source (`ruleSources()` there): core's describe core's rules only, and a profile's go in its own folder, in the same places under it as core's are under the repository root. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` write both, and their checks compare both, so a profile's rules never change core's files. The WCAG coverage report (`npm run coverage`) reads core's rules only. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:report`) cover every dictionary folder, each for the locales it has, and `i18n:new` adds a locale to core's or, with `--profile`, to one profile's.
 
 ## Adding a profile
 
 ```sh
-npm run profile:new -- <key> --name "<Name>"
+npm run profile:new -- <key> --name "<Name>" [--locales en,es]
 ```
 
 writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an empty but working standard: it builds, passes its own tests and the boundary check, and its profile, `<key>-1.0`, runs WCAG 2.2 A and AA. Filling it in is editing tables and adding rules:
@@ -53,7 +53,7 @@ writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an em
 - `requirements.js`: the standard's requirements per version, each with its title and the WCAG criteria it corresponds to;
 - `rule-map.js`: which requirements each rule checks, core's rules or the profile's own, with the reason;
 - `rules/automatic/`, `rules/manual/`: rules for requirements no core rule checks, tagged `<key>`; where a requirement is a core rule with other thresholds, a variant of it rather than a copy ([`docs/RULE_AUTHORING.md`](../docs/RULE_AUTHORING.md#rule-variants)), each with a test in `tests/rules/` and a scenario page in `tests/fixtures/` (read from the test as `../../fixtures`);
-- `i18n/en.json`: their messages, then `npm run i18n:sync`;
+- `i18n/en.json`: their messages, then `npm run i18n:sync`. The files in `i18n/` are the profile's languages: `profile:new` writes one per core locale, or those `--locales en,es` names; `npm run i18n:new -- <locale> --profile <key>` adds one, and deleting a file drops one, whose messages then show in English;
 - `docs/RULE_EXAMPLES.md`: an example pair per rule. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` then write the profile's catalog, fixture index and records in its folder. Until the profile has a rule of its own they write nothing for it.
 
 From those tables `mappings.js` builds what each result names, one rollup per requirement, and the checks the build runs on the tables. The profile's own `README.md` lists the same steps. More versions, or another WCAG base, are a change to `VERSIONS` in `requirements.js` and `profiles` in `index.js`. A standard narrower than WCAG, or one replacing a WCAG check with its own, adds `exclude: { rules, criteria }` to a profile in `index.js`.
