@@ -1070,6 +1070,10 @@ function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
