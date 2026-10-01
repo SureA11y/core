@@ -10,8 +10,10 @@
  * find which criteria RGAA relates to a given WCAG Success Criterion.
  *
  * The text is RGAA's own French wording (DINUM, Licence Ouverte 2.0). The
- * objects are frozen: they are the RGAA profile's own table
- * (profiles/rgaa/map.js), not copies.
+ * objects are frozen: they are the profile's own table (map.js), not copies.
+ *
+ * The profile's public entry point, published as @surea11y/core/rgaa: it
+ * lives with the profile, and would move with it.
  */
 
 const {
@@ -20,7 +22,7 @@ const {
   RGAA_CRITERIA,
   RGAA_TESTS,
   rgaaCriteriaForSc
-} = require('../profiles/rgaa/map.js');
+} = require('./map.js');
 
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {

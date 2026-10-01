@@ -596,7 +596,6 @@ src/
   junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
-  rgaa.js                  # RGAA criteria and tests (@surea11y/core/rgaa)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
   profile-kit.js           # Mapping for a profile's standard (@surea11y/core/profile-kit)
 
@@ -613,7 +612,7 @@ src/
 
 profiles/
   index.js                 # The profiles built into the engine
-  rgaa/                    # RGAA 4.1.2: its criteria, rule mapping, rollups, own rules and their messages, data, scripts and tests
+  rgaa/                    # RGAA 4.1.2: its criteria, rule mapping, rollups, own rules and their messages, data, scripts, tests and its entry point (@surea11y/core/rgaa)
 
 scripts/
   build-core.js            # Generates src/core.js

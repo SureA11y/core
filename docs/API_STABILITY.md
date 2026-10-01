@@ -26,7 +26,7 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/junit` | `src/junit.js` | `renderJunitReport()` |
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
 | `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
-| `@surea11y/core/rgaa` | `src/rgaa.js` | `RGAA_VERSIONS`, `RGAA_THEMES`, `RGAA_CRITERIA`, `RGAA_TESTS`, `rgaaCriteriaForSc()` |
+| `@surea11y/core/rgaa` | `profiles/rgaa/public.js` | `RGAA_VERSIONS`, `RGAA_THEMES`, `RGAA_CRITERIA`, `RGAA_TESTS`, `rgaaCriteriaForSc()` |
 | `@surea11y/core/wcag` | `src/wcag.js` | `WCAG_VERSIONS`, `wcagCriteria()`, `wcagCriterion()`, `wcagTags()` |
 | `@surea11y/core/profile-kit` | `src/profile-kit.js` | `ruleMappedStandard()`, the mapping a profile made with `npm run profile:new` uses (see [`profiles/README.md`](../profiles/README.md)) |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |

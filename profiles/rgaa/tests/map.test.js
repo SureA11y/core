@@ -140,7 +140,7 @@ test('rgaaCriteriaForSc: every criterion RGAA relates to the WCAG criterion', ()
 // --- the public entry point ----------------------------------------------------
 
 test('@surea11y/core/rgaa exposes the tables, frozen', () => {
-  const pub = require('../../../src/rgaa.js');
+  const pub = require('../public.js');
   assert.deepEqual(Object.keys(pub).sort(), [
     'RGAA_CRITERIA',
     'RGAA_TESTS',
