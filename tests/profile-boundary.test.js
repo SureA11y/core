@@ -253,3 +253,15 @@ test("core's source, tests and scripts never read a profile's files", () => {
   );
   assert.deepEqual(found, []);
 });
+
+test("core's rule tests name no profile's standard, profiles or rollups", () => {
+  // What a standard makes of core's rules is tested in the profile; that a
+  // profile never changes a rule's outcome, in tests/profile-outcomes.test.js.
+  const names = PROFILES.flatMap((p) => [p.standard.key, p.standard.standard]).filter(Boolean);
+  const escape = (n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const literal = new RegExp(`(['"\`])(?:${names.map(escape).join('|')})(?:[-:][^'"\`]*)?\\1`, 'g');
+  const found = walk(path.join(ROOT, 'tests', 'engine-checks')).flatMap((file) =>
+    [...fs.readFileSync(file, 'utf8').matchAll(literal)].map((m) => `${rel(file)}: ${m[0]}`)
+  );
+  assert.deepEqual(found, []);
+});

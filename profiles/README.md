@@ -78,3 +78,5 @@ A profile depends on core only through what core already publishes, so it never 
 A profile's tests read core's files only through the package, as a profile outside this repository would: `require.resolve('@surea11y/core/browser')` for the browser bundle, never a path that climbs out of the profile. A behaviour core guarantees for every profile, such as a variant leaving its base rule's results unchanged, is tested in core, over every profile's rules.
 
 The other direction holds too: core reaches a profile only through `profiles/index.js`, and core's tests never read a profile's files. The generated `src/core.js`, which requires every rule, is the one exception. `tests/profile-boundary.test.js` checks both directions.
+
+What a standard makes of core's rules, which of its requirements a core rule checks and how it counts in its rollups, is the profile's to test, as RGAA does in `tests/core-rules.test.js`; core's rule tests name no profile's standard. Core guarantees in turn that a profile chooses which rules run and never changes what they decide: `tests/profile-outcomes.test.js` runs every rule's scenario page under every profile.
