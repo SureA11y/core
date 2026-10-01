@@ -35,7 +35,10 @@ function ruleFiles() {
 
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
   const files = ruleFiles();
-  const handBuilt = files.filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
+  // A variant has no code of its own: it runs its base rule's, counted there.
+  const handBuilt = files
+    .filter((f) => typeof require(f).from !== 'string')
+    .filter((f) => !fs.readFileSync(f, 'utf8').includes('reportOccurrence'));
 
   assert.ok(files.length > 100, 'sanity: the rule files were found');
   assert.ok(

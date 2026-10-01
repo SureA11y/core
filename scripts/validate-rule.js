@@ -41,6 +41,32 @@ const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
 const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js');
 const { CORE_I18N_DIR, i18nDirs, loadDictionaries } = require('./lib/dictionaries');
 const { isOptInRule, runOnlyForRule } = require('./lib/rule-run-selection.js');
+const { ruleDirs } = require('./lib/rule-dirs');
+const { isVariant, resolveVariants } = require('./lib/rule-variants');
+
+// The file of the rule with this id, in any rules folder.
+function findRuleFile(id) {
+  const walk = (dir) =>
+    fs.existsSync(dir)
+      ? fs
+          .readdirSync(dir, { withFileTypes: true })
+          .flatMap((e) =>
+            e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]
+          )
+          .filter((f) => f.endsWith('.js'))
+      : [];
+  return (
+    ruleDirs()
+      .flatMap(walk)
+      .find((file) => {
+        try {
+          return require(file).id === id;
+        } catch {
+          return false;
+        }
+      }) || null
+  );
+}
 const { UNCERTAINTY_CODE_VALUES, isUncertaintyCode } = require('../src/core/uncertainty.js');
 
 function loadWcagFacetsRegistry(repoRoot) {
@@ -597,25 +623,58 @@ function main() {
   const repoRoot = process.cwd();
 
   // Load module
-  const mod = require(ruleAbsPath);
+  let mod = require(ruleAbsPath);
+  assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
+
+  // A variant (scripts/lib/rule-variants.js) has no code of its own: it is
+  // checked as its base rule's code run under its own id, meta and messages.
+  let codePath = ruleAbsPath;
+  let ownKey = (key) => key;
+  if (isVariant(mod)) {
+    const extra = Object.keys(mod)
+      .filter((k) => !['id', 'from', 'config', 'meta'].includes(k))
+      .sort();
+    assert.deepStrictEqual(
+      extra,
+      [],
+      `a variant exports only id, from, config, meta (got: ${extra.join(', ')})`
+    );
+    const baseFile = findRuleFile(mod.from);
+    assert.ok(baseFile, `variant ${mod.id}: from names ${mod.from}, which is no rule`);
+    const { modules, problems } = resolveVariants([
+      { file: baseFile, mod: require(baseFile) },
+      { file: ruleAbsPath, mod }
+    ]);
+    assert.deepStrictEqual(problems, [], `variant ${mod.id}: ${problems.join('; ')}`);
+    mod = modules[1].mod;
+    codePath = baseFile;
+    const { from, to } = mod.variant.messages;
+    ownKey = (key) => (key.startsWith(from + '_') ? to + key.slice(from.length) : key);
+  }
 
   // Exports
-  assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
   for (const k of ['id', 'meta', 'runInPage']) {
     assert.ok(hasOwn(mod, k), `module missing export: ${k}`);
   }
 
-  // applicability is an optional part of the contract; anything else is a typo
-  // or a helper that should live inside runInPage.
-  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability']);
+  // applicability and settings (the names a variant may change) are optional
+  // parts of the contract; anything else is a typo or a helper that should
+  // live inside runInPage.
+  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability', 'settings', 'variant']);
   const unexpected = Object.keys(mod)
     .filter((k) => !allowed.has(k))
     .sort();
   assert.deepStrictEqual(
     unexpected,
     [],
-    `module exports more than id, meta, runInPage, applicability (got: ${unexpected.join(', ')})`
+    `module exports more than id, meta, runInPage, applicability, settings (got: ${unexpected.join(', ')})`
   );
+  if (hasOwn(mod, 'settings')) {
+    assert.ok(
+      mod.settings && typeof mod.settings === 'object' && !Array.isArray(mod.settings),
+      'settings, when exported, must be an object of setting names and defaults'
+    );
+  }
 
   if (hasOwn(mod, 'applicability')) {
     assert.ok(
@@ -667,13 +726,14 @@ function main() {
   );
 
   // Validate i18n keys referenced in source (static extraction)
-  const { keys: staticKeys } = extractI18nKeysFromSource(ruleAbsPath);
+  // (a variant's: its base's keys, read from the variant's own prefix)
+  const { keys: staticKeys } = extractI18nKeysFromSource(codePath);
   for (const k of staticKeys) {
-    validateI18nKeyExists(enDict, k, 'static i18n key');
+    validateI18nKeyExists(enDict, ownKey(k), 'static i18n key');
   }
 
   // Keep the cantTell vocabulary closed (static extraction)
-  validateUncertaintyCodes(ruleAbsPath);
+  validateUncertaintyCodes(codePath);
 
   // Runtime validation via engine
   const RULE_ID = mod.id;

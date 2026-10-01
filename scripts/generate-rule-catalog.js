@@ -156,7 +156,9 @@ function readRuleProse(rulesDir) {
     } catch {
       continue;
     }
-    if (!mod || typeof mod.id !== 'string' || typeof mod.runInPage !== 'function') continue;
+    // A rule, or a variant of one (its own header documents it).
+    const isRule = mod && (typeof mod.runInPage === 'function' || typeof mod.from === 'string');
+    if (!isRule || typeof mod.id !== 'string') continue;
 
     const source = fs.readFileSync(file, 'utf8');
     prose.set(mod.id, {

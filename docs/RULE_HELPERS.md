@@ -353,9 +353,10 @@ apart from `sharedCache`: a plain object that lives for one scan and lets the co
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
 it computes exactly what that key's other users compute (`contrast-minimum`,
-`contrast-enhanced`, `contrast-computable` and `contrast-minimum-rgaa` share
-`__elBgCache`, `__elFgCache` and `__elBlockerCache`, WeakMaps of each element's
-effective background, foreground and computability blocker). Backs the
+`contrast-enhanced` and `contrast-computable`, and `contrast-minimum`'s variants such as
+`contrast-minimum-rgaa`, share `__elBgCache`, `__elFgCache` and `__elBlockerCache`,
+WeakMaps of each element's effective background, foreground and computability blocker;
+a variant with other thresholds keeps its own font and analysis caches, keyed by them). Backs the
 `contrast-*` rule family (`contrast-minimum`, `contrast-minimum-rgaa`, `contrast-enhanced`,
 `contrast-computable`) and `focus-indicator-contrast` — see `src/core/contrast-helpers.js`
 if you're extending that family specifically. `isLargeText(fontSizePx, fontWeightNum,
