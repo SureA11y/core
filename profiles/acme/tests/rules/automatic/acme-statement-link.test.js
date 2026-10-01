@@ -77,11 +77,12 @@ test(`${RULE_ID}: no default or WCAG run includes it`, () => {
   }
 });
 
-// Finding F9 (DESIGN.md): a rule cannot tell which version of its standard
-// is targeted. It reads engineOptions.profile, so selecting ACME's rules any
-// other way gives 1.0's behaviour.
-test(`${RULE_ID}: F9, as it stands: selected by tag, the footer rule does not apply`, () => {
+// The rule reads the version from ctx.standard (finding F9, DESIGN.md).
+// Chosen by tag, no version is targeted, so it checks what both versions
+// require: a link anywhere.
+test(`${RULE_ID}: chosen by tag, with no version targeted, a link anywhere is enough`, () => {
   assertRule(scan(page(NAV), { optInRules: 'acme' }), RULE_ID, 'pass', { maxOccurrences: 0 });
+  assertRule(scan(page(''), { optInRules: 'acme' }), RULE_ID, 'fail', { maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: fixture coverage (fixtures/acme-statement-link-all-scenarios.html)`, () => {

@@ -22,9 +22,10 @@
  *   { linkTexts: string[], urlPaths: string[] }. Without them, the rule
  *   accepts "accessibility statement", "declaración de accesibilidad" and
  *   the path "/accessibility".
- * - A rule cannot tell which version of its standard is targeted, so the
- *   footer requirement reads engineOptions.profile, and applies only when
- *   the run names acme-2.0 itself (finding F9 in DESIGN.md).
+ * - The footer requirement is 2.0's: the rule reads the version the run
+ *   targets from ctx.standard. When no ACME profile selected the run (its
+ *   rules chosen by tag), no version is known, and the rule checks what both
+ *   versions require: a link anywhere.
  * - ACME is a made-up standard that tests the profile model; it never ships.
  */
 
@@ -66,11 +67,11 @@ function runInPage(ctx) {
     'declaración de accesibilidad'
   ]);
   const urlPaths = list(config.urlPaths, ['/accessibility']);
-  const profile =
-    ctx.engineOptions && typeof ctx.engineOptions.profile === 'string'
-      ? ctx.engineOptions.profile.trim().toLowerCase()
-      : '';
-  const needsFooter = profile === 'acme-2.0';
+  const needsFooter = !!(
+    ctx.standard &&
+    ctx.standard.key === 'acme' &&
+    ctx.standard.version === '2.0'
+  );
 
   function pathOf(href) {
     try {

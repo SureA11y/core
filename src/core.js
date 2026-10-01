@@ -28080,26 +28080,44 @@ const PROFILE_MAPPINGS = {
 // versions has a rollup per requirement in each.
 const PROFILE_TARGETS = {
   "en301549-v4.1.1": {
+    "key": "en301549",
     "standard": "EN 301 549",
     "version": "V4.1.1"
   },
   "en301549-v3.2.1": {
+    "key": "en301549",
     "standard": "EN 301 549",
     "version": "V3.2.1"
   },
   "rgaa-4.1.2": {
+    "key": "rgaa",
     "standard": "RGAA",
     "version": "4.1.2"
   },
   "acme-1.0": {
+    "key": "acme",
     "standard": "ACME",
     "version": "1.0"
   },
   "acme-2.0": {
+    "key": "acme",
     "standard": "ACME",
     "version": "2.0"
   }
 };
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
 
 // Whether a standard's own rollup belongs to the version the selection's
 // profile targets. A rollup of another standard, or a selection with no
@@ -37562,6 +37580,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -37699,6 +37720,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
@@ -58290,11 +58313,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'declaración de accesibilidad'
   ]);
   const urlPaths = list(config.urlPaths, ['/accessibility']);
-  const profile =
-    ctx.engineOptions && typeof ctx.engineOptions.profile === 'string'
-      ? ctx.engineOptions.profile.trim().toLowerCase()
-      : '';
-  const needsFooter = profile === 'acme-2.0';
+  const needsFooter = !!(
+    ctx.standard &&
+    ctx.standard.key === 'acme' &&
+    ctx.standard.version === '2.0'
+  );
 
   function pathOf(href) {
     try {
@@ -108006,26 +108029,44 @@ const PROFILE_MAPPINGS = {
 // versions has a rollup per requirement in each.
 const PROFILE_TARGETS = {
   "en301549-v4.1.1": {
+    "key": "en301549",
     "standard": "EN 301 549",
     "version": "V4.1.1"
   },
   "en301549-v3.2.1": {
+    "key": "en301549",
     "standard": "EN 301 549",
     "version": "V3.2.1"
   },
   "rgaa-4.1.2": {
+    "key": "rgaa",
     "standard": "RGAA",
     "version": "4.1.2"
   },
   "acme-1.0": {
+    "key": "acme",
     "standard": "ACME",
     "version": "1.0"
   },
   "acme-2.0": {
+    "key": "acme",
     "standard": "ACME",
     "version": "2.0"
   }
 };
+
+// What a rule sees as ctx.standard: the standard and version the run's
+// profile targets, { key, name, version }, or null when no standard's
+// profile selected the run (no profile, a WCAG one, or tags alone).
+function profileStandardOf(profile) {
+  const target =
+    typeof profile === 'string' && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+      ? PROFILE_TARGETS[profile]
+      : null;
+  return target
+    ? Object.freeze({ key: target.key, name: target.standard, version: target.version })
+    : null;
+}
 
 // Whether a standard's own rollup belongs to the version the selection's
 // profile targets. A rollup of another standard, or a selection with no
@@ -117488,6 +117529,9 @@ const runCore = (function runCore(
   // fall back, but a caller who asked for a conformance target and silently
   // got a full run would read the result wrongly, so say so.
   const appliedProfile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+  // A rule whose behaviour differs between versions of its standard reads
+  // which one the run targets here (ctx.standard).
+  const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
   if (profileNotApplied) {
     try {
@@ -117625,6 +117669,8 @@ const runCore = (function runCore(
       root: roots,
       rule: defResolved,
       config: ruleConfig,
+      // The standard and version the run's profile targets, or null.
+      standard: runStandard,
       helpers: sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
