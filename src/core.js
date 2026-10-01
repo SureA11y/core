@@ -28057,6 +28057,24 @@ const PROFILE_RULES = {
   ]
 };
 
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {
+  "acme-2.0": {
+    "rules": [],
+    "criteria": [
+      "3.3.8"
+    ],
+    "ruleIds": [
+      "password-paste-enabled"
+    ],
+    "rollupIds": [
+      "wcag-3.3.8-accessible-authentication-minimum"
+    ]
+  }
+};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -28233,6 +28251,16 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
     }
     selection.profile = requestedProfile;
   }
@@ -37890,6 +37918,10 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
@@ -38162,6 +38194,9 @@ function toCompositeCatalogEntry(x, tokens) {
 // engineOptions.optInRules and includes nothing else, so the catalog lists
 // what a scan with the same options would produce.
 function isCompositeListed(x, selection) {
+  // An excluded rollup, by the caller or by a profile's exclude, is not
+  // produced, so it is not listed.
+  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
   const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
   const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
   if (!optIn.length) return true;
@@ -108006,6 +108041,24 @@ const PROFILE_RULES = {
   ]
 };
 
+// What a profile leaves out (exclude in the registry): { rules, criteria }
+// as declared, and the rule and rollup ids they come to. Applied with the
+// profile, as its own exclusions, so the scan and the catalog agree.
+const PROFILE_EXCLUDES = {
+  "acme-2.0": {
+    "rules": [],
+    "criteria": [
+      "3.3.8"
+    ],
+    "ruleIds": [
+      "password-paste-enabled"
+    ],
+    "rollupIds": [
+      "wcag-3.3.8-accessible-authentication-minimum"
+    ]
+  }
+};
+
 const PROFILE_MAPPINGS = {
   "en301549-v4.1.1": [
     "en301549:V4.1.1"
@@ -108182,6 +108235,16 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+    }
+    if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
+      const ex = PROFILE_EXCLUDES[requestedProfile];
+      const ids = ex.ruleIds.concat(ex.rollupIds);
+      selection.excludeRuleIds = selection.excludeRuleIds.concat(
+        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+      );
+      if (ex.rules.length || ex.criteria.length) {
+        selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
+      }
     }
     selection.profile = requestedProfile;
   }
@@ -117839,6 +117902,10 @@ const runCore = (function runCore(
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // What the profile left out, when it excludes anything.
+      ...(appliedProfile && runOnly && runOnly.profileExcludes
+        ? { profileExcludes: runOnly.profileExcludes }
+        : {}),
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),

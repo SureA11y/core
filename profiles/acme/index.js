@@ -34,7 +34,9 @@ const standard = {
     'acme-2.0': {
       version: '2.0',
       tags: WCAG22_AA_TAGS.concat(['acme']),
-      mappedRules: true
+      mappedRules: true,
+      // B6: ACME 2.0 waives WCAG 3.3.8 for internal tools.
+      exclude: { criteria: ['3.3.8'] }
     }
   },
   ruleTag: 'acme',

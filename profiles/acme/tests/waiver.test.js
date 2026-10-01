@@ -1,13 +1,14 @@
 'use strict';
 
 /**
- * ACME B6: ACME 2.0 waives WCAG 3.3.8. Stress point 8 of DESIGN.md and
- * finding F13: a profile can only add rules, so it cannot waive one.
+ * ACME B6: ACME 2.0 waives WCAG 3.3.8 (`exclude: { criteria: ['3.3.8'] }` on
+ * acme-2.0). Stress point 8 of DESIGN.md, finding F13.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const core = require('../../../src/index.js');
 const { runa11yCoreOnHtml } = require('../../../tests/helpers/runDomRulesOnHtml.js');
 
 const PAGE =
@@ -18,18 +19,24 @@ const ROLLUP = 'wcag-3.3.8-accessible-authentication-minimum';
 
 const scan = (engineOptions) => runa11yCoreOnHtml(PAGE, { engineOptions });
 const ran = (result) => result.checksResults.some((r) => r.ruleId === RULE);
-const rollup = (result) => result.rulesResults.find((r) => r.ruleId === ROLLUP);
+const rolled = (result) => result.rulesResults.some((r) => r.ruleId === ROLLUP);
 
-test('F13, as it stands: ACME 2.0 cannot waive 3.3.8; its rule and rollup still run', () => {
+test('under acme-2.0, the waived criterion runs neither its rule nor its rollup', () => {
   const result = scan({ profile: 'acme-2.0' });
-  assert.ok(ran(result));
-  assert.ok(rollup(result));
+  assert.ok(!ran(result));
+  assert.ok(!rolled(result));
+  assert.deepEqual(result.engine.profileExcludes, { rules: [], criteria: ['3.3.8'] });
 });
 
-test('F13, as it stands: excluding the rule by hand leaves the criterion undecided', () => {
-  // The runner reads a rollup rule that did not run as "not tested", so the
-  // waived criterion shows as cantTell rather than going away.
-  const result = scan({ profile: 'acme-2.0', rules: { exclude: RULE } });
-  assert.ok(!ran(result));
-  assert.equal(rollup(result).outcome, 'cantTell');
+test('the catalog leaves them out too', () => {
+  const options = { profile: 'acme-2.0' };
+  assert.ok(!core.getChecksForRunOnly(null, options).some((r) => r.ruleId === RULE));
+  assert.ok(!core.getRulesCatalog(options).some((r) => r.id === ROLLUP));
+});
+
+test('a WCAG 2.2 run still checks 3.3.8, and says nothing was excluded', () => {
+  const result = scan({ profile: 'wcag22-aa' });
+  assert.ok(ran(result));
+  assert.ok(rolled(result));
+  assert.equal(result.engine.profileExcludes, undefined);
 });
