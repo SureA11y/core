@@ -96,10 +96,6 @@ function runInPage(ctx) {
     try {
       if (!el || el.nodeType !== 1) return null;
 
-      if (helpers && typeof helpers.computedStyle === 'function') {
-        const cs = helpers.computedStyle(el);
-        if (cs) return cs;
-      }
       const view =
         el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);

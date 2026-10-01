@@ -43,6 +43,20 @@ The build (`scripts/build-core.js`) compiles a profile's rules into the engine w
 2. Add it to `profiles/index.js`.
 3. Put its tests in `profiles/<name>/tests/`: a test per rule in `tests/rules/automatic/` or `tests/rules/manual/`, reading its scenario page from `tests/fixtures/` as core's rule tests do (`../../fixtures`).
 
-## Work in progress
+## What a profile may use
 
-Next: a check that a profile uses only what the engine publishes for profiles, and a written contract for what that is.
+A profile depends on core only through what core already publishes, so it never breaks when core's internals change, and it could become a package of its own. `scripts/lib/profile-contract.js` states the contract and `tests/profile-boundary.test.js` checks every profile against it:
+
+- **Its entry.** `index.js` exports only `standard`, `rulesDir` and `i18nDir`, and both folders sit inside the profile. `standard` follows ENTRY SHAPE in `src/coverage/standards.js`.
+- **Its own files.** The entry and its tables (`*.js` at the profile's root) require only each other and Node built-ins: nothing from `src/` or `scripts/`.
+- **Its rules.** A rule follows the custom-rule contract, which semver covers ([`docs/API_STABILITY.md`](../docs/API_STABILITY.md)):
+  - it requires nothing, since `runInPage` is serialized into the page;
+  - it reads only `ctx.document`, `window`, `root`, `rule`, `config`, `helpers`, `engineOptions`, `inputs` and `contextSelector`;
+  - it calls only the helpers [`docs/RULE_HELPERS.md`](../docs/RULE_HELPERS.md) documents. A helper a profile needs that is not documented there is a change to core's public API: document it there first;
+  - it carries the standard's `ruleTag`, so no WCAG scan runs it.
+- **Its tests and scripts.** From core, they require only the package's entry points (`src/index.js`, `src/core.js`, `src/report.js`, `src/rgaa.js` and the others in `package.json` `exports`), WCAG's reference tables (`src/coverage/wcag-facets.js`, `src/coverage/wcag-version-map.js`) and the shared test harness (`tests/helpers/`). npm packages and Node built-ins are fine.
+- **Its dictionaries.** They hold only keys of its own rules (each rule's `meta.i18n` prefix) and of its entry (`report.noteKey`). The build refuses a key core also defines.
+
+The other direction holds too: core reaches a profile only through `profiles/index.js`. The exceptions are `src/rgaa.js`, RGAA's public entry point (`@surea11y/core/rgaa`), which reads the profile's table and would move with the profile, and the generated `src/core.js`, which requires every rule.
+
+A few of RGAA's tests read core files directly, which the check does not cover: `contrast-minimum-rgaa`'s test reads core's `tests/fixtures/contrast-all-scenarios.html`, `skip-link-present`'s compares its wording list with `src/checks/manual/skip-link-manual.js`, and `scripted-components-review`'s reads the generated bundles. In the other direction, core's media rules browser test reads `media-transcript-adjacent`'s scenario page. These would need a copy, or a published equivalent, if RGAA left this repository.

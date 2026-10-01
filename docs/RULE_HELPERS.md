@@ -345,8 +345,17 @@ flat `helpers.*` list above:
 Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba`,
 `relativeLuminance`, `contrastRatio`, `requiredRatio`, `isLargeText`,
 `computeEffectiveForeground`/`computeEffectiveBackground`, `getComputabilityBlocker`,
+`hasBackgroundImageOrGradient`, `hasBlendMode`, `hasFilter`, `computeOpacityProduct`,
 `getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
-(`clamp01`, `round2`, `toHex2`, `pxToPt`, `fontWeightLabel`, …). Backs the
+(`clamp01`, `clamp255`, `round2`, `toHex2`, `rgbToHex`, `rgbaToString`, `parsePx`,
+`normalizeFontWeight`, `pxToPt`, `fontWeightLabel`). That is the whole namespace,
+apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
+rules reuse per-element work. Treat it as an optimisation, never as data a rule
+depends on: a key may be absent, and a rule stores only under keys of its own unless
+it computes exactly what that key's other users compute (`contrast-minimum`,
+`contrast-enhanced`, `contrast-computable` and `contrast-minimum-rgaa` share
+`__elBgCache`, `__elFgCache` and `__elBlockerCache`, WeakMaps of each element's
+effective background, foreground and computability blocker). Backs the
 `contrast-*` rule family (`contrast-minimum`, `contrast-minimum-rgaa`, `contrast-enhanced`,
 `contrast-computable`) and `focus-indicator-contrast` — see `src/core/contrast-helpers.js`
 if you're extending that family specifically. `isLargeText(fontSizePx, fontWeightNum,

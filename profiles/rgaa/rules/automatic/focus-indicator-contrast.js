@@ -595,10 +595,6 @@ function runInPage(ctx) {
 
   function computedStyleOf(el) {
     try {
-      if (helpers && typeof helpers.computedStyle === 'function') {
-        const cs = helpers.computedStyle(el);
-        if (cs) return cs;
-      }
       return view && view.getComputedStyle ? view.getComputedStyle(el) : null;
     } catch {
       return null;

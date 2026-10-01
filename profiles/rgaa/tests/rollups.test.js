@@ -108,37 +108,6 @@ test('the HTML report shows RGAA rollups in their own section, only when there a
   assert.doesNotMatch(renderHtmlReport(scan({})), /RGAA rollup/);
 });
 
-// The report finds a standard's own rollups through the registry, so another
-// registered standard gets a section of its own and never lands in the WCAG
-// table. The fake standard here borrows the RGAA rollups and renames them.
-test("the HTML report gives any registered standard's rollups their own section", () => {
-  const { NORMATIVE_STANDARDS } = require('../../../src/coverage/standards.js');
-  const result = scan({ profile: 'rgaa-4.1.2' });
-  for (const r of rgaaRollups(result)) {
-    r.meta.standard = 'ACME';
-    r.data.details.criterion = `A${r.data.details.criterion}`;
-    for (const m of r.meta.normativeMappings) if (m.standard === 'RGAA') m.standard = 'ACME';
-  }
-  NORMATIVE_STANDARDS.push({
-    key: 'acme',
-    standard: 'ACME',
-    versions: ['4.1.2'],
-    mappingsFor: () => []
-  });
-  let html;
-  try {
-    html = renderHtmlReport(result);
-  } finally {
-    NORMATIVE_STANDARDS.pop();
-  }
-  assert.match(html, /<h2>ACME rollup<\/h2>/);
-  assert.match(html, /ACME A9\.1<br><span class="note">9\.1\.1<\/span>/);
-  assert.doesNotMatch(html, /WCAG A9\.1/);
-  assert.doesNotMatch(html, /RGAA rollup/);
-  // No titleLang, so the titles take the page's language.
-  assert.doesNotMatch(html, /<td lang="fr">/);
-});
-
 // RGAA 13.1.1 accepts a refresh of 20 hours or more, and without a URL it is
 // no redirect for 13.1.2. The AAA rule fails any positive delay, so it is not
 // linked to 13.1 and the profile does not run it.
