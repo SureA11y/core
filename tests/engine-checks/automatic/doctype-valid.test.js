@@ -122,6 +122,7 @@ test(`${RULE_ID}: RGAA 8.1 reports a missing doctype under 8.1.1 and an invalid 
   const html5 = runa11yCoreOnHtml('<!doctype html>' + BODY, RGAA);
   assert.equal(rollup(html5, 'rgaa-4.1.2-8.1').outcome, 'pass');
   assert.deepEqual(rollup(html5, 'rgaa-4.1.2-8.1').data.details.checksIds.sort(), [
+    'doctype-position',
     'doctype-present',
     RULE_ID
   ]);

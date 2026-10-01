@@ -2,13 +2,13 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**197 rules total: 126 automatic (WCAG-normative, can return `fail`), 71 manual (advisory/judgment-required, capped at `cantTell`). 106 carry at least one formal WCAG Success Criterion mapping.**
+**202 rules total: 134 automatic (WCAG-normative, can return `fail`), 68 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (126), can return `fail`
+## Automatic rules (134), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -51,6 +51,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`dialog-name-present`](#dialog-name-present) | Dialogs have an accessible name | 4.1.2 | A | high | serious |
 | [`dir-attribute-valid`](#dir-attribute-valid) | dir attributes are ltr or rtl | — | — | high | minor |
 | [`dlitem-parent-valid`](#dlitem-parent-valid) | Description-list items must be inside a description list | 1.3.1 | A | high | serious |
+| [`doctype-position`](#doctype-position) | The doctype comes before the &lt;html&gt; tag | — | — | high | moderate |
 | [`doctype-present`](#doctype-present) | Page declares a doctype | — | — | high | moderate |
 | [`doctype-valid`](#doctype-valid) | Declared doctype is valid | — | — | high | moderate |
 | [`duplicate-id`](#duplicate-id) | IDs must be unique | 4.1.1 | A | high | moderate |
@@ -88,11 +89,13 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
 | [`link-label-in-name-sources`](#link-label-in-name-sources) | Every name source of a link contains its visible label | — | — | high | serious |
 | [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
+| [`link-state-colors-review`](#link-state-colors-review) | Link states shown by color alone contrast 3:1 with the surrounding text | — | — | medium | moderate |
 | [`list-children-valid`](#list-children-valid) | Lists must only directly contain list items | 1.3.1 | A | high | serious |
 | [`listbox-name-present`](#listbox-name-present) | Listboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`listbox-option-groups-absent`](#listbox-option-groups-absent) | ARIA listboxes do not group options | — | — | high | moderate |
 | [`listitem-parent-valid`](#listitem-parent-valid) | List items must be inside a list container | 1.3.1 | A | high | serious |
 | [`main-element-structure`](#main-element-structure) | Main content uses one visible &lt;main&gt; element | — | — | high | moderate |
+| [`markup-validation-review`](#markup-validation-review) | The generated source code passes the W3C validator | — | — | medium | moderate |
 | [`media-transcript-adjacent`](#media-transcript-adjacent) | Audio and video have an adjacent transcript or a link to one | — | — | medium | moderate |
 | [`menuitem-name-present`](#menuitem-name-present) | Menu items have an accessible name | 4.1.2 | A | high | serious |
 | [`meta-redirect-immediate`](#meta-redirect-immediate) | Meta redirects are immediate | — | — | medium | serious |
@@ -107,8 +110,11 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`optgroup-label-not-empty`](#optgroup-label-not-empty) | Option group labels are not empty | — | — | high | moderate |
 | [`optgroup-label-present`](#optgroup-label-present) | Option groups have a label | — | — | high | moderate |
 | [`option-name-present`](#option-name-present) | Options have an accessible name | 4.1.2 | A | high | serious |
+| [`orientation-content-parity`](#orientation-content-parity) | Content stays the same in portrait and landscape | — | — | medium | moderate |
 | [`page-language-present`](#page-language-present) | Page gives a default language | — | — | high | serious |
 | [`page-title-present`](#page-title-present) | Page has a non-empty title | 2.4.2 | A | high | serious |
+| [`page-title-unique`](#page-title-unique) | Page titles are unique across the site | — | — | high | moderate |
+| [`page-zones-reachable`](#page-zones-reachable) | Each area of the page can be reached or skipped | — | — | medium | moderate |
 | [`presentational-attributes-absent`](#presentational-attributes-absent) | Page uses no presentational attributes | — | — | high | minor |
 | [`presentational-children-focusable-absent`](#presentational-children-focusable-absent) | Roles with presentational children must not contain focusable content | 4.1.2 | A | high | serious |
 | [`presentational-elements-absent`](#presentational-elements-absent) | Page uses no presentational elements | — | — | high | minor |
@@ -117,6 +123,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`role-img-text-alternative-present`](#role-img-text-alternative-present) | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | [`searchbox-name-present`](#searchbox-name-present) | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`server-side-image-map-absent`](#server-side-image-map-absent) | Server-side image maps must have a keyboard-operable alternative | 2.1.1 | A | high | serious |
+| [`skip-link-placement`](#skip-link-placement) | Skip links are visible and at the same place on every page | — | — | medium | moderate |
 | [`skip-link-present`](#skip-link-present) | Pages have a skip link to the main content | — | — | high | moderate |
 | [`slider-name-present`](#slider-name-present) | Sliders have an accessible name | 4.1.2 | A | high | serious |
 | [`spinbutton-name-present`](#spinbutton-name-present) | Spinbuttons have an accessible name | 4.1.2 | A | high | serious |
@@ -130,6 +137,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`table-th-has-data-cells`](#table-th-has-data-cells) | &lt;th&gt; elements must describe at least one data cell | 1.3.1 | A | high | moderate |
 | [`target-size-minimum`](#target-size-minimum) | Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets | 2.5.8 | AA | medium | serious |
 | [`td-has-header`](#td-has-header) | Data cells in large tables must have an associated header | 1.3.1 | A | high | serious |
+| [`text-spacing-content-loss`](#text-spacing-content-loss) | Text stays readable when the user increases text spacing | 1.4.12 | AA | medium | serious |
 | [`textbox-name-present`](#textbox-name-present) | Textboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`title-placeholder-identical`](#title-placeholder-identical) | A form field's title and placeholder are identical | — | — | medium | moderate |
 | [`tooltip-name-present`](#tooltip-name-present) | Tooltips have an accessible name | 4.1.2 | A | high | serious |
@@ -139,7 +147,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 | [`widget-label-in-name`](#widget-label-in-name) | The accessible name of a scripted component contains its visible label | — | — | high | serious |
 
-## Manual rules (71), advisory, capped at `cantTell`
+## Manual rules (68), advisory, capped at `cantTell`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -186,16 +194,13 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`letters-spaced-with-spaces`](#letters-spaced-with-spaces) | Letters of a word are not spaced out with spaces | — | — | medium | minor |
 | [`link-context-review`](#link-context-review) | Generic links whose only context is outside RGAA's list are reviewed | — | — | medium | minor |
 | [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4 | A | medium | minor |
-| [`link-state-colors-review`](#link-state-colors-review) | Link states shown by color alone are reviewed | — | — | medium | moderate |
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | AA | medium | moderate |
-| [`markup-validation-review`](#markup-validation-review) | The generated source code is checked with the W3C validator | — | — | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
 | [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1 | A | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`office-document-link`](#office-document-link) | Downloadable office documents are accessible or have an accessible version | — | — | high | moderate |
-| [`orientation-content-parity`](#orientation-content-parity) | Content stays the same in portrait and landscape | — | — | medium | moderate |
 | [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
 | [`page-has-heading-one`](#page-has-heading-one) | Page should have a level-one heading | — | — | medium | minor |
 | [`page-title-patterns`](#page-title-patterns) | Page title patterns that may be insufficiently descriptive | 2.4.2 | A | medium | minor |
@@ -228,7 +233,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
-| `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring inline styles do not block user text-spacing overrides. | 1.4.12 | AA | 1 |
+| `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring text spacing can be increased without losing content. | 1.4.12 | AA | 2 |
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
@@ -968,6 +973,24 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 **Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container is not exposed as a term/definition to assistive technologies.
 
+### `doctype-position`
+
+**The doctype comes before the &lt;html&gt; tag**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Checks that a declared doctype comes before the &lt;html&gt; tag in the source, reading the page source given as the page.source probe when the parser has dropped it (RGAA 8.1.3).
+
+**Applies to.** Applies to a run over a whole document that declares a doctype (RGAA 8.1.3: « possédant une déclaration de type de document »). A page whose source has none is notApplicable: doctype-present fails it under 8.1.1. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable.
+
+**Expectation.**
+
+RGAA 8.1.3: the doctype comes before the &lt;html&gt; tag in the source.
+
+- A doctype in the DOM passes: the HTML parser keeps one only when it comes before &lt;html&gt;, so the DOM settles it with no other input.
+- With no doctype in the DOM, the source as the server sent it is needed, through the `page.source` probe: `{ url, start }`, start being the first 2,000 characters of the response body (the engine cuts longer probe strings). Comments are skipped. A doctype that comes after &lt;html&gt; fails (DOCTYPE_AFTER_HTML); a source with &lt;html&gt; and no doctype is notApplicable; a start that shows neither is asked about (SOURCE_TOO_SHORT).
+- With no doctype in the DOM and no probe, the rule asks (SOURCE_MISSING): the doctype may be missing or misplaced.
+
 ### `doctype-present`
 
 **Page declares a doctype**
@@ -978,7 +1001,7 @@ Checks that the document has a doctype, written before the &lt;html&gt; element.
 
 **Applies to.** Applies to a run over a whole document. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: a subtree has no doctype of its own.
 
-**Expectation.** The document has a doctype (RGAA 8.1.1). A doctype written after &lt;html&gt; is dropped by the HTML parser, so it reads as missing here; the 8.1.1 methodology checks that the doctype comes before &lt;html&gt;.
+**Expectation.** The document has a doctype (RGAA 8.1.1). A doctype written after &lt;html&gt; is dropped by the HTML parser, so without the page's source it reads as missing here. With the `page.source` probe (the start of the response body, see doctype-position), a doctype the source shows after &lt;html&gt; is present and passes: its place is 8.1.3's question, which doctype-position fails.
 
 ### `doctype-valid`
 
@@ -1886,23 +1909,15 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 
 ### `link-state-colors-review`
 
-**Link states shown by color alone are reviewed**
+**Link states shown by color alone contrast 3:1 with the surrounding text**
 
-manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+automatic · no formal WCAG SC mapping · confidence medium · default severity moderate
 
-Flags links in a run of text, shown only by color, whose visited, active, hover or focus state changes their color, for a person to check the 3:1 contrast of each state with the surrounding text (RGAA 10.6.1).
+Checks that a link in a run of text, shown only by color, keeps a contrast of 3:1 with the surrounding text in each visited, active, hover or focus state shown by another color, and asks when the states cannot be put on the link (RGAA 10.6.1).
 
-**Applies to.**
+**Applies to.** Applies to links (&lt;a href&gt; and role="link") inside a run of text (their parent has text of its own, as for link-in-text-block) that carry no mark other than color at rest: no underline, no weight or style difference from the surrounding text, no border, outline, box-shadow, background image, background color of its own (a highlight, as link-in-text-block reads it), image or generated content (glossary "Lien dont la nature n'est pas évidente").
 
-Applies to links (&lt;a href&gt; and role="link") inside a run of text (their parent has text of its own, as for link-in-text-block) that carry no mark other than color at rest: no underline, no weight or style difference from the surrounding text, no border, outline, box-shadow, background image, image or generated content (glossary "Lien dont la nature n'est pas évidente"). Among those, it flags a link:
-
-- matched by an author style rule for :visited, :active, :hover, :focus or :focus-visible that sets a color and adds no other mark (STATE_COLOR_CHANGE);
-- an &lt;a href&gt; whose color no author rule sets, so the browser's own visited color, which differs from its link color, applies (BROWSER_STATE_COLORS);
-- when a style sheet cannot be read, so such a rule cannot be ruled out (STYLESHEET_UNREADABLE).
-
-A page with no such link is notApplicable.
-
-**Expectation.** RGAA 10.6.1 step 3: the 3:1 contrast between the link color and the surrounding text must be checked « pour les différents états du lien s'ils sont présentés au moyen d'une couleur différente : l'état non visité, l'état visité, l'état activé, l'état au survol et l'état à la prise de focus ». Each flagged link is asked about, for a person to check the contrast of each state.
+**Expectation.** RGAA 10.6.1 step 3: the 3:1 contrast between the link color and the surrounding text must be checked « pour les différents états du lien s'ils sont présentés au moyen d'une couleur différente : l'état non visité, l'état visité, l'état activé, l'état au survol et l'état à la prise de focus ». Where the page has a layout (a browser), each state is put on the link and its colors are read. A state whose color differs from the resting one and that adds no other mark fails below 3:1 against the surrounding text (STATE_CONTRAST_LOW). The link passes when every such state reaches 3:1. It is asked about when the browser's own visited color applies (BROWSER_STATE_COLORS) or a style sheet cannot be read (STYLESHEET_UNREADABLE). Without a layout (jsdom), the states cannot be put on the link, so it is asked about when an author rule for :visited, :active, :hover, :focus or :focus-visible changes only its color (STATE_COLOR_CHANGE), when the browser's visited color applies, or when a style sheet cannot be read. A link whose states raise no question is left out there. A page with no link in scope is notApplicable.
 
 ### `list-children-valid`
 
@@ -1985,15 +2000,23 @@ Flags that a manual review of keyboard navigation and focus order is required.
 
 ### `markup-validation-review`
 
-**The generated source code is checked with the W3C validator**
+**The generated source code passes the W3C validator**
 
-manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+automatic · no formal WCAG SC mapping · confidence medium · default severity moderate
 
-Asks a person to run the W3C validator on the generated source code of the page and check the conditions of RGAA 8.2.1, most of which the engine cannot see once the browser has parsed the page.
+Reads the W3C validator report on the generated source, given as the validator.report probe, and fails the errors it lists; without a report it asks a person to run the validator (RGAA 8.2.1).
 
 **Applies to.** Applies to every page: RGAA 8.2 asks, for every page, whether its generated source code is valid for its document type.
 
-**Expectation.** Always cantTell, never pass or fail. One occurrence at the scan root asks a person to run the W3C validator (Nu HTML Checker) on the generated source of the page, as RGAA 8.2.1 step 1 says (« activer l'option W3C Nu markup checker »), and to check its five conditions: tags, attributes and values follow the writing rules; tags are nested correctly; tags are opened and closed correctly; id values are unique; no attribute appears twice on one element.
+**Expectation.**
+
+RGAA 8.2.1, step 1 runs the W3C validator (Nu HTML Checker, « activer l'option W3C Nu markup checker ») on « le code source généré », the page after its scripts have run, and checks five conditions: tags, attributes and values follow the writing rules; tags are nested, opened and closed correctly; id values are unique; no attribute appears twice on one element. The caller can give the validator's report as the `validator.report` probe: `{ url, source: 'generated' | 'original', messages }`, where `messages` are the Nu checker's JSON messages as it outputs them.
+
+- A report on the generated source with an error fails, one finding per error with its line and message (VALIDATOR_ERROR). Messages about CSS (starting "CSS:") and warnings are left out: 8.2.1's conditions are about the HTML.
+- A report on the generated source with no error passes, unless it holds 200 messages or more, the most the engine reads from a probe, which is asked about (REPORT_TRUNCATED).
+- A report saying the validator could not check the page is asked about (VALIDATOR_FAILED).
+- A report on the original source is asked about, never passed or failed: its errors may be ones the parser repairs, which RGAA's method does not count, and a clean one says nothing of what scripts add (ORIGINAL_SOURCE). A report without `source` counts as one on the original source.
+- Without a report, or with one for another page or for a narrowed scan, the page is asked about (pageReview): the HTML parser repairs unclosed and misnested tags, drops repeated attributes and moves misplaced elements before the engine sees the page, so the DOM cannot show most of what 8.2.1 checks.
 
 ### `media-alternative-transcript-evidence`
 
@@ -2257,13 +2280,18 @@ Checks that elements with role="option" expose a non-empty accessible name.
 
 **Content stays the same in portrait and landscape**
 
-manual · no formal WCAG SC mapping · confidence medium · default severity moderate
+automatic · no formal WCAG SC mapping · confidence medium · default severity moderate
 
-Flags each element that an orientation media query hides (display: none or visibility: hidden), for a person to check that the same content is offered in both orientations.
+Lays the page out as portrait and as landscape and fails content shown in one orientation and missing from the other, and asks about elements an orientation media query hides when the page cannot be laid out (RGAA 13.9.1).
 
-**Applies to.** Applies to elements that a style rule inside an orientation media condition (`@media (orientation: portrait)` or `landscape`, at any depth, or on the `&lt;style&gt;`, `&lt;link&gt;` or `@import` that holds the rule) hides with `display: none`, `visibility: hidden` or `visibility: collapse`. Elements are found whether or not they are hidden in the current viewport, since that depends on the orientation the scan runs in. A page where no such rule matches an element is notApplicable.
+**Applies to.** Applies to a page whose readable style sheets hold an orientation media condition (`@media (orientation: portrait)` or `landscape`, at any depth, or on the `&lt;style&gt;`, `&lt;link&gt;` or `@import` that holds the rule). A page with none is notApplicable.
 
-**Expectation.** Always cantTell on such an element, never pass or fail. RGAA 13.9.1 asks that « le contenu proposé reste le même quel que soit le mode d’orientation de l’écran utilisé même si sa présentation et le moyen d’y accéder peut différer ». Hiding an element in one orientation is allowed when its content stays available there in another form, or when the orientation is essential (the criterion's particular case), so a person checks.
+**Expectation.**
+
+RGAA 13.9.1 asks that « le contenu proposé reste le même quel que soit le mode d’orientation de l’écran utilisé même si sa présentation et le moyen d’y accéder peut différer ».
+
+- Where the page has a layout (a browser), it is laid out as portrait and as landscape, and the text and image alternatives shown in each are compared. Content shown in one orientation fails when it is hidden in the other and the same text is not shown anywhere else there (CONTENT_MISSING), reported on the outermost element hidden. It is asked about when what is hidden holds the main content (a "rotate your device" page, which the essential-orientation exception may allow; MAIN_CONTENT_HIDDEN), and when an element an orientation rule hides has no text to compare (hiddenInOrientation). The page passes when every content shown in one orientation is shown in the other.
+- Without a layout (jsdom), each element that a style rule inside an orientation condition hides with `display: none`, `visibility: hidden` or `visibility: collapse` is asked about (hiddenInOrientation).
 
 ### `p-as-heading`
 
@@ -2331,6 +2359,43 @@ Checks that the page includes a non-empty &lt;title&gt; element.
 **Applies to.** Applies to a run over a whole document. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: whether the page has a title is not a property any subtree can answer.
 
 **Expectation.** The document has a &lt;title&gt; element, and document.title with whitespace collapsed is non-empty. The element is looked for anywhere in the document, not only inside &lt;head&gt;: a &lt;title&gt; the parser leaves outside &lt;head&gt; is still the document title in every browser. Only an HTML-namespace &lt;title&gt; counts; the &lt;title&gt; of an inline &lt;svg&gt; names the graphic, so a page whose only &lt;title&gt; is inside an &lt;svg&gt; is missing its title element. Whether that title describes the page is page-title-patterns' question.
+
+### `page-title-unique`
+
+**Page titles are unique across the site**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity moderate
+
+Compares the page title with the titles of the site’s other pages, given as the crawl.pageTitles probe, and fails one shared with another page, since RGAA 8.6.1 asks for a title that identifies the page uniquely.
+
+**Applies to.** Applies to a run over a whole document whose &lt;title&gt; has text. A page with no title, or an empty one, is page-title-present's (RGAA 8.5.1) and notApplicable here.
+
+**Expectation.**
+
+RGAA 8.6.1 asks that the title be relevant, and the glossary entry « Titre de page » defines a relevant title as one that identifies the page « de manière claire, concise et unique ». The title is compared, with case and spacing ignored, with the other pages of the site given in the `crawl.pageTitles` probe (`{ pages: [{ url, title }] }`):
+
+- another page, at another path, with the same title fails (TITLE_DUPLICATE);
+- another page whose URL differs from this one only by its query string, with the same title, is asked about, since it may be this same page (TITLE_DUPLICATE_SAME_PATH);
+- with no other page to compare, the title is asked about (TITLE_SINGLE_PAGE).
+
+It passes when no other page shares the title.
+
+### `page-zones-reachable`
+
+**Each area of the page can be reached or skipped**
+
+automatic · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Checks that the header, main navigation, main content, footer and search areas each have a landmark, and asks about an area found from its name that relies on a heading, a skip or quick-access link, or a button instead (RGAA 12.6.1).
+
+**Applies to.** Applies to a run over a whole document. RGAA 12.6.1 looks at five areas, where present: header, main navigation, main content, footer and search engine. An area is found from its landmark (banner, navigation, main, contentinfo, search), or, without one, from a name that says what it is: an id or class such as `header`, `nav`, `menu`, `content`, `footer`, `pied-de-page`, or a form with a search field. The main content is always present: a page with no main landmark is asked about. Deciding what counts as an area stays a person's call.
+
+**Expectation.**
+
+RGAA 12.6.1: each area has a landmark matching its nature, a heading that says what it holds, a button just before it that hides it, a skip link just before it, or a quick-access link to it that is visible, at least on focus.
+
+- The rule passes when every area it finds has a landmark matching its nature, and no main content is missing.
+- It never fails, since which blocks are areas is a person's call. It asks about an area found from its name, without a landmark: when a heading opens it (whether the heading says what it holds, ZONE_HEADING), a same-page link just before it skips it (ZONE_SKIP_LINK), a button just before it controls it (ZONE_TOGGLE), or a same-page link leads to it (whether that link is visible, ZONE_QUICK_LINK); and when it has none of these (ZONE_NO_MECHANISM). A page with no main landmark is asked about too (MAIN_NOT_FOUND).
 
 ### `password-paste-enabled`
 
@@ -2537,6 +2602,25 @@ Applies to &lt;a href="#fragment"&gt; elements that are skip links by one of two
 Other same-page anchor links are not skip links and are left alone.
 
 **Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, not zero-area/no-rects). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination.
+
+### `skip-link-placement`
+
+**Skip links are visible and at the same place on every page**
+
+automatic · no formal WCAG SC mapping · confidence medium · default severity moderate
+
+Checks that the link to the main content is visible, at least when it takes focus, and that the site’s other pages show it at the same place and in the same focus order (RGAA 12.7.2).
+
+**Applies to.** Applies to a run over a whole document that has a skip link: a same-page link outside the main content zone (the first visible &lt;main&gt;, or failing one a visible role="main") whose target is &lt;main&gt;, or an element inside or just before it with no navigation block, link or other focusable element in between, as skip-link-present recognises one. A page without one is notApplicable here: skip-link-present reports it, and skip-link a link that does not work.
+
+**Expectation.**
+
+RGAA 12.7.2, conditions 1 to 3: the link sits at the same place in the presentation, comes in the same relative order in the source, and is visible or, failing that, visible when it takes focus.
+
+- Visibility needs a layout (a browser). A link that is not visible at rest is focused, as by the keyboard, and measured again. It fails when it is still not visible: no size, outside the page, clipped by an ancestor, fully transparent or `visibility: hidden` (SKIP_LINK_NOT_VISIBLE). It is asked about when something may cover it, or an animation starts on focus (SKIP_LINK_VISIBILITY_UNKNOWN). Without a layout (jsdom) visibility is always asked about.
+- Place and order need the site's other pages, through the `crawl.skipLinks` probe. The link fails when another page measured at the same viewport width shows it more than 24 CSS pixels away (SKIP_LINK_POSITION_DIFFERS). It is asked about when its focus order differs (SKIP_LINK_ORDER_DIFFERS), since what the order is relative to is a person's call; when no other page was measured at the same width (SKIP_LINK_VIEWPORT_DIFFERS); and when the probe brings no other page with a skip link (SKIP_LINK_SINGLE_PAGE).
+
+It passes when it is visible, at least on focus, and every other page shows it at the same place and in the same focus order.
 
 ### `skip-link-present`
 
@@ -2796,6 +2880,25 @@ Every non-empty `&lt;td&gt;` has an associated header, via one of:
 - an implicit row header: a header cell earlier in the same row.
 
 A header cell is a `&lt;th&gt;` with no other role, or any cell with role="columnheader" or role="rowheader" (such a `&lt;td&gt;` is a header, not a data cell). A `&lt;td&gt;` with no text and no content that could carry a name (an image, a control, an element with an ARIA label) holds no data, so it needs no header; the empty corner cell above row headers is the usual case.
+
+### `text-spacing-content-loss`
+
+**Text stays readable when the user increases text spacing**
+
+automatic · WCAG 1.4.12 (AA) · confidence medium · default severity serious
+
+Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.
+
+**Applies to.** Applies to a page with visible text. The loss of content needs a layout (a browser): without one, only the style sheets are read.
+
+**Expectation.**
+
+WCAG 1.4.12 and RGAA 10.12.1: with line height at 1.5 times the font size, spacing after paragraphs at 2 times, letter spacing at 0.12 times and word spacing at 0.16 times, no content or functionality is lost.
+
+- In a browser, the spacing is applied as a style sheet that wins over the page's own (inline `!important` aside, which avoid-inline-spacing reports), and each line of text is measured before and after against the ancestors that clip it (`overflow: hidden` or `clip`). A line that was inside and ends at least half outside (half its height, or half an em across) fails: the container cuts that text off (TEXT_CLIPPED). A line pushed out by less is asked about (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other text it did not overlap before (TEXT_OVERLAPS).
+- In any environment, a style sheet rule that sets line-height, letter-spacing or word-spacing below those values with `!important` is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style sheet to the page cannot override it, though a user style sheet can.
+
+Without a layout and with no such rule, the rule is notApplicable, with `data.reason: 'noLayout'`.
 
 ### `textbox-name-present`
 

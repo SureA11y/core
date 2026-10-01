@@ -205,18 +205,23 @@ test(`${RULE_ID}: a main landmark satisfies WCAG 2.4.1 but not RGAA 12.7`, () =>
     rgaa127.meta.normativeMappings.filter((m) => m.standard === 'RGAA').map((m) => m.requirement),
     ['12.7.1']
   );
-  // bypass-blocks-present keeps 12.6.1 only.
-  assert.deepEqual(rule('bypass-blocks-present').rollupIds, [
-    'wcag-2.4.1-bypass-blocks',
-    'rgaa-4.1.2-12.6'
-  ]);
+  // bypass-blocks-present links no RGAA test: page-zones-reachable reports 12.6.1.
+  assert.deepEqual(rule('bypass-blocks-present').rollupIds, ['wcag-2.4.1-bypass-blocks']);
   assert.ok(!rgaa127.data.details.checksIds.includes('bypass-blocks-present'));
 });
 
-test(`${RULE_ID}: with a skip link to main, WCAG finds a bypass and RGAA 12.7 passes`, () => {
-  const { rollup } = rgaaRun('<a href="#main">Aller au contenu</a>' + NAV + MAIN);
+// 12.7.1 passes here. 12.7 as a whole stays a question: skip-link-placement
+// asks about 12.7.2 (visibility needs a browser, place needs other pages).
+test(`${RULE_ID}: with a skip link to main, WCAG finds a bypass and RGAA 12.7.1 passes`, () => {
+  const { rule, rollup } = rgaaRun('<a href="#main">Aller au contenu</a>' + NAV + MAIN);
   assert.equal(rollup('wcag-2.4.1-').outcome, 'notApplicable');
-  assert.equal(rollup('rgaa-4.1.2-12.7').outcome, 'pass');
+  assert.equal(rule(RULE_ID).outcome, 'pass');
+  const rgaa127 = rollup('rgaa-4.1.2-12.7');
+  assert.equal(rgaa127.outcome, 'cantTell');
+  assert.deepEqual(
+    rgaa127.data.details.contributors.filter((c) => c.outcome === 'cantTell').map((c) => c.testId),
+    ['skip-link-placement']
+  );
 });
 
 test(`${RULE_ID}: with no main, no heading and no anchor, both ask`, () => {

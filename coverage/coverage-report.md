@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **197**
+Total rules (loaded without error): **202**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 106 | 19 | 5 |
+| Any WCAG version | 107 | 20 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 100 | 14 | 5 |
-| WCAG 2.1 | 4 | 3 | 0 |
+| WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,7 +26,7 @@ Total rules (loaded without error): **197**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 3 |
+| wcag21aa | 4 |
 | wcag22aa | 2 |
 | wcag2a | 89 |
 | wcag2aa | 10 |
@@ -254,16 +254,18 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
+| text-spacing-content-loss | partial | text-spacing-content-loss |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1
 
@@ -648,6 +650,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | src/checks/automatic/canvas-role-img.js |  |  |
 | contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | src/checks/automatic/contrast-minimum-rgaa.js |  |  |
 | dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
+| doctype-position | automatic | The doctype comes before the &lt;html&gt; tag | src/checks/automatic/doctype-position.js |  |  |
 | doctype-present | automatic | Page declares a doctype | src/checks/automatic/doctype-present.js |  |  |
 | doctype-valid | automatic | Declared doctype is valid | src/checks/automatic/doctype-valid.js |  |  |
 | embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | src/checks/automatic/embed-image-role-img.js |  |  |
@@ -669,18 +672,24 @@ Automation mix: **full 36, partial 1, manual 2**.
 | layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
 | link-content-label-present | automatic | Links have a label in their content | src/checks/automatic/link-content-label-present.js |  |  |
 | link-label-in-name-sources | automatic | Every name source of a link contains its visible label | src/checks/automatic/link-label-in-name-sources.js |  |  |
+| link-state-colors-review | automatic | Link states shown by color alone contrast 3:1 with the surrounding text | src/checks/automatic/link-state-colors-review.js |  |  |
 | listbox-option-groups-absent | automatic | ARIA listboxes do not group options | src/checks/automatic/listbox-option-groups-absent.js |  |  |
 | main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | src/checks/automatic/main-element-structure.js |  |  |
+| markup-validation-review | automatic | The generated source code passes the W3C validator | src/checks/automatic/markup-validation-review.js |  |  |
 | media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | src/checks/automatic/media-transcript-adjacent.js |  |  |
 | meta-redirect-immediate | automatic | Meta redirects are immediate | src/checks/automatic/meta-redirect-immediate.js |  |  |
 | meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | src/checks/automatic/meta-refresh-no-url-timing.js |  |  |
 | object-image-role-img | automatic | Image objects have role="img" and a text alternative | src/checks/automatic/object-image-role-img.js |  |  |
 | optgroup-label-not-empty | automatic | Option group labels are not empty | src/checks/automatic/optgroup-label-not-empty.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| orientation-content-parity | automatic | Content stays the same in portrait and landscape | src/checks/automatic/orientation-content-parity.js |  |  |
 | page-language-present | automatic | Page gives a default language | src/checks/automatic/page-language-present.js |  |  |
+| page-title-unique | automatic | Page titles are unique across the site | src/checks/automatic/page-title-unique.js |  |  |
+| page-zones-reachable | automatic | Each area of the page can be reached or skipped | src/checks/automatic/page-zones-reachable.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
 | role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | src/checks/automatic/role-img-aria-name.js |  |  |
+| skip-link-placement | automatic | Skip links are visible and at the same place on every page | src/checks/automatic/skip-link-placement.js |  |  |
 | skip-link-present | automatic | Pages have a skip link to the main content | src/checks/automatic/skip-link-present.js |  |  |
 | svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
 | svg-role-img | automatic | SVGs with a text alternative have role="img" | src/checks/automatic/svg-role-img.js |  |  |
@@ -714,11 +723,8 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
 | letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
 | link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | src/checks/manual/link-context-review-manual.js |  |  |
-| link-state-colors-review | manual | Link states shown by color alone are reviewed | src/checks/manual/link-state-colors-review-manual.js |  |  |
-| markup-validation-review | manual | The generated source code is checked with the W3C validator | src/checks/manual/markup-validation-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
 | office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
-| orientation-content-parity | manual | Content stays the same in portrait and landscape | src/checks/manual/orientation-content-parity-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |
@@ -953,16 +959,18 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
+| text-spacing-content-loss | partial | text-spacing-content-loss |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1
 
@@ -1347,6 +1355,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | canvas-role-img | automatic | &lt;canvas&gt; images have role="img" with an ARIA name, or fallback content | src/checks/automatic/canvas-role-img.js |  |  |
 | contrast-minimum-rgaa | automatic | Text meets RGAA minimum color contrast | src/checks/automatic/contrast-minimum-rgaa.js |  |  |
 | dir-attribute-valid | automatic | dir attributes are ltr or rtl | src/checks/automatic/dir-attribute-valid.js |  |  |
+| doctype-position | automatic | The doctype comes before the &lt;html&gt; tag | src/checks/automatic/doctype-position.js |  |  |
 | doctype-present | automatic | Page declares a doctype | src/checks/automatic/doctype-present.js |  |  |
 | doctype-valid | automatic | Declared doctype is valid | src/checks/automatic/doctype-valid.js |  |  |
 | embed-image-role-img | automatic | Embedded images have role="img" and a text alternative | src/checks/automatic/embed-image-role-img.js |  |  |
@@ -1368,18 +1377,24 @@ Automation mix: **full 36, partial 1, manual 2**.
 | layout-table-no-data-markup | automatic | Layout tables use no data table markup | src/checks/automatic/layout-table-no-data-markup.js |  |  |
 | link-content-label-present | automatic | Links have a label in their content | src/checks/automatic/link-content-label-present.js |  |  |
 | link-label-in-name-sources | automatic | Every name source of a link contains its visible label | src/checks/automatic/link-label-in-name-sources.js |  |  |
+| link-state-colors-review | automatic | Link states shown by color alone contrast 3:1 with the surrounding text | src/checks/automatic/link-state-colors-review.js |  |  |
 | listbox-option-groups-absent | automatic | ARIA listboxes do not group options | src/checks/automatic/listbox-option-groups-absent.js |  |  |
 | main-element-structure | automatic | Main content uses one visible &lt;main&gt; element | src/checks/automatic/main-element-structure.js |  |  |
+| markup-validation-review | automatic | The generated source code passes the W3C validator | src/checks/automatic/markup-validation-review.js |  |  |
 | media-transcript-adjacent | automatic | Audio and video have an adjacent transcript or a link to one | src/checks/automatic/media-transcript-adjacent.js |  |  |
 | meta-redirect-immediate | automatic | Meta redirects are immediate | src/checks/automatic/meta-redirect-immediate.js |  |  |
 | meta-refresh-no-url-timing | automatic | Meta refresh waits 20 hours or more | src/checks/automatic/meta-refresh-no-url-timing.js |  |  |
 | object-image-role-img | automatic | Image objects have role="img" and a text alternative | src/checks/automatic/object-image-role-img.js |  |  |
 | optgroup-label-not-empty | automatic | Option group labels are not empty | src/checks/automatic/optgroup-label-not-empty.js |  |  |
 | optgroup-label-present | automatic | Option groups have a label | src/checks/automatic/optgroup-label-present.js |  |  |
+| orientation-content-parity | automatic | Content stays the same in portrait and landscape | src/checks/automatic/orientation-content-parity.js |  |  |
 | page-language-present | automatic | Page gives a default language | src/checks/automatic/page-language-present.js |  |  |
+| page-title-unique | automatic | Page titles are unique across the site | src/checks/automatic/page-title-unique.js |  |  |
+| page-zones-reachable | automatic | Each area of the page can be reached or skipped | src/checks/automatic/page-zones-reachable.js |  |  |
 | presentational-attributes-absent | automatic | Page uses no presentational attributes | src/checks/automatic/presentational-attributes-absent.js |  |  |
 | presentational-elements-absent | automatic | Page uses no presentational elements | src/checks/automatic/presentational-elements-absent.js |  |  |
 | role-img-aria-name | automatic | Elements with role="img" are named with aria-labelledby or aria-label | src/checks/automatic/role-img-aria-name.js |  |  |
+| skip-link-placement | automatic | Skip links are visible and at the same place on every page | src/checks/automatic/skip-link-placement.js |  |  |
 | skip-link-present | automatic | Pages have a skip link to the main content | src/checks/automatic/skip-link-present.js |  |  |
 | svg-hidden-no-alternative | automatic | Hidden decorative SVGs carry no text alternative | src/checks/automatic/svg-hidden-no-alternative.js |  |  |
 | svg-role-img | automatic | SVGs with a text alternative have role="img" | src/checks/automatic/svg-role-img.js |  |  |
@@ -1413,11 +1428,8 @@ Automation mix: **full 36, partial 1, manual 2**.
 | landmark-unique | manual | Landmarks with the same role must have unique names | src/checks/manual/landmark-unique-manual.js |  |  |
 | letters-spaced-with-spaces | manual | Letters of a word are not spaced out with spaces | src/checks/manual/letters-spaced-with-spaces-manual.js |  |  |
 | link-context-review | manual | Generic links whose only context is outside RGAA's list are reviewed | src/checks/manual/link-context-review-manual.js |  |  |
-| link-state-colors-review | manual | Link states shown by color alone are reviewed | src/checks/manual/link-state-colors-review-manual.js |  |  |
-| markup-validation-review | manual | The generated source code is checked with the W3C validator | src/checks/manual/markup-validation-review-manual.js |  |  |
 | meta-viewport-large | manual | Viewport meta tag should allow zooming up to 500% | src/checks/manual/meta-viewport-large-manual.js |  |  |
 | office-document-link | manual | Downloadable office documents are accessible or have an accessible version | src/checks/manual/office-document-link-manual.js |  |  |
-| orientation-content-parity | manual | Content stays the same in portrait and landscape | src/checks/manual/orientation-content-parity-manual.js |  |  |
 | page-has-heading-one | manual | Page should have a level-one heading | src/checks/manual/page-has-heading-one-manual.js |  |  |
 | presentation-role-conflict | manual | Presentational role must not conflict with a global ARIA attribute or focusability | src/checks/manual/presentation-role-conflict-manual.js |  |  |
 | radio-group-present | manual | Radio buttons sharing a name are grouped | src/checks/manual/radio-group-present-manual.js |  |  |

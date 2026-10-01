@@ -54,6 +54,17 @@
  *   of the focused element. Backgrounds are resolved by
  *   helpers.contrast.computeEffectiveBackground with the engine's
  *   contrast options.
+ * - Where the page has a layout (a browser), each element is focused as by
+ *   the keyboard (`focusVisible`), with transitions switched off, and the
+ *   outline, borders and box-shadow that differ from the unfocused computed
+ *   style are measured. The computed style settles variables, @media and the
+ *   cascade, so those are no longer asked about there. The colors outside
+ *   the indicator are read from what is painted on each side
+ *   (document.elementsFromPoint), so a positioned layer behind the element
+ *   counts; a side outside the viewport falls back to the ancestors'
+ *   background. An image or gradient on any side, or an animation started
+ *   by focus, is still asked about. Focus and the style attribute are put
+ *   back afterwards. jsdom keeps the stylesheet reading described above.
  * - Opt-in (tag `rgaa`): the rule runs only under the rgaa-4.1.2 profile,
  *   the `rgaa` tag or its own id.
  */
@@ -789,14 +800,23 @@ function runInPage(ctx) {
       el.hasAttribute('onfocus') ||
       el.hasAttribute('onfocusin');
 
-    if (!indicators.length && !unmeasured && !unsettled && !otherStyle) {
-      return null; // outline removed with nothing in its place: css-focus-indicator-suppressed
-    }
+    return decide(indicators, unmeasured, unsettled, otherStyle);
+  }
+
+  // The verdict from the measured indicators: null when there is nothing to
+  // judge (the outline is removed with nothing in its place, which is
+  // css-focus-indicator-suppressed's case).
+  function decide(indicators, unmeasured, unsettled, otherStyle) {
+    if (!indicators.length && !unmeasured && !unsettled && !otherStyle) return null;
 
     const details = (ind) => ({
       property: ind.property,
       color: ind.m.color,
-      ratios: ind.m.ratios.map((r) => Number(helpers.contrast.round2(r)))
+      // Two decimals, except that a ratio below 3 never reads 3.00.
+      ratios: ind.m.ratios.map((r) => {
+        const rounded = Number(helpers.contrast.round2(r));
+        return r < MIN_RATIO && rounded >= MIN_RATIO ? 2.99 : rounded;
+      })
     });
 
     const full = indicators.find((i) => !i.blurred && i.m.ratios.every((r) => r >= MIN_RATIO));
@@ -829,6 +849,291 @@ function runInPage(ctx) {
     return { verdict: 'fail', reasonCode: 'lowContrast', details: details(worst) };
   }
 
+  // Where the page has a layout (a browser), the element is focused and what
+  // the browser draws is measured: the computed style settles variables,
+  // @media and the cascade, and the colors next to the indicator are read
+  // from what is painted there. jsdom has no layout and keeps the stylesheet
+  // reading above.
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    if (typeof document.elementsFromPoint !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+  const layout = hasLayout();
+
+  const RING_PROPS = ['outline-style', 'outline-width', 'outline-color', 'outline-offset'];
+  const BORDER_PROPS = (side) => [
+    `border-${side}-style`,
+    `border-${side}-width`,
+    `border-${side}-color`
+  ];
+  const RENDERED_OTHER = [
+    'background-color',
+    'background-image',
+    'color',
+    'filter',
+    'font-weight',
+    'opacity',
+    'text-decoration-line',
+    'text-decoration-color',
+    'text-shadow',
+    'transform'
+  ];
+  const PSEUDO_PROPS = [
+    'content',
+    'display',
+    'background-color',
+    'background-image',
+    'border-top-color',
+    'border-top-width',
+    'box-shadow',
+    'color',
+    'opacity',
+    'outline-style',
+    'transform'
+  ];
+
+  function snapshot(el) {
+    const out = {};
+    const cs = view.getComputedStyle(el);
+    for (const p of [
+      ...RING_PROPS,
+      ...SIDES.flatMap(BORDER_PROPS),
+      'box-shadow',
+      ...RENDERED_OTHER
+    ]) {
+      out[p] = cs.getPropertyValue(p);
+    }
+    for (const pseudo of ['::before', '::after']) {
+      const ps = view.getComputedStyle(el, pseudo);
+      out[pseudo] = PSEUDO_PROPS.map((p) => ps.getPropertyValue(p)).join('|');
+    }
+    return out;
+  }
+
+  function deepActiveElement() {
+    let cur = document.activeElement || null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  // Runs fn(before, after) with the element focused as by the keyboard,
+  // transitions switched off so the focused values are read at once, then
+  // puts focus and the style attribute back. undefined when the element
+  // could not be focused.
+  function whileFocused(el, fn) {
+    const previous = deepActiveElement();
+    const hadStyle = el.hasAttribute('style');
+    const styleAttr = el.getAttribute('style');
+    try {
+      el.style.setProperty('transition', 'none', 'important');
+      if (previous === el) el.blur();
+      const before = snapshot(el);
+      el.focus({ preventScroll: true, focusVisible: true });
+      if (deepActiveElement() !== el) return undefined;
+      return fn(before, snapshot(el));
+    } catch {
+      return undefined;
+    } finally {
+      try {
+        if (previous && previous !== document.body && typeof previous.focus === 'function') {
+          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        } else if (deepActiveElement() === el) {
+          el.blur();
+        }
+      } catch {}
+      // Reading the attribute first makes Chromium write the inline style
+      // back to it; removed before that, it comes back as style="".
+      el.getAttribute('style');
+      if (hadStyle) el.setAttribute('style', styleAttr);
+      else el.removeAttribute('style');
+    }
+  }
+
+  function px(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  // The color painted at a point outside the element: the background of the
+  // topmost other element there. undefined when the point is outside the
+  // viewport, null when an image or gradient makes it unknown.
+  function paintedAt(el, x, y) {
+    const w = view.innerWidth;
+    const h = view.innerHeight;
+    if (!(x >= 0 && y >= 0 && x < w && y < h)) return undefined;
+    let stack;
+    try {
+      stack = document.elementsFromPoint(x, y) || [];
+    } catch {
+      return undefined;
+    }
+    const top = stack.find((n) => n !== el && !el.contains(n));
+    return top && top !== document.documentElement ? backgroundAt(top) : canvasColor();
+  }
+
+  // The canvas: the root's background, or the body's when the root has none,
+  // which is what the browser paints there.
+  function canvasColor() {
+    const root = document.documentElement;
+    const cs = root ? computedStyleOf(root) : null;
+    const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
+    const rootPainted =
+      (bg && bg.a > 0) || (cs && helpers.contrast.hasBackgroundImageOrGradient(cs));
+    return backgroundAt(!rootPainted && document.body ? document.body : root);
+  }
+
+  // The colors next to the element on the given sides, `dist` pixels
+  // outside its border box. A side outside the viewport falls back to the
+  // background of the element's ancestors.
+  function colorsAround(el, rect, dist, sides) {
+    const midX = rect.left + rect.width / 2;
+    const midY = rect.top + rect.height / 2;
+    const points = {
+      top: [midX, rect.top - dist],
+      right: [rect.right + dist, midY],
+      bottom: [midX, rect.bottom + dist],
+      left: [rect.left - dist, midY]
+    };
+    let fallback;
+    const colors = [];
+    for (const side of sides) {
+      let c = paintedAt(el, points[side][0], points[side][1]);
+      if (c === undefined) {
+        if (fallback === undefined) fallback = backgroundAt(parentOf(el));
+        c = fallback;
+      }
+      if (!c) return null;
+      if (!colors.some((k) => k.r === c.r && k.g === c.g && k.b === c.b)) colors.push(c);
+    }
+    return colors;
+  }
+
+  // The element's own background while focused, over what is behind it.
+  // What is behind it is read at its center, like the colors around it.
+  function focusedBackground(el, rect) {
+    const cs = view.getComputedStyle(el);
+    if (helpers.contrast.hasBackgroundImageOrGradient(cs)) return null;
+    const bg = helpers.contrast.parseCssColorToRgba(cs.backgroundColor);
+    if (bg && bg.a >= 1) return { r: bg.r, g: bg.g, b: bg.b, a: 1 };
+    let behind = paintedAt(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    if (behind === undefined) behind = backgroundAt(parentOf(el));
+    if (!behind) return null;
+    if (!bg || !bg.a) return behind;
+    const c = helpers.contrast.compositeRgba(bg, behind);
+    return { r: c.r, g: c.g, b: c.b, a: 1 };
+  }
+
+  // One indicator against the colors outside it and the element's own
+  // background. A translucent indicator is composited over each outside
+  // color in turn (over the element's background for a border).
+  function measureAround(rgba, outside, inner, overInner) {
+    if (!rgba || !outside || !inner) return null;
+    const ratios = [];
+    let painted = null;
+    for (const out of overInner ? [inner] : outside) {
+      painted =
+        rgba.a != null && rgba.a < 1
+          ? helpers.contrast.compositeRgba(rgba, out)
+          : { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 };
+      for (const side of overInner ? outside : [out]) {
+        ratios.push(helpers.contrast.contrastRatio(painted, side));
+      }
+      ratios.push(helpers.contrast.contrastRatio(painted, inner));
+    }
+    return { ratios, color: helpers.contrast.rgbToHex(painted) };
+  }
+
+  function evaluateRendered(el) {
+    return whileFocused(el, (before, after) => {
+      if (after['outline-style'] === 'auto') return null; // the browser's outline
+      const changed = (props) => props.some((p) => before[p] !== after[p]);
+      const visibleColor = (value) => {
+        const c = helpers.contrast.parseCssColorToRgba(value);
+        return c && c.a > 0 ? c : null;
+      };
+
+      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+        return {
+          verdict: 'cantTell',
+          reasonCode: 'notComputable',
+          details: { cause: 'animation' }
+        };
+      }
+
+      const rect = el.getBoundingClientRect();
+      const inner = focusedBackground(el, rect);
+      const indicators = [];
+      let unmeasured = null;
+      function add(property, rgba, outside, overInner, blurred) {
+        const m = measureAround(rgba, outside, inner, overInner);
+        if (m) indicators.push({ property, m, blurred });
+        else if (!unmeasured) unmeasured = 'background';
+      }
+
+      // Outline drawn on focus, measured halfway across its width.
+      const ow = px(after['outline-width']);
+      const outlineColor = visibleColor(after['outline-color']);
+      if (
+        changed(RING_PROPS) &&
+        !['none', 'hidden'].includes(after['outline-style']) &&
+        ow > 0 &&
+        outlineColor
+      ) {
+        const dist = Math.max(1, px(after['outline-offset']) + ow / 2);
+        add('outline', outlineColor, colorsAround(el, rect, dist, SIDES), false, false);
+      }
+
+      // Borders that change on focus, side by side.
+      for (const side of SIDES) {
+        const props = BORDER_PROPS(side);
+        if (!changed(props)) continue;
+        const color = visibleColor(after[props[2]]);
+        if (['none', 'hidden'].includes(after[props[0]]) || px(after[props[1]]) <= 0 || !color) {
+          continue;
+        }
+        add(`border-${side}`, color, colorsAround(el, rect, 1, [side]), true, false);
+      }
+
+      // Box shadows that change on focus.
+      if (changed(['box-shadow'])) {
+        for (const layer of parseShadows(after['box-shadow'])) {
+          const color = visibleColor(layer.color);
+          if (!color) continue;
+          if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
+          if (layer.spread < 0 && !layer.blur) continue;
+          const blurred = layer.blur > 0 && layer.spread <= 0;
+          if (layer.inset) {
+            const m = inner ? measure(color, inner, [inner]) : null;
+            if (m) indicators.push({ property: 'box-shadow (inset)', m, blurred });
+            else if (!unmeasured) unmeasured = 'background';
+          } else {
+            const dist = Math.max(1, Math.max(layer.spread, layer.blur) / 2);
+            add('box-shadow', color, colorsAround(el, rect, dist, SIDES), false, blurred);
+          }
+        }
+      }
+
+      const otherStyle =
+        changed(RENDERED_OTHER) ||
+        changed(['::before', '::after']) ||
+        indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
+        el.hasAttribute('onfocus') ||
+        el.hasAttribute('onfocusin');
+
+      return decide(indicators, unmeasured, false, otherStyle);
+    });
+  }
+
   const MESSAGES = {
     lowContrast: {
       summary: (p) =>
@@ -842,7 +1147,7 @@ function runInPage(ctx) {
     },
     notComputable: {
       summary: () =>
-        "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, a CSS variable, a condition such as @media, or rules the engine cannot order).",
+        "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, an animation, a CSS variable, a condition such as @media, or rules the engine cannot order).",
       hint: 'Measure the contrast of the focus indicator on the page: it needs a ratio of at least 3:1 with the colors next to it (RGAA 10.7.1).'
     },
     notMeasured: {
@@ -867,7 +1172,8 @@ function runInPage(ctx) {
     if (!isTabbable(el) || !isRendered(el)) continue;
     let res;
     try {
-      res = evaluate(el);
+      res = layout ? evaluateRendered(el) : undefined;
+      if (res === undefined) res = evaluate(el);
     } catch {
       res = { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'error' } };
     }

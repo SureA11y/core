@@ -2122,16 +2122,6 @@ const CHECK_DEFS = [
         "wcagSc": [
           "2.4.1"
         ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "12.6.1",
-        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
-        "criterion": "12.6",
-        "wcagSc": [
-          "2.4.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -3605,6 +3595,54 @@ const CHECK_DEFS = [
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "doctype-position",
+    "title": "The doctype comes before the <html> tag",
+    "description": "Checks that a declared doctype comes before the <html> tag in the source, reading the page source given as the page.source probe when the parser has dropped it (RGAA 8.1.3).",
+    "i18n": {
+      "titleKey": "doctypePosition_title",
+      "descriptionKey": "doctypePosition_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.3",
+        "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -7873,8 +7911,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "link-state-colors-review",
-    "title": "Link states shown by color alone are reviewed",
-    "description": "Flags links in a run of text, shown only by color, whose visited, active, hover or focus state changes their color, for a person to check the 3:1 contrast of each state with the surrounding text (RGAA 10.6.1).",
+    "title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+    "description": "Checks that a link in a run of text, shown only by color, keeps a contrast of 3:1 with the surrounding text in each visited, active, hover or focus state shown by another color, and asks when the states cannot be put on the link (RGAA 10.6.1).",
     "i18n": {
       "titleKey": "linkStateColorsReview_title",
       "descriptionKey": "linkStateColorsReview_description"
@@ -7886,7 +7924,7 @@ const CHECK_DEFS = [
       "color",
       "contrast",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -7904,7 +7942,7 @@ const CHECK_DEFS = [
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -8458,8 +8496,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "markup-validation-review",
-    "title": "The generated source code is checked with the W3C validator",
-    "description": "Asks a person to run the W3C validator on the generated source code of the page and check the conditions of RGAA 8.2.1, most of which the engine cannot see once the browser has parsed the page.",
+    "title": "The generated source code passes the W3C validator",
+    "description": "Reads the W3C validator report on the generated source, given as the validator.report probe, and fails the errors it lists; without a report it asks a person to run the validator (RGAA 8.2.1).",
     "i18n": {
       "titleKey": "markupValidationReview_title",
       "descriptionKey": "markupValidationReview_description"
@@ -8469,7 +8507,7 @@ const CHECK_DEFS = [
       "rgaa",
       "structure",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -8488,7 +8526,7 @@ const CHECK_DEFS = [
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -9830,7 +9868,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "orientation-content-parity",
     "title": "Content stays the same in portrait and landscape",
-    "description": "Flags each element that an orientation media query hides (display: none or visibility: hidden), for a person to check that the same content is offered in both orientations.",
+    "description": "Lays the page out as portrait and as landscape and fails content shown in one orientation and missing from the other, and asks about elements an orientation media query hides when the page cannot be laid out (RGAA 13.9.1).",
     "i18n": {
       "titleKey": "orientationContentParity_title",
       "descriptionKey": "orientationContentParity_description"
@@ -9841,7 +9879,7 @@ const CHECK_DEFS = [
       "structure",
       "css",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -9859,7 +9897,7 @@ const CHECK_DEFS = [
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -10195,6 +10233,106 @@ const CHECK_DEFS = [
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "page-title-unique",
+    "title": "Page titles are unique across the site",
+    "description": "Compares the page title with the titles of the site’s other pages, given as the crawl.pageTitles probe, and fails one shared with another page, since RGAA 8.6.1 asks for a title that identifies the page uniquely.",
+    "i18n": {
+      "titleKey": "pageTitleUnique_title",
+      "descriptionKey": "pageTitleUnique_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "document",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.6.1",
+        "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+        "criterion": "8.6",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "page-zones-reachable",
+    "title": "Each area of the page can be reached or skipped",
+    "description": "Checks that the header, main navigation, main content, footer and search areas each have a landmark, and asks about an area found from its name that relies on a heading, a skip or quick-access link, or a button instead (RGAA 12.6.1).",
+    "i18n": {
+      "titleKey": "pageZonesReachable_title",
+      "descriptionKey": "pageZonesReachable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "keyboard",
+      "navigation",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.6.1",
+        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+        "criterion": "12.6",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -11177,6 +11315,57 @@ const CHECK_DEFS = [
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "skip-link-placement",
+    "title": "Skip links are visible and at the same place on every page",
+    "description": "Checks that the link to the main content is visible, at least when it takes focus, and that the site’s other pages show it at the same place and in the same focus order (RGAA 12.7.2).",
+    "i18n": {
+      "titleKey": "skipLinkPlacement_title",
+      "descriptionKey": "skipLinkPlacement_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "keyboard",
+      "navigation",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.2",
+        "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -12345,6 +12534,88 @@ const CHECK_DEFS = [
       "facetsBySc": {
         "1.3.1": [
           "td-has-header"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "text-spacing-content-loss",
+    "title": "Text stays readable when the user increases text spacing",
+    "description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "i18n": {
+      "titleKey": "textSpacingContentLoss_title",
+      "descriptionKey": "textSpacingContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1412",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.12",
+        "title": "Text Spacing",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.12.1",
+        "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+        "criterion": "10.12",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.12": [
+          "text-spacing-content-loss"
         ]
       }
     },
@@ -13824,16 +14095,6 @@ const COMPOSITE_RULES = [
           "wcagSc": [
             "2.4.1"
           ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "12.6.1",
-          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
-          "criterion": "12.6",
-          "wcagSc": [
-            "2.4.1"
-          ]
         }
       ]
     }
@@ -14402,13 +14663,14 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-1.4.12-text-spacing",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
       "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
-      "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+      "description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "wcagSc": [
         "1.4.12"
       ],
@@ -15822,6 +16084,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-8.1",
     "checksIds": [
+      "doctype-position",
       "doctype-present",
       "doctype-valid"
     ],
@@ -15852,6 +16115,16 @@ const COMPOSITE_RULES = [
           "version": "4.1.2",
           "requirement": "8.1.2",
           "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.3",
+          "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
           "criterion": "8.1",
           "wcagSc": [
             "4.1.1"
@@ -15990,7 +16263,8 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-8.6",
     "checksIds": [
-      "page-title-patterns"
+      "page-title-patterns",
+      "page-title-unique"
     ],
     "meta": {
       "title": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
@@ -16410,7 +16684,8 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-10.12",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
@@ -16763,7 +17038,7 @@ const COMPOSITE_RULES = [
   {
     "id": "rgaa-4.1.2-12.6",
     "checksIds": [
-      "bypass-blocks-present"
+      "page-zones-reachable"
     ],
     "meta": {
       "title": "Les zones de regroupement de contenus présentes dans plusieurs pages web (zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche) peuvent-elles être atteintes ou évitées ?",
@@ -16796,6 +17071,7 @@ const COMPOSITE_RULES = [
     "id": "rgaa-4.1.2-12.7",
     "checksIds": [
       "skip-link",
+      "skip-link-placement",
       "skip-link-present"
     ],
     "meta": {
@@ -17064,6 +17340,7 @@ const RULE_IMPLS = {
   "dialog-name-present": { run: require("./checks/automatic/dialog-name-present.js").runInPage, applicability: require("./checks/automatic/dialog-name-present.js").applicability || null },
   "dir-attribute-valid": { run: require("./checks/automatic/dir-attribute-valid.js").runInPage, applicability: require("./checks/automatic/dir-attribute-valid.js").applicability || null },
   "dlitem-parent-valid": { run: require("./checks/automatic/dlitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/dlitem-parent-valid.js").applicability || null },
+  "doctype-position": { run: require("./checks/automatic/doctype-position.js").runInPage, applicability: require("./checks/automatic/doctype-position.js").applicability || null },
   "doctype-present": { run: require("./checks/automatic/doctype-present.js").runInPage, applicability: require("./checks/automatic/doctype-present.js").applicability || null },
   "doctype-valid": { run: require("./checks/automatic/doctype-valid.js").runInPage, applicability: require("./checks/automatic/doctype-valid.js").applicability || null },
   "duplicate-id": { run: require("./checks/automatic/duplicate-id.js").runInPage, applicability: require("./checks/automatic/duplicate-id.js").applicability || null },
@@ -17133,14 +17410,14 @@ const RULE_IMPLS = {
   "link-label-in-name-sources": { run: require("./checks/automatic/link-label-in-name-sources.js").runInPage, applicability: require("./checks/automatic/link-label-in-name-sources.js").applicability || null },
   "link-name-present": { run: require("./checks/automatic/link-name-present.js").runInPage, applicability: require("./checks/automatic/link-name-present.js").applicability || null },
   "link-name-quality": { run: require("./checks/manual/link-name-quality-manual.js").runInPage, applicability: require("./checks/manual/link-name-quality-manual.js").applicability || null },
-  "link-state-colors-review": { run: require("./checks/manual/link-state-colors-review-manual.js").runInPage, applicability: require("./checks/manual/link-state-colors-review-manual.js").applicability || null },
+  "link-state-colors-review": { run: require("./checks/automatic/link-state-colors-review.js").runInPage, applicability: require("./checks/automatic/link-state-colors-review.js").applicability || null },
   "list-children-valid": { run: require("./checks/automatic/list-children-valid.js").runInPage, applicability: require("./checks/automatic/list-children-valid.js").applicability || null },
   "listbox-name-present": { run: require("./checks/automatic/listbox-name-present.js").runInPage, applicability: require("./checks/automatic/listbox-name-present.js").applicability || null },
   "listbox-option-groups-absent": { run: require("./checks/automatic/listbox-option-groups-absent.js").runInPage, applicability: require("./checks/automatic/listbox-option-groups-absent.js").applicability || null },
   "listitem-parent-valid": { run: require("./checks/automatic/listitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/listitem-parent-valid.js").applicability || null },
   "main-element-structure": { run: require("./checks/automatic/main-element-structure.js").runInPage, applicability: require("./checks/automatic/main-element-structure.js").applicability || null },
   "manual-review": { run: require("./checks/manual-review.js").runInPage, applicability: require("./checks/manual-review.js").applicability || null },
-  "markup-validation-review": { run: require("./checks/manual/markup-validation-review-manual.js").runInPage, applicability: require("./checks/manual/markup-validation-review-manual.js").applicability || null },
+  "markup-validation-review": { run: require("./checks/automatic/markup-validation-review.js").runInPage, applicability: require("./checks/automatic/markup-validation-review.js").applicability || null },
   "media-alternative-transcript-evidence": { run: require("./checks/manual/media-transcript-present-manual.js").runInPage, applicability: require("./checks/manual/media-transcript-present-manual.js").applicability || null },
   "media-transcript-adjacent": { run: require("./checks/automatic/media-transcript-adjacent.js").runInPage, applicability: require("./checks/automatic/media-transcript-adjacent.js").applicability || null },
   "menuitem-name-present": { run: require("./checks/automatic/menuitem-name-present.js").runInPage, applicability: require("./checks/automatic/menuitem-name-present.js").applicability || null },
@@ -17161,12 +17438,14 @@ const RULE_IMPLS = {
   "optgroup-label-not-empty": { run: require("./checks/automatic/optgroup-label-not-empty.js").runInPage, applicability: require("./checks/automatic/optgroup-label-not-empty.js").applicability || null },
   "optgroup-label-present": { run: require("./checks/automatic/optgroup-label-present.js").runInPage, applicability: require("./checks/automatic/optgroup-label-present.js").applicability || null },
   "option-name-present": { run: require("./checks/automatic/option-name-present.js").runInPage, applicability: require("./checks/automatic/option-name-present.js").applicability || null },
-  "orientation-content-parity": { run: require("./checks/manual/orientation-content-parity-manual.js").runInPage, applicability: require("./checks/manual/orientation-content-parity-manual.js").applicability || null },
+  "orientation-content-parity": { run: require("./checks/automatic/orientation-content-parity.js").runInPage, applicability: require("./checks/automatic/orientation-content-parity.js").applicability || null },
   "p-as-heading": { run: require("./checks/manual/p-as-heading-manual.js").runInPage, applicability: require("./checks/manual/p-as-heading-manual.js").applicability || null },
   "page-has-heading-one": { run: require("./checks/manual/page-has-heading-one-manual.js").runInPage, applicability: require("./checks/manual/page-has-heading-one-manual.js").applicability || null },
   "page-language-present": { run: require("./checks/automatic/page-language-present.js").runInPage, applicability: require("./checks/automatic/page-language-present.js").applicability || null },
   "page-title-patterns": { run: require("./checks/manual/page-title-patterns-manual.js").runInPage, applicability: require("./checks/manual/page-title-patterns-manual.js").applicability || null },
   "page-title-present": { run: require("./checks/automatic/page-title-present.js").runInPage, applicability: require("./checks/automatic/page-title-present.js").applicability || null },
+  "page-title-unique": { run: require("./checks/automatic/page-title-unique.js").runInPage, applicability: require("./checks/automatic/page-title-unique.js").applicability || null },
+  "page-zones-reachable": { run: require("./checks/automatic/page-zones-reachable.js").runInPage, applicability: require("./checks/automatic/page-zones-reachable.js").applicability || null },
   "password-paste-enabled": { run: require("./checks/manual/password-paste-enabled-manual.js").runInPage, applicability: require("./checks/manual/password-paste-enabled-manual.js").applicability || null },
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-attributes-absent": { run: require("./checks/automatic/presentational-attributes-absent.js").runInPage, applicability: require("./checks/automatic/presentational-attributes-absent.js").applicability || null },
@@ -17183,6 +17462,7 @@ const RULE_IMPLS = {
   "searchbox-name-present": { run: require("./checks/automatic/searchbox-name-present.js").runInPage, applicability: require("./checks/automatic/searchbox-name-present.js").applicability || null },
   "server-side-image-map-absent": { run: require("./checks/automatic/server-side-image-map-absent.js").runInPage, applicability: require("./checks/automatic/server-side-image-map-absent.js").applicability || null },
   "skip-link": { run: require("./checks/manual/skip-link-manual.js").runInPage, applicability: require("./checks/manual/skip-link-manual.js").applicability || null },
+  "skip-link-placement": { run: require("./checks/automatic/skip-link-placement.js").runInPage, applicability: require("./checks/automatic/skip-link-placement.js").applicability || null },
   "skip-link-present": { run: require("./checks/automatic/skip-link-present.js").runInPage, applicability: require("./checks/automatic/skip-link-present.js").applicability || null },
   "slider-name-present": { run: require("./checks/automatic/slider-name-present.js").runInPage, applicability: require("./checks/automatic/slider-name-present.js").applicability || null },
   "spinbutton-name-present": { run: require("./checks/automatic/spinbutton-name-present.js").runInPage, applicability: require("./checks/automatic/spinbutton-name-present.js").applicability || null },
@@ -17200,6 +17480,7 @@ const RULE_IMPLS = {
   "table-th-has-data-cells": { run: require("./checks/automatic/table-th-has-data-cells.js").runInPage, applicability: require("./checks/automatic/table-th-has-data-cells.js").applicability || null },
   "target-size-minimum": { run: require("./checks/automatic/target-size-minimum.js").runInPage, applicability: require("./checks/automatic/target-size-minimum.js").applicability || null },
   "td-has-header": { run: require("./checks/automatic/td-has-header.js").runInPage, applicability: require("./checks/automatic/td-has-header.js").applicability || null },
+  "text-spacing-content-loss": { run: require("./checks/automatic/text-spacing-content-loss.js").runInPage, applicability: require("./checks/automatic/text-spacing-content-loss.js").applicability || null },
   "textbox-name-present": { run: require("./checks/automatic/textbox-name-present.js").runInPage, applicability: require("./checks/automatic/textbox-name-present.js").applicability || null },
   "th-scope-row-col": { run: require("./checks/manual/th-scope-row-col-manual.js").runInPage, applicability: require("./checks/manual/th-scope-row-col-manual.js").applicability || null },
   "title-placeholder-identical": { run: require("./checks/automatic/title-placeholder-identical.js").runInPage, applicability: require("./checks/automatic/title-placeholder-identical.js").applicability || null },
@@ -17397,6 +17678,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel ist sehr kurz und identifiziert das Thema oder den Zweck der Seite möglicherweise nicht.",
     "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt schablonenhaft und identifiziert das Thema oder den Zweck der Seite möglicherweise nicht.",
     "pageTitlePatterns_hint_cantTell": "Überprüfen Sie den Seitentitel und stellen Sie sicher, dass er das Thema oder den Zweck der Seite klar identifiziert und hilft, die Seite von anderen zu unterscheiden.",
+    "pageTitleUnique_title": "Seitentitel sind auf der Website eindeutig",
+    "pageTitleUnique_description": "Vergleicht den Seitentitel mit den Titeln der anderen Seiten der Website aus der Probe crawl.pageTitles und wertet einen mit einer anderen Seite geteilten Titel als Fehler, da RGAA 8.6.1 einen Titel verlangt, der die Seite eindeutig bezeichnet.",
+    "pageTitleUnique_summary_fail_duplicate": "Andere Seiten der Website haben denselben Titel, „{{title}}“: {{pages}}. RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » (klar, knapp und eindeutig) bezeichnet.",
+    "pageTitleUnique_hint_fail_duplicate": "Geben Sie jeder Seite einen eigenen Titel, der sagt, was sie enthält, etwa das Thema der Seite gefolgt vom Namen der Website (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Eine Seite, deren Adresse sich von dieser nur durch die Parameter unterscheidet, hat denselben Titel, „{{title}}“: {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Prüfen Sie, ob diese Adressen verschiedene Seiten zeigen. Falls ja, geben Sie jeder einen eigenen Titel: RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » bezeichnet (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Nur diese Seite war verfügbar, daher ließ sich nicht prüfen, ob ihr Titel „{{title}}“ auf der Website eindeutig ist.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Prüfen Sie mehrere Seiten der Website und übergeben Sie deren Titel als Probe crawl.pageTitles, oder prüfen Sie, dass keine andere Seite diesen Titel hat: RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » bezeichnet (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Jeder Bereich der Seite kann erreicht oder übersprungen werden",
+    "pageZonesReachable_description": "Prüft, dass Kopfbereich, Hauptnavigation, Hauptinhalt, Fußbereich und Suche jeweils eine Landmark haben, und fragt bei einem über seinen Namen gefundenen Bereich nach, der stattdessen eine Überschrift, einen Sprung- oder Schnellzugriffslink oder eine Schaltfläche nutzt (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Eine Überschrift leitet ihn ein: Prüfen Sie, dass sie sagt, was der Bereich enthält.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link direkt davor führt dahinter: Prüfen Sie, dass es ein Sprunglink über diesen Bereich ist.",
+    "pageZonesReachable_summary_cantTell_toggle": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Eine Schaltfläche direkt davor kann ihn verbergen: Prüfen Sie, dass sie diesen Bereich verbirgt.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link führt zu ihm: Prüfen Sie, dass der Link sichtbar ist, zumindest wenn er den Fokus erhält.",
+    "pageZonesReachable_summary_cantTell_none": "Dieser Bereich („{{hint}}“) hat weder eine Landmark-Rolle noch eine einleitende Überschrift noch einen Link oder eine Schaltfläche, um ihn zu erreichen, zu überspringen oder zu verbergen.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "Die Seite hat keine Haupt-Landmark (<main> oder role=\"main\"), daher ließ sich nicht prüfen, wie der Hauptinhalt erreicht wird.",
+    "pageZonesReachable_hint_cantTell": "Geben Sie jedem Bereich die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular. Andernfalls geben Sie ihm eine Überschrift, die sagt, was er enthält, oder einen Sprung- oder Schnellzugriffslink (RGAA 12.6.1).",
     "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
     "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
     "contrastComputable_pass_allComputable": "Der Kontrast ist für allen zutreffenden Text berechenbar ({{eligibleTextCount}} Textknoten).",
@@ -17498,7 +17796,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Geben Sie dem Fokusindikator eine Farbe mit einem Kontrastverhältnis von mindestens 3:1 zum Hintergrund hinter dem Element und zum Element selbst (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "Der Fokusindikator dieses Elements ({{property}}, {{color}}) erreicht 3:1 nur gegenüber einer der angrenzenden Farben ({{ratio}}:1 gegenüber der anderen).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Prüfen Sie auf der Seite, ob der Fokusindikator gut sichtbar ist, mit einem Kontrastverhältnis von mindestens 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "Der Kontrast des Fokusindikators dieses Elements konnte nicht berechnet werden (Hintergrundbild, Verlauf, weicher Schatten, CSS-Variable, eine Bedingung wie @media oder Regeln, die die Engine nicht ordnen kann).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "Der Kontrast des Fokusindikators dieses Elements konnte nicht berechnet werden (Hintergrundbild, Verlauf, weicher Schatten, Animation, CSS-Variable, eine Bedingung wie @media oder Regeln, die die Engine nicht ordnen kann).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Messen Sie den Kontrast des Fokusindikators auf der Seite: Er braucht ein Verhältnis von mindestens 3:1 zu den angrenzenden Farben (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "Der Fokusstil dieses Elements ändert etwas, das die Engine nicht misst (Hintergrund, Textfarbe, Unterstreichung oder ein anderes Element).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Prüfen Sie auf der Seite, ob der Fokusstil sichtbar ist, mit einem Kontrastverhältnis von mindestens 3:1 (RGAA 10.7.1).",
@@ -17633,7 +17931,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
     "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
-    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
     "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
     "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
@@ -17765,8 +18063,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Entfernen Sie aria-hidden von <body>: Es würde die ganze Seite vor assistiven Technologien verbergen.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Dieses <{{element}}> hat role=\"{{role}}\", aber kein {{attr}}-Attribut, das die Rolle verlangt.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Fügen Sie das Attribut mit dem aktuellen Wert hinzu oder verwenden Sie ein natives Element mit dieser Rolle.",
-    "markupValidationReview_title": "Der generierte Quellcode wird mit dem W3C-Validator geprüft",
-    "markupValidationReview_description": "Fordert dazu auf, den generierten Quellcode der Seite mit dem W3C-Validator zu prüfen und die Bedingungen von RGAA 8.2.1 zu kontrollieren, von denen die Engine die meisten nicht mehr sieht, sobald der Browser die Seite geparst hat.",
+    "markupValidationReview_title": "Der generierte Quelltext besteht den W3C-Validator",
+    "markupValidationReview_description": "Liest den Bericht des W3C-Validators zum generierten Quelltext aus der Probe validator.report und wertet die aufgeführten Fehler als Fehler; ohne Bericht bittet es eine Person, den Validator auszuführen (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "Der W3C-Validator meldet einen Fehler im generierten Quelltext, Zeile {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Korrigieren Sie das Markup, damit es den HTML-Schreibregeln folgt: Tags, Attribute und Werte wie HTML sie erlaubt, korrekt verschachtelte, geöffnete und geschlossene Tags, eindeutige id-Werte und kein doppeltes Attribut an einem Element (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "Der Validator konnte die Seite nicht prüfen: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "Der W3C-Validator meldet {{count}} Fehler im ursprünglichen Quelltext, den ersten in Zeile {{line}}: {{message}}. RGAA 8.2.1 prüft den generierten Quelltext, in dem der Browser sie behoben haben kann.",
+    "markupValidationReview_summary_cantTell_originalClean": "Der W3C-Validator meldet keinen Fehler im ursprünglichen Quelltext. RGAA 8.2.1 prüft den generierten Quelltext, den Skripte verändern können.",
+    "markupValidationReview_summary_cantTell_truncated": "Der Validatorbericht hat {{cap}} oder mehr Meldungen, und die Engine liest die ersten {{cap}}, von denen keine ein Fehler ist; der Rest ließ sich nicht prüfen.",
+    "markupValidationReview_hint_cantTell_report": "Prüfen Sie den generierten Quelltext der Seite, also die Seite nach Ausführung ihrer Skripte, mit dem Nu HTML Checker des W3C und übergeben Sie dessen Meldungen als Probe validator.report mit source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Prüfen Sie den generierten Quellcode dieser Seite mit dem W3C-Validator: Die Engine sieht keine nicht geschlossenen oder falsch verschachtelten Tags, doppelten Attribute und anderen Fehler, die der Browser repariert.",
     "markupValidationReview_hint_cantTell_page": "Validieren Sie den generierten Quellcode (zum Beispiel mit dem W3C Nu HTML Checker) und prüfen Sie, dass Tags, Attribute und Werte den Schreibregeln folgen, Tags korrekt verschachtelt, geöffnet und geschlossen sind, id-Werte eindeutig sind und kein Attribut zweimal auf einem Element steht (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
@@ -18092,6 +18397,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Ein Sprunglink zum Hauptinhalt ist nötig, außer die Website besteht aus einer einzigen Seite, die keinen braucht. Prüfen Sie den Inhalt vor <main>, und fügen Sie einen Link hinzu, wenn sich dieser Inhalt wiederholt oder übersprungen werden kann.",
     "skipLinkPresent_summary_cantTell_noMain": "Die Seite hat kein Element <main>, daher konnten der Hauptinhalt und ein Link dorthin nicht gefunden werden.",
     "skipLinkPresent_hint_cantTell_noMain": "Kennzeichnen Sie den Hauptinhalt mit einem Element <main>, und fügen Sie davor einen Link wie „Zum Inhalt springen“ hinzu, dessen href die id dieses Elements ist.",
+    "skipLinkPlacement_title": "Sprunglinks sind sichtbar und stehen auf jeder Seite an derselben Stelle",
+    "skipLinkPlacement_description": "Prüft, dass der Link zum Hauptinhalt sichtbar ist, zumindest wenn er den Fokus erhält, und dass die anderen Seiten der Website ihn an derselben Stelle und in derselben Fokusreihenfolge zeigen (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Dieser Sprunglink ist nicht sichtbar und bleibt verborgen, wenn er den Fokus erhält (ohne Größe, außerhalb der Seite, abgeschnitten, transparent oder visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Zeigen Sie den Sprunglink immer an, oder zumindest wenn er den Tastaturfokus erhält, etwa indem eine :focus-Regel ihn wieder ins Bild holt (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Dieser Sprunglink steht auf anderen Seiten der Website, gemessen bei derselben Fensterbreite, nicht an derselben Stelle: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Setzen Sie den Sprunglink auf jeder Seite an dieselbe Stelle, meist an den Anfang des Seitenkopfs (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Ob dieser Sprunglink sichtbar ist, ließ sich nicht klären: Etwas verdeckt ihn vielleicht, er ist beim Fokus animiert, oder die Seite wurde nicht dargestellt.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Springen Sie mit der Tabulatortaste zum Sprunglink und prüfen Sie, dass er mit Fokus sichtbar ist (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Dieser Sprunglink steht auf anderen Seiten der Website an einer anderen Stelle der Fokusreihenfolge: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Prüfen Sie, dass der Sprunglink auf jeder Seite in derselben Reihenfolge relativ zum Rest der Seite steht (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Die anderen Seiten der Website wurden bei einer anderen Fensterbreite gemessen, daher ließ sich die Stelle dieses Sprunglinks nicht vergleichen.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Messen Sie alle Seiten bei derselben Fensterbreite, oder prüfen Sie auf der Website, dass der Sprunglink auf jeder Seite an derselben Stelle steht (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Nur diese Seite war verfügbar, daher ließ sich nicht prüfen, ob der Sprunglink auf den anderen Seiten der Website an derselben Stelle und in derselben Reihenfolge steht.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Prüfen Sie mehrere Seiten der Website und übergeben Sie deren Sprunglink-Daten als Probe crawl.skipLinks, oder prüfen Sie auf der Website, dass der Sprunglink auf jeder Seite an derselben Stelle und in derselben Reihenfolge steht (RGAA 12.7.2).",
     "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
@@ -18180,6 +18499,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
     "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+    "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
+    "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
+    "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element den Text „{{text}}“ ab.",
+    "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ den Text „{{other}}“.",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -18196,8 +18525,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder ein anderes Merkmal außer der Farbe aufweist, oder mindestens 3:1 Kontrast zum umgebenden Text zusammen mit einem Merkmal außer der Farbe bei Hover und Fokus. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
-    "linkStateColorsReview_title": "Nur durch Farbe gezeigte Linkzustände werden geprüft",
-    "linkStateColorsReview_description": "Markiert Links im Fließtext, die nur durch Farbe erkennbar sind und deren besuchter, aktiver, Hover- oder Fokuszustand die Farbe ändert, damit eine Person den Kontrast von 3:1 jedes Zustands zum umgebenden Text prüft (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Nur durch Farbe gezeigte Linkzustände haben einen Kontrast von 3:1 zum umgebenden Text",
+    "linkStateColorsReview_description": "Prüft, dass ein nur durch Farbe erkennbarer Link im Fließtext in jedem besuchten, aktiven, Hover- oder Fokuszustand, der eine andere Farbe zeigt, einen Kontrast von 3:1 zum umgebenden Text behält, und fragt nach, wenn diese Zustände nicht auf den Link angewendet werden können (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und in diesen Zuständen kontrastiert diese Farbe unter 3:1 zum umgebenden Text: {{states}} (niedrigster Wert {{ratio}}:1, {{color}} zu {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Geben Sie dem Link in jedem Zustand eine Farbe mit einem Kontrast von mindestens 3:1 zum umgebenden Text, oder kennzeichnen Sie ihn in diesen Zuständen durch mehr als Farbe, etwa eine Unterstreichung (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und eine Stilregel ändert diese Farbe in diesen Zuständen: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und keine Stilregel legt diese Farbe fest, daher gilt die eigene, abweichende Farbe des Browsers für besuchte Links.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und ein nicht lesbares Stylesheet kann diese Farbe in einigen seiner Zustände ändern.",
@@ -18246,7 +18577,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
     "orientationContentParity_title": "Der Inhalt bleibt im Hoch- und Querformat gleich",
-    "orientationContentParity_description": "Meldet jedes Element, das eine Media Query zur Ausrichtung ausblendet (display: none oder visibility: hidden), damit eine Person prüft, ob in beiden Ausrichtungen derselbe Inhalt angeboten wird.",
+    "orientationContentParity_description": "Stellt die Seite im Hoch- und im Querformat dar, wertet Inhalte als Fehler, die in einer Ausrichtung gezeigt werden und in der anderen fehlen, und fragt bei Elementen nach, die eine Ausrichtungs-Media-Query verbirgt, wenn die Seite nicht dargestellt werden kann (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "Im Hochformat ist dieses <{{element}}> verborgen, und sein Inhalt („{{text}}“) wird nirgends sonst gezeigt.",
+    "orientationContentParity_summary_fail_missing_landscape": "Im Querformat ist dieses <{{element}}> verborgen, und sein Inhalt („{{text}}“) wird nirgends sonst gezeigt.",
+    "orientationContentParity_hint_fail_missing": "Bieten Sie in beiden Ausrichtungen dieselben Inhalte an. Die Darstellung darf sich ändern, die Inhalte müssen aber verfügbar bleiben (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "Im Hochformat ist dieses <{{element}}> verborgen, und mit ihm der Hauptinhalt der Seite.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "Im Querformat ist dieses <{{element}}> verborgen, und mit ihm der Hauptinhalt der Seite.",
+    "orientationContentParity_hint_cantTell_mainContent": "Prüfen Sie, dass die Seite in beiden Ausrichtungen nutzbar ist, sofern nicht eine Ausrichtung wesentlich ist (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Eine Media Query \"{{mediaText}}\" blendet dieses <{{element}}> aus (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Prüfen Sie, ob im Hoch- und im Querformat derselbe Inhalt angeboten wird, auch wenn er anders dargestellt oder erreicht wird (RGAA 13.9.1). Das ist nicht erforderlich, wenn eine Ausrichtung wesentlich ist.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
@@ -18302,6 +18639,14 @@ const I18N = {
     "doctypePresent_description": "Prüft, ob das Dokument einen Doctype hat, der vor dem <html>-Element steht.",
     "doctypePresent_summary_fail_missing": "Die Seite hat keinen Doctype.",
     "doctypePresent_hint_fail": "Beginnen Sie die Seite mit <!DOCTYPE html>, vor dem <html>-Element.",
+    "doctypePosition_title": "Der Doctype steht vor dem <html>-Tag",
+    "doctypePosition_description": "Prüft, dass ein deklarierter Doctype im Quelltext vor dem <html>-Tag steht, und liest dazu den Quelltext aus der Probe page.source, wenn der Parser ihn verworfen hat (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "Der Quelltext der Seite deklariert den Doctype nach dem <html>-Tag, daher ignorieren Browser ihn.",
+    "doctypePosition_hint_fail_afterHtml": "Setzen Sie den Doctype ganz an den Anfang der Seite, vor das <html>-Tag: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "Die Seite hat nach dem Parsen keinen Doctype. Ohne ihren Quelltext ließ sich nicht sagen, ob er fehlt oder nach dem <html>-Tag steht.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Sehen Sie sich den Quelltext an, wie der Server ihn sendet, oder übergeben Sie seinen Anfang als Probe page.source: Ein Doctype muss vor dem <html>-Tag stehen (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "Der übergebene Anfang des Quelltexts zeigt weder einen Doctype noch das <html>-Tag, daher ließ sich nicht sagen, wo der Doctype steht.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Sehen Sie sich den Quelltext an, wie der Server ihn sendet: Ein Doctype muss vor dem <html>-Tag stehen (RGAA 8.1.3).",
     "doctypeValid_title": "Der deklarierte Doctype ist gültig",
     "doctypeValid_description": "Prüft, ob ein deklarierter Doctype der HTML5-Doctype oder einer der vom W3C empfohlenen ist.",
     "doctypeValid_summary_fail": "Die Seite deklariert einen Doctype, der weder HTML5 noch vom W3C empfohlen ist.",
@@ -18707,6 +19052,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "The page title is very short and may not identify the page topic or purpose.",
     "pageTitlePatterns_summary_cantTell_templateLike": "The page title appears templated and may not identify the page topic or purpose.",
     "pageTitlePatterns_hint_cantTell": "Review the page title and ensure it clearly identifies the page topic or purpose and helps distinguish the page from others.",
+    "pageTitleUnique_title": "Page titles are unique across the site",
+    "pageTitleUnique_description": "Compares the page title with the titles of the site’s other pages, given as the crawl.pageTitles probe, and fails one shared with another page, since RGAA 8.6.1 asks for a title that identifies the page uniquely.",
+    "pageTitleUnique_summary_fail_duplicate": "Other pages of the site have the same title, \"{{title}}\": {{pages}}. RGAA asks that a page title identify the page « de manière claire, concise et unique ».",
+    "pageTitleUnique_hint_fail_duplicate": "Give each page a title of its own that says what this page holds, for instance the page’s subject followed by the site’s name (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "A page whose address differs from this one only by its query string has the same title, \"{{title}}\": {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Check whether these addresses show different pages. If they do, give each its own title: RGAA asks that a page title identify the page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Only this page was available, so whether its title, \"{{title}}\", is unique across the site could not be checked.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Scan several pages of the site and pass their titles as the crawl.pageTitles probe, or check that no other page has this title: RGAA asks that a page title identify the page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Each area of the page can be reached or skipped",
+    "pageZonesReachable_description": "Checks that the header, main navigation, main content, footer and search areas each have a landmark, and asks about an area found from its name that relies on a heading, a skip or quick-access link, or a button instead (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "This area (\"{{hint}}\") has no landmark role. A heading opens it: check that the heading says what the area holds.",
+    "pageZonesReachable_summary_cantTell_skipLink": "This area (\"{{hint}}\") has no landmark role. A same-page link just before it leads past it: check that it is a skip link for this area.",
+    "pageZonesReachable_summary_cantTell_toggle": "This area (\"{{hint}}\") has no landmark role. A button just before it may hide it: check that the button hides this area.",
+    "pageZonesReachable_summary_cantTell_quickLink": "This area (\"{{hint}}\") has no landmark role. A same-page link leads to it: check that the link is visible, at least when it takes focus.",
+    "pageZonesReachable_summary_cantTell_none": "This area (\"{{hint}}\") has no landmark role, no heading opening it, and no link or button to reach, skip or hide it.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "The page has no main landmark (<main> or role=\"main\"), so how the main content can be reached could not be checked.",
+    "pageZonesReachable_hint_cantTell": "Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).",
     "contrastComputable_title": "Color contrast is computable for rendered text",
     "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
     "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
@@ -18808,7 +19170,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Give the focus indicator a color with a contrast ratio of at least 3:1 against the background behind the element and against the element itself (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "The {{property}} this element shows on focus ({{color}}) reaches 3:1 against only one of the colors next to it ({{ratio}}:1 against the other).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Check on the page that the focus indicator is clearly visible, with a contrast ratio of at least 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, a CSS variable, a condition such as @media, or rules the engine cannot order).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, an animation, a CSS variable, a condition such as @media, or rules the engine cannot order).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Measure the contrast of the focus indicator on the page: it needs a ratio of at least 3:1 with the colors next to it (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "This element's focus style changes something the engine does not measure (background, text color, underline, or another element).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Check on the page that the focus style is visible, with a contrast ratio of at least 3:1 (RGAA 10.7.1).",
@@ -18943,7 +19305,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
     "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
-    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
@@ -19075,8 +19437,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Remove aria-hidden from <body>: it would hide the whole page from assistive technologies.",
     "ariaAttributeConformance_summary_fail_missingRequired": "This <{{element}}> has role=\"{{role}}\" but no {{attr}} attribute, which the role requires.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Add the attribute with the current value, or use a native element that has this role.",
-    "markupValidationReview_title": "The generated source code is checked with the W3C validator",
-    "markupValidationReview_description": "Asks a person to run the W3C validator on the generated source code of the page and check the conditions of RGAA 8.2.1, most of which the engine cannot see once the browser has parsed the page.",
+    "markupValidationReview_title": "The generated source code passes the W3C validator",
+    "markupValidationReview_description": "Reads the W3C validator report on the generated source, given as the validator.report probe, and fails the errors it lists; without a report it asks a person to run the validator (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "The W3C validator reports an error in the generated source, line {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Correct the markup so that it follows the HTML writing rules: tags, attributes and values written as HTML allows, tags nested, opened and closed correctly, unique id values and no attribute twice on one element (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "The validator could not check the page: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "The W3C validator reports {{count}} errors in the original source, the first at line {{line}}: {{message}}. RGAA 8.2.1 validates the generated source, where the browser may have repaired them.",
+    "markupValidationReview_summary_cantTell_originalClean": "The W3C validator reports no error in the original source. RGAA 8.2.1 validates the generated source, which scripts may change.",
+    "markupValidationReview_summary_cantTell_truncated": "The validator report has {{cap}} messages or more and the engine reads the first {{cap}}, none of them an error, so the rest could not be checked.",
+    "markupValidationReview_hint_cantTell_report": "Validate the generated source of the page, the page after its scripts have run, with the W3C Nu HTML Checker, and pass its messages as the validator.report probe with source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Run the W3C validator on the generated source code of this page: the engine cannot see unclosed or misnested tags, repeated attributes and other errors the browser repairs.",
     "markupValidationReview_hint_cantTell_page": "Validate the generated source (for example with the W3C Nu HTML Checker) and check that tags, attributes and values follow the writing rules, tags are nested, opened and closed correctly, id values are unique and no attribute appears twice on one element (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
@@ -19402,6 +19771,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "A skip link to the main content is needed unless the site is a single page that has no use for one. Check the content before <main>, and add a link to it if that content repeats or can be skipped.",
     "skipLinkPresent_summary_cantTell_noMain": "The page has no <main> element, so the main content zone and a link to it could not be found.",
     "skipLinkPresent_hint_cantTell_noMain": "Mark the main content with a <main> element, and add a link before it, such as \"Skip to content\", whose href is the id of that element.",
+    "skipLinkPlacement_title": "Skip links are visible and at the same place on every page",
+    "skipLinkPlacement_description": "Checks that the link to the main content is visible, at least when it takes focus, and that the site’s other pages show it at the same place and in the same focus order (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "This skip link is not visible, and it stays hidden when it takes focus (no size, outside the page, clipped, transparent or visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Show the skip link at all times, or at least when it takes keyboard focus, for instance by moving it back into view in a :focus rule (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "This skip link is not at the same place on other pages of the site, measured at the same window width: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Place the skip link at the same position on every page, usually first in the page header (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Whether this skip link is visible could not be settled: something may cover it, it is animated when it takes focus, or the page was not rendered.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Tab to the skip link and check that it is visible when it has focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "This skip link comes at another place in the focus order on other pages of the site: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Check that the skip link comes in the same order relative to the rest of the page on every page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "The other pages of the site were measured at another window width, so the place of this skip link could not be compared.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Measure every page at the same window width, or check on the site that the skip link is at the same place on every page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Only this page was available, so whether the skip link is at the same place and in the same order on the other pages of the site could not be checked.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Scan several pages of the site and pass their skip link records as the crawl.skipLinks probe, or check on the site that the skip link is at the same place and in the same order on every page (RGAA 12.7.2).",
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
@@ -19490,6 +19873,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+    "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
+    "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied, this element cuts off the text \"{{text}}\".",
+    "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" reaches past the edge of this element, which hides what goes past it.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -19506,8 +19899,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
-    "linkStateColorsReview_title": "Link states shown by color alone are reviewed",
-    "linkStateColorsReview_description": "Flags links in a run of text, shown only by color, whose visited, active, hover or focus state changes their color, for a person to check the 3:1 contrast of each state with the surrounding text (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+    "linkStateColorsReview_description": "Checks that a link in a run of text, shown only by color, keeps a contrast of 3:1 with the surrounding text in each visited, active, hover or focus state shown by another color, and asks when the states cannot be put on the link (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "This link in a run of text is shown only by its color, and in these states that color contrasts below 3:1 with the surrounding text: {{states}} (lowest {{ratio}}:1, {{color}} against {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Give the link a color with a contrast ratio of at least 3:1 with the surrounding text in each state, or mark it in those states by more than color, such as an underline (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "This link in a run of text is shown only by its color, and a style rule changes that color in these states: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "This link in a run of text is shown only by its color, and no style rule sets that color, so the browser's own visited color, a different one, applies.",
     "linkStateColorsReview_summary_cantTell_unreadable": "This link in a run of text is shown only by its color, and a style sheet that could not be read may change that color in some of its states.",
@@ -19556,7 +19951,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
     "orientationContentParity_title": "Content stays the same in portrait and landscape",
-    "orientationContentParity_description": "Flags each element that an orientation media query hides (display: none or visibility: hidden), for a person to check that the same content is offered in both orientations.",
+    "orientationContentParity_description": "Lays the page out as portrait and as landscape and fails content shown in one orientation and missing from the other, and asks about elements an orientation media query hides when the page cannot be laid out (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "In portrait, this <{{element}}> is hidden and its content (\"{{text}}\") is not shown anywhere else.",
+    "orientationContentParity_summary_fail_missing_landscape": "In landscape, this <{{element}}> is hidden and its content (\"{{text}}\") is not shown anywhere else.",
+    "orientationContentParity_hint_fail_missing": "Offer the same content in both orientations. Its presentation may change, but it must stay available (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "In portrait, this <{{element}}> is hidden, and with it the main content of the page.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "In landscape, this <{{element}}> is hidden, and with it the main content of the page.",
+    "orientationContentParity_hint_cantTell_mainContent": "Check that the page can be used in both orientations, unless one orientation is essential to it (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "A \"{{mediaText}}\" media query hides this <{{element}}> (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Check that the same content is offered in portrait and in landscape, even if it is presented or reached differently (RGAA 13.9.1). This is not required when one orientation is essential.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
@@ -19612,6 +20013,14 @@ const I18N = {
     "doctypePresent_description": "Checks that the document has a doctype, written before the <html> element.",
     "doctypePresent_summary_fail_missing": "The page has no doctype.",
     "doctypePresent_hint_fail": "Start the page with <!DOCTYPE html>, before the <html> element.",
+    "doctypePosition_title": "The doctype comes before the <html> tag",
+    "doctypePosition_description": "Checks that a declared doctype comes before the <html> tag in the source, reading the page source given as the page.source probe when the parser has dropped it (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "The page source declares its doctype after the <html> tag, so browsers ignore it.",
+    "doctypePosition_hint_fail_afterHtml": "Move the doctype to the very start of the page, before the <html> tag: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "The page has no doctype once parsed. Without its source, whether one is missing or written after the <html> tag could not be told.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Look at the page source as the server sends it, or pass its start as the page.source probe: a doctype must come before the <html> tag (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "The start of the page source given shows neither a doctype nor the <html> tag, so where the doctype sits could not be told.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Look at the page source as the server sends it: a doctype must come before the <html> tag (RGAA 8.1.3).",
     "doctypeValid_title": "Declared doctype is valid",
     "doctypeValid_description": "Checks that a declared doctype is the HTML5 doctype or one of the doctypes the W3C recommends.",
     "doctypeValid_summary_fail": "The page declares a doctype that is neither HTML5 nor a W3C recommended one.",
@@ -20017,6 +20426,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página es muy corto y puede no identificar su tema o propósito.",
     "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece basado en una plantilla y puede no identificar su tema o propósito.",
     "pageTitlePatterns_hint_cantTell": "Revisar el título de la página y asegurarse de que identifique claramente su tema o propósito y ayude a distinguirla de otras.",
+    "pageTitleUnique_title": "Los títulos de página son únicos en el sitio",
+    "pageTitleUnique_description": "Compara el título de la página con los de las demás páginas del sitio, recibidos en la sonda crawl.pageTitles, y falla un título compartido con otra página, ya que RGAA 8.6.1 pide un título que identifique la página de forma única.",
+    "pageTitleUnique_summary_fail_duplicate": "Otras páginas del sitio tienen el mismo título, «{{title}}»: {{pages}}. El RGAA pide que el título identifique la página « de manière claire, concise et unique » (de forma clara, concisa y única).",
+    "pageTitleUnique_hint_fail_duplicate": "Dé a cada página un título propio que diga lo que contiene, por ejemplo el tema de la página seguido del nombre del sitio (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Una página cuya dirección solo se diferencia de esta por sus parámetros tiene el mismo título, «{{title}}»: {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Compruebe si estas direcciones muestran páginas distintas. Si es así, dé a cada una su propio título: el RGAA pide que el título identifique la página « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Solo estaba disponible esta página, así que no se pudo comprobar si su título, «{{title}}», es único en el sitio.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Analice varias páginas del sitio y pase sus títulos en la sonda crawl.pageTitles, o compruebe que ninguna otra página tiene este título: el RGAA pide que el título identifique la página « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Cada zona de la página se puede alcanzar u omitir",
+    "pageZonesReachable_description": "Comprueba que las zonas de cabecera, navegación principal, contenido principal, pie de página y búsqueda tienen cada una un landmark, y pregunta por una zona encontrada por su nombre que se apoya en su lugar en un encabezado, un enlace de salto o de acceso rápido, o un botón (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Esta zona («{{hint}}») no tiene rol landmark. La abre un encabezado: compruebe que el encabezado dice lo que contiene la zona.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno justo antes de ella lleva más allá: compruebe que es un enlace para saltar esta zona.",
+    "pageZonesReachable_summary_cantTell_toggle": "Esta zona («{{hint}}») no tiene rol landmark. Un botón justo antes de ella puede ocultarla: compruebe que el botón oculta esta zona.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno lleva a ella: compruebe que el enlace es visible, al menos cuando recibe el foco.",
+    "pageZonesReachable_summary_cantTell_none": "Esta zona («{{hint}}») no tiene rol landmark, ni encabezado que la abra, ni enlace o botón para alcanzarla, saltarla u ocultarla.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "La página no tiene landmark principal (<main> o role=\"main\"), así que no se pudo comprobar cómo se llega al contenido principal.",
+    "pageZonesReachable_hint_cantTell": "Dé a cada zona el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda. Si no, dele un encabezado que diga lo que contiene, o un enlace de salto o de acceso rápido (RGAA 12.6.1).",
     "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
     "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
     "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
@@ -20118,7 +20544,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Dar al indicador de foco un color con una relación de contraste de al menos 3:1 con el fondo que hay detrás del elemento y con el propio elemento (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "El indicador de foco de este elemento ({{property}}, {{color}}) llega a 3:1 solo con uno de los colores contiguos ({{ratio}}:1 con el otro).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Comprobar en la página que el indicador de foco se ve con claridad, con una relación de contraste de al menos 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "No se pudo calcular el contraste del indicador de foco de este elemento (imagen o degradado de fondo, sombra difuminada, variable CSS, una condición como @media o reglas que el motor no puede ordenar).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "No se pudo calcular el contraste del indicador de foco de este elemento (imagen o degradado de fondo, sombra difuminada, animación, variable CSS, una condición como @media o reglas que el motor no puede ordenar).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Medir en la página el contraste del indicador de foco: necesita una relación de al menos 3:1 con los colores contiguos (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "El estilo de foco de este elemento cambia algo que el motor no mide (fondo, color del texto, subrayado u otro elemento).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Comprobar en la página que el estilo de foco es visible, con una relación de contraste de al menos 3:1 (RGAA 10.7.1).",
@@ -20253,7 +20679,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
-    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
     "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
     "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
@@ -20385,8 +20811,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Eliminar aria-hidden de <body>: ocultaría toda la página a las tecnologías de apoyo.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Este <{{element}}> tiene role=\"{{role}}\" pero ningún atributo {{attr}}, que el rol exige.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Añadir el atributo con el valor actual, o usar un elemento nativo que tenga este rol.",
-    "markupValidationReview_title": "El código fuente generado se comprueba con el validador del W3C",
-    "markupValidationReview_description": "Pide a una persona que pase el código fuente generado de la página por el validador del W3C y compruebe las condiciones de RGAA 8.2.1, que el motor en su mayoría ya no ve una vez que el navegador ha analizado la página.",
+    "markupValidationReview_title": "El código fuente generado supera el validador del W3C",
+    "markupValidationReview_description": "Lee el informe del validador del W3C sobre el código fuente generado, recibido en la sonda validator.report, y falla los errores que enumera; sin informe, pide a una persona que ejecute el validador (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "El validador del W3C informa de un error en el código fuente generado, línea {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Corrija el código para que siga las reglas de escritura del HTML: etiquetas, atributos y valores conformes, etiquetas bien anidadas, abiertas y cerradas, valores de id únicos y ningún atributo repetido en un mismo elemento (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "El validador no pudo comprobar la página: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "El validador del W3C informa de {{count}} errores en el código fuente original, el primero en la línea {{line}}: {{message}}. RGAA 8.2.1 valida el código fuente generado, donde el navegador puede haberlos corregido.",
+    "markupValidationReview_summary_cantTell_originalClean": "El validador del W3C no informa de ningún error en el código fuente original. RGAA 8.2.1 valida el código fuente generado, que los scripts pueden cambiar.",
+    "markupValidationReview_summary_cantTell_truncated": "El informe del validador tiene {{cap}} mensajes o más y el motor lee los {{cap}} primeros, ninguno de ellos un error, así que el resto no se pudo comprobar.",
+    "markupValidationReview_hint_cantTell_report": "Valide el código fuente generado de la página, es decir la página tras ejecutarse sus scripts, con el Nu HTML Checker del W3C, y pase sus mensajes en la sonda validator.report con source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Pasar el código fuente generado de esta página por el validador del W3C: el motor no ve las etiquetas sin cerrar o mal anidadas, los atributos repetidos ni los demás errores que corrige el navegador.",
     "markupValidationReview_hint_cantTell_page": "Validar el código fuente generado (por ejemplo con el W3C Nu HTML Checker) y comprobar que etiquetas, atributos y valores siguen las reglas de escritura, que las etiquetas se anidan, abren y cierran correctamente, que los valores de id son únicos y que ningún atributo aparece dos veces en un mismo elemento (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
@@ -20712,6 +21145,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Hace falta un enlace de salto al contenido principal salvo que el sitio sea una sola página que no lo necesite. Revise el contenido anterior a <main> y añada un enlace si ese contenido se repite o se puede saltar.",
     "skipLinkPresent_summary_cantTell_noMain": "La página no tiene elemento <main>, así que no se pudo encontrar la zona de contenido principal ni un enlace a ella.",
     "skipLinkPresent_hint_cantTell_noMain": "Marque el contenido principal con un elemento <main> y añada antes un enlace como «Saltar al contenido» cuyo href sea el id de ese elemento.",
+    "skipLinkPlacement_title": "Los enlaces para saltar al contenido son visibles y están en el mismo lugar en todas las páginas",
+    "skipLinkPlacement_description": "Comprueba que el enlace al contenido principal es visible, al menos cuando recibe el foco, y que las demás páginas del sitio lo muestran en el mismo lugar y en el mismo orden de foco (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Este enlace para saltar al contenido no es visible y sigue oculto cuando recibe el foco (sin tamaño, fuera de la página, recortado, transparente o visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Muestre el enlace siempre, o al menos cuando recibe el foco del teclado, por ejemplo devolviéndolo a la vista con una regla :focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Este enlace para saltar al contenido no está en el mismo lugar en otras páginas del sitio, medidas con el mismo ancho de ventana: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Coloque el enlace en la misma posición en todas las páginas, normalmente el primero en la cabecera (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "No se pudo determinar si este enlace es visible: puede que algo lo cubra, se anima al recibir el foco o la página no se mostró.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Llegue al enlace con la tecla Tab y compruebe que es visible cuando tiene el foco (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Este enlace ocupa otro lugar en el orden de foco en otras páginas del sitio: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Compruebe que el enlace aparece en el mismo orden relativo respecto al resto de la página en todas las páginas (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Las demás páginas del sitio se midieron con otro ancho de ventana, así que no se pudo comparar el lugar de este enlace.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Mida todas las páginas con el mismo ancho de ventana, o compruebe en el sitio que el enlace está en el mismo lugar en todas las páginas (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Solo estaba disponible esta página, así que no se pudo comprobar si el enlace está en el mismo lugar y en el mismo orden en las demás páginas del sitio.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Analice varias páginas del sitio y pase sus registros del enlace en la sonda crawl.skipLinks, o compruebe en el sitio que el enlace está en el mismo lugar y orden en todas las páginas (RGAA 12.7.2).",
     "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
@@ -20800,6 +21247,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
     "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+    "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
+    "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado, este elemento recorta el texto «{{text}}».",
+    "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» sobrepasa el borde de este elemento, que oculta lo que sobresale.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» se superpone al texto «{{other}}».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -20816,8 +21273,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente u otra marca distinta del color, o al menos un contraste de 3:1 con el texto circundante junto con una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
-    "linkStateColorsReview_title": "Se revisan los estados de enlace señalados solo por el color",
-    "linkStateColorsReview_description": "Señala los enlaces dentro de un texto, distinguidos solo por el color, cuyo estado visitado, activo, al pasar el puntero o con el foco cambia su color, para que una persona compruebe el contraste de 3:1 de cada estado con el texto circundante (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Los estados de enlace señalados solo por el color tienen un contraste de 3:1 con el texto circundante",
+    "linkStateColorsReview_description": "Comprueba que un enlace dentro de un texto, distinguido solo por el color, mantiene un contraste de 3:1 con el texto circundante en cada estado visitado, activo, al pasar el puntero o con el foco que se presente con otro color, y pregunta cuando esos estados no se pueden aplicar al enlace (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Este enlace dentro de un texto se distingue solo por su color, y en estos estados ese color tiene un contraste inferior a 3:1 con el texto circundante: {{states}} (mínimo {{ratio}}:1, {{color}} frente a {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Dé al enlace un color con un contraste de al menos 3:1 con el texto circundante en cada estado, o márquelo en esos estados con algo más que el color, como un subrayado (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Este enlace dentro de un texto se distingue solo por su color, y una regla de estilo cambia ese color en estos estados: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Este enlace dentro de un texto se distingue solo por su color, y ninguna regla de estilo fija ese color, así que se aplica el color de enlace visitado del propio navegador, que es distinto.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Este enlace dentro de un texto se distingue solo por su color, y una hoja de estilo que no se pudo leer puede cambiar ese color en algunos de sus estados.",
@@ -20866,7 +21325,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
     "orientationContentParity_title": "El contenido es el mismo en vertical y en horizontal",
-    "orientationContentParity_description": "Señala cada elemento que una media query de orientación oculta (display: none o visibility: hidden), para que una persona compruebe que se ofrece el mismo contenido en ambas orientaciones.",
+    "orientationContentParity_description": "Presenta la página en vertical y en horizontal, falla el contenido mostrado en una orientación que falta en la otra, y pregunta por los elementos que oculta una media query de orientación cuando la página no se puede presentar (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "En vertical, este <{{element}}> está oculto y su contenido («{{text}}») no se muestra en ningún otro lugar.",
+    "orientationContentParity_summary_fail_missing_landscape": "En horizontal, este <{{element}}> está oculto y su contenido («{{text}}») no se muestra en ningún otro lugar.",
+    "orientationContentParity_hint_fail_missing": "Ofrezca el mismo contenido en ambas orientaciones. Su presentación puede cambiar, pero debe seguir disponible (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "En vertical, este <{{element}}> está oculto y, con él, el contenido principal de la página.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "En horizontal, este <{{element}}> está oculto y, con él, el contenido principal de la página.",
+    "orientationContentParity_hint_cantTell_mainContent": "Compruebe que la página se puede usar en ambas orientaciones, salvo que una orientación sea esencial (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Una media query \"{{mediaText}}\" oculta este <{{element}}> (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Comprobar que se ofrece el mismo contenido en vertical y en horizontal, aunque se presente o se acceda a él de otra forma (RGAA 13.9.1). No es obligatorio si una orientación es esencial.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
@@ -20922,6 +21387,14 @@ const I18N = {
     "doctypePresent_description": "Comprueba que el documento tiene un doctype, escrito antes del elemento <html>.",
     "doctypePresent_summary_fail_missing": "La página no tiene doctype.",
     "doctypePresent_hint_fail": "Empezar la página con <!DOCTYPE html>, antes del elemento <html>.",
+    "doctypePosition_title": "El doctype está antes de la etiqueta <html>",
+    "doctypePosition_description": "Comprueba que un doctype declarado está antes de la etiqueta <html> en el código fuente, leyendo el código de la página recibido en la sonda page.source cuando el analizador lo ha descartado (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "El código fuente de la página declara su doctype después de la etiqueta <html>, así que los navegadores lo ignoran.",
+    "doctypePosition_hint_fail_afterHtml": "Coloque el doctype al principio de la página, antes de la etiqueta <html>: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "La página no tiene doctype una vez analizada. Sin su código fuente, no se pudo saber si falta o si está escrito después de la etiqueta <html>.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Revise el código fuente de la página tal como lo envía el servidor, o pase su comienzo en la sonda page.source: el doctype debe ir antes de la etiqueta <html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "El comienzo del código fuente recibido no muestra ni doctype ni etiqueta <html>, así que no se pudo saber dónde está el doctype.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Revise el código fuente de la página tal como lo envía el servidor: el doctype debe ir antes de la etiqueta <html> (RGAA 8.1.3).",
     "doctypeValid_title": "El doctype declarado es válido",
     "doctypeValid_description": "Comprueba que un doctype declarado es el de HTML5 o uno de los recomendados por el W3C.",
     "doctypeValid_summary_fail": "La página declara un doctype que no es ni HTML5 ni uno recomendado por el W3C.",
@@ -21327,6 +21800,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page est très court et peut ne pas identifier le sujet ou l’objectif de la page.",
     "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page semble modélisé et peut ne pas identifier le sujet ou l’objectif de la page.",
     "pageTitlePatterns_hint_cantTell": "Vérifier que le titre de la page identifie clairement le sujet ou l’objectif de la page et permet de la distinguer des autres pages.",
+    "pageTitleUnique_title": "Les titres de page sont uniques sur le site",
+    "pageTitleUnique_description": "Compare le titre de la page avec ceux des autres pages du site, transmis dans la sonde crawl.pageTitles, et signale en échec un titre partagé avec une autre page, puisque RGAA 8.6.1 demande un titre qui identifie la page de manière unique.",
+    "pageTitleUnique_summary_fail_duplicate": "D’autres pages du site ont le même titre, « {{title}} » : {{pages}}. Le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique ».",
+    "pageTitleUnique_hint_fail_duplicate": "Donnez à chaque page un titre propre qui dit ce qu’elle contient, par exemple le sujet de la page suivi du nom du site (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Une page dont l’adresse ne diffère de celle-ci que par ses paramètres a le même titre, « {{title}} » : {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Vérifiez si ces adresses affichent des pages différentes. Si c’est le cas, donnez à chacune son propre titre : le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Seule cette page était disponible : impossible de vérifier que son titre, « {{title}} », est unique sur le site.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Analysez plusieurs pages du site et transmettez leurs titres dans la sonde crawl.pageTitles, ou vérifiez qu’aucune autre page n’a ce titre : le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Chaque zone de la page peut être atteinte ou évitée",
+    "pageZonesReachable_description": "Vérifie que les zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de recherche ont chacune un landmark, et pose la question pour une zone repérée par son nom qui s’appuie à la place sur un titre, un lien d’évitement ou d’accès rapide, ou un bouton (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un titre l’ouvre : vérifiez que ce titre dit ce que contient la zone.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne juste avant elle mène après elle : vérifiez qu’il s’agit d’un lien d’évitement de cette zone.",
+    "pageZonesReachable_summary_cantTell_toggle": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un bouton juste avant elle peut la masquer : vérifiez que ce bouton masque cette zone.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne y mène : vérifiez que ce lien est visible, au moins à la prise de focus.",
+    "pageZonesReachable_summary_cantTell_none": "Cette zone (« {{hint}} ») n’a ni rôle landmark, ni titre qui l’ouvre, ni lien ou bouton pour l’atteindre, l’éviter ou la masquer.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "La page n’a pas de landmark principal (<main> ou role=\"main\") : impossible de vérifier comment atteindre le contenu principal.",
+    "pageZonesReachable_hint_cantTell": "Donnez à chaque zone le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche. À défaut, donnez-lui un titre qui dit ce qu’elle contient, ou un lien d’évitement ou d’accès rapide (RGAA 12.6.1).",
     "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
     "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
     "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
@@ -21428,7 +21918,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Donnez à l’indication visuelle de la prise de focus une couleur dont le rapport de contraste est d’au moins 3:1 avec l’arrière-plan derrière l’élément et avec l’élément lui-même (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "L’indication de prise de focus de cet élément ({{property}}, {{color}}) n’atteint 3:1 qu’avec une seule des couleurs qui l’entourent ({{ratio}}:1 avec l’autre).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Vérifiez sur la page que l’indication visuelle de la prise de focus est bien visible, avec un rapport de contraste d’au moins 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "Le contraste de l’indication de prise de focus de cet élément n’a pas pu être calculé (image ou dégradé d’arrière-plan, ombre floue, variable CSS, condition comme @media, ou règles que le moteur ne sait pas départager).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "Le contraste de l’indication de prise de focus de cet élément n’a pas pu être calculé (image ou dégradé d’arrière-plan, ombre floue, animation, variable CSS, condition comme @media, ou règles que le moteur ne sait pas départager).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Mesurez sur la page le contraste de l’indication visuelle de la prise de focus : il doit être d’au moins 3:1 avec les couleurs qui l’entourent (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "Le style de focus de cet élément modifie une propriété que le moteur ne mesure pas (arrière-plan, couleur du texte, soulignement ou autre élément).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Vérifiez sur la page que le style du focus est visible, avec un rapport de contraste d’au moins 3:1 (RGAA 10.7.1).",
@@ -21563,7 +22053,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
-    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
@@ -21695,8 +22185,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Supprimez aria-hidden de <body> : il masquerait toute la page aux technologies d’assistance.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Cette balise <{{element}}> a role=\"{{role}}\" mais pas d’attribut {{attr}}, que ce rôle exige.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Ajoutez l’attribut avec sa valeur actuelle, ou utilisez un élément natif qui a ce rôle.",
-    "markupValidationReview_title": "Le code source généré est vérifié avec le validateur du W3C",
-    "markupValidationReview_description": "Demande de passer le code source généré de la page au validateur du W3C et de vérifier les conditions du test RGAA 8.2.1, que le moteur ne peut pour la plupart pas voir une fois la page analysée par le navigateur.",
+    "markupValidationReview_title": "Le code source généré passe le validateur du W3C",
+    "markupValidationReview_description": "Lit le rapport du validateur du W3C sur le code source généré, transmis dans la sonde validator.report, et signale en échec les erreurs qu’il liste ; sans rapport, demande à une personne de lancer le validateur (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "Le validateur du W3C signale une erreur dans le code source généré, ligne {{line}} : {{message}}",
+    "markupValidationReview_hint_fail_error": "Corrigez le code pour qu’il respecte les règles d’écriture du HTML : balises, attributs et valeurs conformes, imbrication, ouverture et fermeture des balises conformes, valeurs d’id uniques et aucun attribut doublé sur un même élément (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "Le validateur n’a pas pu vérifier la page : {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "Le validateur du W3C signale {{count}} erreurs dans le code source d’origine, la première ligne {{line}} : {{message}}. Le RGAA 8.2.1 valide le code source généré, où le navigateur a pu les corriger.",
+    "markupValidationReview_summary_cantTell_originalClean": "Le validateur du W3C ne signale aucune erreur dans le code source d’origine. Le RGAA 8.2.1 valide le code source généré, que les scripts peuvent modifier.",
+    "markupValidationReview_summary_cantTell_truncated": "Le rapport du validateur compte {{cap}} messages ou plus et le moteur lit les {{cap}} premiers, dont aucun n’est une erreur : le reste n’a pas pu être vérifié.",
+    "markupValidationReview_hint_cantTell_report": "Validez le code source généré de la page, c’est-à-dire la page après l’exécution de ses scripts, avec le Nu HTML Checker du W3C, et transmettez ses messages dans la sonde validator.report avec source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Passez le code source généré de cette page au validateur du W3C : le moteur ne voit pas les balises non fermées ou mal imbriquées, les attributs doublés et les autres erreurs que le navigateur corrige.",
     "markupValidationReview_hint_cantTell_page": "Validez le code source généré (par exemple avec le W3C Nu HTML Checker) et vérifiez que les balises, attributs et valeurs d’attributs respectent les règles d’écriture, que l’imbrication, l’ouverture et la fermeture des balises sont conformes, que les valeurs d’attribut id sont uniques dans la page et que les attributs ne sont pas doublés sur un même élément (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
@@ -22022,6 +22519,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Un lien d’accès rapide à la zone de contenu principal est nécessaire, sauf pour un site d’une seule page où il est avéré inutile. Examinez le contenu qui précède <main>, et ajoutez le lien si ce contenu se répète ou peut être évité.",
     "skipLinkPresent_summary_cantTell_noMain": "La page n’a pas d’élément <main> : la zone de contenu principal et un lien vers elle n’ont pas pu être trouvés.",
     "skipLinkPresent_hint_cantTell_noMain": "Structurez la zone de contenu principal avec un élément <main>, et ajoutez avant elle un lien, par exemple « Aller au contenu », dont le href est l’id de cet élément.",
+    "skipLinkPlacement_title": "Les liens d’évitement sont visibles et à la même place sur chaque page",
+    "skipLinkPlacement_description": "Vérifie que le lien vers le contenu principal est visible, au moins à la prise de focus, et que les autres pages du site le présentent à la même place et dans le même ordre de tabulation (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Ce lien d’évitement n’est pas visible, et il reste masqué à la prise de focus (sans taille, hors de la page, rogné, transparent ou visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Affichez le lien d’évitement en permanence, ou au moins quand il reçoit le focus clavier, par exemple en le ramenant dans la page avec une règle :focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Ce lien d’évitement n’est pas à la même place sur d’autres pages du site, mesurées à la même largeur de fenêtre : {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Placez le lien d’évitement au même endroit sur chaque page, en général en premier dans l’en-tête (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Impossible de déterminer si ce lien d’évitement est visible : un élément le recouvre peut-être, il est animé à la prise de focus, ou la page n’a pas été affichée.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Atteignez le lien d’évitement avec la touche Tab et vérifiez qu’il est visible quand il a le focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Ce lien d’évitement arrive à une autre place dans l’ordre de tabulation sur d’autres pages du site : {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Vérifiez que le lien d’évitement se présente dans le même ordre relatif dans le code source de chaque page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Les autres pages du site ont été mesurées à une autre largeur de fenêtre, la place de ce lien d’évitement n’a donc pas pu être comparée.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Mesurez toutes les pages à la même largeur de fenêtre, ou vérifiez sur le site que le lien d’évitement est à la même place sur chaque page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Seule cette page était disponible : impossible de vérifier que le lien d’évitement est à la même place et dans le même ordre sur les autres pages du site.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Analysez plusieurs pages du site et transmettez leurs relevés de lien d’évitement dans la sonde crawl.skipLinks, ou vérifiez sur le site que le lien est à la même place et dans le même ordre sur chaque page (RGAA 12.7.2).",
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
@@ -22110,6 +22621,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
     "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+    "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
+    "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, cet élément rogne le texte « {{text}} ».",
+    "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » dépasse le bord de cet élément, qui masque ce qui dépasse.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » se superpose au texte « {{other}} ».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -22126,8 +22647,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police ou une autre marque que la couleur, ou un contraste d'au moins 3:1 avec le texte environnant accompagné d’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
-    "linkStateColorsReview_title": "Les états des liens signalés uniquement par la couleur sont vérifiés",
-    "linkStateColorsReview_description": "Signale les liens placés dans du texte et signalés uniquement par la couleur dont l’état visité, activé, au survol ou à la prise de focus change la couleur, pour qu’une personne vérifie le contraste de 3:1 de chaque état avec le texte environnant (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Les états des liens signalés uniquement par la couleur ont un contraste de 3:1 avec le texte environnant",
+    "linkStateColorsReview_description": "Vérifie qu’un lien placé dans du texte et signalé uniquement par la couleur garde un rapport de contraste de 3:1 avec le texte environnant dans chaque état visité, activé, au survol ou à la prise de focus présenté par une autre couleur, et pose la question quand ces états ne peuvent pas être appliqués au lien (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et dans ces états cette couleur a un rapport de contraste inférieur à 3:1 avec le texte environnant : {{states}} (au plus bas {{ratio}}:1, {{color}} sur {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Donnez au lien une couleur ayant un rapport de contraste d’au moins 3:1 avec le texte environnant dans chaque état, ou signalez-le dans ces états par autre chose que la couleur, comme un soulignement (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une règle de style change cette couleur dans ces états : {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et aucune règle de style ne fixe cette couleur : la couleur des liens visités du navigateur, qui est différente, s’applique.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une feuille de style illisible peut changer cette couleur dans certains de ses états.",
@@ -22176,7 +22699,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
     "orientationContentParity_title": "Le contenu reste le même en portrait et en paysage",
-    "orientationContentParity_description": "Signale chaque élément qu’une media query d’orientation masque (display: none ou visibility: hidden), pour qu’une personne vérifie que le même contenu est proposé dans les deux modes d’orientation.",
+    "orientationContentParity_description": "Affiche la page en portrait et en paysage et signale en échec le contenu présent dans un mode d’orientation et absent de l’autre, et pose la question pour les éléments qu’une media query d’orientation masque quand la page ne peut pas être affichée (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "En portrait, cet élément <{{element}}> est masqué et son contenu (« {{text}} ») n’est présenté nulle part ailleurs.",
+    "orientationContentParity_summary_fail_missing_landscape": "En paysage, cet élément <{{element}}> est masqué et son contenu (« {{text}} ») n’est présenté nulle part ailleurs.",
+    "orientationContentParity_hint_fail_missing": "Proposez le même contenu dans les deux modes d’orientation. Sa présentation peut changer, mais il doit rester disponible (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "En portrait, cet élément <{{element}}> est masqué, et avec lui le contenu principal de la page.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "En paysage, cet élément <{{element}}> est masqué, et avec lui le contenu principal de la page.",
+    "orientationContentParity_hint_cantTell_mainContent": "Vérifiez que la page peut être consultée dans les deux modes d’orientation, sauf si un mode est essentiel (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Une media query « {{mediaText}} » masque cet élément <{{element}}> (« {{selectorText}} »).",
     "orientationContentParity_hint_cantTell": "Vérifiez que le contenu proposé reste le même en portrait et en paysage, même si sa présentation et le moyen d’y accéder diffèrent (RGAA 13.9.1). Ce n’est pas exigé si l’orientation est essentielle à l’utilisation.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
@@ -22232,6 +22761,14 @@ const I18N = {
     "doctypePresent_description": "Vérifie que le document a un doctype, placé avant la balise <html>.",
     "doctypePresent_summary_fail_missing": "La page n’a pas de doctype.",
     "doctypePresent_hint_fail": "Commencez la page par <!DOCTYPE html>, avant l’élément <html>.",
+    "doctypePosition_title": "Le doctype est placé avant la balise <html>",
+    "doctypePosition_description": "Vérifie qu’un doctype déclaré est placé avant la balise <html> dans le code source, en lisant le source de la page transmis dans la sonde page.source quand l’analyseur l’a écarté (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "Le code source de la page déclare son doctype après la balise <html>, si bien que les navigateurs l’ignorent.",
+    "doctypePosition_hint_fail_afterHtml": "Placez le doctype tout au début de la page, avant la balise <html> : <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "La page n’a pas de doctype une fois analysée. Sans son code source, impossible de savoir s’il manque ou s’il est écrit après la balise <html>.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Consultez le code source de la page tel que le serveur l’envoie, ou transmettez son début dans la sonde page.source : un doctype doit être placé avant la balise <html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "Le début du code source transmis ne montre ni doctype ni balise <html> : impossible de savoir où se trouve le doctype.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Consultez le code source de la page tel que le serveur l’envoie : un doctype doit être placé avant la balise <html> (RGAA 8.1.3).",
     "doctypeValid_title": "Le type de document déclaré est valide",
     "doctypeValid_description": "Vérifie qu’un doctype déclaré est le doctype HTML5 ou l’un des doctypes recommandés par le W3C.",
     "doctypeValid_summary_fail": "La page déclare un doctype qui n’est ni HTML5 ni recommandé par le W3C.",
@@ -22637,6 +23174,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトルが非常に短く、ページの主題や目的を特定できないおそれがあります。",
     "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがテンプレートのままのようで、ページの主題や目的を特定できないおそれがあります。",
     "pageTitlePatterns_hint_cantTell": "ページタイトルがページの主題や目的を明確に示し、ほかのページと区別するのに役立っているか確認してください。",
+    "pageTitleUnique_title": "ページタイトルがサイト内で一意である",
+    "pageTitleUnique_description": "ページタイトルを crawl.pageTitles プローブで渡されたサイトの他のページのタイトルと比較し、他のページと同じタイトルを不合格とします。RGAA 8.6.1 はページを一意に識別するタイトルを求めているためです。",
+    "pageTitleUnique_summary_fail_duplicate": "サイトの他のページに同じタイトル「{{title}}」があります：{{pages}}。RGAA は、ページタイトルがページを « de manière claire, concise et unique »（明確、簡潔かつ一意に）識別することを求めています。",
+    "pageTitleUnique_hint_fail_duplicate": "各ページに、その内容を表す固有のタイトルを付けてください。たとえば、ページの主題の後にサイト名を続けます（RGAA 8.6.1）。",
+    "pageTitleUnique_summary_cantTell_samePath": "このページとクエリ文字列だけが異なるアドレスのページに、同じタイトル「{{title}}」があります：{{pages}}。",
+    "pageTitleUnique_hint_cantTell_samePath": "これらのアドレスが異なるページを表示するかを確認してください。異なる場合はそれぞれに固有のタイトルを付けてください。RGAA は、ページタイトルがページを « de manière claire, concise et unique » 識別することを求めています（RGAA 8.6.1）。",
+    "pageTitleUnique_summary_cantTell_singlePage": "このページしか利用できなかったため、そのタイトル「{{title}}」がサイト内で一意かどうかを確認できませんでした。",
+    "pageTitleUnique_hint_cantTell_singlePage": "サイトの複数のページをスキャンしてそのタイトルを crawl.pageTitles プローブとして渡すか、他のページにこのタイトルがないことを確認してください。RGAA は、ページタイトルがページを « de manière claire, concise et unique » 識別することを求めています（RGAA 8.6.1）。",
+    "pageZonesReachable_title": "ページの各領域に到達またはスキップできる",
+    "pageZonesReachable_description": "ヘッダー、メインナビゲーション、メインコンテンツ、フッター、検索の各領域にランドマークがあることを確認し、名前から見つかった領域が代わりに見出し、スキップリンクやクイックアクセスリンク、ボタンに頼っている場合は確認を求めます（RGAA 12.6.1）。",
+    "pageZonesReachable_summary_cantTell_heading": "この領域（「{{hint}}」）にはランドマークロールがありません。見出しで始まっているので、その見出しが領域の内容を表しているか確認してください。",
+    "pageZonesReachable_summary_cantTell_skipLink": "この領域（「{{hint}}」）にはランドマークロールがありません。直前のページ内リンクがこの領域の後ろへ移動するので、この領域のスキップリンクであるか確認してください。",
+    "pageZonesReachable_summary_cantTell_toggle": "この領域（「{{hint}}」）にはランドマークロールがありません。直前のボタンで隠せる可能性があるので、そのボタンがこの領域を隠すか確認してください。",
+    "pageZonesReachable_summary_cantTell_quickLink": "この領域（「{{hint}}」）にはランドマークロールがありません。ページ内リンクがこの領域へ移動するので、そのリンクが少なくともフォーカス時に見えるか確認してください。",
+    "pageZonesReachable_summary_cantTell_none": "この領域（「{{hint}}」）には、ランドマークロールも、冒頭の見出しも、到達・スキップ・非表示のためのリンクやボタンもありません。",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "ページにメインのランドマーク（<main> または role=\"main\"）がないため、メインコンテンツへの到達方法を確認できませんでした。",
+    "pageZonesReachable_hint_cantTell": "各領域に対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。そうでなければ、内容を表す見出しか、スキップリンクやクイックアクセスリンクを付けてください（RGAA 12.6.1）。",
     "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
     "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
     "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
@@ -22738,7 +23292,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "フォーカスインジケーターの色を、要素の背後の背景と要素自体の両方に対してコントラスト比 3:1 以上にしてください (RGAA 10.7.1)。",
     "focusIndicatorContrast_summary_cantTell_oneSide": "この要素がフォーカス時に表示する {{property}} ({{color}}) は、隣接する色の一方に対してしか 3:1 に達していません (もう一方とは {{ratio}}:1)。",
     "focusIndicatorContrast_hint_cantTell_oneSide": "フォーカスインジケーターがはっきり見え、コントラスト比が 3:1 以上あるかをページ上で確認してください (RGAA 10.7.1)。",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "この要素のフォーカスインジケーターのコントラストを計算できませんでした (背景画像、グラデーション、ぼかしのある影、CSS 変数、@media などの条件、またはエンジンが優先順位を決められないルール)。",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "この要素のフォーカスインジケーターのコントラストを計算できませんでした (背景画像、グラデーション、ぼかしのある影、アニメーション、CSS 変数、@media などの条件、またはエンジンが優先順位を決められないルール)。",
     "focusIndicatorContrast_hint_cantTell_notComputable": "ページ上でフォーカスインジケーターのコントラストを測定してください。隣接する色とのコントラスト比は 3:1 以上必要です (RGAA 10.7.1)。",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "この要素のフォーカススタイルは、エンジンが測定しないもの (背景、文字色、下線、または別の要素) を変更しています。",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "フォーカススタイルが見え、コントラスト比が 3:1 以上あるかをページ上で確認してください (RGAA 10.7.1)。",
@@ -22873,7 +23427,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
     "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
     "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
-    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
     "catalog.rules.wcag_224_interruptions.title": "割り込み",
     "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
     "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
@@ -23005,8 +23559,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "<body> から aria-hidden を削除してください。ページ全体が支援技術から隠れてしまいます。",
     "ariaAttributeConformance_summary_fail_missingRequired": "この <{{element}}> には role=\"{{role}}\" がありますが、このロールに必要な {{attr}} 属性がありません。",
     "ariaAttributeConformance_hint_fail_missingRequired": "現在の値で属性を追加するか、このロールを持つネイティブ要素を使ってください。",
-    "markupValidationReview_title": "生成されたソースコードを W3C バリデーターで確認している",
-    "markupValidationReview_description": "ページの生成されたソースコードを W3C バリデーターにかけ、RGAA 8.2.1 の条件を確認するよう求めます。ブラウザーがページを解析した後では、エンジンにはその大半が見えません。",
+    "markupValidationReview_title": "生成されたソースコードが W3C バリデーターを通過する",
+    "markupValidationReview_description": "validator.report プローブで渡された、生成されたソースに対する W3C バリデーターの報告を読み、記載されたエラーを不合格とします。報告がない場合は、バリデーターを実行するよう人に求めます（RGAA 8.2.1）。",
+    "markupValidationReview_summary_fail_error": "W3C バリデーターが、生成されたソースの {{line}} 行目でエラーを報告しています：{{message}}",
+    "markupValidationReview_hint_fail_error": "HTML の記述規則に従うようマークアップを修正してください。タグ・属性・値を HTML が認める形で書き、タグを正しく入れ子にして開閉し、id の値を一意にし、同じ要素に属性を重複させないでください（RGAA 8.2.1）。",
+    "markupValidationReview_summary_cantTell_validatorFailed": "バリデーターはページを検査できませんでした：{{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "W3C バリデーターは元のソースで {{count}} 件のエラーを報告しています。最初は {{line}} 行目：{{message}}。RGAA 8.2.1 は生成されたソースを検証しますが、そこではブラウザーがエラーを修復している可能性があります。",
+    "markupValidationReview_summary_cantTell_originalClean": "W3C バリデーターは元のソースでエラーを報告していません。RGAA 8.2.1 はスクリプトが変更しうる生成されたソースを検証します。",
+    "markupValidationReview_summary_cantTell_truncated": "バリデーターの報告には {{cap}} 件以上のメッセージがあり、エンジンは最初の {{cap}} 件を読みましたがエラーはありませんでした。残りは確認できませんでした。",
+    "markupValidationReview_hint_cantTell_report": "スクリプト実行後のページである生成されたソースを W3C の Nu HTML Checker で検証し、そのメッセージを source: 'generated' 付きの validator.report プローブとして渡してください（RGAA 8.2.1）。",
     "markupValidationReview_summary_cantTell_page": "このページの生成されたソースコードを W3C バリデーターにかけてください。閉じられていないタグや入れ子の誤り、重複した属性など、ブラウザーが修復するエラーはエンジンには見えません。",
     "markupValidationReview_hint_cantTell_page": "生成されたソースコードを検証し (たとえば W3C Nu HTML Checker で)、タグ・属性・値が記述ルールに従っていること、タグの入れ子・開始・終了が正しいこと、id の値が一意であること、同じ要素に属性が重複していないことを確認してください (RGAA 8.2.1)。",
     "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
@@ -23332,6 +23893,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "サイトがスキップリンクを必要としない 1 ページだけのものでない限り、メインコンテンツへのスキップリンクが必要です。<main> の前の内容を確認し、その内容が繰り返される、または飛ばせるものであればリンクを追加してください。",
     "skipLinkPresent_summary_cantTell_noMain": "ページに <main> 要素がないため、メインコンテンツの領域とそこへのリンクを特定できませんでした。",
     "skipLinkPresent_hint_cantTell_noMain": "メインコンテンツを <main> 要素でマークアップし、その前に「本文へスキップ」のようなリンクを追加して、href にその要素の id を指定してください。",
+    "skipLinkPlacement_title": "スキップリンクが見え、すべてのページで同じ位置にある",
+    "skipLinkPlacement_description": "メインコンテンツへのリンクが、少なくともフォーカスを受けたときに見えること、またサイトの他のページで同じ位置・同じフォーカス順序にあることを確認します（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_fail_notVisible": "このスキップリンクは見えず、フォーカスを受けても隠れたままです（サイズがない、ページの外、切り取られている、透明、または visibility: hidden）。",
+    "skipLinkPlacement_hint_fail_notVisible": "スキップリンクを常に表示するか、少なくともキーボードフォーカスを受けたときに、たとえば :focus ルールで画面内に戻して表示してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_fail_positionDiffers": "このスキップリンクは、同じウィンドウ幅で測ったサイトの他のページで同じ位置にありません：{{pages}}。",
+    "skipLinkPlacement_hint_fail_positionDiffers": "スキップリンクをすべてのページで同じ位置に置いてください。通常はページのヘッダーの最初です（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_visibility": "このスキップリンクが見えるかどうかを判断できませんでした。何かに覆われている、フォーカス時にアニメーションする、またはページが描画されていない可能性があります。",
+    "skipLinkPlacement_hint_cantTell_visibility": "Tab キーでスキップリンクに移動し、フォーカスがあるときに見えることを確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "このスキップリンクは、サイトの他のページでフォーカス順序の別の位置にあります：{{pages}}。",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "スキップリンクが、すべてのページでページの他の部分に対して同じ相対的な順序にあることを確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "サイトの他のページは別のウィンドウ幅で測定されたため、このスキップリンクの位置を比較できませんでした。",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "すべてのページを同じウィンドウ幅で測定するか、スキップリンクがすべてのページで同じ位置にあることをサイト上で確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_singlePage": "このページしか利用できなかったため、スキップリンクがサイトの他のページで同じ位置・同じ順序にあるかを確認できませんでした。",
+    "skipLinkPlacement_hint_cantTell_singlePage": "サイトの複数のページをスキャンし、そのスキップリンクの記録を crawl.skipLinks プローブとして渡すか、スキップリンクがすべてのページで同じ位置・同じ順序にあることをサイト上で確認してください（RGAA 12.7.2）。",
     "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
@@ -23420,6 +23995,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
     "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+    "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
+    "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
+    "textSpacingContentLoss_summary_fail_clipped": "WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります。",
+    "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端からはみ出し、はみ出した部分が隠れます。",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
     "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
     "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
@@ -23436,8 +24021,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、その他の色以外の目印があるか、または周囲のテキストとの 3:1 以上のコントラストに加えてホバー時とフォーカス時に色以外の手がかりがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
     "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
     "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
-    "linkStateColorsReview_title": "色だけで示されるリンクの状態を確認する",
-    "linkStateColorsReview_description": "色だけで示される文中のリンクのうち、訪問済み・アクティブ・ホバー・フォーカスの状態で色が変わるものを示し、各状態の色が周囲のテキストと 3:1 のコントラストを持つかを人が確認できるようにします（RGAA 10.6.1）。",
+    "linkStateColorsReview_title": "色だけで示されるリンクの状態は周囲のテキストと 3:1 のコントラストを持つ",
+    "linkStateColorsReview_description": "色だけで示される文中のリンクが、別の色で示される訪問済み・アクティブ・ホバー・フォーカスの各状態で、周囲のテキストと 3:1 のコントラストを保つかを確認し、状態をリンクに適用できない場合は確認を求めます（RGAA 10.6.1）。",
+    "linkStateColorsReview_summary_fail_lowContrast": "文中のこのリンクは色だけで示されており、次の状態でその色と周囲のテキストとのコントラスト比が 3:1 未満です：{{states}}（最低 {{ratio}}:1、{{color}} と {{textColor}}）。",
+    "linkStateColorsReview_hint_fail_lowContrast": "各状態でリンクの色と周囲のテキストとのコントラスト比を 3:1 以上にするか、それらの状態で下線など色以外の目印を付けてください（RGAA 10.6.1）。",
     "linkStateColorsReview_summary_cantTell_stateColor": "文中のこのリンクは色だけで示されており、スタイル規則が次の状態でその色を変えています：{{states}}。",
     "linkStateColorsReview_summary_cantTell_browserColors": "文中のこのリンクは色だけで示されており、その色を指定するスタイル規則がないため、ブラウザー独自の異なる訪問済みリンクの色が適用されます。",
     "linkStateColorsReview_summary_cantTell_unreadable": "文中のこのリンクは色だけで示されており、読み取れなかったスタイルシートが一部の状態でその色を変えている可能性があります。",
@@ -23486,7 +24073,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
     "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
     "orientationContentParity_title": "縦向きと横向きでコンテンツが同じである",
-    "orientationContentParity_description": "画面の向きのメディアクエリで非表示 (display: none または visibility: hidden) になる要素を示し、どちらの向きでも同じコンテンツが提供されているかを人が確認できるようにします。",
+    "orientationContentParity_description": "ページを縦向きと横向きでレイアウトし、一方の向きで表示され他方で欠けている内容を不合格とし、ページをレイアウトできない場合は向きのメディアクエリが隠す要素について確認を求めます（RGAA 13.9.1）。",
+    "orientationContentParity_summary_fail_missing_portrait": "縦向きでは、この <{{element}}> は隠れており、その内容（「{{text}}」）は他のどこにも表示されません。",
+    "orientationContentParity_summary_fail_missing_landscape": "横向きでは、この <{{element}}> は隠れており、その内容（「{{text}}」）は他のどこにも表示されません。",
+    "orientationContentParity_hint_fail_missing": "両方の向きで同じ内容を提供してください。表示方法は変わってもかまいませんが、内容は利用できる状態のままにしてください（RGAA 13.9.1）。",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "縦向きでは、この <{{element}}> が隠れ、それとともにページのメインコンテンツも隠れます。",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "横向きでは、この <{{element}}> が隠れ、それとともにページのメインコンテンツも隠れます。",
+    "orientationContentParity_hint_cantTell_mainContent": "一方の向きが不可欠な場合を除き、ページが両方の向きで利用できることを確認してください（RGAA 13.9.1）。",
     "orientationContentParity_summary_cantTell": "\"{{mediaText}}\" のメディアクエリがこの <{{element}}> を非表示にしています (\"{{selectorText}}\")。",
     "orientationContentParity_hint_cantTell": "表示方法やたどり着き方が異なっていても、縦向きと横向きで同じコンテンツが提供されているか確認してください (RGAA 13.9.1)。特定の向きが必須の場合は不要です。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
@@ -23542,6 +24135,14 @@ const I18N = {
     "doctypePresent_description": "文書に doctype があり、<html> 要素より前に書かれているかを確認します。",
     "doctypePresent_summary_fail_missing": "ページに doctype がありません。",
     "doctypePresent_hint_fail": "ページの先頭、<html> 要素より前に <!DOCTYPE html> を記述してください。",
+    "doctypePosition_title": "doctype が <html> タグより前にある",
+    "doctypePosition_description": "宣言された doctype がソースで <html> タグより前にあることを確認します。パーサーが doctype を捨てた場合は、page.source プローブで渡されたページのソースを読みます（RGAA 8.1.3）。",
+    "doctypePosition_summary_fail_afterHtml": "ページのソースは <html> タグの後で doctype を宣言しているため、ブラウザーはそれを無視します。",
+    "doctypePosition_hint_fail_afterHtml": "doctype をページの先頭、<html> タグの前に移動してください：<!DOCTYPE html>（RGAA 8.1.3）。",
+    "doctypePosition_summary_cantTell_sourceMissing": "解析後のページに doctype がありません。ソースがないため、doctype がないのか、<html> タグの後に書かれているのか判断できませんでした。",
+    "doctypePosition_hint_cantTell_sourceMissing": "サーバーが送るページのソースを確認するか、その先頭を page.source プローブとして渡してください。doctype は <html> タグより前に置く必要があります（RGAA 8.1.3）。",
+    "doctypePosition_summary_cantTell_sourceTooShort": "渡されたソースの先頭に doctype も <html> タグもないため、doctype の位置を判断できませんでした。",
+    "doctypePosition_hint_cantTell_sourceTooShort": "サーバーが送るページのソースを確認してください。doctype は <html> タグより前に置く必要があります（RGAA 8.1.3）。",
     "doctypeValid_title": "宣言された doctype が有効である",
     "doctypeValid_description": "宣言された doctype が HTML5 の doctype か、W3C が推奨する doctype のいずれかであるかを確認します。",
     "doctypeValid_summary_fail": "ページが宣言している doctype は、HTML5 でも W3C 推奨のものでもありません。",
@@ -24327,7 +24928,6 @@ const PROFILE_RULES = {
     "aria-role-name-present",
     "autocomplete-valid",
     "avoid-inline-spacing",
-    "bypass-blocks-present",
     "canvas-decorative-aria-hidden",
     "canvas-role-img",
     "canvas-text-alternative-quality",
@@ -24343,6 +24943,7 @@ const PROFILE_RULES = {
     "dialog-name-present",
     "dir-attribute-valid",
     "dlitem-parent-valid",
+    "doctype-position",
     "doctype-present",
     "doctype-valid",
     "duplicate-id",
@@ -24413,6 +25014,8 @@ const PROFILE_RULES = {
     "page-language-present",
     "page-title-patterns",
     "page-title-present",
+    "page-title-unique",
+    "page-zones-reachable",
     "presentational-attributes-absent",
     "presentational-elements-absent",
     "radio-group-present",
@@ -24421,6 +25024,7 @@ const PROFILE_RULES = {
     "scripted-components-review",
     "server-side-image-map-absent",
     "skip-link",
+    "skip-link-placement",
     "skip-link-present",
     "svg-hidden-no-alternative",
     "svg-role-img",
@@ -24430,6 +25034,7 @@ const PROFILE_RULES = {
     "tabindex",
     "table-fake-caption",
     "table-headers-attr-valid",
+    "text-spacing-content-loss",
     "th-scope-row-col",
     "title-placeholder-identical",
     "treeitem-name-present",
@@ -36658,16 +37263,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "2.4.1"
         ]
-      },
-      {
-        "standard": "RGAA",
-        "version": "4.1.2",
-        "requirement": "12.6.1",
-        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
-        "criterion": "12.6",
-        "wcagSc": [
-          "2.4.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -38141,6 +38736,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "doctype-position",
+    "title": "The doctype comes before the <html> tag",
+    "description": "Checks that a declared doctype comes before the <html> tag in the source, reading the page source given as the page.source probe when the parser has dropped it (RGAA 8.1.3).",
+    "i18n": {
+      "titleKey": "doctypePosition_title",
+      "descriptionKey": "doctypePosition_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.1.3",
+        "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
+        "criterion": "8.1",
+        "wcagSc": [
+          "4.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -42409,8 +43052,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "link-state-colors-review",
-    "title": "Link states shown by color alone are reviewed",
-    "description": "Flags links in a run of text, shown only by color, whose visited, active, hover or focus state changes their color, for a person to check the 3:1 contrast of each state with the surrounding text (RGAA 10.6.1).",
+    "title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+    "description": "Checks that a link in a run of text, shown only by color, keeps a contrast of 3:1 with the surrounding text in each visited, active, hover or focus state shown by another color, and asks when the states cannot be put on the link (RGAA 10.6.1).",
     "i18n": {
       "titleKey": "linkStateColorsReview_title",
       "descriptionKey": "linkStateColorsReview_description"
@@ -42422,7 +43065,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "color",
       "contrast",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -42440,7 +43083,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -42994,8 +43637,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "markup-validation-review",
-    "title": "The generated source code is checked with the W3C validator",
-    "description": "Asks a person to run the W3C validator on the generated source code of the page and check the conditions of RGAA 8.2.1, most of which the engine cannot see once the browser has parsed the page.",
+    "title": "The generated source code passes the W3C validator",
+    "description": "Reads the W3C validator report on the generated source, given as the validator.report probe, and fails the errors it lists; without a report it asks a person to run the validator (RGAA 8.2.1).",
     "i18n": {
       "titleKey": "markupValidationReview_title",
       "descriptionKey": "markupValidationReview_description"
@@ -43005,7 +43648,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "rgaa",
       "structure",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -43024,7 +43667,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -44366,7 +45009,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "orientation-content-parity",
     "title": "Content stays the same in portrait and landscape",
-    "description": "Flags each element that an orientation media query hides (display: none or visibility: hidden), for a person to check that the same content is offered in both orientations.",
+    "description": "Lays the page out as portrait and as landscape and fails content shown in one orientation and missing from the other, and asks about elements an orientation media query hides when the page cannot be laid out (RGAA 13.9.1).",
     "i18n": {
       "titleKey": "orientationContentParity_title",
       "descriptionKey": "orientationContentParity_description"
@@ -44377,7 +45020,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "structure",
       "css",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
@@ -44395,7 +45038,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "defaultSeverity": "moderate",
     "defaultConfidence": "medium",
-    "type": "manual",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -44731,6 +45374,106 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "page-title-unique",
+    "title": "Page titles are unique across the site",
+    "description": "Compares the page title with the titles of the site’s other pages, given as the crawl.pageTitles probe, and fails one shared with another page, since RGAA 8.6.1 asks for a title that identifies the page uniquely.",
+    "i18n": {
+      "titleKey": "pageTitleUnique_title",
+      "descriptionKey": "pageTitleUnique_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "document",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "8.6.1",
+        "title": "Pour chaque page web ayant un titre de page (balise <title>), le contenu de cette balise est-il pertinent ?",
+        "criterion": "8.6",
+        "wcagSc": [
+          "2.4.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "page-zones-reachable",
+    "title": "Each area of the page can be reached or skipped",
+    "description": "Checks that the header, main navigation, main content, footer and search areas each have a landmark, and asks about an area found from its name that relies on a heading, a skip or quick-access link, or a button instead (RGAA 12.6.1).",
+    "i18n": {
+      "titleKey": "pageZonesReachable_title",
+      "descriptionKey": "pageZonesReachable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "keyboard",
+      "navigation",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.6.1",
+        "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
+        "criterion": "12.6",
+        "wcagSc": [
+          "1.3.1",
+          "2.4.1",
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -45713,6 +46456,57 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "defaultSeverity": "minor",
     "defaultConfidence": "medium",
     "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "skip-link-placement",
+    "title": "Skip links are visible and at the same place on every page",
+    "description": "Checks that the link to the main content is visible, at least when it takes focus, and that the site’s other pages show it at the same place and in the same focus order (RGAA 12.7.2).",
+    "i18n": {
+      "titleKey": "skipLinkPlacement_title",
+      "descriptionKey": "skipLinkPlacement_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "rgaa",
+      "keyboard",
+      "navigation",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "12.7.2",
+        "title": "Dans chaque ensemble de pages, le lien d’évitement ou d’accès rapide à la zone de contenu principal vérifie-t-il ces conditions (hors cas particuliers) ?",
+        "criterion": "12.7",
+        "wcagSc": [
+          "2.4.1",
+          "2.4.3",
+          "3.2.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -46881,6 +47675,88 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "facetsBySc": {
         "1.3.1": [
           "td-has-header"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "text-spacing-content-loss",
+    "title": "Text stays readable when the user increases text spacing",
+    "description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "i18n": {
+      "titleKey": "textSpacingContentLoss_title",
+      "descriptionKey": "textSpacingContentLoss_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag1412",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.12",
+        "title": "Text Spacing",
+        "conformanceLevel": "AA"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.12",
+        "title": "Text spacing",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      },
+      {
+        "standard": "RGAA",
+        "version": "4.1.2",
+        "requirement": "10.12.1",
+        "title": "Dans chaque page web, le texte reste-t-il lisible lorsque l’affichage est modifié selon ces conditions (hors cas particuliers) ?",
+        "criterion": "10.12",
+        "wcagSc": [
+          "1.4.12"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.12": [
+          "text-spacing-content-loss"
         ]
       }
     },
@@ -48360,16 +49236,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "wcagSc": [
             "2.4.1"
           ]
-        },
-        {
-          "standard": "RGAA",
-          "version": "4.1.2",
-          "requirement": "12.6.1",
-          "title": "Dans chaque page web où elles sont présentes, la zone d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche respectent-elles au moins une de ces conditions ?",
-          "criterion": "12.6",
-          "wcagSc": [
-            "2.4.1"
-          ]
         }
       ]
     }
@@ -48938,13 +49804,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-1.4.12-text-spacing",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_1412_text_spacing.title",
       "descriptionKey": "catalog.rules.wcag_1412_text_spacing.description",
       "title": "Text Spacing",
-      "description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+      "description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "wcagSc": [
         "1.4.12"
       ],
@@ -50358,6 +51225,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-8.1",
     "checksIds": [
+      "doctype-position",
       "doctype-present",
       "doctype-valid"
     ],
@@ -50388,6 +51256,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "version": "4.1.2",
           "requirement": "8.1.2",
           "title": "Pour chaque page web, le type de document (balise doctype) est-il valide ?",
+          "criterion": "8.1",
+          "wcagSc": [
+            "4.1.1"
+          ]
+        },
+        {
+          "standard": "RGAA",
+          "version": "4.1.2",
+          "requirement": "8.1.3",
+          "title": "Pour chaque page web possédant une déclaration de type de document, celle-ci est-elle située avant la balise <html> dans le code source ?",
           "criterion": "8.1",
           "wcagSc": [
             "4.1.1"
@@ -50526,7 +51404,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-8.6",
     "checksIds": [
-      "page-title-patterns"
+      "page-title-patterns",
+      "page-title-unique"
     ],
     "meta": {
       "title": "Pour chaque page web ayant un titre de page, ce titre est-il pertinent ?",
@@ -50946,7 +51825,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-10.12",
     "checksIds": [
-      "avoid-inline-spacing"
+      "avoid-inline-spacing",
+      "text-spacing-content-loss"
     ],
     "meta": {
       "title": "Dans chaque page web, les propriétés d’espacement du texte peuvent-elles être redéfinies par l’utilisateur sans perte de contenu ou de fonctionnalité (hors cas particuliers) ?",
@@ -51299,7 +52179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "rgaa-4.1.2-12.6",
     "checksIds": [
-      "bypass-blocks-present"
+      "page-zones-reachable"
     ],
     "meta": {
       "title": "Les zones de regroupement de contenus présentes dans plusieurs pages web (zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de moteur de recherche) peuvent-elles être atteintes ou évitées ?",
@@ -51332,6 +52212,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "rgaa-4.1.2-12.7",
     "checksIds": [
       "skip-link",
+      "skip-link-placement",
       "skip-link-present"
     ],
     "meta": {
@@ -63931,11 +64812,148 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "doctype-position": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  if (document.doctype) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  const probes =
+    ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+      ? ctx.inputs.probes
+      : null;
+  const source =
+    probes && probes['page.source'] && typeof probes['page.source'] === 'object'
+      ? probes['page.source']
+      : null;
+  function pageUrl(u) {
+    try {
+      const url = new URL(String(u), document.baseURI);
+      url.hash = '';
+      return url.href;
+    } catch {
+      return String(u || '');
+    }
+  }
+  const usable =
+    source &&
+    typeof source.start === 'string' &&
+    (!source.url || pageUrl(source.url) === pageUrl(document.URL));
+
+  const MESSAGES = {
+    DOCTYPE_AFTER_HTML: {
+      key: 'fail_afterHtml',
+      summary: 'The page source declares its doctype after the <html> tag, so browsers ignore it.',
+      hint: 'Move the doctype to the very start of the page, before the <html> tag: <!DOCTYPE html> (RGAA 8.1.3).'
+    },
+    SOURCE_MISSING: {
+      key: 'cantTell_sourceMissing',
+      summary:
+        'The page has no doctype once parsed. Without its source, whether one is missing or written after the <html> tag could not be told.',
+      hint: 'Look at the page source as the server sends it, or pass its start as the page.source probe: a doctype must come before the <html> tag (RGAA 8.1.3).',
+      needed: 'Whether the page source declares a doctype, and where.'
+    },
+    SOURCE_TOO_SHORT: {
+      key: 'cantTell_sourceTooShort',
+      summary:
+        'The start of the page source given shows neither a doctype nor the <html> tag, so where the doctype sits could not be told.',
+      hint: 'Look at the page source as the server sends it: a doctype must come before the <html> tag (RGAA 8.1.3).',
+      needed: 'Whether the page source declares a doctype before the <html> tag.'
+    }
+  };
+
+  function report(reasonCode) {
+    const msg = MESSAGES[reasonCode];
+    const occ = helpers.reportOccurrence(document.documentElement, {
+      selector: 'html',
+      html: '<html>',
+      summary: msg.summary,
+      hint: msg.hint,
+      i18n: {
+        summaryKey: `doctypePosition_summary_${msg.key}`,
+        hintKey: `doctypePosition_hint_${msg.key}`,
+        params: {}
+      },
+      ...(msg.needed
+        ? {
+            uncertainty: {
+              code: 'out-of-scope',
+              needed: msg.needed,
+              evidence: { reasonCode }
+            }
+          }
+        : {}),
+      data: {
+        details: { reasonCode },
+        visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+      }
+    });
+    return {
+      ruleId: rule.ruleId,
+      outcome: msg.needed ? 'cantTell' : 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences: [occ]
+    };
+  }
+
+  if (!usable) return report('SOURCE_MISSING');
+
+  // Comments may come before either tag; their text is not markup.
+  const text = source.start
+    .replace(/^\uFEFF/, '')
+    .replace(/<!--[\s\S]*?(-->|$)/g, (m) => ' '.repeat(m.length));
+  const doctypeAt = text.search(/<!doctype[\s>]/i);
+  const htmlAt = text.search(/<html[\s>/]/i);
+
+  if (doctypeAt !== -1 && (htmlAt === -1 || doctypeAt < htmlAt)) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  if (doctypeAt !== -1) return report('DOCTYPE_AFTER_HTML');
+  if (htmlAt !== -1) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return report('SOURCE_TOO_SHORT');
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "doctype-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   if (document.doctype) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+
+  // The source as the server sent it, when the caller gives its start: a
+  // doctype the parser dropped for coming after <html> is still present.
+  const probes =
+    ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+      ? ctx.inputs.probes
+      : null;
+  const source =
+    probes && probes['page.source'] && typeof probes['page.source'] === 'object'
+      ? probes['page.source']
+      : null;
+  function pageUrl(u) {
+    try {
+      const url = new URL(String(u), document.baseURI);
+      url.hash = '';
+      return url.href;
+    } catch {
+      return String(u || '');
+    }
+  }
+  if (
+    source &&
+    typeof source.start === 'string' &&
+    (!source.url || pageUrl(source.url) === pageUrl(document.URL))
+  ) {
+    const text = source.start
+      .replace(/^\uFEFF/, '')
+      .replace(/<!--[\s\S]*?(-->|$)/g, (m) => ' '.repeat(m.length));
+    if (/<!doctype[\s>]/i.test(text)) {
+      return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    }
   }
 
   // A doctype is not an element, so the finding is reported on <html>.
@@ -67024,14 +68042,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el.hasAttribute('onfocus') ||
       el.hasAttribute('onfocusin');
 
-    if (!indicators.length && !unmeasured && !unsettled && !otherStyle) {
-      return null; // outline removed with nothing in its place: css-focus-indicator-suppressed
-    }
+    return decide(indicators, unmeasured, unsettled, otherStyle);
+  }
+
+  // The verdict from the measured indicators: null when there is nothing to
+  // judge (the outline is removed with nothing in its place, which is
+  // css-focus-indicator-suppressed's case).
+  function decide(indicators, unmeasured, unsettled, otherStyle) {
+    if (!indicators.length && !unmeasured && !unsettled && !otherStyle) return null;
 
     const details = (ind) => ({
       property: ind.property,
       color: ind.m.color,
-      ratios: ind.m.ratios.map((r) => Number(helpers.contrast.round2(r)))
+      // Two decimals, except that a ratio below 3 never reads 3.00.
+      ratios: ind.m.ratios.map((r) => {
+        const rounded = Number(helpers.contrast.round2(r));
+        return r < MIN_RATIO && rounded >= MIN_RATIO ? 2.99 : rounded;
+      })
     });
 
     const full = indicators.find((i) => !i.blurred && i.m.ratios.every((r) => r >= MIN_RATIO));
@@ -67064,6 +68091,291 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { verdict: 'fail', reasonCode: 'lowContrast', details: details(worst) };
   }
 
+  // Where the page has a layout (a browser), the element is focused and what
+  // the browser draws is measured: the computed style settles variables,
+  // @media and the cascade, and the colors next to the indicator are read
+  // from what is painted there. jsdom has no layout and keeps the stylesheet
+  // reading above.
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    if (typeof document.elementsFromPoint !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+  const layout = hasLayout();
+
+  const RING_PROPS = ['outline-style', 'outline-width', 'outline-color', 'outline-offset'];
+  const BORDER_PROPS = (side) => [
+    `border-${side}-style`,
+    `border-${side}-width`,
+    `border-${side}-color`
+  ];
+  const RENDERED_OTHER = [
+    'background-color',
+    'background-image',
+    'color',
+    'filter',
+    'font-weight',
+    'opacity',
+    'text-decoration-line',
+    'text-decoration-color',
+    'text-shadow',
+    'transform'
+  ];
+  const PSEUDO_PROPS = [
+    'content',
+    'display',
+    'background-color',
+    'background-image',
+    'border-top-color',
+    'border-top-width',
+    'box-shadow',
+    'color',
+    'opacity',
+    'outline-style',
+    'transform'
+  ];
+
+  function snapshot(el) {
+    const out = {};
+    const cs = view.getComputedStyle(el);
+    for (const p of [
+      ...RING_PROPS,
+      ...SIDES.flatMap(BORDER_PROPS),
+      'box-shadow',
+      ...RENDERED_OTHER
+    ]) {
+      out[p] = cs.getPropertyValue(p);
+    }
+    for (const pseudo of ['::before', '::after']) {
+      const ps = view.getComputedStyle(el, pseudo);
+      out[pseudo] = PSEUDO_PROPS.map((p) => ps.getPropertyValue(p)).join('|');
+    }
+    return out;
+  }
+
+  function deepActiveElement() {
+    let cur = document.activeElement || null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  // Runs fn(before, after) with the element focused as by the keyboard,
+  // transitions switched off so the focused values are read at once, then
+  // puts focus and the style attribute back. undefined when the element
+  // could not be focused.
+  function whileFocused(el, fn) {
+    const previous = deepActiveElement();
+    const hadStyle = el.hasAttribute('style');
+    const styleAttr = el.getAttribute('style');
+    try {
+      el.style.setProperty('transition', 'none', 'important');
+      if (previous === el) el.blur();
+      const before = snapshot(el);
+      el.focus({ preventScroll: true, focusVisible: true });
+      if (deepActiveElement() !== el) return undefined;
+      return fn(before, snapshot(el));
+    } catch {
+      return undefined;
+    } finally {
+      try {
+        if (previous && previous !== document.body && typeof previous.focus === 'function') {
+          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        } else if (deepActiveElement() === el) {
+          el.blur();
+        }
+      } catch {}
+      // Reading the attribute first makes Chromium write the inline style
+      // back to it; removed before that, it comes back as style="".
+      el.getAttribute('style');
+      if (hadStyle) el.setAttribute('style', styleAttr);
+      else el.removeAttribute('style');
+    }
+  }
+
+  function px(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  // The color painted at a point outside the element: the background of the
+  // topmost other element there. undefined when the point is outside the
+  // viewport, null when an image or gradient makes it unknown.
+  function paintedAt(el, x, y) {
+    const w = view.innerWidth;
+    const h = view.innerHeight;
+    if (!(x >= 0 && y >= 0 && x < w && y < h)) return undefined;
+    let stack;
+    try {
+      stack = document.elementsFromPoint(x, y) || [];
+    } catch {
+      return undefined;
+    }
+    const top = stack.find((n) => n !== el && !el.contains(n));
+    return top && top !== document.documentElement ? backgroundAt(top) : canvasColor();
+  }
+
+  // The canvas: the root's background, or the body's when the root has none,
+  // which is what the browser paints there.
+  function canvasColor() {
+    const root = document.documentElement;
+    const cs = root ? computedStyleOf(root) : null;
+    const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
+    const rootPainted =
+      (bg && bg.a > 0) || (cs && helpers.contrast.hasBackgroundImageOrGradient(cs));
+    return backgroundAt(!rootPainted && document.body ? document.body : root);
+  }
+
+  // The colors next to the element on the given sides, `dist` pixels
+  // outside its border box. A side outside the viewport falls back to the
+  // background of the element's ancestors.
+  function colorsAround(el, rect, dist, sides) {
+    const midX = rect.left + rect.width / 2;
+    const midY = rect.top + rect.height / 2;
+    const points = {
+      top: [midX, rect.top - dist],
+      right: [rect.right + dist, midY],
+      bottom: [midX, rect.bottom + dist],
+      left: [rect.left - dist, midY]
+    };
+    let fallback;
+    const colors = [];
+    for (const side of sides) {
+      let c = paintedAt(el, points[side][0], points[side][1]);
+      if (c === undefined) {
+        if (fallback === undefined) fallback = backgroundAt(parentOf(el));
+        c = fallback;
+      }
+      if (!c) return null;
+      if (!colors.some((k) => k.r === c.r && k.g === c.g && k.b === c.b)) colors.push(c);
+    }
+    return colors;
+  }
+
+  // The element's own background while focused, over what is behind it.
+  // What is behind it is read at its center, like the colors around it.
+  function focusedBackground(el, rect) {
+    const cs = view.getComputedStyle(el);
+    if (helpers.contrast.hasBackgroundImageOrGradient(cs)) return null;
+    const bg = helpers.contrast.parseCssColorToRgba(cs.backgroundColor);
+    if (bg && bg.a >= 1) return { r: bg.r, g: bg.g, b: bg.b, a: 1 };
+    let behind = paintedAt(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    if (behind === undefined) behind = backgroundAt(parentOf(el));
+    if (!behind) return null;
+    if (!bg || !bg.a) return behind;
+    const c = helpers.contrast.compositeRgba(bg, behind);
+    return { r: c.r, g: c.g, b: c.b, a: 1 };
+  }
+
+  // One indicator against the colors outside it and the element's own
+  // background. A translucent indicator is composited over each outside
+  // color in turn (over the element's background for a border).
+  function measureAround(rgba, outside, inner, overInner) {
+    if (!rgba || !outside || !inner) return null;
+    const ratios = [];
+    let painted = null;
+    for (const out of overInner ? [inner] : outside) {
+      painted =
+        rgba.a != null && rgba.a < 1
+          ? helpers.contrast.compositeRgba(rgba, out)
+          : { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 };
+      for (const side of overInner ? outside : [out]) {
+        ratios.push(helpers.contrast.contrastRatio(painted, side));
+      }
+      ratios.push(helpers.contrast.contrastRatio(painted, inner));
+    }
+    return { ratios, color: helpers.contrast.rgbToHex(painted) };
+  }
+
+  function evaluateRendered(el) {
+    return whileFocused(el, (before, after) => {
+      if (after['outline-style'] === 'auto') return null; // the browser's outline
+      const changed = (props) => props.some((p) => before[p] !== after[p]);
+      const visibleColor = (value) => {
+        const c = helpers.contrast.parseCssColorToRgba(value);
+        return c && c.a > 0 ? c : null;
+      };
+
+      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+        return {
+          verdict: 'cantTell',
+          reasonCode: 'notComputable',
+          details: { cause: 'animation' }
+        };
+      }
+
+      const rect = el.getBoundingClientRect();
+      const inner = focusedBackground(el, rect);
+      const indicators = [];
+      let unmeasured = null;
+      function add(property, rgba, outside, overInner, blurred) {
+        const m = measureAround(rgba, outside, inner, overInner);
+        if (m) indicators.push({ property, m, blurred });
+        else if (!unmeasured) unmeasured = 'background';
+      }
+
+      // Outline drawn on focus, measured halfway across its width.
+      const ow = px(after['outline-width']);
+      const outlineColor = visibleColor(after['outline-color']);
+      if (
+        changed(RING_PROPS) &&
+        !['none', 'hidden'].includes(after['outline-style']) &&
+        ow > 0 &&
+        outlineColor
+      ) {
+        const dist = Math.max(1, px(after['outline-offset']) + ow / 2);
+        add('outline', outlineColor, colorsAround(el, rect, dist, SIDES), false, false);
+      }
+
+      // Borders that change on focus, side by side.
+      for (const side of SIDES) {
+        const props = BORDER_PROPS(side);
+        if (!changed(props)) continue;
+        const color = visibleColor(after[props[2]]);
+        if (['none', 'hidden'].includes(after[props[0]]) || px(after[props[1]]) <= 0 || !color) {
+          continue;
+        }
+        add(`border-${side}`, color, colorsAround(el, rect, 1, [side]), true, false);
+      }
+
+      // Box shadows that change on focus.
+      if (changed(['box-shadow'])) {
+        for (const layer of parseShadows(after['box-shadow'])) {
+          const color = visibleColor(layer.color);
+          if (!color) continue;
+          if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
+          if (layer.spread < 0 && !layer.blur) continue;
+          const blurred = layer.blur > 0 && layer.spread <= 0;
+          if (layer.inset) {
+            const m = inner ? measure(color, inner, [inner]) : null;
+            if (m) indicators.push({ property: 'box-shadow (inset)', m, blurred });
+            else if (!unmeasured) unmeasured = 'background';
+          } else {
+            const dist = Math.max(1, Math.max(layer.spread, layer.blur) / 2);
+            add('box-shadow', color, colorsAround(el, rect, dist, SIDES), false, blurred);
+          }
+        }
+      }
+
+      const otherStyle =
+        changed(RENDERED_OTHER) ||
+        changed(['::before', '::after']) ||
+        indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
+        el.hasAttribute('onfocus') ||
+        el.hasAttribute('onfocusin');
+
+      return decide(indicators, unmeasured, false, otherStyle);
+    });
+  }
+
   const MESSAGES = {
     lowContrast: {
       summary: (p) =>
@@ -67077,7 +68389,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     },
     notComputable: {
       summary: () =>
-        "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, a CSS variable, a condition such as @media, or rules the engine cannot order).",
+        "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, an animation, a CSS variable, a condition such as @media, or rules the engine cannot order).",
       hint: 'Measure the contrast of the focus indicator on the page: it needs a ratio of at least 3:1 with the colors next to it (RGAA 10.7.1).'
     },
     notMeasured: {
@@ -67102,7 +68414,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!isTabbable(el) || !isRendered(el)) continue;
     let res;
     try {
-      res = evaluate(el);
+      res = layout ? evaluateRendered(el) : undefined;
+      if (res === undefined) res = evaluate(el);
     } catch {
       res = { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'error' } };
     }
@@ -78478,6 +79791,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // A background color of the link's own, different from the one behind
+  // the surrounding text, marks it like a highlight, as in link-in-text-block.
+  function highlighted(el, parent, cs) {
+    const c = helpers.contrast || null;
+    if (!c) return false;
+    const own = c.parseCssColorToRgba(cs.backgroundColor);
+    if (!own || !own.a) return false;
+    try {
+      const opts = { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } };
+      const behindLink = c.computeEffectiveBackground(el, opts);
+      const behindText = c.computeEffectiveBackground(parent, opts);
+      if (!behindLink || !behindLink.ok || !behindText || !behindText.ok) return false;
+      return c.rgbToHex(behindLink.rgba) !== c.rgbToHex(behindText.rgba);
+    } catch {
+      return false;
+    }
+  }
+
   function markedByMoreThanColor(el, parent) {
     const cs = safeComputedStyle(el);
     const parentCs = safeComputedStyle(parent);
@@ -78495,6 +79826,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return true;
     }
     if (hasImageChild(el) || hasPseudoContent(el)) return true;
+    if (cs && highlighted(el, parent, cs)) return true;
     const decoration = decorationInfo(cs);
     const underlined = decoration.trustworthy ? decoration.underlined : underlineFromCssom(el);
     return underlined === true;
@@ -78563,7 +79895,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  const CANTTELL_HINT =
+    'Put the link in each state (visited, active, hovered, focused) and check that its color contrasts at least 3:1 with the surrounding text, or give the link a mark other than color, such as an underline.';
+
   const MESSAGES = {
+    STATE_CONTRAST_LOW: {
+      reasonCode: 'STATE_CONTRAST_LOW',
+      summaryKey: 'linkStateColorsReview_summary_fail_lowContrast',
+      hintKey: 'linkStateColorsReview_hint_fail_lowContrast',
+      summary: (p) =>
+        `This link in a run of text is shown only by its color, and in these states that color contrasts below 3:1 with the surrounding text: ${p.states} (lowest ${p.ratio}:1, ${p.color} against ${p.textColor}).`,
+      hint: 'Give the link a color with a contrast ratio of at least 3:1 with the surrounding text in each state, or mark it in those states by more than color, such as an underline (RGAA 10.6.1).'
+    },
     STATE_COLOR_CHANGE: {
       reasonCode: 'STATE_COLOR_CHANGE',
       summaryKey: 'linkStateColorsReview_summary_cantTell_stateColor',
@@ -78588,13 +79931,282 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
+  // ---- States put on the link, where the page has a layout ----
+
+  function hasLayout(doc) {
+    const probe = doc && doc.documentElement;
+    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  const STATE_ATTR = 'data-surea11y-link-state';
+  const STATE_NAME_RE = /:(visited|active|hover|focus-visible|focus)(?![\w-])/gi;
+  const LINK_RE = /:link(?![\w-])/gi;
+
+  // Rewrites every readable author rule that names a link state so the
+  // state also matches STATE_ATTR, keeping its specificity, order and
+  // conditions. Returns a function that puts the selectors back, or null
+  // when a selector could not be rewritten.
+  function emulateStates(doc) {
+    const changed = [];
+    function restore() {
+      for (let i = changed.length - 1; i >= 0; i--) {
+        try {
+          changed[i][0].selectorText = changed[i][1];
+        } catch {
+          // left as rewritten; the attribute it needs is never set
+        }
+      }
+    }
+    for (const cssRule of getStyleRules(doc)) {
+      const before = cssRule.selectorText;
+      STATE_NAME_RE.lastIndex = 0;
+      LINK_RE.lastIndex = 0;
+      if (!STATE_NAME_RE.test(before) && !LINK_RE.test(before)) continue;
+      const after = splitSelectorList(before)
+        .map((part) =>
+          part
+            .replace(STATE_NAME_RE, (m, name) => {
+              const state = name.toLowerCase() === 'focus-visible' ? 'focus' : name.toLowerCase();
+              return `:is(${m}, [${STATE_ATTR}~="${state}"])`;
+            })
+            .replace(LINK_RE, `:link:where(:not([${STATE_ATTR}~="visited"]))`)
+        )
+        .join(', ');
+      try {
+        cssRule.selectorText = after;
+      } catch {
+        // checked below
+      }
+      if (cssRule.selectorText === before) {
+        restore();
+        return null;
+      }
+      changed.push([cssRule, before]);
+    }
+    return restore;
+  }
+
+  function deepActiveElement(doc) {
+    let cur = doc.activeElement || null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  // Runs fn with the link in one state, then takes the state off.
+  function inState(el, state, fn) {
+    const doc = el.ownerDocument;
+    if (state === 'focus') {
+      if (typeof el.focus !== 'function') return null;
+      const previous = deepActiveElement(doc);
+      try {
+        el.focus({ preventScroll: true, focusVisible: true });
+        if (deepActiveElement(doc) !== el) return null;
+        return fn();
+      } catch {
+        return null;
+      } finally {
+        try {
+          if (previous && previous !== doc.body && typeof previous.focus === 'function') {
+            if (deepActiveElement(doc) !== previous) previous.focus({ preventScroll: true });
+          } else if (deepActiveElement(doc) === el) {
+            el.blur();
+          }
+        } catch {}
+      }
+    }
+    const targets = [el];
+    if (state === 'hover' || state === 'active') {
+      for (let n = el.parentElement; n; n = n.parentElement) targets.push(n);
+    }
+    const saved = targets.map((t) =>
+      t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null
+    );
+    try {
+      targets.forEach((t, i) =>
+        t.setAttribute(STATE_ATTR, ((saved[i] || '') + ' ' + state).trim())
+      );
+      return fn();
+    } catch {
+      return null;
+    } finally {
+      targets.forEach((t, i) => {
+        if (saved[i] == null) t.removeAttribute(STATE_ATTR);
+        else t.setAttribute(STATE_ATTR, saved[i]);
+      });
+    }
+  }
+
+  // What the link looks like now: its color, the color of the surrounding
+  // text, and whether anything but color marks it.
+  function lookOf(el, parent, rest) {
+    const cs = safeComputedStyle(el);
+    const parentCs = safeComputedStyle(parent);
+    if (!cs || !parentCs) return null;
+    const c = helpers.contrast;
+    const marked =
+      decorationInfo(cs).underlined ||
+      hasBorder(cs) ||
+      hasOutline(cs) ||
+      hasValue(cs.boxShadow) ||
+      hasValue(cs.backgroundImage) ||
+      String(c.normalizeFontWeight(cs.fontWeight)) !==
+        String(c.normalizeFontWeight(parentCs.fontWeight)) ||
+      (cs.fontStyle || 'normal') !== (parentCs.fontStyle || 'normal') ||
+      (rest ? cs.backgroundColor !== rest.backgroundColor : false);
+    return {
+      color: cs.color,
+      parentColor: parentCs.color,
+      backgroundColor: cs.backgroundColor,
+      marked
+    };
+  }
+
+  // Contrast between the link color and the surrounding text, both over the
+  // background behind the link. null when it cannot be computed.
+  function ratioOf(el, look, bgOpts) {
+    const c = helpers.contrast;
+    try {
+      const bg = c.computeEffectiveBackground(el, bgOpts);
+      if (!bg || !bg.ok || !bg.rgba) return null;
+      const opaque = (value) => {
+        const rgba = c.parseCssColorToRgba(value);
+        if (!rgba) return null;
+        return rgba.a < 1
+          ? c.compositeRgba(rgba, bg.rgba)
+          : { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 };
+      };
+      const link = opaque(look.color);
+      const text = opaque(look.parentColor);
+      if (!link || !text) return null;
+      return {
+        ratio: c.contrastRatio(link, text),
+        color: c.rgbToHex(link),
+        textColor: c.rgbToHex(text)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const STATES = ['visited', 'hover', 'active', 'focus'];
+
+  // Rounded to two decimals, except that a ratio below 3 never reads 3.00.
+  function shownRatio(r) {
+    const rounded = Number(helpers.contrast.round2(r));
+    return r < 3 && rounded >= 3 ? 2.99 : rounded;
+  }
+
+  // What every link looks like in one state. Visited, hover and active are
+  // put on all the links at once, so the page's styles are worked out once
+  // per state rather than once per link; focus is real focus, link by link.
+  function looksInState(list, state) {
+    const looks = new Map();
+    if (state === 'focus') {
+      for (const [el, parent, rest] of list) {
+        looks.set(
+          el,
+          inState(el, 'focus', () => lookOf(el, parent, rest))
+        );
+      }
+      return looks;
+    }
+    const targets = new Set();
+    for (const [el] of list) {
+      targets.add(el);
+      if (state === 'hover' || state === 'active') {
+        for (let n = el.parentElement; n; n = n.parentElement) targets.add(n);
+      }
+    }
+    const saved = new Map();
+    try {
+      for (const t of targets) {
+        const before = t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null;
+        saved.set(t, before);
+        t.setAttribute(STATE_ATTR, ((before || '') + ' ' + state).trim());
+      }
+      for (const [el, parent, rest] of list) looks.set(el, lookOf(el, parent, rest));
+    } catch {
+      // the states left unread are not judged
+    } finally {
+      for (const [t, before] of saved) {
+        if (before == null) t.removeAttribute(STATE_ATTR);
+        else t.setAttribute(STATE_ATTR, before);
+      }
+    }
+    return looks;
+  }
+
+  // For each link: { failing: [{ state, ratio, color, textColor }],
+  // visitedUnknown, uncomputable }.
+  function judgeAll(pairs, bgOpts) {
+    const list = [];
+    for (const [el, parent] of pairs) {
+      const rest = lookOf(el, parent, null);
+      if (rest) list.push([el, parent, rest]);
+    }
+    const verdicts = new Map(
+      list.map(([el]) => [el, { failing: [], uncomputable: [], visitedSame: false }])
+    );
+    for (const state of STATES) {
+      const looks = looksInState(list, state);
+      for (const [el, , rest] of list) {
+        const look = looks.get(el);
+        const v = verdicts.get(el);
+        if (!look) continue; // a link that cannot take focus has no focus state
+        if (look.color === rest.color && look.parentColor === rest.parentColor) {
+          if (state === 'visited') v.visitedSame = true;
+          continue;
+        }
+        if (look.marked) continue;
+        const m = ratioOf(el, look, bgOpts);
+        if (!m) v.uncomputable.push(state);
+        else if (m.ratio < 3) v.failing.push({ state, ...m });
+      }
+    }
+    for (const [el, v] of verdicts) {
+      v.visitedUnknown = v.visitedSame && uaUnderlines(el) && !authorSetsRestingColor(el);
+    }
+    return verdicts;
+  }
+
   const selector = 'a[href], [role="link"]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
+  const failOccurrences = [];
   const occurrences = [];
+  let passCount = 0;
 
+  const doc = ctx.document || (nodes[0] && nodes[0].ownerDocument) || null;
+  const contrastOpts =
+    ctx.engineOptions &&
+    typeof ctx.engineOptions.contrast === 'object' &&
+    ctx.engineOptions.contrast
+      ? ctx.engineOptions.contrast
+      : {};
+  const bgOpts = {
+    contrast: {
+      mode: contrastOpts.mode === 'auditorAssist' ? 'auditorAssist' : 'strictConformance',
+      rootCanvasFallback:
+        typeof contrastOpts.rootCanvasFallback === 'string' &&
+        contrastOpts.rootCanvasFallback.trim()
+          ? contrastOpts.rootCanvasFallback.trim()
+          : '#ffffff'
+    },
+    collectStack: false
+  };
+
+  const inScope = [];
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
@@ -78605,6 +80217,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parent = el.parentElement;
     if (!hasSurroundingText(el, parent)) continue;
     if (markedByMoreThanColor(el, parent)) continue;
+    inScope.push([el, parent]);
+  }
+
+  // Each link's states, read in one pass while the selectors are rewritten.
+  const judged = new Map();
+  if (inScope.length && doc && hasLayout(doc)) {
+    getStyleRules(doc);
+    const restore = unreadableSheet ? null : emulateStates(doc);
+    if (restore) {
+      try {
+        for (const [el, verdict] of judgeAll(inScope, bgOpts)) judged.set(el, verdict);
+      } finally {
+        restore();
+      }
+    }
+  }
+
+  function report(el, reasonCode, params, extra) {
+    const msg = MESSAGES[reasonCode];
+    return helpers.reportOccurrence(el, {
+      summary: typeof msg.summary === 'function' ? msg.summary(params) : msg.summary,
+      hint: msg.hint || CANTTELL_HINT,
+      i18n: {
+        summaryKey: msg.summaryKey,
+        hintKey: msg.hintKey || 'linkStateColorsReview_hint_cantTell',
+        params
+      },
+      ...(msg.needed
+        ? {
+            uncertainty: {
+              code: 'runtime-dependent',
+              needed: msg.needed,
+              evidence: { reasonCode, states: extra.states }
+            }
+          }
+        : {}),
+      data: { details: { reasonCode, ...extra } }
+    });
+  }
+
+  for (const [el] of inScope) {
+    const verdict = judged.get(el);
+    if (verdict) {
+      if (verdict.failing.length) {
+        const worst = verdict.failing.slice().sort((a, b) => a.ratio - b.ratio)[0];
+        const states = verdict.failing.map((f) => f.state);
+        failOccurrences.push(
+          report(
+            el,
+            'STATE_CONTRAST_LOW',
+            {
+              states: states.join(', '),
+              color: worst.color,
+              textColor: worst.textColor,
+              ratio: String(shownRatio(worst.ratio))
+            },
+            {
+              states,
+              ratios: verdict.failing.map((f) => ({
+                state: f.state,
+                color: f.color,
+                textColor: f.textColor,
+                ratio: shownRatio(f.ratio)
+              }))
+            }
+          )
+        );
+      } else if (verdict.visitedUnknown) {
+        occurrences.push(report(el, 'BROWSER_STATE_COLORS', { states: '' }, { states: [] }));
+      } else if (verdict.uncomputable.length) {
+        const states = verdict.uncomputable;
+        occurrences.push(
+          report(el, 'STATE_COLOR_CHANGE', { states: states.join(', ') }, { states })
+        );
+      } else {
+        passCount += 1;
+      }
+      continue;
+    }
 
     const states = colorOnlyStates(el);
     let reasonCode = '';
@@ -78612,38 +80303,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     else if (uaUnderlines(el) && !authorSetsRestingColor(el)) reasonCode = 'BROWSER_STATE_COLORS';
     else if (unreadableSheet) reasonCode = 'STYLESHEET_UNREADABLE';
     if (!reasonCode) continue;
-
-    const msg = MESSAGES[reasonCode];
-    const stateList = states.join(', ');
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary: msg.summary,
-        hint: 'Put the link in each state (visited, active, hovered, focused) and check that its color contrasts at least 3:1 with the surrounding text, or give the link a mark other than color, such as an underline.',
-        i18n: {
-          summaryKey: msg.summaryKey,
-          hintKey: 'linkStateColorsReview_hint_cantTell',
-          params: { states: stateList }
-        },
-        uncertainty: {
-          code: 'runtime-dependent',
-          needed: msg.needed,
-          evidence: { reasonCode, states }
-        },
-        data: {
-          details: { reasonCode, states }
-        }
-      })
-    );
+    occurrences.push(report(el, reasonCode, { states: states.join(', ') }, { states }));
   }
 
-  if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (!failOccurrences.length && !occurrences.length) {
+    return passCount
+      ? { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] }
+      : { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'cantTell',
-    severity: rule.defaultSeverity || 'moderate',
-    occurrences
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      occurrences,
+      rule.defaultSeverity || 'moderate'
+    )
   };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
@@ -79252,27 +80926,187 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const occurrence = helpers.reportOccurrence(scanRoot, {
-    summary:
-      'Run the W3C validator on the generated source code of this page: the engine cannot see unclosed or misnested tags, repeated attributes and other errors the browser repairs.',
-    hint: 'Validate the generated source (for example with the W3C Nu HTML Checker) and check that tags, attributes and values follow the writing rules, tags are nested, opened and closed correctly, id values are unique and no attribute appears twice on one element (RGAA 8.2.1).',
-    i18n: {
-      summaryKey: 'markupValidationReview_summary_cantTell_page',
-      hintKey: 'markupValidationReview_hint_cantTell_page',
-      params: {}
-    },
-    data: {
-      details: { reasonCode: 'pageReview' },
-      visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
-    }
-  });
+  const MAX_ERRORS = 50;
+  const PROBE_CAP = 200; // the most items the engine keeps in a probe array
 
-  return {
+  function pageUrl(u) {
+    try {
+      const url = new URL(String(u), document.baseURI);
+      url.hash = '';
+      return url.href;
+    } catch {
+      return String(u || '');
+    }
+  }
+  const probes =
+    ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+      ? ctx.inputs.probes
+      : null;
+  const report =
+    probes && probes['validator.report'] && typeof probes['validator.report'] === 'object'
+      ? probes['validator.report']
+      : null;
+  const wholeDocument = helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
+  const usable =
+    wholeDocument &&
+    report &&
+    Array.isArray(report.messages) &&
+    (!report.url || pageUrl(report.url) === pageUrl(document.URL));
+
+  const html = document.documentElement || scanRoot;
+  const text = (v) =>
+    String(v == null ? '' : v)
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  function ask(reasonCode, key, summary, hint, params, uncertaintyCode, needed, extra) {
+    return helpers.reportOccurrence(reasonCode === 'pageReview' ? scanRoot : html, {
+      ...(reasonCode === 'pageReview' ? {} : { selector: 'html' }),
+      summary,
+      hint,
+      i18n: {
+        summaryKey: `markupValidationReview_summary_cantTell_${key}`,
+        hintKey:
+          reasonCode === 'pageReview'
+            ? 'markupValidationReview_hint_cantTell_page'
+            : 'markupValidationReview_hint_cantTell_report',
+        params
+      },
+      uncertainty: { code: uncertaintyCode, needed, evidence: { reasonCode } },
+      data: {
+        details: { reasonCode, ...extra },
+        visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+      }
+    });
+  }
+  const REPORT_HINT =
+    "Validate the generated source of the page, the page after its scripts have run, with the W3C Nu HTML Checker, and pass its messages as the validator.report probe with source: 'generated' (RGAA 8.2.1).";
+  const cantTell = (occ) => ({
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'moderate',
-    occurrences: [occurrence]
-  };
+    occurrences: [occ]
+  });
+
+  if (!usable) {
+    return cantTell(
+      ask(
+        'pageReview',
+        'page',
+        'Run the W3C validator on the generated source code of this page: the engine cannot see unclosed or misnested tags, repeated attributes and other errors the browser repairs.',
+        'Validate the generated source (for example with the W3C Nu HTML Checker) and check that tags, attributes and values follow the writing rules, tags are nested, opened and closed correctly, id values are unique and no attribute appears twice on one element (RGAA 8.2.1).',
+        {},
+        'out-of-scope',
+        'The W3C validator report on the generated source of the page.',
+        {}
+      )
+    );
+  }
+
+  const messages = report.messages.filter((m) => m && typeof m === 'object');
+  const failed = messages.find((m) => m.type === 'non-document-error');
+  if (failed) {
+    const message = text(failed.message);
+    return cantTell(
+      ask(
+        'VALIDATOR_FAILED',
+        'validatorFailed',
+        `The validator could not check the page: ${message}`,
+        REPORT_HINT,
+        { message },
+        'not-computable',
+        'A validator report on the generated source of the page.',
+        { message }
+      )
+    );
+  }
+
+  // Errors about the HTML: CSS messages and warnings are left out.
+  const errors = messages.filter((m) => m.type === 'error' && !/^CSS:/i.test(text(m.message)));
+
+  if (report.source !== 'generated') {
+    const first = errors[0];
+    const params = {
+      count: String(errors.length),
+      line: first && first.lastLine != null ? String(first.lastLine) : '',
+      message: first ? text(first.message) : ''
+    };
+    return cantTell(
+      errors.length
+        ? ask(
+            'ORIGINAL_SOURCE',
+            'originalErrors',
+            `The W3C validator reports ${params.count} errors in the original source, the first at line ${params.line}: ${params.message}. RGAA 8.2.1 validates the generated source, where the browser may have repaired them.`,
+            REPORT_HINT,
+            params,
+            'runtime-dependent',
+            'Whether the generated source of the page has these errors.',
+            { errorCount: errors.length }
+          )
+        : ask(
+            'ORIGINAL_SOURCE',
+            'originalClean',
+            'The W3C validator reports no error in the original source. RGAA 8.2.1 validates the generated source, which scripts may change.',
+            REPORT_HINT,
+            {},
+            'runtime-dependent',
+            'Whether the generated source of the page has errors.',
+            { errorCount: 0 }
+          )
+    );
+  }
+
+  if (errors.length) {
+    const occurrences = errors.slice(0, MAX_ERRORS).map((m) => {
+      const message = text(m.message);
+      const line = m.lastLine != null ? String(m.lastLine) : '';
+      const extract = text(m.extract).slice(0, 200);
+      return helpers.reportOccurrence(html, {
+        selector: 'html',
+        html: extract || '<html>',
+        summary: `The W3C validator reports an error in the generated source, line ${line}: ${message}`,
+        hint: 'Correct the markup so that it follows the HTML writing rules: tags, attributes and values written as HTML allows, tags nested, opened and closed correctly, unique id values and no attribute twice on one element (RGAA 8.2.1).',
+        i18n: {
+          summaryKey: 'markupValidationReview_summary_fail_error',
+          hintKey: 'markupValidationReview_hint_fail_error',
+          params: { line, message }
+        },
+        data: {
+          details: {
+            reasonCode: 'VALIDATOR_ERROR',
+            message,
+            line: m.lastLine != null ? m.lastLine : null,
+            column: m.lastColumn != null ? m.lastColumn : null,
+            errorCount: errors.length
+          },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      });
+    });
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'fail',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+
+  if (report.messages.length >= PROBE_CAP) {
+    return cantTell(
+      ask(
+        'REPORT_TRUNCATED',
+        'truncated',
+        `The validator report has ${PROBE_CAP} messages or more and the engine reads the first ${PROBE_CAP}, none of them an error, so the rest could not be checked.`,
+        REPORT_HINT,
+        { cap: String(PROBE_CAP) },
+        'not-computable',
+        'Whether the messages after the first ones include an error.',
+        { messageCount: report.messages.length }
+      )
+    );
+  }
+
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "media-alternative-transcript-evidence": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -82092,6 +83926,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const hidings = []; // { mediaText, selectorText }
+  const mediaLists = []; // MediaList objects naming an orientation
+  function noteMedia(list) {
+    if (list && isOrientationMedia(mediaTextOf(list)) && !mediaLists.includes(list)) {
+      mediaLists.push(list);
+    }
+  }
 
   function walk(rules, orientationMedia, depth) {
     if (!rules || depth > MAX_DEPTH) return;
@@ -82104,6 +83944,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
       const ownMedia = mediaTextOf(cssRule.media);
+      noteMedia(cssRule.media);
       const media = isOrientationMedia(ownMedia) ? ownMedia : orientationMedia;
       if (cssRule.type === CSS_IMPORT_RULE) {
         let imported;
@@ -82135,14 +83976,229 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue; // cross-origin: css-orientation-lock asks about it
       }
       const sheetMedia = mediaTextOf(sheet.media);
+      noteMedia(sheet.media);
       walk(rules, isOrientationMedia(sheetMedia) ? sheetMedia : '', 0);
     }
   } catch {
     // no-throw: treat as no readable stylesheets
   }
 
+  // ---- Portrait and landscape, where the page has a layout ----
+
+  const view = document.defaultView || null;
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
+    if (typeof probe.checkVisibility !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  const ORIENTATION_RE = /\(\s*orientation\s*:\s*(portrait|landscape)\s*\)/gi;
+  // Always true, and always false: no viewport is narrower than 0px.
+  const TRUE_FEATURE = '(min-width: 0px)';
+  const FALSE_FEATURE = '(max-width: -1px)';
+
+  function shown(el) {
+    try {
+      return el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+    } catch {
+      return true;
+    }
+  }
+  function norm(t) {
+    return String(t || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  // The content items of the page: text nodes and image alternatives.
+  function contentItems() {
+    const SKIP = new Set(['script', 'style', 'noscript', 'template']);
+    const items = [];
+    if (!document.body) return items;
+    const walker = document.createTreeWalker(document.body, 4);
+    for (let n = walker.nextNode(); n && items.length < 3000; n = walker.nextNode()) {
+      const text = norm(n.nodeValue);
+      if (!/[\p{L}\p{N}]/u.test(text)) continue;
+      const parent = n.parentElement;
+      if (!parent || SKIP.has(String(parent.localName))) continue;
+      items.push({
+        node: n,
+        el: parent,
+        text,
+        display: String(n.nodeValue).replace(/\s+/g, ' ').trim()
+      });
+    }
+    for (const img of document.body.querySelectorAll('img[alt]')) {
+      const text = norm(img.getAttribute('alt'));
+      if (text) {
+        const display = String(img.getAttribute('alt')).replace(/\s+/g, ' ').trim();
+        items.push({ node: img, el: img, text, display });
+      }
+    }
+    return items;
+  }
+
+  function isShownItem(item) {
+    if (!shown(item.el)) return false;
+    try {
+      if (item.node.nodeType === 3) {
+        const range = document.createRange();
+        range.selectNodeContents(item.node);
+        return Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0);
+      }
+      const r = item.node.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    } catch {
+      return true;
+    }
+  }
+
+  // The outermost element, below <body>, that is not shown.
+  function hiddenRoot(el) {
+    let root = el;
+    for (let a = el; a && a !== document.body && a.nodeType === 1; a = a.parentElement) {
+      if (!shown(a)) root = a;
+    }
+    return root;
+  }
+
+  // Each item's state in one orientation: { shown, root }, and the shown text.
+  function look(items) {
+    const states = items.map((item) => {
+      const visible = isShownItem(item);
+      return { shown: visible, root: visible ? null : hiddenRoot(item.el) };
+    });
+    const joined = items
+      .filter((_, i) => states[i].shown)
+      .map((item) => item.text)
+      .join(' \n ');
+    return { states, joined };
+  }
+
+  function emulate(orientation) {
+    for (const entry of saved) {
+      const text = entry.original.replace(ORIENTATION_RE, (m, o) =>
+        o.toLowerCase() === orientation ? TRUE_FEATURE : FALSE_FEATURE
+      );
+      try {
+        entry.list.mediaText = text;
+      } catch {}
+    }
+  }
+  const saved = mediaLists.map((list) => ({ list, original: mediaTextOf(list) }));
+
+  const main = (() => {
+    // Unfiltered: in the orientation the scan runs in, <main> may be the
+    // very thing hidden.
+    const q = helpers.queryAllSource || helpers.queryAllSmart || helpers.queryAll;
+    try {
+      return q('main')[0] || q('[role="main"]')[0] || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const fails = [];
+  const questions = [];
+  let decided = false;
+  const judged = new Set(); // elements whose content the comparison settled
+
+  if (saved.length && hasLayout()) {
+    const items = contentItems();
+    let portrait;
+    let landscape;
+    try {
+      emulate('portrait');
+      portrait = look(items);
+      emulate('landscape');
+      landscape = look(items);
+    } catch {
+      // left undecided: the elements found in the style sheets are asked about
+    } finally {
+      for (const entry of saved) {
+        try {
+          entry.list.mediaText = entry.original;
+        } catch {}
+      }
+    }
+    decided = !!(portrait && landscape);
+
+    const missing = new Map(); // root -> { orientation, texts[] }
+    const pairs = decided
+      ? [
+          [portrait, landscape, 'landscape'],
+          [landscape, portrait, 'portrait']
+        ]
+      : [];
+    for (const [from, to, hiddenIn] of pairs) {
+      items.forEach((item, i) => {
+        if (!from.states[i].shown || to.states[i].shown) return;
+        const root = to.states[i].root || item.el;
+        judged.add(root);
+        // The same text shown elsewhere in that orientation is the same content.
+        if (to.joined.includes(item.text)) return;
+        if (!missing.has(root)) missing.set(root, { orientation: hiddenIn, texts: [] });
+        missing.get(root).texts.push(item.display);
+      });
+    }
+
+    const holdsMain = (root) => !!(main && (root === main || root.contains(main)));
+    // An orientation that hides the main content is a lock, asked about
+    // once. What only that orientation shows (a "rotate your device"
+    // message) is part of the lock, not content missing from the other one.
+    const locked = new Set();
+    for (const [root, m] of missing) if (holdsMain(root)) locked.add(m.orientation);
+    const other = (o) => (o === 'portrait' ? 'landscape' : 'portrait');
+
+    for (const [root, m] of missing) {
+      if (!holdsMain(root) && locked.has(other(m.orientation))) continue;
+      const element = String(root.localName || '').toLowerCase();
+      const text = m.texts.join(' ').slice(0, 80);
+      if (holdsMain(root)) {
+        questions.push(
+          helpers.reportOccurrence(root, {
+            summary: `In ${m.orientation}, this <${element}> is hidden, and with it the main content of the page.`,
+            hint: 'Check that the page can be used in both orientations, unless one orientation is essential to it (RGAA 13.9.1).',
+            i18n: {
+              summaryKey: `orientationContentParity_summary_cantTell_mainContent_${m.orientation}`,
+              hintKey: 'orientationContentParity_hint_cantTell_mainContent',
+              params: { orientation: m.orientation, element }
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether the orientation is essential to the page.',
+              evidence: { reasonCode: 'MAIN_CONTENT_HIDDEN', orientation: m.orientation }
+            },
+            data: { details: { reasonCode: 'MAIN_CONTENT_HIDDEN', orientation: m.orientation } }
+          })
+        );
+        continue;
+      }
+      fails.push(
+        helpers.reportOccurrence(root, {
+          summary: `In ${m.orientation}, this <${element}> is hidden and its content ("${text}") is not shown anywhere else.`,
+          hint: 'Offer the same content in both orientations. Its presentation may change, but it must stay available (RGAA 13.9.1).',
+          i18n: {
+            summaryKey: `orientationContentParity_summary_fail_missing_${m.orientation}`,
+            hintKey: 'orientationContentParity_hint_fail_missing',
+            params: { orientation: m.orientation, element, text }
+          },
+          data: {
+            details: { reasonCode: 'CONTENT_MISSING', orientation: m.orientation, texts: m.texts }
+          }
+        })
+      );
+    }
+  }
+
   const query = helpers.queryAllSource || helpers.queryAllSmart || helpers.queryAll;
-  const occurrences = [];
   const seen = new Set();
 
   for (const h of hidings) {
@@ -82155,8 +84211,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const el of matched) {
       if (!el || el.nodeType !== 1 || seen.has(el)) continue;
       seen.add(el);
+      // The comparison settled what this element shows.
+      if (decided && (judged.has(el) || norm(el.textContent) || el.querySelector('img[alt]'))) {
+        continue;
+      }
       const element = String(el.localName || el.tagName || '').toLowerCase();
-      occurrences.push(
+      questions.push(
         helpers.reportOccurrence(el, {
           summary: `A "${h.mediaText}" media query hides this <${element}> ("${h.selectorText}").`,
           hint: 'Check that the same content is offered in portrait and in landscape, even if it is presented or reached differently (RGAA 13.9.1). This is not required when one orientation is essential.',
@@ -82164,6 +84224,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'orientationContentParity_summary_cantTell',
             hintKey: 'orientationContentParity_hint_cantTell',
             params: { mediaText: h.mediaText, selectorText: h.selectorText, element }
+          },
+          uncertainty: {
+            code: decided ? 'judgement-required' : 'runtime-dependent',
+            needed: 'Whether the same content is offered in both orientations.',
+            evidence: { reasonCode: 'hiddenInOrientation' }
           },
           data: {
             details: {
@@ -82178,15 +84243,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  if (fails.length || questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'moderate')
+    };
   }
-  return {
-    ruleId: rule.ruleId,
-    outcome: 'cantTell',
-    severity: rule.defaultSeverity || 'moderate',
-    occurrences
-  };
+  if (decided) return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -82990,6 +85054,451 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'minor',
       occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
+    "page-title-unique": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  function norm(t) {
+    return String(t == null ? '' : t)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  // { key: origin + path without a trailing slash, full: key + query }
+  function urlParts(u) {
+    try {
+      const url = new URL(String(u), document.baseURI);
+      const path = url.pathname.replace(/\/+$/, '') || '/';
+      const key = url.origin + path;
+      return { key, full: key + url.search };
+    } catch {
+      const s = String(u || '').replace(/#.*$/, '');
+      return { key: s.replace(/\?.*$/, ''), full: s };
+    }
+  }
+
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
+  const title = norm(document.title);
+  const here = urlParts(document.URL);
+  const page = { url: here.full, title };
+
+  if (!titleEl || !title) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: 'minor',
+      occurrences: [],
+      data: { page }
+    };
+  }
+
+  const probes =
+    ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+      ? ctx.inputs.probes
+      : null;
+  const probe =
+    probes && probes['crawl.pageTitles'] && typeof probes['crawl.pageTitles'] === 'object'
+      ? probes['crawl.pageTitles']
+      : null;
+  const others = (probe && Array.isArray(probe.pages) ? probe.pages : [])
+    .filter((p) => p && typeof p === 'object' && p.url && typeof p.title === 'string')
+    .map((p) => ({ url: String(p.url), title: norm(p.title), parts: urlParts(p.url) }))
+    .filter((p) => p.title && p.parts.full !== here.full);
+
+  const same = others.filter((p) => p.title.toLowerCase() === title.toLowerCase());
+  const otherPath = same.filter((p) => p.parts.key !== here.key);
+  const samePath = same.filter((p) => p.parts.key === here.key);
+
+  const selector =
+    titleEl.parentElement && titleEl.parentElement.localName === 'head'
+      ? 'head > title'
+      : undefined;
+  function report(reasonCode, key, summary, hint, pages, uncertainty) {
+    const params = { title, pages: pages.map((p) => p.url).join(', ') };
+    return helpers.reportOccurrence(titleEl, {
+      ...(selector ? { selector } : {}),
+      summary,
+      hint,
+      i18n: {
+        summaryKey: `pageTitleUnique_summary_${key}`,
+        hintKey: `pageTitleUnique_hint_${key}`,
+        params
+      },
+      ...(uncertainty ? { uncertainty } : {}),
+      data: { details: { reasonCode, title, pages: pages.map((p) => p.url) } }
+    });
+  }
+
+  const fails = [];
+  const questions = [];
+  const GLOSSARY = '« de manière claire, concise et unique »';
+  if (otherPath.length) {
+    fails.push(
+      report(
+        'TITLE_DUPLICATE',
+        'fail_duplicate',
+        `Other pages of the site have the same title, "${title}": ${otherPath.map((p) => p.url).join(', ')}. RGAA asks that a page title identify the page ${GLOSSARY}.`,
+        'Give each page a title of its own that says what this page holds, for instance the page’s subject followed by the site’s name (RGAA 8.6.1).',
+        otherPath
+      )
+    );
+  } else if (samePath.length) {
+    questions.push(
+      report(
+        'TITLE_DUPLICATE_SAME_PATH',
+        'cantTell_samePath',
+        `A page whose address differs from this one only by its query string has the same title, "${title}": ${samePath.map((p) => p.url).join(', ')}.`,
+        `Check whether these addresses show different pages. If they do, give each its own title: RGAA asks that a page title identify the page ${GLOSSARY} (RGAA 8.6.1).`,
+        samePath,
+        {
+          code: 'equivalence-unknown',
+          needed: 'Whether the addresses show the same page or different ones.',
+          evidence: { reasonCode: 'TITLE_DUPLICATE_SAME_PATH' }
+        }
+      )
+    );
+  } else if (!others.length) {
+    questions.push(
+      report(
+        'TITLE_SINGLE_PAGE',
+        'cantTell_singlePage',
+        `Only this page was available, so whether its title, "${title}", is unique across the site could not be checked.`,
+        `Scan several pages of the site and pass their titles as the crawl.pageTitles probe, or check that no other page has this title: RGAA asks that a page title identify the page ${GLOSSARY} (RGAA 8.6.1).`,
+        [],
+        {
+          code: 'out-of-scope',
+          needed: 'Whether another page of the site has the same title.',
+          evidence: { reasonCode: 'TITLE_SINGLE_PAGE' }
+        }
+      )
+    );
+  }
+
+  if (!fails.length && !questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'pass',
+      severity: 'minor',
+      occurrences: [],
+      data: { page }
+    };
+  }
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'moderate'),
+    data: { page }
+  };
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
+    "page-zones-reachable": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
+
+  function query(sel) {
+    return helpers.queryAllSmart ? helpers.queryAllSmart(sel) : helpers.queryAll(sel);
+  }
+  function attr(el, name) {
+    try {
+      return el.getAttribute(name);
+    } catch {
+      return null;
+    }
+  }
+  function isEligible(el) {
+    const r = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    return typeof r === 'boolean' ? r : !!(r && r.eligible);
+  }
+
+  // The landmark role an element carries, or ''.
+  function landmarkOf(el) {
+    const explicit = String(attr(el, 'role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    if (explicit) {
+      return ['banner', 'navigation', 'main', 'contentinfo', 'search'].includes(explicit)
+        ? explicit
+        : '';
+    }
+    const tag = String(el.localName || '').toLowerCase();
+    const scoped = () =>
+      helpers.hasLandmarkScopingAncestor ? helpers.hasLandmarkScopingAncestor(el, ctx) : false;
+    if (tag === 'header') return scoped() ? '' : 'banner';
+    if (tag === 'footer') return scoped() ? '' : 'contentinfo';
+    if (tag === 'nav') return 'navigation';
+    if (tag === 'main') return 'main';
+    if (tag === 'search') return 'search';
+    return '';
+  }
+
+  // The five areas, the landmark that matches each, and the names that
+  // point to one without it.
+  const ZONES = [
+    {
+      zone: 'header',
+      landmark: 'banner',
+      names: /^(site-?|page-?|main-?)?(header|masthead|top-?bar|en-?tete|entete|bandeau)$/
+    },
+    {
+      zone: 'navigation',
+      landmark: 'navigation',
+      names: /^(main-?|primary-?|site-?|top-?)?(nav|navbar|navigation|menu|menu-?principal)$/
+    },
+    {
+      zone: 'main',
+      landmark: 'main',
+      names:
+        /^(main|main-?content|content|page-?content|site-?content|contenu|contenu-?principal|principal)$/
+    },
+    {
+      zone: 'footer',
+      landmark: 'contentinfo',
+      names: /^(site-?|page-?|main-?)?(footer|pied|pied-?de-?page)$/
+    },
+    {
+      zone: 'search',
+      landmark: 'search',
+      names: /^(site-?)?(search|recherche|moteur-?de-?recherche)$/
+    }
+  ];
+
+  const landmarks = { banner: [], navigation: [], main: [], contentinfo: [], search: [] };
+  for (const el of query('header, footer, nav, main, search, [role]')) {
+    if (!isEligible(el)) continue;
+    const role = landmarkOf(el);
+    if (role) landmarks[role].push(el);
+  }
+
+  function tokensOf(el) {
+    const out = [];
+    const idv = String(attr(el, 'id') || '').toLowerCase();
+    if (idv) out.push(idv);
+    for (const c of String(attr(el, 'class') || '')
+      .toLowerCase()
+      .split(/\s+/)) {
+      if (c) out.push(c);
+    }
+    return out;
+  }
+
+  // Areas found from a name, outside any landmark of the same kind.
+  const candidates = [];
+  const SEARCH_FIELD =
+    'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role="searchbox"]';
+  for (const el of query('body *')) {
+    if (!el || el.nodeType !== 1 || !isEligible(el)) continue;
+    if (landmarkOf(el)) continue;
+    const tag = String(el.localName || '').toLowerCase();
+    if (['script', 'style', 'a', 'button', 'input', 'span', 'li', 'img', 'svg'].includes(tag))
+      continue;
+    let found = null;
+    let hint = '';
+    for (const z of ZONES) {
+      const t = tokensOf(el).find((tok) => z.names.test(tok));
+      if (t) {
+        found = z;
+        hint = t;
+        break;
+      }
+    }
+    if (!found && tag === 'form') {
+      try {
+        if (el.querySelector(SEARCH_FIELD)) {
+          found = ZONES[4];
+          hint = 'form';
+        }
+      } catch {}
+    }
+    if (!found) continue;
+    const same = landmarks[found.landmark];
+    if (same.some((l) => l.contains(el) || el.contains(l))) continue;
+    // The outermost element carrying the name stands for the area.
+    if (candidates.some((c) => c.zone === found.zone && c.el.contains(el))) continue;
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      if (candidates[i].zone === found.zone && el.contains(candidates[i].el))
+        candidates.splice(i, 1);
+    }
+    candidates.push({ el, zone: found.zone, hint });
+  }
+
+  // ---- The mechanisms other than a landmark ----
+
+  function sameDocumentTarget(link) {
+    const href = String(attr(link, 'href') || '').trim();
+    if (href.charAt(0) !== '#' || href.length < 2) return null;
+    let frag = href.slice(1);
+    try {
+      frag = decodeURIComponent(frag);
+    } catch {}
+    try {
+      return document.getElementById(frag);
+    } catch {
+      return null;
+    }
+  }
+  const links = query('a[href^="#"]');
+
+  function headingOpens(el) {
+    try {
+      const h = el.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
+      if (!h || !isEligible(h)) return false;
+      // The heading comes before any other text of the area.
+      const walker = document.createTreeWalker(el, 4);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!/\S/.test(n.nodeValue || '')) continue;
+        return h.contains(n);
+      }
+    } catch {}
+    return false;
+  }
+
+  function previousFocusable(el) {
+    const all = query('a[href], button, input, select, textarea, [tabindex]');
+    let prev = null;
+    for (const f of all) {
+      if (el.contains(f)) break;
+      let before = false;
+      try {
+        before = !!(f.compareDocumentPosition(el) & FOLLOWING);
+      } catch {}
+      if (!before) break;
+      prev = f;
+    }
+    return prev;
+  }
+
+  function skipLinkBefore(el) {
+    const prev = previousFocusable(el);
+    if (!prev || String(prev.localName) !== 'a') return false;
+    const target = sameDocumentTarget(prev);
+    if (!target || el.contains(target)) return false;
+    try {
+      return !!(el.compareDocumentPosition(target) & FOLLOWING);
+    } catch {
+      return false;
+    }
+  }
+
+  function toggleBefore(el) {
+    const prev = previousFocusable(el);
+    if (!prev) return false;
+    const isButton = String(prev.localName) === 'button' || attr(prev, 'role') === 'button';
+    if (!isButton) return false;
+    const controls = String(attr(prev, 'aria-controls') || '').split(/\s+/);
+    const idv = attr(el, 'id');
+    return (!!idv && controls.includes(idv)) || attr(prev, 'aria-expanded') != null;
+  }
+
+  function quickLinkTo(el) {
+    return links.some((l) => {
+      if (el.contains(l)) return false;
+      const t = sameDocumentTarget(l);
+      return !!t && (t === el || el.contains(t));
+    });
+  }
+
+  // ---- Findings ----
+
+  const MESSAGES = {
+    ZONE_HEADING: {
+      key: 'heading',
+      summary: (p) =>
+        `This area ("${p.hint}") has no landmark role. A heading opens it: check that the heading says what the area holds.`,
+      needed: 'Whether the heading says what the area holds.'
+    },
+    ZONE_SKIP_LINK: {
+      key: 'skipLink',
+      summary: (p) =>
+        `This area ("${p.hint}") has no landmark role. A same-page link just before it leads past it: check that it is a skip link for this area.`,
+      needed: 'Whether the link just before the area skips it.'
+    },
+    ZONE_TOGGLE: {
+      key: 'toggle',
+      summary: (p) =>
+        `This area ("${p.hint}") has no landmark role. A button just before it may hide it: check that the button hides this area.`,
+      needed: 'Whether the button just before the area hides it.'
+    },
+    ZONE_QUICK_LINK: {
+      key: 'quickLink',
+      summary: (p) =>
+        `This area ("${p.hint}") has no landmark role. A same-page link leads to it: check that the link is visible, at least when it takes focus.`,
+      needed: 'Whether the quick-access link to the area is visible, at least on focus.'
+    },
+    ZONE_NO_MECHANISM: {
+      key: 'none',
+      summary: (p) =>
+        `This area ("${p.hint}") has no landmark role, no heading opening it, and no link or button to reach, skip or hide it.`,
+      needed: 'Whether this block is an area of the page, and if so how it can be reached.'
+    },
+    MAIN_NOT_FOUND: {
+      key: 'mainNotFound',
+      summary: () =>
+        'The page has no main landmark (<main> or role="main"), so how the main content can be reached could not be checked.',
+      needed:
+        'Where the main content is, and whether it has a landmark, a heading, or a link to it.'
+    }
+  };
+  const HINT =
+    'Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role="search" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).';
+
+  const questions = [];
+  function ask(reasonCode, el, hint, zone) {
+    const msg = MESSAGES[reasonCode];
+    const params = { hint };
+    questions.push(
+      helpers.reportOccurrence(el, {
+        summary: msg.summary(params),
+        hint: HINT,
+        i18n: {
+          summaryKey: `pageZonesReachable_summary_cantTell_${msg.key}`,
+          hintKey: 'pageZonesReachable_hint_cantTell',
+          params
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed: msg.needed,
+          evidence: { reasonCode, zone }
+        },
+        data: { details: { reasonCode, zone, hint } }
+      })
+    );
+  }
+
+  for (const c of candidates) {
+    const reasonCode = headingOpens(c.el)
+      ? 'ZONE_HEADING'
+      : skipLinkBefore(c.el)
+        ? 'ZONE_SKIP_LINK'
+        : toggleBefore(c.el)
+          ? 'ZONE_TOGGLE'
+          : quickLinkTo(c.el)
+            ? 'ZONE_QUICK_LINK'
+            : 'ZONE_NO_MECHANISM';
+    ask(reasonCode, c.el, c.hint, c.zone);
+  }
+  if (!landmarks.main.length && !candidates.some((c) => c.zone === 'main')) {
+    ask('MAIN_NOT_FOUND', document.body || document.documentElement, '', 'main');
+  }
+
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences: questions
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -85705,6 +88214,492 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "skip-link-placement": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+
+  const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
+  const CONTAINED_BY = 16; // Node.DOCUMENT_POSITION_CONTAINED_BY
+  const MAX_SHIFT = 24; // CSS pixels between two pages before the place differs
+  const view = document.defaultView || null;
+
+  function norm(s) {
+    return String(s == null ? '' : s)
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function attr(el, name) {
+    try {
+      return el.getAttribute(name);
+    } catch {
+      return null;
+    }
+  }
+
+  function query(sel) {
+    return helpers.queryAllSmart ? helpers.queryAllSmart(sel) : helpers.queryAll(sel);
+  }
+
+  function isEligible(el) {
+    const r = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    return typeof r === 'boolean' ? r : !!(r && r.eligible);
+  }
+
+  function linkName(el) {
+    const al = norm(attr(el, 'aria-label'));
+    if (al) return al;
+    return norm(el.textContent) || norm(attr(el, 'title'));
+  }
+
+  // ---- The skip link, found as skip-link-present finds one ----
+
+  function sameDocumentFragment(el) {
+    const href = String(attr(el, 'href') || '').trim();
+    let fragment = null;
+    if (href.charAt(0) === '#') {
+      fragment = href.slice(1);
+    } else if (href.indexOf('#') !== -1) {
+      try {
+        const url = new URL(href, document.baseURI);
+        const here = new URL(document.URL);
+        url.hash = '';
+        here.hash = '';
+        if (url.href === here.href) fragment = href.slice(href.indexOf('#') + 1);
+      } catch {}
+    }
+    if (fragment == null) return null;
+    try {
+      fragment = decodeURIComponent(fragment);
+    } catch {}
+    fragment = fragment.trim();
+    if (!fragment || fragment.toLowerCase() === 'top') return null;
+    return fragment;
+  }
+
+  function resolveTarget(el, fragment) {
+    const root = el.getRootNode ? el.getRootNode() : document;
+    let target = null;
+    try {
+      if (root && typeof root.getElementById === 'function') target = root.getElementById(fragment);
+      if (!target) target = document.getElementById(fragment);
+    } catch {}
+    if (!target) {
+      try {
+        target = document.querySelector('a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]');
+      } catch {}
+    }
+    return target;
+  }
+
+  function isNavigation(el) {
+    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
+    if (role) return role === 'navigation';
+    return tag === 'nav';
+  }
+
+  function isFocusable(el) {
+    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tabindex = attr(el, 'tabindex');
+    if (tabindex != null && /^\s*-/.test(tabindex)) return false;
+    if (tabindex != null && /^\s*\d/.test(tabindex)) return true;
+    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'input') return String(attr(el, 'type') || '').toLowerCase() !== 'hidden';
+    if (['button', 'select', 'textarea', 'iframe', 'summary'].includes(tag)) return true;
+    const ce = attr(el, 'contenteditable');
+    return ce != null && ce.toLowerCase() !== 'false';
+  }
+
+  function scan(from, to, found) {
+    const walker = document.createTreeWalker(document, 1);
+    walker.currentNode = from;
+    let count = 0;
+    for (let n = walker.nextNode(); n && n !== to; n = walker.nextNode()) {
+      if (++count > 5000) {
+        found.navigation = true;
+        break;
+      }
+      if (n.contains(to)) continue;
+      if (!isEligible(n)) continue;
+      if (isNavigation(n)) found.navigation = true;
+      else if (isFocusable(n)) found.focusable = true;
+    }
+    return found;
+  }
+
+  function between(target, main) {
+    const found = { navigation: false, focusable: false };
+    if (target === main) return found;
+    let inside = false;
+    try {
+      inside = main.contains(target);
+    } catch {}
+    if (inside) return scan(main, target, found);
+    let pos = 0;
+    try {
+      pos = target.compareDocumentPosition(main);
+    } catch {}
+    if (!(pos & FOLLOWING) && !(pos & CONTAINED_BY)) return null;
+    return scan(target, main, found);
+  }
+
+  const mains = query('main').filter(isEligible);
+  const main = mains.length ? mains[0] : query('[role="main"]').filter(isEligible)[0] || null;
+
+  let skipLink = null;
+  if (main) {
+    for (const el of query('a[href]')) {
+      if (main.contains(el)) continue;
+      const fragment = sameDocumentFragment(el);
+      if (fragment == null) continue;
+      const target = resolveTarget(el, fragment);
+      if (!target || !isEligible(target)) continue;
+      const path = between(target, main);
+      if (path && !path.navigation && !path.focusable) {
+        skipLink = el;
+        break;
+      }
+    }
+  }
+
+  function pageUrl(u) {
+    try {
+      const url = new URL(String(u), document.baseURI);
+      url.hash = '';
+      return url.href;
+    } catch {
+      return String(u || '');
+    }
+  }
+  const here = pageUrl(document.URL);
+  const viewportWidth = view && Number.isFinite(view.innerWidth) ? view.innerWidth : null;
+
+  if (!skipLink) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: 'minor',
+      occurrences: [],
+      data: { page: { url: here, viewportWidth, skipLink: null } }
+    };
+  }
+
+  // ---- Focus order ----
+
+  function focusOrderOf(el) {
+    const getInfo =
+      typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+    const candidates = query(
+      'a[href],area[href],button,input,select,textarea,summary,iframe,[tabindex],[contenteditable]'
+    );
+    const positive = [];
+    const rest = [];
+    for (const c of candidates) {
+      let tabbable;
+      try {
+        tabbable = getInfo ? !!(getInfo(c, ctx) || {}).tabbable : isFocusable(c);
+      } catch {
+        tabbable = false;
+      }
+      if (!tabbable) continue;
+      const t = parseInt(attr(c, 'tabindex'), 10);
+      if (t > 0) positive.push([t, c]);
+      else rest.push(c);
+    }
+    positive.sort((a, b) => a[0] - b[0]);
+    const order = positive.map((p) => p[1]).concat(rest);
+    const i = order.indexOf(el);
+    return i === -1 ? null : i;
+  }
+
+  // ---- Visibility, where the page has a layout ----
+
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  function styleOf(el) {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  }
+
+  // 'visible', 'hidden' (certainly not visible) or 'unknown' (something may
+  // cover it), with its rect in page coordinates.
+  function visibility(el) {
+    const r = el.getBoundingClientRect();
+    const sx = view.scrollX || 0;
+    const sy = view.scrollY || 0;
+    const rect = {
+      x: Math.round(r.left + sx),
+      y: Math.round(r.top + sy),
+      width: Math.round(r.width),
+      height: Math.round(r.height)
+    };
+    const cs = styleOf(el);
+    if (!cs || cs.visibility === 'hidden' || cs.visibility === 'collapse') {
+      return { state: 'hidden', rect };
+    }
+    if (r.width < 2 || r.height < 2) return { state: 'hidden', rect };
+    // Outside the page: left of or above its origin.
+    if (r.right + sx <= 0 || r.bottom + sy <= 0) return { state: 'hidden', rect };
+    let visible = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const s = styleOf(n);
+      if (!s) continue;
+      if (parseFloat(s.opacity) === 0) return { state: 'hidden', rect };
+      const clip = String(s.clip || '');
+      if (/rect\(\s*0(px)?[\s,]+0(px)?[\s,]+0(px)?[\s,]+0(px)?\s*\)/.test(clip)) {
+        return { state: 'hidden', rect };
+      }
+      const clipPath = String(s.clipPath || '');
+      if (/inset\(\s*50%/.test(clipPath)) return { state: 'hidden', rect };
+      if (n !== el && (s.overflowX !== 'visible' || s.overflowY !== 'visible')) {
+        const b = n.getBoundingClientRect();
+        visible = {
+          left: Math.max(visible.left, s.overflowX !== 'visible' ? b.left : -Infinity),
+          top: Math.max(visible.top, s.overflowY !== 'visible' ? b.top : -Infinity),
+          right: Math.min(visible.right, s.overflowX !== 'visible' ? b.right : Infinity),
+          bottom: Math.min(visible.bottom, s.overflowY !== 'visible' ? b.bottom : Infinity)
+        };
+        if (visible.right - visible.left < 2 || visible.bottom - visible.top < 2) {
+          return { state: 'hidden', rect };
+        }
+      }
+    }
+    // Something positioned over it may hide it: asked about, not decided.
+    const cx = (visible.left + visible.right) / 2;
+    const cy = (visible.top + visible.bottom) / 2;
+    if (cx >= 0 && cy >= 0 && cx < view.innerWidth && cy < view.innerHeight) {
+      try {
+        const top = document.elementFromPoint(cx, cy);
+        if (top && top !== el && !el.contains(top) && !top.contains(el)) {
+          return { state: 'unknown', rect };
+        }
+      } catch {}
+    }
+    return { state: 'visible', rect };
+  }
+
+  function deepActiveElement() {
+    let cur = document.activeElement || null;
+    let guard = 0;
+    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
+      cur = cur.shadowRoot.activeElement;
+    }
+    return cur;
+  }
+
+  // The link focused as by the keyboard, transitions off, then put back.
+  function visibilityOnFocus(el) {
+    const previous = deepActiveElement();
+    const hadStyle = el.hasAttribute('style');
+    const styleAttr = el.getAttribute('style');
+    try {
+      el.style.setProperty('transition', 'none', 'important');
+      el.focus({ preventScroll: true, focusVisible: true });
+      if (deepActiveElement() !== el) return null;
+      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+        return { state: 'unknown', rect: null, animated: true };
+      }
+      return visibility(el);
+    } catch {
+      return null;
+    } finally {
+      try {
+        if (previous && previous !== document.body && typeof previous.focus === 'function') {
+          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        } else if (deepActiveElement() === el) {
+          el.blur();
+        }
+      } catch {}
+      // Reading the attribute first makes Chromium write the inline style
+      // back to it; removed before that, it comes back as style="".
+      el.getAttribute('style');
+      if (hadStyle) el.setAttribute('style', styleAttr);
+      else el.removeAttribute('style');
+    }
+  }
+
+  const layout = view && hasLayout();
+  let shown = null; // { state, rect, onFocus }
+  if (layout) {
+    const atRest = visibility(skipLink);
+    if (atRest.state === 'visible') shown = { ...atRest, onFocus: false };
+    else {
+      const focused = visibilityOnFocus(skipLink);
+      shown = focused
+        ? { ...focused, onFocus: true }
+        : { state: 'unknown', rect: atRest.rect, onFocus: true };
+    }
+  }
+
+  // Flat, so it survives the engine's depth cap on probes.
+  const where = shown && shown.state === 'visible' ? shown.rect : null;
+  const record = {
+    text: linkName(skipLink),
+    href: String(attr(skipLink, 'href') || '').trim(),
+    focusOrder: focusOrderOf(skipLink),
+    x: where ? where.x : null,
+    y: where ? where.y : null,
+    width: where ? where.width : null,
+    height: where ? where.height : null
+  };
+
+  // ---- The other pages ----
+
+  const probes =
+    ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
+      ? ctx.inputs.probes
+      : null;
+  const probe =
+    probes && probes['crawl.skipLinks'] && typeof probes['crawl.skipLinks'] === 'object'
+      ? probes['crawl.skipLinks']
+      : null;
+  const others = (probe && Array.isArray(probe.pages) ? probe.pages : []).filter(
+    (p) =>
+      p &&
+      typeof p === 'object' &&
+      p.url &&
+      pageUrl(p.url) !== here &&
+      p.skipLink &&
+      typeof p.skipLink === 'object' &&
+      (typeof p.skipLink.x === 'number' || typeof p.skipLink.focusOrder === 'number')
+  );
+
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  const moved = [];
+  const reordered = [];
+  let measured = 0;
+  let comparable = 0;
+  for (const p of others) {
+    const r = p.skipLink;
+    const hasRect = num(r.x) != null && num(r.y) != null;
+    if (hasRect) measured += 1;
+    if (where && hasRect && num(p.viewportWidth) != null && p.viewportWidth === viewportWidth) {
+      comparable += 1;
+      const dx = Math.abs(r.x - where.x);
+      const dy = Math.abs(r.y - where.y);
+      if (dx > MAX_SHIFT || dy > MAX_SHIFT) moved.push({ url: String(p.url), x: r.x, y: r.y });
+    }
+    const o = num(p.skipLink.focusOrder);
+    if (o != null && record.focusOrder != null && o !== record.focusOrder) {
+      reordered.push({ url: String(p.url), focusOrder: o });
+    }
+  }
+
+  // ---- Findings ----
+
+  const MESSAGES = {
+    SKIP_LINK_NOT_VISIBLE: {
+      summary: () =>
+        'This skip link is not visible, and it stays hidden when it takes focus (no size, outside the page, clipped, transparent or visibility: hidden).',
+      hint: 'Show the skip link at all times, or at least when it takes keyboard focus, for instance by moving it back into view in a :focus rule (RGAA 12.7.2).',
+      key: 'fail_notVisible'
+    },
+    SKIP_LINK_POSITION_DIFFERS: {
+      summary: (p) =>
+        `This skip link is not at the same place on other pages of the site, measured at the same window width: ${p.pages}.`,
+      hint: 'Place the skip link at the same position on every page, usually first in the page header (RGAA 12.7.2).',
+      key: 'fail_positionDiffers'
+    },
+    SKIP_LINK_VISIBILITY_UNKNOWN: {
+      summary: () =>
+        'Whether this skip link is visible could not be settled: something may cover it, it is animated when it takes focus, or the page was not rendered.',
+      hint: 'Tab to the skip link and check that it is visible when it has focus (RGAA 12.7.2).',
+      key: 'cantTell_visibility',
+      needed: 'Whether the skip link is visible, at least when it takes focus.'
+    },
+    SKIP_LINK_ORDER_DIFFERS: {
+      summary: (p) =>
+        `This skip link comes at another place in the focus order on other pages of the site: ${p.pages}.`,
+      hint: 'Check that the skip link comes in the same order relative to the rest of the page on every page (RGAA 12.7.2).',
+      key: 'cantTell_orderDiffers',
+      needed: 'Whether the skip link comes in the same relative order in the source of every page.'
+    },
+    SKIP_LINK_VIEWPORT_DIFFERS: {
+      summary: () =>
+        'The other pages of the site were measured at another window width, so the place of this skip link could not be compared.',
+      hint: 'Measure every page at the same window width, or check on the site that the skip link is at the same place on every page (RGAA 12.7.2).',
+      key: 'cantTell_viewportDiffers',
+      needed: 'Whether the skip link is at the same place on every page.'
+    },
+    SKIP_LINK_SINGLE_PAGE: {
+      summary: () =>
+        'Only this page was available, so whether the skip link is at the same place and in the same order on the other pages of the site could not be checked.',
+      hint: 'Scan several pages of the site and pass their skip link records as the crawl.skipLinks probe, or check on the site that the skip link is at the same place and in the same order on every page (RGAA 12.7.2).',
+      key: 'cantTell_singlePage',
+      needed: 'Whether the skip link is at the same place and in the same order on every page.'
+    }
+  };
+
+  const fails = [];
+  const questions = [];
+  function report(reasonCode, extra) {
+    const msg = MESSAGES[reasonCode];
+    const pages = (extra.pages || []).map((p) => p.url).join(', ');
+    const params = { pages };
+    const occ = helpers.reportOccurrence(skipLink, {
+      summary: msg.summary(params),
+      hint: msg.hint,
+      i18n: {
+        summaryKey: `skipLinkPlacement_summary_${msg.key}`,
+        hintKey: `skipLinkPlacement_hint_${msg.key}`,
+        params
+      },
+      ...(msg.needed
+        ? {
+            uncertainty: {
+              code:
+                reasonCode === 'SKIP_LINK_VISIBILITY_UNKNOWN' ? 'not-computable' : 'out-of-scope',
+              needed: msg.needed,
+              evidence: { reasonCode, ...extra }
+            }
+          }
+        : {}),
+      data: { details: { reasonCode, ...extra } }
+    });
+    (msg.needed ? questions : fails).push(occ);
+  }
+
+  if (!shown || shown.state === 'unknown') {
+    report('SKIP_LINK_VISIBILITY_UNKNOWN', {
+      cause: !shown ? 'noLayout' : shown.animated ? 'animation' : 'covered'
+    });
+  } else if (shown.state === 'hidden') {
+    report('SKIP_LINK_NOT_VISIBLE', { rect: shown.rect });
+  }
+
+  if (moved.length) report('SKIP_LINK_POSITION_DIFFERS', { x: where.x, y: where.y, pages: moved });
+  if (reordered.length) {
+    report('SKIP_LINK_ORDER_DIFFERS', { focusOrder: record.focusOrder, pages: reordered });
+  }
+  if (!others.length) report('SKIP_LINK_SINGLE_PAGE', {});
+  else if (where && measured && !comparable) {
+    report('SKIP_LINK_VIEWPORT_DIFFERS', { viewportWidth });
+  }
+
+  const data = { page: { url: here, viewportWidth, skipLink: record } };
+  if (!fails.length && !questions.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], data };
+  }
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'moderate'),
+    data
+  };
+}), applicability: (function applicability(ctx) {
+  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+}) },
     "skip-link-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
@@ -88993,6 +91988,476 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "text-spacing-content-loss": { run: (function runInPage(ctx) {
+  const { document, helpers, rule } = ctx;
+  const view = document.defaultView || null;
+
+  const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  const SPACING_PROPS = Object.keys(MIN_RATIO);
+  const MAX_TEXT_NODES = 3000;
+  const CSS_STYLE_RULE = 1;
+  const LAYER = 'surea11y-text-spacing';
+
+  function styleOf(el, pseudo) {
+    try {
+      return view.getComputedStyle(el, pseudo || null);
+    } catch {
+      return null;
+    }
+  }
+  function px(v) {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  }
+  // A spacing value as a multiple of the font size, or null when it cannot
+  // be read. A computed value is in px; a declared one, which is all a DOM
+  // emulator returns, may be in em, rem or %, or unitless for line-height.
+  function ratioOf(prop, value, fontSize) {
+    const v = String(value == null ? '' : value)
+      .trim()
+      .toLowerCase();
+    if (v === 'normal') return prop === 'line-height' ? 1.2 : 0;
+    const m = /^(-?\d*\.?\d+)(px|em|rem|%)?$/.exec(v);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    const unit = m[2] || '';
+    if (unit === 'px') return n / fontSize;
+    if (unit === 'em') return n;
+    if (unit === 'rem') {
+      const root = px(
+        styleOf(document.documentElement) && styleOf(document.documentElement).fontSize
+      );
+      return (n * (root || 16)) / fontSize;
+    }
+    if (unit === '%') return prop === 'line-height' ? n / 100 : null;
+    return prop === 'line-height' ? n : null;
+  }
+  function textOf(el) {
+    return String(el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 60);
+  }
+
+  // ---- Style sheet rules that force spacing with !important ----
+
+  const importantFindings = [];
+  (function readSheets() {
+    const seen = new Set();
+    function check(cssRule) {
+      const style = cssRule.style;
+      for (const prop of SPACING_PROPS) {
+        let value;
+        let priority;
+        try {
+          value = String(style.getPropertyValue(prop) || '').trim();
+          priority = String(style.getPropertyPriority(prop) || '');
+        } catch {
+          continue;
+        }
+        if (!value || priority !== 'important') continue;
+        if (/^(inherit|initial|unset|revert|revert-layer)$/i.test(value)) continue;
+        let targets;
+        try {
+          targets = helpers.queryAllSmart
+            ? helpers.queryAllSmart(cssRule.selectorText)
+            : helpers.queryAll(cssRule.selectorText);
+        } catch {
+          targets = [];
+        }
+        for (const el of targets) {
+          if (!el || seen.has(el) || !textOf(el)) continue;
+          const cs = styleOf(el);
+          const fontSize = px(cs && cs.fontSize) || 16;
+          const ratio = ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
+          // A value that already meets the metric leaves nothing to override.
+          if (ratio == null ? false : ratio >= MIN_RATIO[prop]) continue;
+          seen.add(el);
+          importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
+          break;
+        }
+      }
+    }
+    function walk(rules, depth) {
+      if (!rules || depth > 8) return;
+      for (const r of rules) {
+        if (!r) continue;
+        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) check(r);
+        let nested = null;
+        try {
+          nested = r.cssRules || null;
+        } catch {}
+        if (nested) walk(nested, depth + 1);
+      }
+    }
+    try {
+      for (const sheet of document.styleSheets || []) {
+        let rules = null;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          continue;
+        }
+        walk(rules, 0);
+      }
+    } catch {}
+  })();
+
+  // ---- Lines of text, before and after the spacing ----
+
+  function hasLayout() {
+    const probe = document.documentElement || null;
+    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
+    if (typeof document.createRange !== 'function') return false;
+    try {
+      const rects = probe.getClientRects();
+      return !!(rects && rects.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  const clipped = [];
+  const partly = [];
+  const overlaps = [];
+  let textCount = 0;
+
+  if (hasLayout() && document.body) {
+    const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
+    const nodes = [];
+    const walker = document.createTreeWalker(document.body, 4);
+    for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
+      if (!/\S/.test(n.nodeValue || '')) continue;
+      const parent = n.parentElement;
+      if (!parent || SKIP.has(String(parent.localName))) continue;
+      nodes.push(n);
+    }
+
+    const clipCache = new Map();
+    // Ancestors that clip on an axis: [{ el, x, y }]. Past an ancestor that
+    // scrolls on an axis, outer ancestors no longer clip the text on that
+    // axis: what goes past them can be scrolled to.
+    function clippersOf(el) {
+      if (clipCache.has(el)) return clipCache.get(el);
+      const out = [];
+      let scrollX = false;
+      let scrollY = false;
+      for (
+        let a = el;
+        a && a.nodeType === 1 && a !== document.documentElement;
+        a = a.parentElement
+      ) {
+        const cs = styleOf(a);
+        if (!cs) continue;
+        const x = !scrollX && (cs.overflowX === 'hidden' || cs.overflowX === 'clip');
+        const y = !scrollY && (cs.overflowY === 'hidden' || cs.overflowY === 'clip');
+        if (x || y) out.push({ el: a, x, y });
+        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') scrollX = true;
+        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') scrollY = true;
+        if (scrollX && scrollY) break;
+      }
+      clipCache.set(el, out);
+      return out;
+    }
+
+    function shown(el) {
+      try {
+        return typeof el.checkVisibility === 'function'
+          ? el.checkVisibility({ opacityProperty: true, visibilityProperty: true })
+          : true;
+      } catch {
+        return true;
+      }
+    }
+
+    const sx = () => view.scrollX || 0;
+    const sy = () => view.scrollY || 0;
+    function linesOf(node) {
+      const range = document.createRange();
+      try {
+        range.selectNodeContents(node);
+        const out = [];
+        const ox = sx();
+        const oy = sy();
+        for (const r of range.getClientRects()) {
+          if (r.width < 1 || r.height < 1) continue;
+          out.push({
+            left: r.left + ox,
+            top: r.top + oy,
+            right: r.right + ox,
+            bottom: r.bottom + oy
+          });
+        }
+        return out;
+      } catch {
+        return [];
+      } finally {
+        try {
+          range.detach();
+        } catch {}
+      }
+    }
+    function boxOf(el) {
+      const r = el.getBoundingClientRect();
+      const cs = styleOf(el);
+      const bl = px(cs && cs.borderLeftWidth) || 0;
+      const bt = px(cs && cs.borderTopWidth) || 0;
+      const ox = sx();
+      const oy = sy();
+      return {
+        left: r.left + ox + bl,
+        top: r.top + oy + bt,
+        right: r.left + ox + bl + el.clientWidth,
+        bottom: r.top + oy + bt + el.clientHeight
+      };
+    }
+
+    function measure() {
+      const lines = new Map();
+      const boxes = new Map();
+      for (const n of nodes) {
+        lines.set(n, linesOf(n));
+        for (const c of clippersOf(n.parentElement)) {
+          if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
+        }
+      }
+      return { lines, boxes };
+    }
+
+    const scroll = [sx(), sy()];
+    const before = measure();
+    const fontSizes = new Map();
+    for (const n of nodes) {
+      const cs = styleOf(n.parentElement);
+      fontSizes.set(n, px(cs && cs.fontSize) || 16);
+    }
+
+    // Text a person could see before the spacing: rendered, and wholly
+    // inside every ancestor that clips it. Visually hidden text (a 1px box
+    // with overflow hidden), text scrolled out of a carousel or hidden by
+    // opacity or visibility is left out.
+    const visibleBefore = new Set();
+    for (const n of nodes) {
+      const lines = before.lines.get(n) || [];
+      if (!lines.length || !shown(n.parentElement)) continue;
+      const inside = clippersOf(n.parentElement).every((c) => {
+        const b0 = before.boxes.get(c.el);
+        return (
+          !!b0 &&
+          lines.every((l) => {
+            const o = outside(l, b0, c);
+            return o.dx <= 1 && o.dy <= 1;
+          })
+        );
+      });
+      if (inside) visibleBefore.add(n);
+    }
+
+    const sheet = document.createElement('style');
+    sheet.setAttribute('data-surea11y', LAYER);
+    sheet.textContent =
+      `@layer ${LAYER} {` +
+      '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
+      'p { margin-bottom: 2em !important; }' +
+      '}';
+    let after;
+    try {
+      const head = document.head || document.documentElement;
+      head.insertBefore(sheet, head.firstChild);
+      after = measure();
+    } finally {
+      if (sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      try {
+        view.scrollTo(scroll[0], scroll[1]);
+      } catch {}
+    }
+
+    // How far a line sits outside a box, along the axes the box clips.
+    function outside(line, box, c) {
+      const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
+      const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
+      return { dx, dy };
+    }
+
+    const reportedClip = new Set();
+    for (const n of nodes) {
+      const linesAfter = (after && after.lines.get(n)) || [];
+      if (!linesAfter.length || !visibleBefore.has(n)) continue;
+      textCount += 1;
+      const fontSize = fontSizes.get(n);
+      for (const c of clippersOf(n.parentElement)) {
+        if (reportedClip.has(c.el)) continue;
+        const b1 = after.boxes.get(c.el);
+        if (!b1) continue;
+        let worst = null;
+        for (const l of linesAfter) {
+          const o = outside(l, b1, c);
+          const height = l.bottom - l.top;
+          const lost = o.dy >= height / 2 || o.dx >= fontSize / 2;
+          const some = o.dy > 2 || o.dx > 2;
+          if (lost) {
+            worst = 'lost';
+            break;
+          }
+          if (some) worst = 'some';
+        }
+        if (worst) {
+          reportedClip.add(c.el);
+          (worst === 'lost' ? clipped : partly).push({ el: c.el, text: textOf(n.parentElement) });
+          break;
+        }
+      }
+    }
+
+    // Text that comes to overlap text from another element.
+    if (after) {
+      const BAND = 40;
+      const buckets = new Map();
+      const entries = [];
+      for (const n of nodes) {
+        if (!visibleBefore.has(n)) continue;
+        for (const whole of after.lines.get(n) || []) {
+          // Only the part of the line its clipping ancestors still show is
+          // painted; what they cut off is the clipping check's.
+          const l = { ...whole };
+          for (const c of clippersOf(n.parentElement)) {
+            const b = after.boxes.get(c.el);
+            if (!b) continue;
+            if (c.x) {
+              l.left = Math.max(l.left, b.left);
+              l.right = Math.min(l.right, b.right);
+            }
+            if (c.y) {
+              l.top = Math.max(l.top, b.top);
+              l.bottom = Math.min(l.bottom, b.bottom);
+            }
+          }
+          if (l.right - l.left < 1 || l.bottom - l.top < 1) continue;
+          const entry = { n, l };
+          entries.push(entry);
+          for (let b = Math.floor(l.top / BAND); b <= Math.floor(l.bottom / BAND); b++) {
+            if (!buckets.has(b)) buckets.set(b, []);
+            buckets.get(b).push(entry);
+          }
+        }
+      }
+      const intersects = (a, b) => {
+        const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        if (w <= 0 || h <= 0) return false;
+        const smaller = Math.min(
+          (a.right - a.left) * (a.bottom - a.top),
+          (b.right - b.left) * (b.bottom - b.top)
+        );
+        return w * h > smaller * 0.25;
+      };
+      const overlappedBefore = (n1, n2) =>
+        (before.lines.get(n1) || []).some((a) =>
+          (before.lines.get(n2) || []).some((b) => intersects(a, b))
+        );
+      const reported = new Set();
+      for (const list of buckets.values()) {
+        for (let i = 0; i < list.length; i++) {
+          for (let j = i + 1; j < list.length; j++) {
+            const a = list[i];
+            const b = list[j];
+            const pa = a.n.parentElement;
+            const pb = b.n.parentElement;
+            if (pa === pb || pa.contains(pb) || pb.contains(pa)) continue;
+            if (reported.has(pa) || reported.has(pb)) continue;
+            if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
+            reported.add(pa);
+            overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
+          }
+        }
+      }
+    }
+  }
+
+  // ---- Findings ----
+
+  const MESSAGES = {
+    TEXT_CLIPPED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, this element cuts off the text "${p.text}".`,
+      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12, RGAA 10.12.1).',
+      key: 'fail_clipped'
+    },
+    TEXT_CLIPPED_PARTLY: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" reaches past the edge of this element, which hides what goes past it.`,
+      hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12, RGAA 10.12.1).',
+      key: 'cantTell_clippedPartly',
+      needed: 'Whether the text that reaches past the edge of the element can still be read.'
+    },
+    TEXT_OVERLAPS: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" comes to overlap the text "${p.other}".`,
+      hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12, RGAA 10.12.1).',
+      key: 'cantTell_overlaps',
+      needed: 'Whether the overlapping texts can still be read.'
+    },
+    STYLESHEET_IMPORTANT: {
+      summary: (p) =>
+        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
+      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12, RGAA 10.12.1).',
+      key: 'cantTell_stylesheetImportant',
+      needed: 'Whether users can still apply their own text spacing to this text.'
+    }
+  };
+
+  const fails = [];
+  const questions = [];
+  function report(reasonCode, el, params, uncertaintyCode) {
+    const msg = MESSAGES[reasonCode];
+    const occ = helpers.reportOccurrence(el, {
+      summary: msg.summary(params),
+      hint: msg.hint,
+      i18n: {
+        summaryKey: `textSpacingContentLoss_summary_${msg.key}`,
+        hintKey: `textSpacingContentLoss_hint_${msg.key}`,
+        params
+      },
+      ...(msg.needed
+        ? { uncertainty: { code: uncertaintyCode, needed: msg.needed, evidence: { reasonCode } } }
+        : {}),
+      data: { details: { reasonCode, ...params } }
+    });
+    (msg.needed ? questions : fails).push(occ);
+  }
+
+  for (const f of clipped) report('TEXT_CLIPPED', f.el, { text: f.text });
+  for (const f of partly) {
+    report('TEXT_CLIPPED_PARTLY', f.el, { text: f.text }, 'judgement-required');
+  }
+  for (const f of overlaps) {
+    report('TEXT_OVERLAPS', f.el, { text: f.text, other: f.other }, 'judgement-required');
+  }
+  for (const f of importantFindings) {
+    report(
+      'STYLESHEET_IMPORTANT',
+      f.el,
+      { selector: f.selector, property: f.prop, value: f.value },
+      'runtime-dependent'
+    );
+  }
+
+  if (fails.length || questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+    };
+  }
+  if (textCount)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(hasLayout() ? {} : { data: { reason: 'noLayout' } })
+  };
+}), applicability: null },
     "textbox-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
@@ -91002,6 +94467,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel ist sehr kurz und identifiziert das Thema oder den Zweck der Seite möglicherweise nicht.",
     "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt schablonenhaft und identifiziert das Thema oder den Zweck der Seite möglicherweise nicht.",
     "pageTitlePatterns_hint_cantTell": "Überprüfen Sie den Seitentitel und stellen Sie sicher, dass er das Thema oder den Zweck der Seite klar identifiziert und hilft, die Seite von anderen zu unterscheiden.",
+    "pageTitleUnique_title": "Seitentitel sind auf der Website eindeutig",
+    "pageTitleUnique_description": "Vergleicht den Seitentitel mit den Titeln der anderen Seiten der Website aus der Probe crawl.pageTitles und wertet einen mit einer anderen Seite geteilten Titel als Fehler, da RGAA 8.6.1 einen Titel verlangt, der die Seite eindeutig bezeichnet.",
+    "pageTitleUnique_summary_fail_duplicate": "Andere Seiten der Website haben denselben Titel, „{{title}}“: {{pages}}. RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » (klar, knapp und eindeutig) bezeichnet.",
+    "pageTitleUnique_hint_fail_duplicate": "Geben Sie jeder Seite einen eigenen Titel, der sagt, was sie enthält, etwa das Thema der Seite gefolgt vom Namen der Website (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Eine Seite, deren Adresse sich von dieser nur durch die Parameter unterscheidet, hat denselben Titel, „{{title}}“: {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Prüfen Sie, ob diese Adressen verschiedene Seiten zeigen. Falls ja, geben Sie jeder einen eigenen Titel: RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » bezeichnet (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Nur diese Seite war verfügbar, daher ließ sich nicht prüfen, ob ihr Titel „{{title}}“ auf der Website eindeutig ist.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Prüfen Sie mehrere Seiten der Website und übergeben Sie deren Titel als Probe crawl.pageTitles, oder prüfen Sie, dass keine andere Seite diesen Titel hat: RGAA verlangt, dass ein Seitentitel die Seite « de manière claire, concise et unique » bezeichnet (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Jeder Bereich der Seite kann erreicht oder übersprungen werden",
+    "pageZonesReachable_description": "Prüft, dass Kopfbereich, Hauptnavigation, Hauptinhalt, Fußbereich und Suche jeweils eine Landmark haben, und fragt bei einem über seinen Namen gefundenen Bereich nach, der stattdessen eine Überschrift, einen Sprung- oder Schnellzugriffslink oder eine Schaltfläche nutzt (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Eine Überschrift leitet ihn ein: Prüfen Sie, dass sie sagt, was der Bereich enthält.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link direkt davor führt dahinter: Prüfen Sie, dass es ein Sprunglink über diesen Bereich ist.",
+    "pageZonesReachable_summary_cantTell_toggle": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Eine Schaltfläche direkt davor kann ihn verbergen: Prüfen Sie, dass sie diesen Bereich verbirgt.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link führt zu ihm: Prüfen Sie, dass der Link sichtbar ist, zumindest wenn er den Fokus erhält.",
+    "pageZonesReachable_summary_cantTell_none": "Dieser Bereich („{{hint}}“) hat weder eine Landmark-Rolle noch eine einleitende Überschrift noch einen Link oder eine Schaltfläche, um ihn zu erreichen, zu überspringen oder zu verbergen.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "Die Seite hat keine Haupt-Landmark (<main> oder role=\"main\"), daher ließ sich nicht prüfen, wie der Hauptinhalt erreicht wird.",
+    "pageZonesReachable_hint_cantTell": "Geben Sie jedem Bereich die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular. Andernfalls geben Sie ihm eine Überschrift, die sagt, was er enthält, oder einen Sprung- oder Schnellzugriffslink (RGAA 12.6.1).",
     "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
     "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
     "contrastComputable_pass_allComputable": "Der Kontrast ist für allen zutreffenden Text berechenbar ({{eligibleTextCount}} Textknoten).",
@@ -91103,7 +94585,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Geben Sie dem Fokusindikator eine Farbe mit einem Kontrastverhältnis von mindestens 3:1 zum Hintergrund hinter dem Element und zum Element selbst (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "Der Fokusindikator dieses Elements ({{property}}, {{color}}) erreicht 3:1 nur gegenüber einer der angrenzenden Farben ({{ratio}}:1 gegenüber der anderen).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Prüfen Sie auf der Seite, ob der Fokusindikator gut sichtbar ist, mit einem Kontrastverhältnis von mindestens 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "Der Kontrast des Fokusindikators dieses Elements konnte nicht berechnet werden (Hintergrundbild, Verlauf, weicher Schatten, CSS-Variable, eine Bedingung wie @media oder Regeln, die die Engine nicht ordnen kann).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "Der Kontrast des Fokusindikators dieses Elements konnte nicht berechnet werden (Hintergrundbild, Verlauf, weicher Schatten, Animation, CSS-Variable, eine Bedingung wie @media oder Regeln, die die Engine nicht ordnen kann).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Messen Sie den Kontrast des Fokusindikators auf der Seite: Er braucht ein Verhältnis von mindestens 3:1 zu den angrenzenden Farben (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "Der Fokusstil dieses Elements ändert etwas, das die Engine nicht misst (Hintergrund, Textfarbe, Unterstreichung oder ein anderes Element).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Prüfen Sie auf der Seite, ob der Fokusstil sichtbar ist, mit einem Kontrastverhältnis von mindestens 3:1 (RGAA 10.7.1).",
@@ -91238,7 +94720,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
     "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
-    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inline-Stile benutzerdefinierte Textabstände nicht blockieren.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
     "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
     "catalog.rules.wcag_224_interruptions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass automatische Kontextänderungen nur auf Anforderung des Benutzers erfolgen (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Änderung auf Anfrage",
@@ -91370,8 +94852,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Entfernen Sie aria-hidden von <body>: Es würde die ganze Seite vor assistiven Technologien verbergen.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Dieses <{{element}}> hat role=\"{{role}}\", aber kein {{attr}}-Attribut, das die Rolle verlangt.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Fügen Sie das Attribut mit dem aktuellen Wert hinzu oder verwenden Sie ein natives Element mit dieser Rolle.",
-    "markupValidationReview_title": "Der generierte Quellcode wird mit dem W3C-Validator geprüft",
-    "markupValidationReview_description": "Fordert dazu auf, den generierten Quellcode der Seite mit dem W3C-Validator zu prüfen und die Bedingungen von RGAA 8.2.1 zu kontrollieren, von denen die Engine die meisten nicht mehr sieht, sobald der Browser die Seite geparst hat.",
+    "markupValidationReview_title": "Der generierte Quelltext besteht den W3C-Validator",
+    "markupValidationReview_description": "Liest den Bericht des W3C-Validators zum generierten Quelltext aus der Probe validator.report und wertet die aufgeführten Fehler als Fehler; ohne Bericht bittet es eine Person, den Validator auszuführen (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "Der W3C-Validator meldet einen Fehler im generierten Quelltext, Zeile {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Korrigieren Sie das Markup, damit es den HTML-Schreibregeln folgt: Tags, Attribute und Werte wie HTML sie erlaubt, korrekt verschachtelte, geöffnete und geschlossene Tags, eindeutige id-Werte und kein doppeltes Attribut an einem Element (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "Der Validator konnte die Seite nicht prüfen: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "Der W3C-Validator meldet {{count}} Fehler im ursprünglichen Quelltext, den ersten in Zeile {{line}}: {{message}}. RGAA 8.2.1 prüft den generierten Quelltext, in dem der Browser sie behoben haben kann.",
+    "markupValidationReview_summary_cantTell_originalClean": "Der W3C-Validator meldet keinen Fehler im ursprünglichen Quelltext. RGAA 8.2.1 prüft den generierten Quelltext, den Skripte verändern können.",
+    "markupValidationReview_summary_cantTell_truncated": "Der Validatorbericht hat {{cap}} oder mehr Meldungen, und die Engine liest die ersten {{cap}}, von denen keine ein Fehler ist; der Rest ließ sich nicht prüfen.",
+    "markupValidationReview_hint_cantTell_report": "Prüfen Sie den generierten Quelltext der Seite, also die Seite nach Ausführung ihrer Skripte, mit dem Nu HTML Checker des W3C und übergeben Sie dessen Meldungen als Probe validator.report mit source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Prüfen Sie den generierten Quellcode dieser Seite mit dem W3C-Validator: Die Engine sieht keine nicht geschlossenen oder falsch verschachtelten Tags, doppelten Attribute und anderen Fehler, die der Browser repariert.",
     "markupValidationReview_hint_cantTell_page": "Validieren Sie den generierten Quellcode (zum Beispiel mit dem W3C Nu HTML Checker) und prüfen Sie, dass Tags, Attribute und Werte den Schreibregeln folgen, Tags korrekt verschachtelt, geöffnet und geschlossen sind, id-Werte eindeutig sind und kein Attribut zweimal auf einem Element steht (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
@@ -91697,6 +95186,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Ein Sprunglink zum Hauptinhalt ist nötig, außer die Website besteht aus einer einzigen Seite, die keinen braucht. Prüfen Sie den Inhalt vor <main>, und fügen Sie einen Link hinzu, wenn sich dieser Inhalt wiederholt oder übersprungen werden kann.",
     "skipLinkPresent_summary_cantTell_noMain": "Die Seite hat kein Element <main>, daher konnten der Hauptinhalt und ein Link dorthin nicht gefunden werden.",
     "skipLinkPresent_hint_cantTell_noMain": "Kennzeichnen Sie den Hauptinhalt mit einem Element <main>, und fügen Sie davor einen Link wie „Zum Inhalt springen“ hinzu, dessen href die id dieses Elements ist.",
+    "skipLinkPlacement_title": "Sprunglinks sind sichtbar und stehen auf jeder Seite an derselben Stelle",
+    "skipLinkPlacement_description": "Prüft, dass der Link zum Hauptinhalt sichtbar ist, zumindest wenn er den Fokus erhält, und dass die anderen Seiten der Website ihn an derselben Stelle und in derselben Fokusreihenfolge zeigen (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Dieser Sprunglink ist nicht sichtbar und bleibt verborgen, wenn er den Fokus erhält (ohne Größe, außerhalb der Seite, abgeschnitten, transparent oder visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Zeigen Sie den Sprunglink immer an, oder zumindest wenn er den Tastaturfokus erhält, etwa indem eine :focus-Regel ihn wieder ins Bild holt (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Dieser Sprunglink steht auf anderen Seiten der Website, gemessen bei derselben Fensterbreite, nicht an derselben Stelle: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Setzen Sie den Sprunglink auf jeder Seite an dieselbe Stelle, meist an den Anfang des Seitenkopfs (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Ob dieser Sprunglink sichtbar ist, ließ sich nicht klären: Etwas verdeckt ihn vielleicht, er ist beim Fokus animiert, oder die Seite wurde nicht dargestellt.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Springen Sie mit der Tabulatortaste zum Sprunglink und prüfen Sie, dass er mit Fokus sichtbar ist (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Dieser Sprunglink steht auf anderen Seiten der Website an einer anderen Stelle der Fokusreihenfolge: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Prüfen Sie, dass der Sprunglink auf jeder Seite in derselben Reihenfolge relativ zum Rest der Seite steht (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Die anderen Seiten der Website wurden bei einer anderen Fensterbreite gemessen, daher ließ sich die Stelle dieses Sprunglinks nicht vergleichen.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Messen Sie alle Seiten bei derselben Fensterbreite, oder prüfen Sie auf der Website, dass der Sprunglink auf jeder Seite an derselben Stelle steht (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Nur diese Seite war verfügbar, daher ließ sich nicht prüfen, ob der Sprunglink auf den anderen Seiten der Website an derselben Stelle und in derselben Reihenfolge steht.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Prüfen Sie mehrere Seiten der Website und übergeben Sie deren Sprunglink-Daten als Probe crawl.skipLinks, oder prüfen Sie auf der Website, dass der Sprunglink auf jeder Seite an derselben Stelle und in derselben Reihenfolge steht (RGAA 12.7.2).",
     "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
@@ -91785,6 +95288,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
     "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+    "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
+    "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
+    "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element den Text „{{text}}“ ab.",
+    "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ den Text „{{other}}“.",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
     "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
     "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -91801,8 +95314,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied in Schriftstärke oder -stil oder ein anderes Merkmal außer der Farbe aufweist, oder mindestens 3:1 Kontrast zum umgebenden Text zusammen mit einem Merkmal außer der Farbe bei Hover und Fokus. Wird die Engine in einem echten Browser statt in einem DOM-Emulator ausgeführt, klärt sich das in den meisten Fällen automatisch.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
-    "linkStateColorsReview_title": "Nur durch Farbe gezeigte Linkzustände werden geprüft",
-    "linkStateColorsReview_description": "Markiert Links im Fließtext, die nur durch Farbe erkennbar sind und deren besuchter, aktiver, Hover- oder Fokuszustand die Farbe ändert, damit eine Person den Kontrast von 3:1 jedes Zustands zum umgebenden Text prüft (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Nur durch Farbe gezeigte Linkzustände haben einen Kontrast von 3:1 zum umgebenden Text",
+    "linkStateColorsReview_description": "Prüft, dass ein nur durch Farbe erkennbarer Link im Fließtext in jedem besuchten, aktiven, Hover- oder Fokuszustand, der eine andere Farbe zeigt, einen Kontrast von 3:1 zum umgebenden Text behält, und fragt nach, wenn diese Zustände nicht auf den Link angewendet werden können (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und in diesen Zuständen kontrastiert diese Farbe unter 3:1 zum umgebenden Text: {{states}} (niedrigster Wert {{ratio}}:1, {{color}} zu {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Geben Sie dem Link in jedem Zustand eine Farbe mit einem Kontrast von mindestens 3:1 zum umgebenden Text, oder kennzeichnen Sie ihn in diesen Zuständen durch mehr als Farbe, etwa eine Unterstreichung (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und eine Stilregel ändert diese Farbe in diesen Zuständen: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und keine Stilregel legt diese Farbe fest, daher gilt die eigene, abweichende Farbe des Browsers für besuchte Links.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Dieser Link im Fließtext ist nur durch seine Farbe erkennbar, und ein nicht lesbares Stylesheet kann diese Farbe in einigen seiner Zustände ändern.",
@@ -91851,7 +95366,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
     "orientationContentParity_title": "Der Inhalt bleibt im Hoch- und Querformat gleich",
-    "orientationContentParity_description": "Meldet jedes Element, das eine Media Query zur Ausrichtung ausblendet (display: none oder visibility: hidden), damit eine Person prüft, ob in beiden Ausrichtungen derselbe Inhalt angeboten wird.",
+    "orientationContentParity_description": "Stellt die Seite im Hoch- und im Querformat dar, wertet Inhalte als Fehler, die in einer Ausrichtung gezeigt werden und in der anderen fehlen, und fragt bei Elementen nach, die eine Ausrichtungs-Media-Query verbirgt, wenn die Seite nicht dargestellt werden kann (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "Im Hochformat ist dieses <{{element}}> verborgen, und sein Inhalt („{{text}}“) wird nirgends sonst gezeigt.",
+    "orientationContentParity_summary_fail_missing_landscape": "Im Querformat ist dieses <{{element}}> verborgen, und sein Inhalt („{{text}}“) wird nirgends sonst gezeigt.",
+    "orientationContentParity_hint_fail_missing": "Bieten Sie in beiden Ausrichtungen dieselben Inhalte an. Die Darstellung darf sich ändern, die Inhalte müssen aber verfügbar bleiben (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "Im Hochformat ist dieses <{{element}}> verborgen, und mit ihm der Hauptinhalt der Seite.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "Im Querformat ist dieses <{{element}}> verborgen, und mit ihm der Hauptinhalt der Seite.",
+    "orientationContentParity_hint_cantTell_mainContent": "Prüfen Sie, dass die Seite in beiden Ausrichtungen nutzbar ist, sofern nicht eine Ausrichtung wesentlich ist (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Eine Media Query \"{{mediaText}}\" blendet dieses <{{element}}> aus (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Prüfen Sie, ob im Hoch- und im Querformat derselbe Inhalt angeboten wird, auch wenn er anders dargestellt oder erreicht wird (RGAA 13.9.1). Das ist nicht erforderlich, wenn eine Ausrichtung wesentlich ist.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
@@ -91907,6 +95428,14 @@ const I18N = {
     "doctypePresent_description": "Prüft, ob das Dokument einen Doctype hat, der vor dem <html>-Element steht.",
     "doctypePresent_summary_fail_missing": "Die Seite hat keinen Doctype.",
     "doctypePresent_hint_fail": "Beginnen Sie die Seite mit <!DOCTYPE html>, vor dem <html>-Element.",
+    "doctypePosition_title": "Der Doctype steht vor dem <html>-Tag",
+    "doctypePosition_description": "Prüft, dass ein deklarierter Doctype im Quelltext vor dem <html>-Tag steht, und liest dazu den Quelltext aus der Probe page.source, wenn der Parser ihn verworfen hat (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "Der Quelltext der Seite deklariert den Doctype nach dem <html>-Tag, daher ignorieren Browser ihn.",
+    "doctypePosition_hint_fail_afterHtml": "Setzen Sie den Doctype ganz an den Anfang der Seite, vor das <html>-Tag: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "Die Seite hat nach dem Parsen keinen Doctype. Ohne ihren Quelltext ließ sich nicht sagen, ob er fehlt oder nach dem <html>-Tag steht.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Sehen Sie sich den Quelltext an, wie der Server ihn sendet, oder übergeben Sie seinen Anfang als Probe page.source: Ein Doctype muss vor dem <html>-Tag stehen (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "Der übergebene Anfang des Quelltexts zeigt weder einen Doctype noch das <html>-Tag, daher ließ sich nicht sagen, wo der Doctype steht.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Sehen Sie sich den Quelltext an, wie der Server ihn sendet: Ein Doctype muss vor dem <html>-Tag stehen (RGAA 8.1.3).",
     "doctypeValid_title": "Der deklarierte Doctype ist gültig",
     "doctypeValid_description": "Prüft, ob ein deklarierter Doctype der HTML5-Doctype oder einer der vom W3C empfohlenen ist.",
     "doctypeValid_summary_fail": "Die Seite deklariert einen Doctype, der weder HTML5 noch vom W3C empfohlen ist.",
@@ -92312,6 +95841,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "The page title is very short and may not identify the page topic or purpose.",
     "pageTitlePatterns_summary_cantTell_templateLike": "The page title appears templated and may not identify the page topic or purpose.",
     "pageTitlePatterns_hint_cantTell": "Review the page title and ensure it clearly identifies the page topic or purpose and helps distinguish the page from others.",
+    "pageTitleUnique_title": "Page titles are unique across the site",
+    "pageTitleUnique_description": "Compares the page title with the titles of the site’s other pages, given as the crawl.pageTitles probe, and fails one shared with another page, since RGAA 8.6.1 asks for a title that identifies the page uniquely.",
+    "pageTitleUnique_summary_fail_duplicate": "Other pages of the site have the same title, \"{{title}}\": {{pages}}. RGAA asks that a page title identify the page « de manière claire, concise et unique ».",
+    "pageTitleUnique_hint_fail_duplicate": "Give each page a title of its own that says what this page holds, for instance the page’s subject followed by the site’s name (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "A page whose address differs from this one only by its query string has the same title, \"{{title}}\": {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Check whether these addresses show different pages. If they do, give each its own title: RGAA asks that a page title identify the page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Only this page was available, so whether its title, \"{{title}}\", is unique across the site could not be checked.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Scan several pages of the site and pass their titles as the crawl.pageTitles probe, or check that no other page has this title: RGAA asks that a page title identify the page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Each area of the page can be reached or skipped",
+    "pageZonesReachable_description": "Checks that the header, main navigation, main content, footer and search areas each have a landmark, and asks about an area found from its name that relies on a heading, a skip or quick-access link, or a button instead (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "This area (\"{{hint}}\") has no landmark role. A heading opens it: check that the heading says what the area holds.",
+    "pageZonesReachable_summary_cantTell_skipLink": "This area (\"{{hint}}\") has no landmark role. A same-page link just before it leads past it: check that it is a skip link for this area.",
+    "pageZonesReachable_summary_cantTell_toggle": "This area (\"{{hint}}\") has no landmark role. A button just before it may hide it: check that the button hides this area.",
+    "pageZonesReachable_summary_cantTell_quickLink": "This area (\"{{hint}}\") has no landmark role. A same-page link leads to it: check that the link is visible, at least when it takes focus.",
+    "pageZonesReachable_summary_cantTell_none": "This area (\"{{hint}}\") has no landmark role, no heading opening it, and no link or button to reach, skip or hide it.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "The page has no main landmark (<main> or role=\"main\"), so how the main content can be reached could not be checked.",
+    "pageZonesReachable_hint_cantTell": "Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).",
     "contrastComputable_title": "Color contrast is computable for rendered text",
     "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
     "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
@@ -92413,7 +95959,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Give the focus indicator a color with a contrast ratio of at least 3:1 against the background behind the element and against the element itself (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "The {{property}} this element shows on focus ({{color}}) reaches 3:1 against only one of the colors next to it ({{ratio}}:1 against the other).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Check on the page that the focus indicator is clearly visible, with a contrast ratio of at least 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, a CSS variable, a condition such as @media, or rules the engine cannot order).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "The contrast of this element's focus indicator could not be computed (a background image, a gradient, a blurred shadow, an animation, a CSS variable, a condition such as @media, or rules the engine cannot order).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Measure the contrast of the focus indicator on the page: it needs a ratio of at least 3:1 with the colors next to it (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "This element's focus style changes something the engine does not measure (background, text color, underline, or another element).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Check on the page that the focus style is visible, with a contrast ratio of at least 3:1 (RGAA 10.7.1).",
@@ -92548,7 +96094,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
     "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
-    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring inline styles do not block user text-spacing overrides.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Rollup of checks ensuring automatic context changes only happen at the user's request (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Change on Request",
@@ -92680,8 +96226,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Remove aria-hidden from <body>: it would hide the whole page from assistive technologies.",
     "ariaAttributeConformance_summary_fail_missingRequired": "This <{{element}}> has role=\"{{role}}\" but no {{attr}} attribute, which the role requires.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Add the attribute with the current value, or use a native element that has this role.",
-    "markupValidationReview_title": "The generated source code is checked with the W3C validator",
-    "markupValidationReview_description": "Asks a person to run the W3C validator on the generated source code of the page and check the conditions of RGAA 8.2.1, most of which the engine cannot see once the browser has parsed the page.",
+    "markupValidationReview_title": "The generated source code passes the W3C validator",
+    "markupValidationReview_description": "Reads the W3C validator report on the generated source, given as the validator.report probe, and fails the errors it lists; without a report it asks a person to run the validator (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "The W3C validator reports an error in the generated source, line {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Correct the markup so that it follows the HTML writing rules: tags, attributes and values written as HTML allows, tags nested, opened and closed correctly, unique id values and no attribute twice on one element (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "The validator could not check the page: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "The W3C validator reports {{count}} errors in the original source, the first at line {{line}}: {{message}}. RGAA 8.2.1 validates the generated source, where the browser may have repaired them.",
+    "markupValidationReview_summary_cantTell_originalClean": "The W3C validator reports no error in the original source. RGAA 8.2.1 validates the generated source, which scripts may change.",
+    "markupValidationReview_summary_cantTell_truncated": "The validator report has {{cap}} messages or more and the engine reads the first {{cap}}, none of them an error, so the rest could not be checked.",
+    "markupValidationReview_hint_cantTell_report": "Validate the generated source of the page, the page after its scripts have run, with the W3C Nu HTML Checker, and pass its messages as the validator.report probe with source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Run the W3C validator on the generated source code of this page: the engine cannot see unclosed or misnested tags, repeated attributes and other errors the browser repairs.",
     "markupValidationReview_hint_cantTell_page": "Validate the generated source (for example with the W3C Nu HTML Checker) and check that tags, attributes and values follow the writing rules, tags are nested, opened and closed correctly, id values are unique and no attribute appears twice on one element (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
@@ -93007,6 +96560,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "A skip link to the main content is needed unless the site is a single page that has no use for one. Check the content before <main>, and add a link to it if that content repeats or can be skipped.",
     "skipLinkPresent_summary_cantTell_noMain": "The page has no <main> element, so the main content zone and a link to it could not be found.",
     "skipLinkPresent_hint_cantTell_noMain": "Mark the main content with a <main> element, and add a link before it, such as \"Skip to content\", whose href is the id of that element.",
+    "skipLinkPlacement_title": "Skip links are visible and at the same place on every page",
+    "skipLinkPlacement_description": "Checks that the link to the main content is visible, at least when it takes focus, and that the site’s other pages show it at the same place and in the same focus order (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "This skip link is not visible, and it stays hidden when it takes focus (no size, outside the page, clipped, transparent or visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Show the skip link at all times, or at least when it takes keyboard focus, for instance by moving it back into view in a :focus rule (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "This skip link is not at the same place on other pages of the site, measured at the same window width: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Place the skip link at the same position on every page, usually first in the page header (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Whether this skip link is visible could not be settled: something may cover it, it is animated when it takes focus, or the page was not rendered.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Tab to the skip link and check that it is visible when it has focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "This skip link comes at another place in the focus order on other pages of the site: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Check that the skip link comes in the same order relative to the rest of the page on every page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "The other pages of the site were measured at another window width, so the place of this skip link could not be compared.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Measure every page at the same window width, or check on the site that the skip link is at the same place on every page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Only this page was available, so whether the skip link is at the same place and in the same order on the other pages of the site could not be checked.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Scan several pages of the site and pass their skip link records as the crawl.skipLinks probe, or check on the site that the skip link is at the same place and in the same order on every page (RGAA 12.7.2).",
     "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
@@ -93095,6 +96662,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
     "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+    "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
+    "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied, this element cuts off the text \"{{text}}\".",
+    "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" reaches past the edge of this element, which hides what goes past it.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
     "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
     "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -93111,8 +96688,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
-    "linkStateColorsReview_title": "Link states shown by color alone are reviewed",
-    "linkStateColorsReview_description": "Flags links in a run of text, shown only by color, whose visited, active, hover or focus state changes their color, for a person to check the 3:1 contrast of each state with the surrounding text (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+    "linkStateColorsReview_description": "Checks that a link in a run of text, shown only by color, keeps a contrast of 3:1 with the surrounding text in each visited, active, hover or focus state shown by another color, and asks when the states cannot be put on the link (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "This link in a run of text is shown only by its color, and in these states that color contrasts below 3:1 with the surrounding text: {{states}} (lowest {{ratio}}:1, {{color}} against {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Give the link a color with a contrast ratio of at least 3:1 with the surrounding text in each state, or mark it in those states by more than color, such as an underline (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "This link in a run of text is shown only by its color, and a style rule changes that color in these states: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "This link in a run of text is shown only by its color, and no style rule sets that color, so the browser's own visited color, a different one, applies.",
     "linkStateColorsReview_summary_cantTell_unreadable": "This link in a run of text is shown only by its color, and a style sheet that could not be read may change that color in some of its states.",
@@ -93161,7 +96740,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
     "orientationContentParity_title": "Content stays the same in portrait and landscape",
-    "orientationContentParity_description": "Flags each element that an orientation media query hides (display: none or visibility: hidden), for a person to check that the same content is offered in both orientations.",
+    "orientationContentParity_description": "Lays the page out as portrait and as landscape and fails content shown in one orientation and missing from the other, and asks about elements an orientation media query hides when the page cannot be laid out (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "In portrait, this <{{element}}> is hidden and its content (\"{{text}}\") is not shown anywhere else.",
+    "orientationContentParity_summary_fail_missing_landscape": "In landscape, this <{{element}}> is hidden and its content (\"{{text}}\") is not shown anywhere else.",
+    "orientationContentParity_hint_fail_missing": "Offer the same content in both orientations. Its presentation may change, but it must stay available (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "In portrait, this <{{element}}> is hidden, and with it the main content of the page.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "In landscape, this <{{element}}> is hidden, and with it the main content of the page.",
+    "orientationContentParity_hint_cantTell_mainContent": "Check that the page can be used in both orientations, unless one orientation is essential to it (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "A \"{{mediaText}}\" media query hides this <{{element}}> (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Check that the same content is offered in portrait and in landscape, even if it is presented or reached differently (RGAA 13.9.1). This is not required when one orientation is essential.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
@@ -93217,6 +96802,14 @@ const I18N = {
     "doctypePresent_description": "Checks that the document has a doctype, written before the <html> element.",
     "doctypePresent_summary_fail_missing": "The page has no doctype.",
     "doctypePresent_hint_fail": "Start the page with <!DOCTYPE html>, before the <html> element.",
+    "doctypePosition_title": "The doctype comes before the <html> tag",
+    "doctypePosition_description": "Checks that a declared doctype comes before the <html> tag in the source, reading the page source given as the page.source probe when the parser has dropped it (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "The page source declares its doctype after the <html> tag, so browsers ignore it.",
+    "doctypePosition_hint_fail_afterHtml": "Move the doctype to the very start of the page, before the <html> tag: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "The page has no doctype once parsed. Without its source, whether one is missing or written after the <html> tag could not be told.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Look at the page source as the server sends it, or pass its start as the page.source probe: a doctype must come before the <html> tag (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "The start of the page source given shows neither a doctype nor the <html> tag, so where the doctype sits could not be told.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Look at the page source as the server sends it: a doctype must come before the <html> tag (RGAA 8.1.3).",
     "doctypeValid_title": "Declared doctype is valid",
     "doctypeValid_description": "Checks that a declared doctype is the HTML5 doctype or one of the doctypes the W3C recommends.",
     "doctypeValid_summary_fail": "The page declares a doctype that is neither HTML5 nor a W3C recommended one.",
@@ -93622,6 +97215,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página es muy corto y puede no identificar su tema o propósito.",
     "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece basado en una plantilla y puede no identificar su tema o propósito.",
     "pageTitlePatterns_hint_cantTell": "Revisar el título de la página y asegurarse de que identifique claramente su tema o propósito y ayude a distinguirla de otras.",
+    "pageTitleUnique_title": "Los títulos de página son únicos en el sitio",
+    "pageTitleUnique_description": "Compara el título de la página con los de las demás páginas del sitio, recibidos en la sonda crawl.pageTitles, y falla un título compartido con otra página, ya que RGAA 8.6.1 pide un título que identifique la página de forma única.",
+    "pageTitleUnique_summary_fail_duplicate": "Otras páginas del sitio tienen el mismo título, «{{title}}»: {{pages}}. El RGAA pide que el título identifique la página « de manière claire, concise et unique » (de forma clara, concisa y única).",
+    "pageTitleUnique_hint_fail_duplicate": "Dé a cada página un título propio que diga lo que contiene, por ejemplo el tema de la página seguido del nombre del sitio (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Una página cuya dirección solo se diferencia de esta por sus parámetros tiene el mismo título, «{{title}}»: {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Compruebe si estas direcciones muestran páginas distintas. Si es así, dé a cada una su propio título: el RGAA pide que el título identifique la página « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Solo estaba disponible esta página, así que no se pudo comprobar si su título, «{{title}}», es único en el sitio.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Analice varias páginas del sitio y pase sus títulos en la sonda crawl.pageTitles, o compruebe que ninguna otra página tiene este título: el RGAA pide que el título identifique la página « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Cada zona de la página se puede alcanzar u omitir",
+    "pageZonesReachable_description": "Comprueba que las zonas de cabecera, navegación principal, contenido principal, pie de página y búsqueda tienen cada una un landmark, y pregunta por una zona encontrada por su nombre que se apoya en su lugar en un encabezado, un enlace de salto o de acceso rápido, o un botón (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Esta zona («{{hint}}») no tiene rol landmark. La abre un encabezado: compruebe que el encabezado dice lo que contiene la zona.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno justo antes de ella lleva más allá: compruebe que es un enlace para saltar esta zona.",
+    "pageZonesReachable_summary_cantTell_toggle": "Esta zona («{{hint}}») no tiene rol landmark. Un botón justo antes de ella puede ocultarla: compruebe que el botón oculta esta zona.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno lleva a ella: compruebe que el enlace es visible, al menos cuando recibe el foco.",
+    "pageZonesReachable_summary_cantTell_none": "Esta zona («{{hint}}») no tiene rol landmark, ni encabezado que la abra, ni enlace o botón para alcanzarla, saltarla u ocultarla.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "La página no tiene landmark principal (<main> o role=\"main\"), así que no se pudo comprobar cómo se llega al contenido principal.",
+    "pageZonesReachable_hint_cantTell": "Dé a cada zona el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda. Si no, dele un encabezado que diga lo que contiene, o un enlace de salto o de acceso rápido (RGAA 12.6.1).",
     "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
     "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
     "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
@@ -93723,7 +97333,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Dar al indicador de foco un color con una relación de contraste de al menos 3:1 con el fondo que hay detrás del elemento y con el propio elemento (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "El indicador de foco de este elemento ({{property}}, {{color}}) llega a 3:1 solo con uno de los colores contiguos ({{ratio}}:1 con el otro).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Comprobar en la página que el indicador de foco se ve con claridad, con una relación de contraste de al menos 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "No se pudo calcular el contraste del indicador de foco de este elemento (imagen o degradado de fondo, sombra difuminada, variable CSS, una condición como @media o reglas que el motor no puede ordenar).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "No se pudo calcular el contraste del indicador de foco de este elemento (imagen o degradado de fondo, sombra difuminada, animación, variable CSS, una condición como @media o reglas que el motor no puede ordenar).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Medir en la página el contraste del indicador de foco: necesita una relación de al menos 3:1 con los colores contiguos (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "El estilo de foco de este elemento cambia algo que el motor no mide (fondo, color del texto, subrayado u otro elemento).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Comprobar en la página que el estilo de foco es visible, con una relación de contraste de al menos 3:1 (RGAA 10.7.1).",
@@ -93858,7 +97468,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identificar el propósito de la entrada",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
-    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que los estilos en línea no impidan que el usuario modifique el espaciado del texto.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
     "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
     "catalog.rules.wcag_224_interruptions.description": "Agrupación de comprobaciones que garantizan que los cambios de contexto automáticos solo se produzcan a petición del usuario (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Cambio a petición",
@@ -93990,8 +97600,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Eliminar aria-hidden de <body>: ocultaría toda la página a las tecnologías de apoyo.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Este <{{element}}> tiene role=\"{{role}}\" pero ningún atributo {{attr}}, que el rol exige.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Añadir el atributo con el valor actual, o usar un elemento nativo que tenga este rol.",
-    "markupValidationReview_title": "El código fuente generado se comprueba con el validador del W3C",
-    "markupValidationReview_description": "Pide a una persona que pase el código fuente generado de la página por el validador del W3C y compruebe las condiciones de RGAA 8.2.1, que el motor en su mayoría ya no ve una vez que el navegador ha analizado la página.",
+    "markupValidationReview_title": "El código fuente generado supera el validador del W3C",
+    "markupValidationReview_description": "Lee el informe del validador del W3C sobre el código fuente generado, recibido en la sonda validator.report, y falla los errores que enumera; sin informe, pide a una persona que ejecute el validador (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "El validador del W3C informa de un error en el código fuente generado, línea {{line}}: {{message}}",
+    "markupValidationReview_hint_fail_error": "Corrija el código para que siga las reglas de escritura del HTML: etiquetas, atributos y valores conformes, etiquetas bien anidadas, abiertas y cerradas, valores de id únicos y ningún atributo repetido en un mismo elemento (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "El validador no pudo comprobar la página: {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "El validador del W3C informa de {{count}} errores en el código fuente original, el primero en la línea {{line}}: {{message}}. RGAA 8.2.1 valida el código fuente generado, donde el navegador puede haberlos corregido.",
+    "markupValidationReview_summary_cantTell_originalClean": "El validador del W3C no informa de ningún error en el código fuente original. RGAA 8.2.1 valida el código fuente generado, que los scripts pueden cambiar.",
+    "markupValidationReview_summary_cantTell_truncated": "El informe del validador tiene {{cap}} mensajes o más y el motor lee los {{cap}} primeros, ninguno de ellos un error, así que el resto no se pudo comprobar.",
+    "markupValidationReview_hint_cantTell_report": "Valide el código fuente generado de la página, es decir la página tras ejecutarse sus scripts, con el Nu HTML Checker del W3C, y pase sus mensajes en la sonda validator.report con source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Pasar el código fuente generado de esta página por el validador del W3C: el motor no ve las etiquetas sin cerrar o mal anidadas, los atributos repetidos ni los demás errores que corrige el navegador.",
     "markupValidationReview_hint_cantTell_page": "Validar el código fuente generado (por ejemplo con el W3C Nu HTML Checker) y comprobar que etiquetas, atributos y valores siguen las reglas de escritura, que las etiquetas se anidan, abren y cierran correctamente, que los valores de id son únicos y que ningún atributo aparece dos veces en un mismo elemento (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
@@ -94317,6 +97934,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Hace falta un enlace de salto al contenido principal salvo que el sitio sea una sola página que no lo necesite. Revise el contenido anterior a <main> y añada un enlace si ese contenido se repite o se puede saltar.",
     "skipLinkPresent_summary_cantTell_noMain": "La página no tiene elemento <main>, así que no se pudo encontrar la zona de contenido principal ni un enlace a ella.",
     "skipLinkPresent_hint_cantTell_noMain": "Marque el contenido principal con un elemento <main> y añada antes un enlace como «Saltar al contenido» cuyo href sea el id de ese elemento.",
+    "skipLinkPlacement_title": "Los enlaces para saltar al contenido son visibles y están en el mismo lugar en todas las páginas",
+    "skipLinkPlacement_description": "Comprueba que el enlace al contenido principal es visible, al menos cuando recibe el foco, y que las demás páginas del sitio lo muestran en el mismo lugar y en el mismo orden de foco (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Este enlace para saltar al contenido no es visible y sigue oculto cuando recibe el foco (sin tamaño, fuera de la página, recortado, transparente o visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Muestre el enlace siempre, o al menos cuando recibe el foco del teclado, por ejemplo devolviéndolo a la vista con una regla :focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Este enlace para saltar al contenido no está en el mismo lugar en otras páginas del sitio, medidas con el mismo ancho de ventana: {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Coloque el enlace en la misma posición en todas las páginas, normalmente el primero en la cabecera (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "No se pudo determinar si este enlace es visible: puede que algo lo cubra, se anima al recibir el foco o la página no se mostró.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Llegue al enlace con la tecla Tab y compruebe que es visible cuando tiene el foco (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Este enlace ocupa otro lugar en el orden de foco en otras páginas del sitio: {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Compruebe que el enlace aparece en el mismo orden relativo respecto al resto de la página en todas las páginas (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Las demás páginas del sitio se midieron con otro ancho de ventana, así que no se pudo comparar el lugar de este enlace.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Mida todas las páginas con el mismo ancho de ventana, o compruebe en el sitio que el enlace está en el mismo lugar en todas las páginas (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Solo estaba disponible esta página, así que no se pudo comprobar si el enlace está en el mismo lugar y en el mismo orden en las demás páginas del sitio.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Analice varias páginas del sitio y pase sus registros del enlace en la sonda crawl.skipLinks, o compruebe en el sitio que el enlace está en el mismo lugar y orden en todas las páginas (RGAA 12.7.2).",
     "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
@@ -94405,6 +98036,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
     "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+    "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
+    "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado, este elemento recorta el texto «{{text}}».",
+    "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» sobrepasa el borde de este elemento, que oculta lo que sobresale.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado, el texto «{{text}}» se superpone al texto «{{other}}».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
     "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
     "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -94421,8 +98062,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Compruebe visualmente que el enlace tiene subrayado, una diferencia de grosor o estilo de fuente u otra marca distinta del color, o al menos un contraste de 3:1 con el texto circundante junto con una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de en un emulador de DOM, resuelve la mayoría de los casos automáticamente.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
-    "linkStateColorsReview_title": "Se revisan los estados de enlace señalados solo por el color",
-    "linkStateColorsReview_description": "Señala los enlaces dentro de un texto, distinguidos solo por el color, cuyo estado visitado, activo, al pasar el puntero o con el foco cambia su color, para que una persona compruebe el contraste de 3:1 de cada estado con el texto circundante (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Los estados de enlace señalados solo por el color tienen un contraste de 3:1 con el texto circundante",
+    "linkStateColorsReview_description": "Comprueba que un enlace dentro de un texto, distinguido solo por el color, mantiene un contraste de 3:1 con el texto circundante en cada estado visitado, activo, al pasar el puntero o con el foco que se presente con otro color, y pregunta cuando esos estados no se pueden aplicar al enlace (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Este enlace dentro de un texto se distingue solo por su color, y en estos estados ese color tiene un contraste inferior a 3:1 con el texto circundante: {{states}} (mínimo {{ratio}}:1, {{color}} frente a {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Dé al enlace un color con un contraste de al menos 3:1 con el texto circundante en cada estado, o márquelo en esos estados con algo más que el color, como un subrayado (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Este enlace dentro de un texto se distingue solo por su color, y una regla de estilo cambia ese color en estos estados: {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Este enlace dentro de un texto se distingue solo por su color, y ninguna regla de estilo fija ese color, así que se aplica el color de enlace visitado del propio navegador, que es distinto.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Este enlace dentro de un texto se distingue solo por su color, y una hoja de estilo que no se pudo leer puede cambiar ese color en algunos de sus estados.",
@@ -94471,7 +98114,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
     "orientationContentParity_title": "El contenido es el mismo en vertical y en horizontal",
-    "orientationContentParity_description": "Señala cada elemento que una media query de orientación oculta (display: none o visibility: hidden), para que una persona compruebe que se ofrece el mismo contenido en ambas orientaciones.",
+    "orientationContentParity_description": "Presenta la página en vertical y en horizontal, falla el contenido mostrado en una orientación que falta en la otra, y pregunta por los elementos que oculta una media query de orientación cuando la página no se puede presentar (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "En vertical, este <{{element}}> está oculto y su contenido («{{text}}») no se muestra en ningún otro lugar.",
+    "orientationContentParity_summary_fail_missing_landscape": "En horizontal, este <{{element}}> está oculto y su contenido («{{text}}») no se muestra en ningún otro lugar.",
+    "orientationContentParity_hint_fail_missing": "Ofrezca el mismo contenido en ambas orientaciones. Su presentación puede cambiar, pero debe seguir disponible (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "En vertical, este <{{element}}> está oculto y, con él, el contenido principal de la página.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "En horizontal, este <{{element}}> está oculto y, con él, el contenido principal de la página.",
+    "orientationContentParity_hint_cantTell_mainContent": "Compruebe que la página se puede usar en ambas orientaciones, salvo que una orientación sea esencial (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Una media query \"{{mediaText}}\" oculta este <{{element}}> (\"{{selectorText}}\").",
     "orientationContentParity_hint_cantTell": "Comprobar que se ofrece el mismo contenido en vertical y en horizontal, aunque se presente o se acceda a él de otra forma (RGAA 13.9.1). No es obligatorio si una orientación es esencial.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
@@ -94527,6 +98176,14 @@ const I18N = {
     "doctypePresent_description": "Comprueba que el documento tiene un doctype, escrito antes del elemento <html>.",
     "doctypePresent_summary_fail_missing": "La página no tiene doctype.",
     "doctypePresent_hint_fail": "Empezar la página con <!DOCTYPE html>, antes del elemento <html>.",
+    "doctypePosition_title": "El doctype está antes de la etiqueta <html>",
+    "doctypePosition_description": "Comprueba que un doctype declarado está antes de la etiqueta <html> en el código fuente, leyendo el código de la página recibido en la sonda page.source cuando el analizador lo ha descartado (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "El código fuente de la página declara su doctype después de la etiqueta <html>, así que los navegadores lo ignoran.",
+    "doctypePosition_hint_fail_afterHtml": "Coloque el doctype al principio de la página, antes de la etiqueta <html>: <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "La página no tiene doctype una vez analizada. Sin su código fuente, no se pudo saber si falta o si está escrito después de la etiqueta <html>.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Revise el código fuente de la página tal como lo envía el servidor, o pase su comienzo en la sonda page.source: el doctype debe ir antes de la etiqueta <html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "El comienzo del código fuente recibido no muestra ni doctype ni etiqueta <html>, así que no se pudo saber dónde está el doctype.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Revise el código fuente de la página tal como lo envía el servidor: el doctype debe ir antes de la etiqueta <html> (RGAA 8.1.3).",
     "doctypeValid_title": "El doctype declarado es válido",
     "doctypeValid_description": "Comprueba que un doctype declarado es el de HTML5 o uno de los recomendados por el W3C.",
     "doctypeValid_summary_fail": "La página declara un doctype que no es ni HTML5 ni uno recomendado por el W3C.",
@@ -94932,6 +98589,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page est très court et peut ne pas identifier le sujet ou l’objectif de la page.",
     "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page semble modélisé et peut ne pas identifier le sujet ou l’objectif de la page.",
     "pageTitlePatterns_hint_cantTell": "Vérifier que le titre de la page identifie clairement le sujet ou l’objectif de la page et permet de la distinguer des autres pages.",
+    "pageTitleUnique_title": "Les titres de page sont uniques sur le site",
+    "pageTitleUnique_description": "Compare le titre de la page avec ceux des autres pages du site, transmis dans la sonde crawl.pageTitles, et signale en échec un titre partagé avec une autre page, puisque RGAA 8.6.1 demande un titre qui identifie la page de manière unique.",
+    "pageTitleUnique_summary_fail_duplicate": "D’autres pages du site ont le même titre, « {{title}} » : {{pages}}. Le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique ».",
+    "pageTitleUnique_hint_fail_duplicate": "Donnez à chaque page un titre propre qui dit ce qu’elle contient, par exemple le sujet de la page suivi du nom du site (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_samePath": "Une page dont l’adresse ne diffère de celle-ci que par ses paramètres a le même titre, « {{title}} » : {{pages}}.",
+    "pageTitleUnique_hint_cantTell_samePath": "Vérifiez si ces adresses affichent des pages différentes. Si c’est le cas, donnez à chacune son propre titre : le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageTitleUnique_summary_cantTell_singlePage": "Seule cette page était disponible : impossible de vérifier que son titre, « {{title}} », est unique sur le site.",
+    "pageTitleUnique_hint_cantTell_singlePage": "Analysez plusieurs pages du site et transmettez leurs titres dans la sonde crawl.pageTitles, ou vérifiez qu’aucune autre page n’a ce titre : le RGAA demande qu’un titre de page identifie la page « de manière claire, concise et unique » (RGAA 8.6.1).",
+    "pageZonesReachable_title": "Chaque zone de la page peut être atteinte ou évitée",
+    "pageZonesReachable_description": "Vérifie que les zones d’en-tête, de navigation principale, de contenu principal, de pied de page et de recherche ont chacune un landmark, et pose la question pour une zone repérée par son nom qui s’appuie à la place sur un titre, un lien d’évitement ou d’accès rapide, ou un bouton (RGAA 12.6.1).",
+    "pageZonesReachable_summary_cantTell_heading": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un titre l’ouvre : vérifiez que ce titre dit ce que contient la zone.",
+    "pageZonesReachable_summary_cantTell_skipLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne juste avant elle mène après elle : vérifiez qu’il s’agit d’un lien d’évitement de cette zone.",
+    "pageZonesReachable_summary_cantTell_toggle": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un bouton juste avant elle peut la masquer : vérifiez que ce bouton masque cette zone.",
+    "pageZonesReachable_summary_cantTell_quickLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne y mène : vérifiez que ce lien est visible, au moins à la prise de focus.",
+    "pageZonesReachable_summary_cantTell_none": "Cette zone (« {{hint}} ») n’a ni rôle landmark, ni titre qui l’ouvre, ni lien ou bouton pour l’atteindre, l’éviter ou la masquer.",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "La page n’a pas de landmark principal (<main> ou role=\"main\") : impossible de vérifier comment atteindre le contenu principal.",
+    "pageZonesReachable_hint_cantTell": "Donnez à chaque zone le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche. À défaut, donnez-lui un titre qui dit ce qu’elle contient, ou un lien d’évitement ou d’accès rapide (RGAA 12.6.1).",
     "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
     "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
     "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
@@ -95033,7 +98707,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "Donnez à l’indication visuelle de la prise de focus une couleur dont le rapport de contraste est d’au moins 3:1 avec l’arrière-plan derrière l’élément et avec l’élément lui-même (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_oneSide": "L’indication de prise de focus de cet élément ({{property}}, {{color}}) n’atteint 3:1 qu’avec une seule des couleurs qui l’entourent ({{ratio}}:1 avec l’autre).",
     "focusIndicatorContrast_hint_cantTell_oneSide": "Vérifiez sur la page que l’indication visuelle de la prise de focus est bien visible, avec un rapport de contraste d’au moins 3:1 (RGAA 10.7.1).",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "Le contraste de l’indication de prise de focus de cet élément n’a pas pu être calculé (image ou dégradé d’arrière-plan, ombre floue, variable CSS, condition comme @media, ou règles que le moteur ne sait pas départager).",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "Le contraste de l’indication de prise de focus de cet élément n’a pas pu être calculé (image ou dégradé d’arrière-plan, ombre floue, animation, variable CSS, condition comme @media, ou règles que le moteur ne sait pas départager).",
     "focusIndicatorContrast_hint_cantTell_notComputable": "Mesurez sur la page le contraste de l’indication visuelle de la prise de focus : il doit être d’au moins 3:1 avec les couleurs qui l’entourent (RGAA 10.7.1).",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "Le style de focus de cet élément modifie une propriété que le moteur ne mesure pas (arrière-plan, couleur du texte, soulignement ou autre élément).",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "Vérifiez sur la page que le style du focus est visible, avec un rapport de contraste d’au moins 3:1 (RGAA 10.7.1).",
@@ -95168,7 +98842,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité des champs",
     "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
     "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
-    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que les styles en ligne n’empêchent pas l’utilisateur de modifier l’espacement du texte.",
+    "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
     "catalog.rules.wcag_224_interruptions.title": "Interruptions",
     "catalog.rules.wcag_224_interruptions.description": "Regroupe les contrôles garantissant que les changements de contexte automatiques n’ont lieu qu’à la demande de l’utilisateur (AAA).",
     "catalog.rules.wcag_325_change_on_request.title": "Changement à la demande",
@@ -95300,8 +98974,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "Supprimez aria-hidden de <body> : il masquerait toute la page aux technologies d’assistance.",
     "ariaAttributeConformance_summary_fail_missingRequired": "Cette balise <{{element}}> a role=\"{{role}}\" mais pas d’attribut {{attr}}, que ce rôle exige.",
     "ariaAttributeConformance_hint_fail_missingRequired": "Ajoutez l’attribut avec sa valeur actuelle, ou utilisez un élément natif qui a ce rôle.",
-    "markupValidationReview_title": "Le code source généré est vérifié avec le validateur du W3C",
-    "markupValidationReview_description": "Demande de passer le code source généré de la page au validateur du W3C et de vérifier les conditions du test RGAA 8.2.1, que le moteur ne peut pour la plupart pas voir une fois la page analysée par le navigateur.",
+    "markupValidationReview_title": "Le code source généré passe le validateur du W3C",
+    "markupValidationReview_description": "Lit le rapport du validateur du W3C sur le code source généré, transmis dans la sonde validator.report, et signale en échec les erreurs qu’il liste ; sans rapport, demande à une personne de lancer le validateur (RGAA 8.2.1).",
+    "markupValidationReview_summary_fail_error": "Le validateur du W3C signale une erreur dans le code source généré, ligne {{line}} : {{message}}",
+    "markupValidationReview_hint_fail_error": "Corrigez le code pour qu’il respecte les règles d’écriture du HTML : balises, attributs et valeurs conformes, imbrication, ouverture et fermeture des balises conformes, valeurs d’id uniques et aucun attribut doublé sur un même élément (RGAA 8.2.1).",
+    "markupValidationReview_summary_cantTell_validatorFailed": "Le validateur n’a pas pu vérifier la page : {{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "Le validateur du W3C signale {{count}} erreurs dans le code source d’origine, la première ligne {{line}} : {{message}}. Le RGAA 8.2.1 valide le code source généré, où le navigateur a pu les corriger.",
+    "markupValidationReview_summary_cantTell_originalClean": "Le validateur du W3C ne signale aucune erreur dans le code source d’origine. Le RGAA 8.2.1 valide le code source généré, que les scripts peuvent modifier.",
+    "markupValidationReview_summary_cantTell_truncated": "Le rapport du validateur compte {{cap}} messages ou plus et le moteur lit les {{cap}} premiers, dont aucun n’est une erreur : le reste n’a pas pu être vérifié.",
+    "markupValidationReview_hint_cantTell_report": "Validez le code source généré de la page, c’est-à-dire la page après l’exécution de ses scripts, avec le Nu HTML Checker du W3C, et transmettez ses messages dans la sonde validator.report avec source: 'generated' (RGAA 8.2.1).",
     "markupValidationReview_summary_cantTell_page": "Passez le code source généré de cette page au validateur du W3C : le moteur ne voit pas les balises non fermées ou mal imbriquées, les attributs doublés et les autres erreurs que le navigateur corrige.",
     "markupValidationReview_hint_cantTell_page": "Validez le code source généré (par exemple avec le W3C Nu HTML Checker) et vérifiez que les balises, attributs et valeurs d’attributs respectent les règles d’écriture, que l’imbrication, l’ouverture et la fermeture des balises sont conformes, que les valeurs d’attribut id sont uniques dans la page et que les attributs ne sont pas doublés sur un même élément (RGAA 8.2.1).",
     "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
@@ -95627,6 +99308,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "Un lien d’accès rapide à la zone de contenu principal est nécessaire, sauf pour un site d’une seule page où il est avéré inutile. Examinez le contenu qui précède <main>, et ajoutez le lien si ce contenu se répète ou peut être évité.",
     "skipLinkPresent_summary_cantTell_noMain": "La page n’a pas d’élément <main> : la zone de contenu principal et un lien vers elle n’ont pas pu être trouvés.",
     "skipLinkPresent_hint_cantTell_noMain": "Structurez la zone de contenu principal avec un élément <main>, et ajoutez avant elle un lien, par exemple « Aller au contenu », dont le href est l’id de cet élément.",
+    "skipLinkPlacement_title": "Les liens d’évitement sont visibles et à la même place sur chaque page",
+    "skipLinkPlacement_description": "Vérifie que le lien vers le contenu principal est visible, au moins à la prise de focus, et que les autres pages du site le présentent à la même place et dans le même ordre de tabulation (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_notVisible": "Ce lien d’évitement n’est pas visible, et il reste masqué à la prise de focus (sans taille, hors de la page, rogné, transparent ou visibility: hidden).",
+    "skipLinkPlacement_hint_fail_notVisible": "Affichez le lien d’évitement en permanence, ou au moins quand il reçoit le focus clavier, par exemple en le ramenant dans la page avec une règle :focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_fail_positionDiffers": "Ce lien d’évitement n’est pas à la même place sur d’autres pages du site, mesurées à la même largeur de fenêtre : {{pages}}.",
+    "skipLinkPlacement_hint_fail_positionDiffers": "Placez le lien d’évitement au même endroit sur chaque page, en général en premier dans l’en-tête (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_visibility": "Impossible de déterminer si ce lien d’évitement est visible : un élément le recouvre peut-être, il est animé à la prise de focus, ou la page n’a pas été affichée.",
+    "skipLinkPlacement_hint_cantTell_visibility": "Atteignez le lien d’évitement avec la touche Tab et vérifiez qu’il est visible quand il a le focus (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "Ce lien d’évitement arrive à une autre place dans l’ordre de tabulation sur d’autres pages du site : {{pages}}.",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "Vérifiez que le lien d’évitement se présente dans le même ordre relatif dans le code source de chaque page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "Les autres pages du site ont été mesurées à une autre largeur de fenêtre, la place de ce lien d’évitement n’a donc pas pu être comparée.",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "Mesurez toutes les pages à la même largeur de fenêtre, ou vérifiez sur le site que le lien d’évitement est à la même place sur chaque page (RGAA 12.7.2).",
+    "skipLinkPlacement_summary_cantTell_singlePage": "Seule cette page était disponible : impossible de vérifier que le lien d’évitement est à la même place et dans le même ordre sur les autres pages du site.",
+    "skipLinkPlacement_hint_cantTell_singlePage": "Analysez plusieurs pages du site et transmettez leurs relevés de lien d’évitement dans la sonde crawl.skipLinks, ou vérifiez sur le site que le lien est à la même place et dans le même ordre sur chaque page (RGAA 12.7.2).",
     "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
@@ -95715,6 +99410,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
     "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
     "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+    "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
+    "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
+    "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, cet élément rogne le texte « {{text}} ».",
+    "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » dépasse le bord de cet élément, qui masque ce qui dépasse.",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué, le texte « {{text}} » se superpose au texte « {{other}} ».",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12, RGAA 10.12.1).",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12, RGAA 10.12.1).",
     "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
     "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
     "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -95731,8 +99436,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien porte un soulignement, une différence de graisse ou de style de police ou une autre marque que la couleur, ou un contraste d'au moins 3:1 avec le texte environnant accompagné d’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur de DOM résout automatiquement la plupart des cas.",
     "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
     "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
-    "linkStateColorsReview_title": "Les états des liens signalés uniquement par la couleur sont vérifiés",
-    "linkStateColorsReview_description": "Signale les liens placés dans du texte et signalés uniquement par la couleur dont l’état visité, activé, au survol ou à la prise de focus change la couleur, pour qu’une personne vérifie le contraste de 3:1 de chaque état avec le texte environnant (RGAA 10.6.1).",
+    "linkStateColorsReview_title": "Les états des liens signalés uniquement par la couleur ont un contraste de 3:1 avec le texte environnant",
+    "linkStateColorsReview_description": "Vérifie qu’un lien placé dans du texte et signalé uniquement par la couleur garde un rapport de contraste de 3:1 avec le texte environnant dans chaque état visité, activé, au survol ou à la prise de focus présenté par une autre couleur, et pose la question quand ces états ne peuvent pas être appliqués au lien (RGAA 10.6.1).",
+    "linkStateColorsReview_summary_fail_lowContrast": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et dans ces états cette couleur a un rapport de contraste inférieur à 3:1 avec le texte environnant : {{states}} (au plus bas {{ratio}}:1, {{color}} sur {{textColor}}).",
+    "linkStateColorsReview_hint_fail_lowContrast": "Donnez au lien une couleur ayant un rapport de contraste d’au moins 3:1 avec le texte environnant dans chaque état, ou signalez-le dans ces états par autre chose que la couleur, comme un soulignement (RGAA 10.6.1).",
     "linkStateColorsReview_summary_cantTell_stateColor": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une règle de style change cette couleur dans ces états : {{states}}.",
     "linkStateColorsReview_summary_cantTell_browserColors": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et aucune règle de style ne fixe cette couleur : la couleur des liens visités du navigateur, qui est différente, s’applique.",
     "linkStateColorsReview_summary_cantTell_unreadable": "Ce lien placé dans du texte est signalé uniquement par sa couleur, et une feuille de style illisible peut changer cette couleur dans certains de ses états.",
@@ -95781,7 +99488,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
     "orientationContentParity_title": "Le contenu reste le même en portrait et en paysage",
-    "orientationContentParity_description": "Signale chaque élément qu’une media query d’orientation masque (display: none ou visibility: hidden), pour qu’une personne vérifie que le même contenu est proposé dans les deux modes d’orientation.",
+    "orientationContentParity_description": "Affiche la page en portrait et en paysage et signale en échec le contenu présent dans un mode d’orientation et absent de l’autre, et pose la question pour les éléments qu’une media query d’orientation masque quand la page ne peut pas être affichée (RGAA 13.9.1).",
+    "orientationContentParity_summary_fail_missing_portrait": "En portrait, cet élément <{{element}}> est masqué et son contenu (« {{text}} ») n’est présenté nulle part ailleurs.",
+    "orientationContentParity_summary_fail_missing_landscape": "En paysage, cet élément <{{element}}> est masqué et son contenu (« {{text}} ») n’est présenté nulle part ailleurs.",
+    "orientationContentParity_hint_fail_missing": "Proposez le même contenu dans les deux modes d’orientation. Sa présentation peut changer, mais il doit rester disponible (RGAA 13.9.1).",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "En portrait, cet élément <{{element}}> est masqué, et avec lui le contenu principal de la page.",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "En paysage, cet élément <{{element}}> est masqué, et avec lui le contenu principal de la page.",
+    "orientationContentParity_hint_cantTell_mainContent": "Vérifiez que la page peut être consultée dans les deux modes d’orientation, sauf si un mode est essentiel (RGAA 13.9.1).",
     "orientationContentParity_summary_cantTell": "Une media query « {{mediaText}} » masque cet élément <{{element}}> (« {{selectorText}} »).",
     "orientationContentParity_hint_cantTell": "Vérifiez que le contenu proposé reste le même en portrait et en paysage, même si sa présentation et le moyen d’y accéder diffèrent (RGAA 13.9.1). Ce n’est pas exigé si l’orientation est essentielle à l’utilisation.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
@@ -95837,6 +99550,14 @@ const I18N = {
     "doctypePresent_description": "Vérifie que le document a un doctype, placé avant la balise <html>.",
     "doctypePresent_summary_fail_missing": "La page n’a pas de doctype.",
     "doctypePresent_hint_fail": "Commencez la page par <!DOCTYPE html>, avant l’élément <html>.",
+    "doctypePosition_title": "Le doctype est placé avant la balise <html>",
+    "doctypePosition_description": "Vérifie qu’un doctype déclaré est placé avant la balise <html> dans le code source, en lisant le source de la page transmis dans la sonde page.source quand l’analyseur l’a écarté (RGAA 8.1.3).",
+    "doctypePosition_summary_fail_afterHtml": "Le code source de la page déclare son doctype après la balise <html>, si bien que les navigateurs l’ignorent.",
+    "doctypePosition_hint_fail_afterHtml": "Placez le doctype tout au début de la page, avant la balise <html> : <!DOCTYPE html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceMissing": "La page n’a pas de doctype une fois analysée. Sans son code source, impossible de savoir s’il manque ou s’il est écrit après la balise <html>.",
+    "doctypePosition_hint_cantTell_sourceMissing": "Consultez le code source de la page tel que le serveur l’envoie, ou transmettez son début dans la sonde page.source : un doctype doit être placé avant la balise <html> (RGAA 8.1.3).",
+    "doctypePosition_summary_cantTell_sourceTooShort": "Le début du code source transmis ne montre ni doctype ni balise <html> : impossible de savoir où se trouve le doctype.",
+    "doctypePosition_hint_cantTell_sourceTooShort": "Consultez le code source de la page tel que le serveur l’envoie : un doctype doit être placé avant la balise <html> (RGAA 8.1.3).",
     "doctypeValid_title": "Le type de document déclaré est valide",
     "doctypeValid_description": "Vérifie qu’un doctype déclaré est le doctype HTML5 ou l’un des doctypes recommandés par le W3C.",
     "doctypeValid_summary_fail": "La page déclare un doctype qui n’est ni HTML5 ni recommandé par le W3C.",
@@ -96242,6 +99963,23 @@ const I18N = {
     "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトルが非常に短く、ページの主題や目的を特定できないおそれがあります。",
     "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがテンプレートのままのようで、ページの主題や目的を特定できないおそれがあります。",
     "pageTitlePatterns_hint_cantTell": "ページタイトルがページの主題や目的を明確に示し、ほかのページと区別するのに役立っているか確認してください。",
+    "pageTitleUnique_title": "ページタイトルがサイト内で一意である",
+    "pageTitleUnique_description": "ページタイトルを crawl.pageTitles プローブで渡されたサイトの他のページのタイトルと比較し、他のページと同じタイトルを不合格とします。RGAA 8.6.1 はページを一意に識別するタイトルを求めているためです。",
+    "pageTitleUnique_summary_fail_duplicate": "サイトの他のページに同じタイトル「{{title}}」があります：{{pages}}。RGAA は、ページタイトルがページを « de manière claire, concise et unique »（明確、簡潔かつ一意に）識別することを求めています。",
+    "pageTitleUnique_hint_fail_duplicate": "各ページに、その内容を表す固有のタイトルを付けてください。たとえば、ページの主題の後にサイト名を続けます（RGAA 8.6.1）。",
+    "pageTitleUnique_summary_cantTell_samePath": "このページとクエリ文字列だけが異なるアドレスのページに、同じタイトル「{{title}}」があります：{{pages}}。",
+    "pageTitleUnique_hint_cantTell_samePath": "これらのアドレスが異なるページを表示するかを確認してください。異なる場合はそれぞれに固有のタイトルを付けてください。RGAA は、ページタイトルがページを « de manière claire, concise et unique » 識別することを求めています（RGAA 8.6.1）。",
+    "pageTitleUnique_summary_cantTell_singlePage": "このページしか利用できなかったため、そのタイトル「{{title}}」がサイト内で一意かどうかを確認できませんでした。",
+    "pageTitleUnique_hint_cantTell_singlePage": "サイトの複数のページをスキャンしてそのタイトルを crawl.pageTitles プローブとして渡すか、他のページにこのタイトルがないことを確認してください。RGAA は、ページタイトルがページを « de manière claire, concise et unique » 識別することを求めています（RGAA 8.6.1）。",
+    "pageZonesReachable_title": "ページの各領域に到達またはスキップできる",
+    "pageZonesReachable_description": "ヘッダー、メインナビゲーション、メインコンテンツ、フッター、検索の各領域にランドマークがあることを確認し、名前から見つかった領域が代わりに見出し、スキップリンクやクイックアクセスリンク、ボタンに頼っている場合は確認を求めます（RGAA 12.6.1）。",
+    "pageZonesReachable_summary_cantTell_heading": "この領域（「{{hint}}」）にはランドマークロールがありません。見出しで始まっているので、その見出しが領域の内容を表しているか確認してください。",
+    "pageZonesReachable_summary_cantTell_skipLink": "この領域（「{{hint}}」）にはランドマークロールがありません。直前のページ内リンクがこの領域の後ろへ移動するので、この領域のスキップリンクであるか確認してください。",
+    "pageZonesReachable_summary_cantTell_toggle": "この領域（「{{hint}}」）にはランドマークロールがありません。直前のボタンで隠せる可能性があるので、そのボタンがこの領域を隠すか確認してください。",
+    "pageZonesReachable_summary_cantTell_quickLink": "この領域（「{{hint}}」）にはランドマークロールがありません。ページ内リンクがこの領域へ移動するので、そのリンクが少なくともフォーカス時に見えるか確認してください。",
+    "pageZonesReachable_summary_cantTell_none": "この領域（「{{hint}}」）には、ランドマークロールも、冒頭の見出しも、到達・スキップ・非表示のためのリンクやボタンもありません。",
+    "pageZonesReachable_summary_cantTell_mainNotFound": "ページにメインのランドマーク（<main> または role=\"main\"）がないため、メインコンテンツへの到達方法を確認できませんでした。",
+    "pageZonesReachable_hint_cantTell": "各領域に対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。そうでなければ、内容を表す見出しか、スキップリンクやクイックアクセスリンクを付けてください（RGAA 12.6.1）。",
     "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
     "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
     "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
@@ -96343,7 +100081,7 @@ const I18N = {
     "focusIndicatorContrast_hint_fail_lowContrast": "フォーカスインジケーターの色を、要素の背後の背景と要素自体の両方に対してコントラスト比 3:1 以上にしてください (RGAA 10.7.1)。",
     "focusIndicatorContrast_summary_cantTell_oneSide": "この要素がフォーカス時に表示する {{property}} ({{color}}) は、隣接する色の一方に対してしか 3:1 に達していません (もう一方とは {{ratio}}:1)。",
     "focusIndicatorContrast_hint_cantTell_oneSide": "フォーカスインジケーターがはっきり見え、コントラスト比が 3:1 以上あるかをページ上で確認してください (RGAA 10.7.1)。",
-    "focusIndicatorContrast_summary_cantTell_notComputable": "この要素のフォーカスインジケーターのコントラストを計算できませんでした (背景画像、グラデーション、ぼかしのある影、CSS 変数、@media などの条件、またはエンジンが優先順位を決められないルール)。",
+    "focusIndicatorContrast_summary_cantTell_notComputable": "この要素のフォーカスインジケーターのコントラストを計算できませんでした (背景画像、グラデーション、ぼかしのある影、アニメーション、CSS 変数、@media などの条件、またはエンジンが優先順位を決められないルール)。",
     "focusIndicatorContrast_hint_cantTell_notComputable": "ページ上でフォーカスインジケーターのコントラストを測定してください。隣接する色とのコントラスト比は 3:1 以上必要です (RGAA 10.7.1)。",
     "focusIndicatorContrast_summary_cantTell_notMeasured": "この要素のフォーカススタイルは、エンジンが測定しないもの (背景、文字色、下線、または別の要素) を変更しています。",
     "focusIndicatorContrast_hint_cantTell_notMeasured": "フォーカススタイルが見え、コントラスト比が 3:1 以上あるかをページ上で確認してください (RGAA 10.7.1)。",
@@ -96478,7 +100216,7 @@ const I18N = {
     "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
     "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
     "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
-    "catalog.rules.wcag_1412_text_spacing.description": "インラインスタイルが、利用者によるテキストの間隔の上書きを妨げていないかを確認するチェックの集約です。",
+    "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
     "catalog.rules.wcag_224_interruptions.title": "割り込み",
     "catalog.rules.wcag_224_interruptions.description": "自動的なコンテキストの変化が、利用者の要求があったときにのみ起こるかを確認するチェックの集約です (AAA)。",
     "catalog.rules.wcag_325_change_on_request.title": "要求による変化",
@@ -96610,8 +100348,15 @@ const I18N = {
     "ariaAttributeConformance_hint_fail_nativeAttributeConflictBody": "<body> から aria-hidden を削除してください。ページ全体が支援技術から隠れてしまいます。",
     "ariaAttributeConformance_summary_fail_missingRequired": "この <{{element}}> には role=\"{{role}}\" がありますが、このロールに必要な {{attr}} 属性がありません。",
     "ariaAttributeConformance_hint_fail_missingRequired": "現在の値で属性を追加するか、このロールを持つネイティブ要素を使ってください。",
-    "markupValidationReview_title": "生成されたソースコードを W3C バリデーターで確認している",
-    "markupValidationReview_description": "ページの生成されたソースコードを W3C バリデーターにかけ、RGAA 8.2.1 の条件を確認するよう求めます。ブラウザーがページを解析した後では、エンジンにはその大半が見えません。",
+    "markupValidationReview_title": "生成されたソースコードが W3C バリデーターを通過する",
+    "markupValidationReview_description": "validator.report プローブで渡された、生成されたソースに対する W3C バリデーターの報告を読み、記載されたエラーを不合格とします。報告がない場合は、バリデーターを実行するよう人に求めます（RGAA 8.2.1）。",
+    "markupValidationReview_summary_fail_error": "W3C バリデーターが、生成されたソースの {{line}} 行目でエラーを報告しています：{{message}}",
+    "markupValidationReview_hint_fail_error": "HTML の記述規則に従うようマークアップを修正してください。タグ・属性・値を HTML が認める形で書き、タグを正しく入れ子にして開閉し、id の値を一意にし、同じ要素に属性を重複させないでください（RGAA 8.2.1）。",
+    "markupValidationReview_summary_cantTell_validatorFailed": "バリデーターはページを検査できませんでした：{{message}}",
+    "markupValidationReview_summary_cantTell_originalErrors": "W3C バリデーターは元のソースで {{count}} 件のエラーを報告しています。最初は {{line}} 行目：{{message}}。RGAA 8.2.1 は生成されたソースを検証しますが、そこではブラウザーがエラーを修復している可能性があります。",
+    "markupValidationReview_summary_cantTell_originalClean": "W3C バリデーターは元のソースでエラーを報告していません。RGAA 8.2.1 はスクリプトが変更しうる生成されたソースを検証します。",
+    "markupValidationReview_summary_cantTell_truncated": "バリデーターの報告には {{cap}} 件以上のメッセージがあり、エンジンは最初の {{cap}} 件を読みましたがエラーはありませんでした。残りは確認できませんでした。",
+    "markupValidationReview_hint_cantTell_report": "スクリプト実行後のページである生成されたソースを W3C の Nu HTML Checker で検証し、そのメッセージを source: 'generated' 付きの validator.report プローブとして渡してください（RGAA 8.2.1）。",
     "markupValidationReview_summary_cantTell_page": "このページの生成されたソースコードを W3C バリデーターにかけてください。閉じられていないタグや入れ子の誤り、重複した属性など、ブラウザーが修復するエラーはエンジンには見えません。",
     "markupValidationReview_hint_cantTell_page": "生成されたソースコードを検証し (たとえば W3C Nu HTML Checker で)、タグ・属性・値が記述ルールに従っていること、タグの入れ子・開始・終了が正しいこと、id の値が一意であること、同じ要素に属性が重複していないことを確認してください (RGAA 8.2.1)。",
     "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
@@ -96937,6 +100682,20 @@ const I18N = {
     "skipLinkPresent_hint_cantTell_noNavigation": "サイトがスキップリンクを必要としない 1 ページだけのものでない限り、メインコンテンツへのスキップリンクが必要です。<main> の前の内容を確認し、その内容が繰り返される、または飛ばせるものであればリンクを追加してください。",
     "skipLinkPresent_summary_cantTell_noMain": "ページに <main> 要素がないため、メインコンテンツの領域とそこへのリンクを特定できませんでした。",
     "skipLinkPresent_hint_cantTell_noMain": "メインコンテンツを <main> 要素でマークアップし、その前に「本文へスキップ」のようなリンクを追加して、href にその要素の id を指定してください。",
+    "skipLinkPlacement_title": "スキップリンクが見え、すべてのページで同じ位置にある",
+    "skipLinkPlacement_description": "メインコンテンツへのリンクが、少なくともフォーカスを受けたときに見えること、またサイトの他のページで同じ位置・同じフォーカス順序にあることを確認します（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_fail_notVisible": "このスキップリンクは見えず、フォーカスを受けても隠れたままです（サイズがない、ページの外、切り取られている、透明、または visibility: hidden）。",
+    "skipLinkPlacement_hint_fail_notVisible": "スキップリンクを常に表示するか、少なくともキーボードフォーカスを受けたときに、たとえば :focus ルールで画面内に戻して表示してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_fail_positionDiffers": "このスキップリンクは、同じウィンドウ幅で測ったサイトの他のページで同じ位置にありません：{{pages}}。",
+    "skipLinkPlacement_hint_fail_positionDiffers": "スキップリンクをすべてのページで同じ位置に置いてください。通常はページのヘッダーの最初です（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_visibility": "このスキップリンクが見えるかどうかを判断できませんでした。何かに覆われている、フォーカス時にアニメーションする、またはページが描画されていない可能性があります。",
+    "skipLinkPlacement_hint_cantTell_visibility": "Tab キーでスキップリンクに移動し、フォーカスがあるときに見えることを確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_orderDiffers": "このスキップリンクは、サイトの他のページでフォーカス順序の別の位置にあります：{{pages}}。",
+    "skipLinkPlacement_hint_cantTell_orderDiffers": "スキップリンクが、すべてのページでページの他の部分に対して同じ相対的な順序にあることを確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_viewportDiffers": "サイトの他のページは別のウィンドウ幅で測定されたため、このスキップリンクの位置を比較できませんでした。",
+    "skipLinkPlacement_hint_cantTell_viewportDiffers": "すべてのページを同じウィンドウ幅で測定するか、スキップリンクがすべてのページで同じ位置にあることをサイト上で確認してください（RGAA 12.7.2）。",
+    "skipLinkPlacement_summary_cantTell_singlePage": "このページしか利用できなかったため、スキップリンクがサイトの他のページで同じ位置・同じ順序にあるかを確認できませんでした。",
+    "skipLinkPlacement_hint_cantTell_singlePage": "サイトの複数のページをスキャンし、そのスキップリンクの記録を crawl.skipLinks プローブとして渡すか、スキップリンクがすべてのページで同じ位置・同じ順序にあることをサイト上で確認してください（RGAA 12.7.2）。",
     "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
@@ -97025,6 +100784,16 @@ const I18N = {
     "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
     "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
     "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+    "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
+    "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
+    "textSpacingContentLoss_summary_fail_clipped": "WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります。",
+    "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_clippedPartly": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端からはみ出し、はみ出した部分が隠れます。",
+    "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_overlaps": "WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
+    "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
+    "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
+    "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12、RGAA 10.12.1）。",
     "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
     "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
     "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
@@ -97041,8 +100810,10 @@ const I18N = {
     "linkInTextBlock_hint_cantTell": "リンクに下線、フォントの太さやスタイルの違い、その他の色以外の目印があるか、または周囲のテキストとの 3:1 以上のコントラストに加えてホバー時とフォーカス時に色以外の手がかりがあるか、目視で確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどの場合は自動で判定できます。",
     "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
     "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
-    "linkStateColorsReview_title": "色だけで示されるリンクの状態を確認する",
-    "linkStateColorsReview_description": "色だけで示される文中のリンクのうち、訪問済み・アクティブ・ホバー・フォーカスの状態で色が変わるものを示し、各状態の色が周囲のテキストと 3:1 のコントラストを持つかを人が確認できるようにします（RGAA 10.6.1）。",
+    "linkStateColorsReview_title": "色だけで示されるリンクの状態は周囲のテキストと 3:1 のコントラストを持つ",
+    "linkStateColorsReview_description": "色だけで示される文中のリンクが、別の色で示される訪問済み・アクティブ・ホバー・フォーカスの各状態で、周囲のテキストと 3:1 のコントラストを保つかを確認し、状態をリンクに適用できない場合は確認を求めます（RGAA 10.6.1）。",
+    "linkStateColorsReview_summary_fail_lowContrast": "文中のこのリンクは色だけで示されており、次の状態でその色と周囲のテキストとのコントラスト比が 3:1 未満です：{{states}}（最低 {{ratio}}:1、{{color}} と {{textColor}}）。",
+    "linkStateColorsReview_hint_fail_lowContrast": "各状態でリンクの色と周囲のテキストとのコントラスト比を 3:1 以上にするか、それらの状態で下線など色以外の目印を付けてください（RGAA 10.6.1）。",
     "linkStateColorsReview_summary_cantTell_stateColor": "文中のこのリンクは色だけで示されており、スタイル規則が次の状態でその色を変えています：{{states}}。",
     "linkStateColorsReview_summary_cantTell_browserColors": "文中のこのリンクは色だけで示されており、その色を指定するスタイル規則がないため、ブラウザー独自の異なる訪問済みリンクの色が適用されます。",
     "linkStateColorsReview_summary_cantTell_unreadable": "文中のこのリンクは色だけで示されており、読み取れなかったスタイルシートが一部の状態でその色を変えている可能性があります。",
@@ -97091,7 +100862,13 @@ const I18N = {
     "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
     "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
     "orientationContentParity_title": "縦向きと横向きでコンテンツが同じである",
-    "orientationContentParity_description": "画面の向きのメディアクエリで非表示 (display: none または visibility: hidden) になる要素を示し、どちらの向きでも同じコンテンツが提供されているかを人が確認できるようにします。",
+    "orientationContentParity_description": "ページを縦向きと横向きでレイアウトし、一方の向きで表示され他方で欠けている内容を不合格とし、ページをレイアウトできない場合は向きのメディアクエリが隠す要素について確認を求めます（RGAA 13.9.1）。",
+    "orientationContentParity_summary_fail_missing_portrait": "縦向きでは、この <{{element}}> は隠れており、その内容（「{{text}}」）は他のどこにも表示されません。",
+    "orientationContentParity_summary_fail_missing_landscape": "横向きでは、この <{{element}}> は隠れており、その内容（「{{text}}」）は他のどこにも表示されません。",
+    "orientationContentParity_hint_fail_missing": "両方の向きで同じ内容を提供してください。表示方法は変わってもかまいませんが、内容は利用できる状態のままにしてください（RGAA 13.9.1）。",
+    "orientationContentParity_summary_cantTell_mainContent_portrait": "縦向きでは、この <{{element}}> が隠れ、それとともにページのメインコンテンツも隠れます。",
+    "orientationContentParity_summary_cantTell_mainContent_landscape": "横向きでは、この <{{element}}> が隠れ、それとともにページのメインコンテンツも隠れます。",
+    "orientationContentParity_hint_cantTell_mainContent": "一方の向きが不可欠な場合を除き、ページが両方の向きで利用できることを確認してください（RGAA 13.9.1）。",
     "orientationContentParity_summary_cantTell": "\"{{mediaText}}\" のメディアクエリがこの <{{element}}> を非表示にしています (\"{{selectorText}}\")。",
     "orientationContentParity_hint_cantTell": "表示方法やたどり着き方が異なっていても、縦向きと横向きで同じコンテンツが提供されているか確認してください (RGAA 13.9.1)。特定の向きが必須の場合は不要です。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
@@ -97147,6 +100924,14 @@ const I18N = {
     "doctypePresent_description": "文書に doctype があり、<html> 要素より前に書かれているかを確認します。",
     "doctypePresent_summary_fail_missing": "ページに doctype がありません。",
     "doctypePresent_hint_fail": "ページの先頭、<html> 要素より前に <!DOCTYPE html> を記述してください。",
+    "doctypePosition_title": "doctype が <html> タグより前にある",
+    "doctypePosition_description": "宣言された doctype がソースで <html> タグより前にあることを確認します。パーサーが doctype を捨てた場合は、page.source プローブで渡されたページのソースを読みます（RGAA 8.1.3）。",
+    "doctypePosition_summary_fail_afterHtml": "ページのソースは <html> タグの後で doctype を宣言しているため、ブラウザーはそれを無視します。",
+    "doctypePosition_hint_fail_afterHtml": "doctype をページの先頭、<html> タグの前に移動してください：<!DOCTYPE html>（RGAA 8.1.3）。",
+    "doctypePosition_summary_cantTell_sourceMissing": "解析後のページに doctype がありません。ソースがないため、doctype がないのか、<html> タグの後に書かれているのか判断できませんでした。",
+    "doctypePosition_hint_cantTell_sourceMissing": "サーバーが送るページのソースを確認するか、その先頭を page.source プローブとして渡してください。doctype は <html> タグより前に置く必要があります（RGAA 8.1.3）。",
+    "doctypePosition_summary_cantTell_sourceTooShort": "渡されたソースの先頭に doctype も <html> タグもないため、doctype の位置を判断できませんでした。",
+    "doctypePosition_hint_cantTell_sourceTooShort": "サーバーが送るページのソースを確認してください。doctype は <html> タグより前に置く必要があります（RGAA 8.1.3）。",
     "doctypeValid_title": "宣言された doctype が有効である",
     "doctypeValid_description": "宣言された doctype が HTML5 の doctype か、W3C が推奨する doctype のいずれかであるかを確認します。",
     "doctypeValid_summary_fail": "ページが宣言している doctype は、HTML5 でも W3C 推奨のものでもありません。",
@@ -97932,7 +101717,6 @@ const PROFILE_RULES = {
     "aria-role-name-present",
     "autocomplete-valid",
     "avoid-inline-spacing",
-    "bypass-blocks-present",
     "canvas-decorative-aria-hidden",
     "canvas-role-img",
     "canvas-text-alternative-quality",
@@ -97948,6 +101732,7 @@ const PROFILE_RULES = {
     "dialog-name-present",
     "dir-attribute-valid",
     "dlitem-parent-valid",
+    "doctype-position",
     "doctype-present",
     "doctype-valid",
     "duplicate-id",
@@ -98018,6 +101803,8 @@ const PROFILE_RULES = {
     "page-language-present",
     "page-title-patterns",
     "page-title-present",
+    "page-title-unique",
+    "page-zones-reachable",
     "presentational-attributes-absent",
     "presentational-elements-absent",
     "radio-group-present",
@@ -98026,6 +101813,7 @@ const PROFILE_RULES = {
     "scripted-components-review",
     "server-side-image-map-absent",
     "skip-link",
+    "skip-link-placement",
     "skip-link-present",
     "svg-hidden-no-alternative",
     "svg-role-img",
@@ -98035,6 +101823,7 @@ const PROFILE_RULES = {
     "tabindex",
     "table-fake-caption",
     "table-headers-attr-valid",
+    "text-spacing-content-loss",
     "th-scope-row-col",
     "title-placeholder-identical",
     "treeitem-name-present",

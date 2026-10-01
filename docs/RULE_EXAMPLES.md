@@ -1,7 +1,7 @@
 # Rule examples
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
-example pairs for all 197 rules, meant to feed a future rule-page docs site the
+example pairs for all 202 rules, meant to feed a future rule-page docs site the
 way alfa.siteimprove.com/rules pages show worked examples alongside a rule's
 description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md), which carries
 each rule's title, WCAG mapping, applicability, and expectation — this file
@@ -895,6 +895,25 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 </div>
 ```
 `<dt>` has no `<dl>` ancestor at all.
+
+## doctype-position
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<!DOCTYPE html>
+<html lang="fr">…</html>
+```
+The doctype comes first. The parser keeps a doctype only there, so a doctype in the DOM is enough.
+
+**Failed (with the `page.source` probe)**
+```html
+<html lang="fr">
+<!DOCTYPE html>
+…</html>
+```
+The source declares the doctype after the `<html>` tag, and browsers ignore it. Without the probe the parsed page simply has no doctype, so the rule asks; with it, RGAA 8.1.3 fails, and `doctype-present` counts the doctype as present for 8.1.1.
 
 ## doctype-present
 
@@ -2093,15 +2112,36 @@ The link text is specific and descriptive.
 
 *Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
 
-**Flagged (cantTell)**
+**Fails (in a browser)**
 ```html
 <style>
+  p { color: #000; }
   p a { color: #b00000; text-decoration: none; }
   a:visited { color: #555; }
 </style>
 <p>Lire <a href="/article">la suite</a> de l'article.</p>
 ```
-The link is shown only by its color, and its visited state has another color. RGAA 10.6.1 step 3 asks for the 3:1 contrast with the surrounding text in each state, which a person checks.
+The link is shown only by its color, and its visited state has another color, #555, at 2.82:1 against the surrounding text. RGAA 10.6.1 step 3 asks for 3:1 in each state shown by another color. In a browser the rule puts the link in that state and measures it; in jsdom it can only ask.
+
+**Flagged (cantTell)**
+```html
+<style>
+  p a { text-decoration: none; }
+</style>
+<p>Lire <a href="/article">la suite</a> de l'article.</p>
+```
+No style rule sets the link's color, so the browser's own visited color applies, and browsers differ on it.
+
+**Passes (in a browser)**
+```html
+<style>
+  p { color: #000; }
+  p a { color: #f60; text-decoration: none; }
+  a:hover, a:focus { color: #09f; }
+</style>
+<p>Lire <a href="/article">la suite</a> de l'article.</p>
+```
+The hover and focus colors both contrast more than 3:1 with the surrounding text.
 
 **Not applicable**
 ```html
@@ -2232,13 +2272,20 @@ Keyboard operability and focus order always need a person driving the page; this
 
 ## markup-validation-review
 
-*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id. It has no `notApplicable` branch: RGAA 8.2 applies to every page, so the rule asks on every run and there is only one example.*
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id. It has no `notApplicable` branch: RGAA 8.2 applies to every page.*
+
+**Failed (with the `validator.report` probe)**
+```html
+<p class="intro" class="lead">Opening hours</p>
+<!-- probe: { source: "generated", messages: [{ type: "error", lastLine: 1, message: "Duplicate attribute “class”." }] } -->
+```
+The W3C validator's report on the generated source lists an error, and each error it lists is a finding (RGAA 8.2.1). A report with no error, CSS messages and warnings aside, passes.
 
 **Flagged (cantTell)**
 ```html
 <p class="intro" class="lead">Opening hours: <span>Monday</p><p><b><i>9:00 to 17:00</b></i></p>
 ```
-Every page is asked about. Here the source repeats an attribute, leaves a `<span>` unclosed and misnests `<b>` and `<i>`: the browser repairs all three before the engine sees the page, so only the W3C validator run on the generated source can report them (RGAA 8.2.1).
+Without a report the page is asked about. Here the source repeats an attribute, leaves a `<span>` unclosed and misnests `<b>` and `<i>`: the browser repairs all three before the engine sees the page, so only the W3C validator can report them.
 
 ## media-alternative-transcript-evidence
 
@@ -2578,12 +2625,23 @@ No name and no content.
 
 *Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
 
-**Flagged (cantTell)**
+**Fails (in a browser)**
 ```html
 <style>@media (orientation: portrait) { .prices { display: none } }</style>
 <table class="prices"><tr><th>Adult</th><td>12 €</td></tr></table>
 ```
-The price table disappears in portrait. The page still works in both orientations, so WCAG 1.3.4 passes, but RGAA 13.9.1 asks that the content stays the same, so a person checks whether the prices are offered another way in portrait.
+The price table disappears in portrait and its text is shown nowhere else there. The page still works in both orientations, so WCAG 1.3.4 passes, but RGAA 13.9.1 asks that the content stays the same. In jsdom, which cannot lay the page out, the rule asks about the table instead.
+
+**Passes (in a browser)**
+```html
+<style>
+  @media (orientation: portrait) { .wide { display: none } }
+  @media (orientation: landscape) { .narrow { display: none } }
+</style>
+<nav class="wide"><a href="/">Home</a> <a href="/contact">Contact</a></nav>
+<nav class="narrow"><a href="/">Home</a> <a href="/contact">Contact</a></nav>
+```
+Each orientation shows its own version of the same links, so the content stays the same.
 
 **Not applicable**
 ```html
@@ -2687,6 +2745,44 @@ The document has a non-empty `<title>`.
 </html>
 ```
 No `<title>` element anywhere in the document.
+
+## page-title-unique
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed (with the `crawl.pageTitles` probe)**
+```html
+<title>Horaires – Médiathèque de Lyon</title>
+<!-- probe: { pages: [{ url: "/contact", title: "Contact – Médiathèque de Lyon" }] } -->
+```
+No other page of the site has this title.
+
+**Failed (with the `crawl.pageTitles` probe)**
+```html
+<title>Médiathèque de Lyon</title>
+<!-- probe: { pages: [{ url: "/contact", title: "Médiathèque de Lyon" }] } -->
+```
+The contact page has the same title, so the title does not identify the page « de manière claire, concise et unique », as RGAA 8.6.1's glossary asks. WCAG 2.4.2 does not ask for unique titles. Without the probe, the rule asks.
+
+## page-zones-reachable
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed**
+```html
+<header><a href="/">Médiathèque</a></header>
+<nav><a href="/agenda">Agenda</a></nav>
+<main><h1>Actualités</h1></main>
+<footer>Mentions légales</footer>
+```
+Each area has the landmark that matches it.
+
+**Flagged (cantTell)**
+```html
+<div class="header"><a href="/">Médiathèque</a></div>
+<main><h1>Actualités</h1></main>
+```
+The block named `header` has no landmark, heading, button or link to reach or skip it. Whether it is the page's header area is a person's call, so RGAA 12.6.1 is asked about rather than failed. WCAG 2.4.1 is met here by the `<main>` landmark alone.
 
 ## password-paste-enabled
 
@@ -2958,6 +3054,33 @@ French skip-link wording is recognised as well, and the target is missing.
 <div id="target">Target content</div>
 ```
 The fragment target exists and is usable.
+
+## skip-link-placement
+
+*Opt-in: runs only under the `rgaa-4.1.2` profile, the `rgaa` tag or its id.*
+
+**Passed (in a browser, with the `crawl.skipLinks` probe)**
+```html
+<style>
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 8px; top: 8px; }
+</style>
+<a class="skip" href="#main">Aller au contenu</a>
+<nav><a href="/">Accueil</a> <a href="/contact">Contact</a></nav>
+<main id="main"><h1>Actualités</h1></main>
+```
+The link shows when it takes focus, and the other pages in the probe, measured at the same window width, show it at the same place and first in the focus order.
+
+**Failed (in a browser)**
+```html
+<style>
+  .skip { position: absolute; left: -9999px; }
+</style>
+<a class="skip" href="#main">Aller au contenu</a>
+<nav><a href="/">Accueil</a> <a href="/contact">Contact</a></nav>
+<main id="main"><h1>Actualités</h1></main>
+```
+The link stays off the page even when it has focus. RGAA 12.7.2 asks that it be visible, at least on focus. Without the probe the rule also asks whether the link sits at the same place on the other pages, and in jsdom it asks about its visibility too.
 
 ## skip-link-present
 
@@ -3273,6 +3396,23 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 </table>
 ```
 A 4x4 table with no `<th>` anywhere — no cell has a row, column, or `headers`-attribute association.
+
+## text-spacing-content-loss
+
+**Passed (in a browser)**
+```html
+<p>Opening hours today, and the rest of the week from nine to five.</p>
+```
+The paragraph has no fixed size, so the text grows with the spacing and nothing is lost.
+
+**Failed (in a browser)**
+```html
+<style>
+  .hours { width: 19ch; height: 20px; overflow: hidden; }
+</style>
+<div class="hours">Opening hours today</div>
+```
+With line height 1.5, letter spacing 0.12em and word spacing 0.16em, the text wraps to a second line that the box cuts off. In jsdom, which has no layout, the rule reads only the style sheets and asks about spacing forced with `!important`.
 
 ## textbox-name-present
 

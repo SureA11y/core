@@ -28,6 +28,12 @@
     @media (max-width: 400px) {
       #ocp_case_04 { display: none; }
     }
+    @media (orientation: portrait) {
+      #ocp_case_07 { display: none; }
+    }
+    @media (orientation: landscape) {
+      #ocp_case_07_alt { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -37,7 +43,11 @@
     Each target has a stable <code>id</code> of the form <code>ocp_case_NN</code>.
     RGAA 13.9.1 asks that the content stays the same in portrait and in
     landscape. An element that an orientation media query hides is asked
-    about, whatever the orientation the scan runs in.
+    about, whatever the orientation the scan runs in. The markers give the
+    verdict without a layout (jsdom). In a browser the page is laid out in
+    both orientations: cases 01 to 03 then fail, since their content is
+    shown nowhere else, and case 07 passes, since each version shows the
+    same text.
   </p>
 
   <h2>A. Hidden in one orientation (CANTTELL)</h2>
@@ -55,6 +65,12 @@
   <div class="case" id="case_03">
     <div class="case-title">03 — CANTTELL: orientation query nested in @supports</div>
     <p id="ocp_case_03">Delivery is free from 50 euros.</p>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: two versions of the same links, one per orientation</div>
+    <nav id="ocp_case_07"><a href="/a">Accueil</a> <a href="/b">Contact</a></nav>
+    <nav id="ocp_case_07_alt"><a href="/a">Accueil</a> <a href="/b">Contact</a></nav>
   </div>
 
   <h2>B. Not hidden by an orientation query (NOT APPLICABLE)</h2>

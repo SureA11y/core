@@ -51,6 +51,7 @@
     "dialog-name-present",
     "dir-attribute-valid",
     "dlitem-parent-valid",
+    "doctype-position",
     "doctype-present",
     "doctype-valid",
     "duplicate-id",
@@ -154,6 +155,8 @@
     "page-language-present",
     "page-title-patterns",
     "page-title-present",
+    "page-title-unique",
+    "page-zones-reachable",
     "password-paste-enabled",
     "presentation-role-conflict",
     "presentational-attributes-absent",
@@ -170,6 +173,7 @@
     "searchbox-name-present",
     "server-side-image-map-absent",
     "skip-link",
+    "skip-link-placement",
     "skip-link-present",
     "slider-name-present",
     "spinbutton-name-present",
@@ -187,6 +191,7 @@
     "table-th-has-data-cells",
     "target-size-minimum",
     "td-has-header",
+    "text-spacing-content-loss",
     "textbox-name-present",
     "th-scope-row-col",
     "title-placeholder-identical",
@@ -393,6 +398,9 @@
     ],
     "dlitem-parent-valid": [
       "DLITEM_INVALID_PARENT"
+    ],
+    "doctype-position": [
+      "SOURCE_MISSING"
     ],
     "doctype-present": [
       "missingDoctype"
@@ -658,6 +666,7 @@
     "link-state-colors-review": [
       "BROWSER_STATE_COLORS",
       "STATE_COLOR_CHANGE",
+      "STATE_CONTRAST_LOW",
       "STYLESHEET_UNREADABLE"
     ],
     "list-children-valid": [
@@ -676,6 +685,7 @@
       "extraMain"
     ],
     "markup-validation-review": [
+      "VALIDATOR_ERROR",
       "pageReview"
     ],
     "media-alternative-transcript-evidence": [
@@ -740,6 +750,8 @@
       "name_missing"
     ],
     "orientation-content-parity": [
+      "CONTENT_MISSING",
+      "MAIN_CONTENT_HIDDEN",
       "hiddenInOrientation"
     ],
     "p-as-heading": [
@@ -754,6 +766,15 @@
     ],
     "page-title-present": [
       "emptyTitleText"
+    ],
+    "page-title-unique": [
+      "TITLE_DUPLICATE_SAME_PATH",
+      "TITLE_SINGLE_PAGE"
+    ],
+    "page-zones-reachable": [
+      "ZONE_HEADING",
+      "ZONE_NO_MECHANISM",
+      "ZONE_SKIP_LINK"
     ],
     "password-paste-enabled": [
       "PASTE_CANCELLED",
@@ -815,6 +836,10 @@
       "SKIP_LINK_TARGET_MISSING",
       "SKIP_LINK_TARGET_UNUSABLE"
     ],
+    "skip-link-placement": [
+      "SKIP_LINK_SINGLE_PAGE",
+      "SKIP_LINK_VISIBILITY_UNKNOWN"
+    ],
     "skip-link-present": [
       "mainNotFound",
       "noNavigationBeforeMain",
@@ -863,6 +888,9 @@
     ],
     "td-has-header": [
       "TD_NO_ASSOCIATED_HEADER"
+    ],
+    "text-spacing-content-loss": [
+      "STYLESHEET_IMPORTANT"
     ],
     "textbox-name-present": [
       "name_missing"

@@ -157,7 +157,13 @@ test(`${RULE_ID}: WCAG 1.3.4 and RGAA 13.9 agree on a page with no orientation q
 test(`${RULE_ID}: fixture coverage (tests/fixtures/${RULE_ID}-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', `${RULE_ID}-all-scenarios.html`);
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), RUN);
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
-  assert.deepEqual(ids, ['ocp_case_01', 'ocp_case_02', 'ocp_case_03']);
+  assert.deepEqual(ids, [
+    'ocp_case_01',
+    'ocp_case_02',
+    'ocp_case_03',
+    'ocp_case_07',
+    'ocp_case_07_alt'
+  ]);
 });

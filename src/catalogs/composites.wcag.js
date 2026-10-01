@@ -387,13 +387,13 @@ module.exports = [
 
   {
     id: 'wcag-1.4.12-text-spacing',
-    checksIds: ['avoid-inline-spacing'],
+    checksIds: ['avoid-inline-spacing', 'text-spacing-content-loss'],
     meta: {
       titleKey: 'catalog.rules.wcag_1412_text_spacing.title',
       descriptionKey: 'catalog.rules.wcag_1412_text_spacing.description',
       title: 'Text Spacing',
       description:
-        'Rollup of checks ensuring inline styles do not block user text-spacing overrides.',
+        'Rollup of checks ensuring text spacing can be increased without losing content.',
       wcagSc: ['1.4.12'],
       level: 'AA'
     }

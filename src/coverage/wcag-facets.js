@@ -461,6 +461,11 @@ const FACETS = {
                 "id": "avoid-inline-spacing",
                 "label": "Inline style does not force line-height/letter-spacing/word-spacing with !important",
                 "automation": "full"
+            },
+            {
+                "id": "text-spacing-content-loss",
+                "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+                "automation": "partial"
             }
         ]
     },

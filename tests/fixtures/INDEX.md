@@ -4,13 +4,13 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **197**. With fixture: **197**. Without fixture: **0**.
+Total rules: **202**. With fixture: **202**. Without fixture: **0**.
 
 ## Rules WITHOUT a fixture (0)
 
 None — every rule has a fixture.
 
-## Rules WITH a fixture (197)
+## Rules WITH a fixture (202)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -64,6 +64,7 @@ None — every rule has a fixture.
 | dialog-name-present | automatic | `tests/fixtures/dialog-name-present-all-scenarios.html` | 25 | 5 | 8 | 0 | 12 |
 | dir-attribute-valid | automatic | `tests/fixtures/dir-attribute-valid-all-scenarios.html` | 8 | 2 | 4 | 0 | 2 |
 | dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
+| doctype-position | automatic | `tests/fixtures/doctype-position-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | doctype-present | automatic | `tests/fixtures/doctype-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | doctype-valid | automatic | `tests/fixtures/doctype-valid-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 7 | 2 | 0 | 3 | 2 |
@@ -133,14 +134,14 @@ None — every rule has a fixture.
 | link-label-in-name-sources | automatic | `tests/fixtures/link-label-in-name-sources-all-scenarios.html` | 13 | 3 | 4 | 3 | 3 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 12 | 5 | 0 | 2 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
-| link-state-colors-review | manual | `tests/fixtures/link-state-colors-review-all-scenarios.html` | 7 | 0 | 0 | 3 | 4 |
+| link-state-colors-review | automatic | `tests/fixtures/link-state-colors-review-all-scenarios.html` | 7 | 0 | 0 | 3 | 4 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 16 | 8 | 5 | 0 | 3 |
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | listbox-option-groups-absent | automatic | `tests/fixtures/listbox-option-groups-absent-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | listitem-parent-valid | automatic | `tests/fixtures/listitem-parent-valid-all-scenarios.html` | 14 | 6 | 5 | 0 | 3 |
 | main-element-structure | automatic | `tests/fixtures/main-element-structure-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | manual-review | manual | `tests/fixtures/manual-review-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
-| markup-validation-review | manual | `tests/fixtures/markup-validation-review-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
+| markup-validation-review | automatic | `tests/fixtures/markup-validation-review-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | media-alternative-transcript-evidence | manual | `tests/fixtures/media-transcript-present-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | media-transcript-adjacent | automatic | `tests/fixtures/media-transcript-adjacent-all-scenarios.html` | 9 | 3 | 0 | 5 | 1 |
 | menuitem-name-present | automatic | `tests/fixtures/menuitem-name-present-all-scenarios.html` | 20 | 6 | 6 | 0 | 8 |
@@ -161,12 +162,14 @@ None — every rule has a fixture.
 | optgroup-label-not-empty | automatic | `tests/fixtures/optgroup-label-not-empty-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | optgroup-label-present | automatic | `tests/fixtures/optgroup-label-present-all-scenarios.html` | 3 | 2 | 1 | 0 | 0 |
 | option-name-present | automatic | `tests/fixtures/option-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
-| orientation-content-parity | manual | `tests/fixtures/orientation-content-parity-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
+| orientation-content-parity | automatic | `tests/fixtures/orientation-content-parity-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
 | p-as-heading | manual | `tests/fixtures/p-as-heading-all-scenarios.html` | 10 | 0 | 0 | 3 | 7 |
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-language-present | automatic | `tests/fixtures/page-language-present-all-scenarios.html` | 1 | 1 | 0 | 0 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
+| page-title-unique | automatic | `tests/fixtures/page-title-unique-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
+| page-zones-reachable | automatic | `tests/fixtures/page-zones-reachable-all-scenarios.html` | 6 | 2 | 0 | 4 | 0 |
 | password-paste-enabled | manual | `tests/fixtures/password-paste-enabled-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
 | presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 15 | 0 | 0 | 8 | 7 |
 | presentational-attributes-absent | automatic | `tests/fixtures/presentational-attributes-absent-all-scenarios.html` | 11 | 0 | 8 | 0 | 3 |
@@ -183,6 +186,7 @@ None — every rule has a fixture.
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
 | skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 11 | 0 | 0 | 7 | 4 |
+| skip-link-placement | automatic | `tests/fixtures/skip-link-placement-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | skip-link-present | automatic | `tests/fixtures/skip-link-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
 | spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
@@ -200,6 +204,7 @@ None — every rule has a fixture.
 | table-th-has-data-cells | automatic | `tests/fixtures/table-th-has-data-cells-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 25 | 8 | 7 | 2 | 8 |
 | td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 8 | 0 | 1 | 0 | 7 |
+| text-spacing-content-loss | automatic | `tests/fixtures/text-spacing-content-loss-all-scenarios.html` | 5 | 2 | 1 | 2 | 0 |
 | textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | th-scope-row-col | manual | `tests/fixtures/th-scope-row-col-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
 | title-placeholder-identical | automatic | `tests/fixtures/title-placeholder-identical-all-scenarios.html` | 7 | 2 | 0 | 3 | 2 |

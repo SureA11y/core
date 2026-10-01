@@ -93,3 +93,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/doctype-present-all-scenarios
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'missingDoctype');
 });
+
+// With the page source, a doctype the parser dropped for coming after <html>
+// is present: its place is doctype-position's (8.1.3).
+test(`${RULE_ID}: a doctype the page.source probe shows after <html> is present`, () => {
+  const late =
+    '<html lang="fr">\n<!DOCTYPE html>\n<head><title>t</title></head><body></body></html>';
+  const run = (probes) =>
+    runa11yCoreOnHtml(late, {
+      runOnly: { includeRuleIds: [RULE_ID] },
+      url: 'https://example.test/p',
+      engineOptions: probes ? { probes } : {}
+    }).checksResults.find((r) => r.ruleId === RULE_ID).outcome;
+  assert.equal(run(null), 'fail');
+  assert.equal(run({ 'page.source': { url: 'https://example.test/p', start: late } }), 'pass');
+  assert.equal(run({ 'page.source': { url: 'https://example.test/other', start: late } }), 'fail');
+  assert.equal(
+    run({ 'page.source': { start: '<html><!-- <!DOCTYPE html> --><body></body></html>' } }),
+    'fail'
+  );
+});

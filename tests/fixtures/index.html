@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">197/197 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">202/202 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -546,6 +546,16 @@
       <td class="num pass">2</td>
       <td class="num fail">3</td>
       <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="doctype-position the doctype comes before the &lt;html&gt; tag">
+      <td><a href="doctype-position-all-scenarios.html" target="_blank" rel="noopener">doctype-position</a></td>
+      <td class="muted">automatic</td>
+      <td>The doctype comes before the &lt;html&gt; tag</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
       <td class="num"></td>
     </tr>
 <tr data-search="doctype-present page declares a doctype">
@@ -1238,10 +1248,10 @@
       <td class="num canttell">4</td>
       <td class="num">3</td>
     </tr>
-<tr data-search="link-state-colors-review link states shown by color alone are reviewed">
+<tr data-search="link-state-colors-review link states shown by color alone contrast 3:1 with the surrounding text">
       <td><a href="link-state-colors-review-all-scenarios.html" target="_blank" rel="noopener">link-state-colors-review</a></td>
-      <td class="muted">manual</td>
-      <td>Link states shown by color alone are reviewed</td>
+      <td class="muted">automatic</td>
+      <td>Link states shown by color alone contrast 3:1 with the surrounding text</td>
       <td class="num">7</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
@@ -1308,10 +1318,10 @@
       <td class="num canttell">1</td>
       <td class="num"></td>
     </tr>
-<tr data-search="markup-validation-review the generated source code is checked with the w3c validator">
+<tr data-search="markup-validation-review the generated source code passes the w3c validator">
       <td><a href="markup-validation-review-all-scenarios.html" target="_blank" rel="noopener">markup-validation-review</a></td>
-      <td class="muted">manual</td>
-      <td>The generated source code is checked with the W3C validator</td>
+      <td class="muted">automatic</td>
+      <td>The generated source code passes the W3C validator</td>
       <td class="num">1</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
@@ -1520,12 +1530,12 @@
     </tr>
 <tr data-search="orientation-content-parity content stays the same in portrait and landscape">
       <td><a href="orientation-content-parity-all-scenarios.html" target="_blank" rel="noopener">orientation-content-parity</a></td>
-      <td class="muted">manual</td>
+      <td class="muted">automatic</td>
       <td>Content stays the same in portrait and landscape</td>
-      <td class="num">6</td>
+      <td class="num">7</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
-      <td class="num canttell">3</td>
+      <td class="num canttell">4</td>
       <td class="num">3</td>
     </tr>
 <tr data-search="p-as-heading text styled to look like a heading should probably be a real heading">
@@ -1576,6 +1586,26 @@
       <td class="num pass"></td>
       <td class="num fail">1</td>
       <td class="num canttell"></td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="page-title-unique page titles are unique across the site">
+      <td><a href="page-title-unique-all-scenarios.html" target="_blank" rel="noopener">page-title-unique</a></td>
+      <td class="muted">automatic</td>
+      <td>Page titles are unique across the site</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
+    </tr>
+<tr data-search="page-zones-reachable each area of the page can be reached or skipped">
+      <td><a href="page-zones-reachable-all-scenarios.html" target="_blank" rel="noopener">page-zones-reachable</a></td>
+      <td class="muted">automatic</td>
+      <td>Each area of the page can be reached or skipped</td>
+      <td class="num">6</td>
+      <td class="num pass">2</td>
+      <td class="num fail"></td>
+      <td class="num canttell">4</td>
       <td class="num"></td>
     </tr>
 <tr data-search="password-paste-enabled authentication fields must not block pasting">
@@ -1737,6 +1767,16 @@
       <td class="num fail"></td>
       <td class="num canttell">7</td>
       <td class="num">4</td>
+    </tr>
+<tr data-search="skip-link-placement skip links are visible and at the same place on every page">
+      <td><a href="skip-link-placement-all-scenarios.html" target="_blank" rel="noopener">skip-link-placement</a></td>
+      <td class="muted">automatic</td>
+      <td>Skip links are visible and at the same place on every page</td>
+      <td class="num">1</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">1</td>
+      <td class="num"></td>
     </tr>
 <tr data-search="skip-link-present pages have a skip link to the main content">
       <td><a href="skip-link-present-all-scenarios.html" target="_blank" rel="noopener">skip-link-present</a></td>
@@ -1907,6 +1947,16 @@
       <td class="num fail">1</td>
       <td class="num canttell"></td>
       <td class="num">7</td>
+    </tr>
+<tr data-search="text-spacing-content-loss text stays readable when the user increases text spacing">
+      <td><a href="text-spacing-content-loss-all-scenarios.html" target="_blank" rel="noopener">text-spacing-content-loss</a></td>
+      <td class="muted">automatic</td>
+      <td>Text stays readable when the user increases text spacing</td>
+      <td class="num">5</td>
+      <td class="num pass">2</td>
+      <td class="num fail">1</td>
+      <td class="num canttell">2</td>
+      <td class="num"></td>
     </tr>
 <tr data-search="textbox-name-present textboxes have an accessible name">
       <td><a href="textbox-name-present-all-scenarios.html" target="_blank" rel="noopener">textbox-name-present</a></td>

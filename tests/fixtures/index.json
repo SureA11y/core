@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 197,
-    "withFixture": 197,
+    "total": 202,
+    "withFixture": 202,
     "withoutFixture": 0
   },
   "rows": [
@@ -926,6 +926,23 @@
         "PASS": 2,
         "FAIL": 3,
         "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "doctype-position",
+      "title": "The doctype comes before the <html> tag",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/doctype-position.js",
+      "testFile": "tests/engine-checks/automatic/doctype-position.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/doctype-position-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
         "OTHER": 0
       }
     },
@@ -2159,11 +2176,11 @@
     },
     {
       "ruleId": "link-state-colors-review",
-      "title": "Link states shown by color alone are reviewed",
-      "type": "manual",
+      "title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+      "type": "automatic",
       "wcagSc": [],
-      "ruleFile": "src/checks/manual/link-state-colors-review-manual.js",
-      "testFile": "tests/engine-checks/manual/link-state-colors-review.test.js",
+      "ruleFile": "src/checks/automatic/link-state-colors-review.js",
+      "testFile": "tests/engine-checks/automatic/link-state-colors-review-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-state-colors-review-all-scenarios.html",
       "totalCases": 7,
@@ -2284,11 +2301,11 @@
     },
     {
       "ruleId": "markup-validation-review",
-      "title": "The generated source code is checked with the W3C validator",
-      "type": "manual",
+      "title": "The generated source code passes the W3C validator",
+      "type": "automatic",
       "wcagSc": [],
-      "ruleFile": "src/checks/manual/markup-validation-review-manual.js",
-      "testFile": "tests/engine-checks/manual/markup-validation-review.test.js",
+      "ruleFile": "src/checks/automatic/markup-validation-review.js",
+      "testFile": "tests/engine-checks/automatic/markup-validation-review.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/markup-validation-review-all-scenarios.html",
       "totalCases": 1,
@@ -2667,17 +2684,17 @@
     {
       "ruleId": "orientation-content-parity",
       "title": "Content stays the same in portrait and landscape",
-      "type": "manual",
+      "type": "automatic",
       "wcagSc": [],
-      "ruleFile": "src/checks/manual/orientation-content-parity-manual.js",
-      "testFile": "tests/engine-checks/manual/orientation-content-parity.test.js",
+      "ruleFile": "src/checks/automatic/orientation-content-parity.js",
+      "testFile": "tests/engine-checks/automatic/orientation-content-parity-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/orientation-content-parity-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
+        "CANTTELL": 4,
         "OTHER": 3
       }
     },
@@ -2769,6 +2786,40 @@
         "PASS": 0,
         "FAIL": 1,
         "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "page-title-unique",
+      "title": "Page titles are unique across the site",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/page-title-unique.js",
+      "testFile": "tests/engine-checks/automatic/page-title-unique.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/page-title-unique-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "page-zones-reachable",
+      "title": "Each area of the page can be reached or skipped",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/page-zones-reachable.js",
+      "testFile": "tests/engine-checks/automatic/page-zones-reachable.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/page-zones-reachable-all-scenarios.html",
+      "totalCases": 6,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "CANTTELL": 4,
         "OTHER": 0
       }
     },
@@ -3057,6 +3108,23 @@
         "FAIL": 0,
         "CANTTELL": 7,
         "OTHER": 4
+      }
+    },
+    {
+      "ruleId": "skip-link-placement",
+      "title": "Skip links are visible and at the same place on every page",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/skip-link-placement.js",
+      "testFile": "tests/engine-checks/automatic/skip-link-placement-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/skip-link-placement-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
+        "OTHER": 0
       }
     },
     {
@@ -3370,6 +3438,25 @@
         "FAIL": 1,
         "CANTTELL": 0,
         "OTHER": 7
+      }
+    },
+    {
+      "ruleId": "text-spacing-content-loss",
+      "title": "Text stays readable when the user increases text spacing",
+      "type": "automatic",
+      "wcagSc": [
+        "1.4.12"
+      ],
+      "ruleFile": "src/checks/automatic/text-spacing-content-loss.js",
+      "testFile": "tests/engine-checks/automatic/text-spacing-content-loss-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/text-spacing-content-loss-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 1,
+        "CANTTELL": 2,
+        "OTHER": 0
       }
     },
     {

@@ -2,7 +2,7 @@
   "rulesDir": "src/checks",
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 197,
+    "totalRules": 202,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -11,8 +11,8 @@
           "AAA": 5
         },
         "2.1": {
-          "A": 4,
-          "AA": 3,
+          "A": 5,
+          "AA": 4,
           "AAA": 0
         },
         "2.2": {
@@ -22,14 +22,14 @@
         }
       },
       "anyVersion": {
-        "A": 106,
-        "AA": 19,
+        "A": 107,
+        "AA": 20,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
         "wcag2aa": 10,
-        "wcag21aa": 3,
+        "wcag21aa": 4,
         "wcag2aaa": 5,
         "wcag21a": 1,
         "wcag22aa": 2
@@ -1778,6 +1778,29 @@
       }
     },
     {
+      "file": "src/checks/automatic/doctype-position.js",
+      "ruleId": "doctype-position",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "The doctype comes before the <html> tag",
+      "tags": [
+        "rgaa",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/doctype-present.js",
       "ruleId": "doctype-present",
       "wcagScNormative": [],
@@ -3083,6 +3106,31 @@
       }
     },
     {
+      "file": "src/checks/automatic/link-state-colors-review.js",
+      "ruleId": "link-state-colors-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Link states shown by color alone contrast 3:1 with the surrounding text",
+      "tags": [
+        "rgaa",
+        "links",
+        "color",
+        "contrast",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/list-children-valid.js",
       "ruleId": "list-children-valid",
       "wcagScNormative": [
@@ -3264,6 +3312,29 @@
       "tags": [
         "rgaa",
         "landmarks",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/automatic/markup-validation-review.js",
+      "ruleId": "markup-validation-review",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "The generated source code passes the W3C validator",
+      "tags": [
+        "rgaa",
         "structure",
         "atomic",
         "automatic"
@@ -3820,6 +3891,30 @@
       }
     },
     {
+      "file": "src/checks/automatic/orientation-content-parity.js",
+      "ruleId": "orientation-content-parity",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Content stays the same in portrait and landscape",
+      "tags": [
+        "rgaa",
+        "structure",
+        "css",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
       "file": "src/checks/automatic/page-language-present.js",
       "ruleId": "page-language-present",
       "wcagScNormative": [],
@@ -3890,6 +3985,54 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/page-title-unique.js",
+      "ruleId": "page-title-unique",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Page titles are unique across the site",
+      "tags": [
+        "rgaa",
+        "document",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
+    },
+    {
+      "file": "src/checks/automatic/page-zones-reachable.js",
+      "ruleId": "page-zones-reachable",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Each area of the page can be reached or skipped",
+      "tags": [
+        "rgaa",
+        "keyboard",
+        "navigation",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/presentational-attributes-absent.js",
@@ -4208,6 +4351,30 @@
           ]
         }
       }
+    },
+    {
+      "file": "src/checks/automatic/skip-link-placement.js",
+      "ruleId": "skip-link-placement",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Skip links are visible and at the same place on every page",
+      "tags": [
+        "rgaa",
+        "keyboard",
+        "navigation",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {}
     },
     {
       "file": "src/checks/automatic/skip-link-present.js",
@@ -4776,6 +4943,56 @@
         "facetsBySc": {
           "1.3.1": [
             "td-has-header"
+          ]
+        }
+      }
+    },
+    {
+      "file": "src/checks/automatic/text-spacing-content-loss.js",
+      "ruleId": "text-spacing-content-loss",
+      "wcagScNormative": [
+        "1.4.12"
+      ],
+      "wcagScAll": [
+        "1.4.12"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Text stays readable when the user increases text spacing",
+      "tags": [
+        "wcag21aa",
+        "wcag1412",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.12": [
+            "text-spacing-content-loss"
           ]
         }
       }
@@ -6541,54 +6758,6 @@
       }
     },
     {
-      "file": "src/checks/manual/link-state-colors-review-manual.js",
-      "ruleId": "link-state-colors-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Link states shown by color alone are reviewed",
-      "tags": [
-        "rgaa",
-        "links",
-        "color",
-        "contrast",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "src/checks/manual/markup-validation-review-manual.js",
-      "ruleId": "markup-validation-review",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "The generated source code is checked with the W3C validator",
-      "tags": [
-        "rgaa",
-        "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
       "file": "src/checks/manual/media-transcript-present-manual.js",
       "ruleId": "media-alternative-transcript-evidence",
       "wcagScNormative": [
@@ -6816,30 +6985,6 @@
       "tags": [
         "rgaa",
         "links",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {}
-    },
-    {
-      "file": "src/checks/manual/orientation-content-parity-manual.js",
-      "ruleId": "orientation-content-parity",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Content stays the same in portrait and landscape",
-      "tags": [
-        "rgaa",
-        "structure",
-        "css",
         "atomic",
         "manual"
       ],
@@ -8068,11 +8213,12 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8083,6 +8229,14 @@
             "automation": "full",
             "coveredBy": [
               "avoid-inline-spacing"
+            ]
+          },
+          {
+            "id": "text-spacing-content-loss",
+            "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+            "automation": "partial",
+            "coveredBy": [
+              "text-spacing-content-loss"
             ]
           }
         ]
@@ -9468,11 +9622,12 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9483,6 +9638,14 @@
             "automation": "full",
             "coveredBy": [
               "avoid-inline-spacing"
+            ]
+          },
+          {
+            "id": "text-spacing-content-loss",
+            "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+            "automation": "partial",
+            "coveredBy": [
+              "text-spacing-content-loss"
             ]
           }
         ]
