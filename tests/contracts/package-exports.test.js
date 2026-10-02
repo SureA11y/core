@@ -65,12 +65,16 @@ test('every locale side file the exports map can reach is also published', () =>
 // a file `files` leaves out works here and throws in a consumer's project.
 test('every module entry point loads only published files', () => {
   const { execFileSync } = require('node:child_process');
-  const packed = JSON.parse(
+  // npm 10 and 11 print a list with one entry per package; npm 12 prints an
+  // object keyed by package name.
+  const report = JSON.parse(
     execFileSync('npm', ['pack', '--dry-run', '--json', '--silent'], {
       cwd: ROOT_DIR,
       encoding: 'utf8'
     })
-  )[0].files.map((f) => f.path);
+  );
+  const [entry] = Array.isArray(report) ? report : Object.values(report);
+  const packed = entry.files.map((f) => f.path);
   const published = new Set(packed);
 
   const missing = [];
