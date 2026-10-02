@@ -5,8 +5,9 @@ example pairs for every one of core's rules, meant to feed a future rule-page
 docs site the way alfa.siteimprove.com/rules pages show worked examples
 alongside a rule's description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md),
 which carries each rule's title, WCAG mapping, applicability, and expectation —
-this file adds one illustrative pair per rule. A profile's rules have theirs in
-the profile.
+this file adds one illustrative pair per rule, plus an extra `Flagged (cantTell)`
+example where a rule's outcome is tiered. A profile's rules have theirs in the
+profile.
 
 Every example was verified against the built engine (`npm run build`, then
 replayed through `tests/helpers/runa11yCoreOnHtml`), not just read off a
