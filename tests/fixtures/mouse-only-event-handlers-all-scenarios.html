@@ -32,6 +32,11 @@
     <div id="moeh_case_02" onmousedown="startDrag()">Mouse-drag-only handle</div>
   </div>
 
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: onmouseover paired with onfocus, but the element cannot take focus</div>
+    <div id="moeh_case_07" onmouseover="show()" onfocus="show()">Menu</div>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_03">
@@ -47,6 +52,11 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — NEUTRAL: only onclick (not a pointer-only handler this rule targets)</div>
     <div id="moeh_case_05" onclick="act()">Click-only, out of scope for this rule</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: onmouseover paired with onkeydown on a wrapper whose button takes focus</div>
+    <div id="moeh_case_08" onmouseover="show()" onkeydown="show()"><button type="button">Menu</button></div>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

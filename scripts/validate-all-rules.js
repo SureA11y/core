@@ -5,6 +5,8 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
+const { ruleTypeDirs } = require('./lib/rule-dirs');
+
 function walk(dir) {
   let results = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -18,11 +20,9 @@ function walk(dir) {
   return results;
 }
 
-const dirs = process.argv.slice(2);
-if (!dirs.length) {
-  console.error('Usage: node validate-all-rules.js <dir> [<dir> ...]');
-  process.exit(1);
-}
+// With no folder given, every rule folder: src/checks and each profile's.
+const args = process.argv.slice(2);
+const dirs = args.length ? args : ['automatic', 'manual'].flatMap((type) => ruleTypeDirs(type));
 
 const files = dirs.flatMap(walk).sort();
 

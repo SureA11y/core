@@ -302,6 +302,73 @@ test('renderSarifReport: a malformed normative mapping is skipped, the valid one
   assert.deepStrictEqual(rule.properties.tags, ['accessibility', 'automatic', 'wcag-4.1.2']);
 });
 
+test('renderSarifReport: only WCAG Success Criteria become wcag- tags; EN 301 549 clauses get their own', () => {
+  // The shape manual-review carries: a criterion, its Understanding document,
+  // and the matching EN 301 549 clause, all with a `requirement` of their own.
+  const result = makeScanResult([
+    makeCheckResult({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', version: '2.2', requirement: '2.1.1', conformanceLevel: 'A' },
+          { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1' }
+        ]
+      }
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'automatic',
+    'wcag-2.1.1',
+    'en301549-9.2.1.1'
+  ]);
+});
+
+test('renderSarifReport: a clause in two EN 301 549 versions is tagged once', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', requirement: '1.4.3', conformanceLevel: 'AA' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.4.3' },
+          { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3' }
+        ]
+      }
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'automatic',
+    'wcag-1.4.3',
+    'en301549-9.1.4.3'
+  ]);
+});
+
+test('renderSarifReport: manual-review is tagged with its WCAG criteria only', () => {
+  const manualReview = require('../src/checks/manual-review.js');
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'manual-review',
+      type: 'manual',
+      outcome: 'cantTell',
+      meta: manualReview.meta
+    })
+  ]);
+
+  const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  assert.deepStrictEqual(rule.properties.tags, [
+    'accessibility',
+    'manual',
+    'wcag-2.1.1',
+    'wcag-2.4.3',
+    'wcag-2.4.7'
+  ]);
+});
+
 test('renderSarifReport: a manual rule is tagged manual', () => {
   const result = makeScanResult([makeCheckResult({ type: 'manual', outcome: 'cantTell' })]);
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
@@ -516,4 +583,23 @@ test('an occurrence with no summary produces no notice', () => {
   const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
 
   assert.strictEqual(sarif.runs[0].invocations, undefined);
+});
+
+test('renderSarifReport: the run records the WCAG target and profile as properties', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.engine = { ...result.engine, wcagVersion: '2.1', profile: 'en301549-v3.2.1' };
+  const run = parse(renderSarifReport(result, {})).runs[0];
+  assert.deepStrictEqual(run.properties, { wcagVersion: '2.1', profile: 'en301549-v3.2.1' });
+});
+
+test('renderSarifReport: the run records the opt-in rules a scan added', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['sample'] };
+  const run = parse(renderSarifReport(result, {})).runs[0];
+  assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', optInRules: ['sample'] });
+});
+
+test('renderSarifReport: a result from an older engine gets no run properties', () => {
+  const run = parse(renderSarifReport(makeScanResult([makeCheckResult({})]), {})).runs[0];
+  assert.strictEqual('properties' in run, false);
 });

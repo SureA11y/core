@@ -6,8 +6,8 @@
 
 Removing, renaming, or changing the type/meaning of any of these is a **major** version bump:
 
-- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
-- Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
+- Top-level result: `engine.tag`, `engine.schemaVersion`, `engine.locale` (the field and its `requested`/`resolved`/`reason` keys — the set of `reason` *values* is open and may gain entries in a minor), `engine.wcagVersion`, `engine.profile` (when present; the set of profile names may grow in a minor), `engine.optInRules` (when present; the set of tags may grow in a minor), `url`, `checksResults` (an array), `rulesResults` (an array), `overriddenBuiltinIds` (an array, empty when no `customRules` entry shadowed a built-in id — part of the extension contract, see below).
+- Each `checksResults[i]` / `rulesResults[i]` entry: `ruleId`, `outcome`, `rollupIds` (check results only), `outcomeNormalized`, `severity`, `confidence`, `type`, `title`, `description`, `meta` (including `meta.normativeMappings`, `meta.deprecated`/`.deprecation` — see below), `engineOptions`, `schemaVersion`.
 - Each occurrence (`occurrences[i]`): `selector`, `html`, `summary`, `hint`, `i18n`, `structuralPath`.
 - The rule **catalog** (`getChecksCatalog()`/`getRulesCatalog()`, a separate surface from a scan result — see `RULE_AUTHORING.md`): `ruleId`, `title`, `description`, `tags`, `wcagSc`, `normativeMappings`, `defaultSeverity`, `defaultConfidence`, `type`, `deprecated`/`.deprecation`. Note `tags` lives here, not on a per-scan `checksResults[i].meta` — the two surfaces intentionally carry different subsets of a rule's metadata.
 
@@ -23,10 +23,13 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/baseline` | `src/baseline.js` | `buildBaselineEntries()`, `matchBaseline()` |
 | `@surea11y/core/report` | `src/report.js` | `renderHtmlReport()` |
 | `@surea11y/core/sarif` | `src/sarif.js` | `renderSarifReport()` |
+| `@surea11y/core/junit` | `src/junit.js` | `renderJunitReport()` |
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
+| `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
+| `@surea11y/core/wcag` | `src/wcag.js` | `WCAG_VERSIONS`, `wcagCriteria()`, `wcagCriterion()`, `wcagTags()` |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle, for bundlers that resolve it as a module |
 
-Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
+Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, `profiles/*` (a profile's tables and rules, which the engine reads), and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
 
 Declaring this map is what lets the engine's internal file layout change without a major bump. Note that `src/checks/*` is still *shipped* (the generated bundle `require()`s it at runtime) — shipped is not the same as public.
 
@@ -59,6 +62,7 @@ There is deliberately no hook for changing what a built-in rule decides. Overrid
 
 ## Explicitly unstable (not covered by semver)
 
+- **What profiles build on: a rule's `settings` and `src/profile-kit.js`.** A rule's settings are the thresholds a built-in rule declares it reads from `ctx.config` (`contrast-minimum`'s `boldLargeMinPx`, `largeTextRatio`, `normalTextRatio`), for its variants ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)); a scan's `engineOptions.rules` cannot set them. `src/profile-kit.js` is the mapping a profile made with `npm run profile:new` uses, and is not exported. Both serve the profiles in this repository, which change with them, so they stay outside this contract until a profile can live outside it ([`profiles/README.md`](../profiles/README.md)).
 - `perfStats` and `ruleTimings` — internal timing/debug counters, only present when `engineOptions.perfStats`/`.profileRules` is set. Shape not covered by this document.
 - `occurrences[i].data.details` — rule-specific, non-normative extra context. Shape varies per rule and may change in a patch release; treat as best-effort, not a stable contract (this was already noted in `docs/OUTPUT_SCHEMA.md` before this document existed). **`data.details.reasonCode` is the exception** and is stable — see [Finding identity](#finding-identity) below.
 - `ruleInterfaceVersion` / `ruleVersion` on a rule's meta — currently unused scaffolding (every rule defaults to the same two static strings; nothing meaningfully sets or consumes them today). Not part of this contract until they're actually wired up to mean something.
@@ -74,10 +78,17 @@ So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of t
 
 - **A rule id, once published, does not change.** Renaming or removing one is a major change. The supported path is to keep the id, mark it `deprecated` with `deprecation.replacedBy` naming the successor, and remove it only after the notice period.
 - **A reason code, once a rule has shipped it, does not change.** This is a deliberate exception to the surrounding "`data.details` is unstable" rule: everything else under `data.details` is free-form, but `reasonCode` is load-bearing for identity, so it is pinned. Adding a new code to a rule is a minor change; changing or dropping an existing one is not, because every stored baseline entry and every open Code Scanning alert keyed on it stops matching.
+- **A reason code retires only with the finding it named.** The promise is that a finding the engine still makes keeps its identity, not that a finding is made forever. When a correctness fix (a patch, see [below](#what-triggers-which-version-bump)) changes what a rule reports for an element, the finding the old code named no longer exists, and its code may go with it: a baseline entry or alert for it then closes, as it would for any fixed bug, rather than silently stopping to match a finding that is still there. Renaming a code for a finding that stays, or dropping one the rule still has a case for, is never allowed. A retirement is recorded in `CHANGELOG.md` and, with its reason, under `retired` in `scripts/data/released-finding-ids.json`.
 
-Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json), regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
+What the last release shipped is frozen in [`scripts/data/released-finding-ids.json`](../scripts/data/released-finding-ids.json), written by `npm run finding-ids:release -- <version>` as part of each release, and `tests/released-finding-ids.test.js` fails when a rule id or reason code from it is missing and not listed under `retired` with its reason. No commit rewrites that file between releases, so an identity cannot be dropped and the inventory regenerated in the same change without the test noticing.
+
+Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json) for core's rules, and in each profile's own `scripts/data/finding-ids.json` for its rules, regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
 
 Note what identity does **not** include: `selector` and `structuralPath` deliberately stay out of the fingerprint, because both change when the surrounding page is edited, which would make every finding look new after an unrelated refactor. `html` is in, so editing the flagged element itself does read as a new finding — that is the intended trade-off, since the element's markup is the thing the finding is about.
+
+### A removal that predates this guard
+
+`area-alt-decorative`, shipped in 1.7.0, was removed afterwards without the deprecation period described [below](#rule-id-deprecation-policy). It asked a human whether an `<area>` with an empty `alt` was decorative, a question with no legitimate "yes": `area-alt-present` now fails that case outright ([`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md)). The removal was accepted as an exception rather than reverted, and is listed under `retired` in `scripts/data/released-finding-ids.json`. Anything holding its id — a `runOnly` list, a baseline entry — matches nothing from the release after 1.7.0; the empty-`alt` area it asked about is reported by `area-alt-present` instead.
 
 ### A rename that predates this
 
@@ -100,6 +111,8 @@ The version number is the contract — not a measure of how much has changed or 
 - **Major (`X.0.0`)** — a breaking change to a stable field (see above). Rare by design; the entire point of the stable-fields list is to keep these infrequent and well-signposted.
 
 Because every `1.x` release is backward-compatible, a consumer pinned to a `^1.y.0` range is never broken by an upgrade within the line — so a steady stream of patch/minor releases reflects active maintenance and prompt fixes, not instability. Frequency of releases is not a signal of churn; a change to a **major** version is.
+
+Each release freezes the finding identities it ships: run `npm run finding-ids:release -- <version>` and commit `scripts/data/released-finding-ids.json` with the release (see [Finding identity](#finding-identity)).
 
 ## Rule-ID deprecation policy
 
@@ -126,7 +139,7 @@ The process:
 2. Leave it running normally for at least one full minor version cycle after the deprecation, so integrators pinned to `^x.y.0` have a real chance to see it before it's gone.
 3. Remove the rule file entirely in a future **major** version, documented under `### Removed`.
 
-`iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It also reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation and waiting for 2.0.0 to stop reporting one was not acceptable. That is a property of the retired check, not of deprecation: a deprecated rule whose results are still correct keeps producing them, as described above. Its reason code stays in `scripts/data/finding-ids.json` until the file is removed, since the inventory records what was shipped, not what is still produced; `tests/finding-ids.test.js` lets a deprecated rule that emits nothing keep its committed codes for that reason.
+`iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It also reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation and waiting for 2.0.0 to stop reporting one was not acceptable. That is a property of the retired check, not of deprecation: a deprecated rule whose results are still correct keeps producing them, as described above. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named and is listed, with its reason, under `retired` in `scripts/data/released-finding-ids.json` (see [Finding identity](#finding-identity)).
 
 ## See also
 

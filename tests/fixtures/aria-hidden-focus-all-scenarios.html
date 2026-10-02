@@ -108,15 +108,27 @@
 </div>
 
 <!-- Browsers apply a UA default of `area { display: none }` (areas are
-     hotspots on a referenced <img>, not independently rendered), so an
-     explicit style override is needed here to exercise the focusable-area
-     code path deterministically. -->
+     hotspots on a referenced <img>, not independently rendered). The rule
+     judges an <area href> by the image that uses its map, so the image
+     below is what makes these areas focusable. -->
+<img src="map.png" alt="Fixture map" usemap="#fixturemap" width="20" height="20">
 <map name="fixturemap">
   <div class="case" id="case_14">
     <div class="case-title">14 — FAIL: aria-hidden subtree contains a focusable &lt;area href&gt;</div>
   <div id="case_area_href" aria-hidden="true">
-    <area shape="rect" coords="0,0,10,10" href="#x" alt="Area" style="display:inline">
+    <area shape="rect" coords="0,0,10,10" href="#x" alt="Area">
   </div>
+  </div>
+  <div class="case" id="case_35">
+    <div class="case-title">35 — FAIL: aria-hidden on an &lt;area href&gt; of a map an image uses</div>
+    <area id="case_area_self" shape="rect" coords="10,10,20,20" href="#y" alt="Other area" aria-hidden="true">
+  </div>
+</map>
+
+<map name="unusedmap">
+  <div class="case" id="case_36">
+    <div class="case-title">36 — PASS: &lt;area href&gt; in a map no image uses is not focusable</div>
+    <area id="case_area_unused_map" shape="rect" coords="0,0,10,10" href="#z" alt="Unused" aria-hidden="true">
   </div>
 </map>
 
@@ -171,6 +183,13 @@
   <div class="case-title">20 — PASS: a disabled input is not focusable</div>
 <div id="case_disabled_input" aria-hidden="true">
   <input type="text" disabled>
+</div>
+</div>
+
+<div class="case" id="case_34">
+  <div class="case-title">34 — PASS: an input disabled by its &lt;fieldset disabled&gt; is not focusable</div>
+<div id="case_fieldset_disabled" aria-hidden="true">
+  <fieldset disabled><input type="text" aria-label="Name"></fieldset>
 </div>
 </div>
 

@@ -51,6 +51,24 @@
         "additionalProperties": true
       }
     },
+    "profile": {
+      "type": "string",
+      "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1', 'section508', or a profile a registered standard brings (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly or engineOptions selects the rules instead. Excludes apply on top of it."
+    },
+    "optInRules": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Opt-in rules to unlock outside their standard's profile: 'all' for every standard's, or a list of standards' rule tags (case-insensitive; an array or a comma-separated string). It only lifts the opt-in gate: the rest of the selection still decides, so a run with no filter and no profile then runs every rule, while a WCAG profile still runs WCAG rules only. Unknown tags are ignored with a console warning."
+    },
+    "mappings": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Standards besides WCAG whose entries a result's meta.normativeMappings carries: 'en301549' for every version, or 'en301549:V3.2.1' / 'en301549:V4.1.1' for one; likewise the key of any other registered standard (case-insensitive; an array or a comma-separated string). Default: none, so a result names WCAG only. A standard's profile adds the version it targets. Unknown names and versions are ignored with a console warning."
+    },
     "policyContract": {
       "oneOf": [
         { "type": "string", "minLength": 1 },

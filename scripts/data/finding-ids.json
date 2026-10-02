@@ -127,6 +127,7 @@
     "table-th-has-data-cells",
     "target-size-minimum",
     "td-has-header",
+    "text-spacing-content-loss",
     "textbox-name-present",
     "tooltip-name-present",
     "treeitem-name-present",
@@ -205,12 +206,14 @@
       "ARIA_ATTR_VALUE_TARGET_ABSENT"
     ],
     "autocomplete-valid": [
+      "AUTOCOMPLETE_FIELD_CONTROL_MISMATCH",
       "AUTOCOMPLETE_VALUE_INVALID"
     ],
     "avoid-inline-spacing": [
       "INLINE_SPACING_IMPORTANT",
       "INLINE_SPACING_NOT_RESOLVABLE",
-      "INLINE_SPACING_NO_SOFT_WRAP"
+      "INLINE_SPACING_NO_SOFT_WRAP",
+      "INLINE_SPACING_SHORT_TEXT"
     ],
     "binary-control-name-present": [
       "name_missing"
@@ -254,15 +257,17 @@
       "cssHiddenTabbable_runtimeRedirect_needsReview"
     ],
     "css-orientation-lock": [
+      "ORIENTATION_MEDIA_HIDES_CONTENT",
       "ORIENTATION_MEDIA_ROTATE_TRANSFORM",
       "STYLESHEETS_NOT_READABLE"
     ],
     "definition-list-children-valid": [
+      "DL_DT_DD_ORDER",
       "DL_INVALID_CHILD",
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "DEPRECATED_NON_STOPPABLE_ELEMENT"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
     ],
     "dialog-name-present": [
       "name_missing"
@@ -332,9 +337,6 @@
     "iframe-name-present": [
       "IFRAME_NAME_MISSING"
     ],
-    "iframe-title-unique": [
-      "IFRAME_TITLE_DUPLICATE"
-    ],
     "image-redundant-alt": [
       "IMAGE_ALT_REDUNDANT"
     ],
@@ -381,7 +383,8 @@
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
-      "COLOR_ONLY_DIFFERENTIATION"
+      "COLOR_ONLY_DIFFERENTIATION",
+      "LINK_COLOR_CONTRAST_ONLY"
     ],
     "link-name-present": [
       "name_missing"
@@ -422,18 +425,21 @@
       "name_missing"
     ],
     "mouse-only-event-handlers": [
+      "MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE",
       "MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT"
     ],
     "nested-interactive-controls-absent": [
       "NESTED_INTERACTIVE_CONTROL"
     ],
     "no-autoplay-audio": [
-      "AUTOPLAY_NO_CONTROLS_MECHANISM"
+      "AUTOPLAY_NO_CONTROLS_MECHANISM",
+      "EMBEDDED_SOUND_SOURCE"
     ],
     "option-name-present": [
       "name_missing"
     ],
     "p-as-heading": [
+      "BOLD_LARGE_DIV",
       "BOLD_LARGE_PARAGRAPH"
     ],
     "page-has-heading-one": [
@@ -519,6 +525,9 @@
     "td-has-header": [
       "TD_NO_ASSOCIATED_HEADER"
     ],
+    "text-spacing-content-loss": [
+      "STYLESHEET_IMPORTANT"
+    ],
     "textbox-name-present": [
       "name_missing"
     ],
@@ -532,7 +541,8 @@
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [
-      "CAPTIONS_TRACK_NOT_DETECTED"
+      "CAPTIONS_TRACK_NOT_DETECTED",
+      "SUBTITLES_TRACK_ONLY"
     ]
   }
 }

@@ -596,6 +596,49 @@ test(`${RULE_ID}: disabled form control exception (pass even though disabled but
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a control disabled by an ancestor <fieldset disabled> is not focusable (pass)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <div aria-hidden="true">
+        <fieldset disabled><input aria-label="x"><select aria-label="y"><option>a</option></select></fieldset>
+      </div>
+    </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a control in the first <legend> of a disabled fieldset stays focusable (fail)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <div id="ah_legend" aria-hidden="true">
+        <fieldset disabled><legend><input aria-label="x"></legend></fieldset>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: aria-hidden <area href> of a map an image uses fails; judged by that image`, () => {
+  const page = (img) => `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      ${img}
+      <map name="m"><area id="ar" href="/a" alt="P" shape="rect" coords="0,0,10,10" aria-hidden="true"></map>
+    </body></html>`;
+  const used = page('<img src="a.png" alt="Plan" usemap="#m">');
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(used, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'ar'));
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'ariaHiddenSelfFocusable');
+  }
+  // No image uses the map, or the image is not rendered: the area takes no focus.
+  for (const img of ['', '<img src="a.png" alt="Plan" usemap="#m" hidden>']) {
+    assertRule(runa11yCoreOnHtml(page(img), { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+  }
+  // A negative tabindex takes the area out of the tab order.
+  const negative = used.replace('aria-hidden="true"', 'aria-hidden="true" tabindex="-1"');
+  assertRule(runa11yCoreOnHtml(negative, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+});
+
 // ===== visibilityHints metric (data.details.metrics.visibilityHints) =====
 // getVisibilityHints is a diagnostic-only enrichment (does not affect
 // outcome -- opacity/clip/offscreen focusables are already in-scope and
@@ -680,7 +723,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 20, maxOccurrences: 20 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 21, maxOccurrences: 21 });
 
   const expectedFailIds = [
     'case_link_href',
@@ -696,6 +739,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_audio_controls',
     'case_video_controls',
     'case_area_href',
+    'case_area_self',
     'case_opacity_zero',
     'case_self_focusable',
     'case_self_and_descendant',
@@ -713,6 +757,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_inert',
     'case_disabled_button',
     'case_disabled_input',
+    'case_fieldset_disabled',
+    'case_area_unused_map',
     'case_display_none',
     'case_visibility_hidden',
     'case_opacity_and_visibility_hidden',

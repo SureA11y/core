@@ -36,7 +36,7 @@ function liftFunction(name) {
 // These close over the inlined I18N table, so they are lifted out of the built
 // engine to be exercised against dictionaries the shipped locales cannot
 // produce.
-function makeResolveLocale(i18n, knownLocales) {
+function makeResolveLocale(i18n, knownLocales, leftOut) {
   const source = [
     'getSuppliedMessages',
     'ownDict',
@@ -52,10 +52,11 @@ function makeResolveLocale(i18n, knownLocales) {
     .concat('return resolveLocale;')
     .join('\n');
 
-  return new Function('I18N', 'KNOWN_LOCALES', 'normalizeLocale', source)(
+  return new Function('I18N', 'KNOWN_LOCALES', 'normalizeLocale', 'I18N_LEFT_OUT', source)(
     i18n,
     knownLocales || Object.keys(i18n || {}),
-    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en')
+    (locale) => (typeof locale === 'string' && locale.trim() ? locale.trim() : 'en'),
+    leftOut || {}
   );
 }
 
@@ -83,11 +84,29 @@ for (const locale of ['en', ...LOCALES]) {
 }
 
 test('engine.locale reports the fallback for a locale the build does not carry', () => {
-  assert.deepEqual(localeOf({ locale: 'ja' }), {
-    requested: 'ja',
+  assert.deepEqual(localeOf({ locale: 'ko' }), {
+    requested: 'ko',
     resolved: 'en',
     reason: 'unknown-locale'
   });
+});
+
+test('engine.locale resolves ja-JP to the shipped ja dictionary', () => {
+  assert.deepEqual(localeOf({ locale: 'ja-JP' }), {
+    requested: 'ja-JP',
+    resolved: 'ja',
+    reason: 'primary-subtag'
+  });
+});
+
+test('asking for ja returns Japanese strings, not English', () => {
+  const ja = runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } });
+  const img = ja.checksResults.find((r) => r.ruleId === 'img-alt-present');
+
+  assert.equal(img.outcome, 'fail');
+  assert.equal(img.title, '<img> 要素には alt 属性が必要');
+  assert.equal(img.occurrences[0].summary, '<img> 要素に alt 属性がありません。');
+  assert.match(img.occurrences[0].hint, /alt=""/);
 });
 
 test('engine.locale falls back from a subtag to its primary language', () => {
@@ -127,7 +146,7 @@ test('a subtag fallback returns the primary language strings, not English', () =
 });
 
 test('engine.locale does not change the strings a run produces', () => {
-  const withUnknown = runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } });
+  const withUnknown = runa11yCoreOnHtml(html, { engineOptions: { locale: 'ko' } });
   const withEnglish = runa11yCoreOnHtml(html, { engineOptions: { locale: 'en' } });
 
   assert.deepEqual(
@@ -432,4 +451,21 @@ test('resolveLocale counts supplied and built-in keys together for completeness'
     'ok',
     'the supplied key completes the built-in dictionary'
   );
+});
+
+// A profile that does not offer a language leaves its keys out of that
+// locale by choice (scripts/lib/dictionaries.js keysLeftOut): they show in
+// English without making the dictionary look incomplete. A key missing that
+// was not left out still does.
+test('keys a profile leaves out of a locale do not make it partial', () => {
+  const i18n = { en: { core: 'Core', own: 'Own' }, de: { core: 'Kern' } };
+  const resolve = makeResolveLocale(i18n, ['en', 'de'], { de: { own: true } });
+  assert.deepEqual(resolve({ locale: 'de' }), { requested: 'de', resolved: 'de', reason: 'ok' });
+
+  const strict = makeResolveLocale(i18n, ['en', 'de']);
+  assert.deepEqual(strict({ locale: 'de' }), {
+    requested: 'de',
+    resolved: 'de',
+    reason: 'partial-dictionary'
+  });
 });

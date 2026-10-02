@@ -1,0 +1,20 @@
+{
+  "report_sampleRollup_note": "Une ligne par exigence de la Sample Standard à laquelle une règle est liée, qui regroupe ces règles.",
+  "sampleTitleLength_title": "Les titres de page sont courts",
+  "sampleTitleLength_description": "Vérifie que le titre de la page fait au plus 60 caractères.",
+  "sampleTitleLength_summary_fail": "Le titre de la page fait {{length}} caractères.",
+  "sampleTitleLength_hint_fail": "Raccourcissez le titre à 60 caractères ou moins.",
+  "sampleStatementLink_title": "Chaque page renvoie à la déclaration d'accessibilité",
+  "sampleStatementLink_description": "Vérifie que la page renvoie à sa déclaration d'accessibilité.",
+  "sampleStatementLink_summary_fail": "La page n'a pas de lien vers la déclaration d'accessibilité.",
+  "sampleStatementLink_summary_fail_footer": "Le pied de page n'a pas de lien vers la déclaration d'accessibilité.",
+  "sampleStatementLink_hint_fail": "Ajoutez sur chaque page un lien vers la déclaration d'accessibilité.",
+  "sampleContrastEnhanced_title": "Le texte atteint un rapport de contraste de 7:1",
+  "sampleContrastEnhanced_description": "Vérifie le contraste du texte selon la Sample Standard : 7:1, ou 4,5:1 pour le grand texte.",
+  "sampleContrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+  "sampleContrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
+  "sampleContrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
+  "sampleContrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
+  "sampleContrastEnhanced_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
+  "sampleContrastEnhanced_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA)."
+}

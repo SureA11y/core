@@ -11,14 +11,17 @@
  * generate-wcag-coverage.js); this one is organized by rule, for someone
  * asking "what does rule X do" or "what rules exist for element Y."
  *
+ * Core's rules go in docs/RULE_CATALOG.md, and each profile's in its own
+ * docs/RULE_CATALOG.md (scripts/lib/rule-dirs.js ruleSources).
+ *
  * Usage:
  *   npm run build && node scripts/generate-rule-catalog.js
- *   node scripts/generate-rule-catalog.js --out docs/RULE_CATALOG.md
- *   node scripts/generate-rule-catalog.js --check   (fails if the file is stale, writes nothing)
+ *   node scripts/generate-rule-catalog.js --check   (fails if a file is stale, writes nothing)
  */
 
 const fs = require('fs');
 const path = require('path');
+const { ruleDirs, ruleSources, ruleIdsOf } = require('./lib/rule-dirs');
 
 function parseArgs(argv) {
   const out = {};
@@ -155,7 +158,9 @@ function readRuleProse(rulesDir) {
     } catch {
       continue;
     }
-    if (!mod || typeof mod.id !== 'string' || typeof mod.runInPage !== 'function') continue;
+    // A rule, or a variant of one (its own header documents it).
+    const isRule = mod && (typeof mod.runInPage === 'function' || typeof mod.from === 'string');
+    if (!isRule || typeof mod.id !== 'string') continue;
 
     const source = fs.readFileSync(file, 'utf8');
     prose.set(mod.id, {
@@ -167,31 +172,9 @@ function readRuleProse(rulesDir) {
   return prose;
 }
 
-function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const repoRoot = path.join(__dirname, '..');
-  const outPath = path.join(repoRoot, args.out || 'docs/RULE_CATALOG.md');
-
-  const core = require(path.join(repoRoot, 'src/core.js'));
-  const catalog = core.getChecksCatalog();
-  const composites = core.getRulesCatalog();
-  const prose = readRuleProse(path.join(repoRoot, 'src/checks'));
-
-  const rows = catalog
-    .map((r) => ({
-      ruleId: r.ruleId,
-      title: r.title,
-      description: r.description || '',
-      type: r.type,
-      wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.join(', ') : '',
-      level: levelFromTags(r.tags),
-      confidence: r.defaultConfidence,
-      severity: r.defaultSeverity,
-      applicability: (prose.get(r.ruleId) || {}).applicability || '',
-      expectation: (prose.get(r.ruleId) || {}).expectation || ''
-    }))
-    .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
-
+// One catalog: the rules in rows; composites, core's only. coreDocs is the
+// path from the catalog's folder to core's docs, for the links.
+function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
   const automatic = rows.filter((r) => r.type === 'automatic');
   const manual = rows.filter((r) => r.type === 'manual');
   const withSc = rows.filter((r) => r.wcagSc);
@@ -244,15 +227,31 @@ function main() {
         `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${escapePipes((c.meta && c.meta.description) || '')} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
     );
 
-  const md = `# Rule catalog
+  const intro = isCore
+    ? ''
+    : `The rules of the ${name} profile, which a scan runs under its profile or when asked for by tag. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).\n\n`;
 
-Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header. Run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
+  const compositeSection = isCore
+    ? `## Composite (WCAG-SC rollup) rules (${composites.length})
 
-**${rows.length} rules total: ${automatic.length} automatic (WCAG-normative, can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
+Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for rollup semantics.
+
+| Composite ID | Title | Description | WCAG SC | Level | # atomic rules rolled up |
+|---|---|---|---|---|---|
+${compositeLines.join('\n')}
+
+`
+    : '';
+
+  return `# Rule catalog${isCore ? '' : `: ${name}`}
+
+${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header. Run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
+
+**${rows.length} rules total: ${automatic.length} automatic (${isCore ? 'WCAG-normative, ' : ''}can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
 
-See [\`OUTPUT_SCHEMA.md\`](./OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see \`coverage/coverage-report.md\` instead: that one is organized by facet, this one by rule.
+See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim.${isCore ? " For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule." : ''}
 
 ## Automatic rules (${automatic.length}), can return \`fail\`
 
@@ -262,35 +261,76 @@ ${table(automatic)}
 
 ${table(manual)}
 
-## Composite (WCAG-SC rollup) rules (${composites.length})
-
-Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [\`WCAG_CONFORMANCE.md\`](./WCAG_CONFORMANCE.md) for rollup semantics.
-
-| Composite ID | Title | Description | WCAG SC | Level | # atomic rules rolled up |
-|---|---|---|---|---|---|
-${compositeLines.join('\n')}
-
-## Rule reference
+${compositeSection}## Rule reference
 
 Every atomic rule, alphabetically. "Applies to" is the rule's precondition (when it returns \`notApplicable\`), and "Expectation" is the condition it decides once it does apply.
 
 ${rows.map(reference).join('\n\n')}
 `;
+}
+
+function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const repoRoot = path.join(__dirname, '..');
+
+  const core = require(path.join(repoRoot, 'src/core.js'));
+  const catalog = core.getChecksCatalog();
+  const composites = core.getRulesCatalog();
+  const prose = new Map(ruleDirs().flatMap((dir) => [...readRuleProse(dir)]));
+  const profiles = new Map(require('../profiles').map((p) => [p.standard.key, p.standard]));
+
+  // A profile's catalog holds its own rules; core's, every other rule.
+  const sources = ruleSources();
+  const owned = new Map();
+  for (const src of sources.slice(1)) for (const id of ruleIdsOf(src)) owned.set(id, src.key);
+  const coreDocsDir = sources[0].docsDir;
+
+  const stale = [];
+  for (const src of sources) {
+    const isCore = src.key === 'core';
+    const outPath = path.join(src.docsDir, 'RULE_CATALOG.md');
+    const coreDocs = path.relative(src.docsDir, coreDocsDir).split(path.sep).join('/') || '.';
+    const rows = catalog
+      .filter((r) => (owned.get(r.ruleId) || 'core') === src.key)
+      .map((r) => ({
+        ruleId: r.ruleId,
+        title: r.title,
+        description: r.description || '',
+        type: r.type,
+        wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.join(', ') : '',
+        level: levelFromTags(r.tags),
+        confidence: r.defaultConfidence,
+        severity: r.defaultSeverity,
+        applicability: (prose.get(r.ruleId) || {}).applicability || '',
+        expectation: (prose.get(r.ruleId) || {}).expectation || ''
+      }))
+      .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+    const name = isCore ? 'core' : (profiles.get(src.key) || {}).standard || src.key;
+    const md = renderCatalog(rows, isCore ? composites : [], { isCore, name, coreDocs });
+    const shown = path.relative(repoRoot, outPath);
+
+    if (args.check) {
+      const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : null;
+      if (current !== md) stale.push(shown);
+      continue;
+    }
+
+    fs.mkdirSync(src.docsDir, { recursive: true });
+    fs.writeFileSync(outPath, md);
+    console.log(
+      `[generate-rule-catalog] wrote ${shown} (${rows.length} rules${isCore ? `, ${composites.length} composites` : ''})`
+    );
+  }
 
   if (args.check) {
-    const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : null;
-    if (current !== md) {
-      console.error(`[generate-rule-catalog] ${outPath} is stale. Run: npm run docs:rule-catalog`);
+    if (stale.length) {
+      console.error(
+        `[generate-rule-catalog] ${stale.join(', ')} stale. Run: npm run docs:rule-catalog`
+      );
       process.exit(1);
     }
     console.log('[generate-rule-catalog] catalog is up to date.');
-    return;
   }
-
-  fs.writeFileSync(outPath, md);
-  console.log(
-    `[generate-rule-catalog] wrote ${outPath} (${rows.length} rules, ${composites.length} composites)`
-  );
 }
 
 main();

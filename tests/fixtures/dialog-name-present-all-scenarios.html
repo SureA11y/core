@@ -149,6 +149,28 @@
     </template>
   </div>
 
+  <h2>F. Native dialog and role fallback lists</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: open native &lt;dialog&gt; with no role and no name</div>
+    <dialog open id="dialog_case_22"><p>Are you sure?</p><button>OK</button></dialog>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — PASS: open native &lt;dialog&gt; with aria-labelledby</div>
+    <dialog open id="dialog_case_23" aria-labelledby="dialog_case_23_t"><h2 id="dialog_case_23_t">Delete file</h2><button>OK</button></dialog>
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — FAIL: role="alertdialog dialog" (first token wins), no name</div>
+    <div role="alertdialog dialog" id="dialog_case_24"><p>Unsaved changes.</p></div>
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — NEUTRAL/INELIGIBLE: closed native &lt;dialog&gt;</div>
+    <dialog id="dialog_case_25"><p>Closed</p></dialog>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

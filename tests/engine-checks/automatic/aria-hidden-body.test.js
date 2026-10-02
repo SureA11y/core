@@ -33,10 +33,8 @@ test(`${RULE_ID}: declares both 1.3.1 and 4.1.2`, () => {
   const html = `<!doctype html><html><body aria-hidden="true"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.deepStrictEqual(rule.meta.normativeMappings.map((m) => m.requirement).sort(), [
-    '1.3.1',
-    '4.1.2'
-  ]);
+  const wcag = rule.meta.normativeMappings.filter((m) => m.standard === 'WCAG');
+  assert.deepStrictEqual(wcag.map((m) => m.requirement).sort(), ['1.3.1', '4.1.2']);
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

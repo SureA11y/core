@@ -19,6 +19,11 @@
  *   node scripts/generate-wcag-coverage.js
  *   node scripts/generate-wcag-coverage.js --rulesDir src/checks --out coverage/coverage-report.md --json coverage/coverage-report.json --facets src/coverage/wcag-facets.js
  *
+ * --rulesDir may be given more than once. Without it, the report reads core's
+ * rules, src/checks: it is WCAG's coverage by the rules a WCAG scan runs. A
+ * profile's rules answer its own standard's requirements, and the profile
+ * documents its coverage of them.
+ *
  * Output:
  * - Markdown report (grouped by SC, with facet coverage when available)
  * - JSON (rows + facet summaries + summary coverage by WCAG level/version tags)
@@ -41,9 +46,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { CORE_RULES_DIR } = require('./lib/rule-dirs');
+
 function parseArgs(argv) {
   const args = {
-    rulesDir: null, // auto-detect
+    rulesDirs: [], // every rule folder when empty
     out: 'coverage/coverage-report.md',
     json: 'coverage/coverage-report.json',
     facets: null, // auto-detect
@@ -52,7 +59,7 @@ function parseArgs(argv) {
 
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--rulesDir') args.rulesDir = argv[++i];
+    if (a === '--rulesDir') args.rulesDirs.push(argv[++i]);
     else if (a === '--out') args.out = argv[++i];
     else if (a === '--json') args.json = argv[++i];
     else if (a === '--facets') args.facets = argv[++i];
@@ -72,22 +79,9 @@ function findRepoRoot(startDir) {
   }
 }
 
-function resolveRulesDir(repoRoot, rulesDirArg) {
-  if (rulesDirArg) {
-    return path.isAbsolute(rulesDirArg) ? rulesDirArg : path.resolve(repoRoot, rulesDirArg);
-  }
-
-  const candidates = [
-    path.join(repoRoot, 'src', 'checks'),
-    path.join(repoRoot, 'src', 'rules'),
-    path.join(repoRoot, 'rules')
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) return candidate;
-  }
-
-  return path.join(repoRoot, 'src', 'checks');
+function resolveRulesDirs(repoRoot, rulesDirArgs) {
+  if (!rulesDirArgs.length) return [CORE_RULES_DIR];
+  return rulesDirArgs.map((dir) => (path.isAbsolute(dir) ? dir : path.resolve(repoRoot, dir)));
 }
 
 function resolveFacetsFile(repoRoot, facetsArg) {
@@ -128,6 +122,14 @@ function listRuleFilesRecursive(dirAbs) {
     else if (ent.isFile() && isRuleFileName(ent.name)) out.push(full);
   }
   return out;
+}
+
+// Folder before folder, name before name: 'manual' before 'manual-review.js'.
+function comparePathSegments(a, b) {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
+  }
+  return a.length - b.length;
 }
 
 function safeRequire(file) {
@@ -387,8 +389,8 @@ function initCoverageCounters() {
   return out;
 }
 
-function incrementCoverageCounters(counters, signals, ruleId) {
-  // ruleId unused for now, but kept for potential "coveredBy" expansions later
+function incrementCoverageCounters(counters, signals, _ruleId) {
+  // _ruleId unused for now, but kept for potential "coveredBy" expansions later
   if (!counters || !signals) return;
 
   // raw tags
@@ -426,7 +428,7 @@ function main() {
   const args = parseArgs(process.argv);
 
   const repoRoot = findRepoRoot(process.cwd());
-  const absRulesDir = resolveRulesDir(repoRoot, args.rulesDir);
+  const absRulesDirs = resolveRulesDirs(repoRoot, args.rulesDirs);
 
   const facetsFile = resolveFacetsFile(repoRoot, args.facets);
   let facetMap = null;
@@ -436,12 +438,18 @@ function main() {
       const mod = safeRequire(facetsFile);
       facetMap = mod && mod.FACETS ? mod.FACETS : null;
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('[wcag-coverage] Failed to load facets file:', facetsFile, e.message);
     }
   }
 
-  const files = listRuleFilesRecursive(absRulesDir);
+  // Ordered by their path inside their rules folder (automatic/…, manual/…),
+  // so a profile's rules sit among core's rather than after them.
+  const files = absRulesDirs
+    .flatMap((dir) =>
+      listRuleFilesRecursive(dir).map((file) => [path.relative(dir, file).split(path.sep), file])
+    )
+    .sort(([a], [b]) => comparePathSegments(a, b))
+    .map(([, file]) => file);
 
   const rows = [];
   for (const file of files) {
@@ -530,10 +538,10 @@ function main() {
   // Build Markdown. No timestamp: this file is committed, so a generation
   // time would make every run a diff and hide the drift worth seeing. Git
   // already records when it last changed.
-  const displayRulesDir = path.relative(repoRoot, absRulesDir) || '.';
+  const displayRulesDirs = absRulesDirs.map((dir) => path.relative(repoRoot, dir) || '.');
   const displayFacets = facetsFile ? path.relative(repoRoot, facetsFile) || facetsFile : null;
 
-  let md = `# WCAG Coverage Report\n\nRules directory: \`${displayRulesDir}\`\n`;
+  let md = `# WCAG Coverage Report\n\nRules directories: ${displayRulesDirs.map((d) => `\`${d}\``).join(', ')}\n`;
   if (displayFacets) md += `Facets: \`${displayFacets}\`\n`;
   md += `\n`;
 
@@ -617,7 +625,6 @@ function main() {
     countUnknownFacetIds(facetSummaries.enforced) + countUnknownFacetIds(facetSummaries.all);
 
   if (args.strictFacets && unknownCount > 0) {
-    // eslint-disable-next-line no-console
     console.error(`[wcag-coverage] strictFacets: found ${unknownCount} unknown facet id(s).`);
     process.exit(2);
   }
@@ -699,7 +706,7 @@ function main() {
   const json =
     JSON.stringify(
       {
-        rulesDir: displayRulesDir,
+        rulesDirs: displayRulesDirs,
         facetsFile: displayFacets,
         summary: {
           totalRules,
@@ -716,11 +723,9 @@ function main() {
     const readOrNull = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null);
 
     if (readOrNull(mdPath) !== md || readOrNull(jsonPath) !== json) {
-      // eslint-disable-next-line no-console
       console.error(`Coverage report is stale. Run: npm run coverage`);
       process.exit(1);
     }
-    // eslint-disable-next-line no-console
     console.log('[wcag-coverage] report is up to date.');
     return;
   }
@@ -729,7 +734,6 @@ function main() {
   fs.writeFileSync(mdPath, md, 'utf8');
   fs.writeFileSync(jsonPath, json, 'utf8');
 
-  // eslint-disable-next-line no-console
   console.log(`[wcag-coverage] wrote ${args.out} and ${args.json}`);
 }
 

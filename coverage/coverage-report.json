@@ -1,8 +1,10 @@
 {
-  "rulesDir": "src/checks",
+  "rulesDirs": [
+    "src/checks"
+  ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 132,
+    "totalRules": 133,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -11,8 +13,8 @@
           "AAA": 5
         },
         "2.1": {
-          "A": 4,
-          "AA": 3,
+          "A": 5,
+          "AA": 4,
           "AAA": 0
         },
         "2.2": {
@@ -22,14 +24,14 @@
         }
       },
       "anyVersion": {
-        "A": 106,
-        "AA": 19,
+        "A": 107,
+        "AA": 20,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
         "wcag2aa": 10,
-        "wcag21aa": 3,
+        "wcag21aa": 4,
         "wcag2aaa": 5,
         "wcag21a": 1,
         "wcag22aa": 2
@@ -1452,7 +1454,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Obsolete non-stoppable elements (<blink>, <marquee>) must not be used",
+      "title": "Scrolling <marquee> content must be possible to pause, stop, or hide",
       "tags": [
         "wcag2a",
         "wcag222",
@@ -2344,9 +2346,11 @@
       "file": "src/checks/automatic/link-name-present.js",
       "ruleId": "link-name-present",
       "wcagScNormative": [
+        "2.4.4",
         "4.1.2"
       ],
       "wcagScAll": [
+        "2.4.4",
         "4.1.2"
       ],
       "wcagScInformative": [],
@@ -2354,6 +2358,7 @@
       "title": "Links have an accessible name",
       "tags": [
         "wcag2a",
+        "wcag244",
         "wcag412",
         "navigation",
         "atomic",
@@ -2384,6 +2389,9 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
+          "2.4.4": [
+            "link-name-present"
+          ],
           "4.1.2": [
             "link-name-present"
           ]
@@ -2601,7 +2609,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Page must not use a meta refresh at all (AAA)",
+      "title": "Page must not use a timed meta refresh (AAA)",
       "tags": [
         "wcag2aaa",
         "wcag224",
@@ -3199,7 +3207,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Images must not use a server-side image map",
+      "title": "Server-side image maps must have a keyboard-operable alternative",
       "tags": [
         "wcag2a",
         "wcag211",
@@ -3737,6 +3745,56 @@
       }
     },
     {
+      "file": "src/checks/automatic/text-spacing-content-loss.js",
+      "ruleId": "text-spacing-content-loss",
+      "wcagScNormative": [
+        "1.4.12"
+      ],
+      "wcagScAll": [
+        "1.4.12"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Text stays readable when the user increases text spacing",
+      "tags": [
+        "wcag21aa",
+        "wcag1412",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.12": [
+            "text-spacing-content-loss"
+          ]
+        }
+      }
+    },
+    {
       "file": "src/checks/automatic/textbox-name-present.js",
       "ruleId": "textbox-name-present",
       "wcagScNormative": [
@@ -4020,7 +4078,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "<area> alt text must be appropriate (manual review)",
+      "title": "<area> text alternative must be appropriate (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -4866,7 +4924,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "<input type=\"image\"> alt text must be appropriate (manual review)",
+      "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
       "tags": [
         "wcag2a",
         "wcag111",
@@ -5421,7 +5479,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "A <p> styled to look like a heading should probably be a real heading",
+      "title": "Text styled to look like a heading should probably be a real heading",
       "tags": [
         "wcag2a",
         "wcag131",
@@ -6534,11 +6592,12 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -6549,6 +6608,14 @@
             "automation": "full",
             "coveredBy": [
               "avoid-inline-spacing"
+            ]
+          },
+          {
+            "id": "text-spacing-content-loss",
+            "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+            "automation": "partial",
+            "coveredBy": [
+              "text-spacing-content-loss"
             ]
           }
         ]
@@ -6760,15 +6827,24 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
+          "full": 1,
           "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
         "facets": [
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
+            ]
+          },
           {
             "id": "link-text-descriptive-evidence",
             "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
@@ -7918,11 +7994,12 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7933,6 +8010,14 @@
             "automation": "full",
             "coveredBy": [
               "avoid-inline-spacing"
+            ]
+          },
+          {
+            "id": "text-spacing-content-loss",
+            "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
+            "automation": "partial",
+            "coveredBy": [
+              "text-spacing-content-loss"
             ]
           }
         ]
@@ -8144,15 +8229,24 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
+          "full": 1,
           "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
         "facets": [
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
+            ]
+          },
           {
             "id": "link-text-descriptive-evidence",
             "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",

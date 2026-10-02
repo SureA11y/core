@@ -38,7 +38,7 @@ function createContrastHelpers(opts, shared) {
       const wm = new WeakMap();
       sc[propName] = wm;
       return wm;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -84,7 +84,7 @@ function createContrastHelpers(opts, shared) {
       const m = new Map();
       sc.__colorParseCache = m;
       return m;
-    } catch (_e) {
+    } catch {
       return null;
     }
   }
@@ -681,11 +681,18 @@ function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
-  function isLargeText(fontSizePx, fontWeightNum) {
+  // `boldLargeMinPx` overrides the size from which bold text is large. It
+  // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
+  // finite number, the WCAG threshold applies, so existing callers are
+  // unchanged.
+  function isLargeText(fontSizePx, fontWeightNum, boldLargeMinPx) {
     const size = parseFloat(fontSizePx);
     const w = Number(fontWeightNum);
     if (!Number.isFinite(size)) return false;
     if (size >= 24) return true;
+    if (typeof boldLargeMinPx === 'number' && Number.isFinite(boldLargeMinPx)) {
+      return size >= boldLargeMinPx && Number.isFinite(w) && w >= 700;
+    }
     // WCAG's bold-large threshold is 14pt. Derived via parsePx('14pt')
     // rather than a hardcoded decimal (e.g. "18.6667") or a hand-written
     // reconversion: floating-point multiplication/division isn't
@@ -878,13 +885,13 @@ function createContrastHelpers(opts, shared) {
         let computed = '';
         try {
           computed = (w.getComputedStyle(probe) && w.getComputedStyle(probe).color) || '';
-        } catch (_e) {
+        } catch {
           computed = '';
         }
 
         try {
           if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
-        } catch (_e) {}
+        } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
         if (normalized && normalized !== __normalizeCssColorCacheKey(input)) {
@@ -893,7 +900,7 @@ function createContrastHelpers(opts, shared) {
           if (parsed) return parsed;
         }
       }
-    } catch (_e) {}
+    } catch {}
 
     return null;
   }
@@ -1119,7 +1126,7 @@ function createContrastHelpers(opts, shared) {
       const out = clamp01(prod);
       __opacityProductCache.set(el, out);
       return out;
-    } catch (_e) {
+    } catch {
       return 1;
     }
   }
@@ -1141,7 +1148,7 @@ function createContrastHelpers(opts, shared) {
   function computeEffectiveForeground(el) {
     try {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
@@ -1154,7 +1161,7 @@ function createContrastHelpers(opts, shared) {
         __effectiveForegroundCache.set(el, out);
         return out;
       }
-    } catch (_e) {}
+    } catch {}
 
     const cs = __contrastComputedStyle(el);
     const c = parseCssColorToRgba(cs && cs.color);
@@ -1162,7 +1169,7 @@ function createContrastHelpers(opts, shared) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
         if (el) __effectiveForegroundCache.set(el, out);
-      } catch (_e) {}
+      } catch {}
       return out;
     }
 
@@ -1174,7 +1181,7 @@ function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __effectiveForegroundCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 
@@ -1208,7 +1215,7 @@ function createContrastHelpers(opts, shared) {
           reasonCode: null
         };
       }
-    } catch (_e) {}
+    } catch {}
 
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
@@ -1220,7 +1227,7 @@ function createContrastHelpers(opts, shared) {
           const m = __effectiveBackgroundCache.get(el);
           if (m && typeof m.get === 'function' && m.has(__bgKey)) return m.get(__bgKey);
         }
-      } catch (_e) {}
+      } catch {}
     }
 
     const contrast =
@@ -1321,7 +1328,7 @@ function createContrastHelpers(opts, shared) {
           __effectiveBackgroundCache.set(el, m);
         }
         m.set(__bgKey, out);
-      } catch (_e) {}
+      } catch {}
     }
 
     return out;
@@ -1340,7 +1347,7 @@ function createContrastHelpers(opts, shared) {
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
       return s || '';
-    } catch (_e) {
+    } catch {
       return '';
     }
   }
@@ -1404,12 +1411,12 @@ function createContrastHelpers(opts, shared) {
   function resolveGroupOpacityColors(el) {
     try {
       if (el && __groupOpacityOverrideCache.has(el)) return __groupOpacityOverrideCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     function __cacheAndReturn(res) {
       try {
         if (el) __groupOpacityOverrideCache.set(el, res);
-      } catch (_e) {}
+      } catch {}
       return res;
     }
 
@@ -1472,7 +1479,7 @@ function createContrastHelpers(opts, shared) {
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
         bg: { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b }
       });
-    } catch (_e) {
+    } catch {
       return __cacheAndReturn(null);
     }
   }
@@ -1486,7 +1493,7 @@ function createContrastHelpers(opts, shared) {
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
-    } catch (_e) {}
+    } catch {}
 
     let cur = el;
     let guard = 0;
@@ -1542,7 +1549,7 @@ function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -1567,7 +1574,7 @@ function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -1596,7 +1603,7 @@ function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -1615,7 +1622,7 @@ function createContrastHelpers(opts, shared) {
         };
         try {
           if (el) __computabilityBlockerCache.set(el, out);
-        } catch (_e) {}
+        } catch {}
         return out;
       }
 
@@ -1646,7 +1653,7 @@ function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
         if (ancestorOpacity < 1) {
@@ -1662,7 +1669,7 @@ function createContrastHelpers(opts, shared) {
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
-          } catch (_e) {}
+          } catch {}
           return out;
         }
       }
@@ -1690,7 +1697,7 @@ function createContrastHelpers(opts, shared) {
     };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
-    } catch (_e) {}
+    } catch {}
     return out;
   }
 

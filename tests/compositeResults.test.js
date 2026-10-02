@@ -13,7 +13,6 @@ function computeExpectedCompositeOutcome(checksIds, atomicById) {
   let fail = 0;
   let cantTell = 0;
   let notApplicable = 0;
-  let pass = 0;
   let missing = 0;
 
   for (const tid of ids) {
@@ -26,8 +25,7 @@ function computeExpectedCompositeOutcome(checksIds, atomicById) {
     if (out === 'fail') fail += 1;
     else if (out === 'cantTell') cantTell += 1;
     else if (out === 'notApplicable') notApplicable += 1;
-    else if (out === 'pass') pass += 1;
-    else cantTell += 1; // defensive
+    else if (out !== 'pass') cantTell += 1; // defensive: an unknown outcome is not a pass
   }
 
   // Must match your engine rollup precedence

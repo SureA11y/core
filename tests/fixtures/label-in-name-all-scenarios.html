@@ -130,6 +130,40 @@
     <button id="lin_case_17" aria-label="Save changes"><span aria-hidden="true">💾</span> Save</button>
   </div>
 
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL: visible "poser" is only the end of the accented word "Déposer" in the name</div>
+    <button id="lin_case_18" aria-label="Déposer une annonce">poser</button>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — PASS: accented visible word "Déposer" found whole in the name</div>
+    <button id="lin_case_19" aria-label="Déposer une annonce">Déposer</button>
+  </div>
+
+  <h2>F. ARIA naming that names nothing</h2>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — N/A: aria-labelledby points at no element, so the name comes from the content ("Save")</div>
+    <button id="lin_case_20" aria-labelledby="lin_missing_id">Save</button>
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — N/A: aria-labelledby points only at an element with no text, so the name comes from the content ("Read the report")</div>
+    <a href="#" id="lin_case_21" aria-labelledby="lin_case_21_empty">Read the report</a>
+    <span id="lin_case_21_empty"></span>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — N/A: aria-label is only spaces, so the name comes from the content ("Save")</div>
+    <button id="lin_case_22" aria-label="  ">Save</button>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: aria-labelledby resolves to text, and that name does not contain the visible "Save"</div>
+    <button id="lin_case_23" aria-labelledby="lin_case_23_name">Save</button>
+    <span id="lin_case_23_name" hidden>Submit form</span>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

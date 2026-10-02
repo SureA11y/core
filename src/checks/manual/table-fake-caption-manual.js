@@ -11,7 +11,12 @@
  * @applicability
  *   `<table>` elements with no `<caption>` child, at least two rows, and
  *   a first row containing exactly one non-empty-text cell while at
- *   least one other row has more than one cell.
+ *   least one other row has more than one cell. Left out: a table whose
+ *   role (first token) is anything but table, grid or treegrid, such as a
+ *   layout table with role="presentation", which needs no caption; and a
+ *   table already named by a non-empty aria-label, an aria-labelledby that
+ *   resolves to text, or a non-empty title, which WCAG accepts as the
+ *   table's title.
  * @expectation
  *   A single lone cell in the first row, sitting above rows that clearly
  *   have multiple columns, strongly suggests the author is using it as a
@@ -79,6 +84,31 @@ function runInPage(ctx) {
     }
   }
 
+  const getAriaNameInfo =
+    helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
+
+  const TABLE_ROLES = ['table', 'grid', 'treegrid'];
+
+  function hasOtherRole(table) {
+    const role = trim(table.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    return !!role && !TABLE_ROLES.includes(role);
+  }
+
+  // A name from aria-labelledby, aria-label or title already gives the table
+  // a title that assistive technology announces.
+  function isNamed(table) {
+    if (trim(table.getAttribute('title'))) return true;
+    if (getAriaNameInfo) {
+      try {
+        const aria = getAriaNameInfo(table, ctx);
+        return !!(aria && aria.present && trim(aria.value));
+      } catch {
+        return false;
+      }
+    }
+    return !!trim(table.getAttribute('aria-label'));
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -89,6 +119,7 @@ function runInPage(ctx) {
 
     const hasCaption = !!(table.querySelector && table.querySelector('caption'));
     if (hasCaption) continue;
+    if (hasOtherRole(table) || isNamed(table)) continue;
 
     // An aria-hidden row (or cell) isn't part of the AT-perceived table
     // structure at all -- it must not be treated as the table's "first

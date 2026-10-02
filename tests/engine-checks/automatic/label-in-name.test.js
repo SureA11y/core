@@ -56,19 +56,6 @@ function getOccurrences(ruleRes) {
   return [];
 }
 
-function getRuleResult(result, ruleId) {
-  const buckets = ['violations', 'passes', 'incomplete', 'inapplicable'];
-
-  for (const bucket of buckets) {
-    if (Array.isArray(result[bucket])) {
-      const found = result[bucket].find((r) => r.ruleId === ruleId || r.id === ruleId);
-      if (found) return found;
-    }
-  }
-
-  return null;
-}
-
 test('label-in-name: no applicable elements => notApplicable', () => {
   const html = `
 <!doctype html><html><body>
@@ -171,6 +158,35 @@ test(`${RULE_ID}: punctuation and emoji on either side do not affect the compari
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// Accented letters stay whole: NFKD used to split "Déposer" at its combining
+// accent into "de" + "poser". Accents are not folded either: only punctuation
+// and capitals are excused.
+test(`${RULE_ID}: accented words are compared whole, without folding accents`, () => {
+  const pass = `<!doctype html><html><body>
+    <button aria-label="Déposer une annonce">Déposer</button>
+    <button aria-label="Ouvrir la fenêtre">fenêtre</button>
+    <button aria-label="De\u0301poser">D\u00e9poser</button>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(pass, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+
+  for (const [label, name] of [
+    ['Déposer', 'Deposer une annonce'],
+    ['poser', 'Déposer une annonce'],
+    ['Déposer', 'De poser'],
+    ['tre', 'Ouvrir la fenêtre']
+  ]) {
+    const html = `<!doctype html><html><body><button id="b" aria-label="${name}">${label}</button></body></html>`;
+    for (const engineOptions of [{}]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.ok(hasOccurrenceForId(rule, 'b'), `${label} / ${name}`);
+    }
+  }
 });
 
 test(`${RULE_ID}: a label word that merely prefixes a name word does not satisfy the rule`, () => {
@@ -278,6 +294,32 @@ test(`${RULE_ID}: a real mismatch alongside an uncertain one still fails the rul
   assert.deepStrictEqual(codes, ['POSSIBLE_ABBREVIATION', 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME']);
 });
 
+// AccName 1.2 skips an aria-labelledby that yields no text and an aria-label
+// that is empty once trimmed, so the name comes from the content: the control
+// is not named by either attribute and the rule does not apply to it. The
+// dangling reference itself is aria-valid-attr-value's to report.
+test(`${RULE_ID}: aria-label or aria-labelledby that names nothing leaves the control out of scope`, () => {
+  for (const body of [
+    '<button aria-labelledby="missing">Save</button>',
+    '<a href="#" aria-labelledby="missing">Read the report</a>',
+    '<button aria-labelledby="empty">Save</button><span id="empty"></span>',
+    '<button aria-label="  ">Save</button>',
+    '<button aria-labelledby="missing" title="Close">Save</button>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an aria-labelledby that resolves to text is still compared`, () => {
+  const html = `<!doctype html><html><body>
+    <button aria-labelledby="missing name">Save</button><span id="name" hidden>Submit form</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
@@ -288,14 +330,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'lin_case_02',
     'lin_case_04',
     'lin_case_06',
     'lin_case_14',
-    'lin_case_15'
+    'lin_case_15',
+    'lin_case_18',
+    'lin_case_23'
   ];
 
   const expectedNoOccIds = [
@@ -310,7 +354,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_12',
     'lin_case_13',
     'lin_case_16',
-    'lin_case_17'
+    'lin_case_17',
+    'lin_case_19',
+    'lin_case_20',
+    'lin_case_21',
+    'lin_case_22'
   ];
 
   for (const id of expectedFailIds) {

@@ -52,7 +52,8 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when present. |
 | `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one. |
 | `results[].properties.severity` / `.confidence` | `checksResults[i].severity` / `.confidence` — informational, not part of SARIF's own schema. |
-| `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per `meta.normativeMappings[].requirement`. |
+| `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings`. Understanding-document entries get no tag. Each EN 301 549 clause the result carries (only when the scan asked for them, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)) gets an `en301549-<clause>` tag, e.g. `en301549-9.1.1.1`: clause numbers are the same in every version that has them, so the tag carries no version. |
+| `runs[0].properties` | `wcagVersion`, `profile` and `optInRules` from the result's `engine`: the conformance target the run used, so a dashboard can tell a WCAG 2.1 run from a 2.2 one, and the opt-in rule tags it added beyond that target when it added any. Omitted for results from engines that predate those fields. |
 
 ## Locations
 

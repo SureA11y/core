@@ -14,7 +14,8 @@
  *   element renders or not, which is why ACT 3ea0c8 evaluates hidden
  *   elements too.
  * @expectation
- *   No other element in the same tree carries the same id value. Ids are
+ *   No other element in the same tree carries the same id value, compared
+ *   exactly as written (id="a " and id="a" are different ids). Ids are
  *   scoped per document tree and per shadow tree, so the same id inside
  *   two different shadow roots is not a duplicate.
  * @implementation-notes
@@ -126,7 +127,10 @@ function runInPage(ctx) {
 
   for (const el of all) {
     if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
-    const value = String(el.getAttribute('id') || '').trim();
+    // Compared as written: "a " and "a" are different ids in the DOM, and
+    // getElementById does not trim. Whitespace inside an id is a separate
+    // validity error, not a duplicate.
+    const value = String(el.getAttribute('id') || '');
     if (!value) continue;
 
     applicableCount += 1;

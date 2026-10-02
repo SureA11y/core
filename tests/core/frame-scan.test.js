@@ -9,7 +9,7 @@ const path = require('node:path');
 let chromium;
 try {
   ({ chromium } = require('playwright'));
-} catch (e) {
+} catch {
   chromium = null;
 }
 

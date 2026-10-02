@@ -228,3 +228,34 @@ test(`${RULE_ID}: determinism, running twice yields identical rule result`, () =
 
   assert.deepEqual(rr1, rr2);
 });
+
+// An <audio> without controls is display:none in a real browser (its own
+// stylesheet), so eligibility is judged on its parent and its own hidden and
+// aria-hidden attributes (tests/engine-checks/manual/media-rules-chromium.test.js
+// runs the browser case).
+test(`${RULE_ID}: an <audio> without controls is judged by its container and its own hidden/aria-hidden`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  assertRule(run('<audio autoplay loop src="m.mp3"></audio>'), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  for (const body of [
+    '<div style="display:none"><audio src="m.mp3"></audio></div>',
+    '<div aria-hidden="true"><audio src="m.mp3"></audio></div>',
+    '<audio hidden src="m.mp3"></audio>',
+    '<audio aria-hidden="true" src="m.mp3"></audio>'
+  ]) {
+    assertRule(run(body), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: <audio autoplay loop> is cantTell under wcag22-aa`, () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><audio autoplay loop src="m.mp3"></audio></body></html>';
+  const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

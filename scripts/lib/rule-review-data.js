@@ -16,6 +16,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { JSDOM } = require('jsdom');
+const { runOnlyForRule } = require('./rule-run-selection');
+const { ruleDirs, ruleTestDirs } = require('./rule-dirs');
+const { loadDictionaries } = require('./dictionaries');
 
 const OUTCOMES = ['fail', 'cantTell', 'pass', 'notApplicable'];
 
@@ -46,9 +49,8 @@ function listFilesRecursive(dirAbs, filterFn) {
  * Same convention generate-fixture-index.js uses: each rule's test file
  * declares `const RULE_ID = '...'` and reads its fixture by path.
  */
-function scanTestFiles(repoRoot, testsDir) {
+function scanTestFiles(repoRoot, testsDir, fixturesDir, byRuleId = new Map()) {
   const files = listFilesRecursive(path.resolve(repoRoot, testsDir), (n) => n.endsWith('.test.js'));
-  const byRuleId = new Map();
 
   const ruleIdRe = /const\s+RULE_ID\s*=\s*['"]([^'"]+)['"]/;
   const fixtureRefRe = /fixtures['"]\s*,\s*['"]([\w.-]+\.html)['"]/;
@@ -65,7 +67,10 @@ function scanTestFiles(repoRoot, testsDir) {
     if (!idMatch) continue;
 
     const fm = fixtureRefRe.exec(src) || fixtureRefInlineRe.exec(src);
-    const entry = { testFile: path.relative(repoRoot, file), fixtureFile: fm ? fm[1] : null };
+    const entry = {
+      testFile: path.relative(repoRoot, file),
+      fixtureFile: fm ? path.relative(repoRoot, path.resolve(repoRoot, fixturesDir, fm[1])) : null
+    };
     const prev = byRuleId.get(idMatch[1]);
     if (!prev || (entry.fixtureFile && !prev.fixtureFile)) byRuleId.set(idMatch[1], entry);
   }
@@ -73,10 +78,10 @@ function scanTestFiles(repoRoot, testsDir) {
 }
 
 /** Type comes from each rule's own meta: not every rule file sits under a directory named for its type. */
-function listRuleModules(repoRoot, checksDir, types) {
-  const dir = path.resolve(repoRoot, checksDir);
+function listRuleModules(repoRoot, checksDirs, types) {
   const out = [];
-  for (const file of listFilesRecursive(dir, (n) => n.endsWith('.js') && !n.endsWith('.test.js'))) {
+  const isRuleFile = (n) => n.endsWith('.js') && !n.endsWith('.test.js');
+  for (const file of checksDirs.flatMap((dir) => listFilesRecursive(dir, isRuleFile))) {
     let mod;
     try {
       mod = require(file);
@@ -467,7 +472,7 @@ const ENV_PATCHES = {
   ).patchTargetSizeEnv
 };
 
-function replayFixture(run, ruleId, html, doc) {
+function replayFixture(run, ruleId, html, doc, tags) {
   if (!html) return null;
 
   let res;
@@ -478,9 +483,12 @@ function replayFixture(run, ruleId, html, doc) {
     if (patch) {
       const dom = run.createDom(html);
       patch(dom);
-      res = run.runa11yCoreOnDom(dom, { runOnly: [ruleId], entryPointParity: false });
+      res = run.runa11yCoreOnDom(dom, {
+        runOnly: runOnlyForRule(ruleId, tags),
+        entryPointParity: false
+      });
     } else {
-      res = run(html, { runOnly: [ruleId], entryPointParity: false });
+      res = run(html, { runOnly: runOnlyForRule(ruleId, tags), entryPointParity: false });
     }
   } catch (e) {
     return { error: String((e && e.message) || e).slice(0, 200) };
@@ -583,26 +591,29 @@ function settleCase(c, engine, type) {
 /**
  * @param {object} [opts]
  * @param {string} [opts.repoRoot]
- * @param {string[]} [opts.types] which of src/checks/<type> to include
+ * @param {string[]} [opts.types] which rule types (automatic, manual) to include
  * @returns {{rules: object[], stats: object}}
  */
 function collect(opts = {}) {
   const repoRoot = opts.repoRoot || findRepoRoot(__dirname);
   const types = opts.types || ['automatic', 'manual'];
 
-  const messages = JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/en.json'), 'utf8'));
-  const tests = scanTestFiles(repoRoot, 'tests/engine-checks');
+  const messages = loadDictionaries().en;
+  const tests = new Map();
+  for (const { testsDir, fixturesDir } of ruleTestDirs()) {
+    scanTestFiles(repoRoot, testsDir, fixturesDir, tests);
+  }
   const run = require(path.join(repoRoot, 'tests/helpers/runa11yCoreOnHtml'));
 
   const rules = [];
   let replayed = 0;
   let replayErrors = 0;
 
-  for (const mod of listRuleModules(repoRoot, 'src/checks', types)) {
+  for (const mod of listRuleModules(repoRoot, ruleDirs(), types)) {
     const meta = mod.meta;
     const source = fs.readFileSync(path.join(repoRoot, mod.file), 'utf8');
     const found = tests.get(mod.id) || {};
-    const fixtureFile = found.fixtureFile ? 'tests/fixtures/' + found.fixtureFile : null;
+    const fixtureFile = found.fixtureFile || null;
     const prefix =
       meta.i18n && meta.i18n.titleKey ? meta.i18n.titleKey.replace(/_title$/, '') : null;
 
@@ -612,7 +623,7 @@ function collect(opts = {}) {
     const fixtureHtml = readFixture(repoRoot, fixtureFile);
     const fixtureDoc = fixtureHtml ? new JSDOM(fixtureHtml).window.document : null;
 
-    const engine = replayFixture(run, mod.id, fixtureHtml, fixtureDoc);
+    const engine = replayFixture(run, mod.id, fixtureHtml, fixtureDoc, meta.tags);
     if (engine && engine.error) replayErrors++;
     else if (engine) replayed++;
 

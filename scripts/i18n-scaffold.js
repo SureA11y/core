@@ -3,6 +3,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { i18nSources } = require('./lib/dictionaries');
+
 const ROOT_DIR = path.join(__dirname, '..');
 const I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
 
@@ -62,22 +64,37 @@ function scaffoldLocale(locale, { i18nDir = I18N_DIR, force = false } = {}) {
 function main() {
   const args = process.argv.slice(2);
   const force = args.includes('--force');
-  const locale = args.find((a) => !a.startsWith('--'));
+  const profileAt = args.indexOf('--profile');
+  const profile = profileAt === -1 ? 'core' : args[profileAt + 1];
+  const locale = args.find((a, i) => !a.startsWith('--') && i !== profileAt + 1);
 
-  if (!locale) {
-    console.error('Usage: node scripts/i18n-scaffold.js <locale> [--force]');
+  if (!locale || !profile) {
+    console.error('Usage: node scripts/i18n-scaffold.js <locale> [--profile <key>] [--force]');
     console.error('Example: node scripts/i18n-scaffold.js pt-BR');
     process.exitCode = 2;
     return;
   }
 
+  // Core's dictionary, or with --profile one profile's: each folder has the
+  // languages it chooses (scripts/lib/dictionaries.js).
+  const target = i18nSources().find((s) => s.key === profile);
+  if (!target) {
+    console.error(
+      `[i18n-scaffold] no dictionary folder for "${profile}"; one of: ${i18nSources()
+        .map((s) => s.key)
+        .join(', ')}`
+    );
+    process.exitCode = 2;
+    return;
+  }
+
   try {
-    const { outPath, keyCount } = scaffoldLocale(locale, { force });
+    const { outPath, keyCount } = scaffoldLocale(locale, { i18nDir: target.dir, force });
     console.log(
       `[i18n-scaffold] wrote ${path.relative(ROOT_DIR, outPath)} (${keyCount} keys, seeded with the English text as a placeholder).`
     );
     console.log(
-      '[i18n-scaffold] translate the values in that file, then run `npm run i18n:report` to check progress.'
+      '[i18n-scaffold] translate its values, then run `npm run i18n:report` to check progress.'
     );
   } catch (e) {
     console.error(`[i18n-scaffold] ${e.message}`);
@@ -86,6 +103,7 @@ function main() {
 }
 
 module.exports = {
+  ROOT_DIR,
   I18N_DIR,
   LOCALE_RE,
   localePath,

@@ -19,7 +19,7 @@
   <h1>Scenario fixture: <code>p-as-heading</code></h1>
 
   <p class="note">
-    Each target &lt;p&gt; has a stable <code>id</code> of the form <code>pah_case_NN</code>.
+    Each target &lt;p&gt; or &lt;div&gt; has a stable <code>id</code> of the form <code>pah_case_NN</code>.
   </p>
 
   <h2>A. CANTTELL — bold, heading-sized, short</h2>
@@ -44,6 +44,38 @@
   <div class="case" id="case_04">
     <div class="case-title">04 — NEUTRAL: bold via wrapping &lt;strong&gt;, but default (small) font size</div>
     <p id="pah_case_04"><strong>Wrapped bold title</strong></p>
+  </div>
+
+  <h2>B. Bold from inner markup, and text in a &lt;div&gt;</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: 22px paragraph made bold by a styled &lt;span&gt;</div>
+    <p id="pah_case_05" style="font-size: 22px"><span style="font-weight: bold">Our team</span></p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: a &lt;div&gt; holding only bold 22px text</div>
+    <div id="pah_case_06" class="fakeHeading">Opening hours</div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: bold 22px paragraph with one word in normal weight</div>
+    <p id="pah_case_07" class="fakeHeading">Read <span style="font-weight: normal">this first</span></p>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: a bold 22px &lt;div&gt; that also holds an image</div>
+    <div id="pah_case_08" class="fakeHeading"><img src="logo.png" alt="" width="20" height="20"> Logo text</div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: a bold 22px &lt;div&gt; inside a button</div>
+    <button type="button"><div id="pah_case_09" class="fakeHeading">Send</div></button>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: a bold 22px &lt;div&gt; with a role of its own</div>
+    <div id="pah_case_10" class="fakeHeading" role="button" tabindex="0">Menu</div>
   </div>
 
   <p class="note">End of fixture.</p>

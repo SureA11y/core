@@ -18,7 +18,8 @@
  *   aria-labelledby that resolves to non-empty text, or from title.
  *   role="progressbar" is name-from-author-only, so subtree text is never
  *   accepted: text sitting inside a custom progressbar widget is not
- *   reliably exposed as its name.
+ *   reliably exposed as its name. On a labelable element
+ *   (<progress role="progressbar">) an associated <label> counts as well.
  */
 
 const id = 'progressbar-name-present';
@@ -123,6 +124,15 @@ function runInPage(ctx) {
 
     const title = getAttr(el, 'title');
     if (title) return { ok: true, method: 'title' };
+
+    // An associated <label> on a labelable host
+    // (<progress role="progressbar">, <meter role="progressbar">).
+    if (helpers.getNativeHostNameInfo) {
+      try {
+        const host = helpers.getNativeHostNameInfo(el, ctx);
+        if (host && host.present) return { ok: true, method: host.mechanism };
+      } catch {}
+    }
 
     // role="progressbar" is name-from-author-only per WAI-ARIA: aria-label,
     // aria-labelledby, or title, no content-based naming method at all. It

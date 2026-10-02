@@ -12,15 +12,23 @@
  *   `<table>` elements with at least 4 rows and at least 4 columns
  *   (a "large" table, where implicit row/column header association is
  *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table.
+ *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (first
+ *   token) is anything but table, grid or treegrid, such as a layout table
+ *   with role="presentation", is left out: it has no data cells.
  * @expectation
- *   Every `<td>` has an associated header, via one of:
+ *   Every non-empty `<td>` has an associated header, via one of:
  *     - a non-empty `headers` attribute (trusted here; whether it
  *       resolves to real `<th>` ids is `table-headers-attr-valid`'s
  *       concern, not this rule's), OR
- *     - an implicit column header: some `<th>` in the same column, in an
+ *     - an implicit column header: a header cell in the same column, in an
  *       earlier row, OR
- *     - an implicit row header: some `<th>` earlier in the same row.
+ *     - an implicit row header: a header cell earlier in the same row.
+ *   A header cell is a `<th>` with no other role, or any cell with
+ *   role="columnheader" or role="rowheader" (such a `<td>` is a header,
+ *   not a data cell). A `<td>` with no text and no content that could carry
+ *   a name (an image, a control, an element with an ARIA label) holds no
+ *   data, so it needs no header; the empty corner cell above row headers is
+ *   the usual case.
  * @implementation-notes
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional
@@ -84,6 +92,25 @@ function runInPage(ctx) {
     }
   }
 
+  const TABLE_ROLES = ['table', 'grid', 'treegrid'];
+
+  function firstRole(el) {
+    return trim(el.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+  }
+
+  // Content that can carry a name or a value even without text.
+  const NAMED_CONTENT =
+    'img, svg, canvas, input, select, textarea, button, object, embed, video, audio, iframe, meter, progress, [role], [aria-label], [aria-labelledby], [title]';
+
+  function isEmptyCell(cell) {
+    if (trim(cell.textContent)) return false;
+    try {
+      return !cell.querySelector(NAMED_CONTENT);
+    } catch {
+      return false;
+    }
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -91,6 +118,9 @@ function runInPage(ctx) {
 
   for (const table of tables) {
     if (!table || !table.rows) continue;
+
+    const tableRole = firstRole(table);
+    if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
     const rows = Array.from(table.rows);
     if (rows.length < MIN_SIZE) continue;
@@ -115,7 +145,10 @@ function runInPage(ctx) {
     // another cell's row/column header, even though it's still structurally
     // a <th>.
     function isHeaderCell(cell) {
-      return !!(cell && cell.tagName && cell.tagName.toLowerCase() === 'th' && isEligible(cell));
+      if (!cell || !cell.tagName || !isEligible(cell)) return false;
+      const role = firstRole(cell);
+      if (role === 'columnheader' || role === 'rowheader') return true;
+      return cell.tagName.toLowerCase() === 'th' && !role;
     }
 
     // "Was there a <th> above this cell's column" and "was there a <th>
@@ -147,6 +180,9 @@ function runInPage(ctx) {
 
         const headersAttr = trim(cell.getAttribute('headers'));
         if (headersAttr) continue;
+
+        // An empty cell holds no data to associate with a header.
+        if (isEmptyCell(cell)) continue;
 
         if (colHasHeaderAbove[c]) continue;
         if (rowHasHeaderBefore) continue;

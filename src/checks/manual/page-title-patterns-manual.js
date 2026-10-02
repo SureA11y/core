@@ -10,7 +10,9 @@
  * @sc 2.4.2
  * @applicability
  *   Applies to a run over a whole document whose <title> resolves to
- *   non-empty text; a missing or empty title is page-title-present's
+ *   non-empty text. The title element is the first HTML <title> anywhere in
+ *   the document, as for document.title, so one the parser left in <body>
+ *   counts; a missing or empty title is page-title-present's
  *   failure, not a pattern to review. A run narrowed by contextSelector or
  *   by engineOptions.fragment is notApplicable, as is a title matching none
  *   of the patterns below.
@@ -78,7 +80,24 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 1;
 
-  const titleEl = document.querySelector('head > title');
+  // The document's title element, found as page-title-present finds it: the
+  // first HTML-namespace <title> anywhere in the document, since a <title>
+  // the parser leaves in <body> is still what document.title reads. An inline
+  // <svg><title> is not the page title.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  let titleEl = null;
+  for (const t of Array.from(document.getElementsByTagName('title'))) {
+    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+      titleEl = t;
+      break;
+    }
+  }
+  // Kept as the stable selector for the usual place; a <title> elsewhere gets
+  // the selector the engine builds for the node.
+  const titleSelector =
+    titleEl && titleEl.parentElement && titleEl.parentElement.localName === 'head'
+      ? 'head > title'
+      : undefined;
   const rawTitle = document.title || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
@@ -176,7 +195,7 @@ function runInPage(ctx) {
             };
 
         const occBase = {
-          selector: 'head > title',
+          selector: titleSelector,
           html: '',
           summary:
             'The set of page titles may not be descriptive enough to distinguish pages by topic or purpose.',
@@ -244,18 +263,68 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const GENERIC_TITLES = new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']);
+  const GENERIC_TITLES = {
+    en: new Set(['home', 'homepage', 'welcome', 'untitled', 'page', 'document']),
+    de: new Set(['startseite', 'willkommen', 'unbenannt', 'ohne titel', 'seite', 'dokument']),
+    es: new Set([
+      'inicio',
+      'página de inicio',
+      'bienvenido',
+      'bienvenida',
+      'sin título',
+      'página',
+      'documento'
+    ]),
+    fr: new Set(['accueil', "page d'accueil", 'bienvenue', 'sans titre', 'page', 'document']),
+    ja: new Set(['ホーム', 'トップページ', 'トップ', 'ようこそ', '無題', 'ページ', 'ドキュメント'])
+  };
+
+  // The page-specific half of "Brand | Home" in languages other than
+  // English. English keeps its word-boundary patterns below.
+  const TEMPLATE_TOKENS = {
+    de: ['startseite', 'willkommen'],
+    es: ['inicio', 'página de inicio', 'bienvenido', 'bienvenida'],
+    fr: ['accueil', "page d'accueil", 'bienvenue'],
+    ja: ['ホーム', 'トップページ', 'トップ', 'ようこそ']
+  };
+
+  const htmlEl = document.documentElement;
+  const pageLang =
+    htmlEl && htmlEl.getAttribute && htmlEl.getAttribute('lang')
+      ? htmlEl.getAttribute('lang').trim().split('-')[0].toLowerCase()
+      : '';
+  const titleNorm = titleLc.normalize('NFKC').replace(/[\u2018\u2019]/g, "'");
+
+  // Chinese, Japanese and Korean characters each carry roughly a word, so
+  // they count double: 「お問い合わせ」 is a full title in six characters.
+  function effectiveLength(s) {
+    let n = 0;
+    for (const ch of s)
+      n += /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff]/.test(ch) ? 2 : 1;
+    return n;
+  }
 
   // Conservative signals:
   // - very short title (likely non-descriptive)
   // - title is one of a small set of generic titles
-  const isVeryShort = titleText.length > 0 && titleText.length < 8;
-  const isGeneric = GENERIC_TITLES.has(titleLc);
+  const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
+  const isGeneric =
+    GENERIC_TITLES.en.has(titleNorm) ||
+    !!(pageLang && GENERIC_TITLES[pageLang] && GENERIC_TITLES[pageLang].has(titleNorm));
+
+  function isLocalTemplate(title) {
+    const tokens = TEMPLATE_TOKENS[pageLang];
+    if (!tokens) return false;
+    const parts = title.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
+    if (parts.length < 2) return false;
+    return tokens.includes(parts[0]) || tokens.includes(parts[parts.length - 1]);
+  }
 
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
   const templateLike =
     /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText);
+    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText) ||
+    isLocalTemplate(titleNorm);
 
   if (isGeneric || isVeryShort || templateLike) {
     const reasonCode = isGeneric
@@ -271,7 +340,7 @@ function runInPage(ctx) {
           ? 'pageTitlePatterns_summary_cantTell_veryShort'
           : 'pageTitlePatterns_summary_cantTell_templateLike';
     const occBase = {
-      selector: 'head > title',
+      selector: titleSelector,
       html: '',
       summary:
         'The page title may not be descriptive enough to identify the page topic or purpose.',

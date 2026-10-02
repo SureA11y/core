@@ -222,6 +222,20 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 });
 
+test(`${RULE_ID}: fail when aria-label is on a native <caption> (implicit role caption)`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <table><caption id="a" aria-label="x">c</caption><tr><td>1</td></tr></table>
+    <table><caption id="b">Plain</caption><tr><td>1</td></tr></table>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+    assert.equal(rule.occurrences[0].data.details.role, 'caption');
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_PROHIBITED');
+  }
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -232,7 +246,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scen
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
     'apa_case_03',
@@ -243,7 +257,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scen
     'apa_case_09',
     'apa_case_10',
     'apa_case_11',
-    'apa_case_16'
+    'apa_case_16',
+    'apa_case_17'
   ];
   const expectedNoOccIds = [
     'apa_case_01',

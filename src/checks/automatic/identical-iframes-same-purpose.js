@@ -20,10 +20,10 @@
  *   describes one resource, so two frames answering to it must embed the
  *   same one.
  * @implementation-notes
- * - Distinct from iframe-title-unique, which asks the stricter question of
- *   whether the title ATTRIBUTE repeats at all, and answers it from static
- *   markup. This rule keys on the computed accessible name and judges the
- *   resource behind it.
+ * - Frames are grouped by the computed accessible name, not the title
+ *   attribute, so a title that aria-label or aria-labelledby overrides does
+ *   not count. It replaces iframe-title-unique, deprecated in 1.8.0, which
+ *   grouped them by the title attribute.
  * - src values are compared as resolved absolute URLs with the fragment
  *   removed and a trailing slash normalised away, so a directory written
  *   both with and without one is a single resource.

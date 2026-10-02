@@ -63,10 +63,6 @@ const meta = {
       url: 'https://www.w3.org/TR/WCAG22/#focus-visible'
     },
 
-    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1', title: 'Keyboard' },
-    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.4.3', title: 'Focus Order' },
-    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.4.7', title: 'Focus Visible' },
-
     {
       standard: 'WCAG',
       version: '2.2',

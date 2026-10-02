@@ -8,55 +8,56 @@ const { execFileSync } = require('node:child_process');
 
 const { getChecksCatalog } = require('../src/index.js');
 const { computeBaselineKey } = require('../src/baseline');
+const { ruleSources } = require('../scripts/lib/rule-dirs');
 
 const ROOT = path.join(__dirname, '..');
-const INVENTORY = path.join(ROOT, 'scripts', 'data', 'finding-ids.json');
 const GENERATOR = path.join(ROOT, 'scripts', 'generate-finding-ids.js');
 
-const committed = JSON.parse(fs.readFileSync(INVENTORY, 'utf8'));
+// Core's inventory and each profile's, which the generator writes together.
+const INVENTORIES = ruleSources().map((src) => path.join(src.dataDir, 'finding-ids.json'));
 
-// The generator writes in place, so the file is restored afterwards: a failing
-// run must not leave the working tree holding a regenerated inventory.
-function regenerate() {
-  const before = fs.readFileSync(INVENTORY, 'utf8');
+const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+const committedEach = INVENTORIES.map(read);
+
+// Every source's inventory as one: the identities the engine has published.
+function merge(inventories) {
+  return {
+    ruleIds: inventories.flatMap((inv) => inv.ruleIds).sort(),
+    reasonCodes: Object.assign({}, ...inventories.map((inv) => inv.reasonCodes))
+  };
+}
+const committed = merge(committedEach);
+
+// The generator writes in place, so the files are restored afterwards: a
+// failing run must not leave the working tree holding a regenerated inventory.
+function regenerateEach() {
+  const before = INVENTORIES.map((file) => fs.readFileSync(file, 'utf8'));
   try {
     execFileSync(process.execPath, [GENERATOR], { cwd: ROOT, stdio: 'pipe' });
-    return JSON.parse(fs.readFileSync(INVENTORY, 'utf8'));
+    return INVENTORIES.map(read);
   } finally {
-    fs.writeFileSync(INVENTORY, before, 'utf8');
+    INVENTORIES.forEach((file, i) => fs.writeFileSync(file, before[i], 'utf8'));
   }
 }
+const regenerate = () => merge(regenerateEach());
 
-// A deprecated rule reduced to emitting nothing (iframe-title-unique) produces
-// no codes in a fresh generation, but the inventory records what was shipped,
-// not what is still produced, and a code's promise ends only when the rule file
-// is removed (docs/API_STABILITY.md). Such a rule keeps its committed codes.
-// A deprecated rule that still emits anything gets no exemption: its codes are
-// held to the same rule as every other rule's.
-function withRetiredCodes(fresh) {
-  const reasonCodes = { ...fresh.reasonCodes };
-  for (const r of getChecksCatalog()) {
-    if (r.deprecated && !reasonCodes[r.ruleId] && committed.reasonCodes[r.ruleId]) {
-      reasonCodes[r.ruleId] = committed.reasonCodes[r.ruleId];
-    }
-  }
-  return { ...fresh, reasonCodes };
-}
-
-test('the committed inventory matches a fresh generation', () => {
-  assert.deepStrictEqual(
-    withRetiredCodes(regenerate()),
-    committed,
-    'scripts/data/finding-ids.json is stale -- run npm run finding-ids'
-  );
+test('each committed inventory matches a fresh generation', () => {
+  const fresh = regenerateEach();
+  INVENTORIES.forEach((file, i) => {
+    assert.deepStrictEqual(
+      fresh[i],
+      committedEach[i],
+      `${path.relative(ROOT, file)} is stale -- run npm run finding-ids`
+    );
+  });
 });
 
-test('every catalog rule id is in the inventory', () => {
+test('every catalog rule id is in exactly one inventory', () => {
   const catalog = getChecksCatalog()
     .map((r) => r.ruleId)
     .sort();
 
-  assert.deepStrictEqual(catalog, committed.ruleIds);
+  assert.deepStrictEqual(committed.ruleIds, catalog);
 });
 
 test('a rule id disappears only through a deprecation entry', () => {
@@ -78,7 +79,7 @@ test('a rule id disappears only through a deprecation entry', () => {
 });
 
 test('a shipped reason code is never dropped from a rule', () => {
-  const fresh = withRetiredCodes(regenerate()).reasonCodes;
+  const fresh = regenerate().reasonCodes;
   const lost = [];
 
   for (const [ruleId, codes] of Object.entries(committed.reasonCodes)) {

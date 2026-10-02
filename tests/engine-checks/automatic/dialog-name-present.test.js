@@ -10,7 +10,7 @@ let assertRule;
 try {
   ({ runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml'));
   ({ assertRule } = require('../../helpers/assertRule'));
-} catch (e) {}
+} catch {}
 
 const RULE_ID = 'dialog-name-present';
 
@@ -98,7 +98,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'dialog_case_01',
@@ -107,7 +107,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
     'dialog_case_08',
     'dialog_case_09',
     'dialog_case_10',
-    'dialog_case_17'
+    'dialog_case_17',
+    'dialog_case_22',
+    'dialog_case_24'
   ];
 
   const expectedNoOccIds = [
@@ -124,7 +126,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
     'dialog_case_18',
     'dialog_case_19',
     'dialog_case_20',
-    'dialog_case_21'
+    'dialog_case_21',
+    'dialog_case_23',
+    'dialog_case_25'
   ];
 
   for (const id of expectedFailIds) {
@@ -151,4 +155,52 @@ test('dialog-name-present: aria-labelledby pointing at an <iframe> falls back to
   }
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an open native <dialog> with no name fails; a named one passes`, () => {
+  const bad = `<!doctype html><html><body><dialog open id="d"><p>Sure?</p><button>OK</button></dialog></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(bad, { runOnly: [RULE_ID], engineOptions }),
+      RULE_ID,
+      'fail',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'd'));
+    assert.equal(rule.occurrences[0].data.details.controlType, 'dialog');
+  }
+  const good = `<!doctype html><html><body><dialog open aria-label="Confirm"><button>OK</button></dialog></body></html>`;
+  assertRule(runa11yCoreOnHtml(good, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: a closed native <dialog> is not applicable`, () => {
+  const html = `<!doctype html><html><body><dialog><p>Sure?</p></dialog></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: the role is the first concrete token of a fallback list`, () => {
+  const alert = `<!doctype html><html><body><div role="alertdialog dialog" id="d"></div></body></html>`;
+  for (const engineOptions of [{}]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(alert, { runOnly: [RULE_ID], engineOptions }),
+      RULE_ID,
+      'fail',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.equal(rule.occurrences[0].data.details.controlType, 'alertdialog');
+  }
+  const unknownFirst = `<!doctype html><html><body><div role="modal dialog" id="d"></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(unknownFirst, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  // A dialog token after a concrete role does not make the element a dialog.
+  const regionFirst = `<!doctype html><html><body><div role="region dialog"></div><dialog open role="none"><p>x</p></dialog></body></html>`;
+  assertRule(runa11yCoreOnHtml(regionFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
 });

@@ -5,7 +5,7 @@
 /**
  * @check meta-refresh-no-exceptions
  * @atomic true
- * @summary At the AAA level, a meta refresh must not be used at all
+ * @summary At the AAA level, a meta refresh must not use a positive delay, however long
  * @standard WCAG 2.2
  * @sc 2.2.4, 3.2.5
  * @applicability
@@ -37,9 +37,9 @@
 const id = 'meta-refresh-no-exceptions';
 
 const meta = {
-  title: 'Page must not use a meta refresh at all (AAA)',
+  title: 'Page must not use a timed meta refresh (AAA)',
   description:
-    'Checks that <meta http-equiv="refresh"> is not present at all, regardless of delay. This is the stricter AAA-level counterpart of the A-level positive-delay-only check.',
+    'Checks that <meta http-equiv="refresh"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.',
   i18n: {
     titleKey: 'metaRefreshNoExceptions_title',
     descriptionKey: 'metaRefreshNoExceptions_description'

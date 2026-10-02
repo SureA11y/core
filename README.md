@@ -6,33 +6,40 @@
 [![node](https://img.shields.io/node/v/@surea11y/core?style=flat-square&label=node&labelColor=101413&color=3A4441)](package.json)
 [![license](https://img.shields.io/badge/license-MPL--2.0-3A4441?style=flat-square&labelColor=101413)](LICENSE)
 
+[Website](https://surea11y.dev/) · [Documentation](https://surea11y.dev/getting-started/) · [Rules](https://surea11y.dev/rules/)
+
 > **Accessibility testing that tells you what it can't tell you.**
 
-surea11y is a WCAG accessibility testing engine you run in your own test
-suite, CI pipeline, or from the command line.
+`@surea11y/core` is the WCAG accessibility testing engine behind the surea11y
+family of packages. It runs in Node.js against a DOM you supply (such as
+jsdom) or inside a real browser page, and returns deterministic,
+standards-traceable results. The integrations for Playwright, Cypress,
+Puppeteer, Selenium, WebdriverIO, Jest/Vitest and the command line are
+separate packages built on this engine: see
+[Which package do I need?](#which-package-do-i-need).
 
 What sets it apart is what it does with the cases automated testing can't
 settle. It implements the W3C's open [Accessibility Conformance Testing (ACT)
 Rules Format](https://www.w3.org/TR/act-rules-format/), verified against
 ACT's own published test corpus rather than judged only against itself, and
-it reports findings, non-findings, and — unusually — explicit uncertainty, so
+it reports findings, non-findings, and (unusually) explicit uncertainty, so
 results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-It runs against either static HTML or fully rendered browser pages, producing
-deterministic, standards-traceable results suitable for local development,
-automated testing and CI/CD pipelines.
+132 accessibility rules · 58 validated against the ACT corpus (798 reference
+cases) · zero runtime dependencies
 
-Unlike browser extensions or cloud-based services, surea11y is a library-first
-project. You install it, run it where your code runs, and receive structured
-results that can be consumed by people, scripts or reporting tools.
+Unlike browser extensions or cloud-based services, the engine is a library.
+You install it, run it where your code runs, and receive structured results
+that can be consumed by people, scripts or reporting tools.
 
 ## Contents
 
 - [Goals](#goals)
 - [What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)
 - [What this engine does not detect](#what-this-engine-does-not-detect)
+- [Key principles](#key-principles)
 - [Choosing the right execution model](#choosing-the-right-execution-model)
 - [Which package do I need?](#which-package-do-i-need)
 - [Installation](#installation)
@@ -63,18 +70,15 @@ results that can be consumed by people, scripts or reporting tools.
 3. **Make the engine and its rules approachable to build on.** Custom rules,
    policies, and framework bindings are first-class extension points, and
    every rule ships with its WCAG mapping, applicability, and expectation
-   documented. Worked examples for every rule
-   ([`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md)) and a browsable rules
-   site are both in progress — **this goal is not yet where it needs to be**.
+   documented. Worked examples are available in
+   [`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md), and the complete rule
+   catalog can be browsed at [surea11y.dev/rules](https://surea11y.dev/rules/).
 
 ## What automated testing can and cannot do
 
-Automated tools are commonly reckoned to catch somewhere around a third of WCAG
-issues. The remainder require human judgement. That ceiling is a property of
-static analysis itself, not a gap in any particular tool.
-
-surea11y's answer is to be explicit about which side of that line every result
-falls on. Each rule makes a single deterministic decision:
+Many WCAG requirements cannot be determined through automated testing alone and
+require human judgement. surea11y's answer is to make that boundary explicit.
+Each rule makes a single deterministic decision:
 
 - **`fail`** — a violation provable from the DOM. Reserved for objective,
   normative cases.
@@ -110,16 +114,29 @@ scheduled job republishes it weekly and on release.
 
 ## What this engine does not detect
 
-Keyboard traps, reflow and clipping at 400% zoom, anything that only exists
-after a click or an async load, and judgement calls such as whether a heading is
-meaningful — these lie outside what a static DOM scan can establish. Each is a
-reasoned decision rather than an oversight.
+Some things lie outside what a scan of the DOM can establish. For example,
+the engine will not:
 
-[`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) lists them in full with the
-reasoning for each. A `pass` from this engine — or from any automated tool — is
-never a substitute for the manual review WCAG itself requires.
+- confirm that alt text is *meaningful*, only that it is present
+  (an alt attribute of `"image123.png"` passes the objective check);
+- judge whether a color contrast choice is aesthetically appropriate,
+  only whether it meets the applicable contrast ratio;
+- determine whether an error message actually *explains* the problem,
+  since that depends on validation logic a static scan can't see;
+- detect a keyboard trap, or reflow and clipping at 400% zoom, since both
+  require simulating real user interaction over time;
+- see anything that only exists after a click or an async load.
 
-### Key principles
+Where a case comes down to judgement, such as whether a heading is
+meaningful, the engine reports `cantTell` rather than guessing. Each of these
+boundaries is a reasoned decision rather than an oversight:
+[Known limitations](https://surea11y.dev/help/known-limitations/) lists them
+in full with the reasoning for each (also in
+[`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md)). A `pass` from this engine, or
+from any automated tool, is never a substitute for the manual review WCAG
+itself requires.
+
+## Key principles
 
 - **Deterministic execution.** The same input always produces the same
   output.
@@ -135,21 +152,22 @@ never a substitute for the manual review WCAG itself requires.
   by rule IDs, tags or WCAG version.
 - **Localized reporting.** Human-readable messages can be translated
   without affecting machine-readable data. Ships with `en`, `fr`, `de`,
-  and `es` today — see [`docs/I18N.md`](./docs/I18N.md) to use one or
+  `es` and `ja` today. See [`docs/I18N.md`](./docs/I18N.md) to use one or
   contribute another.
 
 ---
 
 ## Choosing the right execution model
 
-surea11y supports two complementary execution models. Choosing the
+The engine supports two complementary execution models. Choosing the
 correct one is essential because it determines which parts of the page
 the engine can inspect.
 
 ### Static HTML
 
-The CLI (`scan file.html` or `scan https://example.com`) and
-`runDomRulesInPage()` analyse HTML without executing page JavaScript.
+`runDomRulesInPage()` analyses HTML without executing page JavaScript,
+and so does the separate [`@surea11y/cli`](#cli) package, which wraps it
+for the terminal.
 
 This approach is ideal for:
 
@@ -200,7 +218,9 @@ matches how you test — each pulls in `@surea11y/core` for you.
 | Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
 | Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
 
-The rest of this README covers `@surea11y/core` itself.
+[Getting Started](https://surea11y.dev/getting-started/) on surea11y.dev
+covers installation and usage for each of these. The rest of this README
+covers `@surea11y/core` itself.
 
 ---
 
@@ -395,6 +415,33 @@ embedded frame to also load the engine and opt in, which doesn't fit a
 single dropped-in `<script>` tag; reach for the npm package directly if
 you need that.
 
+### Conformance targets and EN 301 549
+
+To test against a named target instead of a hand-picked tag list, pass a
+profile:
+
+```js
+runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+```
+
+`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
+the WCAG Level A and AA rules of the version they build on; the result records
+the one used in `engine.profile`. A profile only chooses which rules
+run; it does not certify conformance. A standard with verdicts of its own
+comes as a profile under [`profiles/`](./profiles/README.md), with its own
+rules, which run only when a scan targets it; to run every rule instead, pass
+`optInRules: 'all'` with no profile; the result records it in
+`engine.optInRules`.
+
+An EN 301 549 profile also maps every WCAG criterion in the result to the
+clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
+the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
+without the profile, or for both versions, pass
+`mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
+WCAG only. See
+[`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
+[`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
+
 ---
 
 ## Understanding the Results
@@ -458,14 +505,25 @@ The complete schema also includes confidence, severity, WCAG
 traceability, composite rule results and other metadata intended for
 reporting and automation.
 
-For a complete field-by-field reference, see `docs/OUTPUT_SCHEMA.md`.
+For a complete field-by-field reference, see
+[Output schema](https://surea11y.dev/results-reports/output-schema/)
+(`docs/OUTPUT_SCHEMA.md` in the repository).
 
 ---
 
 ## Documentation
 
-The project documentation is organized by topic so you can start quickly
-and progressively explore more advanced features.
+Full documentation is available at **[surea11y.dev](https://surea11y.dev/)**:
+[getting started](https://surea11y.dev/getting-started/) for each integration,
+the [rule catalog](https://surea11y.dev/rules/),
+[configuration](https://surea11y.dev/configuration/),
+[results and reports](https://surea11y.dev/results-reports/),
+[WCAG conformance](https://surea11y.dev/conformance/), and
+[help](https://surea11y.dev/help/).
+
+The repository also contains the following technical and contributor
+documentation, useful as direct references when building on the engine or
+contributing to it:
 
 | Document | Description |
 |---|---|
@@ -474,12 +532,13 @@ and progressively explore more advanced features.
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
 | `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
 | `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
+| `docs/JUNIT.md` | JUnit XML report for the test dashboards of GitLab, Azure DevOps, Jenkins and CircleCI. |
 | `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
 | `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule. |
+| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, in `profiles/<key>/docs/RULE_CATALOG.md`. |
 | `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
 | `docs/POLICY.md` | Built-in policy contracts and customization. |
 | `docs/I18N.md` | Translation support and localization. |
@@ -511,27 +570,11 @@ need human judgement, knowledge of context, or usability evaluation. A
 single score or a pass/fail verdict flattens that difference; surea11y
 reports it.
 
-This is why `cantTell` and `notApplicable` exist as outcomes, and it
-shapes every rule in the engine.
-
-### What surea11y won't catch
-
-Being explicit about the boundaries of automation is part of the same
-philosophy. For example, surea11y will not:
-
-- confirm that alt text is *meaningful*, only that it is present
-  (an alt attribute of `"image123.png"` passes the objective check);
-- judge whether a color contrast choice is aesthetically appropriate,
-  only whether it meets the applicable contrast ratio;
-- determine whether an error message actually *explains* the problem,
-  since that depends on validation logic a static scan can't see;
-- detect a keyboard focus trap or content clipped at 400% zoom, since
-  both require simulating real user interaction over time, not just
-  reading the DOM at one instant.
-
-These are the cases where the engine reports `cantTell`, and where a
-human reviewer's judgement remains necessary. See
-`docs/LIMITATIONS.md` for the complete list of structural limitations.
+This is why `cantTell` and `notApplicable` exist as outcomes (see
+[What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)),
+and why the engine is explicit about
+[what it does not detect](#what-this-engine-does-not-detect). It shapes
+every rule in the engine.
 
 ---
 
@@ -550,7 +593,11 @@ src/
   baseline.js              # Baseline entry point (@surea11y/core/baseline)
   report.js                # HTML report entry point (@surea11y/core/report)
   sarif.js                 # SARIF entry point (@surea11y/core/sarif)
+  junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
+  en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
+  wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
 
   checks/
     automatic/             # Deterministic automated rules
@@ -562,6 +609,10 @@ src/
   coverage/                # WCAG coverage definitions
   catalogs/                # Composite rule catalogs
   explain/                 # Occurrence grouping, internal
+
+profiles/
+  index.js                 # The profiles built into the engine (none yet)
+  README.md                # What a profile holds and how to add one
 
 scripts/
   build-core.js            # Generates src/core.js

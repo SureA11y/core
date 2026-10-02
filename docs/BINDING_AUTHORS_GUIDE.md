@@ -42,11 +42,11 @@ A binding that crosses a realm boundary has to get the engine into the page
 somehow. The obvious way — serialize `runa11yCoreInPage` with `.toString()` and
 hand it to the driver's evaluate-in-page call — works, and is what
 `@surea11y/playwright` did first, but it sends the whole engine **on every
-call**: about 1.7MB per frame, per scan. A five-frame scan sends it five times,
+call**: about 2.1MB per frame, per scan. A five-frame scan sends it five times,
 and the next scan sends it all again.
 
 The package ships a smaller way. `@surea11y/core/browser` is the standalone
-bundle: the same `runa11yCoreInPage`, minified, about 707KB, which defines
+bundle: the same `runa11yCoreInPage`, minified, about 780KB, which defines
 `window.a11ycore`. Load it into the document once and every later scan costs a
 few hundred bytes.
 

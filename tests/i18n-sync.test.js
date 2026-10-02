@@ -7,8 +7,8 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { syncDict, syncLocale, syncAll } = require('../scripts/i18n-sync.js');
+const { i18nDirs } = require('../scripts/lib/dictionaries');
 const {
-  I18N_DIR,
   listLocales,
   loadDict,
   localePath,
@@ -126,9 +126,18 @@ test('listLocales excludes en', () => {
   assert.deepEqual(listLocales(dir), ['de', 'fr']);
 });
 
-for (const locale of listLocales(I18N_DIR)) {
-  test(`src/i18n/${locale}.json is in sync with en.json`, () => {
-    const result = syncLocale(locale, { check: true });
+// Every dictionary folder, core's and each profile's, for the locales it has.
+const DICTIONARY_FILES = i18nDirs().flatMap((i18nDir) =>
+  listLocales(i18nDir).map((locale) => ({
+    i18nDir,
+    locale,
+    name: path.relative(path.join(__dirname, '..'), path.join(i18nDir, `${locale}.json`))
+  }))
+);
+
+for (const { i18nDir, locale, name } of DICTIONARY_FILES) {
+  test(`${name} is in sync with its en.json`, () => {
+    const result = syncLocale(locale, { i18nDir, check: true });
 
     assert.deepEqual(
       result.added,
@@ -140,14 +149,15 @@ for (const locale of listLocales(I18N_DIR)) {
       [],
       `keys in ${locale}.json that en.json no longer has: ${result.removed.join(', ')}`
     );
-    assert.equal(result.changed, false, `run \`npm run i18n:sync\` to update ${locale}.json`);
+    assert.equal(result.changed, false, `run \`npm run i18n:sync\` to update ${name}`);
   });
 }
 
-for (const locale of ['en', ...listLocales(I18N_DIR)]) {
-  test(`src/i18n/${locale}.json is formatted as i18n:sync would write it`, () => {
-    const filePath = localePath(locale);
-
-    assert.equal(serializeLocale(loadDict(filePath)), fs.readFileSync(filePath, 'utf8'));
-  });
+for (const i18nDir of i18nDirs()) {
+  for (const locale of ['en', ...listLocales(i18nDir)]) {
+    const filePath = localePath(locale, i18nDir);
+    test(`${path.relative(path.join(__dirname, '..'), filePath)} is formatted as i18n:sync would write it`, () => {
+      assert.equal(serializeLocale(loadDict(filePath)), fs.readFileSync(filePath, 'utf8'));
+    });
+  }
 }

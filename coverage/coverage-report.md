@@ -1,24 +1,24 @@
 # WCAG Coverage Report
 
-Rules directory: `src/checks`
+Rules directories: `src/checks`
 Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **132**
+Total rules (loaded without error): **133**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 106 | 19 | 5 |
+| Any WCAG version | 107 | 20 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 100 | 14 | 5 |
-| WCAG 2.1 | 4 | 3 | 0 |
+| WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,7 +26,7 @@ Total rules (loaded without error): **132**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 3 |
+| wcag21aa | 4 |
 | wcag22aa | 2 |
 | wcag2a | 89 |
 | wcag2aa | 10 |
@@ -79,13 +79,13 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
+| area-alt-quality | manual | &lt;area&gt; text alternative must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
 | img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
-| input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
+| input-image-alt-quality | manual | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
 | object-text-alternative-quality | manual | &lt;object&gt; text alternative must be appropriate (manual review) | src/checks/manual/object-text-alternative-quality-manual.js | text-alternative-quality |  |
 | svg-text-alternative-quality | manual | &lt;svg&gt; text alternative must be appropriate (manual review) | src/checks/manual/svg-text-alternative-quality-manual.js | text-alternative-quality |  |
 
@@ -154,7 +154,7 @@ Uncovered facets: form-control-label-quality-review
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
-| p-as-heading | manual | A &lt;p&gt; styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
+| p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
 ### 1.3.4
@@ -254,16 +254,18 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
+| text-spacing-content-loss | partial | text-spacing-content-loss |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1
 
@@ -281,7 +283,7 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
-| server-side-image-map-absent | automatic | Images must not use a server-side image map | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -323,7 +325,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| deprecated-elements-not-used | automatic | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
 
 ### 2.2.4
 
@@ -336,7 +338,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 2.4.1
 
@@ -381,15 +383,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.6
@@ -503,7 +507,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 3.3.2
 
@@ -710,13 +714,13 @@ Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorativ
 | svg-image-text-alternative-present | automatic | SVG &lt;image&gt; must have a text alternative | src/checks/automatic/svg-image-text-alternative-present.js | svg-image-text-alt-present |  |
 | svg-text-alternative-present | automatic | &lt;svg&gt; must provide a text alternative | src/checks/automatic/svg-text-alternative-present.js | svg-text-alternative-present |  |
 | video-poster-text-alternative-present | automatic | &lt;video&gt; poster must have a text alternative | src/checks/automatic/video-poster-text-alternative-present.js | video-poster-text-alt-present |  |
-| area-alt-quality | manual | &lt;area&gt; alt text must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
+| area-alt-quality | manual | &lt;area&gt; text alternative must be appropriate (manual review) | src/checks/manual/area-alt-quality-manual.js | text-alternative-quality |  |
 | canvas-text-alternative-quality | manual | &lt;canvas&gt; text alternative must be appropriate (manual review) | src/checks/manual/canvas-text-alternative-quality-manual.js | text-alternative-quality |  |
 | embed-text-alternative-quality | manual | &lt;embed&gt; text alternative must be appropriate (manual review) | src/checks/manual/embed-text-alternative-quality-manual.js | text-alternative-quality |  |
 | img-alt-decorative | manual | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | src/checks/manual/img-alt-decorative-manual.js | text-alternative-quality |  |
 | img-alt-quality | manual | &lt;img&gt; alt text must be appropriate (manual review) | src/checks/manual/img-alt-quality-manual.js | text-alternative-quality |  |
 | input-image-alt-decorative | manual | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | src/checks/manual/input-image-alt-decorative-manual.js | text-alternative-quality |  |
-| input-image-alt-quality | manual | &lt;input type="image"&gt; alt text must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
+| input-image-alt-quality | manual | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | src/checks/manual/input-image-alt-quality-manual.js | text-alternative-quality |  |
 | object-text-alternative-quality | manual | &lt;object&gt; text alternative must be appropriate (manual review) | src/checks/manual/object-text-alternative-quality-manual.js | text-alternative-quality |  |
 | svg-text-alternative-quality | manual | &lt;svg&gt; text alternative must be appropriate (manual review) | src/checks/manual/svg-text-alternative-quality-manual.js | text-alternative-quality |  |
 
@@ -785,7 +789,7 @@ Uncovered facets: form-control-label-quality-review
 | table-headers-attr-valid | automatic | Table cell "headers" attribute must reference valid header cells | src/checks/automatic/table-headers-attr-valid.js | table-headers-attr-valid |  |
 | table-th-has-data-cells | automatic | &lt;th&gt; elements must describe at least one data cell | src/checks/automatic/table-th-has-data-cells.js | table-th-has-data-cells |  |
 | td-has-header | automatic | Data cells in large tables must have an associated header | src/checks/automatic/td-has-header.js | td-has-header |  |
-| p-as-heading | manual | A &lt;p&gt; styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
+| p-as-heading | manual | Text styled to look like a heading should probably be a real heading | src/checks/manual/p-as-heading-manual.js | p-as-heading-evidence |  |
 | table-fake-caption | manual | A table's first row should not stand in for a real &lt;caption&gt; | src/checks/manual/table-fake-caption-manual.js | table-fake-caption-evidence |  |
 
 ### 1.3.4
@@ -885,16 +889,18 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
+| text-spacing-content-loss | partial | text-spacing-content-loss |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1
 
@@ -912,7 +918,7 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
-| server-side-image-map-absent | automatic | Images must not use a server-side image map | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -954,7 +960,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| deprecated-elements-not-used | automatic | Obsolete non-stoppable elements (&lt;blink&gt;, &lt;marquee&gt;) must not be used | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
 
 ### 2.2.4
 
@@ -967,7 +973,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 2.4.1
 
@@ -1012,15 +1018,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.4.6
@@ -1134,7 +1142,7 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| meta-refresh-no-exceptions | automatic | Page must not use a meta refresh at all (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 
 ### 3.3.2
 

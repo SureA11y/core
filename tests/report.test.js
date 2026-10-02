@@ -99,16 +99,87 @@ test('renderHtmlReport: meta bar reports the locale the scan resolved to', () =>
     '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'de' } }));
 
-  assert.match(report, /<b>de<\/b>locale/);
-  assert.doesNotMatch(report, /requested/);
+  assert.match(report, /<b>de<\/b>Sprache/);
+  assert.doesNotMatch(report, /angefordert/);
 });
 
 test('renderHtmlReport: meta bar names the requested locale when it fell back', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ko' } }));
+
+  assert.match(report, /<b>en<\/b>locale \(requested ko\)/);
+});
+
+test('renderHtmlReport: a report for a shipped locale is written entirely in that language', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"><img src="y.png"></body></html>';
   const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'ja' } }));
 
-  assert.match(report, /<b>en<\/b>locale \(requested ja\)/);
+  assert.match(report, /<html lang="ja">/);
+  assert.match(report, /<h2>確認が必要な項目<\/h2>/);
+  assert.match(report, /<b>ja<\/b>ロケール/);
+  assert.match(report, /\(不合格、重大度: 重大\)/);
+  assert.match(report, /<div class="card-snippet">&lt;img&gt; 要素に alt 属性がありません。/);
+  assert.doesNotMatch(report, /<span lang=|<td lang=/);
+
+  // Every label of the English page, none of which may survive.
+  for (const english of [
+    'Worth reviewing',
+    'WCAG rollup',
+    'rules run',
+    'total occurrences',
+    'schema version',
+    'Selector:',
+    'Scorecard',
+    'Needs review',
+    'applicable checks',
+    'Prev',
+    'No matching occurrences',
+    'Contributing rules',
+    'surea11y scan report'
+  ]) {
+    assert.ok(!report.includes(english), `English label left in a Japanese report: ${english}`);
+  }
+});
+
+test('renderHtmlReport: a dictionary supplied at scan time keeps English labels and tags the findings', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const result = runa11yCoreOnHtml(html, {
+    engineOptions: {
+      locale: 'nl',
+      messages: { nl: { img_altPresent_summary_fail: 'Het alt-attribuut ontbreekt op <img>.' } }
+    }
+  });
+  const report = renderHtmlReport(result);
+
+  assert.equal(result.engine.locale.resolved, 'nl');
+  assert.match(report, /<html lang="en">/);
+  assert.match(report, /<h2>Worth reviewing<\/h2>/);
+  // Only the string the dictionary translated is marked; its English hint,
+  // other rules' English text and English rollup titles are not.
+  assert.match(
+    report,
+    /<div class="card-snippet"><span lang="nl">Het alt-attribuut ontbreekt op &lt;img&gt;\.<\/span> — Add an alt attribute/
+  );
+  assert.doesNotMatch(report, /<td lang="nl">/);
+  const json = report.match(
+    /<script type="application\/json" id="report-data">([\s\S]*?)<\/script>/
+  )[1];
+  const marked = JSON.parse(json)
+    .filter((row) => row.summaryLang)
+    .map((row) => `${row.ruleId}:${row.summaryLang}`);
+  assert.deepEqual([...new Set(marked)], ['img-alt-present:nl']);
+});
+
+test('renderHtmlReport: an English scan adds no lang attributes to rule text', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html));
+
+  assert.doesNotMatch(report, /class="card-snippet" lang=/);
+  assert.doesNotMatch(report, /<span lang=|<td lang=|"summaryLang":"[a-z]/);
 });
 
 test('renderHtmlReport: a result from an engine without engine.locale gets no locale chip', () => {
@@ -253,6 +324,30 @@ function makeComposite(overrides = {}) {
     ...overrides
   };
 }
+
+test('renderHtmlReport: the WCAG rollup names the EN 301 549 clause once per clause', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [
+    makeComposite({
+      meta: {
+        normativeMappings: [
+          { standard: 'WCAG', requirement: '1.1.1', level: 'A' },
+          { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.1.1' },
+          { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.1.1' }
+        ]
+      }
+    })
+  ];
+  const report = renderHtmlReport(result);
+
+  assert.strictEqual(report.match(/EN 301 549 9\.1\.1\.1/g).length, 1);
+});
+
+test('renderHtmlReport: a rollup row with no EN 301 549 clause gets no EN label', () => {
+  const result = makeScanResult([]);
+  result.rulesResults = [makeComposite({})];
+  assert.doesNotMatch(renderHtmlReport(result), /EN 301 549/);
+});
 
 test('renderHtmlReport: the WCAG rollup groups composites under their conformance level', () => {
   const result = makeScanResult([]);
@@ -399,6 +494,22 @@ test('renderHtmlReport: a rule with no normative mappings renders no WCAG chips'
   }
 });
 
+test('renderHtmlReport: only WCAG Success Criteria are chipped as WCAG', () => {
+  const check = makeCheckResult({
+    meta: {
+      normativeMappings: [
+        { standard: 'WCAG', version: '2.2', requirement: '2.1.1', conformanceLevel: 'A' },
+        { standard: 'WCAG', version: '2.2', type: 'Understanding', requirement: '2.1.1' },
+        { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.2.1.1' }
+      ]
+    }
+  });
+  const report = renderHtmlReport(makeScanResult([check]));
+
+  assert.strictEqual(report.match(/>WCAG 2\.1\.1</g).length, 1);
+  assert.doesNotMatch(report, /WCAG 9\.2\.1\.1/);
+});
+
 test('renderHtmlReport: past the card cap, the rest are pointed at the technical data', () => {
   const checks = Array.from({ length: 30 }, (_, i) =>
     makeCheckResult({
@@ -471,4 +582,62 @@ test('renderHtmlReport: an occurrence carrying `outcome` instead of `occurrenceO
   const report = renderHtmlReport(makeScanResult([check]));
 
   assert.match(report, /\u00d7 2 \(1 fail \/ 1 needs review\)/);
+});
+
+test('renderHtmlReport: the meta bar shows the WCAG target and profile when the result has them', () => {
+  const result = makeScanResult([]);
+  result.engine = { ...result.engine, wcagVersion: '2.1', profile: 'en301549-v3.2.1' };
+  const report = renderHtmlReport(result);
+  assert.match(report, /<b>WCAG 2\.1<\/b>target/);
+  assert.match(report, /<b>en301549-v3\.2\.1<\/b>profile/);
+});
+
+test('renderHtmlReport: a result without a target or profile gets no chips for them', () => {
+  const report = renderHtmlReport(makeScanResult([]));
+  assert.doesNotMatch(report, /<\/b>target</);
+  assert.doesNotMatch(report, /<\/b>profile</);
+  assert.doesNotMatch(report, /<\/b>opt-in rules</);
+});
+
+test('renderHtmlReport: the meta bar names the opt-in rules a run added, in the report locale', () => {
+  const result = makeScanResult([]);
+  result.engine = { ...result.engine, wcagVersion: '2.2', optInRules: ['sample'] };
+  assert.match(renderHtmlReport(result), /<b>sample<\/b>opt-in rules/);
+  const fr = {
+    ...result,
+    engine: { ...result.engine, locale: { requested: 'fr', resolved: 'fr', reason: 'ok' } }
+  };
+  assert.match(renderHtmlReport(fr), /<b>sample<\/b>règles optionnelles/);
+  result.engine.optInRules = [];
+  assert.doesNotMatch(renderHtmlReport(result), /opt-in rules/);
+});
+
+test('renderHtmlReport: cards cap a long selector and summary, the table keeps them whole', () => {
+  const selector = `html > body > ${'div > '.repeat(60)}img`;
+  const summary = `Missing alt attribute on <img>. ${'Context. '.repeat(40)}`.trim();
+  const result = {
+    checksResults: [
+      makeCheckResult({
+        ruleId: 'img-alt-present',
+        outcome: 'fail',
+        occurrences: [{ selector, summary, hint: 'Add an alt attribute.', html: '<img>' }]
+      })
+    ],
+    rulesResults: []
+  };
+  const report = renderHtmlReport(result);
+  const card = report.slice(
+    report.indexOf('<div class="card">'),
+    report.indexOf('<h2>', report.indexOf('<div class="card">'))
+  );
+
+  assert.ok(!card.includes(selector), 'card shows the full selector');
+  assert.match(card, /<code>html &gt; body &gt; (div &gt; )+[^<]*…<\/code>/);
+  assert.match(
+    card,
+    /Missing alt attribute on &lt;img&gt;\. (Context\. )+[^<]*… — Add an alt attribute\./
+  );
+  const data = JSON.parse(report.match(/id="report-data">(.*?)<\/script>/)[1]);
+  assert.equal(data[0].selector, selector);
+  assert.equal(data[0].summary, summary);
 });

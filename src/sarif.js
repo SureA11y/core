@@ -26,6 +26,7 @@
 
 const path = require('path');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { standardOfEntry } = require('./coverage/standards.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -60,11 +61,27 @@ function buildRemainingBaselineMap(baselineEntries) {
   return remaining;
 }
 
-function wcagTags(check) {
+// `normativeMappings` also carries other standards (EN 301 549 clauses, say) and
+// WCAG's own non-normative documents (`type: 'Understanding'`), each with a
+// `requirement` of its own. Only a WCAG Success Criterion earns a `wcag-` tag;
+// an entry naming no standard is treated as WCAG, the engine's default.
+function isWcagCriterion(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
+function ruleTags(check) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
   for (const m of mappings) {
-    if (m && m.requirement) tags.add(`wcag-${m.requirement}`);
+    if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
+  }
+  // Each registered standard's entry gets a tag prefixed with its key
+  // (src/coverage/standards.js). The tag carries no version: EN 301 549 numbers
+  // a clause the same way in every version that has it, so two versions
+  // collapse into one tag.
+  for (const m of mappings) {
+    const standard = standardOfEntry(m);
+    if (standard) tags.add(`${standard.key}-${m.requirement}`);
   }
   return Array.from(tags);
 }
@@ -79,7 +96,7 @@ function buildRule(check) {
     // worst-case, rule-level default is "warning"; automatic rules can
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
-    properties: { tags: wcagTags(check) }
+    properties: { tags: ruleTags(check) }
   };
 }
 
@@ -122,6 +139,19 @@ function getOccurrenceOutcome(check, occurrence) {
         : null);
   if (occurrenceOutcome) return occurrenceOutcome;
   return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
+}
+
+// The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
+// from a 2.2 one, and the opt-in rules it added beyond that target. Absent on
+// results from engines that predate the fields.
+function runProperties(result) {
+  const engine = (result && result.engine) || {};
+  const props = {};
+  if (engine.wcagVersion) props.wcagVersion = engine.wcagVersion;
+  if (engine.profile) props.profile = engine.profile;
+  if (Array.isArray(engine.optInRules) && engine.optInRules.length)
+    props.optInRules = engine.optInRules.slice();
+  return Object.keys(props).length ? props : null;
 }
 
 function renderSarifReport(result, options = {}) {
@@ -197,6 +227,7 @@ function renderSarifReport(result, options = {}) {
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.
         results: [...failResults, ...cantTellResults],
+        ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
           ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }
           : {})

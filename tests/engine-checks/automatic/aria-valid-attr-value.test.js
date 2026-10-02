@@ -96,11 +96,72 @@ test(`${RULE_ID}: pass for any non-empty string-typed attribute value`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when idref-list references only a non-existent id`, () => {
+test(`${RULE_ID}: cantTell when idref-list references only a non-existent id`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-labelledby="does_not_exist"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.valueReason, 'idref-list-none-found');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_VALUE_TARGET_ABSENT');
+  assert.equal(rule.occurrences[0].i18n.hintKey, 'ariaValidAttrValue_hint_cantTell_idrefList');
+});
+
+test(`${RULE_ID}: a dangling aria-describedby or aria-labelledby on a named button is asked about; a dangling aria-activedescendant still fails`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <button id="a" aria-describedby="nope">a</button>
+    <button id="b" aria-labelledby="nope">b</button>
+  </body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+    assert.ok(rule.occurrences.every((o) => o.occurrenceOutcome === 'cantTell'));
+  }
+  const active = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <div role="listbox" tabindex="0" aria-label="l" aria-activedescendant="nope"></div>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(active, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+test(`${RULE_ID}: integers outside the range WAI-ARIA sets fail`, () => {
+  const cases = [
+    ['<div role="heading" aria-level="0">t</div>', 'aria-level'],
+    ['<ul><li aria-posinset="0" aria-setsize="3">a</li></ul>', 'aria-posinset'],
+    ['<ul><li aria-setsize="-2">a</li></ul>', 'aria-setsize'],
+    ['<ul><li aria-setsize="0">a</li></ul>', 'aria-setsize'],
+    [
+      '<div role="grid"><div role="row" aria-rowindex="0"><div role="gridcell">a</div></div></div>',
+      'aria-rowindex'
+    ],
+    [
+      '<div role="table"><div role="row"><div role="cell" aria-colspan="0">a</div></div></div>',
+      'aria-colspan'
+    ],
+    [
+      '<div role="table"><div role="row"><div role="cell" aria-rowspan="-1">a</div></div></div>',
+      'aria-rowspan'
+    ]
+  ];
+  for (const [body, attr] of cases) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+    for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      assert.equal(rule.occurrences[0].data.details.attr, attr);
+      assert.equal(rule.occurrences[0].data.details.valueReason, 'integer-out-of-range');
+    }
+  }
+});
+
+test(`${RULE_ID}: integers inside the range pass, including aria-setsize="-1" and aria-rowspan="0"`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <div role="heading" aria-level="1">t</div>
+    <ul><li aria-posinset="1" aria-setsize="-1">a</li></ul>
+    <div role="table" aria-colcount="-1"><div role="row"><div role="cell" aria-rowspan="0" aria-colspan="1">a</div></div></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: pass when idref-list is partially dangling (at least one id resolves)`, () => {
@@ -196,17 +257,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'avav_case_06',
     'avav_case_07',
     'avav_case_08',
     'avav_case_09',
-    'avav_case_14',
-    'avav_case_15'
+    'avav_case_15',
+    'avav_case_18',
+    'avav_case_19'
   ];
-  const expectedCantTellIds = ['avav_case_17'];
+  const expectedCantTellIds = ['avav_case_14', 'avav_case_17'];
   const expectedNoOccIds = [
     'avav_case_01',
     'avav_case_02',
@@ -217,7 +279,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_11',
     'avav_case_12',
     'avav_case_13',
-    'avav_case_16'
+    'avav_case_16',
+    'avav_case_20'
   ];
 
   for (const id of expectedFailIds) {

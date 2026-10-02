@@ -25,12 +25,17 @@
  * - Within one declaration block, importance outranks order, so the effective
  *   declaration is the last `!important` one for that property.
  * - ACT 78fd32/24afc2/9e45ec additionally require the text to contain a soft
- *   wrap break, which layout would settle and this cannot. Two shapes do
- *   establish that no wrap is possible -- text not allowed to wrap, and a
- *   fixed-width element inside a horizontally scrolling ancestor -- and those
- *   are reported for review rather than failed. Anything else is treated as
- *   wrapping, so a forced value on text that never wraps for some other reason
- *   is still reported.
+ *   wrap break, which layout would settle and this cannot. Three shapes
+ *   establish that no wrap is possible -- text not allowed to wrap, a
+ *   fixed-width element inside a horizontally scrolling ancestor, and text
+ *   with no break opportunity (one word, no CJK characters) -- and those are
+ *   reported for review rather than failed.
+ * - Text short enough to fit on one line may never wrap either, so it is also
+ *   reviewed rather than failed. "Short" is an estimate made without layout:
+ *   the text's length at half an em per character (a full em for CJK and
+ *   other wide characters) fits within 320 CSS pixels, the narrowest width
+ *   WCAG 1.4.10 asks content to reflow to. Longer text is treated as wrapping
+ *   and fails.
  */
 
 const id = 'avoid-inline-spacing';
@@ -89,6 +94,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
   const undecided = [];
   const noWrap = [];
+  const shortText = [];
 
   // Within one declaration block, importance wins over order, so the last
   // important declaration is the one that takes effect. Passed Example 5 of ACT
@@ -182,6 +188,32 @@ function runInPage(ctx) {
       if (overflowX === 'scroll' || overflowX === 'auto') return true;
     }
     return false;
+  }
+
+  // Text with no break opportunity cannot take a soft wrap break: a single
+  // word of a script that separates words with spaces. CJK text can break
+  // between most characters, so it never counts as unbreakable here.
+  const WIDE_CHAR =
+    /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
+  function blockText(el) {
+    return String(el.textContent || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function hasNoBreakOpportunity(text) {
+    return !!text && !/\s/.test(text) && !WIDE_CHAR.test(text);
+  }
+
+  // Whether the text may fit on one line at the narrowest width WCAG 1.4.10
+  // asks content to reflow to (320 CSS pixels), estimated without layout at
+  // half an em per character and a full em per wide character.
+  const REFLOW_WIDTH_PX = 320;
+  function mayFitOnOneLine(el, text) {
+    const fontSize = fontSizeOf(computedStyleOf(el)) || 16;
+    let ems = 0;
+    for (const ch of text) ems += WIDE_CHAR.test(ch) ? 1 : 0.5;
+    return ems * fontSize <= REFLOW_WIDTH_PX;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -290,8 +322,13 @@ function runInPage(ctx) {
     // A forced value on text that cannot wrap is outside these ACT rules'
     // applicability, and whether it wraps is not decidable here, so it is
     // reported for review rather than failed.
-    if (cannotSoftWrap(el)) {
+    const text = blockText(el);
+    if (cannotSoftWrap(el) || hasNoBreakOpportunity(text)) {
       noWrap.push({ el, props: flagged.slice() });
+      continue;
+    }
+    if (mayFitOnOneLine(el, text)) {
+      shortText.push({ el, props: flagged.slice() });
       continue;
     }
 
@@ -348,6 +385,39 @@ function runInPage(ctx) {
           }
         }
       })
+    )
+    .concat(
+      shortText.map(({ el, props }) =>
+        helpers.reportOccurrence(el, {
+          occurrenceOutcome: 'cantTell',
+          summary: `This element's inline style forces ${props.join(', ')} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.`,
+          hint: 'Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.',
+          i18n: {
+            summaryKey: 'avoidInlineSpacing_summary_cantTell_shortText',
+            hintKey: 'avoidInlineSpacing_hint_cantTell_shortText',
+            params: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props.join(', ')
+            }
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
+            evidence: {
+              element: (el.tagName || '').toLowerCase(),
+              properties: props,
+              reasonCode: 'INLINE_SPACING_SHORT_TEXT'
+            }
+          },
+          data: {
+            details: {
+              reasonCode: 'INLINE_SPACING_SHORT_TEXT',
+              element: (el.tagName || '').toLowerCase(),
+              properties: props
+            }
+          }
+        })
+      )
     )
     .concat(
       undecided.map(({ el, props }) =>

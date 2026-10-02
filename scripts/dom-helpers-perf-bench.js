@@ -39,7 +39,7 @@ function hrMs(startNs) {
 function gcIfAvailable() {
   try {
     if (typeof global.gc === 'function') global.gc();
-  } catch (_) {
+  } catch {
     // no-throws
   }
 }
@@ -96,7 +96,7 @@ function getCounterSnapshot(helpers) {
   try {
     const s = helpers.getPerfStats && helpers.getPerfStats();
     return s && s.counters ? { ...s.counters } : {};
-  } catch (_) {
+  } catch {
     return {};
   }
 }

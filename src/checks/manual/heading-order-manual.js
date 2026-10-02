@@ -11,6 +11,8 @@
  *   Applies whenever the page contains two or more heading elements
  *   (native <h1>-<h6>, or explicit role="heading" with aria-level;
  *   default level 2 per the ARIA spec when aria-level is absent/invalid).
+ *   A native <hx> with a valid aria-level (a positive integer) takes that
+ *   level, as browsers expose it; otherwise it takes its tag level.
  * @expectation
  *   In document order, each heading's level is no more than one greater
  *   than the highest heading level seen so far. Jumping deeper by more
@@ -73,7 +75,13 @@ function runInPage(ctx) {
     }
     const tag = el.tagName ? el.tagName.toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
-    return m ? parseInt(m[1], 10) : 0;
+    if (!m) return 0;
+    // Browsers expose a valid aria-level on <hx> in place of the tag level.
+    const ariaLevel = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
+      return parseInt(ariaLevel, 10);
+    }
+    return parseInt(m[1], 10);
   }
 
   const nodes = helpers.queryAllSmart

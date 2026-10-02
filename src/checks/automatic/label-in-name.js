@@ -9,7 +9,7 @@
  * @standard WCAG 2.2
  * @sc 2.5.3
  * @applicability
- *   Applies to controls that carry aria-label or aria-labelledby, are
+ *   Applies to controls named by aria-label or aria-labelledby, are
  *   visually rendered, and have visible label text this engine can extract
  *   deterministically, from an associated <label>, from the control's own
  *   rendered text, or from the elements aria-labelledby points at. The
@@ -18,13 +18,20 @@
  *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
  *   minus anything hidden or disabled. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
- *   what this SC is about.
+ *   what this SC is about. An aria-label that is empty once trimmed, or an
+ *   aria-labelledby whose ids point at nothing or only at elements with no
+ *   text, names nothing: the accessible name then comes from the next
+ *   source (the content, a <label>, title...), as for a control without
+ *   them, so the control is out of scope.
  * @expectation
  *   The accessible name contains the visible label's words, adjacent and in
  *   order. The comparison is over words rather than characters:
- *   parenthesised text is dropped, case is folded, text is NFKD-normalised,
- *   and every non-letter/digit becomes a separator, so punctuation and
- *   spacing differences never decide the outcome. Four shapes markup cannot
+ *   parenthesised text is dropped, case is folded, text is NFKC-normalised,
+ *   and every character that is not a letter, digit or combining mark
+ *   becomes a separator, so punctuation and spacing differences never
+ *   decide the outcome. Accents are not folded: "Déposer" stays one word,
+ *   and a name that drops an accent ("Deposer") does not contain it. Four
+ *   shapes markup cannot
  *   settle are reported as cantTell instead of fail: a word hyphenated
  *   differently in the two places; a visible word the author may have
  *   abbreviated, marked by its trailing period; visible text rendered
@@ -86,20 +93,23 @@ function runInPage(ctx) {
   }
 
   // WCAG 2.5.3's label-in-name comparison is over words, not characters: drop
-  // parenthesised text, case-fold and NFKD-normalise, then reduce every
-  // non-letter/digit to a space. `hyphensJoin` deletes hyphens instead of
+  // parenthesised text, case-fold and NFKC-normalise, then reduce every
+  // character that is not a letter, digit or combining mark to a space.
+  // NFKC folds compatibility forms (ligatures, full-width letters) but keeps
+  // accented letters whole; with NFKD, "déposer" split at its combining
+  // accent into "de" and "poser". `hyphensJoin` deletes hyphens instead of
   // splitting on them, which distinguishes a real mismatch from one that is
   // only a hyphenation difference.
   function tokenize(s, hyphensJoin) {
     let v = (s == null ? '' : String(s)).replace(/\([^)]*\)/g, ' ').toLowerCase();
     try {
-      v = v.normalize('NFKD');
+      v = v.normalize('NFKC');
     } catch {
       // Realm without String#normalize: the word comparison below still holds.
     }
     if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
     return v
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
       .split(' ')
       .filter(Boolean);
   }
@@ -129,7 +139,7 @@ function runInPage(ctx) {
   function abbreviatedWords(s) {
     const out = new Set();
     for (const w of (s == null ? '' : String(s)).split(/\s+/)) {
-      const m = /^([\p{L}\p{N}]+)\.$/u.exec(w);
+      const m = /^([\p{L}\p{N}\p{M}]+)\.$/u.exec(w);
       if (m) out.add(m[1].toLowerCase());
     }
     return out;
@@ -231,7 +241,6 @@ function runInPage(ctx) {
 
     const parts = [];
     let n;
-    // eslint-disable-next-line no-cond-assign
     while ((n = walker.nextNode())) {
       try {
         const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
@@ -435,8 +444,6 @@ function runInPage(ctx) {
     // Applicability: only when we can deterministically extract visible label text.
     if (!visibleNorm) continue;
 
-    applicableCount += 1;
-
     let acc = { present: false, value: '', mechanism: 'none', flags: [] };
     try {
       acc = helpers.getAccessibleNameInfo
@@ -445,6 +452,26 @@ function runInPage(ctx) {
     } catch {
       acc = { present: false, value: '', mechanism: 'none', flags: ['exception'] };
     }
+
+    // An aria-label empty once trimmed, or an aria-labelledby that yields no
+    // text, is skipped by the accessible name computation (AccName 1.2 steps
+    // 2B and 2C): the name comes from the next source, the content for a
+    // button or link, as if neither attribute were there. Such a control is
+    // not named by aria-label or aria-labelledby, so it is out of scope.
+    // getAccessibleNameInfo leaves name from content to its callers, which
+    // made `<button aria-labelledby="missing">Save</button>` fail with an
+    // empty name although its name is "Save".
+    const flags = acc && Array.isArray(acc.flags) ? acc.flags : [];
+    const ariaNamed =
+      acc && (acc.mechanism === 'aria-label' || acc.mechanism === 'aria-labelledby');
+    if (
+      !ariaNamed &&
+      (flags.includes('aria-labelledby-empty-or-unresolvable') ||
+        flags.includes('aria-label-empty'))
+    )
+      continue;
+
+    applicableCount += 1;
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 

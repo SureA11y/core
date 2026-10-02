@@ -10,7 +10,7 @@ let assertRule;
 try {
   ({ runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml'));
   ({ assertRule } = require('../../helpers/assertRule'));
-} catch (e) {}
+} catch {}
 
 const RULE_ID = 'combobox-name-present';
 
@@ -67,6 +67,20 @@ test('combobox-name-present: fail even with visible text content (role="combobox
   assert.match(rule.occurrences[0].hint, /aria-label/i);
 });
 
+test(`${RULE_ID}: a placeholder names an <input role="combobox"> (HTML-AAM's last name source)`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><input role="combobox" aria-expanded="false" placeholder="Ville" id="a"></body></html>`;
+  for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a placeholder attribute on an element that is not a text-like input names nothing`, () => {
+  const html = `<!doctype html><html lang="fr"><head><title>t</title></head><body><div role="combobox" tabindex="0" placeholder="x" id="a"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test('combobox-name-present: role=combobox with visible content but no author-provided name => fail', () => {
   const html = `<!doctype html><html><body><div role='combobox' tabindex='0'>Search</div></body></html>`;
 
@@ -95,9 +109,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
+    'combobox_case_26',
     'combobox_case_23',
     'combobox_case_24',
     'combobox_case_01',
@@ -109,6 +124,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/combobox-name-present-all-sce
   ];
 
   const expectedNoOccIds = [
+    'combobox_case_25',
     'combobox_case_12',
     'combobox_case_13',
     'combobox_case_03',
