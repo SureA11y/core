@@ -29,3 +29,23 @@ jobs:
       - run: npm run fixtures:markers:check
       - run: npm run docs:rule-catalog:check
       - run: npm run rule-examples:coverage:check
+
+  act-corpus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm ci
+      - id: week
+        run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+      # Test case pages are content-addressed, but the rule pages listing them
+      # change, so the corpus is refetched once a week.
+      - uses: actions/cache@v4
+        with:
+          path: .act-cache
+          key: act-corpus-${{ steps.week.outputs.key }}
+      - name: ACT corpus has no false positives
+        run: node scripts/act-report.js --out="$RUNNER_TEMP/act-report.jsonld"
