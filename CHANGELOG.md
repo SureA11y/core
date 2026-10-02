@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- CI runs ACT's test-case corpus on every push and pull request, and the release workflow runs it against the live corpus before publishing; either fails on a false positive, or when the corpus cannot be fetched in full. The false positive fixed below reached 1.8.0 because the corpus only ran after the release was tagged.
+- ACT rule 4b1c6c is mapped to `identical-iframes-same-purpose`, so the implementation report covers it. The rule reports `cantTell`, never `fail`, for frames sharing a name but embedding different resources, so the mapping is partial.
+
 ### Fixed
 - `autocomplete-valid` no longer fails a well-formed field name that does not suit its control, such as `bday-day` on `<input type="tel">`, which 1.8.0 began failing. The name still identifies the input's purpose, which is all WCAG 1.3.5 asks, and ACT rule 73f2c2 passes this exact case (Passed Example 8), so 1.8.0 reported a false positive in the ACT implementation report. Its reason code `AUTOCOMPLETE_FIELD_CONTROL_MISMATCH` is retired with the failure it named, so a stored baseline entry or Code Scanning alert for it closes. The rule's other 1.8.0 fixes stay: `impp` and the `tel-local-prefix`/`tel-local-suffix` field names, and controls disabled by a disabled `<fieldset>`.
 
