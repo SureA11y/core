@@ -1,9 +1,8 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "ruleIds": [
     "accesskeys",
-    "area-alt-decorative",
     "area-alt-present",
     "area-alt-quality",
     "aria-allowed-attr",
@@ -129,6 +128,7 @@
     "table-th-has-data-cells",
     "target-size-minimum",
     "td-has-header",
+    "text-spacing-content-loss",
     "textbox-name-present",
     "tooltip-name-present",
     "treeitem-name-present",
@@ -207,12 +207,14 @@
       "ARIA_ATTR_VALUE_TARGET_ABSENT"
     ],
     "autocomplete-valid": [
+      "AUTOCOMPLETE_FIELD_CONTROL_MISMATCH",
       "AUTOCOMPLETE_VALUE_INVALID"
     ],
     "avoid-inline-spacing": [
       "INLINE_SPACING_IMPORTANT",
       "INLINE_SPACING_NOT_RESOLVABLE",
-      "INLINE_SPACING_NO_SOFT_WRAP"
+      "INLINE_SPACING_NO_SOFT_WRAP",
+      "INLINE_SPACING_SHORT_TEXT"
     ],
     "binary-control-name-present": [
       "name_missing"
@@ -256,15 +258,17 @@
       "cssHiddenTabbable_runtimeRedirect_needsReview"
     ],
     "css-orientation-lock": [
+      "ORIENTATION_MEDIA_HIDES_CONTENT",
       "ORIENTATION_MEDIA_ROTATE_TRANSFORM",
       "STYLESHEETS_NOT_READABLE"
     ],
     "definition-list-children-valid": [
+      "DL_DT_DD_ORDER",
       "DL_INVALID_CHILD",
       "DL_NO_DT_DD"
     ],
     "deprecated-elements-not-used": [
-      "DEPRECATED_NON_STOPPABLE_ELEMENT"
+      "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
     ],
     "dialog-name-present": [
       "name_missing"
@@ -334,9 +338,6 @@
     "iframe-name-present": [
       "IFRAME_NAME_MISSING"
     ],
-    "iframe-title-unique": [
-      "IFRAME_TITLE_DUPLICATE"
-    ],
     "image-redundant-alt": [
       "IMAGE_ALT_REDUNDANT"
     ],
@@ -382,7 +383,9 @@
       "LANDMARK_NOT_UNIQUE"
     ],
     "link-in-text-block": [
-      "COLOR_ONLY_DIFFERENTIATION"
+      "BACKGROUND_IMAGE_OR_GRADIENT",
+      "COLOR_ONLY_DIFFERENTIATION",
+      "LINK_COLOR_CONTRAST_ONLY"
     ],
     "link-name-present": [
       "name_missing"
@@ -423,18 +426,21 @@
       "name_missing"
     ],
     "mouse-only-event-handlers": [
+      "MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE",
       "MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT"
     ],
     "nested-interactive-controls-absent": [
       "NESTED_INTERACTIVE_CONTROL"
     ],
     "no-autoplay-audio": [
-      "AUTOPLAY_NO_CONTROLS_MECHANISM"
+      "AUTOPLAY_NO_CONTROLS_MECHANISM",
+      "EMBEDDED_SOUND_SOURCE"
     ],
     "option-name-present": [
       "name_missing"
     ],
     "p-as-heading": [
+      "BOLD_LARGE_DIV",
       "BOLD_LARGE_PARAGRAPH"
     ],
     "page-has-heading-one": [
@@ -520,6 +526,9 @@
     "td-has-header": [
       "TD_NO_ASSOCIATED_HEADER"
     ],
+    "text-spacing-content-loss": [
+      "STYLESHEET_IMPORTANT"
+    ],
     "textbox-name-present": [
       "name_missing"
     ],
@@ -533,16 +542,12 @@
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [
-      "CAPTIONS_TRACK_NOT_DETECTED"
+      "CAPTIONS_TRACK_NOT_DETECTED",
+      "SUBTITLES_TRACK_ONLY"
     ]
   },
   "retired": {
-    "ruleIds": {
-      "area-alt-decorative": "Removed without deprecation, an accepted exception (docs/API_STABILITY.md, \"A removal that predates this guard\"): it asked whether an empty-alt <area> was decorative, a question with no legitimate yes, and area-alt-present now fails that case."
-    },
-    "reasonCodes": {
-      "deprecated-elements-not-used/DEPRECATED_NON_STOPPABLE_ELEMENT": "Retired with the failure it named, by a correctness fix: the rule no longer fails <blink>, which no browser makes blink, and asks about <marquee> (MARQUEE_PAUSE_MECHANISM_UNKNOWN), since the page may offer its own pause control.",
-      "iframe-title-unique/IFRAME_TITLE_DUPLICATE": "Retired with the finding it named: iframe-title-unique is deprecated in favour of identical-iframes-same-purpose and reports notApplicable on every page, since WCAG 4.1.2 does not ask frame names to be unique and the question ACT 4b1c6c does ask is the successor's."
-    }
+    "ruleIds": {},
+    "reasonCodes": {}
   }
 }
