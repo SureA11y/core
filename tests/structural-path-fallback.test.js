@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { emitsNothing } = require('./helpers/emitsNothing');
 const { ruleDirs } = require('../scripts/lib/rule-dirs');
 
 // An occurrence that reaches the engine without its element makes the engine
@@ -34,7 +35,9 @@ function ruleFiles() {
 }
 
 test('the number of rules bypassing reportOccurrence only shrinks', () => {
-  const files = ruleFiles();
+  // A rule that can never report an occurrence neither uses the helper nor
+  // bypasses it (iframe-title-unique, deprecated and reduced to notApplicable).
+  const files = ruleFiles().filter((f) => !emitsNothing(f));
   // A variant has no code of its own: it runs its base rule's, counted there.
   const handBuilt = files
     .filter((f) => typeof require(f).from !== 'string')

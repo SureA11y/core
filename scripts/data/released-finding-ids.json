@@ -541,7 +541,8 @@
       "area-alt-decorative": "Removed without deprecation, an accepted exception (docs/API_STABILITY.md, \"A removal that predates this guard\"): it asked whether an empty-alt <area> was decorative, a question with no legitimate yes, and area-alt-present now fails that case."
     },
     "reasonCodes": {
-      "deprecated-elements-not-used/DEPRECATED_NON_STOPPABLE_ELEMENT": "Retired with the failure it named, by a correctness fix: the rule no longer fails <blink>, which no browser makes blink, and asks about <marquee> (MARQUEE_PAUSE_MECHANISM_UNKNOWN), since the page may offer its own pause control."
+      "deprecated-elements-not-used/DEPRECATED_NON_STOPPABLE_ELEMENT": "Retired with the failure it named, by a correctness fix: the rule no longer fails <blink>, which no browser makes blink, and asks about <marquee> (MARQUEE_PAUSE_MECHANISM_UNKNOWN), since the page may offer its own pause control.",
+      "iframe-title-unique/IFRAME_TITLE_DUPLICATE": "Retired with the finding it named: iframe-title-unique is deprecated in favour of identical-iframes-same-purpose and reports notApplicable on every page, since WCAG 4.1.2 does not ask frame names to be unique and the question ACT 4b1c6c does ask is the successor's."
     }
   }
 }

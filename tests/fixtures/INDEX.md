@@ -4,13 +4,15 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **133**. With fixture: **133**. Without fixture: **0**.
+Total rules: **133**. With fixture: **132**. Without fixture: **1**.
 
-## Rules WITHOUT a fixture (0)
+## Rules WITHOUT a fixture (1)
 
-None — every rule has a fixture.
+| Rule ID | Type | Title | Rule file | Test file |
+|---|---|---|---|---|
+| iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 
-## Rules WITH a fixture (133)
+## Rules WITH a fixture (132)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -72,7 +74,6 @@ None — every rule has a fixture.
 | identical-links-same-purpose | manual | `tests/fixtures/identical-links-same-purpose-all-scenarios.html` | 1 | 0 | 0 | 0 | 1 |
 | iframe-focusable-content | automatic | `tests/fixtures/iframe-focusable-content-all-scenarios.html` | 2 | 1 | 0 | 0 | 1 |
 | iframe-name-present | automatic | `tests/fixtures/iframe-name-present-all-scenarios.html` | 9 | 3 | 3 | 0 | 3 |
-| iframe-title-unique | automatic | `tests/fixtures/iframe-title-unique-all-scenarios.html` | 6 | 3 | 0 | 2 | 1 |
 | image-redundant-alt | manual | `tests/fixtures/image-redundant-alt-all-scenarios.html` | 3 | 0 | 0 | 1 | 2 |
 | img-alt-decorative | manual | `tests/fixtures/img-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | img-alt-present | automatic | `tests/fixtures/img-alt-present-all-scenarios.html` | 33 | 6 | 10 | 0 | 17 |

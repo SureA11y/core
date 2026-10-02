@@ -337,9 +337,6 @@
     "iframe-name-present": [
       "IFRAME_NAME_MISSING"
     ],
-    "iframe-title-unique": [
-      "IFRAME_TITLE_DUPLICATE"
-    ],
     "image-redundant-alt": [
       "IMAGE_ALT_REDUNDANT"
     ],

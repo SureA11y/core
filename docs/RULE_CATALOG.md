@@ -53,7 +53,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`identical-iframes-same-purpose`](#identical-iframes-same-purpose) | Frames with the same name embed the same resource | 4.1.2 | A | medium | moderate |
 | [`iframe-focusable-content`](#iframe-focusable-content) | Frames with tabindex="-1" must not contain focusable content | 2.1.1 | A | high | moderate |
 | [`iframe-name-present`](#iframe-name-present) | Frames have an accessible name | 4.1.2 | A | high | serious |
-| [`iframe-title-unique`](#iframe-title-unique) | Frame titles must be unique | 4.1.2 | A | high | moderate |
+| [`iframe-title-unique`](#iframe-title-unique) | Frame title uniqueness (deprecated) | 4.1.2 | A | high | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
@@ -968,15 +968,15 @@ Checks that &lt;iframe&gt;/&lt;frame&gt; elements expose a non-empty accessible 
 
 ### `iframe-title-unique`
 
-**Frame titles must be unique**
+**Frame title uniqueness (deprecated)**
 
 automatic · WCAG 4.1.2 (A) · confidence high · default severity moderate
 
-Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.
+Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.
 
-**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements that carry a non-empty title attribute.
+**Applies to.** Nothing. The rule is deprecated and reports notApplicable on every page. Its id stays in the catalog, with meta.deprecated set and deprecation.replacedBy naming the successor, so a runOnly list, a stored baseline or an open Code Scanning alert that holds the id keeps resolving until the file is removed in 2.0.0 (docs/API_STABILITY.md, "Rule-ID deprecation policy").
 
-**Expectation.** Frames in scope that share the same (trimmed, case-sensitive) title attribute value load the same resource (the same resolved src, or the same srcdoc). Such a group passes: the same content under the same title is what ACT 4b1c6c accepts. A group whose frames load different resources is cantTell: a shared title may stop assistive technology users from telling the frames apart, but the frames may also serve the same purpose (two instances of one widget), which only a person can judge. Every frame of such a group is reported.
+**Expectation.** None. The check this rule used to make, that no two frames share a title attribute, is not a WCAG 4.1.2 requirement: the criterion asks that a frame's name be programmatically determinable, not unique, and ACT rule 4b1c6c accepts identical names on frames that embed equivalent resources. identical-iframes-same-purpose asks the question 4b1c6c does ask, of the computed accessible name, which for a frame is the title attribute unless aria-label or aria-labelledby overrides it.
 
 ### `image-redundant-alt`
 

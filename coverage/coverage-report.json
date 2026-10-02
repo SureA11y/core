@@ -2056,7 +2056,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Frame titles must be unique",
+      "title": "Frame title uniqueness (deprecated)",
       "tags": [
         "wcag2a",
         "wcag412",
@@ -2090,7 +2090,7 @@
       "coverage": {
         "facetsBySc": {
           "4.1.2": [
-            "iframe-title-unique"
+            "identical-iframes-same-purpose"
           ]
         }
       }
@@ -7136,11 +7136,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 36,
+          "full": 35,
           "manual": 2,
           "partial": 1
         },
@@ -7372,19 +7372,12 @@
             ]
           },
           {
-            "id": "iframe-title-unique",
-            "label": "No two <iframe>/<frame> elements share the same title attribute value",
-            "automation": "full",
-            "coveredBy": [
-              "iframe-title-unique"
-            ]
-          },
-          {
             "id": "identical-iframes-same-purpose",
             "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
             "automation": "partial",
             "coveredBy": [
-              "identical-iframes-same-purpose"
+              "identical-iframes-same-purpose",
+              "iframe-title-unique"
             ]
           },
           {
@@ -8545,11 +8538,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 36,
+          "full": 35,
           "manual": 2,
           "partial": 1
         },
@@ -8781,19 +8774,12 @@
             ]
           },
           {
-            "id": "iframe-title-unique",
-            "label": "No two <iframe>/<frame> elements share the same title attribute value",
-            "automation": "full",
-            "coveredBy": [
-              "iframe-title-unique"
-            ]
-          },
-          {
             "id": "identical-iframes-same-purpose",
             "label": "<iframe>/<frame> elements sharing an accessible name embed the same resource",
             "automation": "partial",
             "coveredBy": [
-              "identical-iframes-same-purpose"
+              "identical-iframes-same-purpose",
+              "iframe-title-unique"
             ]
           },
           {

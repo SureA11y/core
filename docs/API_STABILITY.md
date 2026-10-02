@@ -139,7 +139,7 @@ The process:
 2. Leave it running normally for at least one full minor version cycle after the deprecation, so integrators pinned to `^x.y.0` have a real chance to see it before it's gone.
 3. Remove the rule file entirely in a future **major** version, documented under `### Removed`.
 
-No rule has been deprecated yet as of this document's introduction — this is the mechanism, ready for the first real case.
+`iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It also reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation and waiting for 2.0.0 to stop reporting one was not acceptable. That is a property of the retired check, not of deprecation: a deprecated rule whose results are still correct keeps producing them, as described above. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named and is listed, with its reason, under `retired` in `scripts/data/released-finding-ids.json` (see [Finding identity](#finding-identity)).
 
 ## See also
 

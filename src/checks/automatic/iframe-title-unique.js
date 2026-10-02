@@ -5,40 +5,45 @@
 /**
  * @check iframe-title-unique
  * @atomic true
- * @summary Frames that share a title attribute must load the same resource
+ * @summary Deprecated since 1.8.0, reports notApplicable; see identical-iframes-same-purpose
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to <iframe>/<frame> elements that carry a non-empty title
- *   attribute.
+ *   Nothing. The rule is deprecated and reports notApplicable on every
+ *   page. Its id stays in the catalog, with meta.deprecated set and
+ *   deprecation.replacedBy naming the successor, so a runOnly list, a
+ *   stored baseline or an open Code Scanning alert that holds the id keeps
+ *   resolving until the file is removed in 2.0.0 (docs/API_STABILITY.md,
+ *   "Rule-ID deprecation policy").
  * @expectation
- *   Frames in scope that share the same (trimmed, case-sensitive) title
- *   attribute value load the same resource (the same resolved src, or the
- *   same srcdoc). Such a group passes: the same content under the same
- *   title is what ACT 4b1c6c accepts. A group whose frames load different
- *   resources is cantTell: a shared title may stop assistive technology
- *   users from telling the frames apart, but the frames may also serve the
- *   same purpose (two instances of one widget), which only a person can
- *   judge. Every frame of such a group is reported.
+ *   None. The check this rule used to make, that no two frames share a
+ *   title attribute, is not a WCAG 4.1.2 requirement: the criterion asks
+ *   that a frame's name be programmatically determinable, not unique, and
+ *   ACT rule 4b1c6c accepts identical names on frames that embed equivalent
+ *   resources. identical-iframes-same-purpose asks the question 4b1c6c does
+ *   ask, of the computed accessible name, which for a frame is the title
+ *   attribute unless aria-label or aria-labelledby overrides it.
  * @implementation-notes
- * - Never fails: no WCAG criterion requires unique frame names, and the
- *   relevance of a title is a judgment.
- * - Distinct, atomic decision from iframe-name-present (presence):
- *   a frame can have a non-empty title while still failing uniqueness.
- * - Compares the title ATTRIBUTE specifically, not the full computed
- *   accessible name (aria-label could legitimately differ in wording even
- *   when title happens to collide).
- * - Not rule-gated on isAccTreeEligible: duplicate titles are a static
- *   markup property. Engine-level hidden-subtree filtering still applies
- *   unless engineOptions.includeHiddenElements is true.
+ * - Reduced to notApplicable rather than only marked deprecated because a
+ *   deprecated rule keeps running and reporting normally, and leaving the
+ *   old fail alive until 2.0.0 would have kept reporting a violation WCAG
+ *   does not define. docs/DESIGN_CHALLENGES.md records the decision.
+ * - IFRAME_TITLE_DUPLICATE is no longer emitted. It is retired with the
+ *   finding it named, recorded with its reason under `retired` in
+ *   scripts/data/released-finding-ids.json, so a stored baseline entry or
+ *   alert for it closes and tests/released-finding-ids.test.js knows the
+ *   code went on purpose.
+ * - The facet this rule covered under SC 4.1.2 is retired; the coverage
+ *   entry points at the successor's facet, so the catalog still shows where
+ *   the question is answered.
  */
 
 const id = 'iframe-title-unique';
 
 const meta = {
-  title: 'Frame titles must be unique',
+  title: 'Frame title uniqueness (deprecated)',
   description:
-    'Checks that frames sharing a title attribute value load the same resource; frames with different sources and the same title are asked about.',
+    'Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name embed the same resource is checked by identical-iframes-same-purpose.',
   i18n: {
     titleKey: 'iframeTitleUnique_title',
     descriptionKey: 'iframeTitleUnique_description'
@@ -59,104 +64,19 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['iframe-title-unique'] } }
+  deprecated: true,
+  deprecation: {
+    replacedBy: 'identical-iframes-same-purpose',
+    reason:
+      'A repeated title attribute is not a WCAG 4.1.2 violation, and identical-iframes-same-purpose already checks what ACT rule 4b1c6c asks: that frames sharing a name embed the same resource.',
+    sinceVersion: '1.8.0'
+  },
+  coverage: { facetsBySc: { '4.1.2': ['identical-iframes-same-purpose'] } }
 };
 
 function runInPage(ctx) {
-  const { helpers, rule } = ctx;
-
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('iframe, frame')
-    : helpers.queryAll('iframe, frame');
-
-  const groups = new Map(); // trimmed title -> elements[]
-  let applicableCount = 0;
-
-  for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-
-    const title = String(el.getAttribute('title') || '').trim();
-    if (!title) continue;
-
-    applicableCount += 1;
-
-    const list = groups.get(title);
-    if (list) list.push(el);
-    else groups.set(title, [el]);
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-
-  // The resource a frame loads: srcdoc wins over src, and src is resolved
-  // against the document base so "w.html" and "/w.html" can match.
-  function resourceKey(el) {
-    if (el.hasAttribute && el.hasAttribute('srcdoc')) {
-      return 'srcdoc:' + String(el.getAttribute('srcdoc'));
-    }
-    const raw = String(el.getAttribute('src') || '').trim();
-    if (!raw) return 'src:about:blank';
-    try {
-      const base = (el.ownerDocument && el.ownerDocument.baseURI) || undefined;
-      return 'src:' + new URL(raw, base).href;
-    } catch {
-      return 'src:' + raw;
-    }
-  }
-
-  const occurrences = [];
-
-  for (const [title, els] of groups) {
-    if (els.length < 2) continue;
-    const keys = els.map(resourceKey);
-    if (new Set(keys).size === 1) continue;
-
-    for (const el of els) {
-      const tag = el.tagName.toLowerCase();
-      occurrences.push(
-        helpers.reportOccurrence(el, {
-          summary: `This <${tag}>'s title "${title}" is shared with a frame that loads a different resource.`,
-          hint: 'Check whether these frames have the same content or purpose. If they do not, give each frame a distinct title describing its specific content or purpose.',
-          i18n: {
-            summaryKey: 'iframeTitleUnique_summary_cantTell',
-            hintKey: 'iframeTitleUnique_hint_cantTell',
-            params: { element: tag, title }
-          },
-          uncertainty: {
-            code: 'equivalence-unknown',
-            needed:
-              'Whether frames loading different resources under one title serve the same purpose.',
-            evidence: {
-              element: tag,
-              title,
-              resource: resourceKey(el),
-              otherResources: keys.filter((k) => k !== resourceKey(el)),
-              setSize: els.length
-            }
-          },
-          data: {
-            details: {
-              reasonCode: 'IFRAME_TITLE_DUPLICATE',
-              element: tag,
-              title,
-              duplicateCount: els.length
-            }
-          }
-        })
-      );
-    }
-  }
-
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const { rule } = ctx;
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };
