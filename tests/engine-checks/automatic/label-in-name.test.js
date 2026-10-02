@@ -294,6 +294,32 @@ test(`${RULE_ID}: a real mismatch alongside an uncertain one still fails the rul
   assert.deepStrictEqual(codes, ['POSSIBLE_ABBREVIATION', 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME']);
 });
 
+// AccName 1.2 skips an aria-labelledby that yields no text and an aria-label
+// that is empty once trimmed, so the name comes from the content: the control
+// is not named by either attribute and the rule does not apply to it. The
+// dangling reference itself is aria-valid-attr-value's to report.
+test(`${RULE_ID}: aria-label or aria-labelledby that names nothing leaves the control out of scope`, () => {
+  for (const body of [
+    '<button aria-labelledby="missing">Save</button>',
+    '<a href="#" aria-labelledby="missing">Read the report</a>',
+    '<button aria-labelledby="empty">Save</button><span id="empty"></span>',
+    '<button aria-label="  ">Save</button>',
+    '<button aria-labelledby="missing" title="Close">Save</button>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an aria-labelledby that resolves to text is still compared`, () => {
+  const html = `<!doctype html><html><body>
+    <button aria-labelledby="missing name">Save</button><span id="name" hidden>Submit form</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');
@@ -304,7 +330,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'lin_case_02',
@@ -312,7 +338,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_06',
     'lin_case_14',
     'lin_case_15',
-    'lin_case_18'
+    'lin_case_18',
+    'lin_case_23'
   ];
 
   const expectedNoOccIds = [
@@ -328,7 +355,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_13',
     'lin_case_16',
     'lin_case_17',
-    'lin_case_19'
+    'lin_case_19',
+    'lin_case_20',
+    'lin_case_21',
+    'lin_case_22'
   ];
 
   for (const id of expectedFailIds) {

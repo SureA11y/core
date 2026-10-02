@@ -1258,12 +1258,12 @@
       "testFile": "tests/engine-checks/automatic/label-in-name.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/label-in-name-all-scenarios.html",
-      "totalCases": 19,
+      "totalCases": 23,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 6,
+        "FAIL": 7,
         "CANTTELL": 0,
-        "OTHER": 5
+        "OTHER": 8
       }
     },
     {

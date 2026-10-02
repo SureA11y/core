@@ -50676,8 +50676,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Applicability: only when we can deterministically extract visible label text.
     if (!visibleNorm) continue;
 
-    applicableCount += 1;
-
     let acc = { present: false, value: '', mechanism: 'none', flags: [] };
     try {
       acc = helpers.getAccessibleNameInfo
@@ -50686,6 +50684,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       acc = { present: false, value: '', mechanism: 'none', flags: ['exception'] };
     }
+
+    // An aria-label empty once trimmed, or an aria-labelledby that yields no
+    // text, is skipped by the accessible name computation (AccName 1.2 steps
+    // 2B and 2C): the name comes from the next source, the content for a
+    // button or link, as if neither attribute were there. Such a control is
+    // not named by aria-label or aria-labelledby, so it is out of scope.
+    // getAccessibleNameInfo leaves name from content to its callers, which
+    // made `<button aria-labelledby="missing">Save</button>` fail with an
+    // empty name although its name is "Save".
+    const flags = acc && Array.isArray(acc.flags) ? acc.flags : [];
+    const ariaNamed =
+      acc && (acc.mechanism === 'aria-label' || acc.mechanism === 'aria-labelledby');
+    if (
+      !ariaNamed &&
+      (flags.includes('aria-labelledby-empty-or-unresolvable') ||
+        flags.includes('aria-label-empty'))
+    )
+      continue;
+
+    applicableCount += 1;
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 

@@ -9,7 +9,7 @@
  * @standard WCAG 2.2
  * @sc 2.5.3
  * @applicability
- *   Applies to controls that carry aria-label or aria-labelledby, are
+ *   Applies to controls named by aria-label or aria-labelledby, are
  *   visually rendered, and have visible label text this engine can extract
  *   deterministically, from an associated <label>, from the control's own
  *   rendered text, or from the elements aria-labelledby points at. The
@@ -18,7 +18,11 @@
  *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
  *   minus anything hidden or disabled. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
- *   what this SC is about.
+ *   what this SC is about. An aria-label that is empty once trimmed, or an
+ *   aria-labelledby whose ids point at nothing or only at elements with no
+ *   text, names nothing: the accessible name then comes from the next
+ *   source (the content, a <label>, title...), as for a control without
+ *   them, so the control is out of scope.
  * @expectation
  *   The accessible name contains the visible label's words, adjacent and in
  *   order. The comparison is over words rather than characters:
@@ -440,8 +444,6 @@ function runInPage(ctx) {
     // Applicability: only when we can deterministically extract visible label text.
     if (!visibleNorm) continue;
 
-    applicableCount += 1;
-
     let acc = { present: false, value: '', mechanism: 'none', flags: [] };
     try {
       acc = helpers.getAccessibleNameInfo
@@ -450,6 +452,26 @@ function runInPage(ctx) {
     } catch {
       acc = { present: false, value: '', mechanism: 'none', flags: ['exception'] };
     }
+
+    // An aria-label empty once trimmed, or an aria-labelledby that yields no
+    // text, is skipped by the accessible name computation (AccName 1.2 steps
+    // 2B and 2C): the name comes from the next source, the content for a
+    // button or link, as if neither attribute were there. Such a control is
+    // not named by aria-label or aria-labelledby, so it is out of scope.
+    // getAccessibleNameInfo leaves name from content to its callers, which
+    // made `<button aria-labelledby="missing">Save</button>` fail with an
+    // empty name although its name is "Save".
+    const flags = acc && Array.isArray(acc.flags) ? acc.flags : [];
+    const ariaNamed =
+      acc && (acc.mechanism === 'aria-label' || acc.mechanism === 'aria-labelledby');
+    if (
+      !ariaNamed &&
+      (flags.includes('aria-labelledby-empty-or-unresolvable') ||
+        flags.includes('aria-label-empty'))
+    )
+      continue;
+
+    applicableCount += 1;
     const accName = acc && acc.value != null ? String(acc.value) : '';
     const accNorm = norm(accName);
 
