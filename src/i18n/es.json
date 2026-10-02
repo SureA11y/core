@@ -651,8 +651,6 @@
   "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
   "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
   "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping postal-code\", \"cc-number\").",
-  "autocompleteValid_summary_mismatch": "El nombre de campo de autocompletado \"{{fieldName}}\" no está permitido en un input de tipo \"{{inputType}}\".",
-  "autocompleteValid_hint_mismatch": "Usar un nombre de campo adecuado para este tipo de control, o cambiar el control (street-address requiere un textarea; email requiere un input de tipo text, search o email; bday-day requiere un input de tipo text, search o number).",
   "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
   "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
   "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",

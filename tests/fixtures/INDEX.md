@@ -37,7 +37,7 @@ Total rules: **133**. With fixture: **132**. Without fixture: **1**.
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 0 | 2 | 2 |
 | aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 20 | 10 | 7 | 2 | 1 |
-| autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 5 | 4 | 0 | 2 |
+| autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 7 | 2 | 0 | 2 |
 | avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 13 | 3 | 3 | 4 | 3 |
 | binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
 | button-name-present | automatic | `tests/fixtures/button-name-present-all-scenarios.html` | 29 | 11 | 12 | 0 | 6 |

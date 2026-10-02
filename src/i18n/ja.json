@@ -651,8 +651,6 @@
   "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
   "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
   "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping postal-code\"、\"cc-number\") を使用してください。",
-  "autocompleteValid_summary_mismatch": "自動入力のフィールド名 \"{{fieldName}}\" は、type が \"{{inputType}}\" の input では使用できません。",
-  "autocompleteValid_hint_mismatch": "このコントロールの種類に合うフィールド名を使用するか、コントロールを変更してください (street-address には textarea、email には type が text、search、email の input、bday-day には type が text、search、number の input が必要です)。",
   "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
   "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
   "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",

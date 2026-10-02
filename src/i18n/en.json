@@ -651,8 +651,6 @@
   "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
   "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
   "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping postal-code\", \"cc-number\").",
-  "autocompleteValid_summary_mismatch": "The autofill field name \"{{fieldName}}\" is not allowed on an input of type \"{{inputType}}\".",
-  "autocompleteValid_hint_mismatch": "Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).",
   "passwordPasteEnabled_title": "Authentication fields must not block pasting",
   "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
   "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",

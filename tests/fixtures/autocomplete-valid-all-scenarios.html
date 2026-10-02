@@ -31,13 +31,28 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — PASS: shipping + field name, on a textarea (street-address is multiline)</div>
-    <textarea autocomplete="shipping street-address" id="acv_case_03"></textarea>
+    <div class="case-title">03 — PASS: shipping + field name</div>
+    <input autocomplete="shipping street-address" id="acv_case_03">
   </div>
 
   <div class="case" id="case_04">
     <div class="case-title">04 — PASS: section + billing + contact modality + field name</div>
     <input autocomplete="section-billing shipping home tel" id="acv_case_04">
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — PASS: street-address on a single-line input</div>
+    <input autocomplete="street-address" id="acv_case_08">
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: email on a number input</div>
+    <input type="number" autocomplete="email" id="acv_case_09">
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: bday-day on a number input</div>
+    <input type="number" autocomplete="bday-day" id="acv_case_10">
   </div>
 
   <h2>B. Invalid</h2>
@@ -50,21 +65,6 @@
   <div class="case" id="case_06">
     <div class="case-title">06 — FAIL: unrecognized tokens</div>
     <input autocomplete="foo bar" id="acv_case_06">
-  </div>
-
-  <div class="case" id="case_08">
-    <div class="case-title">08 — FAIL: street-address on a single-line input</div>
-    <input autocomplete="street-address" id="acv_case_08">
-  </div>
-
-  <div class="case" id="case_09">
-    <div class="case-title">09 — FAIL: email on a number input</div>
-    <input type="number" autocomplete="email" id="acv_case_09">
-  </div>
-
-  <div class="case" id="case_10">
-    <div class="case-title">10 — PASS: bday-day on a number input</div>
-    <input type="number" autocomplete="bday-day" id="acv_case_10">
   </div>
 
   <div class="case" id="case_11">

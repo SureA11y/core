@@ -651,8 +651,6 @@
   "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
   "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
   "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping postal-code“, „cc-number“).",
-  "autocompleteValid_summary_mismatch": "Der Autofill-Feldname „{{fieldName}}“ ist auf einem input vom Typ „{{inputType}}“ nicht zulässig.",
-  "autocompleteValid_hint_mismatch": "Verwenden Sie einen Feldnamen, der zu diesem Steuerelementtyp passt, oder ändern Sie das Steuerelement (street-address erfordert ein textarea; email erfordert ein input vom Typ text, search oder email; bday-day erfordert ein input vom Typ text, search oder number).",
   "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
   "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
   "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",

@@ -4,6 +4,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `autocomplete-valid` no longer fails a well-formed field name that does not suit its control, such as `bday-day` on `<input type="tel">`, which 1.8.0 began failing. The name still identifies the input's purpose, which is all WCAG 1.3.5 asks, and ACT rule 73f2c2 passes this exact case (Passed Example 8), so 1.8.0 reported a false positive in the ACT implementation report. Its reason code `AUTOCOMPLETE_FIELD_CONTROL_MISMATCH` is retired with the failure it named, so a stored baseline entry or Code Scanning alert for it closes. The rule's other 1.8.0 fixes stay: `impp` and the `tel-local-prefix`/`tel-local-suffix` field names, and controls disabled by a disabled `<fieldset>`.
+
 ## [1.8.0] - 2026-10-02
 
 ### Added

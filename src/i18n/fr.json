@@ -651,8 +651,6 @@
   "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
   "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
   "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping postal-code », « cc-number »).",
-  "autocompleteValid_summary_mismatch": "Le nom de champ d’auto-remplissage « {{fieldName}} » n’est pas autorisé sur un champ input de type « {{inputType}} ».",
-  "autocompleteValid_hint_mismatch": "Utilisez un nom de champ adapté à ce type de champ, ou changez le champ (street-address demande un textarea ; email demande un input de type text, search ou email ; bday-day demande un input de type text, search ou number).",
   "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
   "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
   "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
