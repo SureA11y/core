@@ -227,6 +227,10 @@ function summarizeFacetCoverage(sc, facetDefs, rowsForSc) {
   const unknownFacetIds = [];
 
   for (const r of rowsForSc) {
+    // A deprecated rule may keep its WCAG mapping, and so its facets, until it
+    // is removed, but it covers nothing: iframe-title-unique points at its
+    // successor's facet and reports notApplicable on every page.
+    if (r.deprecated) continue;
     const facetIds = getFacetIdsForScFromRow(r, sc);
     for (const facetId of facetIds) {
       const facet = byFacet.get(facetId);
@@ -468,7 +472,8 @@ function main() {
         tags: [],
         wcagTagSignals: null,
         error: String(e && e.message ? e.message : e),
-        coverage: null
+        coverage: null,
+        deprecated: false
       });
       continue;
     }
@@ -502,7 +507,8 @@ function main() {
       tags,
       wcagTagSignals,
       error: null,
-      coverage: meta && meta.coverage ? meta.coverage : null
+      coverage: meta && meta.coverage ? meta.coverage : null,
+      deprecated: !!(meta && meta.deprecated)
     });
   }
 
