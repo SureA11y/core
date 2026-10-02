@@ -585,7 +585,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
-| identical-iframes-same-purpose | partial | identical-iframes-same-purpose, iframe-title-unique |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
@@ -1220,7 +1220,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | aria-attr-not-prohibited | full | aria-prohibited-attr |
 | aria-attr-required-for-role | full | aria-required-attr |
 | iframe-name-present | full | iframe-name-present |
-| identical-iframes-same-purpose | partial | identical-iframes-same-purpose, iframe-title-unique |
+| identical-iframes-same-purpose | partial | identical-iframes-same-purpose |
 | aria-hidden-body-absent | full | aria-hidden-body |
 | duplicate-id-aria | full | duplicate-id-aria |
 | summary-name-present | full | summary-name-present |
