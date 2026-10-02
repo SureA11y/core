@@ -490,7 +490,7 @@ Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed au
 
 **Applies to.** Applies to form controls (input, select, textarea) with a non-empty autocomplete attribute. Disabled controls (the disabled attribute, including a control disabled by a disabled fieldset ancestor, or aria-disabled="true") and input types with a fixed value are exempt, as in ACT 73f2c2.
 
-**Expectation.** The value is "on"/"off" alone, or a well-formed autofill detail token list: an optional "section-*" token, then an optional "shipping"/"billing" token, then an optional contact-modality token (home/work/mobile/fax/pager), then exactly one recognized field-name token (name, email, street-address, cc-number, tel, ...), optionally followed by "webauthn". The field name must also suit the control: the HTML Standard gives each field name a control group, and each group is allowed only on some input types (street-address only on textarea or select; email only on text, search or email inputs; and so on). A malformed or unsuitable value means the field is not reliably identified for assistive technology that relies on autocomplete to describe the expected input purpose.
+**Expectation.** The value is "on"/"off" alone, or a well-formed autofill detail token list: an optional "section-*" token, then an optional "shipping"/"billing" token, then an optional contact-modality token (home/work/mobile/fax/pager), then exactly one recognized field-name token (name, email, street-address, cc-number, tel, ...), optionally followed by "webauthn". A malformed value means the field is not reliably identified for assistive technology that relies on autocomplete to describe the expected input purpose.
 
 ### `avoid-inline-spacing`
 

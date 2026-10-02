@@ -11014,8 +11014,6 @@ const I18N = {
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
     "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping postal-code“, „cc-number“).",
-    "autocompleteValid_summary_mismatch": "Der Autofill-Feldname „{{fieldName}}“ ist auf einem input vom Typ „{{inputType}}“ nicht zulässig.",
-    "autocompleteValid_hint_mismatch": "Verwenden Sie einen Feldnamen, der zu diesem Steuerelementtyp passt, oder ändern Sie das Steuerelement (street-address erfordert ein textarea; email erfordert ein input vom Typ text, search oder email; bday-day erfordert ein input vom Typ text, search oder number).",
     "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
     "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
     "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -11857,8 +11855,6 @@ const I18N = {
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
     "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping postal-code\", \"cc-number\").",
-    "autocompleteValid_summary_mismatch": "The autofill field name \"{{fieldName}}\" is not allowed on an input of type \"{{inputType}}\".",
-    "autocompleteValid_hint_mismatch": "Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).",
     "passwordPasteEnabled_title": "Authentication fields must not block pasting",
     "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
     "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -12700,8 +12696,6 @@ const I18N = {
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
     "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping postal-code\", \"cc-number\").",
-    "autocompleteValid_summary_mismatch": "El nombre de campo de autocompletado \"{{fieldName}}\" no está permitido en un input de tipo \"{{inputType}}\".",
-    "autocompleteValid_hint_mismatch": "Usar un nombre de campo adecuado para este tipo de control, o cambiar el control (street-address requiere un textarea; email requiere un input de tipo text, search o email; bday-day requiere un input de tipo text, search o number).",
     "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
     "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
     "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -13543,8 +13537,6 @@ const I18N = {
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
     "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping postal-code », « cc-number »).",
-    "autocompleteValid_summary_mismatch": "Le nom de champ d’auto-remplissage « {{fieldName}} » n’est pas autorisé sur un champ input de type « {{inputType}} ».",
-    "autocompleteValid_hint_mismatch": "Utilisez un nom de champ adapté à ce type de champ, ou changez le champ (street-address demande un textarea ; email demande un input de type text, search ou email ; bday-day demande un input de type text, search ou number).",
     "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
     "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
     "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -14386,8 +14378,6 @@ const I18N = {
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
     "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping postal-code\"、\"cc-number\") を使用してください。",
-    "autocompleteValid_summary_mismatch": "自動入力のフィールド名 \"{{fieldName}}\" は、type が \"{{inputType}}\" の input では使用できません。",
-    "autocompleteValid_hint_mismatch": "このコントロールの種類に合うフィールド名を使用するか、コントロールを変更してください (street-address には textarea、email には type が text、search、email の input、bday-day には type が text、search、number の input が必要です)。",
     "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
     "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
     "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
@@ -40305,68 +40295,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
   const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
-  // Control group of each field name that is not in the Text group (HTML
-  // Standard, autofill field table).
-  const FIELD_GROUP = {
-    username: 'username',
-    'new-password': 'password',
-    'current-password': 'password',
-    'one-time-code': 'password',
-    'street-address': 'multiline',
-    'cc-exp': 'month',
-    'cc-exp-month': 'numeric',
-    'cc-exp-year': 'numeric',
-    'transaction-amount': 'numeric',
-    bday: 'date',
-    'bday-day': 'numeric',
-    'bday-month': 'numeric',
-    'bday-year': 'numeric',
-    url: 'url',
-    photo: 'url',
-    impp: 'url',
-    tel: 'tel',
-    email: 'email'
-  };
-  // Groups accepted by input types other than text and search. text and
-  // search accept every group except multiline.
-  const GROUPS_BY_INPUT_TYPE = {
-    password: ['password'],
-    email: ['email', 'username'],
-    url: ['url'],
-    tel: ['tel'],
-    number: ['numeric'],
-    month: ['month'],
-    date: ['date']
-  };
-  const KNOWN_INPUT_TYPES = new Set([
-    'hidden',
-    'text',
-    'search',
-    'tel',
-    'url',
-    'email',
-    'password',
-    'date',
-    'month',
-    'week',
-    'time',
-    'datetime-local',
-    'number',
-    'range',
-    'color',
-    'checkbox',
-    'radio',
-    'file',
-    'submit',
-    'image',
-    'reset',
-    'button'
-  ]);
-
-  // Returns the field-name token of a well-formed value, or null.
-  function getFieldName(raw) {
+  // True when the value is a well-formed autofill detail token list.
+  function isValidAutocomplete(raw) {
     const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (!tokens.length) return null;
+    if (!tokens.length) return false;
 
     let i = 0;
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
@@ -40378,7 +40310,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const next = tokens[i + 1];
       const isContactField =
         next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
-      if (!isContactField) return null;
+      if (!isContactField) return false;
       i += 1;
     }
 
@@ -40386,24 +40318,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tokens[end - 1] === 'webauthn') end -= 1;
 
     const remaining = tokens.slice(i, end);
-    if (remaining.length !== 1) return null;
-    return FIELD_NAMES.has(remaining[0]) ? remaining[0] : null;
-  }
-
-  // True when the field name's control group is allowed on this control.
-  function fieldSuitsControl(el, fieldName) {
-    const tag = String(el.tagName || '').toLowerCase();
-    if (tag !== 'input') return true;
-    let type = String(el.getAttribute('type') || 'text')
-      .trim()
-      .toLowerCase();
-    if (!KNOWN_INPUT_TYPES.has(type)) type = 'text';
-    if (type === 'hidden') return true;
-    const group = FIELD_GROUP[fieldName] || 'text';
-    if (type === 'text' || type === 'search') return group !== 'multiline';
-    const allowed = GROUPS_BY_INPUT_TYPE[type];
-    if (!allowed) return true;
-    return allowed.includes(group);
+    if (remaining.length !== 1) return false;
+    return FIELD_NAMES.has(remaining[0]);
   }
 
   const nodes = helpers.queryAllSmart
@@ -40455,49 +40371,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const fieldName = getFieldName(raw);
+    if (isValidAutocomplete(raw)) continue;
+
     const tag = el.tagName.toLowerCase();
 
-    if (!fieldName) {
-      occurrences.push(
-        helpers.reportOccurrence(el, {
-          summary: 'This autocomplete attribute value is not a valid autofill value.',
-          hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
-          i18n: {
-            summaryKey: 'autocompleteValid_summary_fail',
-            hintKey: 'autocompleteValid_hint_fail',
-            params: { element: tag, value: raw }
-          },
-          data: {
-            details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
-          }
-        })
-      );
-      continue;
-    }
-
-    if (fieldSuitsControl(el, fieldName)) continue;
-
-    const inputType = String(el.getAttribute('type') || 'text')
-      .trim()
-      .toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `The autofill field name "${fieldName}" is not allowed on an input of type "${inputType}".`,
-        hint: 'Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).',
+        summary: 'This autocomplete attribute value is not a valid autofill value.',
+        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
         i18n: {
-          summaryKey: 'autocompleteValid_summary_mismatch',
-          hintKey: 'autocompleteValid_hint_mismatch',
-          params: { element: tag, value: raw, fieldName, inputType }
+          summaryKey: 'autocompleteValid_summary_fail',
+          hintKey: 'autocompleteValid_hint_fail',
+          params: { element: tag, value: raw }
         },
         data: {
-          details: {
-            reasonCode: 'AUTOCOMPLETE_FIELD_CONTROL_MISMATCH',
-            element: tag,
-            value: raw,
-            fieldName,
-            inputType
-          }
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
         }
       })
     );
@@ -63059,8 +62947,6 @@ const I18N = {
     "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
     "autocompleteValid_summary_fail": "Dieser autocomplete-Attributwert ist kein gültiger Autofill-Wert.",
     "autocompleteValid_hint_fail": "Verwenden Sie „on“/„off“ oder eine gültige Liste von Autofill-Tokens (z. B. „shipping postal-code“, „cc-number“).",
-    "autocompleteValid_summary_mismatch": "Der Autofill-Feldname „{{fieldName}}“ ist auf einem input vom Typ „{{inputType}}“ nicht zulässig.",
-    "autocompleteValid_hint_mismatch": "Verwenden Sie einen Feldnamen, der zu diesem Steuerelementtyp passt, oder ändern Sie das Steuerelement (street-address erfordert ein textarea; email erfordert ein input vom Typ text, search oder email; bday-day erfordert ein input vom Typ text, search oder number).",
     "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
     "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
     "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -63902,8 +63788,6 @@ const I18N = {
     "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
     "autocompleteValid_summary_fail": "This autocomplete attribute value is not a valid autofill value.",
     "autocompleteValid_hint_fail": "Use \"on\"/\"off\", or a valid autofill token list (e.g. \"shipping postal-code\", \"cc-number\").",
-    "autocompleteValid_summary_mismatch": "The autofill field name \"{{fieldName}}\" is not allowed on an input of type \"{{inputType}}\".",
-    "autocompleteValid_hint_mismatch": "Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).",
     "passwordPasteEnabled_title": "Authentication fields must not block pasting",
     "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
     "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -64745,8 +64629,6 @@ const I18N = {
     "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
     "autocompleteValid_summary_fail": "Este valor del atributo autocomplete no es un valor de autocompletado válido.",
     "autocompleteValid_hint_fail": "Usar \"on\"/\"off\", o una lista de tokens de autocompletado válida (por ejemplo, \"shipping postal-code\", \"cc-number\").",
-    "autocompleteValid_summary_mismatch": "El nombre de campo de autocompletado \"{{fieldName}}\" no está permitido en un input de tipo \"{{inputType}}\".",
-    "autocompleteValid_hint_mismatch": "Usar un nombre de campo adecuado para este tipo de control, o cambiar el control (street-address requiere un textarea; email requiere un input de tipo text, search o email; bday-day requiere un input de tipo text, search o number).",
     "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
     "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
     "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -65588,8 +65470,6 @@ const I18N = {
     "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
     "autocompleteValid_summary_fail": "Cette valeur d’attribut autocomplete n’est pas une valeur d’auto-remplissage valide.",
     "autocompleteValid_hint_fail": "Utilisez « on »/« off », ou une liste de jetons d’auto-remplissage valide (ex. « shipping postal-code », « cc-number »).",
-    "autocompleteValid_summary_mismatch": "Le nom de champ d’auto-remplissage « {{fieldName}} » n’est pas autorisé sur un champ input de type « {{inputType}} ».",
-    "autocompleteValid_hint_mismatch": "Utilisez un nom de champ adapté à ce type de champ, ou changez le champ (street-address demande un textarea ; email demande un input de type text, search ou email ; bday-day demande un input de type text, search ou number).",
     "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
     "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
     "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -66431,8 +66311,6 @@ const I18N = {
     "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
     "autocompleteValid_summary_fail": "この autocomplete 属性の値は、有効な自動入力の値ではありません。",
     "autocompleteValid_hint_fail": "\"on\"/\"off\"、または有効な自動入力トークンのリスト (例: \"shipping postal-code\"、\"cc-number\") を使用してください。",
-    "autocompleteValid_summary_mismatch": "自動入力のフィールド名 \"{{fieldName}}\" は、type が \"{{inputType}}\" の input では使用できません。",
-    "autocompleteValid_hint_mismatch": "このコントロールの種類に合うフィールド名を使用するか、コントロールを変更してください (street-address には textarea、email には type が text、search、email の input、bday-day には type が text、search、number の input が必要です)。",
     "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
     "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
     "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",

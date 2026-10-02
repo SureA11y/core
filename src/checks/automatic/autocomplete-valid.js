@@ -20,13 +20,9 @@
  *   "shipping"/"billing" token, then an optional contact-modality token
  *   (home/work/mobile/fax/pager), then exactly one recognized
  *   field-name token (name, email, street-address, cc-number, tel, ...),
- *   optionally followed by "webauthn". The field name must also suit the
- *   control: the HTML Standard gives each field name a control group, and
- *   each group is allowed only on some input types (street-address only on
- *   textarea or select; email only on text, search or email inputs; and so
- *   on). A malformed or unsuitable value means the field is not reliably
- *   identified for assistive technology that relies on autocomplete to
- *   describe the expected input purpose.
+ *   optionally followed by "webauthn". A malformed value means the field
+ *   is not reliably identified for assistive technology that relies on
+ *   autocomplete to describe the expected input purpose.
  * @implementation-notes
  * - Implements the structural shape of the WHATWG autofill grammar
  *   (section/mode/contact-modality prefixes + one field-name token, in
@@ -36,14 +32,9 @@
  *   this engine's established "scoped" precedent (see aria-helpers.js)
  *   for keeping high-confidence fail without reimplementing the entire
  *   spec.
- * - Control groups: textarea, select and input type=hidden accept every
- *   group. input types text and search (and a missing or unknown type)
- *   accept every group except Multiline (street-address). password, email,
- *   url, tel, number, month and date inputs accept only their own group
- *   (email also accepts username). Other input types (time, week,
- *   datetime-local, range, color) are not checked for the group, as the
- *   W3C validator does not check them either. A mismatch is reported with
- *   reasonCode AUTOCOMPLETE_FIELD_CONTROL_MISMATCH.
+ * - A field name that does not suit its control (bday-day on type=tel)
+ *   passes: browsers still derive the purpose from it, and ACT 73f2c2
+ *   leaves contextual appropriateness out of scope.
  */
 
 const id = 'autocomplete-valid';
@@ -138,68 +129,10 @@ function runInPage(ctx) {
   ]);
   const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
-  // Control group of each field name that is not in the Text group (HTML
-  // Standard, autofill field table).
-  const FIELD_GROUP = {
-    username: 'username',
-    'new-password': 'password',
-    'current-password': 'password',
-    'one-time-code': 'password',
-    'street-address': 'multiline',
-    'cc-exp': 'month',
-    'cc-exp-month': 'numeric',
-    'cc-exp-year': 'numeric',
-    'transaction-amount': 'numeric',
-    bday: 'date',
-    'bday-day': 'numeric',
-    'bday-month': 'numeric',
-    'bday-year': 'numeric',
-    url: 'url',
-    photo: 'url',
-    impp: 'url',
-    tel: 'tel',
-    email: 'email'
-  };
-  // Groups accepted by input types other than text and search. text and
-  // search accept every group except multiline.
-  const GROUPS_BY_INPUT_TYPE = {
-    password: ['password'],
-    email: ['email', 'username'],
-    url: ['url'],
-    tel: ['tel'],
-    number: ['numeric'],
-    month: ['month'],
-    date: ['date']
-  };
-  const KNOWN_INPUT_TYPES = new Set([
-    'hidden',
-    'text',
-    'search',
-    'tel',
-    'url',
-    'email',
-    'password',
-    'date',
-    'month',
-    'week',
-    'time',
-    'datetime-local',
-    'number',
-    'range',
-    'color',
-    'checkbox',
-    'radio',
-    'file',
-    'submit',
-    'image',
-    'reset',
-    'button'
-  ]);
-
-  // Returns the field-name token of a well-formed value, or null.
-  function getFieldName(raw) {
+  // True when the value is a well-formed autofill detail token list.
+  function isValidAutocomplete(raw) {
     const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (!tokens.length) return null;
+    if (!tokens.length) return false;
 
     let i = 0;
     if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
@@ -211,7 +144,7 @@ function runInPage(ctx) {
       const next = tokens[i + 1];
       const isContactField =
         next === 'email' || next === 'impp' || next === 'tel' || (next || '').startsWith('tel-');
-      if (!isContactField) return null;
+      if (!isContactField) return false;
       i += 1;
     }
 
@@ -219,24 +152,8 @@ function runInPage(ctx) {
     if (tokens[end - 1] === 'webauthn') end -= 1;
 
     const remaining = tokens.slice(i, end);
-    if (remaining.length !== 1) return null;
-    return FIELD_NAMES.has(remaining[0]) ? remaining[0] : null;
-  }
-
-  // True when the field name's control group is allowed on this control.
-  function fieldSuitsControl(el, fieldName) {
-    const tag = String(el.tagName || '').toLowerCase();
-    if (tag !== 'input') return true;
-    let type = String(el.getAttribute('type') || 'text')
-      .trim()
-      .toLowerCase();
-    if (!KNOWN_INPUT_TYPES.has(type)) type = 'text';
-    if (type === 'hidden') return true;
-    const group = FIELD_GROUP[fieldName] || 'text';
-    if (type === 'text' || type === 'search') return group !== 'multiline';
-    const allowed = GROUPS_BY_INPUT_TYPE[type];
-    if (!allowed) return true;
-    return allowed.includes(group);
+    if (remaining.length !== 1) return false;
+    return FIELD_NAMES.has(remaining[0]);
   }
 
   const nodes = helpers.queryAllSmart
@@ -288,49 +205,21 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const fieldName = getFieldName(raw);
+    if (isValidAutocomplete(raw)) continue;
+
     const tag = el.tagName.toLowerCase();
 
-    if (!fieldName) {
-      occurrences.push(
-        helpers.reportOccurrence(el, {
-          summary: 'This autocomplete attribute value is not a valid autofill value.',
-          hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
-          i18n: {
-            summaryKey: 'autocompleteValid_summary_fail',
-            hintKey: 'autocompleteValid_hint_fail',
-            params: { element: tag, value: raw }
-          },
-          data: {
-            details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
-          }
-        })
-      );
-      continue;
-    }
-
-    if (fieldSuitsControl(el, fieldName)) continue;
-
-    const inputType = String(el.getAttribute('type') || 'text')
-      .trim()
-      .toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `The autofill field name "${fieldName}" is not allowed on an input of type "${inputType}".`,
-        hint: 'Use a field name that suits this type of control, or change the control (street-address needs a textarea; email needs a text, search or email input; bday-day needs a text, search or number input).',
+        summary: 'This autocomplete attribute value is not a valid autofill value.',
+        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
         i18n: {
-          summaryKey: 'autocompleteValid_summary_mismatch',
-          hintKey: 'autocompleteValid_hint_mismatch',
-          params: { element: tag, value: raw, fieldName, inputType }
+          summaryKey: 'autocompleteValid_summary_fail',
+          hintKey: 'autocompleteValid_hint_fail',
+          params: { element: tag, value: raw }
         },
         data: {
-          details: {
-            reasonCode: 'AUTOCOMPLETE_FIELD_CONTROL_MISMATCH',
-            element: tag,
-            value: raw,
-            fieldName,
-            inputType
-          }
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
         }
       })
     );

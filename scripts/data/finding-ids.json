@@ -206,7 +206,6 @@
       "ARIA_ATTR_VALUE_TARGET_ABSENT"
     ],
     "autocomplete-valid": [
-      "AUTOCOMPLETE_FIELD_CONTROL_MISMATCH",
       "AUTOCOMPLETE_VALUE_INVALID"
     ],
     "avoid-inline-spacing": [

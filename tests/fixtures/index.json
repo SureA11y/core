@@ -412,8 +412,8 @@
       "fixtureFile": "tests/fixtures/autocomplete-valid-all-scenarios.html",
       "totalCases": 11,
       "caseCounts": {
-        "PASS": 5,
-        "FAIL": 4,
+        "PASS": 7,
+        "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 2
       }
