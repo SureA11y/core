@@ -28,11 +28,9 @@
  *   deprecated rule keeps running and reporting normally, and leaving the
  *   old fail alive until 2.0.0 would have kept reporting a violation WCAG
  *   does not define. docs/DESIGN_CHALLENGES.md records the decision.
- * - IFRAME_TITLE_DUPLICATE is no longer emitted. It is retired with the
- *   finding it named, recorded with its reason under `retired` in
- *   scripts/data/released-finding-ids.json, so a stored baseline entry or
- *   alert for it closes and tests/released-finding-ids.test.js knows the
- *   code went on purpose.
+ * - IFRAME_TITLE_DUPLICATE is no longer emitted. It retired with the
+ *   finding it named in 1.8.0 (CHANGELOG.md), so a stored baseline entry or
+ *   alert for it closes.
  * - The facet this rule covered under SC 4.1.2 is retired; the coverage
  *   entry points at the successor's facet, so the catalog still shows where
  *   the question is answered.

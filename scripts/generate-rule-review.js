@@ -24,6 +24,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { collect, findRepoRoot } = require('./lib/rule-review-data');
+const { version } = require('../package.json');
 
 function parseArgs(argv) {
   const args = { out: 'docs/rule-review.html', types: 'automatic,manual' };
@@ -79,7 +80,7 @@ function renderPage(collected) {
   const rules = forPage(collected);
   // The data rides in a JSON script block; escaping < keeps a fixture's markup
   // from closing that block early.
-  const json = JSON.stringify({ rules }).replace(/</g, '\\u003c');
+  const json = JSON.stringify({ rules, version }).replace(/</g, '\\u003c');
 
   return `<title>SureA11y Rule Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -736,7 +737,8 @@ pre {
 (function () {
   'use strict';
 
-  var ALL = JSON.parse(document.getElementById('data').textContent).rules;
+  var DATA = JSON.parse(document.getElementById('data').textContent);
+  var ALL = DATA.rules;
   var RULES = [];
   var KEY = 'surea11y-rule-review-v1';
   var ORDER = ['fail', 'cantTell', 'pass', 'notApplicable'];
@@ -883,7 +885,7 @@ pre {
 
     app.innerHTML =
       '<div class="mast">' +
-      '<p class="eyebrow">' + ALL.length + ' rules · engine 1.7.0</p>' +
+      '<p class="eyebrow">' + ALL.length + ' rules · engine ' + DATA.version + '</p>' +
       '<h1>Every rule, and what makes it decide</h1>' +
       '<p class="lede">One rule per screen: what it applies to, what it expects, every message it can emit, ' +
       'and the fixture cases behind those verdicts — each replayed through the engine so the outcome shown is the one it really returns. ' +
