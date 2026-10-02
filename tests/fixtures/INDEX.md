@@ -80,7 +80,7 @@ None — every rule has a fixture.
 | input-image-alt-decorative | manual | `tests/fixtures/input-image-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 19 | 8 | 6 | 0 | 5 |
+| label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 23 | 8 | 7 | 0 | 8 |
 | label-title-only | manual | `tests/fixtures/label-title-only-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
 | landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 0 | 0 | 2 | 5 |
