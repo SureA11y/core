@@ -599,6 +599,20 @@ test('renderSarifReport: the run records the opt-in rules a scan added', () => {
   assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', optInRules: ['sample'] });
 });
 
+test('renderSarifReport: the run records the conditions the page was rendered under', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  const environment = {
+    layout: true,
+    viewport: { width: 1024, height: 900 },
+    devicePixelRatio: 1,
+    colorScheme: 'light',
+    fonts: 'loaded'
+  };
+  result.engine = { ...result.engine, wcagVersion: '2.2', environment };
+  const run = parse(renderSarifReport(result, {})).runs[0];
+  assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', environment });
+});
+
 test('renderSarifReport: a result from an older engine gets no run properties', () => {
   const run = parse(renderSarifReport(makeScanResult([makeCheckResult({})]), {})).runs[0];
   assert.strictEqual('properties' in run, false);

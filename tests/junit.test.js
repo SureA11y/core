@@ -262,6 +262,13 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
     schemaVersion: '1.0.0',
     wcagVersion: '2.2',
     profile: 'en301549-v4.1.1',
+    environment: {
+      layout: true,
+      viewport: { width: 1280, height: 720 },
+      devicePixelRatio: 2,
+      colorScheme: 'light',
+      fonts: 'loaded'
+    },
     locale: { requested: 'en', resolved: 'en', reason: 'ok' }
   };
   result.rulesResults = [
@@ -288,6 +295,11 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
     ['schemaVersion', '1.0.0'],
     ['wcagVersion', '2.2'],
     ['profile', 'en301549-v4.1.1'],
+    ['layout', 'true'],
+    ['viewport', '1280x720'],
+    ['devicePixelRatio', '2'],
+    ['colorScheme', 'light'],
+    ['fonts', 'loaded'],
     ['locale', 'en'],
     ['url', 'https://example.test/']
   ]);

@@ -142,8 +142,9 @@ function getOccurrenceOutcome(check, occurrence) {
 }
 
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
-// from a 2.2 one, and the opt-in rules it added beyond that target. Absent on
-// results from engines that predate the fields.
+// from a 2.2 one, the opt-in rules it added beyond that target, and the
+// conditions the page was rendered under, which layout-dependent results
+// depend on. Absent on results from engines that predate the fields.
 function runProperties(result) {
   const engine = (result && result.engine) || {};
   const props = {};
@@ -151,6 +152,8 @@ function runProperties(result) {
   if (engine.profile) props.profile = engine.profile;
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
+  if (engine.environment && typeof engine.environment === 'object')
+    props.environment = JSON.parse(JSON.stringify(engine.environment));
   return Object.keys(props).length ? props : null;
 }
 
