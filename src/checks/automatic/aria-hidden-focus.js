@@ -447,29 +447,8 @@ function runInPage(ctx) {
 
     // clip / clip-path (still focusable)
     try {
-      const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
-      const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
-      const clipLow = (clip || '').toLowerCase();
-      const clipPathLow = (clipPath || '').toLowerCase();
-
-      // Common visually-hidden patterns
-      if (clipLow && clipLow !== 'auto') {
-        // Examples: rect(0px, 0px, 0px, 0px) / rect(0,0,0,0)
-        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1)
-          out.push('clipped');
-      }
-      if (clipPathLow && clipPathLow !== 'none') {
-        // Examples: inset(100%) / inset(50%)
-        if (
-          clipPathLow.indexOf('inset(') !== -1 &&
-          (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)
-        ) {
-          out.push('clipped');
-        }
-      }
-    } catch {
-      // ignore
-    }
+      if (helpers.isClipHidden(cs)) out.push('clipped');
+    } catch {}
 
     // zero-size + overflow hidden/clip (still focusable)
     try {

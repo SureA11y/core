@@ -3860,6 +3860,61 @@ function createDomHelpers(opts) {
     };
   }
 
+  // Whether a box's clip leaves nothing of it visible, read from a computed
+  // style or from declared values ({ clip, clipPath, position }). It decides
+  // the forms visually hidden text uses: an empty `clip: rect()`, which
+  // applies only to absolutely positioned boxes, such as rect(0 0 0 0) or the
+  // rect(1px, 1px, 1px, 1px) WordPress uses, and a `clip-path` whose insets
+  // meet, such as inset(50%), or a circle or ellipse of radius 0. A clip it
+  // cannot decide without the box's size (insets in px) counts as not hiding.
+  function isEmptyClipRect(value) {
+    const m = /^rect\((.*)\)$/i.exec(String(value == null ? '' : value).trim());
+    if (!m) return false;
+    const edges = m[1].split(/\s*,\s*|\s+/).filter(Boolean);
+    if (edges.length !== 4) return false;
+    const edge = (v, auto) => (v.toLowerCase() === 'auto' ? auto : parseFloat(v));
+    const top = edge(edges[0], -Infinity);
+    const right = edge(edges[1], Infinity);
+    const bottom = edge(edges[2], Infinity);
+    const left = edge(edges[3], -Infinity);
+    if ([top, right, bottom, left].some((n) => Number.isNaN(n))) return false;
+    return right <= left || bottom <= top;
+  }
+  function isEmptyClipPath(value) {
+    const v = String(value == null ? '' : value)
+      .trim()
+      .toLowerCase();
+    if (/^circle\(\s*0(px|%)?(\s|\)|$)/.test(v)) return true;
+    if (/^ellipse\(\s*0(px|%)?\s+0(px|%)?(\s|\)|$)/.test(v)) return true;
+    const m = /^inset\(([^)]*)\)/.exec(v);
+    if (!m) return false;
+    const parts = m[1]
+      .split(/\s+round\s+/)[0]
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!parts.length || parts.length > 4) return false;
+    const pct = [];
+    // A percentage, or zero in any unit (0, 0px). Another length depends on
+    // the box's size.
+    for (const p of parts) {
+      const n = /^(-?\d*\.?\d+)(%|[a-z]*)$/.exec(p);
+      if (!n || (n[2] !== '%' && parseFloat(n[1]) !== 0)) return false;
+      pct.push(parseFloat(n[1]));
+    }
+    const [top, right = top, bottom = top, left = right] = pct;
+    return top + bottom >= 100 || left + right >= 100;
+  }
+  function isClipHidden(style) {
+    if (!style) return false;
+    const position = String(style.position == null ? '' : style.position)
+      .trim()
+      .toLowerCase();
+    if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(style.clip))
+      return true;
+    return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
+  }
+
   function getVisibilityHintsInfo(el, _ctx, _opts) {
     // Deterministic, style-only visibility hints for triage.
     // Does NOT decide eligibility; checks decide outcomes.
@@ -3907,24 +3962,7 @@ function createDomHelpers(opts) {
       const clip = cs.clip != null ? String(cs.clip).trim() : '';
       const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
 
-      const clipLow = clip.toLowerCase();
-      const clipPathLow = clipPath.toLowerCase();
-
-      if (clipLow && clipLow !== 'auto') {
-        // Detect common visually-hidden: rect(0,0,0,0)
-        const norm = clipLow.replace(/\s+/g, '');
-        if (norm.indexOf('rect(') !== -1 && norm.indexOf('rect(0') !== -1) hints.push('clipped');
-      }
-
-      if (clipPathLow && clipPathLow !== 'none') {
-        // Detect common visually-hidden: inset(50%) / inset(100%)
-        if (
-          clipPathLow.indexOf('inset(') !== -1 &&
-          (clipPathLow.indexOf('50%') !== -1 || clipPathLow.indexOf('100%') !== -1)
-        ) {
-          hints.push('clipped');
-        }
-      }
+      if (isClipHidden(cs)) hints.push('clipped');
 
       if (clip) metrics.clip = clip;
       if (clipPath) metrics.clipPath = clipPath;
@@ -4946,6 +4984,7 @@ function createDomHelpers(opts) {
     getRoleInfo,
     getFocusableInfo,
     getVisibilityHintsInfo,
+    isClipHidden,
 
     getAttributeInfo,
 

@@ -141,6 +141,18 @@ its result straight through.
 ### `getVisibilityHintsInfo(el, ctx, opts)` → `{ hints[], metrics, flags[] }`
 Style-only visibility *hints* for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
+`clipped` is `isClipHidden` below.
+
+### `isClipHidden(style)` → `boolean`
+Whether a clip leaves nothing of a box visible, from a computed style or from declared
+values (`{ clip, clipPath, position }`, or `'clip-path'` as a property name). It decides
+the forms visually hidden text uses: an empty `clip: rect()` on an absolutely or fixed
+positioned box (`rect(0 0 0 0)`, or the `rect(1px, 1px, 1px, 1px)` WordPress uses; `clip`
+does nothing on other boxes), a `clip-path: inset()` whose insets meet (`inset(50%)`,
+`inset(0 50% 0 50%)`), and a `circle()` or `ellipse()` of radius 0. A clip that leaves part
+of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that cannot be
+decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
+matching the values yourself, so every rule agrees on what visually hidden means.
 
 ### `isWholeDocumentScope()` → `boolean`
 `true` unless `engineOptions.fragment: true` was set, or `contextSelector` scoped the

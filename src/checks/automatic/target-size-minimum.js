@@ -317,40 +317,13 @@ function runInPage(ctx) {
     return cs;
   }
 
-  // A rect() clip that leaves no area: rect(0, 0, 0, 0), or the older
-  // visually-hidden rect(1px, 1px, 1px, 1px). `auto` edges do not clip.
-  function isEmptyClipRect(value) {
-    const m = /^rect\((.*)\)$/i.exec(String(value || '').trim());
-    if (!m) return false;
-    const edges = m[1].split(/\s*,\s*|\s+/).filter(Boolean);
-    if (edges.length !== 4) return false;
-    const px = (v, auto) => (v.toLowerCase() === 'auto' ? auto : parseFloat(v));
-    const [top, right, bottom, left] = [
-      px(edges[0], -Infinity),
-      px(edges[1], Infinity),
-      px(edges[2], Infinity),
-      px(edges[3], -Infinity)
-    ];
-    if ([top, right, bottom, left].some((n) => Number.isNaN(n))) return false;
-    return right <= left || bottom <= top;
-  }
-
   // Visually hidden: the element, or an ancestor, is clipped to nothing, as
   // the usual screen-reader-only pattern does. A pointer cannot hit any of
-  // it, so it is not a target, however small its box. `clip` applies only to
-  // absolutely positioned boxes; `clip-path: inset(50%)` hides anything.
+  // it, so it is not a target, however small its box (helpers.isClipHidden).
   function isClippedAway(el) {
     for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
       const cs = getStyle(a);
-      if (!cs) continue;
-      const position = String(cs.position || '');
-      if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(cs.clip))
-        return true;
-      const clipPath = String(cs.clipPath || '')
-        .trim()
-        .toLowerCase();
-      if (/^inset\(\s*(50|100)%/.test(clipPath) || /^circle\(\s*0(px|%)?[\s)]/.test(clipPath))
-        return true;
+      if (cs && helpers.isClipHidden(cs)) return true;
     }
     return false;
   }
