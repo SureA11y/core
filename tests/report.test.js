@@ -90,7 +90,7 @@ test("renderHtmlReport: WCAG rollup section reflects a real composite rule's con
   const expectedBreakdown = `${passCount} pass / ${failCount} fail / ${cantTellCount} needs review / ${notApplicableCount} n/a`;
 
   assert.match(report, /WCAG 1\.1\.1/);
-  assert.match(report, new RegExp(expectedBreakdown.replace(/\//g, '\\/')));
+  assert.ok(report.includes(expectedBreakdown), expectedBreakdown);
   assert.match(report, new RegExp(composite.data.details.checksIds[0]));
 });
 

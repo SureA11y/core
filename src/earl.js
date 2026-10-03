@@ -41,7 +41,9 @@ function scSlug(title) {
     .toLowerCase()
     .replace(/[(),.:]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .split('-')
+    .filter(Boolean)
+    .join('-');
 }
 
 /**

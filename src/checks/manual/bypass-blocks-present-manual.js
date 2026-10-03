@@ -159,8 +159,9 @@ function runInPage(ctx) {
   }
 
   // Resolve a fragment id (or legacy <a name>) inside a specific root node
-  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
-  // is used for the legacy anchor-name fallback.
+  // (a Document or a ShadowRoot). Both expose getElementById; a legacy
+  // anchor name is compared as an attribute rather than built into a
+  // selector, which a backslash or quote in the name would break.
   function resolveInRoot(root, fragment) {
     if (!root) return null;
     let target;
@@ -172,8 +173,10 @@ function runInPage(ctx) {
     if (target) return target;
     try {
       target =
-        typeof root.querySelector === 'function'
-          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+        typeof root.querySelectorAll === 'function'
+          ? Array.from(root.querySelectorAll('a[name]')).find(
+              (a) => a.getAttribute('name') === fragment
+            ) || null
           : null;
     } catch {
       target = null;

@@ -14757,8 +14757,9 @@ function resolveLocale(engineOptions) {
     const ctx = (params && typeof params === 'object') ? params : null;
     if (!str || !ctx) return str;
 
-    // Tokenize: {{...}}
-    const tagRe = /\{\{\s*([#^/]?)([^}\s]+)\s*\}\}/g;
+    // Tokenize: {{...}}. A key never contains a brace; leaving braces out of
+    // it keeps a long run of them from making the match slow.
+    const tagRe = /\{\{\s*([#^/]?)([^{}\s]+)\s*\}\}/g;
 
     // We render by building an AST-like stack of frames (small + deterministic).
     const root = { type: 'root', key: null, inverted: false, parts: [] };
@@ -41444,8 +41445,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Resolve a fragment id (or legacy <a name>) inside a specific root node
-  // (a Document or a ShadowRoot). Both expose getElementById; querySelector
-  // is used for the legacy anchor-name fallback.
+  // (a Document or a ShadowRoot). Both expose getElementById; a legacy
+  // anchor name is compared as an attribute rather than built into a
+  // selector, which a backslash or quote in the name would break.
   function resolveInRoot(root, fragment) {
     if (!root) return null;
     let target;
@@ -41457,8 +41459,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (target) return target;
     try {
       target =
-        typeof root.querySelector === 'function'
-          ? root.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]')
+        typeof root.querySelectorAll === 'function'
+          ? Array.from(root.querySelectorAll('a[name]')).find(
+              (a) => a.getAttribute('name') === fragment
+            ) || null
           : null;
     } catch {
       target = null;
@@ -58150,8 +58154,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         target = null;
       }
       if (!target) {
+        // A legacy <a name>, compared as an attribute rather than built into a
+        // selector, which a backslash or quote in the name would break.
         try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
+          target =
+            Array.from(document.querySelectorAll('a[name]')).find(
+              (a) => a.getAttribute('name') === fragment
+            ) || null;
         } catch {
           target = null;
         }
@@ -66925,8 +66934,9 @@ function resolveLocale(engineOptions) {
     const ctx = (params && typeof params === 'object') ? params : null;
     if (!str || !ctx) return str;
 
-    // Tokenize: {{...}}
-    const tagRe = /\{\{\s*([#^/]?)([^}\s]+)\s*\}\}/g;
+    // Tokenize: {{...}}. A key never contains a brace; leaving braces out of
+    // it keeps a long run of them from making the match slow.
+    const tagRe = /\{\{\s*([#^/]?)([^{}\s]+)\s*\}\}/g;
 
     // We render by building an AST-like stack of frames (small + deterministic).
     const root = { type: 'root', key: null, inverted: false, parts: [] };

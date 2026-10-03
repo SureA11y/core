@@ -61,8 +61,9 @@ function escapeAngles(s) {
 }
 
 // Same, plus the `|` cell delimiter, for text going into a markdown table.
+// A backslash is escaped first, so one already before a `|` cannot undo it.
 function escapePipes(s) {
-  return escapeAngles(s).replace(/\|/g, '\\|');
+  return escapeAngles(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function listRuleFiles(dirAbs) {
