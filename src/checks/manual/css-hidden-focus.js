@@ -142,23 +142,7 @@ function runInPage(ctx) {
 
     // clip / clip-path
     try {
-      const clip = cs && cs.clip != null ? String(cs.clip).trim() : '';
-      const clipPath = cs && cs.clipPath != null ? String(cs.clipPath).trim() : '';
-      const clipLow = (clip || '').toLowerCase();
-      const clipPathLow = (clipPath || '').toLowerCase();
-
-      if (clipLow && clipLow !== 'auto') {
-        if (clipLow.indexOf('rect(') !== -1 && clipLow.replace(/\s+/g, '').indexOf('rect(0') !== -1)
-          out.push('clipped');
-      }
-      if (clipPathLow && clipPathLow !== 'none') {
-        if (
-          clipPathLow.indexOf('inset(') !== -1 &&
-          (clipPathLow.indexOf('100%') !== -1 || clipPathLow.indexOf('50%') !== -1)
-        ) {
-          out.push('clipped');
-        }
-      }
+      if (helpers.isClipHidden(cs)) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip
