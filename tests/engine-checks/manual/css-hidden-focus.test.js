@@ -490,3 +490,26 @@ test(`${RULE_ID}: focus is where it was before the scan`, () => {
   runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
   assert.strictEqual(dom.window.document.activeElement, dom.window.document.body);
 });
+
+// GOV.UK Frontend's skip link: `.\:focus` is a class named ":focus", set by
+// script, not the pseudo-class, so the :not(:focus) rule still stops hiding
+// the link when it takes focus.
+test(`${RULE_ID}: an escaped \\:focus class name is not read as the :focus state`, () => {
+  const html = withStyle(
+    '.sr:not(:active):not(:focus):not(.\\:focus){position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important}',
+    '<a class="sr" href="#m">Skip to main content</a><main id="m">x</main>'
+  );
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+
+  // A rule that only applies with the escaped class still hides the link
+  // while focused, so it is still asked about.
+  const still = withStyle(
+    '.sr.\\:focus{left:-9999px}.sr{position:absolute;left:-9999px}',
+    '<a id="a" class="sr" href="#m">Skip</a><main id="m">x</main>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(still, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});

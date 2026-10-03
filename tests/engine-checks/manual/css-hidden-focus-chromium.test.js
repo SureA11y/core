@@ -3,7 +3,9 @@
 /**
  * css-hidden-focus in a real browser, which restyles an element when it
  * takes focus: the rule's focus probe leaves focus where it found it, so
- * the rules after it and the next scan see the page as it was.
+ * the rules after it and the next scan see the page as it was, and a
+ * GOV.UK-style skip link, hidden by `:not(:focus):not(.\\:focus)`, is
+ * recognised as revealed on focus.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -80,6 +82,18 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       assert.deepEqual(await scan(p, { rules: { include: RULE_ID } }), first);
       // A full scan leaves nothing focused either, for the rules after it.
       assert.equal((await scan(p, {})).focused, '');
+    } finally {
+      await p.close();
+    }
+  });
+
+  await t.test('a GOV.UK-style skip link revealed on focus is not asked about', async () => {
+    const p = await open(page('.skip:not(:active):not(:focus):not(.\\:focus)'));
+    try {
+      assert.deepEqual(await scan(p, { rules: { include: RULE_ID } }), {
+        findings: [],
+        focused: ''
+      });
     } finally {
       await p.close();
     }

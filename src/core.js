@@ -44146,6 +44146,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return trim(part.replace(/(^|[\s>+~(])(?=:focus)/g, '$1*').replace(FOCUS_STATE, '')) || '*';
   }
 
+  const ESCAPED_COLON = '\u0001';
+  function unescapeColons(selector) {
+    return selector.split(ESCAPED_COLON).join('\\:');
+  }
+
   let focusRules = null;
   function getFocusRules() {
     if (focusRules) return focusRules;
@@ -44155,19 +44160,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!style) return;
       const props = Object.keys(HINT_PROPS).filter((p) => trim(style.getPropertyValue(p)));
       if (!props.length) return;
-      for (const part of splitTopLevel(cssRule.selectorText, [','])) {
+      for (const raw of splitTopLevel(cssRule.selectorText, [','])) {
+        // A colon escaped with a backslash is part of a name, not a
+        // pseudo-class: GOV.UK Frontend styles a class called ":focus" as
+        // `.\:focus`. Escaped colons are hidden from the focus patterns
+        // and put back in the selector the element is matched against.
+        const part = raw.replace(/\\:/g, ESCAPED_COLON);
         if (hasPseudoElement(part)) continue;
         NOT_FOCUS_STATE.lastIndex = 0;
         if (NOT_FOCUS_STATE.test(part)) {
           const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
           FOCUS_STATE.lastIndex = 0;
-          if (!FOCUS_STATE.test(base)) focusRules.push({ kind: 'notFocus', base, style, props });
+          if (!FOCUS_STATE.test(base))
+            focusRules.push({ kind: 'notFocus', base: unescapeColons(base), style, props });
           continue;
         }
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) continue;
         const base = focusedBase(part);
-        if (base) focusRules.push({ kind: 'focus', base, style, props });
+        if (base) focusRules.push({ kind: 'focus', base: unescapeColons(base), style, props });
       }
     }
     function walk(rules, depth) {
