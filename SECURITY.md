@@ -10,7 +10,7 @@ surea11y is a library: it reads a DOM tree and computed styles and returns struc
 
 ## Reporting a vulnerability
 
-If you find a security issue, please report it privately rather than opening a public issue — email rumoroso.a11y@gmail.com with a description and, if possible, a minimal reproduction.
+If you find a security issue, please report it privately rather than opening a public issue. The easiest way is the **Report a vulnerability** button on the repository's [Security tab](https://github.com/SureA11y/core/security), which opens a private advisory that only the maintainer can see. You can also email rumoroso.a11y@gmail.com. Either way, include a description and, if possible, a minimal reproduction.
 
 You can expect an acknowledgement within five working days. This is a solo-maintained project, so please allow 90 days from that acknowledgement before public disclosure, and get in touch again if you haven't heard back.
 
