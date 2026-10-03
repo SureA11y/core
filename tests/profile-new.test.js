@@ -18,7 +18,10 @@ const { PROFILE_EXPORTS, PROFILE_FILE_MODULES } = require('../scripts/lib/profil
 
 // A root with what the script reads: a profiles/index.js and core's locales.
 function makeRoot() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-profile-new-'));
+  // The real path: on macOS the temp folder is a symlink (/var -> /private/var),
+  // and a module's __dirname, which the profile reports its folders from, is
+  // always resolved.
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-profile-new-')));
   fs.mkdirSync(path.join(root, 'profiles'));
   // A list in the real file's form, holding one stand-in profile, whatever
   // profiles the repository has.
