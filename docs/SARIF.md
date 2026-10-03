@@ -50,9 +50,10 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | `results[].message.text` | `occurrence.summary` + `occurrence.hint` |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | The scanned target — see "Locations" below. |
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when present. |
-| `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one. |
+| `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one, for consumers that read it. GitHub Code Scanning documents that it uses only its own `primaryLocationLineHash` from `partialFingerprints`. |
 | `results[].properties.severity` / `.confidence` | `checksResults[i].severity` / `.confidence` — informational, not part of SARIF's own schema. |
 | `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings`. Understanding-document entries get no tag. Each EN 301 549 clause the result carries (only when the scan asked for them, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)) gets an `en301549-<clause>` tag, e.g. `en301549-9.1.1.1`: clause numbers are the same in every version that has them, so the tag carries no version. |
+| `runs[0].automationDetails.id` | The `category` option, with a trailing `/` added if it has none (GitHub reads everything up to the last slash as the category). Absent when no category is given. See [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
 | `runs[0].properties` | `wcagVersion`, `profile`, `optInRules` and `environment` from the result's `engine`: the conformance target the run used, so a dashboard can tell a WCAG 2.1 run from a 2.2 one, the opt-in rule tags it added beyond that target when it added any, and the conditions the page was rendered under (`layout`, `viewport`, `devicePixelRatio`, `colorScheme`, `fonts`; see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)). Omitted for results from engines that predate those fields. |
 
 ## Locations
@@ -63,6 +64,23 @@ DOM-based scanning has no line/column to report, so `physicalLocation.artifactLo
 - **URL scans**: the scanned URL itself. GitHub Code Scanning will still list the finding, but can't attach an inline annotation to a URL that isn't a file in the repository — this is inherent to how SARIF/Code Scanning associate findings with source, not a surea11y limitation. If you need inline annotations, scan the rendered HTML file (e.g. a build output artifact) rather than a live URL.
 
 `occurrence.selector` is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.
+
+## Scanning at several viewport widths
+
+A layout-dependent rule can fail at one viewport width and pass at another (see [`LIMITATIONS.md`](./LIMITATIONS.md)), so a page scanned at two widths is two analyses, not one. Give each its own category:
+
+```js
+const { renderSarifReport } = require('@surea11y/core/sarif');
+
+for (const width of [390, 1280]) {
+  // ...scan the page at this width into `result`...
+  fs.writeFileSync(`a11y-${width}.sarif`, renderSarifReport(result, { category: `a11y-${width}` }));
+}
+```
+
+and upload each file separately. GitHub Code Scanning treats each category as its own analysis. Within one category, a later upload replaces the earlier one, and an alert missing from it is closed, so two widths uploaded under the same category would open and close a width-specific alert on every run. Since July 2025 GitHub also rejects a single SARIF file holding two runs from the same tool and category. `github/codeql-action/upload-sarif` has a `category` input that does the same job when the file carries none.
+
+The finding's identity does not include the viewport, and does not need to: the same element with the same defect is the same finding at any width, and the category is what keeps the analyses apart. `runs[0].properties.environment` records the viewport each run used.
 
 ## Combining with `--baseline`
 

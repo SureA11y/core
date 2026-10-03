@@ -157,8 +157,21 @@ function runProperties(result) {
   return Object.keys(props).length ? props : null;
 }
 
+// A scan category, for a consumer that keeps several analyses of one commit
+// apart: a page scanned at two viewport widths is two analyses, and GitHub
+// Code Scanning closes an alert that is missing from a later upload in the
+// same category, so a finding seen at one width only would open and close
+// with every upload. SARIF has automationDetails.id for this; GitHub reads
+// everything up to its last slash as the category, hence the one added.
+function automationDetails(category) {
+  if (typeof category !== 'string' || !category.trim()) return null;
+  const id = category.trim();
+  return { id: id.endsWith('/') ? id : `${id}/` };
+}
+
 function renderSarifReport(result, options = {}) {
-  const { toolVersion, informationUri, baselineEntries } = options;
+  const { toolVersion, informationUri, baselineEntries, category } = options;
+  const automation = automationDetails(category);
   const artifactUri = artifactUriFromResult(result);
   const remaining = buildRemainingBaselineMap(baselineEntries);
 
@@ -230,6 +243,7 @@ function renderSarifReport(result, options = {}) {
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.
         results: [...failResults, ...cantTellResults],
+        ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
           ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }

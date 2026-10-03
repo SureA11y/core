@@ -40,6 +40,12 @@ Matching counts occurrences, not just presence: if a page has 3 elements that pr
 
 Baseline entries that don't match anything in a fresh scan are reported as **stale** (the violation was presumably fixed) — this is informational only and never gates the build; regenerate the baseline with `--write-baseline` periodically to clean these up.
 
+## Scanning at several viewport widths
+
+A baseline entry does not record the viewport, and matching does not use it (see [`API_STABILITY.md`](./API_STABILITY.md#finding-identity)): the same element with the same defect matches at any width. That suits a page whose findings do not depend on its layout. A layout-dependent rule, such as `text-spacing-content-loss` or `target-size-minimum`, can fail at one width and not at another, so for a page scanned at several widths, keep **one baseline per width**: `a11y-baseline-390.json`, `a11y-baseline-1280.json`.
+
+A single baseline written from every width still gates correctly, since a finding is new only when no entry matches it. But each run then reports the other widths' findings as stale, so the stale count stops telling you what was fixed.
+
 ## File format
 
 ```json

@@ -72,7 +72,7 @@ There is deliberately no hook for changing what a built-in rule decides. Overrid
 A consumer needs to know whether a finding it is looking at is the same one it saw last week. Two things in this package answer that, and both compute it the same way — `computeBaselineKey(ruleId, reasonCode, html)` in `src/baseline.js`:
 
 - **Baselines.** `--write-baseline`/`--baseline` suppress known findings so a build only breaks on new ones.
-- **SARIF.** `partialFingerprints['surea11y/violation/v1']`, which GitHub Code Scanning uses to decide whether an alert is the same alert or a new one.
+- **SARIF.** `partialFingerprints['surea11y/violation/v1']`, for SARIF consumers that match results on it. (GitHub Code Scanning documents that it uses only its own `primaryLocationLineHash` from `partialFingerprints`.)
 
 So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of those three are promises:
 
@@ -85,6 +85,8 @@ What the last release shipped is frozen in [`scripts/data/released-finding-ids.j
 Both are inventoried in [`scripts/data/finding-ids.json`](../scripts/data/finding-ids.json) for core's rules, and in each profile's own `scripts/data/finding-ids.json` for its rules, regenerated with `npm run finding-ids` and checked by `tests/finding-ids.test.js`, which fails when a published rule id or reason code disappears. The inventory is the record of what has been promised; the test is what stops the promise being broken by accident.
 
 Note what identity does **not** include: `selector` and `structuralPath` deliberately stay out of the fingerprint, because both change when the surrounding page is edited, which would make every finding look new after an unrelated refactor. `html` is in, so editing the flagged element itself does read as a new finding — that is the intended trade-off, since the element's markup is the thing the finding is about.
+
+The conditions a page was rendered under stay out too: `engine.environment`, and the `viewport` a layout-dependent finding carries in `data.details`. The same element with the same defect is the same finding at any viewport width, and needs the same fix. A width-dependent finding is one that exists at some widths and not others, not a different finding at each. Folding the width in would also give every finding a new identity the first time a baseline or alert history met a result that has one. A caller that scans at several widths keeps them apart where the analyses are kept: a baseline per width, a SARIF `category` per width (see [`SARIF.md`](./SARIF.md#scanning-at-several-viewport-widths)).
 
 ### A removal that predates this guard
 
