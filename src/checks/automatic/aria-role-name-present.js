@@ -36,6 +36,8 @@
  *   role: the first child <legend> of a <fieldset>, the first child
  *   <caption> of a <table>, and an associated <label> on a labelable
  *   element such as <progress> or <meter>.
+ * @reports
+ *   - `role`: the role that needs a name.
  */
 
 const id = 'aria-role-name-present';

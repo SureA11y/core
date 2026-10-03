@@ -18,6 +18,10 @@
  *   The element has an ancestor (DOM containment) or owner (via that
  *   ancestor/owner's aria-owns) whose effective role is one of the
  *   acceptable context roles for this element's role.
+ * @reports
+ *   - `role`: the element's role.
+ *   - `requiredContextRoles`: the roles one of which it must sit inside, or
+ *     be owned by. Each item is a role name.
  * @implementation-notes
  * - Scoped to REQUIRED_CONTEXT_ROLE in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale); roles

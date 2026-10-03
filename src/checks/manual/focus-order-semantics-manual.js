@@ -17,6 +17,9 @@
  *   `presentation` gives assistive technology no interactive semantic to
  *   announce, which is confusing for keyboard users who land on it and
  *   get no indication of what activating it (if anything) would do.
+ * @reports
+ *   - `tabindex`: the element's `tabindex`, as a number (0 or greater).
+ *   - `role`: the non-interactive role the element carries.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule.

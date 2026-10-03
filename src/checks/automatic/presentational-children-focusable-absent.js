@@ -21,6 +21,10 @@
  *   The presentational-children mechanism removes every descendant from
  *   the accessibility tree, so a descendant that still takes a tab stop
  *   receives focus with no role and no name to announce.
+ * @reports
+ *   - `role`: the role that makes the element's children presentational.
+ *   - `focusableElements`: the tag name of each tab stop found inside the
+ *     element, one item per tab stop, in document order.
  * @implementation-notes
  * - "Presentational children" is the implicit, role-driven mechanism from
  *   WAI-ARIA §5.2.7, NOT an explicit role="presentation"/"none" attribute.

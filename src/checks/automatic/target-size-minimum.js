@@ -14,7 +14,8 @@
  *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
  *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
  *   a filter here: an aria-hidden control is still a target a pointer can hit.
- *   <area> is matched but never actually evaluated, for the reason given below.
+ *   <area> is matched but never actually evaluated: it has no box of its own
+ *   to measure (see the implementation notes).
  * @expectation
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry: spacing (a
@@ -26,7 +27,26 @@
  *   confirm it (two inline links in one run of text, or a target inside an
  *   SVG, canvas or image map that may be essential), the result is cantTell
  *   rather than a guess.
- *
+ * @reports
+ *   - `metrics.widthPx`, `metrics.heightPx`: the target's size in CSS
+ *     pixels, against `metrics.minSizePx` (24).
+ *   - `metrics.decidedBy`: which check found the target too close to
+ *     another: `centerDistance` or `perimeterSampling`.
+ *   - `metrics.centerDistancePx`, `metrics.minDistancePx` (`centerDistance`):
+ *     the distance from the target's centre to its neighbour's, against the
+ *     24px it needs.
+ *   - `metrics.perimeterHits`, `metrics.perimeterSamples`,
+ *     `metrics.perimeterHitsToFail` (`perimeterSampling`): how many of the
+ *     points on the 24px circle around the target land on another target,
+ *     out of how many, against the number that fails.
+ *   - `conflictWith`: a selector for the neighbour it is too close to.
+ *   - `conflictHitCount`: the same count as `metrics.perimeterHits`, 0 when
+ *     the distance decided.
+ *   - `measured.width`, `measured.height`: the target's size, unrounded.
+ *   - `viewport.width`, `viewport.height`: the viewport the page was laid
+ *     out in, in CSS pixels. A responsive page can size or place a target
+ *     differently at another width.
+ * @implementation-notes
  * Notes (engine intent):
  * - This rule is DOM-based and measures pointer hit regions available to sighted pointer users.
  * - Elements can be "pointer-operable" even if excluded from the accessibility tree (e.g. aria-hidden="true").
@@ -37,11 +57,6 @@
  * - A neighbour found by the centre-distance check counts only if the browser shows it somewhere
  *   near the target: one covered there by something else, such as a page link under a fixed
  *   cookie banner, cannot be hit by a pointer aiming at the target.
- * - Each finding reports what decided it in `data.details.metrics`: the target's size against
- *   the 24px minimum, and either the centre-to-centre distance to its neighbour against 24px
- *   or how many perimeter samples hit another target against the count that fails. It also
- *   reports the viewport it was measured at, and the summary names the size and the viewport
- *   width: a responsive page can size or place a target differently at another width.
  *
  * WCAG 2.5.8 exceptions implemented, and how:
  * - Spacing: a 24px-diameter circle centered on an undersized target must not

@@ -19,6 +19,9 @@
  *   reference: it resolves to the first element in tree order, so the name is
  *   still computed. Whether that element is the intended target depends on
  *   author intent, which markup does not carry, so the outcome is cantTell.
+ * @reports
+ *   - `id`: the duplicated id an ARIA attribute refers to.
+ *   - `duplicateCount`: how many elements in the document carry that id.
  * @implementation-notes
  * - Scoped to ids referenced by ARIA. The page-wide check
  *   lives in its own rule, `duplicate-id`, mapped to the WCAG 2.0/2.1 SC

@@ -19,6 +19,16 @@
  *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ * @reports
+ *   - `fallbackText`: the text content inside the <object>, trimmed, or
+ *     `null` when there is none.
+ *   - `ariaLabel`: the `aria-label` value, or `null` when there is none.
+ *   - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to,
+ *     or `null` when there is none.
+ *   - `ariaLabelledByText`: the text of the elements `aria-labelledby`
+ *     points to. Only looked up when there is no `aria-label`; `null`
+ *     otherwise or when it resolves to nothing.
+ *   - `title`: the `title` value, or `null` when there is none.
  */
 
 const id = 'object-text-alternative-quality';

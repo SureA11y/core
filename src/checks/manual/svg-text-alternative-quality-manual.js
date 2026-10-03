@@ -20,6 +20,17 @@
  *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ * @reports
+ *   - `hasNonEmptyTitle`: `true` when the first <title> inside the <svg> has
+ *     text.
+ *   - `hasNonEmptyDesc`: `true` when the first <desc> inside the <svg> has
+ *     text.
+ *   - `ariaLabel`: the `aria-label` value, or `null` when there is none.
+ *   - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to,
+ *     or `null` when there is none.
+ *   - `ariaLabelledByText`: the text of the elements `aria-labelledby`
+ *     points to, up to 120 characters. Only looked up when there is no
+ *     `aria-label`; `null` otherwise or when it resolves to nothing.
  */
 
 const id = 'svg-text-alternative-quality';

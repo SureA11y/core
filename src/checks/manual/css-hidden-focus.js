@@ -18,8 +18,17 @@
  *   (`.skip { position: absolute; left: -9999px } .skip:focus { left: 0 }`),
  *   or a hiding rule that stops applying on focus
  *   (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`).
- *
- * Notes:
+ * @reports
+ *   - `metrics.visibilityHints`: how the element is hidden while it can
+ *     take focus: `opacityZero`, `offscreen`, `clipped` or
+ *     `zeroSizeOverflowHidden` (no size, with overflow hidden).
+ *   - `runtimeProbe`: `null` unless focusing the element moved focus
+ *     straight to another element
+ *     (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds
+ *     `redirected: true` and the tag and id of the element focus moved to
+ *     (`redirectedToTag`, `redirectedToId`). Only the first three hidden
+ *     elements are tried this way.
+ * @implementation-notes
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
  * - The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.

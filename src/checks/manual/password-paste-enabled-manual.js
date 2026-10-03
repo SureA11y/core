@@ -19,6 +19,10 @@
  *   password is a cognitive function test, and 3.3.8 asks for a mechanism
  *   that helps the user through one; a password manager, or the clipboard
  *   for a one-time code, is that mechanism.
+ * @reports
+ *   - `handler`: the field's `onpaste` attribute value, with spacing
+ *     collapsed. It only cancels the paste (`PASTE_CANCELLED`) or calls
+ *     other script that may or may not (`PASTE_HANDLER_OPAQUE`).
  * @implementation-notes
  * - Advisory and capped at cantTell. Whether a handler really stops the user
  *   depends on script the markup does not carry, so no reading of it is safe

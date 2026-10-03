@@ -22,6 +22,10 @@
  *   subtag (lang="fr-FR-!!") still identifies French, so it passes here;
  *   it is a markup validity error, not a missing language.
  *
+ * @reports
+ *   - `lang` (a language that is not valid): the `lang` attribute's value,
+ *     as written.
+ *
  * @outcomes
  *   Pass:
  *     The <html> element has a non-empty lang attribute whose primary subtag is valid.

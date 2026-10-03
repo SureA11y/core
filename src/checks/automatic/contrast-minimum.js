@@ -20,6 +20,31 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
+ * @reports
+ *   - `metrics.ratio` (text below the threshold): the text's contrast
+ *     ratio against its background (4.5 for 4.5:1), against
+ *     `metrics.threshold`, the ratio its size requires.
+ *   - `colors.foregroundHex`, `colors.backgroundHex` (text below the
+ *     threshold): the text color and the background color behind it, as
+ *     hex, after any transparency is blended in.
+ *     `colors.foregroundRgba` and `colors.backgroundRgba` give the same two
+ *     colors in `rgba()` form.
+ *   - `typography.fontSizePx`, `typography.fontSizePt` (text below the
+ *     threshold): the computed font size, in CSS pixels and in points.
+ *   - `typography.fontWeight`, `typography.fontWeightLabel` (text below the
+ *     threshold): the computed font weight as a number (400, 700) and as
+ *     written.
+ *   - `typography.isBold`, `typography.isLargeText` (text below the
+ *     threshold): whether the text counts as bold, and as large text, the
+ *     size that only needs 3:1.
+ *   - `assumptionsApplied`, `assumedRootCanvasColor` (text below the
+ *     threshold): `null` unless the `auditorAssist` contrast mode had to
+ *     assume a page background because the page sets none that is opaque.
+ *     Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and
+ *     `assumedRootCanvasColor` is the color assumed (white by default).
+ *   - `eligibleTextCount`, `computableTextCount` (the summary when nothing
+ *     fails): how many text nodes the rule looked at, and how many of them
+ *     had colors it could compute. Repeated under `metrics` on a pass.
  * @implementation-notes
  * - Its thresholds are settings (`settings` below), so another standard's
  *   contrast requirement is a variant of this rule rather than a copy

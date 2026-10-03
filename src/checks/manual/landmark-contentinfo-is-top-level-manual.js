@@ -10,8 +10,7 @@
  * @applicability
  *   Applies whenever the page contains at least one contentinfo
  *   candidate: explicit role="contentinfo", OR a <footer> with NO role
- *   attribute at all, regardless of nesting (see implementation notes on
- *   why candidate selection is unconditional on purpose).
+ *   attribute at all, regardless of nesting.
  * @expectation
  *   No contentinfo candidate has an ancestor that is itself any landmark
  *   region. A contentinfo nested inside another landmark is not a

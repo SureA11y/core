@@ -29,6 +29,12 @@
  *   accurate and appropriate. Each occurrence lists every source present
  *   (data.details.sources), so the reviewer checks each one: a title or
  *   aria-label that is not the name still reaches some users.
+ * @reports
+ *   - `name`: the text alternative the area ends up with, taken from the
+ *     first source in `sources`.
+ *   - `sources`: each source of text the area has, in the order they are
+ *     used for the name: `aria-labelledby`, `aria-label`, `alt`, `title`.
+ *   - `alt` (an area with an alt attribute): the alt text.
  */
 
 const id = 'area-alt-quality';

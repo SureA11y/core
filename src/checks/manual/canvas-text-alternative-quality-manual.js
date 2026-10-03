@@ -19,6 +19,15 @@
  *   which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ * @reports
+ *   - `value`: the text alternative to review. When the fallback content
+ *     has no text of its own but holds an image with alt text or an element
+ *     with an aria-label, this is the placeholder `fallback-content`.
+ *   - `mechanism`: where the text alternative comes from:
+ *     `canvas-fallback` (content inside the <canvas>), `aria-labelledby`,
+ *     `aria-label` or `title`.
+ *   - `flags`: notes on how the text alternative was found, such as
+ *     `title-used` when only the title attribute provides it.
  */
 
 const id = 'canvas-text-alternative-quality';

@@ -32,6 +32,9 @@
  *   is unknown fails to identify a real language at all; a malformed later
  *   subtag (lang="en-US_x") still identifies English and passes here, since
  *   it is a markup validity error rather than a missing language.
+ * @reports
+ *   - `value`: the lang attribute's value, with surrounding whitespace
+ *     removed.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule covers the root <html> element only, for SC 3.1.1); this rule

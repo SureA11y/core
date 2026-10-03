@@ -20,6 +20,9 @@
  *   (`<h1>`-`<h6>` or `role="heading"`) so its structural role is
  *   programmatically determinable, the same 1.3.1 concern as any other
  *   "structure conveyed through presentation only" issue.
+ * @reports
+ *   - `fontSizePx`: the computed font size of the text in CSS pixels, the
+ *     smallest one when the pieces differ, against the 18px threshold.
  * @implementation-notes
  * - This is a stylistic heuristic (bold + large + short), not a
  *   deterministic structural check: a short bold sentence is not

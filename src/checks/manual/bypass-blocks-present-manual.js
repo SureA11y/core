@@ -23,7 +23,7 @@
  *       <a href="#id"> (or legacy <a name="id">) whose target resolves to
  *       a real element in the link's own tree (light DOM or the same shadow
  *       root). Not required to be positioned before a <nav> or be
- *       keyboard-focus-order-first (see implementation notes);
+ *       keyboard-focus-order-first;
  *   (c) at least one heading (<h1>-<h6> or [role="heading"]) that is both
  *       included in the accessibility tree AND visible (not off-screen,
  *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:

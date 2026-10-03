@@ -31,6 +31,24 @@
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at
  *   a ratio.
+ * @reports
+ *   - `blockerProperty`, `blockerValue` (a CSS effect in the way): the CSS
+ *     property that blocks the calculation and its value, for example
+ *     `mix-blend-mode`, `filter`, `text-shadow` or `opacity`.
+ *   - `blockerSelector` (a CSS effect in the way): a selector for the
+ *     element that has it, which may be an ancestor of the text.
+ *   - `backgroundFillType` (a background image or gradient): `image`,
+ *     `gradient`, `imageAndGradient`, or `unknown`.
+ *   - `background`, `backgroundAlpha` (a background that never becomes
+ *     opaque, or a color that does not parse): the background color as far
+ *     as it could be worked out, as an `rgba()` string, and its opacity from
+ *     0 to 1.
+ *   - `eligibleTextCount` (the pass): how many text nodes were checked.
+ *   - `assumptionsCount`, `assumptionsApplied` (the pass): how many text
+ *     nodes needed an assumption to get a background, and which ones were
+ *     made. Each item is a code; `ROOT_CANVAS_FALLBACK` means a page
+ *     background that never becomes opaque was taken to sit on the
+ *     configured canvas color, white by default.
  */
 
 const id = 'contrast-computable';

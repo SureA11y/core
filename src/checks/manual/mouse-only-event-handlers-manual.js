@@ -28,6 +28,13 @@
  *   no way to be triggered by a keyboard-only user, and it is flagged with
  *   a reason saying whether the keyboard handlers are missing or cannot
  *   run.
+ * @reports
+ *   - `mouseAttrs`: the pointer-only handler attributes the element
+ *     carries. One item is an attribute name, such as `onmouseover`.
+ *   - `keyboardAttrs` (handlers that cannot run,
+ *     `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard
+ *     handler attributes the element carries, which keyboard events cannot
+ *     reach. One item is an attribute name, such as `onfocus`.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), not
  *   `automatic`: this can only see inline `on*="..."` HTML attributes.

@@ -23,6 +23,8 @@
  *   optionally followed by "webauthn". A malformed value means the field
  *   is not reliably identified for assistive technology that relies on
  *   autocomplete to describe the expected input purpose.
+ * @reports
+ *   - `value`: the autocomplete value as written, trimmed.
  * @implementation-notes
  * - Implements the structural shape of the WHATWG autofill grammar
  *   (section/mode/contact-modality prefixes + one field-name token, in

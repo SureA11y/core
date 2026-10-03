@@ -23,6 +23,9 @@
  *   announced or operable via assistive technology, activating the outer
  *   control and the inner one become ambiguous, and some AT only exposes
  *   one of the two.
+ * @reports
+ *   - `nestedElements`: the controls nested inside this one, one tag name
+ *     per control.
  * @implementation-notes
  * - A descendant counts as a nested interactive control only when it is both
  *   (a) a native interactive element or an explicit ARIA widget role and

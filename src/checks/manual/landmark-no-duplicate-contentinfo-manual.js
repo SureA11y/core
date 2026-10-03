@@ -13,6 +13,9 @@
  * @expectation
  *   At most one contentinfo landmark exists on the page, mirroring
  *   landmark-no-duplicate-banner's rationale for contentinfo.
+ * @reports
+ *   - `count`: how many contentinfo landmarks the page exposes to assistive
+ *     technology, against a limit of 1.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

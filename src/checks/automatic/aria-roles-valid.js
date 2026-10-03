@@ -20,6 +20,11 @@
  *     4.1.2 as a secondary requirement only, "satisfied through the implicit
  *     role," so the bad token is worth reporting but is not itself the
  *     criterion failing.
+ * @reports
+ *   - `role`: the first token of the role attribute. No token in it is a
+ *     known role, or the known ones are all abstract.
+ *   - `nativeRole` (the CANTTELL case): the element's native role, which
+ *     assistive technology keeps using.
  */
 
 const id = 'aria-roles-valid';

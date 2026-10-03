@@ -26,6 +26,10 @@
  *   The native-HTML equivalents already work this way: nothing in this
  *   ruleset fails an empty <ul>, and list-children-valid judges only the
  *   children that exist.
+ * @reports
+ *   - `role`: the container's role.
+ *   - `requiredOwnedRoles`: the roles it needs at least one child with.
+ *     Each item is a role name.
  * @implementation-notes
  * - Scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale).

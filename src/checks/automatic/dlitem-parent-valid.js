@@ -16,6 +16,9 @@
  *   commonly group dt/dd pairs). A <dt>/<dd> used outside a real
  *   description-list container is not exposed as a term/definition to
  *   assistive technologies.
+ * @reports
+ *   - `parentElement`: the tag name of the element's parent, the container
+ *     it is in instead of a `<dl>`.
  * @implementation-notes
  * - Distinct, atomic decision from definition-list-children-valid
  *   (the inverse relationship: does a given <dl> have valid children).

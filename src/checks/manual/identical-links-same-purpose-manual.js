@@ -20,6 +20,12 @@
  *   authored as `type: 'manual'` (cantTell-capped, never fail) rather
  *   than a hard fail, flagging a real name/destination mismatch for
  *   human judgment instead of guessing intent.
+ * @reports
+ *   - `name`: the accessible name the links share, trimmed, with
+ *     whitespace collapsed and in lower case.
+ *   - `href`: the full URL this link leads to.
+ *   - `distinctDestinationCount`: how many different URLs the links with
+ *     this name lead to, a count of 2 or more.
  * @implementation-notes
  * - Destination comparison uses the DOM `.href` property (already
  *   resolved to an absolute URL by the engine/browser), not the raw

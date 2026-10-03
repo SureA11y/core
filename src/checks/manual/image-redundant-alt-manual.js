@@ -18,6 +18,9 @@
  *   present, assistive technology announces the same words twice for a
  *   single control (e.g. an icon-plus-text link where the icon's alt
  *   duplicates the link text).
+ * @reports
+ *   - `alt`: the image's alt text, with spacing collapsed. It matches the
+ *     text next to it.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

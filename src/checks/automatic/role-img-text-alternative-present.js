@@ -27,6 +27,16 @@
  *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
  *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM); OR
  *    - for an SVG-namespace element, a non-empty first-child <title> (SVG-AAM's own naming mechanism, not only for the <svg> root).
+ * @reports
+ *   - `ariaLabel`: the element's `aria-label` with surrounding whitespace
+ *     removed, or null when it has none.
+ *   - `ariaLabelledby`: the element's `aria-labelledby` id list with
+ *     surrounding whitespace removed, or null when it has none.
+ *   - `accessibleNameInfo` (`nameNotResolved`): the accessible name the
+ *     element ends up with: `present`, `value`, `mechanism` (where the name
+ *     came from, such as `aria-labelledby`) and `flags` (notes on what went
+ *     wrong, such as `idref-missing` for a reference to an id that does not
+ *     exist). Null on the other findings.
  */
 
 const id = 'role-img-text-alternative-present';

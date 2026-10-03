@@ -25,9 +25,14 @@
  * @expectation
  *   Prohibited attributes must not be present on (a); for (b), the naming
  *   attribute is at best unreliable (nothing accessible-name-aware to hang
- *   it off) and at worst silently ignored by assistive technology. See the
- *   roleless-branch implementation note below for the confidence split
- *   this produces.
+ *   it off) and at worst silently ignored by assistive technology. A
+ *   roleless element whose own content already gives it a name is
+ *   reported as CANTTELL, since the attribute may be a deliberate override;
+ *   one with no other source for a name FAILs.
+ * @reports
+ *   - `attr`: the naming attribute found, `aria-label` or
+ *     `aria-labelledby`.
+ *   - `role`: the role that prohibits it; `null` on an element with no role.
  * @implementation-notes
  * - Scoped to the single, well-established prohibition class
  *   (naming attributes on pure text-semantics roles) rather than an

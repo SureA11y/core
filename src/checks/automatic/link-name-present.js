@@ -21,6 +21,11 @@
  *   content fallback is suppressed when an explicit, known role that is not
  *   name-from-content is present; an unrecognized role token falls back to
  *   the implicit role.
+ * @reports
+ *   - `refs.accessibleName`: what the programmatic name lookup found:
+ *     `present`, `value`, `mechanism` (the attribute or element the name
+ *     would come from, `none` when there is none) and `flags` (notes on
+ *     why a source gave no name). `null` when no lookup was made.
  */
 
 const id = 'link-name-present';

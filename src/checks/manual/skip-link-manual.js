@@ -28,6 +28,19 @@
  *   browser geometry is available, not zero-area/no-rects). A skip link
  *   whose target is missing or effectively unusable does not provide a
  *   reliable bypass destination.
+ * @reports
+ *   - `href`: the link's `href`.
+ *   - `unusableReasonCode` (a target that is not usable): why it is not:
+ *     `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree,
+ *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it
+ *     has no area.
+ *   - `targetSelector` (a target that is not usable): a selector for the
+ *     target.
+ *   - `geometryCheckEnabled` (a target that is not usable): whether the
+ *     target's geometry could be measured, which needs a browser.
+ *   - `viewport.width`, `viewport.height` (a target whose geometry was
+ *     measured): the viewport the page was laid out in, in CSS pixels. A
+ *     target hidden at one width can be usable at another.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

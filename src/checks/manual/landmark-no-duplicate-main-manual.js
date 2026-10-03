@@ -14,6 +14,9 @@
  *   At most one main landmark exists on the page. Distinct, atomic
  *   decision from landmark-one-main (that rule flags zero
  *   mains too; this one only flags more than one).
+ * @reports
+ *   - `count`: how many main landmarks the page exposes to assistive
+ *     technology, against a limit of 1.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

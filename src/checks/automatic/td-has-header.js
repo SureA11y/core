@@ -29,6 +29,9 @@
  *   a name (an image, a control, an element with an ARIA label) holds no
  *   data, so it needs no header; the empty corner cell above row headers is
  *   the usual case.
+ * @reports
+ *   - `row`, `column`: where the cell sits in the table, counting from 0:
+ *     rows from the top, cells from the left within the row.
  * @implementation-notes
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional

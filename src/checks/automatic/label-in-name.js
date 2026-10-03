@@ -40,6 +40,20 @@
  *   character that doesn't even appear inside the accessible name, which
  *   per ACT 2ee8b8 may be "non-text content" (e.g. "X" meaning "close")
  *   rather than literal text.
+ * @reports
+ *   - `visibleLabel`, `accessibleName`: the visible label text and the
+ *     accessible name, as found.
+ *   - `normalized.visibleLabel`, `normalized.accessibleName`: the same two
+ *     texts as compared: parenthesised text dropped, case folded, Unicode
+ *     normalised.
+ *   - `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each
+ *     text was split into, one word per item. The name must hold the
+ *     label's words next to each other and in order.
+ *   - `labelSource`: where the visible label came from: `label` (an
+ *     associated `<label>`), `self` (the control's own text) or
+ *     `aria-labelledby` (the elements it points at).
+ *   - `nameMechanism`: what gives the accessible name: `aria-label` or
+ *     `aria-labelledby`.
  */
 
 const id = 'label-in-name';

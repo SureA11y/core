@@ -30,6 +30,14 @@
  *   ancestor of it, or, on a page without a main landmark, an element
  *   holding at least half of the body's text. Whether the orientation is
  *   essential, and whether the page stays usable, is left to a person.
+ * @reports
+ *   - `mediaText` (a rotation or hidden content): the media query that
+ *     holds the rule, such as `(orientation: portrait)`.
+ *   - `selectorText` (a rotation or hidden content): the selector of the
+ *     style rule that rotates or hides. Empty when it could not be read.
+ *   - `unreadableSheetCount` (`STYLESHEETS_NOT_READABLE`): how many style
+ *     sheets could not be read, usually because they come from another
+ *     origin.
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
  *   merely the presence of a `rotate()` function: a small decorative icon

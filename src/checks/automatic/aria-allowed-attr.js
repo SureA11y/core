@@ -21,6 +21,11 @@
  *   An attribute ARIA deprecated (rather than prohibited) on the role is
  *   still allowed: it is reported as CANTTELL (see helpers.aria.isDeprecatedAttr)
  *   so the author decides, not as a not-allowed FAIL.
+ * @reports
+ *   - `attr`: the aria-* attribute that is not allowed, or deprecated, on
+ *     the element.
+ *   - `role` (an element with a role): the role it was judged against,
+ *     explicit or implicit. Absent when the element has no role at all.
  * @implementation-notes
  * - Three tiers of role resolution, in order: an explicit `role`; the
  *   implicit role of the tag (IMPLICIT_ROLE_BY_ELEMENT, generated only for
