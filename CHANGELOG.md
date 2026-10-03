@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- `target-size-minimum` no longer reports a visually hidden link or button as a 1×1 target ([#37](https://github.com/SureA11y/core/issues/37)). A control clipped to nothing, on itself or an ancestor (`clip: rect(0 0 0 0)` or `rect(1px, 1px, 1px, 1px)` on an absolutely positioned box, or `clip-path: inset(50%)`), cannot be hit by a pointer, so it is left out like one with `display: none`. A visually hidden skip link next to a logo or menu button failed this way, as on stackoverflow.com.
+- `target-size-minimum` no longer fails a small target over a neighbour that is covered near it ([#38](https://github.com/SureA11y/core/issues/38)). An example is a page link under a fixed cookie banner, which a pointer aiming at the banner's button cannot reach, as on bbc.co.uk/news at 390px. A neighbour found by the centre-distance check now counts only if the browser shows it somewhere within 24px of the target. A point outside the viewport proves nothing, so a neighbour below the fold still counts. Outside a browser nothing changes.
+
 ## [1.8.1] - 2026-10-02
 
 ### Added

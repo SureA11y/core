@@ -60277,6 +60277,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return cs;
   }
 
+  // A rect() clip that leaves no area: rect(0, 0, 0, 0), or the older
+  // visually-hidden rect(1px, 1px, 1px, 1px). `auto` edges do not clip.
+  function isEmptyClipRect(value) {
+    const m = /^rect\((.*)\)$/i.exec(String(value || '').trim());
+    if (!m) return false;
+    const edges = m[1].split(/\s*,\s*|\s+/).filter(Boolean);
+    if (edges.length !== 4) return false;
+    const px = (v, auto) => (v.toLowerCase() === 'auto' ? auto : parseFloat(v));
+    const [top, right, bottom, left] = [
+      px(edges[0], -Infinity),
+      px(edges[1], Infinity),
+      px(edges[2], Infinity),
+      px(edges[3], -Infinity)
+    ];
+    if ([top, right, bottom, left].some((n) => Number.isNaN(n))) return false;
+    return right <= left || bottom <= top;
+  }
+
+  // Visually hidden: the element, or an ancestor, is clipped to nothing, as
+  // the usual screen-reader-only pattern does. A pointer cannot hit any of
+  // it, so it is not a target, however small its box. `clip` applies only to
+  // absolutely positioned boxes; `clip-path: inset(50%)` hides anything.
+  function isClippedAway(el) {
+    for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
+      const cs = getStyle(a);
+      if (!cs) continue;
+      const position = String(cs.position || '');
+      if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(cs.clip))
+        return true;
+      const clipPath = String(cs.clipPath || '')
+        .trim()
+        .toLowerCase();
+      if (/^inset\(\s*(50|100)%/.test(clipPath) || /^circle\(\s*0(px|%)?[\s)]/.test(clipPath))
+        return true;
+    }
+    return false;
+  }
+
   function isPointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
@@ -60322,6 +60360,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (visibility === 'hidden' || visibility === 'collapse') return false;
     if (contentVisibility === 'hidden') return false;
     if (pointerEvents === 'none') return false;
+    if (isClippedAway(el)) return false;
 
     return true;
   }
@@ -60445,6 +60484,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
+  // Whether the browser reports something else on top of `other` everywhere
+  // near `target`: a link under a fixed cookie banner, say, which a pointer
+  // near the banner's own button cannot reach. Points in `other`'s box within
+  // 24px of the target's centre are hit-tested. A point outside the viewport
+  // hits nothing, which proves nothing, so `other` counts as covered only when
+  // a point did hit something and no point hit `other`.
+  function isCoveredNear(other, target) {
+    const r = other.rect;
+    const x0 = Math.max(r.left, target.center.cx - MIN);
+    const x1 = Math.min(r.right, target.center.cx + MIN);
+    const y0 = Math.max(r.top, target.center.cy - MIN);
+    const y1 = Math.min(r.bottom, target.center.cy + MIN);
+    if (x1 <= x0 || y1 <= y0) return false;
+    let answered = false;
+    for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+      for (const fy of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+        const hit = elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
+        if (!hit) continue;
+        answered = true;
+        try {
+          if (hit === other.el || other.el.contains(hit)) return false;
+        } catch {
+          return false;
+        }
+      }
+    }
+    return answered;
+  }
+
   // --- spacing/occlusion evaluation ---
   function hasSpacingConflict(target) {
     // 0) Pure geometry: deterministic center-distance check against ANY
@@ -60459,7 +60527,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // (Inline links in text are exempt and should not invalidate spacing.)
       if (isInlineTextExceptionTarget(other.el)) continue;
 
-      if (dist(target.center, other.center) < MIN) {
+      if (dist(target.center, other.center) < MIN && !isCoveredNear(other, target)) {
         return { conflict: true, confident: true, hitCount: 0, conflictEl: other.el };
       }
     }
