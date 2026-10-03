@@ -10571,13 +10571,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
     "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
-    "targetSizeMinimum_summary_fail": "Ein oder mehrere Zeigerziele sind kleiner als 24×24 CSS-Pixel und liegen zu nah an einem anderen Ziel.",
+    "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
     "targetSizeMinimum_hint_fail": "Vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel, oder fügen Sie ausreichend Abstand zu benachbarten Zielen hinzu.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Das Ziel ist möglicherweise zu klein und zu nah an einem anderen Ziel, aber die Überlappung liegt nahe am Erkennungsschwellenwert und konnte nicht zuverlässig gemessen werden.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt möglicherweise zu nah an einem anderen Ziel, aber die Überlappung liegt nahe am Erkennungsschwellenwert und konnte nicht zuverlässig gemessen werden.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Überprüfen Sie manuell den effektiven Abstand zwischen diesem Ziel und seinem Nachbarn; vergrößern Sie Zielgröße oder Abstand, falls die Überlappung real ist.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.",
     "targetSizeMinimum_notApplicable_noTargets": "Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.",
     "targetSizeMinimum_pass_allOk": "Alle zutreffenden Zeigerziele erfüllen die Mindestgröße oder eine zulässige Ausnahme.",
@@ -11412,13 +11412,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
-    "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
+    "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
@@ -12253,13 +12253,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
     "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
-    "targetSizeMinimum_summary_fail": "Uno o más objetivos de puntero son más pequeños que 24×24 px CSS y están demasiado cerca de otro objetivo.",
+    "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
     "targetSizeMinimum_hint_fail": "Aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar suficiente espaciado respecto a los objetivos vecinos.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "El objetivo puede ser demasiado pequeño y estar demasiado cerca de otro objetivo, pero la superposición está cerca del umbral de detección y no se pudo medir con confianza.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y puede estar demasiado cerca de otro objetivo, pero la superposición está cerca del umbral de detección y no se pudo medir con confianza.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Verificar manualmente el espaciado efectivo entre este objetivo y su vecino; aumentar el tamaño del objetivo o el espaciado si la superposición es real.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.",
     "targetSizeMinimum_notApplicable_noTargets": "Ningún objetivo operable por puntero era elegible para la evaluación.",
     "targetSizeMinimum_pass_allOk": "Todos los objetivos de puntero elegibles cumplen el tamaño mínimo o una excepción permitida.",
@@ -13094,13 +13094,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
-    "targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
+    "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
     "targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible est peut-être trop petite et trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est peut-être trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
@@ -13935,13 +13935,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "aria-label、または空でないテキストを参照する aria-labelledby で、テキストによる代替を指定してください。",
     "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
     "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
-    "targetSizeMinimum_summary_fail": "24×24 CSS px 未満で、ほかのターゲットに近すぎるポインターのターゲットがあります。",
+    "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
     "targetSizeMinimum_hint_fail": "ターゲットのサイズを 24×24 CSS px 以上にするか、隣接するターゲットとの間に十分な間隔を空けてください。",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "ターゲットが小さすぎ、ほかのターゲットに近すぎる可能性がありますが、重なりが検出の閾値付近にあるため、確実には測定できませんでした。",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎる可能性がありますが、重なりが検出の閾値付近にあるため、確実には測定できませんでした。",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "このターゲットと隣接するターゲットとの実際の間隔を手動で確認してください。実際に重なっている場合は、ターゲットのサイズまたは間隔を大きくしてください。",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "ターゲットが小さすぎ、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "このターゲットのサイズが機能にとって必要不可欠か (SVG、canvas、イメージマップの一部など) を確認してください。そうでない場合は、ターゲットのサイズまたは間隔を大きくしてください。",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "ターゲットが 24×24 CSS px 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文中のインラインテキストの一部か (その場合は例外に該当します) を確認してください。そうでない場合は、ターゲットのサイズを 24×24 CSS px 以上にするか、間隔を空けてください。",
     "targetSizeMinimum_notApplicable_noTargets": "評価の対象となる、ポインターで操作できるターゲットはありませんでした。",
     "targetSizeMinimum_pass_allOk": "対象となるすべてのポインターのターゲットが、最小サイズを満たしているか、認められている例外に該当しています。",
@@ -58044,6 +58044,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const geometrySupported = hasReliableGeometrySupport();
+  const view = document.defaultView || null;
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -58157,7 +58158,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               href,
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
-              geometryCheckEnabled: geometrySupported
+              geometryCheckEnabled: geometrySupported,
+              // A target hidden at one breakpoint may be shown at another.
+              ...(geometrySupported && view
+                ? { viewport: { width: view.innerWidth, height: view.innerHeight } }
+                : {})
             },
             visibilityFilter: {
               targetSet: 'acc',
@@ -60571,8 +60576,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // (Inline links in text are exempt and should not invalidate spacing.)
       if (isInlineTextExceptionTarget(other.el)) continue;
 
-      if (dist(target.center, other.center) < MIN && !isCoveredNear(other, target)) {
-        return { conflict: true, confident: true, hitCount: 0, conflictEl: other.el };
+      const d = dist(target.center, other.center);
+      if (d < MIN && !isCoveredNear(other, target)) {
+        return {
+          conflict: true,
+          confident: true,
+          hitCount: 0,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d
+        };
       }
     }
 
@@ -60616,15 +60629,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!firstConflictEl) firstConflictEl = hitCandidate;
     }
 
+    const sampled = {
+      decidedBy: 'perimeterSampling',
+      samples: STEPS,
+      confidentHits: CONFIDENT_THRESHOLD
+    };
     if (hitCount >= CONFIDENT_THRESHOLD) {
-      return { conflict: true, confident: true, hitCount, conflictEl: firstConflictEl };
+      return { conflict: true, confident: true, hitCount, conflictEl: firstConflictEl, ...sampled };
     }
 
     // Ambiguous band: close enough to HIT_THRESHOLD that sampling noise
     // could have tipped the result either way. Defer to manual review
     // instead of committing to pass or fail.
     if (hitCount >= HIT_THRESHOLD - 1) {
-      return { conflict: false, confident: false, hitCount, conflictEl: firstConflictEl };
+      return {
+        conflict: false,
+        confident: false,
+        hitCount,
+        conflictEl: firstConflictEl,
+        ...sampled
+      };
     }
 
     return { conflict: false, confident: true, hitCount, conflictEl: null };
@@ -60708,6 +60732,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
 
+  // What decided a finding, measured against what it was held to, and the
+  // viewport it was measured at: a responsive page can size or place a
+  // target differently at another width. A conflict found by the distance
+  // check reports the centre-to-centre distance against the 24px spacing
+  // needs. One found by sampling the circle around the target reports how
+  // many of its points landed on another target against the count needed to
+  // fail; a centre distance would mislead there, since the neighbour is often
+  // a large element whose centre is far away.
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const view = document.defaultView || null;
+  const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
+  function measurements(it, info) {
+    const metrics = {
+      widthPx: round1(it.rect.width),
+      heightPx: round1(it.rect.height),
+      minSizePx: MIN,
+      decidedBy: info.decidedBy || null
+    };
+    if (info.decidedBy === 'centerDistance') {
+      metrics.centerDistancePx = round1(info.distancePx);
+      metrics.minDistancePx = MIN;
+    } else if (info.decidedBy === 'perimeterSampling') {
+      metrics.perimeterHits = info.hitCount;
+      metrics.perimeterSamples = info.samples;
+      metrics.perimeterHitsToFail = info.confidentHits;
+    }
+    return { metrics, viewport };
+  }
+  function sizeParams(it) {
+    return {
+      widthPx: String(round1(it.rect.width)),
+      heightPx: String(round1(it.rect.height)),
+      viewportWidth: String(viewport && viewport.width)
+    };
+  }
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline links in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -60723,6 +60783,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const info = hasSpacingConflict(it);
+    const size = sizeParams(it);
 
     if (!info.conflict && info.confident === false) {
       // Ambiguous perimeter-sampling result near the decision threshold: report
@@ -60732,13 +60793,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       cantTellOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'cantTell',
-          summary:
-            'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+          summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.`,
           hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
           i18n: {
             summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
             hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
-            params: {}
+            params: size
           },
           uncertainty: {
             code: 'not-computable',
@@ -60753,7 +60813,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-ambiguous-spacing',
               conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+              ...measurements(it, info)
             }
           }
         })
@@ -60769,13 +60830,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary:
-              'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+            summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
             hint: 'Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-              params: {}
+              params: size
             },
             uncertainty: {
               code: 'judgement-required',
@@ -60790,7 +60850,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 measured: { width: it.rect.width, height: it.rect.height },
                 reasonCode: 'undersized-plausibly-essential',
                 conflictHitCount: info.hitCount,
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...measurements(it, info)
               }
             }
           })
@@ -60805,13 +60866,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary:
-              'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+            summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
             hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
-              params: {}
+              params: size
             },
             uncertainty: {
               code: 'judgement-required',
@@ -60826,7 +60886,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 measured: { width: it.rect.width, height: it.rect.height },
                 reasonCode: 'undersized-inline-link-run',
                 conflictHitCount: info.hitCount,
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...measurements(it, info)
               }
             }
           })
@@ -60837,19 +60898,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: 'Target is too small and too close to another target.',
+          summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
           hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
           i18n: {
             summaryKey: 'targetSizeMinimum_summary_fail',
             hintKey: 'targetSizeMinimum_hint_fail',
-            params: {}
+            params: size
           },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-and-too-close',
               conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+              ...measurements(it, info)
             }
           }
         })
@@ -62654,13 +62716,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
     "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
-    "targetSizeMinimum_summary_fail": "Ein oder mehrere Zeigerziele sind kleiner als 24×24 CSS-Pixel und liegen zu nah an einem anderen Ziel.",
+    "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
     "targetSizeMinimum_hint_fail": "Vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel, oder fügen Sie ausreichend Abstand zu benachbarten Zielen hinzu.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Das Ziel ist möglicherweise zu klein und zu nah an einem anderen Ziel, aber die Überlappung liegt nahe am Erkennungsschwellenwert und konnte nicht zuverlässig gemessen werden.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt möglicherweise zu nah an einem anderen Ziel, aber die Überlappung liegt nahe am Erkennungsschwellenwert und konnte nicht zuverlässig gemessen werden.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Überprüfen Sie manuell den effektiven Abstand zwischen diesem Ziel und seinem Nachbarn; vergrößern Sie Zielgröße oder Abstand, falls die Überlappung real ist.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist zu klein und zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob die Größe dieses Ziels wirklich für seine Funktion essenziell ist (z. B. Teil eines SVG/Canvas/einer Image-Map); falls nicht, vergrößern Sie Zielgröße oder Abstand.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist kleiner als 24×24 CSS-Pixel und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links Teil eines Inline-Textflusses sind (der ausgenommen ist); andernfalls vergrößern Sie das Ziel auf mindestens 24×24 CSS-Pixel oder fügen Sie Abstand hinzu.",
     "targetSizeMinimum_notApplicable_noTargets": "Es gab keine per Zeiger bedienbaren Ziele, die für die Bewertung infrage kamen.",
     "targetSizeMinimum_pass_allOk": "Alle zutreffenden Zeigerziele erfüllen die Mindestgröße oder eine zulässige Ausnahme.",
@@ -63495,13 +63557,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
-    "targetSizeMinimum_summary_fail": "One or more pointer targets are smaller than 24×24 CSS px and are too close to another target.",
+    "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
     "targetSizeMinimum_hint_fail": "Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.",
     "targetSizeMinimum_notApplicable_noTargets": "No pointer-operable targets were eligible for evaluation.",
     "targetSizeMinimum_pass_allOk": "All eligible pointer targets meet the minimum size or a permitted exception.",
@@ -64336,13 +64398,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
     "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
-    "targetSizeMinimum_summary_fail": "Uno o más objetivos de puntero son más pequeños que 24×24 px CSS y están demasiado cerca de otro objetivo.",
+    "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
     "targetSizeMinimum_hint_fail": "Aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar suficiente espaciado respecto a los objetivos vecinos.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "El objetivo puede ser demasiado pequeño y estar demasiado cerca de otro objetivo, pero la superposición está cerca del umbral de detección y no se pudo medir con confianza.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y puede estar demasiado cerca de otro objetivo, pero la superposición está cerca del umbral de detección y no se pudo medir con confianza.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Verificar manualmente el espaciado efectivo entre este objetivo y su vecino; aumentar el tamaño del objetivo o el espaciado si la superposición es real.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo es demasiado pequeño y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Verificar si el tamaño de este objetivo es realmente esencial para su función (por ejemplo, parte de un SVG/canvas/mapa de imagen); si no lo es, aumentar el tamaño del objetivo o el espaciado.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo es más pequeño que 24×24 px CSS y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmar si estos enlaces forman parte de un texto en línea (que está exento); de lo contrario, aumentar el tamaño del objetivo a al menos 24×24 px CSS o agregar espaciado.",
     "targetSizeMinimum_notApplicable_noTargets": "Ningún objetivo operable por puntero era elegible para la evaluación.",
     "targetSizeMinimum_pass_allOk": "Todos los objetivos de puntero elegibles cumplen el tamaño mínimo o una excepción permitida.",
@@ -65177,13 +65239,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
     "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
-    "targetSizeMinimum_summary_fail": "La cible est plus petite que 24×24 px CSS et est trop proche d’une autre cible.",
+    "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
     "targetSizeMinimum_hint_fail": "Augmentez la taille de la cible à au moins 24×24 px CSS, ou ajoutez un espacement suffisant par rapport aux cibles voisines.",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible est peut-être trop petite et trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est peut-être trop proche d’une autre cible, mais le chevauchement est proche du seuil de détection et n’a pas pu être mesuré avec certitude.",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "Vérifiez manuellement l’espacement effectif entre cette cible et sa voisine ; augmentez la taille de la cible ou l’espacement si le chevauchement est réel.",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible est trop petite et trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée en tant qu’élément essentiel d’une zone graphique ou d’une image cliquable.",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si la taille de cette cible est réellement essentielle à sa fonction (par ex. partie d’un SVG/canvas/plan d’image) ; sinon, augmentez la taille de la cible ou l’espacement.",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible est plus petite que 24×24 px CSS et proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une fenêtre de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Confirmez si ces liens font partie d’un texte en ligne (qui est exempté) ; sinon, augmentez la taille de la cible à au moins 24×24 px CSS ou ajoutez de l’espacement.",
     "targetSizeMinimum_notApplicable_noTargets": "Aucune cible activable par pointeur n’était éligible à l’évaluation.",
     "targetSizeMinimum_pass_allOk": "Toutes les cibles activables par pointeur respectent la taille minimale ou une exception autorisée.",
@@ -66018,13 +66080,13 @@ const I18N = {
     "roleImg_textAlternativePresent_hint_fail": "aria-label、または空でないテキストを参照する aria-labelledby で、テキストによる代替を指定してください。",
     "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
     "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
-    "targetSizeMinimum_summary_fail": "24×24 CSS px 未満で、ほかのターゲットに近すぎるポインターのターゲットがあります。",
+    "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
     "targetSizeMinimum_hint_fail": "ターゲットのサイズを 24×24 CSS px 以上にするか、隣接するターゲットとの間に十分な間隔を空けてください。",
-    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "ターゲットが小さすぎ、ほかのターゲットに近すぎる可能性がありますが、重なりが検出の閾値付近にあるため、確実には測定できませんでした。",
+    "targetSizeMinimum_summary_cantTell_ambiguousSpacing": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎる可能性がありますが、重なりが検出の閾値付近にあるため、確実には測定できませんでした。",
     "targetSizeMinimum_hint_cantTell_ambiguousSpacing": "このターゲットと隣接するターゲットとの実際の間隔を手動で確認してください。実際に重なっている場合は、ターゲットのサイズまたは間隔を大きくしてください。",
-    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "ターゲットが小さすぎ、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+    "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
     "targetSizeMinimum_hint_cantTell_plausiblyEssential": "このターゲットのサイズが機能にとって必要不可欠か (SVG、canvas、イメージマップの一部など) を確認してください。そうでない場合は、ターゲットのサイズまたは間隔を大きくしてください。",
-    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "ターゲットが 24×24 CSS px 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
+    "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
     "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文中のインラインテキストの一部か (その場合は例外に該当します) を確認してください。そうでない場合は、ターゲットのサイズを 24×24 CSS px 以上にするか、間隔を空けてください。",
     "targetSizeMinimum_notApplicable_noTargets": "評価の対象となる、ポインターで操作できるターゲットはありませんでした。",
     "targetSizeMinimum_pass_allOk": "対象となるすべてのポインターのターゲットが、最小サイズを満たしているか、認められている例外に該当しています。",

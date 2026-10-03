@@ -504,6 +504,54 @@ test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa1
   assert.strictEqual(nodeCheck.occurrences.length, inPageCheck.occurrences.length);
 });
 
+// patchTargetSizeEnv gives the window a 1000x800 viewport.
+test(`${RULE_ID}: a finding says what was measured, against what, and at which viewport`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="100,100,10,10">A</button>
+    <button id="b" data-rect="120,100,10,10">B</button>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const occ = rule.occurrences.find((o) => /#a\b/.test(o.selector));
+  assert.deepStrictEqual(occ.data.details.metrics, {
+    widthPx: 10,
+    heightPx: 10,
+    minSizePx: 24,
+    decidedBy: 'centerDistance',
+    centerDistancePx: 20,
+    minDistancePx: 24
+  });
+  assert.deepStrictEqual(occ.data.details.viewport, { width: 1000, height: 800 });
+  assert.deepStrictEqual(occ.i18n.params, {
+    widthPx: '10',
+    heightPx: '10',
+    viewportWidth: '1000'
+  });
+  assert.strictEqual(
+    occ.summary,
+    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target.'
+  );
+});
+
+test(`${RULE_ID}: a conflict found by the perimeter sample reports the sample, not a distance`, () => {
+  // The same layout as the ambiguous-sampling case above: centres 26.9px
+  // apart, so the distance check alone passes it, and 3 of the 16 points
+  // around #small land on #big, short of the 5 that fail.
+  const html = `<!doctype html><html><body>
+    <button id="small" data-rect="10,10,10,10">Small</button>
+    <button id="big" data-rect="25,10,30,30">Big</button>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.deepStrictEqual(rule.occurrences[0].data.details.metrics, {
+    widthPx: 10,
+    heightPx: 10,
+    minSizePx: 24,
+    decidedBy: 'perimeterSampling',
+    perimeterHits: 3,
+    perimeterSamples: 16,
+    perimeterHitsToFail: 5
+  });
+});
+
 test(`${RULE_ID}: a control clipped to nothing is not a target, however close (#37)`, () => {
   // jsdom reads only the comma form of rect(); Chromium reads both, see the
   // Chromium test next to this one.
