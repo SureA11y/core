@@ -29,6 +29,16 @@
  *   inside it, but once one is found there the rest of that wrapper's
  *   subtree is the item's own content and is not judged against the
  *   container.
+ * @reports
+ *   - `containerRole`: the container's role.
+ *   - `containerSelector`: a selector for the container.
+ *   - `allowedOwnedRoles`: the roles the container may own. Each item is a
+ *     role name.
+ *   - `childRole` (a child with a role): the child's role, which is not one
+ *     of them. `null` on a child with no role.
+ *   - `attr` (a child with no role): what makes it a node of its own: the
+ *     global aria-* attribute it carries, `tabindex`, or `nativeFocusable`
+ *     when it can take focus without one (a link, a button).
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned

@@ -22,6 +22,9 @@
  *   Whether that costs the user anything depends on whether the message is
  *   conveyed some other way (visible text next to the field, aria-describedby),
  *   which static markup does not settle.
+ * @reports
+ *   - `ariaInvalid`: the element's `aria-invalid` value, lowercased; an
+ *     empty string when the attribute is absent.
  * @implementation-notes
  * - This is narrow: the broader space is a table of many
  *   attribute/condition pairs. This rule implements only the one pairing

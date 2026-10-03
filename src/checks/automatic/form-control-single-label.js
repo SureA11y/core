@@ -27,7 +27,14 @@
  *     the real label, but handling of the empty association is not
  *     guaranteed across user agents.
  *   All-empty associations with no override are a missing-name case (the
- *   sibling rule below), not an ambiguity, so this rule stays silent.
+ *   sibling rule form-control-programmatic-label-present), not an
+ *   ambiguity, so this rule stays silent.
+ * @reports
+ *   - `labelCount`: how many labels are associated with the control. On
+ *     the competing-labels failure, only the non-empty ones are counted; on
+ *     the empty-label case, the empty ones are counted too.
+ *   - `contributingLabelCount` (the empty-label case): how many of those
+ *     labels have text, and so give the control its name.
  * @implementation-notes
  * - Distinct, atomic decision from form-control-programmatic-label-present
  *   (that rule checks a label exists at all; this one checks at most one

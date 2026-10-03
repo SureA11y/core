@@ -18,6 +18,12 @@
  *   property, as a multiple of the font size: line-height at least 1.5,
  *   letter-spacing at least 0.12, word-spacing at least 0.16. A forced value
  *   that already satisfies the criterion leaves the user nothing to override.
+ * @reports
+ *   - `properties`: the spacing properties the finding is about. Each item
+ *     is `line-height`, `letter-spacing` or `word-spacing`. On a FAIL, or on
+ *     text that may never wrap, they are the ones forced below the metric;
+ *     on `INLINE_SPACING_NOT_RESOLVABLE`, the ones whose value could not be
+ *     worked out.
  * @implementation-notes
  * - Computed style resolves the cascade and the units; the declared value is
  *   only a fallback for environments that do not lay the document out. Spacing

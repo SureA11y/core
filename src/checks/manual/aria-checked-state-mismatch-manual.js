@@ -17,6 +17,13 @@
  *   it explicitly it should agree with the element's actual state,
  *   otherwise assistive technology is told something different from what
  *   a sighted user perceives.
+ * @reports
+ *   - `ariaChecked`: the state `aria-checked` announces: `true`, `false`,
+ *     or `mixed` (a checkbox only). A value that is not one of these counts
+ *     as `false`.
+ *   - `actualState`: the state the control is really in: `true`, `false`,
+ *     or `mixed` for an indeterminate checkbox.
+ *   - `type`: `checkbox` or `radio`.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), unlike
  *   most ARIA-validity rules in this file family. This engine analyzes

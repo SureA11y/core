@@ -26,6 +26,21 @@
  *   or suffix of twelve characters or more shared across the set. Every
  *   signal is reported as cantTell: whether a title describes its page is a
  *   judgment, so the rule never fails on a pattern alone.
+ * @reports
+ *   - `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`,
+ *     `templateLikeTitle`): the page title, with spacing collapsed.
+ *   - `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a
+ *     URL and a title were compared.
+ *   - `metrics.duplicateGroups` (a cross-page signal): how many titles are
+ *     used by two or more URLs, compared without regard to case.
+ *   - `metrics.largestDuplicateGroupSize` (a cross-page signal): how many
+ *     URLs share the most-repeated title. 0 when no title repeats.
+ *   - `metrics.sharedPrefix`, `metrics.sharedSuffix` (a cross-page
+ *     signal): the start or end of the title that every page shares, when
+ *     it is 12 characters or more. Empty otherwise.
+ *   - `refs.exampleDuplicateTitles` (a cross-page signal): up to three
+ *     repeated titles. One item is the `title` and up to five of the `urls`
+ *     that use it.
  */
 
 const id = 'page-title-patterns';

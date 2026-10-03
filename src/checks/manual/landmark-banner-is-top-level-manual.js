@@ -10,8 +10,7 @@
  * @applicability
  *   Applies whenever the page contains at least one banner candidate:
  *   explicit role="banner", OR a <header> with NO role attribute at all,
- *   regardless of nesting (see implementation notes on why candidate
- *   selection is unconditional on purpose).
+ *   regardless of nesting.
  * @expectation
  *   No banner candidate has an ancestor that is itself any landmark
  *   region. A banner nested inside another landmark is not a top-level,

@@ -27,6 +27,9 @@
  *   Distinct, atomic decision from aria-roles-valid (existence/
  *   abstractness): a role can be valid and non-abstract while still being
  *   discouraged in explicit author use.
+ * @reports
+ *   - `role`: the deprecated or reserved role in use.
+ *   - `guidance`: advice on what to use instead, as English text.
  */
 
 const id = 'aria-deprecated-role';

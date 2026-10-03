@@ -20,6 +20,11 @@
  *   <h2>) breaks the document outline assistive technology users rely on
  *   when navigating by heading. Going back to a shallower level at any
  *   point is always fine.
+ * @reports
+ *   - `fromLevel`: the deepest heading level reached before this heading
+ *     (3 for an <h3>).
+ *   - `toLevel`: this heading's level, more than one deeper than
+ *     `fromLevel`.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

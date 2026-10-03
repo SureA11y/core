@@ -17,6 +17,9 @@
  *   outside the range -1 to 1; and maximum-scale is absent, device-width,
  *   device-height, negative, or 2 or more. Anything else stops the user
  *   zooming text to 200%, which WCAG 1.4.4 (Resize Text) requires.
+ * @reports
+ *   - `reasons`: the settings that restrict zoom, one per item, written as
+ *     in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
  * @implementation-notes
  * - An unparseable value counts as a restriction, because CSS Device
  *   Adaptation translates it to 0: maximum-scale=yes disables zoom exactly

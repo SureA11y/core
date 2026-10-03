@@ -15,6 +15,8 @@
  *   keyboard tab order explicitly, which is fragile to maintain as a
  *   page changes and usually indicates the natural DOM order should be
  *   fixed instead.
+ * @reports
+ *   - `value`: the `tabindex` value, a whole number above 0.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

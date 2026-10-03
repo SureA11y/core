@@ -32,6 +32,12 @@
  *   - CANTTELL where ARIA defines an implicit value the role falls back to
  *     (aria-expanded on combobox, aria-level on heading), so the role still
  *     exposes a value and only the author knows whether it is the right one.
+ * @reports
+ *   - `attr`: the required attribute that is missing or empty.
+ *   - `role`: the element's role.
+ *   - `implicitValue` (the CANTTELL case): the value ARIA falls back to,
+ *     `false` for aria-expanded on a combobox, `2` for aria-level on a
+ *     heading.
  * @implementation-notes
  * - The implicit-value table is generated from aria-query's requiredProps by
  *   scripts/generate-aria-tables.js (REQUIRED_PROP_IMPLICIT_VALUES in

@@ -4,6 +4,12 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- The rule catalog says what each rule's findings report. A new `@reports` tag in a rule's header lists the fields its findings carry in `data.details` besides `reasonCode`, with what each one means and its unit, and `docs/RULE_CATALOG.md` shows it as "What a finding reports" for the 78 rules whose findings carry any. Fields that are only internal diagnostics are left out. These fields are still not a stable contract, as `OUTPUT_SCHEMA.md` says, and the catalog says so once. Nothing a rule reports changes.
+
+### Fixed
+- In `docs/RULE_CATALOG.md`, a rule's internal notes no longer appear as part of its expectation (`target-size-minimum`, `css-hidden-focus`, `aria-hidden-focus`), a one-item list renders as a list, and `<` and `>` inside code show as written instead of as `&lt;` and `&gt;`.
+
 ## [1.9.0] - 2026-10-03
 
 ### Added

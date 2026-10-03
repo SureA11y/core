@@ -23,6 +23,11 @@
  *   ...) with no adjacent context (an aria-describedby target, the
  *   enclosing list item/table cell/paragraph's own text, or (format
  *   names only) a table's first-row header) naming what it belongs to.
+ * @reports
+ *   - `normalizedName`: the link's accessible name as it was matched: in
+ *     lowercase, with spacing collapsed and trailing punctuation removed.
+ *     It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name
+ *     (`AMBIGUOUS_FORMAT_NAME`).
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

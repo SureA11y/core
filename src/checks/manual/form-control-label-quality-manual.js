@@ -26,6 +26,12 @@
  *   with nothing visible on screen saying which is shipping and which is
  *   billing), and (c) is the whole of the field's programmatic label, not
  *   the visible fragment of a label whose descriptive part is hidden.
+ * @reports
+ *   - `label`: the visible label text of the field.
+ *   - `sharedWith`: how many other fields have the same label with nothing
+ *     visible telling them apart, a count. 0 when no other field shares it.
+ *   - `hiddenLabelParts`: how many parts of the field's label are hidden
+ *     from sight, a count. 0 when the whole label is visible.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

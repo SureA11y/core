@@ -30,6 +30,23 @@
  *     sheet to the page cannot override it, though a user style sheet can.
  *   Without a layout and with no such rule, the rule is notApplicable, with
  *   `data.reason: 'noLayout'`.
+ * @reports
+ *   - `text`: the start of the text, up to 60 characters. Not on a style
+ *     sheet rule's finding.
+ *   - `metrics.overflowPx` (cut-off text): how far, in CSS pixels, the line
+ *     went past the edge of the box that clips it, with the spacing applied.
+ *   - `metrics.thresholdPx` (cut-off text): how far it may go before it
+ *     fails: half an em across, or half the line's height down.
+ *   - `metrics.axis` (cut-off text): `x` when the line went past a side, `y`
+ *     past the top or bottom.
+ *   - `container.widthPx`, `container.heightPx` (cut-off text): the size of
+ *     the clipping box with the spacing applied.
+ *   - `viewport.width`, `viewport.height` (cut-off or overlapping text): the
+ *     viewport the page was laid out in, in CSS pixels. Text that fits at
+ *     one width can be cut off at another.
+ *   - `other` (overlapping text): the text it comes to overlap.
+ *   - `selector`, `property`, `value` (a style sheet rule): the rule's
+ *     selector and the declaration that forces the spacing.
  * @implementation-notes
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later
@@ -43,12 +60,6 @@
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
  *   letter-spacing 0.12, word-spacing 0.16, as multiples of the font size.
- * - A clipped line reports how far it went past the edge against the
- *   threshold it was held to (`metrics`: overflowPx, thresholdPx, axis),
- *   the clipping box's size after the spacing (`container`), and the
- *   viewport it was laid out in. An overlap reports the viewport. Text that
- *   fits at one width can be cut off at another, so without these a finding
- *   cannot be reproduced.
  */
 
 const id = 'text-spacing-content-loss';

@@ -16,6 +16,9 @@
  *   and xml:lang match, case-insensitively. When both attributes are
  *   present but declare different languages, assistive technology and
  *   user agents may resolve the page's language inconsistently.
+ * @reports
+ *   - `lang`, `xmlLang`: the values of the `lang` and `xml:lang`
+ *     attributes, as written.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule checks presence/syntax of lang alone; this rule checks

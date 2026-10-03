@@ -16,6 +16,10 @@
  *   stricter counterpart of meta-viewport-zoom-enabled (which
  *   enforces the AA 200% minimum as a hard, WCAG-normative fail); this
  *   rule is advisory best-practice guidance toward the higher AAA bar.
+ * @reports
+ *   - `reasons`: each setting in the content attribute that limits zoom,
+ *     as written there in lowercase, such as `user-scalable=no` or
+ *     `maximum-scale=2` (below 5).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

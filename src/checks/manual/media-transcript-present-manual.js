@@ -13,6 +13,20 @@
  * @expectation If a strong transcript/text-alternative signal is present (e.g., aria-describedby binding to
  *              a visible transcript block, or a nearby clearly labeled Transcript section/link), no occurrence is reported.
  *              Otherwise, the rule reports cantTell (insufficient evidence) for that media element.
+ * @reports
+ *   - `evidence.strength`: how strong the transcript signal found near the
+ *     media is: `none` (`transcriptNotDetected`) or `weak`
+ *     (`transcriptEvidenceUnverified`).
+ *   - `evidence.method`: what was found: `none`, `anchor-unverified` (a
+ *     transcript link to a part of the same page that does not look like a
+ *     transcript) or `external-link` (a transcript link to another page,
+ *     which is not followed).
+ *   - `evidence.transcriptLinkHref` (a weak signal): the transcript link's
+ *     `href`.
+ *   - `evidence.transcriptNodeSelector` (a weak signal): a selector for the
+ *     transcript link.
+ *   - `evidence.notes`: short English notes on what was found. Empty when
+ *     nothing was.
  * @implementation-notes
  * - An <audio> without `controls` is hidden by the browser's own stylesheet
  *   (`display: none`), not by the author, and it still plays. So the rule

@@ -10,7 +10,7 @@
  * @applicability
  *   Applies whenever the page contains at least one element carrying the
  *   complementary role: explicit role="complementary", or an <aside> that
- *   keeps its implicit role (see implementation notes on when it does not).
+ *   keeps its implicit role.
  * @expectation
  *   No complementary candidate has an ancestor that is itself a landmark
  *   region. Complementary content supports the main content of the page and

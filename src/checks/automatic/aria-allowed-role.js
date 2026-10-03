@@ -20,6 +20,8 @@
  *   mapping in any source. The role the author asked for is still the role
  *   assistive technology exposes, so whether the combination harms anyone
  *   depends on the widget, not on the table.
+ * @reports
+ *   - `role`: the explicit role that is not permitted on the host element.
  * @implementation-notes
  * - Not WCAG-normative. ARIA-in-HTML's permitted-roles table is an author
  *   conformance requirement of that specification; no ACT rule covers it and

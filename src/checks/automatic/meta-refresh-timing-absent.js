@@ -20,6 +20,9 @@
  *   redirects the page on a timer the user did not initiate and cannot
  *   pause, stop, or extend, which WCAG 2.2.1 (Timing Adjustable) requires
  *   be possible.
+ * @reports
+ *   - `delay`: the time before the page refreshes or redirects, in
+ *     seconds. A failure is above 0 and at most 72000 (20 hours).
  * @implementation-notes
  * - An unparseable content value (no leading numeric delay) is not
  *   flagged, this rule only reports a clearly-detected timed refresh,

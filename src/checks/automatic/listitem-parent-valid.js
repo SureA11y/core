@@ -16,6 +16,9 @@
  *   explicit role of "list", "presentation", or "none". An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
+ * @reports
+ *   - `parentElement`: the tag name of the `<li>`'s parent, the container
+ *     it is in instead of a list.
  * @implementation-notes
  * - Distinct, atomic decision from list-children-valid (the
  *   inverse relationship: does a given list container have valid

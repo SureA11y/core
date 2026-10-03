@@ -54,10 +54,13 @@ function levelFromTags(tags) {
 // HTML-aware viewer) parses them as real tags, not text. <th>/<caption> are
 // the worst case: real table-structural elements nested inside a <td>, which
 // can visibly corrupt the surrounding row.
+// Outside code spans only: inside backticks markdown shows `<dt>` as it is,
+// and would show an escape as the literal text `&lt;dt&gt;`.
 function escapeAngles(s) {
   return String(s == null ? '' : s)
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .split(/(`[^`\n]*`)/)
+    .map((part, i) => (i % 2 ? part : part.replace(/</g, '&lt;').replace(/>/g, '&gt;')))
+    .join('');
 }
 
 // Same, plus the `|` cell delimiter, for text going into a markdown table.
@@ -145,7 +148,7 @@ function reflow(lines) {
   return out.join('\n');
 }
 
-// The per-rule prose (@applicability/@expectation) lives only in each rule
+// The per-rule prose (@applicability/@expectation/@reports) lives only in each rule
 // module's header comment. normalizeRuleMeta never copies it into meta, so
 // the compiled catalog reports both as empty strings. Read it from source,
 // keyed by the id the module actually exports.
@@ -166,7 +169,8 @@ function readRuleProse(rulesDir) {
     const source = fs.readFileSync(file, 'utf8');
     prose.set(mod.id, {
       applicability: jsdocTag(source, 'applicability'),
-      expectation: jsdocTag(source, 'expectation')
+      expectation: jsdocTag(source, 'expectation'),
+      reports: jsdocTag(source, 'reports')
     });
   }
 
@@ -199,11 +203,13 @@ function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
   }
 
   // A label reads better on its own line when the prose runs to more than one
-  // paragraph or carries a list.
+  // paragraph or carries a list, even a list of one item.
   function proseBlock(label, text) {
     if (!text) return '';
     const body = escapeAngles(text);
-    return body.includes('\n') ? `**${label}**\n\n${body}` : `**${label}** ${body}`;
+    return body.includes('\n') || body.startsWith('- ')
+      ? `**${label}**\n\n${body}`
+      : `**${label}** ${body}`;
   }
 
   function reference(r) {
@@ -214,7 +220,8 @@ function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
       `${r.type} · ${sc} · confidence ${r.confidence} · default severity ${r.severity}`,
       escapeAngles(r.description),
       proseBlock('Applies to.', r.applicability),
-      proseBlock('Expectation.', r.expectation)
+      proseBlock('Expectation.', r.expectation),
+      proseBlock('What a finding reports.', r.reports)
     ].filter(Boolean);
 
     return `### \`${r.ruleId}\`\n\n${parts.join('\n\n')}`;
@@ -251,6 +258,8 @@ ${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`
 **${rows.length} rules total: ${automatic.length} automatic (${isCore ? 'WCAG-normative, ' : ''}can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
+
+Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim.${isCore ? " For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule." : ''}
 
@@ -303,7 +312,8 @@ function main() {
         confidence: r.defaultConfidence,
         severity: r.defaultSeverity,
         applicability: (prose.get(r.ruleId) || {}).applicability || '',
-        expectation: (prose.get(r.ruleId) || {}).expectation || ''
+        expectation: (prose.get(r.ruleId) || {}).expectation || '',
+        reports: (prose.get(r.ruleId) || {}).reports || ''
       }))
       .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
     const name = isCore ? 'core' : (profiles.get(src.key) || {}).standard || src.key;

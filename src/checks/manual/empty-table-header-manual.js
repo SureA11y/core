@@ -25,6 +25,10 @@
  *   announce visible text in the header cell itself. Visible text is the one
  *   mechanism confirmed to work across every tested combination. See
  *   https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/.
+ * @reports
+ *   - `ariaName` (`TABLE_HEADER_NAME_NOT_VISIBLE_TEXT`): the name the header
+ *     cell gets from `aria-label` or `aria-labelledby` instead of visible
+ *     text.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

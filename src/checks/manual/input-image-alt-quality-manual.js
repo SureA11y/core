@@ -21,6 +21,13 @@
  *   Human review is required to confirm that the provided text alternative is
  *   accurate and appropriate. Each occurrence lists every source present
  *   (data.details.sources), so the reviewer checks each one.
+ * @reports
+ *   - `name`: the control's text alternative as announced, from the first
+ *     source that gives one.
+ *   - `sources`: every source that gives a non-empty text alternative, in
+ *     the order they are used for the name. One item is `aria-labelledby`,
+ *     `aria-label`, `alt` or `title`.
+ *   - `alt` (a control with a non-empty `alt`): the `alt` text.
  */
 
 const id = 'input-image-alt-quality';

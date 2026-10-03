@@ -19,6 +19,12 @@
  *   Every frame in a set resolves to the same resource. A shared name
  *   describes one resource, so two frames answering to it must embed the
  *   same one.
+ * @reports
+ *   - `name`: the accessible name the frames share.
+ *   - `resource`: the address this frame embeds, as an absolute URL without
+ *     its fragment. Empty (`null`) when its `src` could not be resolved
+ *     (`IFRAME_RESOURCE_UNRESOLVED`).
+ *   - `setSize`: how many frames share the name.
  * @implementation-notes
  * - Frames are grouped by the computed accessible name, not the title
  *   attribute, so a title that aria-label or aria-labelledby overrides does

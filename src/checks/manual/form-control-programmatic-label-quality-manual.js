@@ -19,6 +19,10 @@
  *     - placeholder (non-empty)
  *     - title (non-empty)
  *   Prefer an associated <label> or aria-labelledby.
+ * @reports
+ *   - `labelMethod`: where the control's label comes from: `placeholder`
+ *     or `title`.
+ *   - `sourceText`: the label text, up to 120 characters.
  * @note
  *   This is a quality/best-practice signal. Controls may still meet SC 4.1.2
  *   while relying on placeholder/title; this rule surfaces that risk as cantTell.

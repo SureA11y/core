@@ -20,6 +20,10 @@
  *   "untitled", "lorem ipsum", ...), a numbered template slot ("Heading
  *   2", "Section 3"), a filename, or a URL. None of these describe the
  *   topic or purpose of the content they introduce.
+ * @reports
+ *   - `name`: the heading's accessible name, with whitespace collapsed.
+ *   - `normalizedName`: the same name as it was matched: lower case, with
+ *     trailing punctuation removed.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

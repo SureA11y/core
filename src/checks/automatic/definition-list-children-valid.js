@@ -24,6 +24,10 @@
  *   flattened set with neither is vacuously fine, not a violation (see
  *   implementation-notes). Any other direct or wrapped child breaks the
  *   description-list semantics assistive technologies rely on.
+ * @reports
+ *   - `invalidChildren`: the children that do not belong in the list, one
+ *     tag name per child (`#text` for text placed directly inside). Empty
+ *     when the problem is a missing or misordered `<dt>`/`<dd>`.
  * @implementation-notes
  * - Only one level of <div> wrapping is flattened, a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are

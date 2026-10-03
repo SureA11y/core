@@ -28,6 +28,12 @@
  *   accessible name is the naming rules' decision for the roles that require
  *   one. The braille attribute being unpaired is worth surfacing, but it is
  *   not itself a criterion failing.
+ * @reports
+ *   - `attr`: the braille attribute that has no equivalent:
+ *     `aria-braillelabel` or `aria-brailleroledescription`.
+ *   - `requires`: what the element also needs: "an accessible name" for
+ *     `aria-braillelabel`, `aria-roledescription` for
+ *     `aria-brailleroledescription`.
  * @implementation-notes
  * - `aria-braillelabel`/`aria-brailleroledescription` do not participate
  *   in the standard accessible-name computation, so

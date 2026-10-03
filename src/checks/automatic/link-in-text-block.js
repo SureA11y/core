@@ -29,6 +29,13 @@
  *   a static scan cannot see, so the link is reported as cantTell. Below
  *   3:1, with contrast confidently computable, color is demonstrably the
  *   only cue and the link fails.
+ * @reports
+ *   - `metrics.ratio` (a link set apart by color only): the contrast
+ *     between the link's text color and the surrounding text's, as a ratio
+ *     (3 for 3:1), against `metrics.threshold` (3).
+ *   - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a
+ *     link set apart by color only): the link's text color and the
+ *     surrounding text's, as hex.
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
  *   parent element's own computed style, not a full inline-context walk

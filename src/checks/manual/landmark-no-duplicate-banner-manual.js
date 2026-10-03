@@ -17,6 +17,9 @@
  *   Authoring Practices, the banner landmark represents site-oriented
  *   content that identifies the page as a whole, so having more than one
  *   is ambiguous for assistive technology users navigating by landmark.
+ * @reports
+ *   - `count`: how many banner landmarks the page exposes to assistive
+ *     technology, against a limit of 1.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

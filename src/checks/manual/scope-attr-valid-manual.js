@@ -14,6 +14,8 @@
  *   (case-insensitive). An invalid scope value is not recognized by
  *   assistive technology, silently losing the row/column header
  *   association it was meant to declare.
+ * @reports
+ *   - `value`: the `scope` value as written, trimmed.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

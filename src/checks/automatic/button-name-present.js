@@ -24,6 +24,12 @@
  *   subtree text, counting each descendant's own name (an <img alt>,
  *   aria-label, an <svg>'s <title> child, or title) rather than only text
  *   nodes.
+ * @reports
+ *   - `refs.accessibleName`: what the lookup of a programmatic name
+ *     (aria-labelledby, aria-label, <label>, title) found. Its `mechanism`
+ *     is the source it stopped at, `none` when there was none, and its
+ *     `flags` say why a naming attribute that is there gave no name, for
+ *     example `aria-label-empty` or `aria-labelledby-empty-or-unresolvable`.
  */
 
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.

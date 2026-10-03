@@ -23,6 +23,15 @@
  *   the presentation/none role silently stops working, contradicting the
  *   author's evident intent to hide the element from the accessibility
  *   tree.
+ * @reports
+ *   - `role`: the presentational role in effect: `presentation` or `none`.
+ *     An <img alt=""> with no role of its own reports `presentation`.
+ *   - `conflictingAttrs`: the global ARIA attributes the element carries,
+ *     whatever their value. One item is an attribute name, such as
+ *     `aria-label`. Empty when the element has `aria-hidden="true"` or only
+ *     its focusability conflicts.
+ *   - `focusable`: `true` when the element can take focus, which also
+ *     restores its role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

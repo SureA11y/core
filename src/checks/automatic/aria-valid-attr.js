@@ -22,6 +22,8 @@
  *   attribute and the element ends up without a name, that absence is the
  *   naming rules' decision, not this one's. ACT 5f99a7 maps 1.3.1/4.1.2 as
  *   secondary requirements, "less strict" than the rule itself.
+ * @reports
+ *   - `attr`: the aria-* attribute name that WAI-ARIA does not define.
  * @implementation-notes
  * - Distinct from aria-valid-attr-value (which validates the VALUE
  *   of a recognized attribute), this rule only validates the attribute

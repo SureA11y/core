@@ -20,6 +20,30 @@
  *   size: 4.5:1 for large text, 7:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
+ * @reports
+ *   - `metrics.ratio` (a FAIL): the text's contrast ratio, for example 4.5
+ *     for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for
+ *     large text).
+ *   - `colors.foregroundHex`, `colors.backgroundHex` (a FAIL): the text and
+ *     background colors the ratio was computed from, as hex. A
+ *     semi-transparent text color is first blended onto the background.
+ *   - `colors.foregroundRgba`, `colors.backgroundRgba` (a FAIL): the same
+ *     colors as `rgba()` strings.
+ *   - `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the
+ *     computed font size in CSS pixels and in points.
+ *   - `typography.fontWeight`, `typography.fontWeightLabel`,
+ *     `typography.isBold` (a FAIL): the computed font weight as a number,
+ *     `bold` (700 or more) or `normal`, and whether it counts as bold.
+ *   - `typography.isLargeText` (a FAIL): whether the text counts as large,
+ *     which sets the threshold.
+ *   - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless
+ *     the page background never became opaque and was taken to sit on a
+ *     canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]`
+ *     and `assumedRootCanvasColor` is the color assumed.
+ *   - `eligibleTextCount`, `computableTextCount` (the pass, and the
+ *     notApplicable result when no text was computable): how many text
+ *     nodes were in scope, and how many of those had colors that could be
+ *     worked out. The pass repeats both under `metrics`.
  */
 
 const id = 'contrast-enhanced';

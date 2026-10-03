@@ -10,14 +10,19 @@
  * @applicability
  *   Applies whenever two or more landmark regions on the page share the
  *   same landmark role (banner, contentinfo, main, navigation,
- *   complementary, region, form, or search; see implementation notes
- *   for the detection model).
+ *   complementary, region, form, or search).
  * @expectation
  *   Among landmarks sharing a role, each has a distinct accessible name
  *   (via aria-label/aria-labelledby; landmarks are not named from
  *   content). Two same-role landmarks with the same name (including two
  *   both left unnamed) are indistinguishable to assistive technology
  *   users navigating by landmark.
+ * @reports
+ *   - `role`: the landmark role the colliding landmarks share, such as
+ *     `navigation`.
+ *   - `name`: the name they share, in lowercase with spacing collapsed.
+ *     Empty when they are all unnamed.
+ *   - `groupSize`: how many landmarks of that role share that name.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

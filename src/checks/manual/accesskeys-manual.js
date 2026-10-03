@@ -15,6 +15,10 @@
  *   make keyboard-shortcut activation ambiguous: only one of the
  *   elements sharing the key can actually be reached by it, and which
  *   one is browser/platform-dependent.
+ * @reports
+ *   - `accesskey`: the shared key, in lower case.
+ *   - `duplicateCount`: how many elements on the page share it, this one
+ *     included.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

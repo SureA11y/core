@@ -21,6 +21,12 @@
  *   referencing cell, and (c) is not the cell itself. A <td> serving as a
  *   header via role="columnheader"/"rowheader" is a valid target, same as
  *   a plain <th> -- ACT a25f45 does not require the native tag.
+ * @reports
+ *   - `invalid`: one item per id in the headers attribute that does not
+ *     point at a valid header: `id`, and `reason`, which is `missing` (no
+ *     element has that id), `self-reference` (the cell points at itself),
+ *     `not-a-cell` (the element is not a <td> or <th>) or `different-table`
+ *     (the cell is in another table).
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
  *   invalid reference.

@@ -24,6 +24,18 @@
  *   of scope for every value type, not a violation: a common, deliberate
  *   pattern in templated markup (e.g. React conditionally rendering
  *   `aria-describedby={hasError ? errorId : ''}`).
+ * @reports
+ *   - `attr`: the attribute whose value is not valid.
+ *   - `value`: its value as written.
+ *   - `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`,
+ *     `expected-true-false-undefined`, `expected-true-false-mixed`,
+ *     `expected-integer`, `expected-number` or `invalid-token` when it is not
+ *     of the attribute's type, `integer-out-of-range` when it is below the
+ *     lowest value ARIA allows, `expected-single-idref` when an attribute
+ *     taking one id holds several, `idref-not-found` when
+ *     aria-activedescendant's id matches no element. On a CANTTELL:
+ *     `idref-list-none-found` when none of the ids in a list matches an
+ *     element, `idref-controls-not-found` for the same on aria-controls.
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies

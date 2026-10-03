@@ -18,6 +18,9 @@
  *   exactly as written (id="a " and id="a" are different ids). Ids are
  *   scoped per document tree and per shadow tree, so the same id inside
  *   two different shadow roots is not a duplicate.
+ * @reports
+ *   - `id`: the duplicated id.
+ *   - `count`: how many elements in the same tree carry it.
  * @implementation-notes
  * - WCAG-VERSION SCOPED. SC 4.1.1 Parsing was removed in WCAG 2.2, so this
  *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`.

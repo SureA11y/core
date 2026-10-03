@@ -22,6 +22,9 @@
  *   despite the <li> tag, and conversely a non-<li> element explicitly
  *   given `role="listitem"` is valid). A wrapper <div> used for styling
  *   (no role at all) still breaks list semantics the same as before.
+ * @reports
+ *   - `invalidChildren`: the children that do not belong in the list, one
+ *     tag name per child.
  * @implementation-notes
  * - Checked via el.children, which already excludes text/comment nodes,
  *   no whitespace-node filtering needed.

@@ -23,6 +23,9 @@
  *   (`a { outline: none }`, `* { outline: 0 }`): an author declaration
  *   outranks the user agent's focus outline whatever its specificity, so
  *   it removes the indicator in the focused state too (WCAG F78).
+ * @reports
+ *   - `suppressingSelectors`: the selector of each style sheet rule that
+ *     removes the element's outline, one item per selector.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
  *   only one of the ways a page can indicate focus: ACT oj04fd's own

@@ -13,8 +13,29 @@
  * @expectation
  *   No element with aria-hidden="true" may itself be focusable, and no focusable element
  *   may exist within an aria-hidden="true" subtree.
- *
- * Notes:
+ * @reports
+ *   - `metrics.focusableTotal`: how many focusable elements the hidden
+ *     element holds, counting itself if it is focusable.
+ *   - `metrics.focusableDescendants`: how many of those are inside it.
+ *   - `metrics.rootIsFocusable`: whether the hidden element itself can take
+ *     focus.
+ *   - `offenders`: up to 5 of the focusable elements. Each item gives its
+ *     `tag`, its `tabindex`, its `href` (a link), its `type` (an input) and
+ *     its `visibilityHints`. `metrics.offendersCaptured` is how many are
+ *     listed.
+ *   - `metrics.visibilityHints`: ways the focusable elements are made
+ *     invisible while still taking focus: `opacityZero`, `offscreen`,
+ *     `clipped`, `zeroSizeOverflowHidden`. Such an element is a focus stop
+ *     a sighted keyboard user cannot see.
+ *   - `metrics.modalOpen`: whether a modal dialog was open elsewhere on the
+ *     page, which turns the finding into one to review.
+ *   - `runtimeProbe`: `null` unless focusing the one focusable element
+ *     moved focus straight out of the hidden element. Then it holds
+ *     `redirected: true`, the tag and id of the element focus moved to
+ *     (`redirectedToTag`, `redirectedToId`) and `focusTrace`, the elements
+ *     focus passed through. A hidden focus sentinel that hands focus on like
+ *     this is reported for review.
+ * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
  * - Disabled controls are not focusable, including those disabled by an ancestor

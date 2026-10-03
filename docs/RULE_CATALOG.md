@@ -6,6 +6,8 @@ Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRules
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
+Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
 ## Automatic rules (80), can return `fail`
@@ -208,6 +210,11 @@ Checks that no two elements on the page share the same accesskey attribute value
 
 **Expectation.** Every accesskey value on the page is unique. Duplicate accesskeys make keyboard-shortcut activation ambiguous: only one of the elements sharing the key can actually be reached by it, and which one is browser/platform-dependent.
 
+**What a finding reports.**
+
+- `accesskey`: the shared key, in lower case.
+- `duplicateCount`: how many elements on the page share it, this one included.
+
 ### `area-alt-present`
 
 **&lt;area&gt; must have an accessible name**
@@ -232,6 +239,12 @@ Flags &lt;area&gt; elements with a non-empty text alternative (alt, aria-label, 
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one: a title or aria-label that is not the name still reaches some users.
 
+**What a finding reports.**
+
+- `name`: the text alternative the area ends up with, taken from the first source in `sources`.
+- `sources`: each source of text the area has, in the order they are used for the name: `aria-labelledby`, `aria-label`, `alt`, `title`.
+- `alt` (an area with an alt attribute): the alt text.
+
 ### `aria-allowed-attr`
 
 **aria-* attributes must be permitted for the element’s role**
@@ -244,6 +257,11 @@ Checks that every recognized aria-* attribute present on an element with an expl
 
 **Expectation.** Every recognized aria-* attribute present is either: (a) globally supported on any element (the "global" ARIA states/properties, e.g. aria-label/aria-hidden/aria-describedby), or (b) explicitly listed as a required or supported state/property for the element's role. An attribute ARIA deprecated (rather than prohibited) on the role is still allowed: it is reported as CANTTELL (see helpers.aria.isDeprecatedAttr) so the author decides, not as a not-allowed FAIL.
 
+**What a finding reports.**
+
+- `attr`: the aria-* attribute that is not allowed, or deprecated, on the element.
+- `role` (an element with a role): the role it was judged against, explicit or implicit. Absent when the element has no role at all.
+
 ### `aria-allowed-role`
 
 **Explicit role must be permitted for its host element**
@@ -255,6 +273,10 @@ Checks that an explicit role="" attribute is one of the roles the ARIA-in-HTML s
 **Applies to.** Applies to elements with an explicit, valid, non-abstract role, where the host element/attribute combination has an asserted permitted-roles constraint in the ARIA-in-HTML table (src/core/aria-helpers.js ALLOWED_ROLES_BY_ELEMENT).
 
 **Expectation.** The explicit role is one of the roles the ARIA-in-HTML specification permits for that host element. Reported at CANTTELL rather than FAIL: ARIA-in-HTML's permitted-roles table is an author conformance requirement with no ACT rule and no WCAG mapping in any source. The role the author asked for is still the role assistive technology exposes, so whether the combination harms anyone depends on the widget, not on the table.
+
+**What a finding reports.**
+
+- `role`: the explicit role that is not permitted on the host element.
 
 ### `aria-braille-equivalent`
 
@@ -275,6 +297,11 @@ Per the ARIA specification, `aria-braillelabel` is a Braille-specific SUPPLEMENT
 
 Using either braille-specific attribute as the ONLY naming mechanism leaves non-braille assistive technology (most screen readers, voice control, etc.) with no accessible name/role description at all. Reported at CANTTELL rather than FAIL: aria-brailleroledescription without aria-roledescription reaches no user at all, and a missing accessible name is the naming rules' decision for the roles that require one. The braille attribute being unpaired is worth surfacing, but it is not itself a criterion failing.
 
+**What a finding reports.**
+
+- `attr`: the braille attribute that has no equivalent: `aria-braillelabel` or `aria-brailleroledescription`.
+- `requires`: what the element also needs: "an accessible name" for `aria-braillelabel`, `aria-roledescription` for `aria-brailleroledescription`.
+
 ### `aria-checked-state-mismatch`
 
 **Native checkbox/radio aria-checked should match its actual state**
@@ -283,9 +310,15 @@ manual · WCAG 4.1.2 (A) · confidence medium · default severity moderate
 
 Flags a native &lt;input type="checkbox"&gt;/&lt;input type="radio"&gt; whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.
 
-**Applies to.** Native `&lt;input type="checkbox"&gt;` / `&lt;input type="radio"&gt;` elements that carry an explicit `aria-checked` attribute.
+**Applies to.** Native `<input type="checkbox">` / `<input type="radio">` elements that carry an explicit `aria-checked` attribute.
 
 **Expectation.** `aria-checked` is redundant on a native checkbox/radio (the role's checked state is already exposed natively), but when an author sets it explicitly it should agree with the element's actual state, otherwise assistive technology is told something different from what a sighted user perceives.
+
+**What a finding reports.**
+
+- `ariaChecked`: the state `aria-checked` announces: `true`, `false`, or `mixed` (a checkbox only). A value that is not one of these counts as `false`.
+- `actualState`: the state the control is really in: `true`, `false`, or `mixed` for an indeterminate checkbox.
+- `type`: `checkbox` or `radio`.
 
 ### `aria-conditional-attr`
 
@@ -298,6 +331,10 @@ Checks that elements with aria-errormessage also have aria-invalid set to "true"
 **Applies to.** Elements with a non-empty `aria-errormessage` attribute.
 
 **Expectation.** Per the ARIA specification, `aria-errormessage` is only exposed to assistive technology when `aria-invalid` is present with a value other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`). An element with `aria-errormessage` but `aria-invalid` absent or `"false"` silently drops the error message from the accessibility tree, authors almost always intend it to be exposed. Reported at CANTTELL rather than FAIL: aria-errormessage is only exposed once aria-invalid is set, so the reference is currently inert. Whether that costs the user anything depends on whether the message is conveyed some other way (visible text next to the field, aria-describedby), which static markup does not settle.
+
+**What a finding reports.**
+
+- `ariaInvalid`: the element's `aria-invalid` value, lowercased; an empty string when the attribute is absent.
 
 ### `aria-deprecated-role`
 
@@ -317,6 +354,11 @@ The role in use is neither deprecated nor reserved. Graded by the strength of th
 - FAIL at MUST NOT. No ARIA 1.2 or 1.3 role carries an author MUST NOT outside the abstract roles, so this outcome is reserved for a later revision promoting a role to that strength.
 
 Distinct, atomic decision from aria-roles-valid (existence/ abstractness): a role can be valid and non-abstract while still being discouraged in explicit author use.
+
+**What a finding reports.**
+
+- `role`: the deprecated or reserved role in use.
+- `guidance`: advice on what to use instead, as English text.
 
 ### `aria-hidden-body`
 
@@ -340,15 +382,17 @@ Checks that aria-hidden="true" elements are not focusable and do not contain foc
 
 **Applies to.** Applies to elements that have aria-hidden="true".
 
-**Expectation.**
+**Expectation.** No element with aria-hidden="true" may itself be focusable, and no focusable element may exist within an aria-hidden="true" subtree.
 
-No element with aria-hidden="true" may itself be focusable, and no focusable element may exist within an aria-hidden="true" subtree. Notes:
+**What a finding reports.**
 
-- Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
-- Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
-- Disabled controls are not focusable, including those disabled by an ancestor &lt;fieldset disabled&gt; (matched with :disabled).
-- &lt;area href&gt; has no box of its own, so it is judged by the &lt;img usemap&gt; that uses its &lt;map&gt;: it counts as focusable when such an image is rendered and not inert.
-- Elements hidden via CSS in ways that still allow keyboard focus (e.g., opacity:0, off-screen, clip) remain in-scope and will be flagged when focusable.
+- `metrics.focusableTotal`: how many focusable elements the hidden element holds, counting itself if it is focusable.
+- `metrics.focusableDescendants`: how many of those are inside it.
+- `metrics.rootIsFocusable`: whether the hidden element itself can take focus.
+- `offenders`: up to 5 of the focusable elements. Each item gives its `tag`, its `tabindex`, its `href` (a link), its `type` (an input) and its `visibilityHints`. `metrics.offendersCaptured` is how many are listed.
+- `metrics.visibilityHints`: ways the focusable elements are made invisible while still taking focus: `opacityZero`, `offscreen`, `clipped`, `zeroSizeOverflowHidden`. Such an element is a focus stop a sighted keyboard user cannot see.
+- `metrics.modalOpen`: whether a modal dialog was open elsewhere on the page, which turns the finding into one to review.
+- `runtimeProbe`: `null` unless focusing the one focusable element moved focus straight out of the hidden element. Then it holds `redirected: true`, the tag and id of the element focus moved to (`redirectedToTag`, `redirectedToId`) and `focusTrace`, the elements focus passed through. A hidden focus sentinel that hands focus on like this is reported for review.
 
 ### `aria-prohibited-attr`
 
@@ -360,7 +404,12 @@ Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose s
 
 **Applies to.** Applies to (a) elements whose explicit, valid role is one of the ARIA 1.2 roles with a documented "Prohibited ARIA States and Properties" list for naming attributes (pure text-semantics / non-naming structural roles: caption, code, deletion, emphasis, generic, insertion, mark, none, paragraph, presentation, strong, subscript, suggestion, superscript, time), plus a native &lt;caption&gt; with no valid explicit role, whose implicit role is caption, and (b) elements with no role at all: a curated set of native HTML tags verified to carry no implicit role (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a hyphenated, author-defined tag per the Custom Elements spec; see isRolelessCustomElementTag below). In both cases, only elements that also carry aria-label or aria-labelledby.
 
-**Expectation.** Prohibited attributes must not be present on (a); for (b), the naming attribute is at best unreliable (nothing accessible-name-aware to hang it off) and at worst silently ignored by assistive technology. See the roleless-branch implementation note below for the confidence split this produces.
+**Expectation.** Prohibited attributes must not be present on (a); for (b), the naming attribute is at best unreliable (nothing accessible-name-aware to hang it off) and at worst silently ignored by assistive technology. A roleless element whose own content already gives it a name is reported as CANTTELL, since the attribute may be a deliberate override; one with no other source for a name FAILs.
+
+**What a finding reports.**
+
+- `attr`: the naming attribute found, `aria-label` or `aria-labelledby`.
+- `role`: the role that prohibits it; `null` on an element with no role.
 
 ### `aria-prohibited-children`
 
@@ -373,6 +422,14 @@ Checks that every accessible-tree-owned child of a container role (list, listbox
 **Applies to.** Applies to elements with an explicit, valid role that is one of the container roles with a documented "required owned elements" entry (the same REQUIRED_OWNED_ROLES table aria-required-children uses, see src/core/aria-helpers.js).
 
 **Expectation.** Every accessible-tree-owned descendant of the container (after pruning role="none"/"presentation" elements and any "group"/ "rowgroup" wrapper, both always transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is itself in the container's own required-owned-roles set) has a role from that same required-owned set. Nothing else is a structurally valid direct child of a composite/container role, where "allowed" is the container's required-owned roles plus the small ALLOWED_EXTRA_OWNED_ROLES set of roles it may own without being required to (a separator between menu items, a caption on a grid). A roleless wrapper is descended into to reach the items a component library buries inside it, but once one is found there the rest of that wrapper's subtree is the item's own content and is not judged against the container.
+
+**What a finding reports.**
+
+- `containerRole`: the container's role.
+- `containerSelector`: a selector for the container.
+- `allowedOwnedRoles`: the roles the container may own. Each item is a role name.
+- `childRole` (a child with a role): the child's role, which is not one of them. `null` on a child with no role.
+- `attr` (a child with no role): what makes it a node of its own: the global aria-* attribute it carries, `tabindex`, or `nativeFocusable` when it can take focus without one (a link, a button).
 
 ### `aria-required-attr`
 
@@ -391,6 +448,12 @@ Every required state/property for that role is present and non-empty. Graded by 
 - FAIL where it does not, so the state is simply not exposed (aria-checked on checkbox/radio/switch/menuitemcheckbox/menuitemradio, aria-valuenow on slider/scrollbar/meter and on a focusable separator).
 - CANTTELL where ARIA defines an implicit value the role falls back to (aria-expanded on combobox, aria-level on heading), so the role still exposes a value and only the author knows whether it is the right one.
 
+**What a finding reports.**
+
+- `attr`: the required attribute that is missing or empty.
+- `role`: the element's role.
+- `implicitValue` (the CANTTELL case): the value ARIA falls back to, `false` for aria-expanded on a combobox, `2` for aria-level on a heading.
+
 ### `aria-required-children`
 
 **Container roles must own at least one required child role**
@@ -402,6 +465,11 @@ Checks that container roles with a documented "required owned elements" entry (l
 **Applies to.** Applies to elements with an explicit, valid, non-abstract role that is also one of the container roles with a documented "required owned elements" entry (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row).
 
 **Expectation.** At least one descendant, or one aria-owns-referenced element, has one of the acceptable owned roles for that container role. Reported at CANTTELL, never FAIL: this rule asks only whether the required content is PRESENT, and a container that owns nothing conveys nothing false -- an empty role="list" is announced as a list with no items, which is what it is. Whether the content a container does own is VALID is aria-prohibited-children's decision, and that rule still fails, so a genuinely misdescribed structure (a role="button" among list items, a tablist of plain buttons) is caught with the same strength as before. The native-HTML equivalents already work this way: nothing in this ruleset fails an empty &lt;ul&gt;, and list-children-valid judges only the children that exist.
+
+**What a finding reports.**
+
+- `role`: the container's role.
+- `requiredOwnedRoles`: the roles it needs at least one child with. Each item is a role name.
 
 ### `aria-required-parent`
 
@@ -415,6 +483,11 @@ Checks that roles with a documented "required context role" entry (listitem, opt
 
 **Expectation.** The element has an ancestor (DOM containment) or owner (via that ancestor/owner's aria-owns) whose effective role is one of the acceptable context roles for this element's role.
 
+**What a finding reports.**
+
+- `role`: the element's role.
+- `requiredContextRoles`: the roles one of which it must sit inside, or be owned by. Each item is a role name.
+
 ### `aria-role-name-present`
 
 **ARIA roles that require an accessible name have one**
@@ -426,6 +499,10 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 **Applies to.** Applies to elements whose role attribute is exactly one of grid, meter, progressbar, radiogroup or tree, and that are included in the accessibility tree. Membership is decided by WAI-ARIA's own "Accessible Name Required: True" characteristic, not by whether a role merely permits a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author roles the spec does not require a name for, and are out of scope. meter and progressbar are also covered by meter-name-present and progressbar-name-present, which map to SC 1.1.1; this rule is what gives those two roles their 4.1.2 coverage.
 
 **Expectation.** The element has a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. Every role in the set is name-from-author-only, so descendant text is not accepted: a labelled child inside a composite widget would otherwise pass the container that has no name of its own. The name the HTML host element gives itself counts too, since the browser still computes it under the role: the first child &lt;legend&gt; of a &lt;fieldset&gt;, the first child &lt;caption&gt; of a &lt;table&gt;, and an associated &lt;label&gt; on a labelable element such as &lt;progress&gt; or &lt;meter&gt;.
+
+**What a finding reports.**
+
+- `role`: the role that needs a name.
 
 ### `aria-roles-valid`
 
@@ -444,6 +521,11 @@ At least one role token names a concrete, non-abstract ARIA role. Graded by what
 - FAIL on a roleless host (div, span, custom element), which is left exposed as generic, so the role the author meant reaches no one.
 - CANTTELL where the element has a native role (a &lt;button&gt;, &lt;nav&gt;, &lt;a href&gt;), which the accessibility tree keeps using. ACT 674b10 lists 4.1.2 as a secondary requirement only, "satisfied through the implicit role," so the bad token is worth reporting but is not itself the criterion failing.
 
+**What a finding reports.**
+
+- `role`: the first token of the role attribute. No token in it is a known role, or the known ones are all abstract.
+- `nativeRole` (the CANTTELL case): the element's native role, which assistive technology keeps using.
+
 ### `aria-text`
 
 **role="text" elements should have no focusable descendants**
@@ -454,7 +536,7 @@ Checks that elements with role="text" contain no focusable descendant (link, but
 
 **Applies to.** Elements with an explicit `role="text"`.
 
-**Expectation.** `role="text"` tells assistive technology to treat an element's whole subtree as a single unit of plain text (e.g. text visually split across multiple `&lt;span&gt;`s by styling). Per the WAI-ARIA Authoring Practices, this only makes sense when that subtree contains no focusable content: a focusable descendant inside a "this is just text" region is unreachable or confusing for keyboard/AT users.
+**Expectation.** `role="text"` tells assistive technology to treat an element's whole subtree as a single unit of plain text (e.g. text visually split across multiple `<span>`s by styling). Per the WAI-ARIA Authoring Practices, this only makes sense when that subtree contains no focusable content: a focusable descendant inside a "this is just text" region is unreachable or confusing for keyboard/AT users.
 
 ### `aria-valid-attr`
 
@@ -468,6 +550,10 @@ Checks that every aria-* attribute name present in the DOM is a real attribute d
 
 **Expectation.** Each aria-* attribute name is a real attribute defined by the WAI-ARIA specification (catches typos / made-up attribute names, which are silently ignored by assistive technology and therefore a real, deterministic defect). Reported at CANTTELL rather than FAIL: an aria-* attribute the spec does not define is inert, so nothing about the element's exposed name, role or value changes because it is there. Where the author meant a real attribute and the element ends up without a name, that absence is the naming rules' decision, not this one's. ACT 5f99a7 maps 1.3.1/4.1.2 as secondary requirements, "less strict" than the rule itself.
 
+**What a finding reports.**
+
+- `attr`: the aria-* attribute name that WAI-ARIA does not define.
+
 ### `aria-valid-attr-value`
 
 **aria-* attribute values must match their declared type**
@@ -479,6 +565,12 @@ Checks that every recognized aria-* attribute has a value conforming to its WAI-
 **Applies to.** Applies to any element carrying at least one recognized aria-* attribute (unrecognized attribute names are aria-valid-attr's concern, not evaluated here).
 
 **Expectation.** Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`).
+
+**What a finding reports.**
+
+- `attr`: the attribute whose value is not valid.
+- `value`: its value as written.
+- `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`, `expected-true-false-undefined`, `expected-true-false-mixed`, `expected-integer`, `expected-number` or `invalid-token` when it is not of the attribute's type, `integer-out-of-range` when it is below the lowest value ARIA allows, `expected-single-idref` when an attribute taking one id holds several, `idref-not-found` when aria-activedescendant's id matches no element. On a CANTTELL: `idref-list-none-found` when none of the ids in a list matches an element, `idref-controls-not-found` for the same on aria-controls.
 
 ### `autocomplete-valid`
 
@@ -492,6 +584,10 @@ Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed au
 
 **Expectation.** The value is "on"/"off" alone, or a well-formed autofill detail token list: an optional "section-*" token, then an optional "shipping"/"billing" token, then an optional contact-modality token (home/work/mobile/fax/pager), then exactly one recognized field-name token (name, email, street-address, cc-number, tel, ...), optionally followed by "webauthn". A malformed value means the field is not reliably identified for assistive technology that relies on autocomplete to describe the expected input purpose.
 
+**What a finding reports.**
+
+- `value`: the autocomplete value as written, trimmed.
+
 ### `avoid-inline-spacing`
 
 **Inline style must not force text spacing below the WCAG metric**
@@ -503,6 +599,10 @@ Checks that where inline style forces line-height, letter-spacing or word-spacin
 **Applies to.** Applies to a rendered element with visible text of its own whose style attribute declares line-height, letter-spacing or word-spacing as `!important` with a real value. A CSS-wide keyword (inherit, initial, unset, revert) specifies no spacing of its own and is out of scope.
 
 **Expectation.** Each such declaration already meets WCAG 1.4.12's own metric for that property, as a multiple of the font size: line-height at least 1.5, letter-spacing at least 0.12, word-spacing at least 0.16. A forced value that already satisfies the criterion leaves the user nothing to override.
+
+**What a finding reports.**
+
+- `properties`: the spacing properties the finding is about. Each item is `line-height`, `letter-spacing` or `word-spacing`. On a FAIL, or on text that may never wrap, they are the ones forced below the metric; on `INLINE_SPACING_NOT_RESOLVABLE`, the ones whose value could not be worked out.
 
 ### `binary-control-name-present`
 
@@ -528,6 +628,10 @@ Checks that buttons expose a non-empty accessible name.
 
 **Expectation.** The element has a non-empty accessible name. A programmatic name is taken first (aria-labelledby, aria-label, an associated &lt;label&gt;, title). Failing that, an &lt;input&gt; button falls back to its value attribute, and type="submit"/type="reset" fall back to the user agent's own "Submit"/"Reset" default, which is why those two are never nameless. Failing both, a button whose role is name-from-content falls back to its subtree text, counting each descendant's own name (an &lt;img alt&gt;, aria-label, an &lt;svg&gt;'s &lt;title&gt; child, or title) rather than only text nodes.
 
+**What a finding reports.**
+
+- `refs.accessibleName`: what the lookup of a programmatic name (aria-labelledby, aria-label, &lt;label&gt;, title) found. Its `mechanism` is the source it stopped at, `none` when there was none, and its `flags` say why a naming attribute that is there gave no name, for example `aria-label-empty` or `aria-labelledby-empty-or-unresolvable`.
+
 ### `bypass-blocks-present`
 
 **Page must provide a way to bypass repeated blocks**
@@ -538,7 +642,7 @@ Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechan
 
 **Applies to.** Always applicable to any HTML document with a &lt;body&gt; element: "bypass blocks" is a whole-page concern, matching aria-hidden-body / page-title-present's pattern of evaluating the document directly rather than a scoped root.
 
-**Expectation.** At least one of the following recognized WCAG 2.4.1 techniques is present: (a) a main landmark (&lt;main&gt; or [role="main"]), technique ARIA11: a screen reader user can jump straight to it, bypassing everything before it (nav, header, repeated blocks) in one step; (b) a working same-page anchor link, technique G1/G123: an &lt;a href="#id"&gt; (or legacy &lt;a name="id"&gt;) whose target resolves to a real element in the link's own tree (light DOM or the same shadow root). Not required to be positioned before a &lt;nav&gt; or be keyboard-focus-order-first (see implementation notes); (c) at least one heading (&lt;h1&gt;-&lt;h6&gt; or [role="heading"]) that is both included in the accessibility tree AND visible (not off-screen, clipped, opacity:0, or zero-size-overflow-hidden), technique H69: heading navigation is itself a standards-recognized bypass mechanism (e.g. a screen reader's "jump by heading" command), but ACT 047fe0's own Expectation requires visibility too, since a screen-reader-only heading leaves sighted keyboard users with no equivalent way to locate the start of non-repeated content.
+**Expectation.** At least one of the following recognized WCAG 2.4.1 techniques is present: (a) a main landmark (&lt;main&gt; or [role="main"]), technique ARIA11: a screen reader user can jump straight to it, bypassing everything before it (nav, header, repeated blocks) in one step; (b) a working same-page anchor link, technique G1/G123: an &lt;a href="#id"&gt; (or legacy &lt;a name="id"&gt;) whose target resolves to a real element in the link's own tree (light DOM or the same shadow root). Not required to be positioned before a &lt;nav&gt; or be keyboard-focus-order-first; (c) at least one heading (&lt;h1&gt;-&lt;h6&gt; or [role="heading"]) that is both included in the accessibility tree AND visible (not off-screen, clipped, opacity:0, or zero-size-overflow-hidden), technique H69: heading navigation is itself a standards-recognized bypass mechanism (e.g. a screen reader's "jump by heading" command), but ACT 047fe0's own Expectation requires visibility too, since a screen-reader-only heading leaves sighted keyboard users with no equivalent way to locate the start of non-repeated content.
 
 ### `canvas-text-alternative-present`
 
@@ -569,6 +673,12 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+**What a finding reports.**
+
+- `value`: the text alternative to review. When the fallback content has no text of its own but holds an image with alt text or an element with an aria-label, this is the placeholder `fallback-content`.
+- `mechanism`: where the text alternative comes from: `canvas-fallback` (content inside the &lt;canvas&gt;), `aria-labelledby`, `aria-label` or `title`.
+- `flags`: notes on how the text alternative was found, such as `title-used` when only the title attribute provides it.
+
 ### `combobox-name-present`
 
 **Comboboxes have an accessible name**
@@ -593,6 +703,15 @@ Determines whether sufficient information is available to compute WCAG color con
 
 **Expectation.** Both sides of the contrast calculation can be established from CSS for every applicable text node: an effective background resolving to an opaque color, and a parsable foreground color. Where either cannot be, a background image or gradient, mix-blend-mode, a filter or backdrop-filter, a text-shadow (which may add contrast this engine has no glyph-rendering model to account for), ancestor opacity, a root background that never becomes opaque, or a color that does not parse, the result is cantTell naming the blocker. This rule is the one that reports that uncertainty, which is what lets contrast-minimum and contrast-enhanced stay silent on the same text instead of guessing at a ratio.
 
+**What a finding reports.**
+
+- `blockerProperty`, `blockerValue` (a CSS effect in the way): the CSS property that blocks the calculation and its value, for example `mix-blend-mode`, `filter`, `text-shadow` or `opacity`.
+- `blockerSelector` (a CSS effect in the way): a selector for the element that has it, which may be an ancestor of the text.
+- `backgroundFillType` (a background image or gradient): `image`, `gradient`, `imageAndGradient`, or `unknown`.
+- `background`, `backgroundAlpha` (a background that never becomes opaque, or a color that does not parse): the background color as far as it could be worked out, as an `rgba()` string, and its opacity from 0 to 1.
+- `eligibleTextCount` (the pass): how many text nodes were checked.
+- `assumptionsCount`, `assumptionsApplied` (the pass): how many text nodes needed an assumption to get a background, and which ones were made. Each item is a code; `ROOT_CANVAS_FALLBACK` means a page background that never becomes opaque was taken to sit on the configured canvas color, white by default.
+
 ### `contrast-enhanced`
 
 **Text meets enhanced color contrast (AAA)**
@@ -604,6 +723,17 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 **Applies to.** Applies to the visible text contrast-computable applies to, see that rule for the eligibility gates, narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
 **Expectation.** Every computable text node reaches the ratio SC 1.4.6 requires for its size: 4.5:1 for large text, 7:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher.
+
+**What a finding reports.**
+
+- `metrics.ratio` (a FAIL): the text's contrast ratio, for example 4.5 for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for large text).
+- `colors.foregroundHex`, `colors.backgroundHex` (a FAIL): the text and background colors the ratio was computed from, as hex. A semi-transparent text color is first blended onto the background.
+- `colors.foregroundRgba`, `colors.backgroundRgba` (a FAIL): the same colors as `rgba()` strings.
+- `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the computed font size in CSS pixels and in points.
+- `typography.fontWeight`, `typography.fontWeightLabel`, `typography.isBold` (a FAIL): the computed font weight as a number, `bold` (700 or more) or `normal`, and whether it counts as bold.
+- `typography.isLargeText` (a FAIL): whether the text counts as large, which sets the threshold.
+- `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless the page background never became opaque and was taken to sit on a canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and `assumedRootCanvasColor` is the color assumed.
+- `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
 
 ### `contrast-minimum`
 
@@ -617,6 +747,16 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 
 **Expectation.** Every computable text node reaches the ratio SC 1.4.3 requires for its size: 3:1 for large text, 4.5:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher.
 
+**What a finding reports.**
+
+- `metrics.ratio` (text below the threshold): the text's contrast ratio against its background (4.5 for 4.5:1), against `metrics.threshold`, the ratio its size requires.
+- `colors.foregroundHex`, `colors.backgroundHex` (text below the threshold): the text color and the background color behind it, as hex, after any transparency is blended in. `colors.foregroundRgba` and `colors.backgroundRgba` give the same two colors in `rgba()` form.
+- `typography.fontSizePx`, `typography.fontSizePt` (text below the threshold): the computed font size, in CSS pixels and in points.
+- `typography.fontWeight`, `typography.fontWeightLabel` (text below the threshold): the computed font weight as a number (400, 700) and as written.
+- `typography.isBold`, `typography.isLargeText` (text below the threshold): whether the text counts as bold, and as large text, the size that only needs 3:1.
+- `assumptionsApplied`, `assumedRootCanvasColor` (text below the threshold): `null` unless the `auditorAssist` contrast mode had to assume a page background because the page sets none that is opaque. Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and `assumedRootCanvasColor` is the color assumed (white by default).
+- `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
+
 ### `css-focus-indicator-suppressed`
 
 **Focus indicator must not be removed without a replacement**
@@ -629,6 +769,10 @@ Flags elements in the tab order whose focus outline is removed, by a :focus/:foc
 
 **Expectation.** No element is matched by a rule that removes the outline (`outline: none`, `outline: 0`, `outline-color: transparent`, ...) unless some focus rule matching it draws a replacement: a border, box-shadow, background, color change, a positive outline of its own, or a `::before`/`::after` decoration. The removing rule is either a `:focus`/`:focus-visible` rule, or a rule with no state at all (`a { outline: none }`, `* { outline: 0 }`): an author declaration outranks the user agent's focus outline whatever its specificity, so it removes the indicator in the focused state too (WCAG F78).
 
+**What a finding reports.**
+
+- `suppressingSelectors`: the selector of each style sheet rule that removes the element's outline, one item per selector.
+
 ### `css-hidden-focus`
 
 **Focusable elements must not be visually hidden**
@@ -639,15 +783,12 @@ Checks that keyboard-focusable elements are not visually hidden by CSS technique
 
 **Applies to.** Applies to elements that are tabbable (keyboard-focusable) but are visually hidden via CSS techniques that can leave them in the tab order.
 
-**Expectation.**
+**Expectation.** No element should be tabbable while visually hidden (e.g., opacity:0, clipped, off-screen). An element that CSS brings back into view when it takes focus is not hidden while focused, and is not flagged: the usual skip-link pattern (`.skip { position: absolute; left: -9999px } .skip:focus { left: 0 }`), or a hiding rule that stops applying on focus (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`).
 
-No element should be tabbable while visually hidden (e.g., opacity:0, clipped, off-screen). An element that CSS brings back into view when it takes focus is not hidden while focused, and is not flagged: the usual skip-link pattern (`.skip { position: absolute; left: -9999px } .skip:focus { left: 0 }`), or a hiding rule that stops applying on focus (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`). Notes:
+**What a finding reports.**
 
-- This rule intentionally targets CSS techniques that *can* keep an element focusable.
-- Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
-- The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.
-- The focused style is worked out from the stylesheets, not by focusing the element: a DOM emulator does not restyle `:focus`. Rules whose subject carries `:focus`, `:focus-visible` or `:focus-within` (or an ancestor carries `:focus-within`) are laid over the computed style in document order; a rule written `:not(:focus)` / `:not(:focus-within)` / `:not(:focus-visible)` has its declarations reset to their initial values. Inline style outranks a stylesheet rule unless the rule is `!important`. The overlay ignores specificity among the focus rules, and cross-origin stylesheets cannot be read, so their focus rules are not seen.
-- To see whether the page redirects focus, up to three candidates are focused for a moment. Focus then goes back where it was, or is blurred when nothing had it, so the rules after this one and a later scan see the page as it was. The page's own focus handlers still run.
+- `metrics.visibilityHints`: how the element is hidden while it can take focus: `opacityZero`, `offscreen`, `clipped` or `zeroSizeOverflowHidden` (no size, with overflow hidden).
+- `runtimeProbe`: `null` unless focusing the element moved focus straight to another element (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds `redirected: true` and the tag and id of the element focus moved to (`redirectedToTag`, `redirectedToId`). Only the first three hidden elements are tried this way.
 
 ### `css-orientation-lock`
 
@@ -657,9 +798,15 @@ automatic · WCAG 1.3.4 (AA) · confidence high · default severity serious
 
 Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.
 
-**Applies to.** Any accessible (same-document, non-cross-origin) stylesheet, inline `&lt;style&gt;` blocks and same-origin `&lt;link&gt;` stylesheets already loaded into `document.styleSheets`.
+**Applies to.** Any accessible (same-document, non-cross-origin) stylesheet, inline `<style>` blocks and same-origin `<link>` stylesheets already loaded into `document.styleSheets`.
 
 **Expectation.** No `@media (orientation: portrait)` or `@media (orientation: landscape)` block sets a `transform`/`-webkit-transform`/`rotate` rotation of approximately 90 degrees (mod 180, i.e. ~90 or ~270), the well-known technique for visually forcing one orientation regardless of the device's actual orientation, which defeats WCAG 1.3.4's requirement that content not restrict its view to a single display orientation unless that orientation is essential. Such a rotation fails. A second shape is asked about (cantTell): an orientation media block that hides the page's content with `display: none` or `visibility: hidden`, the usual form of WCAG F100 (content replaced by a "rotate your device" message in one orientation). The hidden element counts as the page's content when it is `html` or `body`, the `main` landmark, an ancestor of it, or, on a page without a main landmark, an element holding at least half of the body's text. Whether the orientation is essential, and whether the page stays usable, is left to a person.
+
+**What a finding reports.**
+
+- `mediaText` (a rotation or hidden content): the media query that holds the rule, such as `(orientation: portrait)`.
+- `selectorText` (a rotation or hidden content): the selector of the style rule that rotates or hides. Empty when it could not be read.
+- `unreadableSheetCount` (`STYLESHEETS_NOT_READABLE`): how many style sheets could not be read, usually because they come from another origin.
 
 ### `definition-list-children-valid`
 
@@ -672,6 +819,10 @@ Checks that &lt;dl&gt; elements only directly contain &lt;dt&gt;/&lt;dd&gt; grou
 **Applies to.** Applies to &lt;dl&gt; elements that have at least one direct element child or non-whitespace text directly inside them.
 
 **Expectation.** Every direct element child is &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;, or a &lt;div&gt; whose own children are drawn from that same set (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). Non-whitespace text directly inside the &lt;dl&gt; or a wrapping &lt;div&gt; is an invalid child too. If the flattened set contains any &lt;dt&gt; or &lt;dd&gt; at all, it must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is invalid), and read in order it must be groups of one or more &lt;dt&gt; followed by one or more &lt;dd&gt;: a &lt;dd&gt; before the first &lt;dt&gt; has no term, and a &lt;dt&gt; after the last &lt;dd&gt; has no definition. A flattened set with neither is vacuously fine, not a violation (see implementation-notes). Any other direct or wrapped child breaks the description-list semantics assistive technologies rely on.
+
+**What a finding reports.**
+
+- `invalidChildren`: the children that do not belong in the list, one tag name per child (`#text` for text placed directly inside). Empty when the problem is a missing or misordered `<dt>`/`<dd>`.
 
 ### `deprecated-elements-not-used`
 
@@ -709,6 +860,10 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 **Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container is not exposed as a term/definition to assistive technologies.
 
+**What a finding reports.**
+
+- `parentElement`: the tag name of the element's parent, the container it is in instead of a `<dl>`.
+
 ### `duplicate-id`
 
 **IDs must be unique**
@@ -721,6 +876,11 @@ Checks that every non-empty id attribute value is unique within its own document
 
 **Expectation.** No other element in the same tree carries the same id value, compared exactly as written (id="a " and id="a" are different ids). Ids are scoped per document tree and per shadow tree, so the same id inside two different shadow roots is not a duplicate.
 
+**What a finding reports.**
+
+- `id`: the duplicated id.
+- `count`: how many elements in the same tree carry it.
+
 ### `duplicate-id-aria`
 
 **IDs referenced by ARIA must be unique**
@@ -732,6 +892,11 @@ Checks that any id value referenced by an ARIA ID-reference attribute (aria-labe
 **Applies to.** Applies when the document contains at least one non-empty aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, or aria-details attribute (i.e. at least one ARIA ID reference exists to resolve).
 
 **Expectation.** For every id value referenced by one of those attributes, exactly one element in the document carries that id. A duplicate does not break the reference: it resolves to the first element in tree order, so the name is still computed. Whether that element is the intended target depends on author intent, which markup does not carry, so the outcome is cantTell.
+
+**What a finding reports.**
+
+- `id`: the duplicated id an ARIA attribute refers to.
+- `duplicateCount`: how many elements in the document carry that id.
 
 ### `embed-text-alternative-present`
 
@@ -764,6 +929,12 @@ Flags &lt;embed&gt; elements with a detected name for human review of appropriat
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+**What a finding reports.**
+
+- `ariaLabel`, `title`: the element's `aria-label` and `title`, or null when it has none.
+- `ariaLabelledBy`: the ids in the element's `aria-labelledby`, or null when it has none.
+- `ariaLabelledByText`: the text those ids point at, or null. Only looked up when the element has no `aria-label`, since `aria-label` then gives the name.
+
 ### `empty-heading`
 
 **Headings must not be empty**
@@ -788,6 +959,10 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 **Expectation.** The header cell has visible text content. A &lt;th&gt; named only via aria-label/aria-labelledby (no visible text) is ALSO flagged, not treated as equivalent: aria-label support on &lt;th&gt; is inconsistent in practice. NVDA+Firefox and iOS VoiceOver+Safari ignore it entirely (only visible text is announced), JAWS+Chrome/IE11 also only announce visible text in the header cell itself. Visible text is the one mechanism confirmed to work across every tested combination. See https://html5accessibility.com/stuff/2024/05/22/not-so-short-note-on-aria-label-usage-big-table-edition/.
 
+**What a finding reports.**
+
+- `ariaName` (`TABLE_HEADER_NAME_NOT_VISIBLE_TEXT`): the name the header cell gets from `aria-label` or `aria-labelledby` instead of visible text.
+
 ### `focus-order-semantics`
 
 **Elements added to the tab order should have interactive semantics**
@@ -800,6 +975,11 @@ Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive st
 
 **Expectation.** An element placed in the tab order on purpose should communicate why it's focusable: a role like `heading`, `list`, `region`, or `presentation` gives assistive technology no interactive semantic to announce, which is confusing for keyboard users who land on it and get no indication of what activating it (if anything) would do.
 
+**What a finding reports.**
+
+- `tabindex`: the element's `tabindex`, as a number (0 or greater).
+- `role`: the non-interactive role the element carries.
+
 ### `form-control-label-quality`
 
 **Form field labels should be descriptive and distinguishable**
@@ -808,9 +988,15 @@ manual · WCAG 2.4.6 (AA) · confidence medium · default severity minor
 
 Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.
 
-**Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox) that carry a visible programmatic label: a `&lt;label&gt;` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s).
+**Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox) that carry a visible programmatic label: a `<label>` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s).
 
 **Expectation.** The visible label text (a) is not a placeholder left in the markup ("label", "field", "enter text", ...), (b) is not shared with another field that no visible context tells apart (the same "Name" twice, with nothing visible on screen saying which is shipping and which is billing), and (c) is the whole of the field's programmatic label, not the visible fragment of a label whose descriptive part is hidden.
+
+**What a finding reports.**
+
+- `label`: the visible label text of the field.
+- `sharedWith`: how many other fields have the same label with nothing visible telling them apart, a count. 0 when no other field shares it.
+- `hiddenLabelParts`: how many parts of the field's label are hidden from sight, a count. 0 when the whole label is visible.
 
 ### `form-control-programmatic-label-present`
 
@@ -851,6 +1037,11 @@ If a control has a programmatic name, it should not rely ONLY on:
 
 Prefer an associated &lt;label&gt; or aria-labelledby.
 
+**What a finding reports.**
+
+- `labelMethod`: where the control's label comes from: `placeholder` or `title`.
+- `sourceText`: the label text, up to 120 characters.
+
 ### `form-control-single-label`
 
 **Form controls must not have multiple labels**
@@ -869,7 +1060,12 @@ At most one &lt;label&gt; that can contribute to the control's accessible name i
 - FAIL when two or more non-empty labels compete and there is no override: screen readers announce a non-deterministic subset.
 - CANTTELL when one non-empty label is joined by empty label association(s) and there is no override: the name usually resolves to the real label, but handling of the empty association is not guaranteed across user agents.
 
-All-empty associations with no override are a missing-name case (the sibling rule below), not an ambiguity, so this rule stays silent.
+All-empty associations with no override are a missing-name case (the sibling rule form-control-programmatic-label-present), not an ambiguity, so this rule stays silent.
+
+**What a finding reports.**
+
+- `labelCount`: how many labels are associated with the control. On the competing-labels failure, only the non-empty ones are counted; on the empty-label case, the empty ones are counted too.
+- `contributingLabelCount` (the empty-label case): how many of those labels have text, and so give the control its name.
 
 ### `heading-order`
 
@@ -883,6 +1079,11 @@ Checks that heading levels increase by at most one at a time in document order.
 
 **Expectation.** In document order, each heading's level is no more than one greater than the highest heading level seen so far. Jumping deeper by more than one level (e.g. an &lt;h1&gt; followed directly by an &lt;h3&gt;, skipping &lt;h2&gt;) breaks the document outline assistive technology users rely on when navigating by heading. Going back to a shallower level at any point is always fine.
 
+**What a finding reports.**
+
+- `fromLevel`: the deepest heading level reached before this heading (3 for an &lt;h3&gt;).
+- `toLevel`: this heading's level, more than one deeper than `fromLevel`.
+
 ### `heading-quality`
 
 **Heading text should be descriptive, not a placeholder**
@@ -894,6 +1095,11 @@ Flags headings whose accessible name is a placeholder rather than a description 
 **Applies to.** Elements with a heading role (native &lt;h1&gt;-&lt;h6&gt;, or any element with an explicit role="heading") that are included in the accessibility tree and have a non-empty accessible name. A heading with no name at all is `empty-heading`'s concern, not this rule's.
 
 **Expectation.** The heading's accessible name, normalized (whitespace-collapsed, case-folded, trailing punctuation stripped), is not a placeholder left in the markup: a known generic word ("heading", "title", "untitled", "lorem ipsum", ...), a numbered template slot ("Heading 2", "Section 3"), a filename, or a URL. None of these describe the topic or purpose of the content they introduce.
+
+**What a finding reports.**
+
+- `name`: the heading's accessible name, with whitespace collapsed.
+- `normalizedName`: the same name as it was matched: lower case, with trailing punctuation removed.
 
 ### `html-lang-attr-present`
 
@@ -907,6 +1113,10 @@ Checks that the default language of the page is programmatically declared.
 
 **Expectation.** The &lt;html&gt; element has a lang attribute. The lang attribute is not empty and its primary language subtag (the part before the first hyphen) is a registered language subtag, as ACT bf051a requires. A malformed later subtag (lang="fr-FR-!!") still identifies French, so it passes here; it is a markup validity error, not a missing language.
 
+**What a finding reports.**
+
+- `lang` (a language that is not valid): the `lang` attribute's value, as written.
+
 ### `html-xml-lang-mismatch`
 
 **lang and xml:lang must not disagree**
@@ -918,6 +1128,10 @@ Checks that the &lt;html&gt; element's lang and xml:lang attributes declare the 
 **Applies to.** Applies when the &lt;html&gt; element has both a non-empty lang attribute and a non-empty xml:lang attribute.
 
 **Expectation.** The primary language subtag (the part before the first "-") of lang and xml:lang match, case-insensitively. When both attributes are present but declare different languages, assistive technology and user agents may resolve the page's language inconsistently.
+
+**What a finding reports.**
+
+- `lang`, `xmlLang`: the values of the `lang` and `xml:lang` attributes, as written.
 
 ### `identical-iframes-same-purpose`
 
@@ -931,6 +1145,12 @@ Checks that &lt;iframe&gt;/&lt;frame&gt; elements sharing an accessible name emb
 
 **Expectation.** Every frame in a set resolves to the same resource. A shared name describes one resource, so two frames answering to it must embed the same one.
 
+**What a finding reports.**
+
+- `name`: the accessible name the frames share.
+- `resource`: the address this frame embeds, as an absolute URL without its fragment. Empty (`null`) when its `src` could not be resolved (`IFRAME_RESOURCE_UNRESOLVED`).
+- `setSize`: how many frames share the name.
+
 ### `identical-links-same-purpose`
 
 **Links with the same accessible name should lead to the same destination**
@@ -942,6 +1162,12 @@ Flags groups of links that share the same accessible name but resolve to more th
 **Applies to.** Any `a[href]` or `[role="link"]` with a non-empty accessible name, grouped by that name (trimmed, whitespace-collapsed, case-folded).
 
 **Expectation.** Within a page, links that share the same accessible name are expected to serve the same purpose (i.e. resolve to the same destination, the full resolved URL, including any fragment). Same-text-different- destination links are common and frequently intentional in real sites (e.g. repeated "Read more" links per article card), so this is authored as `type: 'manual'` (cantTell-capped, never fail) rather than a hard fail, flagging a real name/destination mismatch for human judgment instead of guessing intent.
+
+**What a finding reports.**
+
+- `name`: the accessible name the links share, trimmed, with whitespace collapsed and in lower case.
+- `href`: the full URL this link leads to.
+- `distinctDestinationCount`: how many different URLs the links with this name lead to, a count of 2 or more.
 
 ### `iframe-focusable-content`
 
@@ -990,6 +1216,10 @@ Checks that an &lt;img&gt; alt text is not identical to other visible text alrea
 **Applies to.** Applies to &lt;img&gt; elements with non-empty alt text whose immediate parent element also has other visible text content (i.e. text nodes besides the image itself, commonly an &lt;a&gt; or &lt;button&gt; wrapping both an icon image and a text label).
 
 **Expectation.** The image's alt text is not the same (case-insensitive, normalized) as the other visible text already in the same parent. When both are present, assistive technology announces the same words twice for a single control (e.g. an icon-plus-text link where the icon's alt duplicates the link text).
+
+**What a finding reports.**
+
+- `alt`: the image's alt text, with spacing collapsed. It matches the text next to it.
 
 ### `img-alt-decorative`
 
@@ -1063,6 +1293,12 @@ Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one.
 
+**What a finding reports.**
+
+- `name`: the control's text alternative as announced, from the first source that gives one.
+- `sources`: every source that gives a non-empty text alternative, in the order they are used for the name. One item is `aria-labelledby`, `aria-label`, `alt` or `title`.
+- `alt` (a control with a non-empty `alt`): the `alt` text.
+
 ### `label-in-name`
 
 **Label in Name: accessible name contains visible text**
@@ -1074,6 +1310,14 @@ Checks that when a control has a visible text label, the accessible name contain
 **Applies to.** Applies to controls named by aria-label or aria-labelledby, are visually rendered, and have visible label text this engine can extract deterministically, from an associated &lt;label&gt;, from the control's own rendered text, or from the elements aria-labelledby points at. The candidates are &lt;button&gt;, &lt;a href&gt;, &lt;summary&gt;, non-hidden form controls, and the button, link, checkbox, radio, switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles, minus anything hidden or disabled. aria-hidden is not excluded: it changes nothing about what is rendered on screen, which is what this SC is about. An aria-label that is empty once trimmed, or an aria-labelledby whose ids point at nothing or only at elements with no text, names nothing: the accessible name then comes from the next source (the content, a &lt;label&gt;, title...), as for a control without them, so the control is out of scope.
 
 **Expectation.** The accessible name contains the visible label's words, adjacent and in order. The comparison is over words rather than characters: parenthesised text is dropped, case is folded, text is NFKC-normalised, and every character that is not a letter, digit or combining mark becomes a separator, so punctuation and spacing differences never decide the outcome. Accents are not folded: "Déposer" stays one word, and a name that drops an accent ("Deposer") does not contain it. Four shapes markup cannot settle are reported as cantTell instead of fail: a word hyphenated differently in the two places; a visible word the author may have abbreviated, marked by its trailing period; visible text rendered through a known icon font (the DOM text is real words, but nothing readable actually renders); and a whole visible label of exactly one character that doesn't even appear inside the accessible name, which per ACT 2ee8b8 may be "non-text content" (e.g. "X" meaning "close") rather than literal text.
+
+**What a finding reports.**
+
+- `visibleLabel`, `accessibleName`: the visible label text and the accessible name, as found.
+- `normalized.visibleLabel`, `normalized.accessibleName`: the same two texts as compared: parenthesised text dropped, case folded, Unicode normalised.
+- `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each text was split into, one word per item. The name must hold the label's words next to each other and in order.
+- `labelSource`: where the visible label came from: `label` (an associated `<label>`), `self` (the control's own text) or `aria-labelledby` (the elements it points at).
+- `nameMechanism`: what gives the accessible name: `aria-label` or `aria-labelledby`.
 
 ### `label-title-only`
 
@@ -1095,7 +1339,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that the banner landmark (role="banner" or a non-nested &lt;header&gt;) is not nested inside another landmark region.
 
-**Applies to.** Applies whenever the page contains at least one banner candidate: explicit role="banner", OR a &lt;header&gt; with NO role attribute at all, regardless of nesting (see implementation notes on why candidate selection is unconditional on purpose).
+**Applies to.** Applies whenever the page contains at least one banner candidate: explicit role="banner", OR a &lt;header&gt; with NO role attribute at all, regardless of nesting.
 
 **Expectation.** No banner candidate has an ancestor that is itself any landmark region. A banner nested inside another landmark is not a top-level, whole-page banner and confuses landmark-based navigation for assistive technology users.
 
@@ -1107,7 +1351,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that the complementary landmark (role="complementary" or an &lt;aside&gt; that keeps its implicit role) is not nested inside another landmark region.
 
-**Applies to.** Applies whenever the page contains at least one element carrying the complementary role: explicit role="complementary", or an &lt;aside&gt; that keeps its implicit role (see implementation notes on when it does not).
+**Applies to.** Applies whenever the page contains at least one element carrying the complementary role: explicit role="complementary", or an &lt;aside&gt; that keeps its implicit role.
 
 **Expectation.** No complementary candidate has an ancestor that is itself a landmark region. Complementary content supports the main content of the page and sits beside it; nested inside another landmark it is a section of that landmark instead, which is not what landmark navigation announces.
 
@@ -1119,7 +1363,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that the contentinfo landmark (role="contentinfo" or a non-nested &lt;footer&gt;) is not nested inside another landmark region.
 
-**Applies to.** Applies whenever the page contains at least one contentinfo candidate: explicit role="contentinfo", OR a &lt;footer&gt; with NO role attribute at all, regardless of nesting (see implementation notes on why candidate selection is unconditional on purpose).
+**Applies to.** Applies whenever the page contains at least one contentinfo candidate: explicit role="contentinfo", OR a &lt;footer&gt; with NO role attribute at all, regardless of nesting.
 
 **Expectation.** No contentinfo candidate has an ancestor that is itself any landmark region. A contentinfo nested inside another landmark is not a top-level, whole-page footer region and confuses landmark-based navigation for assistive technology users.
 
@@ -1147,6 +1391,10 @@ Checks that at most one banner landmark (role="banner" or a non-nested &lt;heade
 
 **Expectation.** At most one banner landmark exists on the page. Per WAI-ARIA Authoring Practices, the banner landmark represents site-oriented content that identifies the page as a whole, so having more than one is ambiguous for assistive technology users navigating by landmark.
 
+**What a finding reports.**
+
+- `count`: how many banner landmarks the page exposes to assistive technology, against a limit of 1.
+
 ### `landmark-no-duplicate-contentinfo`
 
 **Page must not have more than one contentinfo landmark**
@@ -1159,6 +1407,10 @@ Checks that at most one contentinfo landmark (role="contentinfo" or a non-nested
 
 **Expectation.** At most one contentinfo landmark exists on the page, mirroring landmark-no-duplicate-banner's rationale for contentinfo.
 
+**What a finding reports.**
+
+- `count`: how many contentinfo landmarks the page exposes to assistive technology, against a limit of 1.
+
 ### `landmark-no-duplicate-main`
 
 **Page must not have more than one main landmark**
@@ -1170,6 +1422,10 @@ Checks that at most one main landmark (role="main" or &lt;main&gt;) exists on th
 **Applies to.** Applies whenever the page contains at least one main landmark (explicit role="main", or an implicit &lt;main&gt;).
 
 **Expectation.** At most one main landmark exists on the page. Distinct, atomic decision from landmark-one-main (that rule flags zero mains too; this one only flags more than one).
+
+**What a finding reports.**
+
+- `count`: how many main landmarks the page exposes to assistive technology, against a limit of 1.
 
 ### `landmark-one-main`
 
@@ -1191,9 +1447,15 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that when two or more landmarks share the same role, each has a distinct accessible name.
 
-**Applies to.** Applies whenever two or more landmark regions on the page share the same landmark role (banner, contentinfo, main, navigation, complementary, region, form, or search; see implementation notes for the detection model).
+**Applies to.** Applies whenever two or more landmark regions on the page share the same landmark role (banner, contentinfo, main, navigation, complementary, region, form, or search).
 
 **Expectation.** Among landmarks sharing a role, each has a distinct accessible name (via aria-label/aria-labelledby; landmarks are not named from content). Two same-role landmarks with the same name (including two both left unnamed) are indistinguishable to assistive technology users navigating by landmark.
+
+**What a finding reports.**
+
+- `role`: the landmark role the colliding landmarks share, such as `navigation`.
+- `name`: the name they share, in lowercase with spacing collapsed. Empty when they are all unnamed.
+- `groupSize`: how many landmarks of that role share that name.
 
 ### `link-in-text-block`
 
@@ -1203,7 +1465,7 @@ automatic · WCAG 1.4.1 (A) · confidence high · default severity serious
 
 Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a &gt;=3:1 color difference, which also need a hover and focus cue.
 
-**Applies to.** Applies to links (`&lt;a href&gt;` and elements with `role="link"`) whose immediate parent element also has at least one direct-child text node with non-whitespace content (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item).
+**Applies to.** Applies to links (`<a href>` and elements with `role="link"`) whose immediate parent element also has at least one direct-child text node with non-whitespace content (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item).
 
 **Expectation.**
 
@@ -1214,6 +1476,11 @@ A link inside a text block must be visually distinguishable from the surrounding
 - another visible mark on the link itself: a border, box-shadow or outline, a background color different from the surrounding one, a background image, an image or svg inside it, or ::before/::after content.
 
 A link with none of these is distinguished by color alone. When its color contrasts with the surrounding text by at least 3:1, technique G183 is met only if hover and focus also bring a non-color cue, which a static scan cannot see, so the link is reported as cantTell. Below 3:1, with contrast confidently computable, color is demonstrably the only cue and the link fails.
+
+**What a finding reports.**
+
+- `metrics.ratio` (a link set apart by color only): the contrast between the link's text color and the surrounding text's, as a ratio (3 for 3:1), against `metrics.threshold` (3).
+- `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a link set apart by color only): the link's text color and the surrounding text's, as hex.
 
 ### `link-name-present`
 
@@ -1227,6 +1494,10 @@ Checks that links expose a non-empty accessible name.
 
 **Expectation.** The element has a non-empty accessible name. A programmatic name is taken first (aria-labelledby, aria-label, an associated &lt;label&gt;, title), and failing that the element falls back to its own subtree text, counting each descendant's own name (an &lt;img alt&gt;, aria-label or title), the shape behind the common &lt;a&gt;&lt;img alt="..."&gt;&lt;/a&gt; logo link. The content fallback is suppressed when an explicit, known role that is not name-from-content is present; an unrecognized role token falls back to the implicit role.
 
+**What a finding reports.**
+
+- `refs.accessibleName`: what the programmatic name lookup found: `present`, `value`, `mechanism` (the attribute or element the name would come from, `none` when there is none) and `flags` (notes on why a source gave no name). `null` when no lookup was made.
+
 ### `link-name-quality`
 
 **Link text should be descriptive, not generic**
@@ -1239,6 +1510,10 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 
 **Expectation.** The link's full accessible name, normalized (trimmed, case-folded, trailing punctuation stripped), is not an exact match for a known non-descriptive phrase ("click here", "read more", "more", "here", "details", "link", etc., WCAG technique F84's known failure pattern for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB", ...) with no adjacent context (an aria-describedby target, the enclosing list item/table cell/paragraph's own text, or (format names only) a table's first-row header) naming what it belongs to.
 
+**What a finding reports.**
+
+- `normalizedName`: the link's accessible name as it was matched: in lowercase, with spacing collapsed and trailing punctuation removed. It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name (`AMBIGUOUS_FORMAT_NAME`).
+
 ### `list-children-valid`
 
 **Lists must only directly contain list items**
@@ -1249,7 +1524,11 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 
 **Applies to.** Applies to &lt;ul&gt;/&lt;ol&gt; elements that have at least one direct element child and whose role is list: no role attribute, role="list", or a role attribute naming no concrete ARIA role. A &lt;ul&gt;/&lt;ol&gt; given another role (listbox, menubar, tablist, none, ...) is not a list, so its children follow that role's rules instead.
 
-**Expectation.** Every direct element child is &lt;li&gt;, &lt;script&gt;, or &lt;template&gt;. UNLESS it has an explicit `role` attribute, in which case the explicit role wins over the tag entirely: a child is valid iff that role is "listitem" (so `&lt;li role="presentation"&gt;`/`&lt;li role="menuitem"&gt;` are invalid despite the &lt;li&gt; tag, and conversely a non-&lt;li&gt; element explicitly given `role="listitem"` is valid). A wrapper &lt;div&gt; used for styling (no role at all) still breaks list semantics the same as before.
+**Expectation.** Every direct element child is &lt;li&gt;, &lt;script&gt;, or &lt;template&gt;. UNLESS it has an explicit `role` attribute, in which case the explicit role wins over the tag entirely: a child is valid iff that role is "listitem" (so `<li role="presentation">`/`<li role="menuitem">` are invalid despite the &lt;li&gt; tag, and conversely a non-&lt;li&gt; element explicitly given `role="listitem"` is valid). A wrapper &lt;div&gt; used for styling (no role at all) still breaks list semantics the same as before.
+
+**What a finding reports.**
+
+- `invalidChildren`: the children that do not belong in the list, one tag name per child.
 
 ### `listbox-name-present`
 
@@ -1275,6 +1554,10 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **Expectation.** The parent is &lt;ul&gt;/&lt;ol&gt;/&lt;menu&gt; with no role override (all three have the implicit role list), or an element with an explicit role of "list", "presentation", or "none". An &lt;li&gt; used outside a real list container (e.g. as a generic flex/grid item under a &lt;div&gt;) is not exposed as a list item to assistive technologies.
 
+**What a finding reports.**
+
+- `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
+
 ### `manual-review`
 
 **Manual review: keyboard navigation and focus order**
@@ -1298,6 +1581,14 @@ Finds audio and video elements where a transcript or other text alternative is n
 **Applies to.** Any eligible &lt;audio&gt; or &lt;video&gt; element in the composed DOM.
 
 **Expectation.** If a strong transcript/text-alternative signal is present (e.g., aria-describedby binding to a visible transcript block, or a nearby clearly labeled Transcript section/link), no occurrence is reported. Otherwise, the rule reports cantTell (insufficient evidence) for that media element.
+
+**What a finding reports.**
+
+- `evidence.strength`: how strong the transcript signal found near the media is: `none` (`transcriptNotDetected`) or `weak` (`transcriptEvidenceUnverified`).
+- `evidence.method`: what was found: `none`, `anchor-unverified` (a transcript link to a part of the same page that does not look like a transcript) or `external-link` (a transcript link to another page, which is not followed).
+- `evidence.transcriptLinkHref` (a weak signal): the transcript link's `href`.
+- `evidence.transcriptNodeSelector` (a weak signal): a selector for the transcript link.
+- `evidence.notes`: short English notes on what was found. Empty when nothing was.
 
 ### `menuitem-name-present`
 
@@ -1335,6 +1626,10 @@ Checks that &lt;meta http-equiv="refresh"&gt; does not impose a positive delay o
 
 **Expectation.** The delay is 0 (an immediate redirect, which users cannot be caught by mid-read), or exceeds 20 hours. Any other positive delay refreshes or redirects the page on a timer the user did not initiate and cannot pause, stop, or extend, which WCAG 2.2.1 (Timing Adjustable) requires be possible.
 
+**What a finding reports.**
+
+- `delay`: the time before the page refreshes or redirects, in seconds. A failure is above 0 and at most 72000 (20 hours).
+
 ### `meta-viewport-large`
 
 **Viewport meta tag should allow zooming up to 500%**
@@ -1347,6 +1642,10 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 
 **Expectation.** The content attribute does not set user-scalable to "no"/"0", and does not set maximum-scale below 5 (500%). This is the AAA-level, stricter counterpart of meta-viewport-zoom-enabled (which enforces the AA 200% minimum as a hard, WCAG-normative fail); this rule is advisory best-practice guidance toward the higher AAA bar.
 
+**What a finding reports.**
+
+- `reasons`: each setting in the content attribute that limits zoom, as written there in lowercase, such as `user-scalable=no` or `maximum-scale=2` (below 5).
+
 ### `meta-viewport-zoom-enabled`
 
 **Viewport meta tag must not disable zoom**
@@ -1358,6 +1657,10 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 **Applies to.** Applies to &lt;meta name="viewport"&gt; elements whose content attribute sets maximum-scale or user-scalable. Content setting neither cannot restrict zoom.
 
 **Expectation.** user-scalable is absent, yes, device-width, device-height, or a number outside the range -1 to 1; and maximum-scale is absent, device-width, device-height, negative, or 2 or more. Anything else stops the user zooming text to 200%, which WCAG 1.4.4 (Resize Text) requires.
+
+**What a finding reports.**
+
+- `reasons`: the settings that restrict zoom, one per item, written as in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
 
 ### `meter-name-present`
 
@@ -1383,6 +1686,11 @@ Flags elements with an inline pointer-only event handler (onmouseover, onmouseou
 
 **Expectation.** The element also carries at least one keyboard-reachable inline handler: `onkeydown`, `onkeyup`, `onkeypress` (the direct keyboard- event equivalents), or `onfocus`/`onblur` (the standard substitute for hover-triggered behavior: focus/blur are the keyboard- navigable analog to mouseover/mouseout, per WCAG technique G90). A handler is reachable only if keyboard events can reach it: `onfocus`/`onblur` when the element itself can take focus, and a key handler when the element or one of its descendants can (key events bubble, focus events do not). Otherwise the element's mouse-driven behavior (a hover tooltip, a custom dropdown, a drag interaction) has no way to be triggered by a keyboard-only user, and it is flagged with a reason saying whether the keyboard handlers are missing or cannot run.
 
+**What a finding reports.**
+
+- `mouseAttrs`: the pointer-only handler attributes the element carries. One item is an attribute name, such as `onmouseover`.
+- `keyboardAttrs` (handlers that cannot run, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard handler attributes the element carries, which keyboard events cannot reach. One item is an attribute name, such as `onfocus`.
+
 ### `nested-interactive-controls-absent`
 
 **Interactive controls must not be nested**
@@ -1394,6 +1702,10 @@ Checks that an interactive control (link, button, form control, or ARIA widget r
 **Applies to.** Applies to elements matching the interactive-control set (native a[href], button, input (not hidden), select, textarea; or an explicit ARIA widget role: button, link, checkbox, radio, switch, tab, textbox, combobox, listbox, menuitem, menuitemcheckbox, menuitemradio, option, slider, spinbutton, searchbox, treeitem). The container is applicable regardless of whether it is itself focusable, focusability is only used to decide whether a *descendant* nests an interactive control.
 
 **Expectation.** The element does not contain, as a descendant, another *operable* interactive control (e.g. a &lt;button&gt; wrapping a &lt;select&gt;, or a link containing a checkbox). Nested interactive controls are not reliably announced or operable via assistive technology, activating the outer control and the inner one become ambiguous, and some AT only exposes one of the two.
+
+**What a finding reports.**
+
+- `nestedElements`: the controls nested inside this one, one tag name per control.
 
 ### `no-autoplay-audio`
 
@@ -1437,6 +1749,14 @@ Flags &lt;object&gt; elements with detected fallback or name for human review of
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+**What a finding reports.**
+
+- `fallbackText`: the text content inside the &lt;object&gt;, trimmed, or `null` when there is none.
+- `ariaLabel`: the `aria-label` value, or `null` when there is none.
+- `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
+- `ariaLabelledByText`: the text of the elements `aria-labelledby` points to. Only looked up when there is no `aria-label`; `null` otherwise or when it resolves to nothing.
+- `title`: the `title` value, or `null` when there is none.
+
 ### `option-name-present`
 
 **Options have an accessible name**
@@ -1457,9 +1777,13 @@ manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
 Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `&lt;p&gt;` elements, and `&lt;div&gt;` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `&lt;strong&gt;`/`&lt;b&gt;` or a styled `&lt;span&gt;`) and rendered at &gt;=18px.
+**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px.
 
-**Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`&lt;h1&gt;`-`&lt;h6&gt;` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
+**Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`<h1>`-`<h6>` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
+
+**What a finding reports.**
+
+- `fontSizePx`: the computed font size of the text in CSS pixels, the smallest one when the pieces differ, against the 18px threshold.
 
 ### `page-has-heading-one`
 
@@ -1485,6 +1809,15 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 
 **Expectation.** The title carries none of the conservative low-descriptiveness signals: one of the generic titles home, homepage, welcome, untitled, page or document; fewer than eight characters; or a template shape pairing a generic token with a brand, such as "Home | Brand". When the crawl.pageTitles probe supplies at least ten pages, cross-page signals are used instead: one title repeated across distinct URLs, or a prefix or suffix of twelve characters or more shared across the set. Every signal is reported as cantTell: whether a title describes its page is a judgment, so the rule never fails on a pattern alone.
 
+**What a finding reports.**
+
+- `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`, `templateLikeTitle`): the page title, with spacing collapsed.
+- `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a URL and a title were compared.
+- `metrics.duplicateGroups` (a cross-page signal): how many titles are used by two or more URLs, compared without regard to case.
+- `metrics.largestDuplicateGroupSize` (a cross-page signal): how many URLs share the most-repeated title. 0 when no title repeats.
+- `metrics.sharedPrefix`, `metrics.sharedSuffix` (a cross-page signal): the start or end of the title that every page shares, when it is 12 characters or more. Empty otherwise.
+- `refs.exampleDuplicateTitles` (a cross-page signal): up to three repeated titles. One item is the `title` and up to five of the `urls` that use it.
+
 ### `page-title-present`
 
 **Page has a non-empty title**
@@ -1509,6 +1842,10 @@ Checks that a password or one-time-code field carries no inline paste handler th
 
 **Expectation.** A reviewer confirms the field can still be pasted into. Remembering a password is a cognitive function test, and 3.3.8 asks for a mechanism that helps the user through one; a password manager, or the clipboard for a one-time code, is that mechanism.
 
+**What a finding reports.**
+
+- `handler`: the field's `onpaste` attribute value, with spacing collapsed. It only cancels the paste (`PASTE_CANCELLED`) or calls other script that may or may not (`PASTE_HANDLER_OPAQUE`).
+
 ### `presentation-role-conflict`
 
 **Presentational role must not conflict with a global ARIA attribute or focusability**
@@ -1521,6 +1858,12 @@ Checks that role="presentation"/"none" (including an &lt;img alt=""&gt; implicit
 
 **Expectation.** The element does not also carry a WAI-ARIA *global* state/property (aria-label, aria-hidden, aria-describedby, aria-live, aria-current, ...; the full global-attribute set, not just the naming ones), AND is not focusable. Per the WAI-ARIA spec's Presentational Roles Conflict Resolution section, a presentational role is "restored" to the element's implicit semantic role when either condition holds: the presentation/none role silently stops working, contradicting the author's evident intent to hide the element from the accessibility tree.
 
+**What a finding reports.**
+
+- `role`: the presentational role in effect: `presentation` or `none`. An &lt;img alt=""&gt; with no role of its own reports `presentation`.
+- `conflictingAttrs`: the global ARIA attributes the element carries, whatever their value. One item is an attribute name, such as `aria-label`. Empty when the element has `aria-hidden="true"` or only its focusability conflicts.
+- `focusable`: `true` when the element can take focus, which also restores its role.
+
 ### `presentational-children-focusable-absent`
 
 **Roles with presentational children must not contain focusable content**
@@ -1532,6 +1875,11 @@ Checks that an element whose role makes its children presentational (button, che
 **Applies to.** Applies to elements whose semantic role is one of the WAI-ARIA roles defined as having presentational children (button, checkbox, img, menuitemcheckbox, menuitemradio, meter, option, progressbar, radio, scrollbar, separator, slider, switch, tab, plus doc-pagebreak and graphics-symbol from the DPUB-ARIA/Graphics-ARIA modules, which inherit the same trait). The role can be explicit (role="tab") or native (&lt;button&gt;, &lt;meter&gt;, &lt;progress&gt;, &lt;option&gt;).
 
 **Expectation.** No descendant of the element is part of sequential focus navigation. The presentational-children mechanism removes every descendant from the accessibility tree, so a descendant that still takes a tab stop receives focus with no role and no name to announce.
+
+**What a finding reports.**
+
+- `role`: the role that makes the element's children presentational.
+- `focusableElements`: the tag name of each tab stop found inside the element, one item per tab stop, in document order.
 
 ### `progressbar-name-present`
 
@@ -1576,6 +1924,12 @@ Each applicable element has an accessible text alternative:
 - a non-empty title attribute (last-resort accessible-name source per HTML-AAM); OR
 - for an SVG-namespace element, a non-empty first-child &lt;title&gt; (SVG-AAM's own naming mechanism, not only for the &lt;svg&gt; root).
 
+**What a finding reports.**
+
+- `ariaLabel`: the element's `aria-label` with surrounding whitespace removed, or null when it has none.
+- `ariaLabelledby`: the element's `aria-labelledby` id list with surrounding whitespace removed, or null when it has none.
+- `accessibleNameInfo` (`nameNotResolved`): the accessible name the element ends up with: `present`, `value`, `mechanism` (where the name came from, such as `aria-labelledby`) and `flags` (notes on what went wrong, such as `idref-missing` for a reference to an id that does not exist). Null on the other findings.
+
 ### `scope-attr-valid`
 
 **scope attribute must have a valid value**
@@ -1587,6 +1941,10 @@ Checks that scope="..." is one of row, col, rowgroup, or colgroup.
 **Applies to.** Applies to elements with a non-empty scope attribute.
 
 **Expectation.** The scope value is one of "row", "col", "rowgroup", or "colgroup" (case-insensitive). An invalid scope value is not recognized by assistive technology, silently losing the row/column header association it was meant to declare.
+
+**What a finding reports.**
+
+- `value`: the `scope` value as written, trimmed.
 
 ### `scrollable-region-focusable`
 
@@ -1642,6 +2000,14 @@ Applies to &lt;a href="#fragment"&gt; elements that are skip links by one of two
 Other same-page anchor links are not skip links and are left alone.
 
 **Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, not zero-area/no-rects). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination.
+
+**What a finding reports.**
+
+- `href`: the link's `href`.
+- `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it has no area.
+- `targetSelector` (a target that is not usable): a selector for the target.
+- `geometryCheckEnabled` (a target that is not usable): whether the target's geometry could be measured, which needs a browser.
+- `viewport.width`, `viewport.height` (a target whose geometry was measured): the viewport the page was laid out in, in CSS pixels. A target hidden at one width can be usable at another.
 
 ### `slider-name-present`
 
@@ -1709,7 +2075,7 @@ Checks that inline &lt;svg&gt; elements provide a text alternative via a &lt;tit
 
 Applies to inline &lt;svg&gt; elements that are exposed to assistive technologies AND appear intended to be conveyed. "Intended to be conveyed" is approximated deterministically by at least one of:
 
-- role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `&lt;svg&gt;` root with a nested `&lt;circle role="graphics-symbol"&gt;`).
+- role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `<svg>` root with a nested `<circle role="graphics-symbol">`).
 - aria-label / aria-labelledby present
 - &lt;title&gt; or &lt;desc&gt; present (desc alone is an applicability signal only, see @expectation)
 - focusable/tabbable (e.g., tabindex, native focusability)
@@ -1737,6 +2103,14 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
+**What a finding reports.**
+
+- `hasNonEmptyTitle`: `true` when the first &lt;title&gt; inside the &lt;svg&gt; has text.
+- `hasNonEmptyDesc`: `true` when the first &lt;desc&gt; inside the &lt;svg&gt; has text.
+- `ariaLabel`: the `aria-label` value, or `null` when there is none.
+- `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
+- `ariaLabelledByText`: the text of the elements `aria-labelledby` points to, up to 120 characters. Only looked up when there is no `aria-label`; `null` otherwise or when it resolves to nothing.
+
 ### `tab-name-present`
 
 **Tabs have an accessible name**
@@ -1761,6 +2135,10 @@ Checks that tabindex values are 0 or negative, not a positive number.
 
 **Expectation.** The tabindex value is 0 or negative. A positive tabindex reorders keyboard tab order explicitly, which is fragile to maintain as a page changes and usually indicates the natural DOM order should be fixed instead.
 
+**What a finding reports.**
+
+- `value`: the `tabindex` value, a whole number above 0.
+
 ### `table-duplicate-name`
 
 **Table caption must not duplicate its summary attribute**
@@ -1781,9 +2159,9 @@ manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
 Flags tables with no &lt;caption&gt; whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.
 
-**Applies to.** `&lt;table&gt;` elements with no `&lt;caption&gt;` child, at least two rows, and a first row containing exactly one non-empty-text cell while at least one other row has more than one cell. Left out: a table whose role (first token) is anything but table, grid or treegrid, such as a layout table with role="presentation", which needs no caption; and a table already named by a non-empty aria-label, an aria-labelledby that resolves to text, or a non-empty title, which WCAG accepts as the table's title.
+**Applies to.** `<table>` elements with no `<caption>` child, at least two rows, and a first row containing exactly one non-empty-text cell while at least one other row has more than one cell. Left out: a table whose role (first token) is anything but table, grid or treegrid, such as a layout table with role="presentation", which needs no caption; and a table already named by a non-empty aria-label, an aria-labelledby that resolves to text, or a non-empty title, which WCAG accepts as the table's title.
 
-**Expectation.** A single lone cell in the first row, sitting above rows that clearly have multiple columns, strongly suggests the author is using it as a visual caption/title rather than as a real table cell. Structure conveyed only through this positional convention is not programmatically associated with the table the way a real `&lt;caption&gt;` element is (1.3.1).
+**Expectation.** A single lone cell in the first row, sitting above rows that clearly have multiple columns, strongly suggests the author is using it as a visual caption/title rather than as a real table cell. Structure conveyed only through this positional convention is not programmatically associated with the table the way a real `<caption>` element is (1.3.1).
 
 ### `table-headers-attr-valid`
 
@@ -1796,6 +2174,10 @@ Checks that each id in a &lt;td&gt;/&lt;th&gt; headers attribute resolves to a c
 **Applies to.** Applies to &lt;td&gt;/&lt;th&gt; elements that carry a non-empty headers attribute, within a &lt;table&gt; whose semantic role is still table/grid/treegrid -- an explicit role of anything else (role="presentation"/"none", but also role="heading" or any other real role) replaces the native table semantics, leaving no table for headers to describe. Matches ACT a25f45's applicability.
 
 **Expectation.** Every id token in the headers attribute resolves to an element that: (a) exists, (b) is a cell (&lt;td&gt; or &lt;th&gt;) of the same &lt;table&gt; as the referencing cell, and (c) is not the cell itself. A &lt;td&gt; serving as a header via role="columnheader"/"rowheader" is a valid target, same as a plain &lt;th&gt; -- ACT a25f45 does not require the native tag.
+
+**What a finding reports.**
+
+- `invalid`: one item per id in the headers attribute that does not point at a valid header: `id`, and `reason`, which is `missing` (no element has that id), `self-reference` (the cell points at itself), `not-a-cell` (the element is not a &lt;td&gt; or &lt;th&gt;) or `different-table` (the cell is in another table).
 
 ### `table-th-has-data-cells`
 
@@ -1817,29 +2199,20 @@ automatic · WCAG 2.5.8 (AA) · confidence medium · default severity serious
 
 Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).
 
-**Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements with role="button"/"link" that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with a measurable box of non-zero size. Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated, for the reason given below.
+**Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements with role="button"/"link" that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with a measurable box of non-zero size. Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated: it has no box of its own to measure (see the implementation notes).
 
-**Expectation.**
+**Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry: spacing (a 24px-diameter circle centred on the target reaches no unrelated target), the inline exception for a link inside a run of text, or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but geometry cannot confirm it (two inline links in one run of text, or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess.
 
-Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry: spacing (a 24px-diameter circle centred on the target reaches no unrelated target), the inline exception for a link inside a run of text, or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but geometry cannot confirm it (two inline links in one run of text, or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess. Notes (engine intent):
+**What a finding reports.**
 
-- This rule is DOM-based and measures pointer hit regions available to sighted pointer users.
-- Elements can be "pointer-operable" even if excluded from the accessibility tree (e.g. aria-hidden="true").
-- Excludes targets that are not pointer-reachable due to rendering suppression (display:none, etc.), or pointer suppression (pointer-events:none), or zero geometry (e.g. scale(0) -&gt; zero rects), or a clip that leaves nothing visible (`clip: rect(0 0 0 0)`, `clip-path: inset(50%)`, on the element or an ancestor), as visually hidden skip links and labels use.
-- A neighbour found by the centre-distance check counts only if the browser shows it somewhere near the target: one covered there by something else, such as a page link under a fixed cookie banner, cannot be hit by a pointer aiming at the target.
-- Each finding reports what decided it in `data.details.metrics`: the target's size against the 24px minimum, and either the centre-to-centre distance to its neighbour against 24px or how many perimeter samples hit another target against the count that fails. It also reports the viewport it was measured at, and the summary names the size and the viewport width: a responsive page can size or place a target differently at another width.
-
-WCAG 2.5.8 exceptions implemented, and how:
-
-- Spacing: a 24px-diameter circle centered on an undersized target must not intersect another (unrelated) target's box or another undersized target's own circle. Two passes: a fast center-distance check (exact for undersized-vs-undersized, a reasonable proxy otherwise) and a 16-point perimeter sample via elementFromPoint as a more precise fallback for cases the distance check under-detects (e.g. a small target adjacent to a large, elongated neighbor). Ancestor/descendant relationships between the target and the "other" element are never treated as a conflict (see isRelated): a nested-interactive shape, a small control inside its own wrapping link/button, is one visual region, not two independent targets. That pattern is nested-interactive-controls-absent's concern, not a spacing one.
-- Inline: a link inside a text-block container passes outright (isInlineTextExceptionTarget). An inline link whose only spacing conflict is another inline link in the same run is reported as cantTell (isInlineLinkTarget), since the inline exception may cover it but geometry can't confirm that.
-- User Agent Control: an unstyled native checkbox/radio, detected via `appearance` not being reset to `none` (see isUserAgentSizedControl). Scoped narrowly to checkbox/radio specifically, not every form control, since those are the only types with unambiguous native rendering.
-- Essential/Equivalent: only a narrow, high-confidence subset is asserted (SVG/canvas/map-embedded controls, see isPlausiblyEssentialOrEquivalent); anything else defers to cantTell rather than guessing "essential" from a layout container.
-
-Known gap, left unimplemented on purpose: `&lt;area&gt;` (image-map hotspot) elements are not evaluated at all. `area[href]` is in CANDIDATE_SELECTOR for forward-compatibility, but it's currently a no-op. `&lt;area&gt;` has no CSS box of its own (`display: none` by the HTML spec's default UA stylesheet, confirmed against the spec rather than a jsdom quirk), so `getBoundingClientRect()` always reports zero geometry and `isPointerReachable`'s existing `display:none` check rejects it before any size/exception logic runs. A real `&lt;area&gt;` hit-region is computed by the browser from its `shape`/`coords` attributes against the associated `&lt;img&gt;`'s *rendered* size, an entirely different measurement path than every other candidate here. Implementing that properly (parsing `coords`, resolving the owning `&lt;img&gt;` via its `usemap`, accounting for the image's CSS-scaled render size) is a separate, larger feature, not attempted in this pass. This is an automatic, deterministic approximation intended to be:
-
-- strict on clear failures,
-- conservative when exceptions cannot be determined reliably.
+- `metrics.widthPx`, `metrics.heightPx`: the target's size in CSS pixels, against `metrics.minSizePx` (24).
+- `metrics.decidedBy`: which check found the target too close to another: `centerDistance` or `perimeterSampling`.
+- `metrics.centerDistancePx`, `metrics.minDistancePx` (`centerDistance`): the distance from the target's centre to its neighbour's, against the 24px it needs.
+- `metrics.perimeterHits`, `metrics.perimeterSamples`, `metrics.perimeterHitsToFail` (`perimeterSampling`): how many of the points on the 24px circle around the target land on another target, out of how many, against the number that fails.
+- `conflictWith`: a selector for the neighbour it is too close to.
+- `conflictHitCount`: the same count as `metrics.perimeterHits`, 0 when the distance decided.
+- `measured.width`, `measured.height`: the target's size, unrounded.
+- `viewport.width`, `viewport.height`: the viewport the page was laid out in, in CSS pixels. A responsive page can size or place a target differently at another width.
 
 ### `td-has-header`
 
@@ -1849,17 +2222,21 @@ automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
 Checks that every &lt;td&gt; in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column &lt;th&gt; above it, or an implicit row &lt;th&gt; to its left.
 
-**Applies to.** `&lt;table&gt;` elements with at least 4 rows and at least 4 columns (a "large" table, where implicit row/column header association is useful; small tables are usually self-evident), and with NO `colspan`/`rowspan` anywhere in the table. A table whose role (first token) is anything but table, grid or treegrid, such as a layout table with role="presentation", is left out: it has no data cells.
+**Applies to.** `<table>` elements with at least 4 rows and at least 4 columns (a "large" table, where implicit row/column header association is useful; small tables are usually self-evident), and with NO `colspan`/`rowspan` anywhere in the table. A table whose role (first token) is anything but table, grid or treegrid, such as a layout table with role="presentation", is left out: it has no data cells.
 
 **Expectation.**
 
-Every non-empty `&lt;td&gt;` has an associated header, via one of:
+Every non-empty `<td>` has an associated header, via one of:
 
-- a non-empty `headers` attribute (trusted here; whether it resolves to real `&lt;th&gt;` ids is `table-headers-attr-valid`'s concern, not this rule's), OR
+- a non-empty `headers` attribute (trusted here; whether it resolves to real `<th>` ids is `table-headers-attr-valid`'s concern, not this rule's), OR
 - an implicit column header: a header cell in the same column, in an earlier row, OR
 - an implicit row header: a header cell earlier in the same row.
 
-A header cell is a `&lt;th&gt;` with no other role, or any cell with role="columnheader" or role="rowheader" (such a `&lt;td&gt;` is a header, not a data cell). A `&lt;td&gt;` with no text and no content that could carry a name (an image, a control, an element with an ARIA label) holds no data, so it needs no header; the empty corner cell above row headers is the usual case.
+A header cell is a `<th>` with no other role, or any cell with role="columnheader" or role="rowheader" (such a `<td>` is a header, not a data cell). A `<td>` with no text and no content that could carry a name (an image, a control, an element with an ARIA label) holds no data, so it needs no header; the empty corner cell above row headers is the usual case.
+
+**What a finding reports.**
+
+- `row`, `column`: where the cell sits in the table, counting from 0: rows from the top, cells from the left within the row.
 
 ### `text-spacing-content-loss`
 
@@ -1879,6 +2256,17 @@ WCAG 1.4.12: with line height at 1.5 times the font size, spacing after paragrap
 - In any environment, a style sheet rule that sets line-height, letter-spacing or word-spacing below those values with `!important` is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style sheet to the page cannot override it, though a user style sheet can.
 
 Without a layout and with no such rule, the rule is notApplicable, with `data.reason: 'noLayout'`.
+
+**What a finding reports.**
+
+- `text`: the start of the text, up to 60 characters. Not on a style sheet rule's finding.
+- `metrics.overflowPx` (cut-off text): how far, in CSS pixels, the line went past the edge of the box that clips it, with the spacing applied.
+- `metrics.thresholdPx` (cut-off text): how far it may go before it fails: half an em across, or half the line's height down.
+- `metrics.axis` (cut-off text): `x` when the line went past a side, `y` past the top or bottom.
+- `container.widthPx`, `container.heightPx` (cut-off text): the size of the clipping box with the spacing applied.
+- `viewport.width`, `viewport.height` (cut-off or overlapping text): the viewport the page was laid out in, in CSS pixels. Text that fits at one width can be cut off at another.
+- `other` (overlapping text): the text it comes to overlap.
+- `selector`, `property`, `value` (a style sheet rule): the rule's selector and the declaration that forces the spacing.
 
 ### `textbox-name-present`
 
@@ -1934,6 +2322,10 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 **Expectation.** The primary language subtag of the lang value (the part before the first hyphen) is a registered language subtag, as ACT de46e4 requires. WCAG 3.1.2 (Language of Parts) requires that when a passage's language differs from the page's default, it is identified programmatically. A tag whose primary subtag is unknown fails to identify a real language at all; a malformed later subtag (lang="en-US_x") still identifies English and passes here, since it is a markup validity error rather than a missing language.
 
+**What a finding reports.**
+
+- `value`: the lang attribute's value, with surrounding whitespace removed.
+
 ### `video-caption`
 
 **Prerecorded video should provide a captions track**
@@ -1944,7 +2336,7 @@ Flags &lt;video&gt; elements with no &lt;track kind="captions"&gt; child, for ma
 
 **Applies to.** Any &lt;video&gt; element in the composed DOM.
 
-**Expectation.** SC 1.2.2 requires captions for prerecorded synchronized media, but only when the video actually has an audio track that conveys information (a silent/decorative video needs none), which cannot be verified from static markup alone (jsdom does not decode media). This rule is therefore `type: 'manual'` (cantTell-capped, never fail), matching the precedent set by `media-alternative-transcript-evidence` for the same class of "normatively mapped but not statically verifiable" gap. A &lt;video&gt; with a `&lt;track kind="captions"&gt;` whose `src` is non-empty is not flagged; everything else is flagged for human review. A video whose only text tracks are subtitles (`kind="subtitles"`, or no `kind`, which HTML treats as subtitles) gets its own question: subtitles may be a translation of the dialogue only, without the speaker and sound information captions carry.
+**Expectation.** SC 1.2.2 requires captions for prerecorded synchronized media, but only when the video actually has an audio track that conveys information (a silent/decorative video needs none), which cannot be verified from static markup alone (jsdom does not decode media). This rule is therefore `type: 'manual'` (cantTell-capped, never fail), matching the precedent set by `media-alternative-transcript-evidence` for the same class of "normatively mapped but not statically verifiable" gap. A &lt;video&gt; with a `<track kind="captions">` whose `src` is non-empty is not flagged; everything else is flagged for human review. A video whose only text tracks are subtitles (`kind="subtitles"`, or no `kind`, which HTML treats as subtitles) gets its own question: subtitles may be a translation of the dialogue only, without the speaker and sound information captions carry.
 
 ### `video-poster-text-alternative-present`
 
