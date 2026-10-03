@@ -37,6 +37,11 @@
  * - A neighbour found by the centre-distance check counts only if the browser shows it somewhere
  *   near the target: one covered there by something else, such as a page link under a fixed
  *   cookie banner, cannot be hit by a pointer aiming at the target.
+ * - Each finding reports what decided it in `data.details.metrics`: the target's size against
+ *   the 24px minimum, and either the centre-to-centre distance to its neighbour against 24px
+ *   or how many perimeter samples hit another target against the count that fails. It also
+ *   reports the viewport it was measured at, and the summary names the size and the viewport
+ *   width: a responsive page can size or place a target differently at another width.
  *
  * WCAG 2.5.8 exceptions implemented, and how:
  * - Spacing: a 24px-diameter circle centered on an undersized target must not
@@ -562,8 +567,16 @@ function runInPage(ctx) {
       // (Inline links in text are exempt and should not invalidate spacing.)
       if (isInlineTextExceptionTarget(other.el)) continue;
 
-      if (dist(target.center, other.center) < MIN && !isCoveredNear(other, target)) {
-        return { conflict: true, confident: true, hitCount: 0, conflictEl: other.el };
+      const d = dist(target.center, other.center);
+      if (d < MIN && !isCoveredNear(other, target)) {
+        return {
+          conflict: true,
+          confident: true,
+          hitCount: 0,
+          conflictEl: other.el,
+          decidedBy: 'centerDistance',
+          distancePx: d
+        };
       }
     }
 
@@ -607,15 +620,26 @@ function runInPage(ctx) {
       if (!firstConflictEl) firstConflictEl = hitCandidate;
     }
 
+    const sampled = {
+      decidedBy: 'perimeterSampling',
+      samples: STEPS,
+      confidentHits: CONFIDENT_THRESHOLD
+    };
     if (hitCount >= CONFIDENT_THRESHOLD) {
-      return { conflict: true, confident: true, hitCount, conflictEl: firstConflictEl };
+      return { conflict: true, confident: true, hitCount, conflictEl: firstConflictEl, ...sampled };
     }
 
     // Ambiguous band: close enough to HIT_THRESHOLD that sampling noise
     // could have tipped the result either way. Defer to manual review
     // instead of committing to pass or fail.
     if (hitCount >= HIT_THRESHOLD - 1) {
-      return { conflict: false, confident: false, hitCount, conflictEl: firstConflictEl };
+      return {
+        conflict: false,
+        confident: false,
+        hitCount,
+        conflictEl: firstConflictEl,
+        ...sampled
+      };
     }
 
     return { conflict: false, confident: true, hitCount, conflictEl: null };
@@ -699,6 +723,42 @@ function runInPage(ctx) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
 
+  // What decided a finding, measured against what it was held to, and the
+  // viewport it was measured at: a responsive page can size or place a
+  // target differently at another width. A conflict found by the distance
+  // check reports the centre-to-centre distance against the 24px spacing
+  // needs. One found by sampling the circle around the target reports how
+  // many of its points landed on another target against the count needed to
+  // fail; a centre distance would mislead there, since the neighbour is often
+  // a large element whose centre is far away.
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const view = document.defaultView || null;
+  const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
+  function measurements(it, info) {
+    const metrics = {
+      widthPx: round1(it.rect.width),
+      heightPx: round1(it.rect.height),
+      minSizePx: MIN,
+      decidedBy: info.decidedBy || null
+    };
+    if (info.decidedBy === 'centerDistance') {
+      metrics.centerDistancePx = round1(info.distancePx);
+      metrics.minDistancePx = MIN;
+    } else if (info.decidedBy === 'perimeterSampling') {
+      metrics.perimeterHits = info.hitCount;
+      metrics.perimeterSamples = info.samples;
+      metrics.perimeterHitsToFail = info.confidentHits;
+    }
+    return { metrics, viewport };
+  }
+  function sizeParams(it) {
+    return {
+      widthPx: String(round1(it.rect.width)),
+      heightPx: String(round1(it.rect.height)),
+      viewportWidth: String(viewport && viewport.width)
+    };
+  }
+
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline links in text.
     if (isInlineTextExceptionTarget(it.el)) {
@@ -714,6 +774,7 @@ function runInPage(ctx) {
     }
 
     const info = hasSpacingConflict(it);
+    const size = sizeParams(it);
 
     if (!info.conflict && info.confident === false) {
       // Ambiguous perimeter-sampling result near the decision threshold: report
@@ -723,13 +784,12 @@ function runInPage(ctx) {
       cantTellOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'cantTell',
-          summary:
-            'Target may be too small and too close to another target, but the overlap is near the detection threshold and could not be confidently measured.',
+          summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.`,
           hint: 'Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real.',
           i18n: {
             summaryKey: 'targetSizeMinimum_summary_cantTell_ambiguousSpacing',
             hintKey: 'targetSizeMinimum_hint_cantTell_ambiguousSpacing',
-            params: {}
+            params: size
           },
           uncertainty: {
             code: 'not-computable',
@@ -744,7 +804,8 @@ function runInPage(ctx) {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-ambiguous-spacing',
               conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+              ...measurements(it, info)
             }
           }
         })
@@ -760,13 +821,12 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary:
-              'Target is too small and too close to another target, but may be exempt as part of an essential graphic or image-map region.',
+            summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
             hint: 'Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_plausiblyEssential',
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-              params: {}
+              params: size
             },
             uncertainty: {
               code: 'judgement-required',
@@ -781,7 +841,8 @@ function runInPage(ctx) {
                 measured: { width: it.rect.width, height: it.rect.height },
                 reasonCode: 'undersized-plausibly-essential',
                 conflictHitCount: info.hitCount,
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...measurements(it, info)
               }
             }
           })
@@ -796,13 +857,12 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary:
-              'Target is smaller than 24×24 CSS px and close to another inline link in the same run of text, where the inline exception may apply.',
+            summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
             hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
             i18n: {
               summaryKey: 'targetSizeMinimum_summary_cantTell_inlineLinkRun',
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
-              params: {}
+              params: size
             },
             uncertainty: {
               code: 'judgement-required',
@@ -817,7 +877,8 @@ function runInPage(ctx) {
                 measured: { width: it.rect.width, height: it.rect.height },
                 reasonCode: 'undersized-inline-link-run',
                 conflictHitCount: info.hitCount,
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...measurements(it, info)
               }
             }
           })
@@ -828,19 +889,20 @@ function runInPage(ctx) {
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: 'Target is too small and too close to another target.',
+          summary: `Target is ${size.widthPx}×${size.heightPx} CSS px at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
           hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
           i18n: {
             summaryKey: 'targetSizeMinimum_summary_fail',
             hintKey: 'targetSizeMinimum_hint_fail',
-            params: {}
+            params: size
           },
           data: {
             details: {
               measured: { width: it.rect.width, height: it.rect.height },
               reasonCode: 'undersized-and-too-close',
               conflictHitCount: info.hitCount,
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null
+              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+              ...measurements(it, info)
             }
           }
         })

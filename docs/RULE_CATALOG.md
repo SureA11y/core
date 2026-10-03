@@ -1826,6 +1826,7 @@ Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 except
 - Elements can be "pointer-operable" even if excluded from the accessibility tree (e.g. aria-hidden="true").
 - Excludes targets that are not pointer-reachable due to rendering suppression (display:none, etc.), or pointer suppression (pointer-events:none), or zero geometry (e.g. scale(0) -&gt; zero rects), or a clip that leaves nothing visible (`clip: rect(0 0 0 0)`, `clip-path: inset(50%)`, on the element or an ancestor), as visually hidden skip links and labels use.
 - A neighbour found by the centre-distance check counts only if the browser shows it somewhere near the target: one covered there by something else, such as a page link under a fixed cookie banner, cannot be hit by a pointer aiming at the target.
+- Each finding reports what decided it in `data.details.metrics`: the target's size against the 24px minimum, and either the centre-to-centre distance to its neighbour against 24px or how many perimeter samples hit another target against the count that fails. It also reports the viewport it was measured at, and the summary names the size and the viewport width: a responsive page can size or place a target differently at another width.
 
 WCAG 2.5.8 exceptions implemented, and how:
 

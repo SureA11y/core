@@ -114,6 +114,7 @@ function runInPage(ctx) {
   }
 
   const geometrySupported = hasReliableGeometrySupport();
+  const view = document.defaultView || null;
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -227,7 +228,11 @@ function runInPage(ctx) {
               href,
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
-              geometryCheckEnabled: geometrySupported
+              geometryCheckEnabled: geometrySupported,
+              // A target hidden at one breakpoint may be shown at another.
+              ...(geometrySupported && view
+                ? { viewport: { width: view.innerWidth, height: view.innerHeight } }
+                : {})
             },
             visibilityFilter: {
               targetSet: 'acc',
