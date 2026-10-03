@@ -647,6 +647,7 @@ No element should be tabbable while visually hidden (e.g., opacity:0, clipped, o
 - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
 - The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.
 - The focused style is worked out from the stylesheets, not by focusing the element: a DOM emulator does not restyle `:focus`. Rules whose subject carries `:focus`, `:focus-visible` or `:focus-within` (or an ancestor carries `:focus-within`) are laid over the computed style in document order; a rule written `:not(:focus)` / `:not(:focus-within)` / `:not(:focus-visible)` has its declarations reset to their initial values. Inline style outranks a stylesheet rule unless the rule is `!important`. The overlay ignores specificity among the focus rules, and cross-origin stylesheets cannot be read, so their focus rules are not seen.
+- To see whether the page redirects focus, up to three candidates are focused for a moment. Focus then goes back where it was, or is blurred when nothing had it, so the rules after this one and a later scan see the page as it was. The page's own focus handlers still run.
 
 ### `css-orientation-lock`
 

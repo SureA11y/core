@@ -44366,6 +44366,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Put focus back where it was before a probe. Focusing the body does
+  // nothing, so when nothing had focus the probed element (or wherever the
+  // page sent focus) is blurred instead. Left focused, a skip link that CSS
+  // reveals on focus would be visible to every rule after this one and to
+  // the next scan of the page.
+  function restoreFocus(before) {
+    const now = getDeepActiveElement(document);
+    if (now === before) return;
+    const hadFocus = before && before !== document.body && before !== document.documentElement;
+    if (hadFocus && focusElementSafe(before) && getDeepActiveElement(document) === before) return;
+    try {
+      if (now && typeof now.blur === 'function') now.blur();
+    } catch {}
+  }
+
   function probeImmediateFocusRedirect(candidate) {
     if (!candidate || typeof candidate.addEventListener !== 'function') return null;
 
@@ -44389,10 +44404,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!focused || !focusedByEvent) return null;
 
     const after = getDeepActiveElement(document);
-
-    if (before && before !== after) {
-      focusElementSafe(before);
-    }
+    restoreFocus(before);
 
     if (!after || after === candidate) return null;
     const redirectedTag = (() => {

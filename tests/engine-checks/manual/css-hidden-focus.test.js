@@ -460,3 +460,33 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
 
   assert.strictEqual(rule.title, 'Focusable elements must not be visually hidden');
 });
+
+// The runtime probe focuses candidates to see whether focus is redirected.
+// Whatever had focus before the scan has it again afterwards: the rules that
+// run after this one, and the next scan, see the page as it was.
+test(`${RULE_ID}: focus is where it was before the scan`, () => {
+  const page = (extra) => `<!doctype html><html><body>
+      <button id="op0" style="opacity:0">Hidden</button>
+      <a id="off" href="#m" style="position:absolute;left:-9999px">Skip</a>
+      ${extra}<main id="m">x</main>
+    </body></html>`;
+
+  // Nothing focused: the body has focus, and keeps it.
+  let dom = createDom(page(''));
+  runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assert.strictEqual(dom.window.document.activeElement, dom.window.document.body);
+
+  // A control focused before the scan keeps focus.
+  dom = createDom(page('<input id="q">'));
+  dom.window.document.getElementById('q').focus();
+  runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assert.strictEqual(dom.window.document.activeElement.id, 'q');
+
+  // Even when the page moves focus on its own while probed.
+  dom = createDom(page('<button id="target">Target</button>'));
+  dom.window.document.getElementById('op0').addEventListener('focus', () => {
+    dom.window.setTimeout(() => dom.window.document.getElementById('target').focus(), 0);
+  });
+  runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  assert.strictEqual(dom.window.document.activeElement, dom.window.document.body);
+});

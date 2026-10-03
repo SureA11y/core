@@ -32,6 +32,10 @@
  *   Inline style outranks a stylesheet rule unless the rule is `!important`.
  *   The overlay ignores specificity among the focus rules, and cross-origin
  *   stylesheets cannot be read, so their focus rules are not seen.
+ * - To see whether the page redirects focus, up to three candidates are
+ *   focused for a moment. Focus then goes back where it was, or is blurred
+ *   when nothing had it, so the rules after this one and a later scan see
+ *   the page as it was. The page's own focus handlers still run.
  */
 
 const id = 'css-hidden-focus';
@@ -493,6 +497,21 @@ function runInPage(ctx) {
     }
   }
 
+  // Put focus back where it was before a probe. Focusing the body does
+  // nothing, so when nothing had focus the probed element (or wherever the
+  // page sent focus) is blurred instead. Left focused, a skip link that CSS
+  // reveals on focus would be visible to every rule after this one and to
+  // the next scan of the page.
+  function restoreFocus(before) {
+    const now = getDeepActiveElement(document);
+    if (now === before) return;
+    const hadFocus = before && before !== document.body && before !== document.documentElement;
+    if (hadFocus && focusElementSafe(before) && getDeepActiveElement(document) === before) return;
+    try {
+      if (now && typeof now.blur === 'function') now.blur();
+    } catch {}
+  }
+
   function probeImmediateFocusRedirect(candidate) {
     if (!candidate || typeof candidate.addEventListener !== 'function') return null;
 
@@ -516,10 +535,7 @@ function runInPage(ctx) {
     if (!focused || !focusedByEvent) return null;
 
     const after = getDeepActiveElement(document);
-
-    if (before && before !== after) {
-      focusElementSafe(before);
-    }
+    restoreFocus(before);
 
     if (!after || after === candidate) return null;
     const redirectedTag = (() => {
