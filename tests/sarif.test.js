@@ -95,6 +95,38 @@ test('renderSarifReport: partialFingerprints reuse the same ruleId+reasonCode+ht
   );
 });
 
+// GitHub matches results on primaryLocationLineHash alone. Without one, its
+// upload action stored an empty hash for every result, and fixing one finding
+// closed another's alert (checked against a real repository).
+test('renderSarifReport: every result has a primaryLocationLineHash from its own identity', () => {
+  const check = makeCheckResult({
+    occurrences: [
+      makeOccurrence({ html: '<img src="one.png">' }),
+      makeOccurrence({ html: '<img src="two.png">' }),
+      makeOccurrence({ html: '<img src="three.png">' })
+    ]
+  });
+  const hashes = (occurrences) =>
+    parse(
+      renderSarifReport(makeScanResult([makeCheckResult({ occurrences })]), {})
+    ).runs[0].results.map((r) => r.partialFingerprints.primaryLocationLineHash);
+  const all = hashes(check.occurrences);
+  assert.strictEqual(new Set(all).size, 3);
+  for (const h of all) assert.match(h, /^[0-9a-f]{16}:1$/);
+  // Fixing the middle one leaves the others' hashes as they were, so their
+  // alerts stay open and only the fixed one closes.
+  assert.deepStrictEqual(hashes([check.occurrences[0], check.occurrences[2]]), [all[0], all[2]]);
+});
+
+test('renderSarifReport: a finding repeated on the page is told apart by a count', () => {
+  const twice = [makeOccurrence({}), makeOccurrence({})];
+  const [a, b] = parse(
+    renderSarifReport(makeScanResult([makeCheckResult({ occurrences: twice })]), {})
+  ).runs[0].results.map((r) => r.partialFingerprints.primaryLocationLineHash);
+  assert.strictEqual(a.split(':')[0], b.split(':')[0]);
+  assert.deepStrictEqual([a.split(':')[1], b.split(':')[1]], ['1', '2']);
+});
+
 test('renderSarifReport: occurrence.selector is carried as a logical location', () => {
   const check = makeCheckResult({
     occurrences: [makeOccurrence({ selector: 'main > img:nth-child(2)' })]
