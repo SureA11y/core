@@ -31,6 +31,10 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 
 Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, `profiles/*` (a profile's tables and rules, which the engine reads), and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
 
+### TypeScript types
+
+`@surea11y/core` ships `src/index.d.ts` (through the `types` condition of its export), which types the scan result and the main entry's functions. The types describe the stable shape above, so they follow the same rules: a field added to the result is added to them in a minor, and a change that would break code compiled against them is a major. Fields this document calls unstable (`data.details` apart from `reasonCode`, `uncertainty.evidence`, `perfStats`) are typed loosely, and sets documented as open (uncertainty codes, `engine.locale.reason`, profile names) accept any string besides the known ones, so a new value does not break compilation. The exports listed as internal are declared, loosely, only so importing them compiles. A test compiles real scan results against the types, so they cannot drift from what the engine returns. The other entry points (`/sarif`, `/report`, `/junit`, …) have no types yet.
+
 Declaring this map is what lets the engine's internal file layout change without a major bump. Note that `src/checks/*` is still *shipped* (the generated bundle `require()`s it at runtime) — shipped is not the same as public.
 
 ## Extension points

@@ -154,8 +154,8 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
     needed?: string,       // what would settle the question
     evidence?: object      // what the rule did establish, rule-specific
   },
-  data: {
-    visibilityFilter?: { eligible: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
+  data?: {               // absent on manual-review's page-level finding
+    visibilityFilter?: { eligible?: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
     details?: object   // rule-specific, non-normative — see below
   }
 }
@@ -169,7 +169,7 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
 | `summary` | Human-readable, already localized ("This button has no accessible name."). |
 | `hint` | Human-readable remediation guidance, already localized. |
 | `i18n` | The raw translation keys behind `summary`/`hint`, if you want to re-render them in a different locale yourself without re-running the scan. `null` if the occurrence didn't use key-based i18n. |
-| `data.visibilityFilter` | Present on most occurrences: why the engine considered this element eligible (or not) under whichever eligibility model the rule used. `eligible` is that result; `targetSet` says which model produced it (`'dom'`: raw DOM/CSS visibility — most rules; `'acc'`: accessibility-tree eligibility). `accEligible` mirrors `eligible` only when `targetSet` is `'acc'`, otherwise `null` — don't read it as a second, independent signal. `reasons` is a list of machine-readable exclusion codes when `eligible: false`. |
+| `data.visibilityFilter` | Present on most occurrences: why the engine considered this element eligible (or not) under whichever eligibility model the rule used. `eligible` is that result (absent on the page-level findings of `bypass-blocks-present`, `html-lang-attr-present` and `page-title-present`); `targetSet` says which model produced it (`'dom'`: raw DOM/CSS visibility — most rules; `'acc'`: accessibility-tree eligibility). `accEligible` mirrors `eligible` only when `targetSet` is `'acc'`, otherwise `null` — don't read it as a second, independent signal. `reasons` is a list of machine-readable exclusion codes when `eligible: false`. |
 | `data.details` | Rule-specific structured data (computed metrics, resolved references) — **non-normative**: useful for building richer UI or debugging, but never changes what `outcome`/`severity` mean. Shape varies per rule; treat as best-effort extra context, not a stable contract. The one exception is `data.details.reasonCode`, which **is** stable: it identifies *which* of a rule's findings this is, and together with `ruleId` and `html` forms the fingerprint baselines and SARIF are keyed on. A rule may gain a new reason code in a minor release; a shipped one does not change. See [`API_STABILITY.md`](./API_STABILITY.md#finding-identity). |
 | `occurrenceOutcome` | Which tier this occurrence belongs to, on a rule that graded its findings into a confident `fail` tier and a needs-review `cantTell` tier. A rule reporting one tier only omits it, in which case the result's own `outcome` is the occurrence's tier. This is why a `fail` result can carry `cantTell`-tier occurrences: the aggregate outcome stays singular so CI can still gate on it, without discarding the findings that only warranted review. |
 | `uncertainty` | Why this finding could not be decided — see [Uncertainty codes](#uncertainty-codes) below. |
@@ -199,7 +199,9 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
 {
   ruleId: string,              // e.g. "wcag-1.1.1-non-text-content"
   outcome: "pass" | "fail" | "cantTell" | "notApplicable",
-  severity, confidence, type, title, description, meta, engineOptions, schemaVersion,  // same as a check result
+  severity, confidence, type, title, description, meta, engineOptions, schemaVersion,  // as on a check result, except that
+                                // meta.normativeMappings names the criterion in a shorter form:
+                                // { standard, requirement, level }
   occurrences: [],              // always empty — composites are rollups, not element-level findings
   data: {
     details: {

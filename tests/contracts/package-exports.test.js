@@ -78,7 +78,12 @@ test('every module entry point loads only published files', () => {
   const published = new Set(packed);
 
   const missing = [];
-  for (const [subpath, target] of Object.entries(pkg.exports)) {
+  for (const [subpath, entry] of Object.entries(pkg.exports)) {
+    // A target is a path, or conditions such as { types, default }.
+    const target = typeof entry === 'string' ? entry : entry.default;
+    if (entry && entry.types && !published.has(entry.types.replace(/^\.\//, ''))) {
+      missing.push(`${subpath}: ${entry.types} (types)`);
+    }
     if (subpath.includes('*') || !target.endsWith('.js') || target.includes('browser')) continue;
     // A fresh process, so each entry point's own requires are what is loaded.
     const loaded = JSON.parse(
