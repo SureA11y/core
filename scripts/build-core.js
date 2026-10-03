@@ -39,7 +39,11 @@ const {
   resolveContextRoots,
   createDomHelpers
 } = require('../src/core/dom-helpers');
-const { runCore, rollupCompositeResults } = require('../src/core/dom-runner');
+const {
+  runCore,
+  rollupCompositeResults,
+  readRenderingEnvironment
+} = require('../src/core/dom-runner');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
@@ -1565,6 +1569,8 @@ ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
+
+${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
 ${inlineConstFunction('runCore', runCore)}
 
