@@ -24,6 +24,7 @@
  * occurrences, matching --write-baseline).
  */
 
+const crypto = require('crypto');
 const path = require('path');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
@@ -127,6 +128,26 @@ function buildResult(check, occurrence, level, artifactUri) {
       html
     }
   };
+}
+
+// GitHub Code Scanning matches results between uploads on
+// partialFingerprints.primaryLocationLineHash alone. Its upload action
+// computes one from the result's line, and a DOM finding has no line: it
+// stored an empty hash, so alerts were matched by position, and fixing one
+// finding could close another's alert. So the hash is written here, from the
+// finding's own identity. A finding repeated on the page (the same broken
+// component twice) shares that identity, and is told apart by a count, as
+// GitHub's own hashes are: `<hash>:1`, `<hash>:2`.
+function addLineHashes(results) {
+  const seen = new Map();
+  for (const r of results) {
+    const key = r.partialFingerprints['surea11y/violation/v1'];
+    const n = (seen.get(key) || 0) + 1;
+    seen.set(key, n);
+    const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
+    r.partialFingerprints.primaryLocationLineHash = `${hash}:${n}`;
+  }
+  return results;
 }
 
 function getOccurrenceOutcome(check, occurrence) {
@@ -242,7 +263,7 @@ function renderSarifReport(result, options = {}) {
         },
         // fail first: matches docs/REPORT.md's own "violations before advisory
         // findings" ordering.
-        results: [...failResults, ...cantTellResults],
+        results: addLineHashes([...failResults, ...cantTellResults]),
         ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
