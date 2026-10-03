@@ -21,7 +21,14 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     locale: { requested: string, resolved: string, reason: string },
     wcagVersion: "2.0" | "2.1" | "2.2",
     profile?: string,      // "wcag22-aa", "en301549-v4.1.1", "en301549-v3.2.1", "section508", or a registered standard's own
-    mappings?: string[]    // e.g. ["en301549"] or ["en301549:V3.2.1"]
+    mappings?: string[],   // e.g. ["en301549"] or ["en301549:V3.2.1"]
+    environment: {
+      layout: boolean,
+      viewport?: { width: number, height: number },  // CSS px
+      devicePixelRatio?: number,
+      colorScheme?: "light" | "dark",
+      fonts?: "loaded" | "loading"
+    }
   },
   url: string | null,
   title: string | null,
@@ -45,6 +52,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `engine.profileExcludes` | Present only when the applied profile leaves rules out (`exclude` in its standard's registry entry): `{ rules, criteria }`, the rules it names and the WCAG criteria it waives. Their rules and WCAG rollups did not run. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles). |
 | `engine.optInRules` | Present only when `engineOptions.optInRules` ran at least one opt-in rule that the rest of the selection would not have run. Lists their tags. Its presence means the result includes rules for requirements beyond the targeted standard, such as a national standard's, so a failure may not be a WCAG failure. Absent under a WCAG profile, where unlocking selects nothing, and when a standard's own profile ran its rules. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#running-every-rule-optinrules). |
 | `engine.mappings` | Present only when the run names a standard besides WCAG in `meta.normativeMappings`, through `engineOptions.mappings` or a standard's profile. Lists them canonically, in table order: `"en301549"` for every version, `"en301549:V3.2.1"` for one. Absent means every result names WCAG only. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings). |
+| `engine.environment` | The conditions the page was rendered under, read from the page when the scan starts, before any rule runs (some rules change the page while they measure it). Rules that measure the layout, such as `text-spacing-content-loss`, can give another outcome for the same markup at another viewport width or while web fonts are still loading, so this is what you need to reproduce a run. `layout` is whether the page had one: `false` in jsdom and other DOM emulators, and then it is the only field, since a viewport describes nothing that was measured. In a browser, `viewport` is `innerWidth`/`innerHeight` in CSS pixels, `devicePixelRatio` the page's (browser zoom shows here too), `colorScheme` what `prefers-color-scheme` matches, and `fonts` is `document.fonts.status`. A field the page cannot report is left out. Reading these adds no nondeterminism: like the DOM, they are input, and the same page rendered the same way gives the same values. `"loading"` means layout rules measured text in fallback fonts; for results you can compare between runs, wait for `document.fonts.ready` before scanning. Each frame's result in a [cross-frame result](#cross-frame-result-runa11ycoreacrossframes) carries its own, since a frame has its own viewport. |
 | `url` | The `pageUrl` argument you passed in, or `document.location.href` if you passed `null`/omitted it, or `null` if neither is available. |
 | `title` | `document.title` at scan time, or `null`. |
 | `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |

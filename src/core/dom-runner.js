@@ -455,6 +455,47 @@ function rollupCompositeResults(
   return rulesResults;
 }
 
+/**
+ * The conditions the page was rendered under, read from the page itself.
+ *
+ * A rule that measures the layout (text spacing, target size) can give
+ * another outcome for the same markup at another viewport width, or while
+ * the web fonts are still loading. Reporting them is what makes such a
+ * finding reproducible. It reads input, as reading the DOM does, so the
+ * same page rendered the same way still gives the same result.
+ *
+ * Without a layout (jsdom, any DOM emulator) a viewport or a colour scheme
+ * describes nothing that was measured, so only `layout: false` is reported.
+ */
+function readRenderingEnvironment(win, doc) {
+  let layout;
+  try {
+    const root = doc && doc.documentElement;
+    const rects = root && typeof root.getClientRects === 'function' ? root.getClientRects() : null;
+    layout = !!(win && rects && rects.length > 0 && typeof doc.createRange === 'function');
+  } catch {
+    layout = false;
+  }
+  if (!layout) return { layout: false };
+
+  const env = { layout: true };
+  const width = Number(win.innerWidth);
+  const height = Number(win.innerHeight);
+  if (Number.isFinite(width) && Number.isFinite(height)) env.viewport = { width, height };
+  const dpr = Number(win.devicePixelRatio);
+  if (Number.isFinite(dpr) && dpr > 0) env.devicePixelRatio = dpr;
+  try {
+    if (typeof win.matchMedia === 'function') {
+      env.colorScheme = win.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+  } catch {}
+  try {
+    const status = doc.fonts && doc.fonts.status;
+    if (status === 'loaded' || status === 'loading') env.fonts = status;
+  } catch {}
+  return env;
+}
+
 function runCore(
   pageUrl,
   contextSelector,
@@ -519,6 +560,9 @@ function runCore(
     engineOptionsResolved.timestamp.trim()
       ? engineOptionsResolved.timestamp.trim()
       : null;
+
+  // Read before any rule runs: some change the page while they measure it.
+  const environment = readRenderingEnvironment(document.defaultView || window, document);
 
   // createDomHelpers()/createContrastHelpers() persist their element-keyed
   // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
@@ -1121,7 +1165,8 @@ function runCore(
       ...(optInRulesRan.size
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
-      ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {})
+      ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      environment
     },
     url,
     title,
@@ -1134,4 +1179,4 @@ function runCore(
   };
 }
 
-module.exports = { runCore, rollupCompositeResults };
+module.exports = { runCore, rollupCompositeResults, readRenderingEnvironment };

@@ -43,6 +43,12 @@
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
  *   letter-spacing 0.12, word-spacing 0.16, as multiples of the font size.
+ * - A clipped line reports how far it went past the edge against the
+ *   threshold it was held to (`metrics`: overflowPx, thresholdPx, axis),
+ *   the clipping box's size after the spacing (`container`), and the
+ *   viewport it was laid out in. An overlap reports the viewport. Text that
+ *   fits at one width can be cut off at another, so without these a finding
+ *   cannot be reproduced.
  */
 
 const id = 'text-spacing-content-loss';
@@ -117,6 +123,9 @@ function runInPage(ctx) {
     }
     if (unit === '%') return prop === 'line-height' ? n / 100 : null;
     return prop === 'line-height' ? n : null;
+  }
+  function round1(n) {
+    return Math.round(n * 10) / 10;
   }
   function textOf(el) {
     return String(el.textContent || '')
@@ -375,21 +384,40 @@ function runInPage(ctx) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(c.el);
         if (!b1) continue;
+        // The line furthest out, measured on the axis that decided it: the
+        // first one past the threshold, or else the one that went furthest.
         let worst = null;
         for (const l of linesAfter) {
           const o = outside(l, b1, c);
           const height = l.bottom - l.top;
-          const lost = o.dy >= height / 2 || o.dx >= fontSize / 2;
+          const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
+          const y = { axis: 'y', overflowPx: o.dy, thresholdPx: height / 2 };
+          const lost = o.dy >= y.thresholdPx || o.dx >= x.thresholdPx;
           const some = o.dy > 2 || o.dx > 2;
           if (lost) {
-            worst = 'lost';
+            worst = { lost, ...(o.dx >= x.thresholdPx ? x : y) };
             break;
           }
-          if (some) worst = 'some';
+          if (some) {
+            const m = o.dx >= o.dy ? x : y;
+            if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
+          }
         }
         if (worst) {
           reportedClip.add(c.el);
-          (worst === 'lost' ? clipped : partly).push({ el: c.el, text: textOf(n.parentElement) });
+          (worst.lost ? clipped : partly).push({
+            el: c.el,
+            text: textOf(n.parentElement),
+            metrics: {
+              overflowPx: round1(worst.overflowPx),
+              thresholdPx: round1(worst.thresholdPx),
+              axis: worst.axis
+            },
+            container: {
+              widthPx: round1(b1.right - b1.left),
+              heightPx: round1(b1.bottom - b1.top)
+            }
+          });
           break;
         }
       }
@@ -465,20 +493,20 @@ function runInPage(ctx) {
   const MESSAGES = {
     TEXT_CLIPPED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied, this element cuts off the text "${p.text}".`,
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
       hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
       key: 'fail_clipped'
     },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" reaches past the edge of this element, which hides what goes past it.`,
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
       hint: 'Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).',
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
     TEXT_OVERLAPS: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied, the text "${p.text}" comes to overlap the text "${p.other}".`,
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
       hint: 'Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).',
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
@@ -494,7 +522,9 @@ function runInPage(ctx) {
 
   const fails = [];
   const questions = [];
-  function report(reasonCode, el, params, uncertaintyCode) {
+  // `params` fill in the summary; `details` are what the rule found, with
+  // the measurements behind it.
+  function report(reasonCode, el, params, details, uncertaintyCode) {
     const msg = MESSAGES[reasonCode];
     const occ = helpers.reportOccurrence(el, {
       summary: msg.summary(params),
@@ -507,25 +537,39 @@ function runInPage(ctx) {
       ...(msg.needed
         ? { uncertainty: { code: uncertaintyCode, needed: msg.needed, evidence: { reasonCode } } }
         : {}),
-      data: { details: { reasonCode, ...params } }
+      data: { details: { reasonCode, ...details } }
     });
     (msg.needed ? questions : fails).push(occ);
   }
 
-  for (const f of clipped) report('TEXT_CLIPPED', f.el, { text: f.text });
-  for (const f of partly) {
-    report('TEXT_CLIPPED_PARTLY', f.el, { text: f.text }, 'judgement-required');
+  // Whether text gets cut off or overlaps depends on the viewport it was
+  // laid out in, so those findings say which one. Read on its own, in a
+  // baseline or a SARIF result, such a finding can still be reproduced.
+  const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
+  const at = { viewportWidth: String(viewport && viewport.width) };
+  for (const [reasonCode, list, uncertaintyCode] of [
+    ['TEXT_CLIPPED', clipped],
+    ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required']
+  ]) {
+    for (const f of list) {
+      const { text, metrics, container } = f;
+      const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
+      report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
+    }
   }
   for (const f of overlaps) {
-    report('TEXT_OVERLAPS', f.el, { text: f.text, other: f.other }, 'judgement-required');
+    const { text, other } = f;
+    report(
+      'TEXT_OVERLAPS',
+      f.el,
+      { text, other, ...at },
+      { text, other, viewport },
+      'judgement-required'
+    );
   }
   for (const f of importantFindings) {
-    report(
-      'STYLESHEET_IMPORTANT',
-      f.el,
-      { selector: f.selector, property: f.prop, value: f.value },
-      'runtime-dependent'
-    );
+    const params = { selector: f.selector, property: f.prop, value: f.value };
+    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent');
   }
 
   if (fails.length || questions.length) {

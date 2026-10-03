@@ -4,9 +4,14 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- A result records the conditions the page was rendered under, as `engine.environment`: `layout` (`false` in jsdom and other DOM emulators, and then nothing else), and in a browser the `viewport` in CSS pixels, `devicePixelRatio`, `colorScheme` (`light` or `dark`) and `fonts` (`document.fonts.status`, `loaded` or `loading`). Rules that measure the layout can give another outcome for the same page at another width, or while web fonts are still loading, and until now nothing in the result showed which conditions a finding came from. The values are read in the page, so every binding gets them with no change, and each frame of a cross-frame scan has its own. The field is additive; `engine.schemaVersion` stays `1.0.0`. If you compare results between runs, wait for `document.fonts.ready` before scanning: `fonts: "loading"` means text was measured in its fallback font.
+- `text-spacing-content-loss` findings say what was measured. Text cut off or pushed past an edge carries `data.details.metrics` (`overflowPx`, how far the line went past the edge; `thresholdPx`, half an em across or half the line's height down, which decides `fail` against `cantTell`; and `axis`), `data.details.container` (the clipping box's size with the spacing applied) and `data.details.viewport`. Overlapping text carries the viewport. The summaries name the viewport width, and for cut-off text how far it went: "With the text spacing of WCAG 1.4.12 applied at a 1024px-wide viewport, this element cuts off the text "Developers and platforms" (31px past its edge)." Reason codes are unchanged, so baselines and Code Scanning alerts keep matching; a tool that compares summary strings will see the new wording.
+
 ### Fixed
 - `target-size-minimum` no longer reports a visually hidden link or button as a 1×1 target ([#37](https://github.com/SureA11y/core/issues/37)). A control clipped to nothing, on itself or an ancestor (`clip: rect(0 0 0 0)` or `rect(1px, 1px, 1px, 1px)` on an absolutely positioned box, or `clip-path: inset(50%)`), cannot be hit by a pointer, so it is left out like one with `display: none`. A visually hidden skip link next to a logo or menu button failed this way, as on stackoverflow.com.
 - `target-size-minimum` no longer fails a small target over a neighbour that is covered near it ([#38](https://github.com/SureA11y/core/issues/38)). An example is a page link under a fixed cookie banner, which a pointer aiming at the banner's button cannot reach, as on bbc.co.uk/news at 390px. A neighbour found by the centre-distance check now counts only if the browser shows it somewhere within 24px of the target. A point outside the viewport proves nothing, so a neighbour below the fold still counts. Outside a browser nothing changes.
+
 
 ## [1.8.1] - 2026-10-02
 

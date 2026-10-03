@@ -57,10 +57,18 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
 
-  async function scan(html, engineOptions = { rules: { include: RULE_ID } }) {
-    const p = await browser.newPage();
+  // `pageOptions` go to Playwright's newPage (viewport, colorScheme);
+  // `setup` runs once the content is in, before the scan.
+  async function scan(
+    html,
+    engineOptions = { rules: { include: RULE_ID } },
+    pageOptions = {},
+    setup
+  ) {
+    const p = await browser.newPage(pageOptions);
     try {
       await p.setContent(html);
+      if (setup) await setup(p);
       await p.evaluate(() => {
         for (const el of document.querySelectorAll('.fit')) {
           const probe = document.createElement('span');
@@ -173,6 +181,127 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     ]) {
       assert.equal(outcome(await scan(page(css, body))), 'pass', css);
     }
+  });
+
+  const details = (result) =>
+    result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences.map((o) => o.data.details);
+
+  await t.test('a clipped line says how far it went, against what, and where', async () => {
+    const viewport = { width: 800, height: 600 };
+    const result = await scan(
+      page('#box{white-space:nowrap;overflow:hidden}', `<div class="fit" id="box">${TEXT}</div>`),
+      undefined,
+      { viewport }
+    );
+    const [d] = details(result);
+    assert.equal(d.reasonCode, 'TEXT_CLIPPED');
+    assert.equal(d.text, TEXT);
+    assert.equal(d.metrics.axis, 'x');
+    // Half an em of the 16px text.
+    assert.equal(d.metrics.thresholdPx, 8);
+    assert.ok(d.metrics.overflowPx >= d.metrics.thresholdPx, JSON.stringify(d.metrics));
+    assert.ok(d.container.widthPx > 0 && d.container.heightPx > 0, JSON.stringify(d.container));
+    assert.deepEqual(d.viewport, viewport);
+
+    const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+    const px = String(Math.round(d.metrics.overflowPx));
+    assert.deepEqual(occ.i18n.params, { text: TEXT, overflowPx: px, viewportWidth: '800' });
+    assert.match(
+      occ.summary,
+      new RegExp(`at a 800px-wide viewport, .* \\(${px}px past its edge\\)`)
+    );
+  });
+
+  await t.test('a line pushed out a little reports the same measurements', async () => {
+    const result = await scan(
+      page(
+        '#box{white-space:nowrap;overflow:hidden}',
+        '<div class="fit" id="box" data-extra="1">Ab</div>'
+      )
+    );
+    const [d] = details(result);
+    assert.equal(d.reasonCode, 'TEXT_CLIPPED_PARTLY');
+    assert.equal(d.metrics.axis, 'x');
+    assert.ok(d.metrics.overflowPx > 2 && d.metrics.overflowPx < d.metrics.thresholdPx);
+  });
+
+  await t.test('an overlap says the viewport it happened at', async () => {
+    const viewport = { width: 700, height: 500 };
+    const result = await scan(
+      page(
+        '#box{height:20px}',
+        `<div class="fit" id="box">${TEXT}</div><div>Closed on Sundays</div>`
+      ),
+      undefined,
+      { viewport }
+    );
+    const [d] = details(result);
+    assert.equal(d.reasonCode, 'TEXT_OVERLAPS');
+    assert.deepEqual(d.viewport, viewport);
+    assert.equal(d.metrics, undefined);
+  });
+
+  // The case that made this worth recording: the box only gets narrow below
+  // a breakpoint, so the same page passes at one width and fails at another.
+  await t.test('same page, two widths: two outcomes, each with its own viewport', async () => {
+    const html = page(
+      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}}',
+      `<div class="fit" id="box">${TEXT}</div>`
+    );
+    const wide = await scan(html, undefined, { viewport: { width: 1024, height: 600 } });
+    const narrow = await scan(html, undefined, { viewport: { width: 500, height: 600 } });
+    assert.equal(outcome(wide), 'pass');
+    assert.equal(outcome(narrow), 'fail');
+    assert.deepEqual(wide.engine.environment.viewport, { width: 1024, height: 600 });
+    assert.deepEqual(narrow.engine.environment.viewport, { width: 500, height: 600 });
+    assert.deepEqual(details(narrow)[0].viewport, { width: 500, height: 600 });
+  });
+
+  await t.test('the run records the conditions the page was rendered under', async () => {
+    const html = page('', `<p>${TEXT}</p>`);
+    const light = await scan(html, undefined, { viewport: { width: 640, height: 480 } });
+    assert.deepEqual(light.engine.environment, {
+      layout: true,
+      viewport: { width: 640, height: 480 },
+      devicePixelRatio: 1,
+      colorScheme: 'light',
+      fonts: 'loaded'
+    });
+
+    const dark = await scan(html, undefined, { colorScheme: 'dark', deviceScaleFactor: 2 });
+    assert.equal(dark.engine.environment.colorScheme, 'dark');
+    assert.equal(dark.engine.environment.devicePixelRatio, 2);
+
+    // A web font whose file never arrives keeps the page's fonts loading.
+    const loading = await scan(html, undefined, {}, async (p) => {
+      await p.route('https://fonts.example.test/**', () => {});
+      await p.evaluate(() => {
+        const face = new FontFace('Slow', 'url(https://fonts.example.test/slow.woff2)');
+        document.fonts.add(face);
+        face.load().catch(() => {});
+      });
+    });
+    assert.equal(loading.engine.environment.fonts, 'loading');
+
+    // The conditions are the ones the scan started from. A rule that makes
+    // the page load a font while it runs does not change them.
+    const lateFont = {
+      id: 'loads-a-font',
+      meta: { title: 'loads a font', tags: [], wcagSc: [], type: 'automatic' },
+      runInPage: `function runInPage(ctx) {
+        const face = new FontFace('Late', 'url(https://fonts.example.test/late.woff2)');
+        ctx.document.fonts.add(face);
+        face.load().catch(() => {});
+        return { outcome: 'pass', occurrences: [] };
+      }`
+    };
+    const during = await scan(
+      html,
+      { rules: { include: [RULE_ID, 'loads-a-font'] }, customRules: [lateFont] },
+      {},
+      (p) => p.route('https://fonts.example.test/**', () => {})
+    );
+    assert.equal(during.engine.environment.fonts, 'loaded');
   });
 
   await t.test('the WCAG 1.4.12 rollup fails with it', async () => {
