@@ -21,7 +21,9 @@ test('the conditions are read from the page, field by field', () => {
   const doc = {
     documentElement: { getClientRects: () => [{}] },
     createRange: () => ({}),
-    fonts: { status: 'loading' }
+    // The set says loading while every face has loaded: what the faces say
+    // is what counts.
+    fonts: { status: 'loading', forEach: (fn) => [{ status: 'loaded' }].forEach(fn) }
   };
   const win = {
     innerWidth: 900,
@@ -34,8 +36,13 @@ test('the conditions are read from the page, field by field', () => {
     viewport: { width: 900, height: 700 },
     devicePixelRatio: 1.5,
     colorScheme: 'dark',
-    fonts: 'loading'
+    fonts: 'loaded'
   });
+  const stillLoading = {
+    ...doc,
+    fonts: { forEach: (fn) => [{ status: 'loaded' }, { status: 'loading' }].forEach(fn) }
+  };
+  assert.equal(readRenderingEnvironment(win, stillLoading).fonts, 'loading');
 
   // What the page cannot tell is left out rather than guessed.
   const bare = { documentElement: doc.documentElement, createRange: doc.createRange };

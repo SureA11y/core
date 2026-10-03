@@ -302,6 +302,34 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       (p) => p.route('https://fonts.example.test/**', () => {})
     );
     assert.equal(during.engine.environment.fonts, 'loaded');
+
+    // Adding a cascade layer, as this rule does, leaves Chromium's
+    // document.fonts.status at loading for a while although every face has
+    // loaded. A scan straight after another must still see them loaded.
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        page(
+          "@font-face{font-family:Local;src:local('Arial')} body{font-family:Local}",
+          `<p>${TEXT}</p>`
+        )
+      );
+      await p.evaluate(() => document.fonts.ready);
+      await p.addScriptTag({ content: BUNDLE });
+      const [setStatus, second] = await p.evaluate(() => {
+        const run = () => window.a11ycore.runa11yCoreInPage(null, null, {}, null);
+        run();
+        return [document.fonts.status, run().engine.environment.fonts];
+      });
+      assert.equal(
+        setStatus,
+        'loading',
+        'Chromium still flags the set; if not, this test proves nothing'
+      );
+      assert.equal(second, 'loaded');
+    } finally {
+      await p.close();
+    }
   });
 
   await t.test('the WCAG 1.4.12 rollup fails with it', async () => {

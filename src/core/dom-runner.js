@@ -489,9 +489,20 @@ function readRenderingEnvironment(win, doc) {
       env.colorScheme = win.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
   } catch {}
+  // Whether a font face is still loading, asked of each face rather than of
+  // document.fonts.status: Chromium reports the set as loading for a while
+  // after a style sheet adds a cascade layer, as text-spacing-content-loss
+  // does, while every face is loaded and nothing is fetched. A second scan
+  // straight after a first would otherwise say its fonts were loading.
   try {
-    const status = doc.fonts && doc.fonts.status;
-    if (status === 'loaded' || status === 'loading') env.fonts = status;
+    const fonts = doc.fonts;
+    if (fonts && typeof fonts.forEach === 'function') {
+      let loading = false;
+      fonts.forEach((face) => {
+        if (face && face.status === 'loading') loading = true;
+      });
+      env.fonts = loading ? 'loading' : 'loaded';
+    }
   } catch {}
   return env;
 }
