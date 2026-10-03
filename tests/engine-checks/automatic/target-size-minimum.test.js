@@ -503,3 +503,24 @@ test(`${RULE_ID}: runDomRulesInPage (Node/require entry point) agrees with runa1
   assert.strictEqual(nodeCheck.outcome, inPageCheck.outcome);
   assert.strictEqual(nodeCheck.occurrences.length, inPageCheck.occurrences.length);
 });
+
+test(`${RULE_ID}: a control clipped to nothing is not a target, however close (#37)`, () => {
+  // jsdom reads only the comma form of rect(); Chromium reads both, see the
+  // Chromium test next to this one.
+  const sr = 'position:absolute;width:1px;height:1px;overflow:hidden;white-space:nowrap';
+  for (const clip of ['clip:rect(0,0,0,0)', 'clip:rect(1px,1px,1px,1px)', 'clip-path:inset(50%)']) {
+    const html = `<!doctype html><html><body>
+      <a id="skip" href="#main" style="${sr};${clip}" data-rect="10,10,1,1">Skip to content</a>
+      <button id="menu" data-rect="0,0,30,30">Menu</button>
+      <main id="main">x</main>
+    </body></html>`;
+    assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  // A clip that leaves a visible region does not hide the link.
+  const visible = `<!doctype html><html><body>
+    <a id="skip" href="#main" style="position:absolute;clip:rect(0,10px,10px,0)" data-rect="10,10,10,10">S</a>
+    <button id="menu" data-rect="0,0,30,30">Menu</button>
+  </body></html>`;
+  const rule = assertRule(run(visible), RULE_ID, 'fail', { minOccurrences: 1 });
+  assert.ok(rule.occurrences.some((o) => /#skip\b/.test(o.selector)));
+});
