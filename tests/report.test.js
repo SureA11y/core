@@ -612,6 +612,42 @@ test('renderHtmlReport: the meta bar names the opt-in rules a run added, in the 
   assert.doesNotMatch(renderHtmlReport(result), /opt-in rules/);
 });
 
+test('renderHtmlReport: the meta bar shows the conditions the page was rendered under', () => {
+  const result = makeScanResult([]);
+  result.engine = {
+    ...result.engine,
+    environment: {
+      layout: true,
+      viewport: { width: 1024, height: 900 },
+      devicePixelRatio: 1,
+      colorScheme: 'dark',
+      fonts: 'loaded'
+    }
+  };
+  let report = renderHtmlReport(result);
+  assert.match(report, /<b>1024\u00d7900<\/b>viewport/);
+  assert.match(report, /<b>dark<\/b>color scheme/);
+  // Loaded fonts are the normal case and get no chip.
+  assert.doesNotMatch(report, /web fonts/);
+
+  result.engine.environment = {
+    ...result.engine.environment,
+    devicePixelRatio: 2,
+    fonts: 'loading'
+  };
+  report = renderHtmlReport(result);
+  assert.match(report, /<b>1024\u00d7900 @2x<\/b>viewport/);
+  assert.match(report, /<b>loading<\/b>web fonts/);
+
+  result.engine.environment = { layout: false };
+  report = renderHtmlReport(result);
+  assert.match(report, /<b>none<\/b>layout/);
+  assert.doesNotMatch(report, /viewport</);
+
+  delete result.engine.environment;
+  assert.doesNotMatch(renderHtmlReport(result), /<\/b>(layout|viewport)</);
+});
+
 test('renderHtmlReport: cards cap a long selector and summary, the table keeps them whole', () => {
   const selector = `html > body > ${'div > '.repeat(60)}img`;
   const summary = `Missing alt attribute on <img>. ${'Context. '.repeat(40)}`.trim();

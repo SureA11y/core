@@ -204,6 +204,21 @@ function countStatus(entries, status) {
   return entries.filter((e) => e.status === status).length;
 }
 
+// The conditions the page was rendered under, as flat properties: a test
+// view shows them next to the profile, and a failure that comes and goes
+// with the viewport width can be traced to the width it ran at.
+function environmentProperties(env) {
+  if (!env || typeof env !== 'object') return [];
+  const vp = env.viewport;
+  return [
+    ['layout', typeof env.layout === 'boolean' ? String(env.layout) : null],
+    ['viewport', vp && vp.width != null && vp.height != null ? `${vp.width}x${vp.height}` : null],
+    ['devicePixelRatio', env.devicePixelRatio != null ? String(env.devicePixelRatio) : null],
+    ['colorScheme', env.colorScheme],
+    ['fonts', env.fonts]
+  ];
+}
+
 function renderJunitReport(result, options = {}) {
   const opts = {
     cantTellAs: options.cantTellAs === 'failure' ? 'failure' : 'skipped',
@@ -263,6 +278,7 @@ function renderJunitReport(result, options = {}) {
     ['wcagVersion', engine.wcagVersion],
     ['profile', engine.profile],
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
+    ...environmentProperties(engine.environment),
     ['locale', engine.locale && engine.locale.resolved],
     ['url', result && result.url]
   ].filter(([, v]) => v != null && v !== '');

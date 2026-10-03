@@ -177,6 +177,33 @@ function renderTargetChips(engine, ui) {
   return chips.join('\n  ');
 }
 
+// The conditions the page was rendered under. A layout-dependent finding
+// can come and go with the viewport width, so the report says which width
+// it describes; colour scheme and loading fonts change contrast and text
+// measurements too. Fonts get a chip only while still loading, the case
+// that makes results differ between runs. A result from an older engine has
+// no engine.environment and gets no chips.
+function renderEnvironmentChips(engine, ui) {
+  const env = engine && engine.environment;
+  if (!env || typeof env !== 'object') return '';
+  if (env.layout === false)
+    return `<div><b>${esc(ui.tr('report_meta_noLayout'))}</b>${esc(ui.tr('report_meta_layout'))}</div>`;
+  const chips = [];
+  const vp = env.viewport;
+  if (vp && Number.isFinite(vp.width) && Number.isFinite(vp.height)) {
+    const dpr = env.devicePixelRatio;
+    const scale = Number.isFinite(dpr) && dpr !== 1 ? ` @${dpr}x` : '';
+    chips.push(
+      `<div><b>${esc(`${vp.width}\u00d7${vp.height}${scale}`)}</b>${esc(ui.tr('report_meta_viewport'))}</div>`
+    );
+  }
+  if (env.colorScheme)
+    chips.push(`<div><b>${esc(env.colorScheme)}</b>${esc(ui.tr('report_meta_colorScheme'))}</div>`);
+  if (env.fonts === 'loading')
+    chips.push(`<div><b>${esc(env.fonts)}</b>${esc(ui.tr('report_meta_fonts'))}</div>`);
+  return chips.join('\n  ');
+}
+
 // Locale fallback is per-string and silent in the text itself, so a report
 // generated in a locale the engine does not carry reads as a normal English
 // one. A result from an older engine has no engine.locale and gets no chip.
@@ -674,6 +701,7 @@ function renderHtmlReport(result, options = {}) {
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
   ${renderTargetChips(engine, ui)}
+  ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>
 
