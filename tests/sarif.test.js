@@ -613,6 +613,16 @@ test('renderSarifReport: the run records the conditions the page was rendered un
   assert.deepStrictEqual(run.properties, { wcagVersion: '2.2', environment });
 });
 
+test('renderSarifReport: a category becomes the run automationDetails.id', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  const id = (options) => parse(renderSarifReport(result, options)).runs[0].automationDetails;
+  // GitHub reads the category up to the last slash, so one is added.
+  assert.deepStrictEqual(id({ category: 'a11y-1024x900' }), { id: 'a11y-1024x900/' });
+  assert.deepStrictEqual(id({ category: 'a11y/mobile/' }), { id: 'a11y/mobile/' });
+  assert.strictEqual(id({}), undefined);
+  assert.strictEqual(id({ category: '  ' }), undefined);
+});
+
 test('renderSarifReport: a result from an older engine gets no run properties', () => {
   const run = parse(renderSarifReport(makeScanResult([makeCheckResult({})]), {})).runs[0];
   assert.strictEqual('properties' in run, false);
