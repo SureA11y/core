@@ -143,3 +143,16 @@ test(`${RULE_ID}: wording that only resembles a skip link is left alone`, () => 
   const html = `<!doctype html><html><body><a href="/x">X</a><a href="#top">Aller en haut</a><a href="#s2">Section 2</a></body></html>`;
   assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
 });
+
+// The anchor name is compared as an attribute: built into a selector, a
+// backslash in it made the selector invalid and the target looked missing.
+test(`${RULE_ID}: a legacy <a name> target with a backslash or quote in its name is found`, () => {
+  for (const [name, href] of [
+    ['a\\b', '#a%5Cb'],
+    ['say "hi"', '#say%20%22hi%22']
+  ]) {
+    const html = `<!doctype html><html><body><a id="a" href="${href}">Skip to main content</a><a name='${name}'></a><main>x</main></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

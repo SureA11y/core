@@ -170,8 +170,13 @@ function runInPage(ctx) {
         target = null;
       }
       if (!target) {
+        // A legacy <a name>, compared as an attribute rather than built into a
+        // selector, which a backslash or quote in the name would break.
         try {
-          target = document.querySelector('a[name="' + fragment.replace(/"/g, '\\"') + '"]');
+          target =
+            Array.from(document.querySelectorAll('a[name]')).find(
+              (a) => a.getAttribute('name') === fragment
+            ) || null;
         } catch {
           target = null;
         }

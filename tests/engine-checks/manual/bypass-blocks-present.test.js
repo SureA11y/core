@@ -156,3 +156,16 @@ test(`bypass-blocks-present: notApplicable when engineOptions.fragment is true, 
     maxOccurrences: 0
   });
 });
+
+// The anchor name is compared as an attribute: built into a selector, a
+// backslash in it made the selector invalid and the target looked absent.
+test(`${RULE_ID}: a legacy <a name> anchor with a backslash or quote in its name is found`, () => {
+  for (const [name, href] of [
+    ['a\\b', '#a%5Cb'],
+    ['say "hi"', '#say%20%22hi%22']
+  ]) {
+    const html = `<!doctype html><html><body><a href="${href}">Skip</a><nav>Nav</nav><a name='${name}'></a><div>Content</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

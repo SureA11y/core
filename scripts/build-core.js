@@ -674,8 +674,9 @@ function resolveLocale(engineOptions) {
     const ctx = (params && typeof params === 'object') ? params : null;
     if (!str || !ctx) return str;
 
-    // Tokenize: {{...}}
-    const tagRe = /\\{\\{\\s*([#^/]?)([^}\\s]+)\\s*\\}\\}/g;
+    // Tokenize: {{...}}. A key never contains a brace; leaving braces out of
+    // it keeps a long run of them from making the match slow.
+    const tagRe = /\\{\\{\\s*([#^/]?)([^{}\\s]+)\\s*\\}\\}/g;
 
     // We render by building an AST-like stack of frames (small + deterministic).
     const root = { type: 'root', key: null, inverted: false, parts: [] };
