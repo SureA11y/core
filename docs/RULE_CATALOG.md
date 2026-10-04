@@ -113,7 +113,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
-| [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should not rely on placeholder or title as the primary label | 3.3.2 | A | medium | moderate |
+| [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should have a label shown on screen | 3.3.2 | A | medium | moderate |
 | [`heading-order`](#heading-order) | Heading levels must not skip a level | — | — | medium | minor |
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
@@ -1013,11 +1013,11 @@ Checks that form controls have a programmatic label via &lt;label&gt;, aria-labe
 
 ### `form-control-programmatic-label-quality`
 
-**Form controls should not rely on placeholder or title as the primary label**
+**Form controls should have a label shown on screen**
 
 manual · WCAG 3.3.2 (A) · confidence medium · default severity moderate
 
-Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer &lt;label&gt; or aria-labelledby.
+Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible &lt;label&gt;, or aria-labelledby pointing at visible text.
 
 **Applies to.**
 
@@ -1031,16 +1031,19 @@ role="presentation"/"none" are excluded only when not focusable. Only controls t
 
 **Expectation.**
 
-If a control has a programmatic name, it should not rely ONLY on:
+If a control has a programmatic name, it should not come ONLY from:
 
 - placeholder (non-empty)
 - title (non-empty)
+- aria-label
+- aria-labelledby whose every referenced element is unrendered (hidden, display:none, visibility:hidden)
 
-Prefer an associated &lt;label&gt; or aria-labelledby.
+Prefer an associated &lt;label&gt; or aria-labelledby pointing at visible text.
 
 **What a finding reports.**
 
-- `labelMethod`: where the control's label comes from: `placeholder` or `title`.
+- `labelMethod`: where the control's label comes from: `placeholder`, `title`, `aria-label` or `aria-labelledby`.
+- `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`, `label_from_aria_label_only` or `label_from_hidden_labelledby`.
 - `sourceText`: the label text, up to 120 characters.
 
 ### `form-control-single-label`

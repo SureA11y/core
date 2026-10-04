@@ -4694,7 +4694,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Form controls should not rely on placeholder or title as the primary label",
+      "title": "Form controls should have a label shown on screen",
       "tags": [
         "wcag2a",
         "wcag332",

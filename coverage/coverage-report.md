@@ -524,7 +524,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
-| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
+| form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
 
@@ -1160,7 +1160,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
-| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
+| form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
 
