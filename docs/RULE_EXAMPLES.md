@@ -18,10 +18,11 @@ same treatment as the fixture-marker check (`scripts/generate-fixture-markers.js
 a `--check` script wired into CI so a new or changed rule can't silently ship
 without a matching example.
 
-Manual rules (`type: 'manual'`) are capped at `cantTell`/`notApplicable` and
-never return `pass`/`fail`; their pair below is `Flagged (cantTell)` /
-`Not applicable` instead of `Passed`/`Failed`. A few automatic rules also
-never reach `fail` in practice — each says so where it applies.
+Manual rules (`type: 'manual'`) never return `fail`: what needs a person is
+`Flagged (cantTell)`. Most of them show `Passed` for the case that needs no
+judgment, and the rest, which judge every target they find, show
+`Not applicable`. A few automatic rules also never reach `fail` in practice;
+each says so where it applies.
 
 ## accesskeys
 
