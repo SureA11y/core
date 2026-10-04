@@ -349,6 +349,42 @@ export function runa11yCoreInPage(
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
 
+/** Options for waitForPageReady. */
+export interface PageReadyOptions {
+  /** The most it waits in total, in ms. Default 5000; 0 checks once without waiting. */
+  timeoutMs?: number;
+  /**
+   * Also wait until the DOM has not changed for this many ms, for a page its
+   * script is still building after `load`. Off unless a positive number.
+   */
+  quietMs?: number;
+  /** The document to wait for. Default: the page's own `document`. */
+  document?: unknown;
+}
+
+/** What waitForPageReady found: `ready` false means the time ran out first. */
+export interface PageReadyResult {
+  ready: boolean;
+  waitedMs: number;
+  pending: {
+    /** The window's load event had not fired. */
+    load: boolean;
+    /** A font face was still loading. */
+    fonts: boolean;
+    /** Images still loading, not counting those with loading="lazy". */
+    images: number;
+    /** With quietMs only: the DOM was still changing. */
+    domChanging?: boolean;
+  };
+}
+
+/**
+ * Waits for the page to finish loading before a scan: the load event, fonts,
+ * images, and with `quietMs` a DOM that stops changing. Never rejects. The
+ * scan itself never calls it; see docs/INTEGRATION.md.
+ */
+export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
+
 /**
  * Scans this frame and every child frame that called
  * a11yCoreEnableFrameResponder(), over postMessage. For code running inside

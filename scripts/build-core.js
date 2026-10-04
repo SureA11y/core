@@ -79,6 +79,7 @@ const {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
+const { waitForPageReady } = require('../src/core/page-ready');
 const { ruleDirs } = require('./lib/rule-dirs');
 const { resolveVariants } = require('./lib/rule-variants');
 const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
@@ -1725,6 +1726,10 @@ ${a11yCoreEnableFrameResponder.toString()}
 })();
 const runa11yCoreAcrossFrames = __a11yCoreCrossFrameApi.runa11yCoreAcrossFrames;
 const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrameResponder;
+
+// Waits for the page to load before a scan; the scan itself never calls it
+// (src/core/page-ready.js).
+${waitForPageReady.toString()}
 `.trim();
 
   return `'use strict';
@@ -1894,6 +1899,7 @@ module.exports = {
   runa11yCoreInPage,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
+  waitForPageReady,
   // translate/resolveLocale let src/report.js label its own page from the
   // same dictionaries as the findings, without a second table to maintain.
   __internal: {

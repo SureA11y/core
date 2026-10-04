@@ -131,6 +131,53 @@ If you'd rather supply a dictionary yourself, `engineOptions.messages` takes `{ 
 
 Deliberately excluded: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.
 
+## Waiting for the page before a scan
+
+A scan reads the page as it is at that moment. On a page that has just opened, web fonts may still be loading and images may not have arrived, and layout rules measure what is on screen: text in a fallback font, boxes that change size when their image lands. The same page scanned a second later can give another result. The scan records this in `engine.environment.fonts` and `.images` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)), but the better fix is not to scan until the page has settled.
+
+`waitForPageReady(options)` does that waiting. The scan never calls it itself; call it just before you scan. It waits, in order, for the window's `load` event, for `document.fonts.ready`, and for every image still loading (except those with `loading="lazy"`, which wait for the reader to scroll). It never rejects: when the time runs out it resolves anyway and says what was still pending, so you can scan regardless and still know the result was taken on a page that hadn't settled.
+
+| Option | Default | What it does |
+|---|---|---|
+| `timeoutMs` | `5000` | The most it waits in total, across every step. `0` checks once without waiting. |
+| `quietMs` | off | Also waits until the DOM has not changed for this many milliseconds, for a page whose script is still building it after `load`. Off by default: a page that keeps updating itself (a live feed, a clock) never goes quiet, and would always use the whole timeout. |
+| `document` | the page's `document` | The document to wait for, such as a frame's. |
+
+It resolves with:
+
+```js
+{
+  ready: true,          // false when the time ran out first
+  waitedMs: 412,
+  pending: {
+    load: false,        // the load event had not fired
+    fonts: false,       // a font face was still loading
+    images: 0,          // images still loading, lazy ones not counted
+    domChanging: false  // only with quietMs: the DOM was still changing
+  }
+}
+```
+
+It takes one options object and uses nothing from outside its own body, so a driver can send it into the page as it sends `runa11yCoreInPage`:
+
+```js
+const { waitForPageReady, runa11yCoreInPage } = require('@surea11y/core');
+
+// Puppeteer or Playwright: both accept a function and one argument.
+const ready = await page.evaluate(waitForPageReady, { timeoutMs: 5000 });
+if (!ready.ready) console.warn('Scanning a page still loading:', ready.pending);
+const result = await page.evaluate(runa11yCoreInPage, url, null, {}, null); // Puppeteer
+```
+
+In the page itself, with the standalone bundle (Pattern 3) or from a CMS plugin or browser extension that loaded it, it is on the same global:
+
+```js
+const ready = await a11ycore.waitForPageReady({ timeoutMs: 3000 });
+const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
+```
+
+In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or images, so it resolves at once with `ready: true`.
+
 ## Scoping a scan to part of the page
 
 Pass a CSS selector as the 2nd argument (`contextSelector`) to scan one subtree instead of the whole document — e.g. `runDomRulesInPage(url, '#app', {}, null)` to skip a surrounding CMS chrome you don't control. Pass an array of selectors (or a single comma-separated selector string) to scan multiple, possibly disjoint regions in one run — e.g. `runDomRulesInPage(url, ['#header', '#main'], {}, null)`. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) for the full `contextSelector` reference and for `excludeSelectors`, the complementary "skip specific elements anywhere" option.
