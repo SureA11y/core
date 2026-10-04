@@ -368,3 +368,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: the chosen option of a <select> is not its visible label`, () => {
+  const html = `<!doctype html><html><body>
+    <select id="s" aria-label="Country"><option>Spain</option></select>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: the text typed in a <textarea> is not its visible label`, () => {
+  const html = `<!doctype html><html><body>
+    <textarea id="t" aria-label="Comments">Great service</textarea>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a <select> whose visible <label> is missing from its aria-label still fails`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="s">Shipping country</label>
+    <select id="s" aria-label="Destination"><option>Spain</option></select>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
