@@ -100,7 +100,7 @@ Total rules: **134**. With fixture: **133**. Without fixture: **1**.
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | listitem-parent-valid | automatic | `tests/fixtures/listitem-parent-valid-all-scenarios.html` | 14 | 6 | 5 | 0 | 3 |
 | manual-review | manual | `tests/fixtures/manual-review-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
-| media-alternative-transcript-evidence | manual | `tests/fixtures/media-transcript-present-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
+| media-alternative-transcript-evidence | manual | `tests/fixtures/media-alternative-transcript-evidence-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | menuitem-name-present | automatic | `tests/fixtures/menuitem-name-present-all-scenarios.html` | 20 | 6 | 6 | 0 | 8 |
 | meta-refresh-no-exceptions | automatic | `tests/fixtures/meta-refresh-no-exceptions-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | meta-refresh-timing-absent | automatic | `tests/fixtures/meta-refresh-timing-absent-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
