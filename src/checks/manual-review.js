@@ -136,6 +136,7 @@ function runInPage(ctx) {
         selector: contextSelector || 'html',
         html,
         summary: 'Manual review required for keyboard navigation and focus order.',
+        hint: 'Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.',
         i18n: {
           summaryKey: 'manualReview_summary_cantTell',
           hintKey: 'manualReview_hint_cantTell',

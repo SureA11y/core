@@ -100,7 +100,7 @@ function runInPage(ctx) {
           html,
           summary:
             'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
-          hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track.',
+          hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
           i18n: {
             summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
             hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
@@ -114,7 +114,7 @@ function runInPage(ctx) {
           selector: stableSelector,
           html,
           summary: 'This video has no captions track.',
-          hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content.',
+          hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
           i18n: {
             summaryKey: 'videoCaption_summary_cantTell',
             hintKey: 'videoCaption_hint_cantTell',

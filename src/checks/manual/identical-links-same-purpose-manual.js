@@ -186,7 +186,7 @@ function runInPage(ctx) {
         html,
         summary:
           'This link shares an accessible name with other links on the page that lead to a different destination.',
-        hint: 'Ensure links with the same text serve the same purpose, or make the link text distinct enough to describe each destination.',
+        hint: 'Links with the same text may lead to different addresses when they serve the same purpose, such as one page with different tracking parameters. Otherwise make each link’s text describe its own destination.',
         i18n: {
           summaryKey: 'identicalLinksSamePurpose_summary_cantTell',
           hintKey: 'identicalLinksSamePurpose_hint_cantTell',
