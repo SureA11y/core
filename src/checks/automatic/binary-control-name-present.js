@@ -85,21 +85,6 @@ function runInPage(ctx) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -189,48 +174,24 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] associations once for speed/determinism.
-  const labelForMap = buildLabelForMap(document);
-
+  // helpers.getAssociatedLabelElements, as the other *-name-present rules
+  // use: the native el.labels walks the whole document on every call in
+  // jsdom, which made this rule most of a scan on a form-heavy page.
   function getNativeLabelText(el) {
-    // 1) labels API
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        // concatenate conservative text of all associated labels (cap at 4 for determinism)
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-
-    // 2) wrapped by <label>
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-
-    // 3) label[for=id]
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function evaluate(el, controlType) {

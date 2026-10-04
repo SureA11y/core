@@ -864,3 +864,15 @@ test('contrast-minimum: text is counted once, not once per root', () => {
     'slotted content lives in the light tree and is walked once'
   );
 });
+
+test(`${RULE_ID}: a <label for> naming a disabled control is exempt too => notApplicable`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255); opacity: 1">
+<head></head>
+<body style="background-color: rgb(255, 255, 255); opacity: 1">
+  <label for="n" style="color:#888; background: white;">My name</label>
+  <input id="n" type="text" disabled />
+</body></html>`;
+  assertRule(run(html), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

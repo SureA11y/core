@@ -16099,12 +16099,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // the common case of plain text with no label ancestor at all.
     if (labelAncestor) {
       try {
-        const control =
-          typeof labelAncestor.control !== 'undefined'
-            ? labelAncestor.control
-            : labelAncestor.htmlFor && labelAncestor.ownerDocument
-              ? labelAncestor.ownerDocument.getElementById(labelAncestor.htmlFor)
-              : null;
+        // Not the native `.control`, which walks the whole document on
+        // every call in jsdom.
+        const control = shared.getLabelControl
+          ? shared.getLabelControl(labelAncestor)
+          : labelAncestor.control || null;
         if (control && isDisabledWidget(control)) return true;
       } catch {}
 
@@ -18700,12 +18699,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (tag === 'label') {
       // A <label> permits no explicit role at all when associated with
       // a labelable form control (via `for` or wrapping); otherwise any
-      // role is permitted. Uses the native `.control` API (resolves both
-      // `for` and wrapping association) instead of reimplementing that
-      // lookup.
+      // role is permitted. The shared getLabelControl resolves both `for`
+      // and wrapping association as the native `.control` does, without
+      // its whole-document walk in jsdom.
       let associated = false;
       try {
-        associated = !!el.control;
+        associated =
+          shared && typeof shared.getLabelControl === 'function'
+            ? !!shared.getLabelControl(el)
+            : !!el.control;
       } catch {}
       return associated ? 'label[associated]' : '';
     }
@@ -20629,6 +20631,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {}
     }
     return out;
+  }
+
+  // The control a <label> labels, as the native `label.control` returns it,
+  // without that getter's whole-document walk in jsdom (see
+  // getAssociatedLabelElements above): with a `for` attribute, the element
+  // with that id when it is labelable; without one, the label's first
+  // labelable descendant.
+  function getLabelControl(label) {
+    if (!isElement(label)) return null;
+    try {
+      if (label.hasAttribute('for')) {
+        const id = getAttr(label, 'for');
+        if (!id) return null;
+        const root = label.getRootNode ? label.getRootNode() : null;
+        const scope =
+          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
+        const el = scope ? scope.getElementById(id) : null;
+        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+      }
+      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+    } catch {
+      return null;
+    }
   }
 
   function __getEligibilityAccCacheForScope() {
@@ -22570,8 +22595,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // itself uses for every other labelable control.
         if (lower(node.tagName) === 'input') {
           try {
-            if (node.labels && node.labels.length) {
-              for (const labelEl of Array.from(node.labels)) {
+            const imageLabels = getAssociatedLabelElements(node);
+            if (imageLabels.length) {
+              for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
                   parts.push(labelInfo.value);
@@ -23808,6 +23834,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    getLabelControl,
     __contrastSharedCache
   };
 
@@ -23821,7 +23848,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim }
+    { trim, getLabelControl }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -41172,21 +41199,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function buildLabelForMap(doc) {
-    const map = new Map(); // id -> label element (first)
-    try {
-      const labels = doc && doc.getElementsByTagName ? doc.getElementsByTagName('label') : [];
-      for (let i = 0; i < labels.length; i += 1) {
-        const lab = labels[i];
-        if (!lab || !lab.getAttribute) continue;
-        const f = normalizeWs(lab.getAttribute('for'));
-        if (!f) continue;
-        if (!map.has(f)) map.set(f, lab);
-      }
-    } catch {}
-    return map;
-  }
-
   function getConservativeSubtreeText(document, container) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
@@ -41276,48 +41288,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Precompute label[for] associations once for speed/determinism.
-  const labelForMap = buildLabelForMap(document);
-
+  // helpers.getAssociatedLabelElements, as the other *-name-present rules
+  // use: the native el.labels walks the whole document on every call in
+  // jsdom, which made this rule most of a scan on a form-heavy page.
   function getNativeLabelText(el) {
-    // 1) labels API
+    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
+    let labels;
     try {
-      if ('labels' in el && el.labels && el.labels.length) {
-        // concatenate conservative text of all associated labels (cap at 4 for determinism)
-        const parts = [];
-        const max = Math.min(4, el.labels.length);
-        for (let i = 0; i < max; i += 1) {
-          const lab = el.labels[i];
-          const t = lab ? getLabelText(lab) : '';
-          if (t) parts.push(t);
-        }
-        const joined = normalizeWs(parts.join(' '));
-        if (joined) return joined;
-      }
-    } catch {}
-
-    // 2) wrapped by <label>
-    try {
-      if (el.closest) {
-        const wrap = el.closest('label');
-        if (wrap) {
-          const t = getLabelText(wrap);
-          if (t) return t;
-        }
-      }
-    } catch {}
-
-    // 3) label[for=id]
-    try {
-      const idAttr = getAttr(el, 'id');
-      if (idAttr && labelForMap.has(idAttr)) {
-        const lab = labelForMap.get(idAttr);
-        const t = lab ? getLabelText(lab) : '';
-        if (t) return t;
-      }
-    } catch {}
-
-    return '';
+      labels = helpers.getAssociatedLabelElements(el) || [];
+    } catch {
+      labels = [];
+    }
+    const parts = [];
+    const max = Math.min(4, labels.length);
+    for (let i = 0; i < max; i += 1) {
+      const t = getLabelText(labels[i]);
+      if (t) parts.push(t);
+    }
+    return normalizeWs(parts.join(' '));
   }
 
   function evaluate(el, controlType) {
@@ -68060,12 +68048,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // the common case of plain text with no label ancestor at all.
     if (labelAncestor) {
       try {
-        const control =
-          typeof labelAncestor.control !== 'undefined'
-            ? labelAncestor.control
-            : labelAncestor.htmlFor && labelAncestor.ownerDocument
-              ? labelAncestor.ownerDocument.getElementById(labelAncestor.htmlFor)
-              : null;
+        // Not the native `.control`, which walks the whole document on
+        // every call in jsdom.
+        const control = shared.getLabelControl
+          ? shared.getLabelControl(labelAncestor)
+          : labelAncestor.control || null;
         if (control && isDisabledWidget(control)) return true;
       } catch {}
 
@@ -70661,12 +70648,15 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (tag === 'label') {
       // A <label> permits no explicit role at all when associated with
       // a labelable form control (via `for` or wrapping); otherwise any
-      // role is permitted. Uses the native `.control` API (resolves both
-      // `for` and wrapping association) instead of reimplementing that
-      // lookup.
+      // role is permitted. The shared getLabelControl resolves both `for`
+      // and wrapping association as the native `.control` does, without
+      // its whole-document walk in jsdom.
       let associated = false;
       try {
-        associated = !!el.control;
+        associated =
+          shared && typeof shared.getLabelControl === 'function'
+            ? !!shared.getLabelControl(el)
+            : !!el.control;
       } catch {}
       return associated ? 'label[associated]' : '';
     }
@@ -72590,6 +72580,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {}
     }
     return out;
+  }
+
+  // The control a <label> labels, as the native `label.control` returns it,
+  // without that getter's whole-document walk in jsdom (see
+  // getAssociatedLabelElements above): with a `for` attribute, the element
+  // with that id when it is labelable; without one, the label's first
+  // labelable descendant.
+  function getLabelControl(label) {
+    if (!isElement(label)) return null;
+    try {
+      if (label.hasAttribute('for')) {
+        const id = getAttr(label, 'for');
+        if (!id) return null;
+        const root = label.getRootNode ? label.getRootNode() : null;
+        const scope =
+          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
+        const el = scope ? scope.getElementById(id) : null;
+        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+      }
+      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+    } catch {
+      return null;
+    }
   }
 
   function __getEligibilityAccCacheForScope() {
@@ -74531,8 +74544,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // itself uses for every other labelable control.
         if (lower(node.tagName) === 'input') {
           try {
-            if (node.labels && node.labels.length) {
-              for (const labelEl of Array.from(node.labels)) {
+            const imageLabels = getAssociatedLabelElements(node);
+            if (imageLabels.length) {
+              for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
                   parts.push(labelInfo.value);
@@ -75769,6 +75783,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    getLabelControl,
     __contrastSharedCache
   };
 
@@ -75782,7 +75797,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim }
+    { trim, getLabelControl }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the

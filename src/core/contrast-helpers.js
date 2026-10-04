@@ -272,12 +272,11 @@ function createContrastHelpers(opts, shared) {
     // the common case of plain text with no label ancestor at all.
     if (labelAncestor) {
       try {
-        const control =
-          typeof labelAncestor.control !== 'undefined'
-            ? labelAncestor.control
-            : labelAncestor.htmlFor && labelAncestor.ownerDocument
-              ? labelAncestor.ownerDocument.getElementById(labelAncestor.htmlFor)
-              : null;
+        // Not the native `.control`, which walks the whole document on
+        // every call in jsdom.
+        const control = shared.getLabelControl
+          ? shared.getLabelControl(labelAncestor)
+          : labelAncestor.control || null;
         if (control && isDisabledWidget(control)) return true;
       } catch {}
 

@@ -1789,6 +1789,29 @@ function createDomHelpers(opts) {
     return out;
   }
 
+  // The control a <label> labels, as the native `label.control` returns it,
+  // without that getter's whole-document walk in jsdom (see
+  // getAssociatedLabelElements above): with a `for` attribute, the element
+  // with that id when it is labelable; without one, the label's first
+  // labelable descendant.
+  function getLabelControl(label) {
+    if (!isElement(label)) return null;
+    try {
+      if (label.hasAttribute('for')) {
+        const id = getAttr(label, 'for');
+        if (!id) return null;
+        const root = label.getRootNode ? label.getRootNode() : null;
+        const scope =
+          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
+        const el = scope ? scope.getElementById(id) : null;
+        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+      }
+      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+    } catch {
+      return null;
+    }
+  }
+
   function __getEligibilityAccCacheForScope() {
     const scopeObj = __getScopeObj();
     if (!scopeObj || !__domSharedCache) return null;
@@ -3728,8 +3751,9 @@ function createDomHelpers(opts) {
         // itself uses for every other labelable control.
         if (lower(node.tagName) === 'input') {
           try {
-            if (node.labels && node.labels.length) {
-              for (const labelEl of Array.from(node.labels)) {
+            const imageLabels = getAssociatedLabelElements(node);
+            if (imageLabels.length) {
+              for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
                   parts.push(labelInfo.value);
@@ -4966,6 +4990,7 @@ function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    getLabelControl,
     __contrastSharedCache
   };
 
@@ -4979,7 +5004,7 @@ function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim }
+    { trim, getLabelControl }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
