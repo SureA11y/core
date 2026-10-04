@@ -267,7 +267,7 @@
   "tabNamePresent_summary_fail": "Dieser Tab hat keinen zugänglichen Namen.",
   "tabNamePresent_hint_fail": "Stellen Sie einen Tab-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
   "sliderNamePresent_title": "Schieberegler haben einen zugänglichen Namen",
-  "sliderNamePresent_description": "Prüft, ob Schieberegler (input[type=\"range\"] und role=\"slider\") einen nicht leeren zugänglichen Namen aufweisen.",
+  "sliderNamePresent_description": "Prüft, ob Elemente mit role=\"slider\" einen nicht leeren zugänglichen Namen aufweisen. Ein natives <input type=\"range\"> prüft form-control-programmatic-label-present.",
   "sliderNamePresent_summary_fail": "Dieser Schieberegler hat keinen zugänglichen Namen.",
   "sliderNamePresent_hint_fail": "Stellen Sie eine Beschriftung, aria-label oder aria-labelledby bereit, damit assistive Technologien den Schieberegler identifizieren können.",
   "textboxNamePresent_title": "Textfelder haben einen zugänglichen Namen",

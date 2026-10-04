@@ -267,7 +267,7 @@
   "tabNamePresent_summary_fail": "このタブにはアクセシブルな名前がありません。",
   "tabNamePresent_hint_fail": "支援技術から隠されていないタブのテキストを用意するか、aria-label または aria-labelledby を指定してください。",
   "sliderNamePresent_title": "スライダーにアクセシブルな名前があること",
-  "sliderNamePresent_description": "スライダー (input[type=\"range\"] および role=\"slider\") が、空でないアクセシブルな名前を公開しているかを確認します。",
+  "sliderNamePresent_description": "role=\"slider\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。ネイティブの <input type=\"range\"> は form-control-programmatic-label-present が確認します。",
   "sliderNamePresent_summary_fail": "このスライダーにはアクセシブルな名前がありません。",
   "sliderNamePresent_hint_fail": "支援技術がスライダーを識別できるよう、label、aria-label、または aria-labelledby を指定してください。",
   "textboxNamePresent_title": "テキストボックスにアクセシブルな名前があること",

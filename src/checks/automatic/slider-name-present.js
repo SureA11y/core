@@ -31,7 +31,7 @@ const id = 'slider-name-present';
 const meta = {
   title: 'Sliders have an accessible name',
   description:
-    'Checks that sliders (input[type="range"] and role="slider") expose a non-empty accessible name.',
+    'Checks that elements with role="slider" expose a non-empty accessible name. A native <input type="range"> is checked by form-control-programmatic-label-present.',
   i18n: {
     titleKey: 'sliderNamePresent_title',
     descriptionKey: 'sliderNamePresent_description'

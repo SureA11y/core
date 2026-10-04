@@ -2032,7 +2032,7 @@ Other same-page anchor links are not skip links and are left alone.
 
 automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
-Checks that sliders (input[type="range"] and role="slider") expose a non-empty accessible name.
+Checks that elements with role="slider" expose a non-empty accessible name. A native &lt;input type="range"&gt; is checked by form-control-programmatic-label-present.
 
 **Applies to.** Applies to elements carrying role="slider" (the attribute must name that role alone, not a fallback list) that are included in the accessibility tree. An element with the matching implicit role but no role attribute is out of scope. A native &lt;input type="range"&gt; without the role belongs to form-control-programmatic-label-present.
 

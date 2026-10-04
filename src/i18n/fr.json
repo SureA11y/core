@@ -267,7 +267,7 @@
   "tabNamePresent_summary_fail": "Cet onglet n’a pas de nom accessible.",
   "tabNamePresent_hint_fail": "Fournissez un texte d’onglet qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
   "sliderNamePresent_title": "Les curseurs ont un nom accessible",
-  "sliderNamePresent_description": "Vérifie que les curseurs (input[type=\"range\"] et role=\"slider\") exposent un nom accessible non vide.",
+  "sliderNamePresent_description": "Vérifie que les éléments ayant role=\"slider\" exposent un nom accessible non vide. Un <input type=\"range\"> natif est vérifié par form-control-programmatic-label-present.",
   "sliderNamePresent_summary_fail": "Ce curseur n’a pas de nom accessible.",
   "sliderNamePresent_hint_fail": "Fournissez un libellé, aria-label ou aria-labelledby afin que les technologies d’assistance puissent identifier le curseur.",
   "textboxNamePresent_title": "Les champs de texte ont un nom accessible",
