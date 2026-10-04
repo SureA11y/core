@@ -520,6 +520,24 @@ function runInPage(ctx) {
       continue;
     }
 
+    // An underline is a non-color cue: once it is found, the colors do not
+    // matter, so it is looked for before them. Otherwise an underlined link
+    // on a page whose background cannot be computed (no background set,
+    // which strict mode does not assume is white) was left undecided, while
+    // a bold one passed. null: this environment cannot tell.
+    let underlined = null;
+    const decoration = decorationInfo(linkCs);
+    if (decoration.trustworthy) {
+      underlined = decoration.underlined;
+    } else {
+      const fromCssom = resolveUnderlineFromCssom(el);
+      if (fromCssom.resolved) underlined = fromCssom.underlined;
+    }
+    if (underlined === true) {
+      decidedCount += 1;
+      continue;
+    }
+
     let flagged = false;
     let computed = false;
     let backgroundDiffers = false;
@@ -591,23 +609,10 @@ function runInPage(ctx) {
       continue;
     }
 
-    // An underline is the last remaining non-color cue -- and only now does
-    // it matter whether this environment can actually report one.
-    const decoration = decorationInfo(linkCs);
-    let underlined;
-    if (decoration.trustworthy) {
-      underlined = decoration.underlined;
-    } else {
-      const fromCssom = resolveUnderlineFromCssom(el);
-      if (!fromCssom.resolved) {
-        markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
-        continue;
-      }
-      underlined = fromCssom.underlined;
-    }
-
-    if (underlined) {
-      decidedCount += 1;
+    // No underline was found. If this environment could not tell, the
+    // colors cannot settle it either.
+    if (underlined === null) {
+      markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
       continue;
     }
 

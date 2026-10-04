@@ -183,7 +183,8 @@ const CODE_FIXTURES = [
   [
     'not-computable',
     'link-in-text-block',
-    '<main><p>Some surrounding sentence text <a href="/x">a link</a> and more words.</p></main>'
+    // Not underlined: an underline settles the link before its colors are needed.
+    '<main><p>Some surrounding sentence text <a href="/x" style="text-decoration:none">a link</a> and more words.</p></main>'
   ],
   [
     'runtime-dependent',
