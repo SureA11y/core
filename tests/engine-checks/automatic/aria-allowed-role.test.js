@@ -452,3 +452,15 @@ test(`${RULE_ID}: fail: role="grid" is still not permitted on <button> (only the
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
+
+test(`${RULE_ID}: a wrapping <label> around a labelable control is associated with it, so an explicit role is asked about`, () => {
+  const html = `<!doctype html><html><body><label role="button" id="a">Toggle <input type="checkbox"></label></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+});
+
+test(`${RULE_ID}: a <label for> pointing at a non-labelable element labels nothing, so its role is unconstrained`, () => {
+  const html = `<!doctype html><html><body><label for="d" role="button" id="a">Toggle</label><div id="d" role="switch" tabindex="0" aria-checked="false"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

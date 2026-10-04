@@ -1178,12 +1178,15 @@ function createAriaHelpers(opts, shared) {
     if (tag === 'label') {
       // A <label> permits no explicit role at all when associated with
       // a labelable form control (via `for` or wrapping); otherwise any
-      // role is permitted. Uses the native `.control` API (resolves both
-      // `for` and wrapping association) instead of reimplementing that
-      // lookup.
+      // role is permitted. The shared getLabelControl resolves both `for`
+      // and wrapping association as the native `.control` does, without
+      // its whole-document walk in jsdom.
       let associated = false;
       try {
-        associated = !!el.control;
+        associated =
+          shared && typeof shared.getLabelControl === 'function'
+            ? !!shared.getLabelControl(el)
+            : !!el.control;
       } catch {}
       return associated ? 'label[associated]' : '';
     }
