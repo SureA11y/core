@@ -586,7 +586,7 @@
   "landmarkUnique_description": "Comprueba que, cuando dos o más regiones de referencia comparten el mismo rol, cada una tenga un nombre accesible distinto.",
   "landmarkUnique_summary_cantTell_duplicateName": "Esta región de referencia {{role}} comparte su nombre accesible con otra región de referencia {{role}}.",
   "landmarkUnique_summary_cantTell_bothUnnamed": "Esta región de referencia {{role}} no tiene nombre accesible, y existe más de una región de referencia {{role}} sin nombre en esta página.",
-  "landmarkUnique_hint_cantTell": "Asignar a cada región de referencia {{role}} un nombre distinto mediante aria-label o aria-labelledby.",
+  "landmarkUnique_hint_cantTell": "Asignar a cada región de referencia {{role}} un nombre distinto mediante aria-label o aria-labelledby, salvo que tengan el mismo contenido y propósito, como una paginación repetida encima y debajo de una tabla, caso en que las ARIA Authoring Practices permiten el mismo nombre.",
   "landmarkRoleNamePresent_title": "Los roles region y form deben tener un nombre accesible",
   "landmarkRoleNamePresent_description": "Comprueba que un elemento con role=\"region\" o role=\"form\" tenga un nombre accesible, sin el cual no se expone como región de referencia.",
   "landmarkRoleNamePresent_summary_cantTell": "Este elemento tiene role=\"{{role}}\" pero no tiene nombre accesible, así que no se expone como región de referencia.",
