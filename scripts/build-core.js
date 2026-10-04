@@ -41,6 +41,8 @@ const {
 } = require('../src/core/dom-helpers');
 const {
   runCore,
+  runCoreSettled,
+  settleAnimations,
   rollupCompositeResults,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
@@ -1615,6 +1617,8 @@ ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
+${inlineConstFunction('settleAnimations', settleAnimations)}
+${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('runCore', runCore)}
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by

@@ -109,6 +109,12 @@ export interface RenderingEnvironment {
   colorScheme?: 'light' | 'dark';
   /** 'loading' while any of the page's font faces is still loading. */
   fonts?: 'loaded' | 'loading';
+  /**
+   * How many running animations and transitions the scan moved to a fixed
+   * point (a finite one to its end, an infinite one to its start) and put
+   * back afterwards. Only with a layout.
+   */
+  animationsSettled?: number;
 }
 
 export interface EngineInfo {
