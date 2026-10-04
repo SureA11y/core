@@ -561,7 +561,10 @@ function validateOutcomeOccurrenceInvariants(ruleResult, isAutomatic) {
       assert.ok(occCount === 0, `${ruleResult.outcome} outcome must include 0 occurrences`);
     }
   } else {
-    const ok = new Set(['cantTell', 'notApplicable']);
+    // A manual rule asks (cantTell) and never fails. It passes when it
+    // applied and the answer that needs no judgment is the one it found
+    // (RULE_TAXONOMY.md §1.1, RULE_AUTHORING.md §8.3).
+    const ok = new Set(['pass', 'cantTell', 'notApplicable']);
     assert.ok(
       ok.has(ruleResult.outcome),
       `manual rule outcome must be one of ${Array.from(ok).join(', ')}`
@@ -570,7 +573,7 @@ function validateOutcomeOccurrenceInvariants(ruleResult, isAutomatic) {
     if (ruleResult.outcome === 'cantTell') {
       assert.ok(occCount >= 1, 'cantTell outcome must include >= 1 occurrence');
     } else {
-      assert.ok(occCount === 0, 'notApplicable outcome must include 0 occurrences');
+      assert.ok(occCount === 0, `${ruleResult.outcome} outcome must include 0 occurrences`);
     }
   }
 }
@@ -809,4 +812,10 @@ function main() {
   console.log(`   English dictionaries: ${enPaths.join(', ')}`);
 }
 
-main();
+// Run as a script; required (tests/validate-rule.test.js), expose the checks
+// that need no rule file.
+if (require.main === module) {
+  main();
+} else {
+  module.exports = { validateOutcomeOccurrenceInvariants };
+}
