@@ -56,7 +56,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
 
-  async function scan(body) {
+  async function scan(body, contextSelector = null) {
     const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
     try {
       await p.setContent(
@@ -64,8 +64,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       );
       await p.addScriptTag({ content: BUNDLE });
       const result = await p.evaluate(
-        (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
-        RULE_ID
+        ([id, scope]) =>
+          window.a11ycore.runa11yCoreInPage(null, scope, { rules: { include: id } }, null),
+        [RULE_ID, contextSelector]
       );
       const r = result.checksResults.find((c) => c.ruleId === RULE_ID);
       return [r.outcome, r.occurrences.map((o) => [o.selector, o.data.details.reasonCode])];
@@ -126,4 +127,27 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(outcome, 'fail');
   });
+
+  await t.test('under a scoped scan, a neighbour just outside the scope still counts', async () => {
+    const body =
+      '<div id="widget"><button id="a" style="position:absolute;top:10px;left:10px;width:10px;height:10px;padding:0">A</button></div>' +
+      '<button id="b" style="position:absolute;top:10px;left:24px;width:10px;height:10px;padding:0">B</button>';
+    const [outcome, occurrences] = await scan(body, '#widget');
+    assert.equal(outcome, 'fail');
+    assert.deepEqual(
+      occurrences.map(([selector]) => selector),
+      ['#a'],
+      'only the target in scope is reported'
+    );
+  });
+
+  await t.test(
+    'under a scoped scan, a lone small target with no neighbour still passes',
+    async () => {
+      const body =
+        '<div id="widget"><button id="a" style="position:absolute;top:10px;left:10px;width:10px;height:10px;padding:0">A</button></div>' +
+        '<button id="b" style="position:absolute;top:300px;left:300px;width:10px;height:10px;padding:0">B</button>';
+      assert.equal((await scan(body, '#widget'))[0], 'pass');
+    }
+  );
 });
