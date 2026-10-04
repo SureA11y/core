@@ -459,3 +459,15 @@ One existing test changed meaning with it: a bare `<option>` under `role="listbo
 **Accepted cost:** each of the five previously-affected rules (not `slider-name-present`) gains two new failing fixture cases — a wrapping-`<label>` case and a `label[for]`-plus-empty-content-title-fallback case — both real markup a screen reader user hears as unnamed, not new false positives.
 
 **Status:** resolved 2026-09-14. `form-control-single-label.js` and `binary-control-name-present.js` have their own separate, similarly-unguarded `closest('label')` fallbacks, not touched here since their applicability already appears scoped to genuinely labelable elements (not verified) — worth a look if they ever start evaluating non-labelable targets.
+
+### A form control with an empty `<label>` and a `title` or `placeholder`: named, as HTML-AAM and every other engine say, though Chrome gives it no name
+
+**Decision as it stands:** `<label for="f"></label><input id="f" title="Phone">`, the same with a wrapping `<label>` holding nothing but the control, or with a whitespace-only label, counts as named "Phone". The empty label contributes nothing, so the name falls through to `title`, then to `placeholder` on the input types HTML-AAM names. `form-control-programmatic-label-present` passes it. Since 1.10.0 the wrapping case no longer reads the control's own name as the label's text, so both cases get `form-control-programmatic-label-quality`'s 3.3.2 review prompt for a title- or placeholder-only label.
+
+**Why it was questioned:** Chrome's accessibility tree gives these controls an empty name. It takes the associated label even when it is empty, and marks the `title` as superseded, so a screen reader on Chrome announces an unnamed field.
+
+**What the others do (2026-10-04):** Firefox 157 gives every case its name from `title` or `placeholder` (WebDriver Get Computed Label, ten cases including `<textarea>` and `<select>`). axe-core 4.13 (`label`, and its own name computation), IBM Equal Access 4.0.34 (`input_label_exists`) and Siteimprove Alfa 0.119 (`SIA-R8`) all pass them as named, and all fail the same empty label with no `title` or `placeholder`. HTML-AAM's computation for these elements reads "Otherwise use label element. Otherwise use title attribute", which falls through when the label yields no text. Safari was not checked.
+
+**Decision (2026-10-04):** keep treating these controls as named. Following one browser against the specification, every other engine and Firefox would make a `fail` this engine reserves for deterministic violations rest on a browser's behaviour rather than a requirement. The page is not left unreported: the title- or placeholder-only label is the 3.3.2 question `form-control-programmatic-label-quality` asks, and the fix it prompts, a real label, also gives Chrome users a name.
+
+**Status:** decided 2026-10-04, recorded as a known browser difference. Revisit if Chrome changes, if Safari also gives no name, or if HTML-AAM is clarified the other way.
