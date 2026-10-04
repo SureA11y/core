@@ -49,13 +49,36 @@ test(`${RULE_ID}: cantTell when two same-role landmarks share the same name`, ()
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when an unnamed explicit-role <form role="search"> is nested inside another unnamed search landmark`, () => {
+test(`${RULE_ID}: cantTell when an unnamed <form role="search"> is nested inside an unnamed role="search" container, since search needs no name and both are search landmarks`, () => {
   const html = `<!doctype html><html><body>
     <div role="search" id="a"><form role="search" id="b"><input type="search"></form></div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
 });
+
+test(`${RULE_ID}: cantTell when two unnamed <search> elements exist, since <search> is a search landmark`, () => {
+  const html = `<!doctype html><html><body>
+    <search id="a"><input type="search" aria-label="Products"></search>
+    <search id="b"><input type="search" aria-label="Help"></search>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+});
+
+for (const role of ['region', 'form']) {
+  test(`${RULE_ID}: notApplicable when two unnamed elements carry an explicit role="${role}", since a ${role} without a name is not a landmark (Core-AAM)`, () => {
+    const html = `<!doctype html><html><body>
+      <div role="${role}">One</div><div role="${role}">Two</div>
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  });
+}
 
 test(`${RULE_ID}: cantTell when two named <form role="search"> elements share the same name (the name-gate does not exempt <form> outright)`, () => {
   const html = `<!doctype html><html><body>
@@ -200,7 +223,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-unique-all-scenarios
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 12, maxOccurrences: 12 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 16, maxOccurrences: 16 });
   assert.ok(hasOccurrenceForId(rule, 'lu_case_02a'));
   assert.ok(hasOccurrenceForId(rule, 'lu_case_02b'));
   assert.ok(hasOccurrenceForId(rule, 'lu_case_04a'));
@@ -213,6 +236,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-unique-all-scenarios
   assert.ok(hasOccurrenceForId(rule, 'lu_case_10b'));
   assert.ok(hasOccurrenceForId(rule, 'lu_case_12a'));
   assert.ok(hasOccurrenceForId(rule, 'lu_case_12b'));
+  assert.ok(hasOccurrenceForId(rule, 'lu_case_13a'));
+  assert.ok(hasOccurrenceForId(rule, 'lu_case_13b'));
+  assert.ok(hasOccurrenceForId(rule, 'lu_case_14a'));
+  assert.ok(hasOccurrenceForId(rule, 'lu_case_14b'));
   assert.ok(!hasOccurrenceForId(rule, 'lu_case_01a'));
   assert.ok(!hasOccurrenceForId(rule, 'lu_case_01b'));
   assert.ok(!hasOccurrenceForId(rule, 'lu_case_03a'));

@@ -190,8 +190,19 @@ you specifically want "does ARIA name this," excluding native `<label>`/content/
 Landmark-role naming (`nav`/`main`/`region`/`banner`/`contentinfo`, etc.): ARIA name,
 then `title` — landmark roles don't get a name from content, and `title` must be
 included or two landmarks distinguished only by `title` both read as unnamed and get
-flagged as duplicates. Shared by all 7 landmark rule files; use this rather than
+flagged as duplicates. Shared by every landmark rule; use this rather than
 reimplementing landmark naming in a new landmark rule.
+
+### `getLandmarkRole(el, ctx)` → `string`
+The landmark role `el` exposes to assistive technology (`banner`, `complementary`,
+`contentinfo`, `form`, `main`, `navigation`, `region`, `search`), or `''` for none.
+Implicit roles follow HTML-AAM: `<header>`/`<footer>` lose theirs inside sectioning
+content or `<main>`, an unnamed `<aside>` loses its role inside sectioning content, and
+`<search>` is `search`. An explicit role is the role attribute's first token. `region`
+and `form` need a name (`getLandmarkNameInfo`) however the element got the role, since
+Core-AAM says not to expose either as a landmark without one, and browsers don't.
+`helpers.landmarkCandidateSelector` matches every element this can give a role to; query
+with it rather than listing landmark tags yourself.
 
 ### `getAccessibleNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 The general-purpose accessible name: ARIA name → native `<label>` association → `alt`

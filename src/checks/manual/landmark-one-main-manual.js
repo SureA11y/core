@@ -67,20 +67,6 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  function getExplicitRoleToken(el) {
-    const raw = ((el.getAttribute && el.getAttribute('role')) || '').trim();
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  function isMainLandmark(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'main';
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    return tag === 'main';
-  }
-
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
@@ -95,15 +81,11 @@ function runInPage(ctx) {
     }
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a <main> a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('main, [role]')
-        : document.querySelectorAll('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]');
   } catch {
     nodes = [];
   }
@@ -113,7 +95,7 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (!isMainLandmark(el)) continue;
+    if (helpers.getLandmarkRole(el, ctx) !== 'main') continue;
     if (!isExposedToAt(el)) continue;
     hasMain = true;
     break;

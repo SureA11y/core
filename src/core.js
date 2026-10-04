@@ -19465,9 +19465,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these
   // roles don't derive a name from content (unlike a button/link), so per
   // the accname spec their only sources are aria-label, aria-labelledby,
-  // then a title-attribute fallback. Shared by the 7 landmark rule files
-  // (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
-  // landmark-banner/-main/-contentinfo-is-top-level, region); title must
+  // then a title-attribute fallback. Shared by every landmark rule; title must
   // be included, otherwise e.g. two <nav>s distinguished only by
   // title="navigation" are both seen as unnamed and flagged as duplicates.
   function getLandmarkNameInfo(el, ctx) {
@@ -19491,6 +19489,62 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   const lower = (v) => trim(v).toLowerCase();
+
+  // WAI-ARIA 1.2's landmark roles.
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'complementary',
+    'contentinfo',
+    'form',
+    'main',
+    'navigation',
+    'region',
+    'search'
+  ]);
+
+  // Every element that can expose a landmark role, implicitly or through role.
+  const LANDMARK_CANDIDATE_SELECTOR =
+    'header, footer, main, nav, aside, section, form, search, [role]';
+
+  // The landmark role el exposes to assistive technology, or '' for none.
+  // Shared by every landmark rule, so they all agree on what a landmark is.
+  //
+  // Implicit roles follow HTML-AAM: <header>/<footer> are banner/contentinfo
+  // only when not inside sectioning content or <main>; <aside> is
+  // complementary unless it sits in sectioning content without a name;
+  // <section> and <form> are region and form only when named; <search> is
+  // search. An explicit role is the role attribute's first token, as
+  // elsewhere in this engine.
+  //
+  // region and form need a name however the element got the role: Core-AAM
+  // maps "region without an accessible name" and "form without an accessible
+  // name" to "do not expose the element as a landmark", and Chromium exposes
+  // such an element as a generic container.
+  function getLandmarkRole(el, ctx) {
+    if (!isElement(el)) return '';
+    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    let role = '';
+    if (token) {
+      if (LANDMARK_ROLES.has(token)) role = token;
+    } else {
+      const tag = lower(el.tagName);
+      if (tag === 'header' || tag === 'footer') {
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
+          role = tag === 'header' ? 'banner' : 'contentinfo';
+        }
+      } else if (tag === 'aside') {
+        // Named, it stays complementary even inside sectioning content.
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: false })) role = 'complementary';
+        else if (getLandmarkNameInfo(el, ctx).present) role = 'complementary';
+      } else if (tag === 'main') role = 'main';
+      else if (tag === 'nav') role = 'navigation';
+      else if (tag === 'search') role = 'search';
+      else if (tag === 'section') role = 'region';
+      else if (tag === 'form') role = 'form';
+    }
+    if ((role === 'region' || role === 'form') && !getLandmarkNameInfo(el, ctx).present) return '';
+    return role;
+  }
 
   const safeDocGetById = (id) => {
     const key = trim(id);
@@ -23727,6 +23781,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Landmark-role naming (aria-label -> aria-labelledby -> title; no content fallback --
     // see getLandmarkNameInfo's own header comment for why this replaced 7 duplicated copies)
     getLandmarkNameInfo,
+
+    // The landmark role an element exposes ('' for none), and the selector
+    // for every element that can carry one; see getLandmarkRole's header.
+    getLandmarkRole,
+    landmarkCandidateSelector: LANDMARK_CANDIDATE_SELECTOR,
 
     // "Does this element have a landmark-scoping ancestor" (role-aware
     // sectioning-content/<main> check backing <header>/<footer>/<aside>'s
@@ -50779,98 +50838,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-
-  // Declared inside runInPage; see scripts/build-core.js header
-  // ("runInPage MUST be self-contained").
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
-  // the title-attribute fallback consistent across the landmark rules.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm. Example: an
-  // <aside role="dialog"> containing its own <header>.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested. It keeps
-      // "complementary" when it has an accessible name, even inside
-      // sectioning content. Matches landmark-unique's precedent.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
+  const { root, helpers, rule } = ctx;
 
   // A candidate must actually have the banner role. Per HTML-AAM a <header>
   // descended from article/aside/main/nav/section is not a banner at all, so
   // flagging it as a nested banner reports a landmark that does not exist.
   function isBannerCandidate(el) {
-    return getLandmarkRole(el) === 'banner';
+    return helpers.getLandmarkRole(el, ctx) === 'banner';
   }
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = el.parentElement;
     while (p) {
-      if (getLandmarkRole(p)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
@@ -50879,15 +50860,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -50956,97 +50933,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-complementary-is-top-level": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-
-  // Declared inside runInPage; see scripts/build-core.js header
-  // ("runInPage MUST be self-contained").
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
-  // the title-attribute fallback consistent across the landmark rules.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested. It keeps
-      // "complementary" when it has an accessible name, even inside
-      // sectioning content. Matches landmark-unique's precedent.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
+  const { root, helpers, rule } = ctx;
 
   // A candidate must actually carry the complementary role. An <aside> that
   // HTML-AAM strips the role from is not a complementary landmark at all, so
   // flagging it would report a landmark that does not exist.
   function isComplementaryCandidate(el) {
-    return getLandmarkRole(el) === 'complementary';
+    return helpers.getLandmarkRole(el, ctx) === 'complementary';
   }
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = el.parentElement;
     while (p) {
-      if (getLandmarkRole(p)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
@@ -51055,15 +50955,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -51130,101 +51026,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
+  const { root, helpers, rule } = ctx;
 
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
-  // the title-attribute fallback consistent across the landmark rules.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm. Example: an
-  // <aside role="dialog"> containing its own <header>.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested. It keeps
-      // "complementary" when it has an accessible name, even inside
-      // sectioning content. Matches landmark-unique's precedent.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
-
-  // Candidate selection is NOT the same as getLandmarkRole()
-  // === 'contentinfo'; see the header comment above. A <footer> is
-  // a candidate purely by tag + absence of any role attribute, independent
-  // of whether sectioning-ancestor nesting would currently suppress its
-  // implicit role; an explicit role="contentinfo" is always a candidate too.
   // A candidate must actually have the contentinfo role: a <footer> inside
   // article/aside/main/nav/section is not one, so flagging it as nested
   // would report a landmark that does not exist.
   function isContentinfoCandidate(el) {
-    return getLandmarkRole(el) === 'contentinfo';
+    return helpers.getLandmarkRole(el, ctx) === 'contentinfo';
   }
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = el.parentElement;
     while (p) {
-      if (getLandmarkRole(p)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
@@ -51233,15 +51048,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -51310,89 +51121,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
-  const { document, root, helpers, rule } = ctx;
-
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
-  // the title-attribute fallback consistent across the landmark rules.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm. Example: an
-  // <aside role="dialog"> containing its own <header>.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested. It keeps
-      // "complementary" when it has an accessible name, even inside
-      // sectioning content. Matches landmark-unique's precedent.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
+  const { root, helpers, rule } = ctx;
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = el.parentElement;
     while (p) {
-      if (getLandmarkRole(p)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
@@ -51401,15 +51136,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -51419,7 +51150,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (getLandmarkRole(el) !== 'main') continue;
+    if (helpers.getLandmarkRole(el, ctx) !== 'main') continue;
 
     // An aria-hidden main candidate is removed from the accessibility
     // tree entirely -- it isn't part of the landmark structure assistive
@@ -51478,93 +51209,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-no-duplicate-banner": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm, e.g. an
-  // <aside role="dialog"> containing its own <header>, where the <header>
-  // keeps its banner role.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested: keeps
-      // "complementary" when the element has an accessible name, even
-      // inside sectioning content. See landmark-unique-manual.js.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
-
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -51589,7 +51240,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
     if (!isExposedToAt(el)) continue;
-    if (getLandmarkRole(el) === 'banner') banners.push(el);
+    if (helpers.getLandmarkRole(el, ctx) === 'banner') banners.push(el);
   }
 
   if (banners.length <= 1) {
@@ -51619,93 +51270,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-no-duplicate-contentinfo": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js. Sharing it keeps
-  // the title-attribute fallback consistent across the landmark rules.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm. Example: an
-  // <aside role="dialog"> containing its own <header>.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested. It keeps
-      // "complementary" when it has an accessible name, even inside
-      // sectioning content. Matches landmark-unique's precedent.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit) ? explicit : '';
-    return getImplicitLandmarkRole(el);
-  }
-
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -51730,7 +51301,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
     if (!isExposedToAt(el)) continue;
-    if (getLandmarkRole(el) === 'contentinfo') contentinfos.push(el);
+    if (helpers.getLandmarkRole(el, ctx) === 'contentinfo') contentinfos.push(el);
   }
 
   if (contentinfos.length <= 1) {
@@ -51760,37 +51331,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-no-duplicate-main": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
-  function normalizeWs(s) {
-    return String(s || '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'main' ? 'main' : '';
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    return tag === 'main' ? 'main' : '';
-  }
-
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a <main> a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('main, [role]')
-        : document.querySelectorAll('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]');
   } catch {
     nodes = [];
   }
@@ -51815,7 +51362,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
     if (!isExposedToAt(el)) continue;
-    if (getLandmarkRole(el) === 'main') mains.push(el);
+    if (helpers.getLandmarkRole(el, ctx) === 'main') mains.push(el);
   }
 
   if (mains.length <= 1) {
@@ -51852,20 +51399,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  function getExplicitRoleToken(el) {
-    const raw = ((el.getAttribute && el.getAttribute('role')) || '').trim();
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  function isMainLandmark(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return explicit === 'main';
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    return tag === 'main';
-  }
-
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
@@ -51880,15 +51413,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // queryAllSmart (shadow-DOM-aware) instead of plain document.querySelectorAll -- see
-  // landmark-unique-manual.js's header comment. A third-party shadow-DOM-hosted
-  // widget's own landmark is invisible to a light-DOM-only query.
+  // queryAllSmart is shadow-DOM-aware, so a <main> a third-party widget
+  // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('main, [role]')
-        : document.querySelectorAll('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]');
   } catch {
     nodes = [];
   }
@@ -51898,7 +51427,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
-    if (!isMainLandmark(el)) continue;
+    if (helpers.getLandmarkRole(el, ctx) !== 'main') continue;
     if (!isExposedToAt(el)) continue;
     hasMain = true;
     break;
@@ -51931,7 +51460,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "landmark-unique": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -51939,9 +51468,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js.
+  // Landmarks are named by aria-labelledby, aria-label, then title, never by
+  // content; see helpers.getLandmarkNameInfo in src/core/dom-helpers.js.
   function getAccessibleLandmarkName(el) {
     try {
       if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
@@ -51950,88 +51478,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     } catch {}
     return '';
-  }
-
-  function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
-  }
-
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor (role-aware:
-  // an ancestor's bare TAG only counts when it carries no role attribute at
-  // all; an explicit role="dialog"-style override no longer suppresses;
-  // see that function's header comment in src/core/aria-helpers.js), using
-  // two distinct ancestor scopes rather than one shared list: <header>/
-  // <footer> use "sectioning content PLUS <main>" (includeMain: true) to
-  // decide banner/contentinfo suppression, but <aside> uses PLAIN
-  // sectioning content only, not main (includeMain: false), to decide
-  // complementary suppression. A single shared sectioning-ancestors set
-  // that includes 'main' is correct for header/footer but wrong for aside:
-  // e.g. two unnamed <aside> elements that are direct children of <main>
-  // would have their implicit "complementary" role incorrectly suppressed,
-  // hiding a real duplicate-landmark violation. The role-aware half matters
-  // too: take an <aside role="dialog"> containing its own <header>.
-  // role="dialog" isn't one of the four scoping roles, so the nested
-  // <header> keeps "banner" per spec, but a tag-only (non-role-aware)
-  // check would unconditionally suppress it just because the ancestor TAG
-  // was <aside>.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // An <aside> is suppressed by a sectioning-content ancestor ONLY
-      // when it also has no accessible name. A named <aside> is never
-      // suppressed, even when nested.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
-  function getLandmarkRole(el) {
-    if (!el || !el.getAttribute) return '';
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) {
-      if (!LANDMARK_ROLES.has(explicit)) return '';
-      // <form>/<section> only count as landmarks when they have an
-      // accessible name, a property of the ELEMENT, not of how the role
-      // got there. This applies whether the role is implicit (already
-      // handled in getImplicitLandmarkRole below) or explicit. Per the W3C
-      // ARIA-in-HTML spec ("a form is not exposed as a landmark region
-      // unless it has been provided an accessible name"). Otherwise an
-      // unnamed <form role="search"> nested inside an unnamed
-      // <div role="search"> gets wrongly counted as a second distinct
-      // "search" landmark.
-      const tag = el.tagName ? el.tagName.toLowerCase() : '';
-      if (tag === 'form' || tag === 'section') {
-        return getAccessibleLandmarkName(el) ? explicit : '';
-      }
-      return explicit;
-    }
-    return getImplicitLandmarkRole(el);
   }
 
   const isAccTreeEligible =
@@ -52048,17 +51494,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // queryAllSmart (shadow-DOM-aware, includeShadowDom defaults true) instead of a plain
-  // document.querySelectorAll -- a third-party widget rendering its own
-  // unnamed <nav>/<footer> inside a shadow root collides with the page's
-  // own unnamed header <nav>/page <footer>, but is invisible to plain
-  // querySelectorAll's light-DOM-only reach.
+  // queryAllSmart is shadow-DOM-aware: a third-party widget rendering its own
+  // unnamed <nav>/<footer> inside a shadow root collides with the page's own
+  // unnamed <nav>/<footer>, but plain querySelectorAll never reaches it.
   let nodes;
   try {
-    nodes =
-      helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('header, footer, main, nav, aside, section, form, [role]')
-        : document.querySelectorAll('header, footer, main, nav, aside, section, form, [role]');
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
   } catch {
     nodes = [];
   }
@@ -52075,7 +51516,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || seen.has(el)) continue;
     seen.add(el);
     if (!isExposedToAt(el)) continue;
-    const role = getLandmarkRole(el);
+    const role = helpers.getLandmarkRole(el, ctx);
     if (!role) continue;
     const list = byRole.get(role) || [];
     list.push({ el, name: getAccessibleLandmarkName(el) });
@@ -57090,74 +56531,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return String(s || '').toLowerCase();
   }
 
-  // Delegates to the shared helpers.getLandmarkNameInfo (aria-label -> aria-labelledby, via the
-  // target's own accessible name, not raw textContent -> title attribute fallback) rather than a
-  // local copy -- see that function's header comment in src/core/dom-helpers.js.
-  function getAccessibleLandmarkName(el) {
-    try {
-      if (helpers && typeof helpers.getLandmarkNameInfo === 'function') {
-        const info = helpers.getLandmarkNameInfo(el, ctx);
-        if (info && info.present && info.value) return normalizeWs(info.value);
-      }
-    } catch {}
-    return '';
-  }
-
   function getExplicitRoleToken(el) {
     const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
     if (!raw) return '';
     return lower(raw.split(/\s+/)[0]);
   }
 
-  // Delegates to the shared helpers.hasLandmarkScopingAncestor for the
-  // question "does this element sit inside a sectioning-content/<main>
-  // ancestor that suppresses its conditional implicit role": role-aware
-  // (an ancestor's bare TAG only counts when it carries no role attribute
-  // at all; an explicit role="dialog"-style override no longer suppresses)
-  // rather than a local tag-only copy. See that function's header comment
-  // in src/core/aria-helpers.js for the full algorithm, e.g. an
-  // <aside role="dialog"> containing its own <header>, where the <header>
-  // keeps its banner role.
-  function hasSectioningAncestor(el, includeMain) {
-    return helpers && typeof helpers.hasLandmarkScopingAncestor === 'function'
-      ? helpers.hasLandmarkScopingAncestor(el, { includeMain })
-      : false;
-  }
-
-  function getImplicitLandmarkRole(el) {
-    const tag = el.tagName ? lower(el.tagName) : '';
-    if (tag === 'header') return hasSectioningAncestor(el, true) ? '' : 'banner';
-    if (tag === 'footer') return hasSectioningAncestor(el, true) ? '' : 'contentinfo';
-    if (tag === 'main') return 'main';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'aside') {
-      // A named <aside> is never suppressed, even when nested: keeps
-      // "complementary" when the element has an accessible name, even
-      // inside sectioning content. See landmark-unique-manual.js.
-      if (!hasSectioningAncestor(el, false)) return 'complementary';
-      return getAccessibleLandmarkName(el) ? 'complementary' : '';
-    }
-    if (tag === 'section') return getAccessibleLandmarkName(el) ? 'region' : '';
-    if (tag === 'form') return getAccessibleLandmarkName(el) ? 'form' : '';
-    return '';
-  }
-
-  const LANDMARK_ROLES = new Set([
-    'banner',
-    'contentinfo',
-    'main',
-    'navigation',
-    'complementary',
-    'region',
-    'form',
-    'search'
-  ]);
-
   function isLandmark(el) {
-    if (!el || !el.getAttribute) return false;
-    const explicit = getExplicitRoleToken(el);
-    if (explicit) return LANDMARK_ROLES.has(explicit);
-    return !!getImplicitLandmarkRole(el);
+    return !!helpers.getLandmarkRole(el, ctx);
   }
 
   const SKIP_TAGS = new Set(['script', 'style', 'template', 'noscript', 'link', 'meta', 'title']);
@@ -71642,9 +71023,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these
   // roles don't derive a name from content (unlike a button/link), so per
   // the accname spec their only sources are aria-label, aria-labelledby,
-  // then a title-attribute fallback. Shared by the 7 landmark rule files
-  // (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
-  // landmark-banner/-main/-contentinfo-is-top-level, region); title must
+  // then a title-attribute fallback. Shared by every landmark rule; title must
   // be included, otherwise e.g. two <nav>s distinguished only by
   // title="navigation" are both seen as unnamed and flagged as duplicates.
   function getLandmarkNameInfo(el, ctx) {
@@ -71668,6 +71047,62 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   const lower = (v) => trim(v).toLowerCase();
+
+  // WAI-ARIA 1.2's landmark roles.
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'complementary',
+    'contentinfo',
+    'form',
+    'main',
+    'navigation',
+    'region',
+    'search'
+  ]);
+
+  // Every element that can expose a landmark role, implicitly or through role.
+  const LANDMARK_CANDIDATE_SELECTOR =
+    'header, footer, main, nav, aside, section, form, search, [role]';
+
+  // The landmark role el exposes to assistive technology, or '' for none.
+  // Shared by every landmark rule, so they all agree on what a landmark is.
+  //
+  // Implicit roles follow HTML-AAM: <header>/<footer> are banner/contentinfo
+  // only when not inside sectioning content or <main>; <aside> is
+  // complementary unless it sits in sectioning content without a name;
+  // <section> and <form> are region and form only when named; <search> is
+  // search. An explicit role is the role attribute's first token, as
+  // elsewhere in this engine.
+  //
+  // region and form need a name however the element got the role: Core-AAM
+  // maps "region without an accessible name" and "form without an accessible
+  // name" to "do not expose the element as a landmark", and Chromium exposes
+  // such an element as a generic container.
+  function getLandmarkRole(el, ctx) {
+    if (!isElement(el)) return '';
+    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    let role = '';
+    if (token) {
+      if (LANDMARK_ROLES.has(token)) role = token;
+    } else {
+      const tag = lower(el.tagName);
+      if (tag === 'header' || tag === 'footer') {
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
+          role = tag === 'header' ? 'banner' : 'contentinfo';
+        }
+      } else if (tag === 'aside') {
+        // Named, it stays complementary even inside sectioning content.
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: false })) role = 'complementary';
+        else if (getLandmarkNameInfo(el, ctx).present) role = 'complementary';
+      } else if (tag === 'main') role = 'main';
+      else if (tag === 'nav') role = 'navigation';
+      else if (tag === 'search') role = 'search';
+      else if (tag === 'section') role = 'region';
+      else if (tag === 'form') role = 'form';
+    }
+    if ((role === 'region' || role === 'form') && !getLandmarkNameInfo(el, ctx).present) return '';
+    return role;
+  }
 
   const safeDocGetById = (id) => {
     const key = trim(id);
@@ -75904,6 +75339,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Landmark-role naming (aria-label -> aria-labelledby -> title; no content fallback --
     // see getLandmarkNameInfo's own header comment for why this replaced 7 duplicated copies)
     getLandmarkNameInfo,
+
+    // The landmark role an element exposes ('' for none), and the selector
+    // for every element that can carry one; see getLandmarkRole's header.
+    getLandmarkRole,
+    landmarkCandidateSelector: LANDMARK_CANDIDATE_SELECTOR,
 
     // "Does this element have a landmark-scoping ancestor" (role-aware
     // sectioning-content/<main> check backing <header>/<footer>/<aside>'s

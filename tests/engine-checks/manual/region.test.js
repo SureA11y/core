@@ -36,6 +36,19 @@ test(`${RULE_ID}: cantTell when a direct child of body has text but is not a lan
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'CONTENT_OUTSIDE_LANDMARK');
 });
 
+test(`${RULE_ID}: content inside a <search> element is inside a landmark`, () => {
+  const html = `<!doctype html><html><body><main>Content</main><search><p>Find a product</p></search></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell for content inside an unnamed role="region", which is not a landmark (Core-AAM)`, () => {
+  const html = `<!doctype html><html><body><main>Content</main><div role="region" id="a"><p>Stray</p></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><p id="a">Stray</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
