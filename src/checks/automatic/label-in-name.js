@@ -326,8 +326,10 @@ function runInPage(ctx) {
       if (joined) return { text: joined, source: 'label', sourceElements: contributing };
     }
 
-    // 2) Text inside the control itself
-    text = collectVisibleTextUnder(el);
+    // 2) Text inside the control itself. Not for <select> or <textarea>:
+    //    what shows inside them is a value (the chosen option, what the
+    //    user typed), not a label, and neither takes its name from content.
+    text = tn === 'select' || tn === 'textarea' ? '' : collectVisibleTextUnder(el);
     if (text) return { text, source: 'self', sourceElements: [el] };
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
