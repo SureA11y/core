@@ -504,6 +504,16 @@ why:
   page-wide landmark structure, so flagging its absence there is a false positive, not a
   real finding. If you add a new rule to this category, add the same `applicability`
   export rather than letting it silently evaluate document-wide facts regardless of scope.
+
+- **Page-relational checks** (`landmark-unique`, the `landmark-no-duplicate-*` and
+  `landmark-*-is-top-level` rules, `accesskeys`, `heading-order`,
+  `identical-links-same-purpose`, `identical-iframes-same-purpose`): the rule compares
+  elements with each other or with their ancestors, so a scoped scan sees only part of
+  what it compares. A problem found inside the scope is real on any page and is still
+  reported, but the rule returns `notApplicable` where it would `pass` unless
+  `helpers.isWholeDocumentScope()`, since it cannot say the page is fine. A rule that
+  can look past the scope, as `duplicate-id` does by collecting ids from the whole
+  document, needs no such gate: its `pass` holds for the page.
 - **Runtime-mutation-only branches** (e.g. `iframe-focusable-content`'s FAIL branch,
   which requires mutating `iframe.contentDocument` after parse — jsdom does not
   populate `srcdoc` synchronously): cover every branch that IS expressible statically;

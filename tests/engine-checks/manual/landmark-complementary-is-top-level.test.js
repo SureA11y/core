@@ -68,7 +68,8 @@ test(`${RULE_ID}: the ancestor walk stops at the scanned scope`, () => {
   // and must not count as the landmark ancestor.
   const html = `<!doctype html><html><body><nav aria-label="Outer"><div id="scope"><aside aria-label="Related" id="a">Related</aside></div></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], contextSelector: '#scope' });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  // Nothing is reported, and no pass is claimed for a page only partly seen.
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

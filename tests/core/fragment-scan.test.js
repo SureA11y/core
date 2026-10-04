@@ -153,13 +153,52 @@ test("landmark-banner-is-top-level: a real page's outer <nav> does not leak into
   });
 
   // Scoped to #widget: the <nav> is outside the analyzed subtree and must not leak in.
-  // Within the scope the banner is top-level, so the rule passes for the scope.
+  // Nothing is reported, and no pass is claimed for a page only partly seen.
   const scoped = runa11yCoreOnHtml(html, {
     runOnly: ['landmark-banner-is-top-level'],
     contextSelector: '#widget'
   });
-  assertRule(scoped, 'landmark-banner-is-top-level', 'pass', {
+  assertRule(scoped, 'landmark-banner-is-top-level', 'notApplicable', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
 });
+
+// Rules that compare elements across the page keep what they find inside a
+// scoped scan, but claim no pass for a page they saw only part of.
+for (const [ruleId, clean, problem] of [
+  [
+    'landmark-unique',
+    '<nav aria-label="A">a</nav><nav aria-label="B">b</nav>',
+    '<nav aria-label="A">a</nav><nav aria-label="A">b</nav>'
+  ],
+  ['landmark-no-duplicate-main', '<main>m</main>', '<main>m</main><main>n</main>'],
+  [
+    'accesskeys',
+    '<a href="/a" accesskey="a">A</a><a href="/b" accesskey="b">B</a>',
+    '<a href="/a" accesskey="a">A</a><a href="/b" accesskey="a">B</a>'
+  ],
+  [
+    'identical-links-same-purpose',
+    '<a href="/a">More</a><a href="/a">More</a>',
+    '<a href="/a">More</a><a href="/b">More</a>'
+  ],
+  ['heading-order', '<h2>a</h2><h3>b</h3>', '<h2>a</h2><h4>b</h4>']
+]) {
+  test(`${ruleId}: a scoped scan reports what it finds in scope, and claims no pass`, () => {
+    const page = (inner) =>
+      `<!doctype html><html><body><p>Outside</p><div id="widget">${inner}</div></body></html>`;
+    const whole = runa11yCoreOnHtml(page(clean), { runOnly: [ruleId] });
+    assertRule(whole, ruleId, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    const scopedClean = runa11yCoreOnHtml(page(clean), {
+      runOnly: [ruleId],
+      contextSelector: '#widget'
+    });
+    assertRule(scopedClean, ruleId, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    const scopedProblem = runa11yCoreOnHtml(page(problem), {
+      runOnly: [ruleId],
+      contextSelector: '#widget'
+    });
+    assertRule(scopedProblem, ruleId, 'cantTell', { minOccurrences: 1 });
+  });
+}

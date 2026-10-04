@@ -35883,7 +35883,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   if (!occurrences.length) {
     // Every value differs, which needs no judgment.
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
   return {
     ruleId: rule.ruleId,
@@ -47802,7 +47809,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "heading-quality": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -48495,7 +48509,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -48649,7 +48670,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Every shared name leads to one destination.
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
   const { helpers, rule, document } = ctx;
@@ -51059,7 +51087,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "landmark-complementary-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51152,7 +51187,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51247,7 +51289,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51335,7 +51384,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // A pass is a claim about the whole page, and a scoped scan saw only part
+  // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+  return {
+    ruleId: rule.ruleId,
+    outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+    severity: 'minor',
+    occurrences: []
+  };
 }), applicability: null },
     "landmark-no-duplicate-banner": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -51376,7 +51432,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (banners.length === 1) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   const occurrences = banners.map((el) => {
@@ -51440,7 +51503,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (contentinfos.length === 1) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   const occurrences = contentinfos.map((el) => {
@@ -51504,7 +51574,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (mains.length === 1) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   const occurrences = mains.map((el) => {
@@ -51758,7 +51835,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
   return {
     ruleId: rule.ruleId,

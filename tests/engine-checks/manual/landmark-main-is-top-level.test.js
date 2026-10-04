@@ -166,6 +166,7 @@ test(`${RULE_ID} (node runtime): a main scoped to the top of a contextSelector-n
   );
   const rule = ruleFrom(result);
   assert.ok(rule);
-  assert.strictEqual(rule.outcome, 'pass');
+  // Nothing is reported, and no pass is claimed for a page only partly seen.
+  assert.strictEqual(rule.outcome, 'notApplicable');
   assert.strictEqual(rule.occurrences.length, 0);
 });
