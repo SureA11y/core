@@ -267,7 +267,7 @@
   "tabNamePresent_summary_fail": "Esta pestaña no tiene nombre accesible.",
   "tabNamePresent_hint_fail": "Proporcionar texto de pestaña que no esté oculto a las tecnologías de asistencia, o proporcionar aria-label o aria-labelledby.",
   "sliderNamePresent_title": "Los controles deslizantes tienen un nombre accesible",
-  "sliderNamePresent_description": "Comprueba que los controles deslizantes (input[type=\"range\"] y role=\"slider\") expongan un nombre accesible no vacío.",
+  "sliderNamePresent_description": "Comprueba que los elementos con role=\"slider\" expongan un nombre accesible no vacío. Un <input type=\"range\"> nativo lo comprueba form-control-programmatic-label-present.",
   "sliderNamePresent_summary_fail": "Este control deslizante no tiene nombre accesible.",
   "sliderNamePresent_hint_fail": "Proporcionar una etiqueta, aria-label o aria-labelledby para que las tecnologías de asistencia puedan identificar el control deslizante.",
   "textboxNamePresent_title": "Los cuadros de texto tienen un nombre accesible",

@@ -518,8 +518,10 @@ About 4.6:1, above the AA 4.5:1 minimum for normal text.
 
 **Failed**
 ```html
-<div style="opacity:0.5; background:#ffffff;">
-  <p style="color:#000000;">Body text</p>
+<div style="background:#ffffff;">
+  <div style="opacity:0.5; background:#ffffff;">
+    <p style="color:#000000;">Body text</p>
+  </div>
 </div>
 ```
 50% ancestor (group) opacity over white composites to a flat gray around 4:1, below the AA minimum.
@@ -1321,7 +1323,7 @@ The link is underlined, distinguishing it from surrounding text by more than col
 
 **Failed**
 ```html
-<p style="color:#222222;">Read <a href="#" style="text-decoration:none; color:#2a2a2a;">this link</a> for more information.</p>
+<p style="color:#222222; background:#ffffff;">Read <a href="#" style="text-decoration:none; color:#2a2a2a;">this link</a> for more information.</p>
 ```
 The only difference from surrounding text is a color shift with about 1.1:1 contrast, well under the 3:1 minimum, and no underline or weight/style change.
 
@@ -1883,9 +1885,9 @@ French skip-link wording is recognised as well, and the target is missing.
 
 **Passed**
 ```html
-<input type="range" aria-label="Volume">
+<div role="slider" tabindex="0" aria-label="Volume" aria-valuenow="5" aria-valuemin="0" aria-valuemax="10"></div>
 ```
-`aria-label` names the native range input acting as a slider.
+`aria-label` names the slider. A native `<input type="range">` is not in this rule's scope; `form-control-programmatic-label-present` checks it.
 
 **Failed**
 ```html
@@ -2096,10 +2098,9 @@ Meets the 24×24 CSS pixel minimum on its own.
 
 **Failed**
 ```html
-<button style="width:10px; height:10px;">A</button>
-<button style="width:10px; height:10px; margin-left:5px;">B</button>
+<button style="width:10px; height:10px; padding:0;">A</button><button style="width:10px; height:10px; padding:0; margin-left:5px;">B</button>
 ```
-Both targets are under 24×24 and closer together than the spacing exception allows.
+Both targets are 10×10, under 24×24, and their centres are 15px apart, closer than the 24px the spacing exception needs. (`padding:0` matters: a browser's default button padding makes each one wider.)
 
 ## td-has-header
 

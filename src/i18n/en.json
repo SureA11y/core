@@ -267,7 +267,7 @@
   "tabNamePresent_summary_fail": "This tab has no accessible name.",
   "tabNamePresent_hint_fail": "Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
   "sliderNamePresent_title": "Sliders have an accessible name",
-  "sliderNamePresent_description": "Checks that sliders (input[type=\"range\"] and role=\"slider\") expose a non-empty accessible name.",
+  "sliderNamePresent_description": "Checks that elements with role=\"slider\" expose a non-empty accessible name. A native <input type=\"range\"> is checked by form-control-programmatic-label-present.",
   "sliderNamePresent_summary_fail": "This slider has no accessible name.",
   "sliderNamePresent_hint_fail": "Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.",
   "textboxNamePresent_title": "Textboxes have an accessible name",
