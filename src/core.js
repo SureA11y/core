@@ -23508,7 +23508,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // failing that, its rendered content (getContentNameInfo, which excludes
   // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
+  // A <label> hidden by hidden, display: none, visibility: hidden or
+  // aria-hidden names nothing: accname skips a hidden node unless
+  // aria-labelledby points at it, and Chrome and Firefox both give
+  // <label for hidden> + <input> an empty name. Only hiding that leaves the
+  // control shown counts. When one aria-hidden or visibility: hidden
+  // ancestor hides both, accname still names the hidden control from its
+  // hidden label, and the label is no less on screen than the control. A
+  // visually hidden (clipped) label is rendered, so it counts too.
+  function isLabelHiddenApartFromControl(lab, control) {
+    const controlChain = new Set();
+    for (let n = control; n; n = n.parentElement) controlChain.add(n);
+    for (let n = lab; n && !controlChain.has(n); n = n.parentElement) {
+      if (n.hasAttribute('hidden')) return true;
+      if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
+      if (computedStyle(n).display === 'none') return true;
+    }
+    const isInvisible = (el) => {
+      const v = computedStyle(el).visibility;
+      return v === 'hidden' || v === 'collapse';
+    };
+    return isInvisible(lab) && !(control && isInvisible(control));
+  }
+
   function labelContributesAccessibleName(lab, control) {
+    try {
+      if (isLabelHiddenApartFromControl(lab, control)) return false;
+    } catch {}
     try {
       const aria = getAriaNameInfo(lab, null, {});
       if (aria && aria.present && trim(aria.value)) return true;
@@ -75396,7 +75422,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // failing that, its rendered content (getContentNameInfo, which excludes
   // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
+  // A <label> hidden by hidden, display: none, visibility: hidden or
+  // aria-hidden names nothing: accname skips a hidden node unless
+  // aria-labelledby points at it, and Chrome and Firefox both give
+  // <label for hidden> + <input> an empty name. Only hiding that leaves the
+  // control shown counts. When one aria-hidden or visibility: hidden
+  // ancestor hides both, accname still names the hidden control from its
+  // hidden label, and the label is no less on screen than the control. A
+  // visually hidden (clipped) label is rendered, so it counts too.
+  function isLabelHiddenApartFromControl(lab, control) {
+    const controlChain = new Set();
+    for (let n = control; n; n = n.parentElement) controlChain.add(n);
+    for (let n = lab; n && !controlChain.has(n); n = n.parentElement) {
+      if (n.hasAttribute('hidden')) return true;
+      if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
+      if (computedStyle(n).display === 'none') return true;
+    }
+    const isInvisible = (el) => {
+      const v = computedStyle(el).visibility;
+      return v === 'hidden' || v === 'collapse';
+    };
+    return isInvisible(lab) && !(control && isInvisible(control));
+  }
+
   function labelContributesAccessibleName(lab, control) {
+    try {
+      if (isLabelHiddenApartFromControl(lab, control)) return false;
+    } catch {}
     try {
       const aria = getAriaNameInfo(lab, null, {});
       if (aria && aria.present && trim(aria.value)) return true;
