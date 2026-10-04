@@ -24702,6 +24702,21 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.fonts = loading ? 'loading' : 'loaded';
     }
   } catch {}
+  // Whether an image is still loading, for the same reason: the box it
+  // arrives in can move what a layout rule measured. An image loaded lazily
+  // (loading="lazy") is left out, since it waits for the reader to scroll
+  // and may never load in a scan. Queried rather than read from
+  // document.images, which is a live collection.
+  try {
+    if (typeof doc.querySelectorAll === 'function') {
+      let loading = false;
+      for (const img of doc.querySelectorAll('img')) {
+        const lazy = String(img.getAttribute('loading') || '').toLowerCase() === 'lazy';
+        if (!img.complete && !lazy) loading = true;
+      }
+      env.images = loading ? 'loading' : 'loaded';
+    }
+  } catch {}
   return env;
 });
 
@@ -76841,6 +76856,21 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
         if (face && face.status === 'loading') loading = true;
       });
       env.fonts = loading ? 'loading' : 'loaded';
+    }
+  } catch {}
+  // Whether an image is still loading, for the same reason: the box it
+  // arrives in can move what a layout rule measured. An image loaded lazily
+  // (loading="lazy") is left out, since it waits for the reader to scroll
+  // and may never load in a scan. Queried rather than read from
+  // document.images, which is a live collection.
+  try {
+    if (typeof doc.querySelectorAll === 'function') {
+      let loading = false;
+      for (const img of doc.querySelectorAll('img')) {
+        const lazy = String(img.getAttribute('loading') || '').toLowerCase() === 'lazy';
+        if (!img.complete && !lazy) loading = true;
+      }
+      env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
   return env;
