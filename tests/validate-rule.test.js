@@ -94,3 +94,21 @@ for (const [label, code, accepted] of [
     assert.equal(validate(line), accepted);
   });
 }
+
+function withMeta(line) {
+  return SAMPLE_SOURCE.replace('const meta = {', `const meta = {\n  ${line}`);
+}
+
+test('validate-rule accepts meta.reasonCodes that the rule reports', () => {
+  assert.equal(validateSource(withMeta("reasonCodes: ['SKIP_LINK_TARGET_MISSING'],")), true);
+});
+
+for (const [label, line] of [
+  ['a declared reason code the source never mentions', "reasonCodes: ['NOT_IN_THIS_RULE'],"],
+  ['an empty meta.reasonCodes', 'reasonCodes: [],'],
+  ['meta.reasonCodes that is not an array', "reasonCodes: 'SKIP_LINK_TARGET_MISSING',"]
+]) {
+  test(`validate-rule rejects ${label}`, () => {
+    assert.equal(validateSource(withMeta(line)), false);
+  });
+}

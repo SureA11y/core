@@ -97,7 +97,15 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.1': ['link-in-text-block'] } }
+  coverage: { facetsBySc: { '1.4.1': ['link-in-text-block'] } },
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: [
+    'COLOR_NOT_COMPUTABLE',
+    'CONTRAST_HELPERS_UNAVAILABLE',
+    'ENGINE_EXCEPTION',
+    'TEXT_DECORATION_NOT_RESOLVABLE'
+  ]
 };
 
 function runInPage(ctx) {

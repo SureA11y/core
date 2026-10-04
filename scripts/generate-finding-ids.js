@@ -15,7 +15,9 @@
  *
  * Reason codes come from two passes, because neither alone is complete:
  * running each rule against its own fixture catches the ones built at runtime,
- * and reading the source catches the branches a fixture never reaches.
+ * and reading the source catches the branches a fixture never reaches. A code
+ * that is built at runtime on a branch only a browser reaches is in neither,
+ * so a rule lists those in meta.reasonCodes, which is added too.
  */
 
 const fs = require('fs');
@@ -120,12 +122,18 @@ function main() {
   // already drifted apart once (role-img-text-alternative-present).
   const idByFile = new Map();
   const fromById = new Map();
+  const declaredById = new Map();
   for (const file of ruleSourceFiles()) {
     try {
       const mod = require(file);
       if (mod && typeof mod.id === 'string') idByFile.set(file, mod.id);
       // A variant runs its base rule's code, so its codes are in the base's source.
       if (mod && typeof mod.from === 'string') fromById.set(mod.id, mod.from);
+      // Codes a rule builds at runtime, which neither pass can be sure to see:
+      // reached only in a browser, or passed through a variable.
+      if (mod && mod.meta && Array.isArray(mod.meta.reasonCodes)) {
+        declaredById.set(mod.id, mod.meta.reasonCodes.map(String));
+      }
     } catch {
       // A module that will not load is the rule validator's problem, not this one.
     }
@@ -144,6 +152,7 @@ function main() {
     const base = fromById.has(ruleId) ? fileById.get(fromById.get(ruleId)) : null;
     add(ruleId, codesFromSource(base || file));
   }
+  for (const [ruleId, codes] of declaredById) add(ruleId, codes);
 
   const sources = ruleSources();
   for (const src of sources) {

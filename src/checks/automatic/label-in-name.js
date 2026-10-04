@@ -82,7 +82,15 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.5.3': ['label-in-name'] } }
+  coverage: { facetsBySc: { '2.5.3': ['label-in-name'] } },
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: [
+    'HYPHENATION_DIFFERS',
+    'POSSIBLE_ABBREVIATION',
+    'POSSIBLE_ICON_FONT_GLYPH',
+    'POSSIBLE_SYMBOLIC_CHARACTER'
+  ]
 };
 
 function runInPage(ctx) {

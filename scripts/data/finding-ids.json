@@ -232,8 +232,11 @@
       "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
       "BACKGROUND_IMAGE_OR_GRADIENT",
       "BACKGROUND_NOT_COMPUTABLE",
+      "BACKGROUND_NOT_OPAQUE_AT_ROOT",
       "ENGINE_EXCEPTION",
-      "MIX_BLEND_MODE"
+      "FOREGROUND_UNPARSABLE",
+      "MIX_BLEND_MODE",
+      "TEXT_SHADOW"
     ],
     "contrast-enhanced": [
       "ALL_ABOVE_THRESHOLD",
@@ -351,6 +354,10 @@
       "missing_alt"
     ],
     "label-in-name": [
+      "HYPHENATION_DIFFERS",
+      "POSSIBLE_ABBREVIATION",
+      "POSSIBLE_ICON_FONT_GLYPH",
+      "POSSIBLE_SYMBOLIC_CHARACTER",
       "VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME"
     ],
     "landmark-banner-is-top-level": [
@@ -385,8 +392,12 @@
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
+      "COLOR_NOT_COMPUTABLE",
       "COLOR_ONLY_DIFFERENTIATION",
-      "LINK_COLOR_CONTRAST_ONLY"
+      "CONTRAST_HELPERS_UNAVAILABLE",
+      "ENGINE_EXCEPTION",
+      "LINK_COLOR_CONTRAST_ONLY",
+      "TEXT_DECORATION_NOT_RESOLVABLE"
     ],
     "link-name-present": [
       "name_missing"
@@ -529,7 +540,11 @@
       "TD_NO_ASSOCIATED_HEADER"
     ],
     "text-spacing-content-loss": [
-      "STYLESHEET_IMPORTANT"
+      "STYLESHEET_IMPORTANT",
+      "TEXT_CLIPPED",
+      "TEXT_CLIPPED_MOVING",
+      "TEXT_CLIPPED_PARTLY",
+      "TEXT_OVERLAPS"
     ],
     "textbox-name-present": [
       "name_missing"

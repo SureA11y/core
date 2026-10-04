@@ -204,6 +204,16 @@ const meta = {
 
 `deprecated: true` without both `deprecation.reason` and `.sinceVersion` throws at build time (`normalizeRuleMeta`, `src/core/rule-meta.js`).
 
+#### `meta.reasonCodes`
+
+Optional. The reason codes the rule builds at runtime, passed through a variable or a helper instead of written as `reasonCode: 'CODE'`, when the rule's fixture can't reach them in jsdom. `scripts/generate-finding-ids.js` finds a rule's codes by reading `reasonCode: '...'` in its source and by running its fixture in jsdom; a code that is only reached in a browser, such as one `text-spacing-content-loss` reports after measuring the layout, is in neither, and would be missing from the inventory consumers rely on (`docs/API_STABILITY.md`).
+
+```js
+reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS']
+```
+
+`npm run validate:rules` checks that each code is written in the rule's source as a string, outside this list, so a typo can't register a code the rule never reports. A rule whose codes are all `reasonCode: '...'` literals doesn't need it.
+
 ---
 
 ## 4.3 Reporting an occurrence
