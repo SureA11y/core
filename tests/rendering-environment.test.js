@@ -44,6 +44,20 @@ test('the conditions are read from the page, field by field', () => {
   };
   assert.equal(readRenderingEnvironment(win, stillLoading).fonts, 'loading');
 
+  // An image still loading counts; one loaded lazily waits for the reader to
+  // scroll, so it does not.
+  const img = (complete, loading) => ({ complete, getAttribute: () => loading || null });
+  const withImages = (imgs) => ({ ...doc, querySelectorAll: () => imgs });
+  assert.equal(
+    readRenderingEnvironment(win, withImages([img(true), img(false)])).images,
+    'loading'
+  );
+  assert.equal(
+    readRenderingEnvironment(win, withImages([img(true), img(false, 'lazy')])).images,
+    'loaded'
+  );
+  assert.equal(readRenderingEnvironment(win, withImages([])).images, 'loaded');
+
   // What the page cannot tell is left out rather than guessed.
   const bare = { documentElement: doc.documentElement, createRange: doc.createRange };
   assert.deepEqual(readRenderingEnvironment({ innerWidth: 900, innerHeight: 700 }, bare), {

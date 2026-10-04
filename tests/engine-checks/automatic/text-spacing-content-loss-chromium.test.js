@@ -291,8 +291,21 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       devicePixelRatio: 1,
       colorScheme: 'light',
       fonts: 'loaded',
+      images: 'loaded',
       animationsSettled: 0
     });
+
+    // An image whose request never answers is still loading at scan time.
+    const waiting = await scan(html, undefined, {}, async (p) => {
+      await p.route('https://images.example.test/never.png', () => {});
+      await p.evaluate(() => {
+        const i = document.createElement('img');
+        i.src = 'https://images.example.test/never.png';
+        i.alt = '';
+        document.body.append(i);
+      });
+    });
+    assert.equal(waiting.engine.environment.images, 'loading');
 
     const dark = await scan(html, undefined, { colorScheme: 'dark', deviceScaleFactor: 2 });
     assert.equal(dark.engine.environment.colorScheme, 'dark');
