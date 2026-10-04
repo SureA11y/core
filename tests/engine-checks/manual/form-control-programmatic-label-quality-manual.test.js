@@ -308,3 +308,24 @@ test(`${RULE_ID}: a control with no name at all => notApplicable, since that is 
   assert.equal(rule.data.details.metrics.applicableCount, 0);
   assert.equal(rule.data.details.metrics.byMethod.none, 1);
 });
+
+test(`${RULE_ID}: a label under the same aria-hidden ancestor as its control still counts => pass`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><form>
+      <label for="u">User ID</label>
+      <input id="u" type="text" placeholder="User ID">
+    </form></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a hidden <label> beside a shown control => the placeholder is the label`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="h" hidden>Email</label>
+    <input id="h" type="text" placeholder="Email">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'label_from_placeholder_primary');
+});

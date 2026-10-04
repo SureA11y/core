@@ -424,3 +424,64 @@ test('exactly one rule reports an unlabeled native checkbox', () => {
     .map((r) => r.ruleId);
   assert.deepStrictEqual(reporting, [RULE_ID]);
 });
+
+test('fail: a hidden <label for> gives no name, as in Chrome and Firefox', () => {
+  for (const hiding of [
+    'hidden',
+    'style="display:none"',
+    'style="visibility:hidden"',
+    'aria-hidden="true"'
+  ]) {
+    const html = `<!doctype html><html><body>
+      <label for="h" ${hiding}>Email</label>
+      <input id="h" type="text">
+    </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test('pass: a visually hidden (clipped) <label for> still names the control', () => {
+  const html = `<!doctype html><html><body>
+    <label for="v" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Email</label>
+    <input id="v" type="text">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('pass: a hidden <label> beside a visible one; the visible one names the control', () => {
+  const html = `<!doctype html><html><body>
+    <label for="m" hidden>Email</label><label for="m">Mail</label>
+    <input id="m" type="text">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('pass: a hidden <label> plus a title; the name falls back to the title, as in Firefox', () => {
+  const html = `<!doctype html><html><body>
+    <label for="t" hidden>Email</label>
+    <input id="t" type="text" title="Phone">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('pass: a label hidden only by the aria-hidden ancestor that hides the control too still names it', () => {
+  // The shape of a real login panel: the whole form sits under one
+  // aria-hidden wrapper, and accname names a hidden control from its hidden label.
+  const html = `<!doctype html><html><body>
+    <div aria-hidden="true"><form>
+      <label for="u">User ID</label>
+      <input id="u" type="text" placeholder="User ID">
+    </form></div>
+    <div style="visibility:hidden">
+      <label for="p">Password</label>
+      <input id="p" type="password">
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
+  assert.notEqual(rule.outcome, 'fail');
+});
