@@ -677,6 +677,8 @@
   "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
   "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
   "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+  "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
+  "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
   "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
   "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
   "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",

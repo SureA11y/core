@@ -124,6 +124,31 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  await t.test('a clipped line that a repeating animation moves is asked about', async () => {
+    // A marquee: the text moves through the clipping box for ever, so one
+    // frame can't tell whether any of it is lost. Moving it (transform)
+    // counts; only fading it (a blinking cursor) does not.
+    const marquee =
+      '@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}' +
+      '@keyframes blink{50%{opacity:0}}';
+    const moving = await scan(
+      page(
+        marquee +
+          '#box{white-space:nowrap;overflow:hidden} #run{display:inline-block;animation:slide 20s linear infinite}',
+        `<div class="fit" id="box" data-text="${TEXT}"><span id="run">${TEXT}</span></div>`
+      )
+    );
+    assert.deepEqual(findings(moving), [['box', 'cantTell', 'TEXT_CLIPPED_MOVING']]);
+    const blinking = await scan(
+      page(
+        marquee +
+          '#box{white-space:nowrap;overflow:hidden} #run{display:inline-block;animation:blink 1s step-end infinite}',
+        `<div class="fit" id="box" data-text="${TEXT}"><span id="run">${TEXT}</span></div>`
+      )
+    );
+    assert.deepEqual(findings(blinking), [['box', 'fail', 'TEXT_CLIPPED']]);
+  });
+
   await t.test('a line pushed out by less than half an em is asked about', async () => {
     const result = await scan(
       page(
@@ -265,7 +290,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       viewport: { width: 640, height: 480 },
       devicePixelRatio: 1,
       colorScheme: 'light',
-      fonts: 'loaded'
+      fonts: 'loaded',
+      animationsSettled: 0
     });
 
     const dark = await scan(html, undefined, { colorScheme: 'dark', deviceScaleFactor: 2 });

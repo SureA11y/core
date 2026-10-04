@@ -23,7 +23,10 @@
  *     an em across) fails: the container cuts that text off
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
- *     text it did not overlap before (TEXT_OVERLAPS).
+ *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
+ *     animation that repeats for ever (a marquee) is asked about however far
+ *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
+ *     one frame can't tell whether any of it is lost.
  *   - In any environment, a style sheet rule that sets line-height,
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
@@ -225,6 +228,7 @@ function runInPage(ctx) {
 
   const clipped = [];
   const partly = [];
+  const moving = [];
   const overlaps = [];
   let textCount = 0;
 
@@ -378,6 +382,37 @@ function runInPage(ctx) {
       } catch {}
     }
 
+    // Whether an element from `from` up to (not including) `stop` is moved
+    // by an animation that repeats for ever: a marquee or a ticker. Its text
+    // passes through the clipping box and comes back, so one frame can't
+    // tell whether it is lost. The engine holds such an animation at its
+    // start for the scan (see settleAnimations). An animation that only
+    // fades or recolours (a blinking cursor) moves nothing and doesn't count.
+    // Property names as getKeyframes() spells them (camelCase); a keyframe's
+    // own `offset`, `easing` and `composite` are not properties.
+    const MOVING_PROPS =
+      /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
+    function isMovedForEver(from, stop) {
+      for (let el = from; el && el !== stop; el = el.parentElement) {
+        let animations;
+        try {
+          animations = typeof el.getAnimations === 'function' ? el.getAnimations() : [];
+        } catch {
+          animations = [];
+        }
+        for (const a of animations) {
+          try {
+            if (a.playState !== 'running' || !a.effect) continue;
+            if (a.effect.getComputedTiming().iterations !== Infinity) continue;
+            const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
+            const moves = frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)));
+            if (moves) return true;
+          } catch {}
+        }
+      }
+      return false;
+    }
+
     // How far a line sits outside a box, along the axes the box clips.
     function outside(line, box, c) {
       const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
@@ -416,7 +451,12 @@ function runInPage(ctx) {
         }
         if (worst) {
           reportedClip.add(c.el);
-          (worst.lost ? clipped : partly).push({
+          const list = isMovedForEver(n.parentElement, c.el)
+            ? moving
+            : worst.lost
+              ? clipped
+              : partly;
+          list.push({
             el: c.el,
             text: textOf(n.parentElement),
             metrics: {
@@ -515,6 +555,13 @@ function runInPage(ctx) {
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
+    TEXT_CLIPPED_MOVING: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
+      hint: 'Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).',
+      key: 'cantTell_clippedMoving',
+      needed: 'Whether the moving text can still be read in full with the spacing applied.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -560,7 +607,8 @@ function runInPage(ctx) {
   const at = { viewportWidth: String(viewport && viewport.width) };
   for (const [reasonCode, list, uncertaintyCode] of [
     ['TEXT_CLIPPED', clipped],
-    ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required']
+    ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
+    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required']
   ]) {
     for (const f of list) {
       const { text, metrics, container } = f;

@@ -11084,6 +11084,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -11932,6 +11934,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -12780,6 +12784,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Compruebe con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -13628,6 +13634,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -14476,6 +14484,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください (WCAG 1.4.12)。動くコンテンツには一時停止する手段も必要です (WCAG 2.2.2)。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
     "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -24695,7 +24705,42 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   return env;
 });
 
-const runCore = (function runCore(
+const settleAnimations = (function settleAnimations(doc) {
+  let animations = [];
+  try {
+    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+  } catch {
+    animations = [];
+  }
+  const moved = [];
+  for (const anim of animations) {
+    try {
+      if (!anim || anim.playState !== 'running') continue;
+      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      const currentTime = anim.currentTime;
+      if (typeof currentTime !== 'number') continue;
+      const timing =
+        anim.effect && typeof anim.effect.getComputedTiming === 'function'
+          ? anim.effect.getComputedTiming()
+          : null;
+      const end = timing ? Number(timing.endTime) : NaN;
+      const forward = !(Number(anim.playbackRate) < 0);
+      anim.currentTime = Number.isFinite(end) && forward ? end : 0;
+      moved.push({ anim, currentTime });
+    } catch {}
+  }
+  return {
+    count: moved.length,
+    restore() {
+      for (const { anim, currentTime } of moved) {
+        try {
+          anim.currentTime = currentTime;
+        } catch {}
+      }
+    }
+  };
+});
+const runCoreSettled = (function runCoreSettled(
   pageUrl,
   contextSelector,
   engineOptions,
@@ -25376,6 +25421,39 @@ const runCore = (function runCore(
     rulesResults,
     overriddenBuiltinIds
   };
+});
+const runCore = (function runCore(
+  pageUrl,
+  contextSelector,
+  engineOptions,
+  runOnly,
+  CHECK_DEFS,
+  RULE_IMPLS,
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  COMPOSITE_RULES
+) {
+  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  try {
+    const result = runCoreSettled(
+      pageUrl,
+      contextSelector,
+      engineOptions,
+      runOnly,
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+    try {
+      const env = result && result.engine && result.engine.environment;
+      if (env && env.layout) env.animationsSettled = settled.count;
+    } catch {}
+    return result;
+  } finally {
+    settled.restore();
+  }
 });
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by
@@ -61129,6 +61207,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const clipped = [];
   const partly = [];
+  const moving = [];
   const overlaps = [];
   let textCount = 0;
 
@@ -61282,6 +61361,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } catch {}
     }
 
+    // Whether an element from `from` up to (not including) `stop` is moved
+    // by an animation that repeats for ever: a marquee or a ticker. Its text
+    // passes through the clipping box and comes back, so one frame can't
+    // tell whether it is lost. The engine holds such an animation at its
+    // start for the scan (see settleAnimations). An animation that only
+    // fades or recolours (a blinking cursor) moves nothing and doesn't count.
+    // Property names as getKeyframes() spells them (camelCase); a keyframe's
+    // own `offset`, `easing` and `composite` are not properties.
+    const MOVING_PROPS =
+      /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
+    function isMovedForEver(from, stop) {
+      for (let el = from; el && el !== stop; el = el.parentElement) {
+        let animations;
+        try {
+          animations = typeof el.getAnimations === 'function' ? el.getAnimations() : [];
+        } catch {
+          animations = [];
+        }
+        for (const a of animations) {
+          try {
+            if (a.playState !== 'running' || !a.effect) continue;
+            if (a.effect.getComputedTiming().iterations !== Infinity) continue;
+            const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
+            const moves = frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)));
+            if (moves) return true;
+          } catch {}
+        }
+      }
+      return false;
+    }
+
     // How far a line sits outside a box, along the axes the box clips.
     function outside(line, box, c) {
       const dy = c.y ? Math.max(0, box.top - line.top, line.bottom - box.bottom) : 0;
@@ -61320,7 +61430,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (worst) {
           reportedClip.add(c.el);
-          (worst.lost ? clipped : partly).push({
+          const list = isMovedForEver(n.parentElement, c.el)
+            ? moving
+            : worst.lost
+              ? clipped
+              : partly;
+          list.push({
             el: c.el,
             text: textOf(n.parentElement),
             metrics: {
@@ -61419,6 +61534,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
+    TEXT_CLIPPED_MOVING: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
+      hint: 'Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).',
+      key: 'cantTell_clippedMoving',
+      needed: 'Whether the moving text can still be read in full with the spacing applied.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -61464,7 +61586,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const at = { viewportWidth: String(viewport && viewport.width) };
   for (const [reasonCode, list, uncertaintyCode] of [
     ['TEXT_CLIPPED', clipped],
-    ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required']
+    ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
+    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required']
   ]) {
     for (const f of list) {
       const { text, metrics, container } = f;
@@ -63102,6 +63225,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -63950,6 +64075,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -64798,6 +64925,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Compruebe con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -65646,6 +65775,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
     "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -66494,6 +66625,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください (WCAG 1.4.12)。動くコンテンツには一時停止する手段も必要です (WCAG 2.2.2)。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
     "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -76713,7 +76846,42 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   return env;
 });
 
-const runCore = (function runCore(
+const settleAnimations = (function settleAnimations(doc) {
+  let animations = [];
+  try {
+    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+  } catch {
+    animations = [];
+  }
+  const moved = [];
+  for (const anim of animations) {
+    try {
+      if (!anim || anim.playState !== 'running') continue;
+      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      const currentTime = anim.currentTime;
+      if (typeof currentTime !== 'number') continue;
+      const timing =
+        anim.effect && typeof anim.effect.getComputedTiming === 'function'
+          ? anim.effect.getComputedTiming()
+          : null;
+      const end = timing ? Number(timing.endTime) : NaN;
+      const forward = !(Number(anim.playbackRate) < 0);
+      anim.currentTime = Number.isFinite(end) && forward ? end : 0;
+      moved.push({ anim, currentTime });
+    } catch {}
+  }
+  return {
+    count: moved.length,
+    restore() {
+      for (const { anim, currentTime } of moved) {
+        try {
+          anim.currentTime = currentTime;
+        } catch {}
+      }
+    }
+  };
+});
+const runCoreSettled = (function runCoreSettled(
   pageUrl,
   contextSelector,
   engineOptions,
@@ -77394,6 +77562,39 @@ const runCore = (function runCore(
     rulesResults,
     overriddenBuiltinIds
   };
+});
+const runCore = (function runCore(
+  pageUrl,
+  contextSelector,
+  engineOptions,
+  runOnly,
+  CHECK_DEFS,
+  RULE_IMPLS,
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  COMPOSITE_RULES
+) {
+  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  try {
+    const result = runCoreSettled(
+      pageUrl,
+      contextSelector,
+      engineOptions,
+      runOnly,
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+    try {
+      const env = result && result.engine && result.engine.environment;
+      if (env && env.layout) env.animationsSettled = settled.count;
+    } catch {}
+    return result;
+  } finally {
+    settled.restore();
+  }
 });
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by

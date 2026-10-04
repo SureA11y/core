@@ -507,7 +507,97 @@ function readRenderingEnvironment(win, doc) {
   return env;
 }
 
+/**
+ * Moves each running animation and transition to a fixed point for the scan,
+ * then back to exactly where it was.
+ *
+ * A scan reads the page as it is at that moment, so a rule measuring a
+ * fade-in or a marquee gave another outcome on every run: text measured at
+ * 20% opacity failed contrast, and text-spacing-content-loss compared boxes
+ * that had scrolled. A finite animation is moved to its end, the state the
+ * page settles in; an infinite one (a marquee, a blinking cursor) to its
+ * start, a state it returns to. Neither can be told apart from the page at
+ * rest any other way, and the result no longer depends on when the scan ran.
+ *
+ * Only currentTime is set: a scan is one synchronous task, during which no
+ * animation's time advances, so setting it back afterwards restores the
+ * animation exactly, and the browser never paints the moved state. pause()
+ * and play() are not used, since play() on a CSS animation would pin it as
+ * playing over a later animation-play-state from the page. Animations on
+ * another timeline (scroll-driven) are not time-based and are left alone.
+ * Without getAnimations (jsdom) there is nothing to settle.
+ */
+function settleAnimations(doc) {
+  let animations = [];
+  try {
+    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+  } catch {
+    animations = [];
+  }
+  const moved = [];
+  for (const anim of animations) {
+    try {
+      if (!anim || anim.playState !== 'running') continue;
+      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      const currentTime = anim.currentTime;
+      if (typeof currentTime !== 'number') continue;
+      const timing =
+        anim.effect && typeof anim.effect.getComputedTiming === 'function'
+          ? anim.effect.getComputedTiming()
+          : null;
+      const end = timing ? Number(timing.endTime) : NaN;
+      const forward = !(Number(anim.playbackRate) < 0);
+      anim.currentTime = Number.isFinite(end) && forward ? end : 0;
+      moved.push({ anim, currentTime });
+    } catch {}
+  }
+  return {
+    count: moved.length,
+    restore() {
+      for (const { anim, currentTime } of moved) {
+        try {
+          anim.currentTime = currentTime;
+        } catch {}
+      }
+    }
+  };
+}
+
 function runCore(
+  pageUrl,
+  contextSelector,
+  engineOptions,
+  runOnly,
+  CHECK_DEFS,
+  RULE_IMPLS,
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  COMPOSITE_RULES
+) {
+  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  try {
+    const result = runCoreSettled(
+      pageUrl,
+      contextSelector,
+      engineOptions,
+      runOnly,
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+    try {
+      const env = result && result.engine && result.engine.environment;
+      if (env && env.layout) env.animationsSettled = settled.count;
+    } catch {}
+    return result;
+  } finally {
+    settled.restore();
+  }
+}
+
+function runCoreSettled(
   pageUrl,
   contextSelector,
   engineOptions,
@@ -1190,4 +1280,10 @@ function runCore(
   };
 }
 
-module.exports = { runCore, rollupCompositeResults, readRenderingEnvironment };
+module.exports = {
+  runCore,
+  runCoreSettled,
+  settleAnimations,
+  rollupCompositeResults,
+  readRenderingEnvironment
+};
