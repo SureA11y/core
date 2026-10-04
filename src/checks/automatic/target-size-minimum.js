@@ -47,6 +47,11 @@
  *     out in, in CSS pixels. A responsive page can size or place a target
  *     differently at another width.
  * @implementation-notes
+ * - Under a scoped scan (contextSelector), only targets in scope are
+ *   judged, but their neighbours are taken from the whole document: the
+ *   spacing exception depends on what the page puts next to a target, not
+ *   on where the scan's scope ends. A neighbour inside a shadow root outside
+ *   the scope is not found.
  * Notes (engine intent):
  * - This rule is DOM-based and measures pointer hit regions available to sighted pointer users.
  * - Elements can be "pointer-operable" even if excluded from the accessibility tree (e.g. aria-hidden="true").
@@ -448,21 +453,49 @@ function runInPage(ctx) {
   }
 
   // Precompute geometry for applicable elements.
-  const items = [];
-  for (const el of applicable) {
+  function measure(el) {
     const r = getBcr(el);
-    if (!r) continue;
+    if (!r) return null;
     // Guard against nonsense
     const w = Number(r.width);
     const h = Number(r.height);
-    if (!Number.isFinite(w) || !Number.isFinite(h)) continue;
-    if (w <= 0 || h <= 0) continue;
-
-    items.push({
+    if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
+    if (w <= 0 || h <= 0) return null;
+    return {
       el,
       rect: { left: r.left, top: r.top, width: w, height: h, right: r.left + w, bottom: r.top + h },
       center: centerOfRect({ left: r.left, top: r.top, width: w, height: h })
-    });
+    };
+  }
+  const items = [];
+  for (const el of applicable) {
+    const it = measure(el);
+    if (it) items.push(it);
+  }
+
+  // Under a scoped scan the targets judged are the ones in scope, but their
+  // neighbours are whatever the page puts next to them: a target crowded by
+  // a button just outside the scope fails the spacing exception all the
+  // same. So the neighbours come from the whole document (light DOM; a
+  // neighbour in a shadow root outside the scope is not found).
+  const neighbours = items.slice();
+  if (
+    helpers &&
+    typeof helpers.isWholeDocumentScope === 'function' &&
+    !helpers.isWholeDocumentScope()
+  ) {
+    const inScope = new Set(applicable);
+    let all;
+    try {
+      all = Array.from(document.querySelectorAll(CANDIDATE_SELECTOR));
+    } catch {
+      all = [];
+    }
+    for (const el of all) {
+      if (inScope.has(el) || !isPointerReachable(el)) continue;
+      const it = measure(el);
+      if (it) neighbours.push(it);
+    }
   }
 
   if (items.length === 0) {
@@ -472,7 +505,7 @@ function runInPage(ctx) {
 
   const undersized = items.filter((it) => it.rect.width < MIN || it.rect.height < MIN);
 
-  // Spatial grid over ALL items, cell size = MIN (24px), so hasSpacingConflict's
+  // Spatial grid over every neighbour, cell size = MIN (24px), so hasSpacingConflict's
   // proximity check below doesn't have to compare every undersized target
   // against every other item -- an O(items^2) cost that dominates real-browser
   // (not jsdom -- see this rule's own perf note further down) runtime on a
@@ -488,7 +521,7 @@ function runInPage(ctx) {
   function cellKeyFor(cx, cy) {
     return cx + ',' + cy;
   }
-  for (const it of items) {
+  for (const it of neighbours) {
     const cx = Math.floor(it.center.cx / MIN);
     const cy = Math.floor(it.center.cy / MIN);
     const key = cellKeyFor(cx, cy);
