@@ -392,6 +392,28 @@ export function getChecksCatalog(engineOptions?: EngineOptions | null): CheckCat
 /** Every composite rule the given options would make available. */
 export function getRulesCatalog(engineOptions?: EngineOptions | null): RuleCatalogEntry[];
 
+/** How far one shipped translation covers the English dictionary. */
+export interface LocaleCoverage {
+  locale: string;
+  /** English keys the locale is measured against. */
+  total: number;
+  /** Keys whose value differs from English. */
+  translated: number;
+  /** Keys the locale lacks; they show in English. */
+  missing: number;
+  /** Keys the locale has that English does not. */
+  orphaned: string[];
+  /** translated / total, as a percentage with one decimal. */
+  percent: number;
+}
+
+/** Translation coverage of every locale the package ships, against English. */
+export function getLocaleCoverage(): {
+  sourceLocale: 'en';
+  totalKeys: number;
+  locales: LocaleCoverage[];
+};
+
 // ---- Exported but internal ----
 // Reachable, but not part of the supported API (docs/API_STABILITY.md), and
 // free to change in a minor release. Typed loosely on purpose.

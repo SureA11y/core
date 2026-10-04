@@ -11,36 +11,9 @@ function listLocaleNames(i18nDir) {
     .map((f) => f.replace(/\.json$/, ''));
 }
 
-// Coverage is a heuristic: a key is counted as "translated" when its value
-// differs from the English source. A locale seeded by i18n-scaffold.js starts
-// with every value identical to English, so this reports 0% until real
-// translations replace the placeholders. A handful of strings may legitimately
-// stay identical across languages (e.g. a bare "ARIA"), so this slightly
-// undercounts in practice, so treat it as a progress signal, not a precise metric.
-function computeLocaleReport(enDict, localeDict) {
-  const enKeys = Object.keys(enDict);
-  const localeKeySet = new Set(Object.keys(localeDict));
-
-  let translated = 0;
-  let missing = 0;
-
-  for (const key of enKeys) {
-    if (!localeKeySet.has(key)) {
-      missing += 1;
-      continue;
-    }
-    if (localeDict[key] !== enDict[key]) {
-      translated += 1;
-    }
-  }
-
-  const orphaned = Object.keys(localeDict).filter((key) => !(key in enDict));
-
-  const total = enKeys.length;
-  const percent = total === 0 ? 0 : Math.round((translated / total) * 1000) / 10;
-
-  return { total, translated, missing, orphaned, percent };
-}
+// How translated keys are counted: see src/i18n-coverage.js, which the
+// engine's getLocaleCoverage() shares.
+const { computeLocaleReport } = require('../src/i18n-coverage');
 
 // One row per locale a dictionary folder has, against that folder's en.json.
 function reportFor(i18nDir) {
