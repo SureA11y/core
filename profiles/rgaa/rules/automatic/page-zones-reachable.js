@@ -319,7 +319,7 @@ function runInPage(ctx) {
     }
   };
   const HINT =
-    'Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role="search" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).';
+    'An area already reachable by a heading that says what it holds, a skip or quick-access link, or a button that hides it meets RGAA 12.6.1 as it is. Otherwise give it the landmark that matches it: <header>, <nav>, <main>, <footer>, or role="search" on the search form.';
 
   const questions = [];
   function ask(reasonCode, el, hint, zone) {

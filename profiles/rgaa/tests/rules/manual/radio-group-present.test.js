@@ -45,8 +45,20 @@ test(`${RULE_ID}: a set in one fieldset, role="group" or role="radiogroup" is no
     `<div role="group" aria-label="Colour">${set}</div>`,
     `<div role="radiogroup" aria-label="Colour"><div>${set}</div></div>`
   ]) {
-    assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+    assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
   }
+});
+
+// A set can reach past the scanned part of the page, so a scoped scan holds
+// back the pass (ENGINE_OPTIONS.md, "What a scoped result means").
+test(`${RULE_ID}: under a scoped scan, a grouped set is notApplicable rather than pass`, () => {
+  const body = `<main><fieldset><legend>Colour</legend>${radio('c', 'Red') + radio('c', 'Blue')}</fieldset></main>`;
+  assertRule(
+    runa11yCoreOnHtml(page(body), { ...RUN, contextSelector: 'main' }),
+    RULE_ID,
+    'notApplicable',
+    { maxOccurrences: 0 }
+  );
 });
 
 test(`${RULE_ID}: a set split across two groups is flagged`, () => {
@@ -68,7 +80,7 @@ test(`${RULE_ID}: an outer fieldset or group holding the whole set is enough`, (
       `<fieldset><legend>B</legend>${radio('s', 'Large')}</fieldset></div>`
   ]) {
     for (const options of [RUN, { engineOptions: { profile: 'rgaa-4.1.2' } }]) {
-      assertRule(runa11yCoreOnHtml(page(body), options), RULE_ID, 'notApplicable', {
+      assertRule(runa11yCoreOnHtml(page(body), options), RULE_ID, 'pass', {
         maxOccurrences: 0
       });
     }

@@ -18632,7 +18632,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link führt zu ihm: Prüfen Sie, dass der Link sichtbar ist, zumindest wenn er den Fokus erhält.",
     "pageZonesReachable_summary_cantTell_none": "Dieser Bereich („{{hint}}“) hat weder eine Landmark-Rolle noch eine einleitende Überschrift noch einen Link oder eine Schaltfläche, um ihn zu erreichen, zu überspringen oder zu verbergen.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "Die Seite hat keine Haupt-Landmark (<main> oder role=\"main\"), daher ließ sich nicht prüfen, wie der Hauptinhalt erreicht wird.",
-    "pageZonesReachable_hint_cantTell": "Geben Sie jedem Bereich die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular. Andernfalls geben Sie ihm eine Überschrift, die sagt, was er enthält, oder einen Sprung- oder Schnellzugriffslink (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Ein Bereich, der schon über eine Überschrift, die sagt, was er enthält, über einen Sprung- oder Schnellzugriffslink oder über eine Schaltfläche, die ihn ausblendet, erreichbar ist, erfüllt RGAA 12.6.1 so, wie er ist. Andernfalls geben Sie ihm die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular.",
     "contrastMinimumRgaa_title": "Text erfüllt den Mindestfarbkontrast nach RGAA",
     "contrastMinimumRgaa_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 hat, oder 3:1 bei Text ab 24px und fettem Text ab 18,5px (RGAA 3.2), sofern der Kontrast aus dem CSS berechenbar ist.",
     "contrastMinimumRgaa_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}Text ab 24px oder fetter Text ab 18,5px{{/isLargeText}}{{^isLargeText}}Text unter 24px oder fetter Text unter 18,5px{{/isLargeText}}).",
@@ -19068,7 +19068,7 @@ const I18N = {
     "radioGroupPresent_title": "Radiobuttons mit gleichem Namen sind gruppiert",
     "radioGroupPresent_description": "Markiert Radiobuttons mit gleichem Namen, die nicht in einem gemeinsamen Fieldset, role=\"group\" oder role=\"radiogroup\" liegen, damit eine Person entscheidet, ob sie gruppiert werden müssen.",
     "radioGroupPresent_summary_cantTell": "Die {{count}} Radiobuttons mit dem Namen „{{name}}“ sind nicht in einem Fieldset oder einer Gruppe zusammengefasst.",
-    "radioGroupPresent_hint_cantTell": "Legen Sie die Radiobuttons in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage, die sie beantworten, mit ihnen angesagt wird.",
+    "radioGroupPresent_hint_cantTell": "Wenn die Schaltflächen eine Frage beantworten, die ihre eigenen Beschriftungen nicht nennen, legen Sie sie in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage mit ihnen angesagt wird. Eine Gruppe, deren Beschriftungen schon sagen, worauf sie antworten, etwa ein einzelnes Ja/Nein-Paar, braucht unter Umständen keine Gruppierung (RGAA 11.5.1).",
     "fakeList_title": "Als Liste gestalteter Text verwendet Listen-Markup",
     "fakeList_description": "Markiert aufeinanderfolgende Zeilen oder Absätze, die mit Aufzählungszeichen oder fortlaufenden Nummern beginnen, aber nicht als Liste ausgezeichnet sind, damit eine Person entscheidet, ob es eine Liste ist.",
     "fakeList_summary_cantTell_unordered": "Diese {{items}} Zeilen beginnen mit demselben Aufzählungszeichen, sind aber nicht als Liste ausgezeichnet.",
@@ -19082,7 +19082,7 @@ const I18N = {
     "imageAltLong_title": "Textalternativen von Bildern sind kurz",
     "imageAltLong_description": "Markiert ein Bild, dessen Textalternative länger als 80 Zeichen ist, damit eine Person entscheidet, ob sie kurz und prägnant genug ist.",
     "imageAltLong_summary_cantTell": "Die Textalternative dieses Bildes ist {{length}} Zeichen lang.",
-    "imageAltLong_hint_cantTell": "Beschränken Sie die Textalternative auf wenige Worte zu dem, was das Bild im Kontext vermittelt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon.",
+    "imageAltLong_hint_cantTell": "Prüfen Sie, ob die Alternative für das, was das Bild im Kontext vermittelt, kurz und prägnant ist. Eine längere kann in den Sonderfällen richtig sein, die RGAA 1.3.9 zulässt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon (RGAA 1.8).",
     "complexTableSummary_title": "Komplexe Datentabellen haben eine Zusammenfassung",
     "complexTableSummary_description": "Markiert eine Datentabelle, deren Kopfzellen nicht alle in der ersten Zeile oder Spalte liegen oder nur für eine Gruppe von Zeilen oder Spalten gelten und die kein aria-describedby (und vor HTML5 kein summary-Attribut) hat, damit eine Person prüft, ob eine Zusammenfassung vorhanden ist.",
     "complexTableSummary_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle, und nichts weist auf eine Zusammenfassung ihres Aufbaus hin.",
@@ -20031,7 +20031,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "This area (\"{{hint}}\") has no landmark role. A same-page link leads to it: check that the link is visible, at least when it takes focus.",
     "pageZonesReachable_summary_cantTell_none": "This area (\"{{hint}}\") has no landmark role, no heading opening it, and no link or button to reach, skip or hide it.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "The page has no main landmark (<main> or role=\"main\"), so how the main content can be reached could not be checked.",
-    "pageZonesReachable_hint_cantTell": "Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "An area already reachable by a heading that says what it holds, a skip or quick-access link, or a button that hides it meets RGAA 12.6.1 as it is. Otherwise give it the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form.",
     "contrastMinimumRgaa_title": "Text meets RGAA minimum color contrast",
     "contrastMinimumRgaa_description": "Checks that visible text has a contrast ratio of at least 4.5:1, or 3:1 for text of 24px or more and bold text of 18.5px or more (RGAA 3.2), when contrast is computable from CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}text of 24px or more, or bold text of 18.5px or more{{/isLargeText}}{{^isLargeText}}text below 24px, or bold text below 18.5px{{/isLargeText}}).",
@@ -20467,7 +20467,7 @@ const I18N = {
     "radioGroupPresent_title": "Radio buttons sharing a name are grouped",
     "radioGroupPresent_description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
     "radioGroupPresent_summary_cantTell": "The {{count}} radio buttons named \"{{name}}\" are not grouped in one fieldset or group.",
-    "radioGroupPresent_hint_cantTell": "Put the radio buttons in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question they answer is announced with them.",
+    "radioGroupPresent_hint_cantTell": "If the buttons answer a question their own labels don't state, put them in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question is announced with them. A set whose labels already say what they answer, such as a lone yes/no pair, may need no group (RGAA 11.5.1).",
     "fakeList_title": "Text laid out as a list uses list markup",
     "fakeList_description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
     "fakeList_summary_cantTell_unordered": "These {{items}} lines start with the same bullet but are not marked up as a list.",
@@ -20481,7 +20481,7 @@ const I18N = {
     "imageAltLong_title": "Text alternatives of images are short",
     "imageAltLong_description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
     "imageAltLong_summary_cantTell": "This image's text alternative is {{length}} characters long.",
-    "imageAltLong_hint_cantTell": "Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.",
+    "imageAltLong_hint_cantTell": "Check that the alternative is short and concise for what the image conveys in context. A longer one can be right in the particular cases RGAA 1.3.9 allows. Put a detailed description in a long description next to the image or linked from it (RGAA 1.8).",
     "complexTableSummary_title": "Complex data tables have a summary",
     "complexTableSummary_description": "Flags a data table whose headers are not all in the first row or column, or head only a group of rows or columns, and that has no aria-describedby (nor, before HTML5, a summary attribute), for a person to check that a summary is available.",
     "complexTableSummary_summary_cantTell": "This table looks like a complex data table, and nothing marks a summary of its structure.",
@@ -21430,7 +21430,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno lleva a ella: compruebe que el enlace es visible, al menos cuando recibe el foco.",
     "pageZonesReachable_summary_cantTell_none": "Esta zona («{{hint}}») no tiene rol landmark, ni encabezado que la abra, ni enlace o botón para alcanzarla, saltarla u ocultarla.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "La página no tiene landmark principal (<main> o role=\"main\"), así que no se pudo comprobar cómo se llega al contenido principal.",
-    "pageZonesReachable_hint_cantTell": "Dé a cada zona el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda. Si no, dele un encabezado que diga lo que contiene, o un enlace de salto o de acceso rápido (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Una zona a la que ya se llega por un encabezado que dice lo que contiene, por un enlace de salto o de acceso rápido, o por un botón que la oculta cumple el RGAA 12.6.1 tal como está. Si no, dele el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda.",
     "contrastMinimumRgaa_title": "El texto cumple el contraste mínimo de color de RGAA",
     "contrastMinimumRgaa_description": "Comprueba que el texto visible tiene una relación de contraste de al menos 4,5:1, o 3:1 para el texto de 24px o más y el texto en negrita de 18,5px o más (RGAA 3.2), cuando el contraste se puede calcular a partir del CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto de 24px o más, o texto en negrita de 18,5px o más{{/isLargeText}}{{^isLargeText}}texto de menos de 24px, o texto en negrita de menos de 18,5px{{/isLargeText}}).",
@@ -21866,7 +21866,7 @@ const I18N = {
     "radioGroupPresent_title": "Los botones de opción con el mismo nombre están agrupados",
     "radioGroupPresent_description": "Señala un conjunto de botones de opción con el mismo nombre que no está dentro de un mismo fieldset, role=\"group\" o role=\"radiogroup\", para que una persona decida si necesita agruparse.",
     "radioGroupPresent_summary_cantTell": "Los {{count}} botones de opción llamados \"{{name}}\" no están agrupados en un mismo fieldset o grupo.",
-    "radioGroupPresent_hint_cantTell": "Colocar los botones de opción en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta que responden se anuncie con ellos.",
+    "radioGroupPresent_hint_cantTell": "Si los botones responden a una pregunta que sus propias etiquetas no dicen, colocarlos en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta se anuncie con ellos. Un conjunto cuyas etiquetas ya dicen a qué responde, como un simple par sí/no, puede no necesitar agrupación (RGAA 11.5.1).",
     "fakeList_title": "El texto presentado como lista usa marcado de lista",
     "fakeList_description": "Señala líneas o párrafos consecutivos que empiezan con viñetas o números consecutivos pero no están marcados como lista, para que una persona decida si lo son.",
     "fakeList_summary_cantTell_unordered": "Estas {{items}} líneas empiezan con la misma viñeta pero no están marcadas como lista.",
@@ -21880,7 +21880,7 @@ const I18N = {
     "imageAltLong_title": "Las alternativas textuales de las imágenes son cortas",
     "imageAltLong_description": "Señala una imagen cuya alternativa textual supera los 80 caracteres, para que una persona decida si es lo bastante corta y concisa.",
     "imageAltLong_summary_cantTell": "La alternativa textual de esta imagen tiene {{length}} caracteres.",
-    "imageAltLong_hint_cantTell": "Limitar la alternativa textual a lo que la imagen transmite en su contexto, en pocas palabras. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella.",
+    "imageAltLong_hint_cantTell": "Comprobar que la alternativa es corta y concisa para lo que la imagen transmite en su contexto. Una más larga puede ser adecuada en los casos particulares que admite el RGAA 1.3.9. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella (RGAA 1.8).",
     "complexTableSummary_title": "Las tablas de datos complejas tienen un resumen",
     "complexTableSummary_description": "Señala una tabla de datos cuyos encabezados no están todos en la primera fila o columna, o solo encabezan un grupo de filas o columnas, y que no tiene aria-describedby (ni, antes de HTML5, un atributo summary), para que una persona compruebe que hay un resumen.",
     "complexTableSummary_summary_cantTell": "Esta tabla parece una tabla de datos compleja, y nada indica un resumen de su estructura.",
@@ -22829,7 +22829,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne y mène : vérifiez que ce lien est visible, au moins à la prise de focus.",
     "pageZonesReachable_summary_cantTell_none": "Cette zone (« {{hint}} ») n’a ni rôle landmark, ni titre qui l’ouvre, ni lien ou bouton pour l’atteindre, l’éviter ou la masquer.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "La page n’a pas de landmark principal (<main> ou role=\"main\") : impossible de vérifier comment atteindre le contenu principal.",
-    "pageZonesReachable_hint_cantTell": "Donnez à chaque zone le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche. À défaut, donnez-lui un titre qui dit ce qu’elle contient, ou un lien d’évitement ou d’accès rapide (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Une zone déjà atteignable par un titre qui dit ce qu’elle contient, par un lien d’évitement ou d’accès rapide, ou par un bouton qui la masque respecte le RGAA 12.6.1 telle quelle. Sinon, donnez-lui le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche.",
     "contrastMinimumRgaa_title": "Le texte respecte le contraste minimum du RGAA",
     "contrastMinimumRgaa_description": "Vérifie que le texte visible a un rapport de contraste d’au moins 4.5:1, ou 3:1 pour le texte d’une taille restituée de 24px ou plus et le texte en gras de 18,5px ou plus (RGAA 3.2), lorsque le contraste peut être calculé à partir des CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le rapport de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de 24px ou plus, ou texte en gras de 18,5px ou plus{{/isLargeText}}{{^isLargeText}}texte de moins de 24px, ou texte en gras de moins de 18,5px{{/isLargeText}}).",
@@ -23265,7 +23265,7 @@ const I18N = {
     "radioGroupPresent_title": "Les boutons radio partageant un nom sont regroupés",
     "radioGroupPresent_description": "Signale un ensemble de boutons radio de même nom qui n’est pas dans un même fieldset, role=\"group\" ou role=\"radiogroup\", pour qu’une personne décide s’il doit être regroupé.",
     "radioGroupPresent_summary_cantTell": "Les {{count}} boutons radio nommés « {{name}} » ne sont pas regroupés dans un même fieldset ou groupe.",
-    "radioGroupPresent_hint_cantTell": "Placez les boutons radio dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question à laquelle ils répondent soit annoncée avec eux.",
+    "radioGroupPresent_hint_cantTell": "Si les boutons répondent à une question que leurs propres étiquettes ne disent pas, placez-les dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question soit annoncée avec eux. Un ensemble dont les étiquettes disent déjà à quoi il répond, comme un simple couple oui/non, peut se passer de regroupement (RGAA 11.5.1).",
     "fakeList_title": "Le texte présenté en liste utilise un balisage de liste",
     "fakeList_description": "Signale des lignes ou paragraphes consécutifs commençant par des puces ou des numéros consécutifs mais non balisés en liste, pour qu’une personne décide s’il s’agit d’une liste.",
     "fakeList_summary_cantTell_unordered": "Ces {{items}} lignes commencent par la même puce mais ne sont pas balisées en liste.",
@@ -23279,7 +23279,7 @@ const I18N = {
     "imageAltLong_title": "Les alternatives textuelles des images sont courtes",
     "imageAltLong_description": "Signale une image dont l’alternative textuelle dépasse 80 caractères, pour qu’une personne décide si elle est assez courte et concise.",
     "imageAltLong_summary_cantTell": "L’alternative textuelle de cette image fait {{length}} caractères.",
-    "imageAltLong_hint_cantTell": "Limitez l’alternative textuelle à ce que l’image transmet dans son contexte, en quelques mots. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle.",
+    "imageAltLong_hint_cantTell": "Vérifiez que l’alternative est courte et concise pour ce que l’image transmet dans son contexte. Une alternative plus longue peut convenir dans les cas particuliers que prévoit le RGAA 1.3.9. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle (RGAA 1.8).",
     "complexTableSummary_title": "Les tableaux de données complexes ont un résumé",
     "complexTableSummary_description": "Signale un tableau de données dont les en-têtes ne sont pas tous dans la première ligne ou colonne, ou ne portent que sur un groupe de lignes ou de colonnes, sans aria-describedby (ni, avant HTML5, d’attribut summary), pour qu’une personne vérifie qu’un résumé est disponible.",
     "complexTableSummary_summary_cantTell": "Ce tableau semble être un tableau de données complexe, et rien n’indique un résumé de sa structure.",
@@ -24228,7 +24228,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "この領域（「{{hint}}」）にはランドマークロールがありません。ページ内リンクがこの領域へ移動するので、そのリンクが少なくともフォーカス時に見えるか確認してください。",
     "pageZonesReachable_summary_cantTell_none": "この領域（「{{hint}}」）には、ランドマークロールも、冒頭の見出しも、到達・スキップ・非表示のためのリンクやボタンもありません。",
     "pageZonesReachable_summary_cantTell_mainNotFound": "ページにメインのランドマーク（<main> または role=\"main\"）がないため、メインコンテンツへの到達方法を確認できませんでした。",
-    "pageZonesReachable_hint_cantTell": "各領域に対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。そうでなければ、内容を表す見出しか、スキップリンクやクイックアクセスリンクを付けてください（RGAA 12.6.1）。",
+    "pageZonesReachable_hint_cantTell": "内容を表す見出し、スキップリンクやクイックアクセスリンク、または領域を隠すボタンでたどり着ける領域は、そのままで RGAA 12.6.1 を満たします。そうでなければ、対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。",
     "contrastMinimumRgaa_title": "テキストが RGAA の最低限の色のコントラストを満たしている",
     "contrastMinimumRgaa_description": "CSS からコントラストを計算できる場合に、表示されるテキストのコントラスト比が 4.5:1 以上 (24px 以上のテキストと 18.5px 以上の太字テキストは 3:1 以上) であるかを確認します (RGAA 3.2)。",
     "contrastMinimumRgaa_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}24px 以上のテキスト、または 18.5px 以上の太字テキスト{{/isLargeText}}{{^isLargeText}}24px 未満のテキスト、または 18.5px 未満の太字テキスト{{/isLargeText}})。",
@@ -24664,7 +24664,7 @@ const I18N = {
     "radioGroupPresent_title": "同じ name のラジオボタンがグループ化されている",
     "radioGroupPresent_description": "同じ name のラジオボタンの組が 1 つの fieldset、role=\"group\"、role=\"radiogroup\" に入っていない場合に示し、グループ化が必要かを人が判断できるようにします。",
     "radioGroupPresent_summary_cantTell": "name が「{{name}}」の {{count}} 個のラジオボタンが、1 つの fieldset またはグループにまとめられていません。",
-    "radioGroupPresent_hint_cantTell": "ラジオボタンを <legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、答える質問が一緒に読み上げられるようにしてください。",
+    "radioGroupPresent_hint_cantTell": "ボタンが答える質問がそれぞれのラベルで示されていない場合は、<legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、質問が一緒に読み上げられるようにしてください。単独の「はい／いいえ」のように、ラベルだけで何に答えるかわかる組はグループ化が不要な場合があります（RGAA 11.5.1）。",
     "fakeList_title": "リストとして並べたテキストにリストのマークアップを使う",
     "fakeList_description": "箇条記号や連番で始まる連続した行や段落がリストとしてマークアップされていない場合に示し、リストかどうかを人が判断できるようにします。",
     "fakeList_summary_cantTell_unordered": "この {{items}} 行は同じ箇条記号で始まっていますが、リストとしてマークアップされていません。",
@@ -24678,7 +24678,7 @@ const I18N = {
     "imageAltLong_title": "画像の代替テキストが短い",
     "imageAltLong_description": "代替テキストが 80 文字を超える画像を示し、十分に短く簡潔かを人が判断できるようにします。",
     "imageAltLong_summary_cantTell": "この画像の代替テキストは {{length}} 文字あります。",
-    "imageAltLong_hint_cantTell": "代替テキストは、文脈の中で画像が伝える内容を数語で表してください。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください。",
+    "imageAltLong_hint_cantTell": "代替テキストが、文脈の中で画像が伝える内容に対して短く簡潔か確認してください。RGAA 1.3.9 が認める特別な場合には、より長いものが適切なこともあります。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください（RGAA 1.8）。",
     "complexTableSummary_title": "複雑なデータテーブルに要約がある",
     "complexTableSummary_description": "見出しセルがすべて先頭行または先頭列にあるわけではない、または行や列のグループだけを対象とする見出しを持ち、aria-describedby も (HTML5 より前では summary 属性も) ないデータテーブルを示し、要約があるかを人が確認できるようにします。",
     "complexTableSummary_summary_cantTell": "このテーブルは複雑なデータテーブルのようですが、構造の要約を示すものがありません。",
@@ -65791,8 +65791,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -71820,8 +71823,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -79087,7 +79093,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This image's text alternative is ${text.length} characters long.`,
-        hint: 'Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.',
+        hint: 'Check that the alternative is short and concise for what the image conveys in context. A longer one can be right in the particular cases RGAA 1.3.9 allows. Put a detailed description in a long description next to the image or linked from it (RGAA 1.8).',
         i18n: {
           summaryKey: 'imageAltLong_summary_cantTell',
           hintKey: 'imageAltLong_hint_cantTell',
@@ -79106,8 +79112,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -91118,7 +91127,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
   const HINT =
-    'Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role="search" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).';
+    'An area already reachable by a heading that says what it holds, a skip or quick-access link, or a button that hides it meets RGAA 12.6.1 as it is. Otherwise give it the landmark that matches it: <header>, <nav>, <main>, <footer>, or role="search" on the search form.';
 
   const questions = [];
   function ask(reasonCode, el, hint, zone) {
@@ -92081,7 +92090,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(
       helpers.reportOccurrence(set[0], {
         summary: `The ${set.length} radio buttons named "${name}" are not grouped in one fieldset or group.`,
-        hint: 'Put the radio buttons in a <fieldset> with a <legend>, or in an element with role="radiogroup" and a name, so the question they answer is announced with them.',
+        hint: 'If the buttons answer a question their own labels don\'t state, put them in a <fieldset> with a <legend>, or in an element with role="radiogroup" and a name, so the question is announced with them. A set whose labels already say what they answer, such as a lone yes/no pair, may need no group (RGAA 11.5.1).',
         i18n: {
           summaryKey: 'radioGroupPresent_summary_cantTell',
           hintKey: 'radioGroupPresent_hint_cantTell',
@@ -92095,8 +92104,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
   return {
     ruleId: rule.ruleId,
@@ -102421,7 +102438,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Dieser Bereich („{{hint}}“) hat keine Landmark-Rolle. Ein seiteninterner Link führt zu ihm: Prüfen Sie, dass der Link sichtbar ist, zumindest wenn er den Fokus erhält.",
     "pageZonesReachable_summary_cantTell_none": "Dieser Bereich („{{hint}}“) hat weder eine Landmark-Rolle noch eine einleitende Überschrift noch einen Link oder eine Schaltfläche, um ihn zu erreichen, zu überspringen oder zu verbergen.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "Die Seite hat keine Haupt-Landmark (<main> oder role=\"main\"), daher ließ sich nicht prüfen, wie der Hauptinhalt erreicht wird.",
-    "pageZonesReachable_hint_cantTell": "Geben Sie jedem Bereich die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular. Andernfalls geben Sie ihm eine Überschrift, die sagt, was er enthält, oder einen Sprung- oder Schnellzugriffslink (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Ein Bereich, der schon über eine Überschrift, die sagt, was er enthält, über einen Sprung- oder Schnellzugriffslink oder über eine Schaltfläche, die ihn ausblendet, erreichbar ist, erfüllt RGAA 12.6.1 so, wie er ist. Andernfalls geben Sie ihm die passende Landmark: <header>, <nav>, <main>, <footer> oder role=\"search\" am Suchformular.",
     "contrastMinimumRgaa_title": "Text erfüllt den Mindestfarbkontrast nach RGAA",
     "contrastMinimumRgaa_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 hat, oder 3:1 bei Text ab 24px und fettem Text ab 18,5px (RGAA 3.2), sofern der Kontrast aus dem CSS berechenbar ist.",
     "contrastMinimumRgaa_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}Text ab 24px oder fetter Text ab 18,5px{{/isLargeText}}{{^isLargeText}}Text unter 24px oder fetter Text unter 18,5px{{/isLargeText}}).",
@@ -102857,7 +102874,7 @@ const I18N = {
     "radioGroupPresent_title": "Radiobuttons mit gleichem Namen sind gruppiert",
     "radioGroupPresent_description": "Markiert Radiobuttons mit gleichem Namen, die nicht in einem gemeinsamen Fieldset, role=\"group\" oder role=\"radiogroup\" liegen, damit eine Person entscheidet, ob sie gruppiert werden müssen.",
     "radioGroupPresent_summary_cantTell": "Die {{count}} Radiobuttons mit dem Namen „{{name}}“ sind nicht in einem Fieldset oder einer Gruppe zusammengefasst.",
-    "radioGroupPresent_hint_cantTell": "Legen Sie die Radiobuttons in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage, die sie beantworten, mit ihnen angesagt wird.",
+    "radioGroupPresent_hint_cantTell": "Wenn die Schaltflächen eine Frage beantworten, die ihre eigenen Beschriftungen nicht nennen, legen Sie sie in ein <fieldset> mit <legend> oder in ein Element mit role=\"radiogroup\" und einem Namen, damit die Frage mit ihnen angesagt wird. Eine Gruppe, deren Beschriftungen schon sagen, worauf sie antworten, etwa ein einzelnes Ja/Nein-Paar, braucht unter Umständen keine Gruppierung (RGAA 11.5.1).",
     "fakeList_title": "Als Liste gestalteter Text verwendet Listen-Markup",
     "fakeList_description": "Markiert aufeinanderfolgende Zeilen oder Absätze, die mit Aufzählungszeichen oder fortlaufenden Nummern beginnen, aber nicht als Liste ausgezeichnet sind, damit eine Person entscheidet, ob es eine Liste ist.",
     "fakeList_summary_cantTell_unordered": "Diese {{items}} Zeilen beginnen mit demselben Aufzählungszeichen, sind aber nicht als Liste ausgezeichnet.",
@@ -102871,7 +102888,7 @@ const I18N = {
     "imageAltLong_title": "Textalternativen von Bildern sind kurz",
     "imageAltLong_description": "Markiert ein Bild, dessen Textalternative länger als 80 Zeichen ist, damit eine Person entscheidet, ob sie kurz und prägnant genug ist.",
     "imageAltLong_summary_cantTell": "Die Textalternative dieses Bildes ist {{length}} Zeichen lang.",
-    "imageAltLong_hint_cantTell": "Beschränken Sie die Textalternative auf wenige Worte zu dem, was das Bild im Kontext vermittelt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon.",
+    "imageAltLong_hint_cantTell": "Prüfen Sie, ob die Alternative für das, was das Bild im Kontext vermittelt, kurz und prägnant ist. Eine längere kann in den Sonderfällen richtig sein, die RGAA 1.3.9 zulässt. Eine ausführliche Beschreibung gehört in eine Langbeschreibung neben dem Bild oder verlinkt davon (RGAA 1.8).",
     "complexTableSummary_title": "Komplexe Datentabellen haben eine Zusammenfassung",
     "complexTableSummary_description": "Markiert eine Datentabelle, deren Kopfzellen nicht alle in der ersten Zeile oder Spalte liegen oder nur für eine Gruppe von Zeilen oder Spalten gelten und die kein aria-describedby (und vor HTML5 kein summary-Attribut) hat, damit eine Person prüft, ob eine Zusammenfassung vorhanden ist.",
     "complexTableSummary_summary_cantTell": "Diese Tabelle wirkt wie eine komplexe Datentabelle, und nichts weist auf eine Zusammenfassung ihres Aufbaus hin.",
@@ -103820,7 +103837,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "This area (\"{{hint}}\") has no landmark role. A same-page link leads to it: check that the link is visible, at least when it takes focus.",
     "pageZonesReachable_summary_cantTell_none": "This area (\"{{hint}}\") has no landmark role, no heading opening it, and no link or button to reach, skip or hide it.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "The page has no main landmark (<main> or role=\"main\"), so how the main content can be reached could not be checked.",
-    "pageZonesReachable_hint_cantTell": "Give each area the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form. Otherwise give it a heading that says what it holds, or a skip or quick-access link (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "An area already reachable by a heading that says what it holds, a skip or quick-access link, or a button that hides it meets RGAA 12.6.1 as it is. Otherwise give it the landmark that matches it: <header>, <nav>, <main>, <footer>, or role=\"search\" on the search form.",
     "contrastMinimumRgaa_title": "Text meets RGAA minimum color contrast",
     "contrastMinimumRgaa_description": "Checks that visible text has a contrast ratio of at least 4.5:1, or 3:1 for text of 24px or more and bold text of 18.5px or more (RGAA 3.2), when contrast is computable from CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}text of 24px or more, or bold text of 18.5px or more{{/isLargeText}}{{^isLargeText}}text below 24px, or bold text below 18.5px{{/isLargeText}}).",
@@ -104256,7 +104273,7 @@ const I18N = {
     "radioGroupPresent_title": "Radio buttons sharing a name are grouped",
     "radioGroupPresent_description": "Flags a set of radio buttons with the same name that is not inside one fieldset, role=\"group\" or role=\"radiogroup\", for a person to decide whether it needs grouping.",
     "radioGroupPresent_summary_cantTell": "The {{count}} radio buttons named \"{{name}}\" are not grouped in one fieldset or group.",
-    "radioGroupPresent_hint_cantTell": "Put the radio buttons in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question they answer is announced with them.",
+    "radioGroupPresent_hint_cantTell": "If the buttons answer a question their own labels don't state, put them in a <fieldset> with a <legend>, or in an element with role=\"radiogroup\" and a name, so the question is announced with them. A set whose labels already say what they answer, such as a lone yes/no pair, may need no group (RGAA 11.5.1).",
     "fakeList_title": "Text laid out as a list uses list markup",
     "fakeList_description": "Flags consecutive lines or paragraphs that start with bullets or consecutive numbers but are not marked up as a list, for a person to decide whether they are one.",
     "fakeList_summary_cantTell_unordered": "These {{items}} lines start with the same bullet but are not marked up as a list.",
@@ -104270,7 +104287,7 @@ const I18N = {
     "imageAltLong_title": "Text alternatives of images are short",
     "imageAltLong_description": "Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.",
     "imageAltLong_summary_cantTell": "This image's text alternative is {{length}} characters long.",
-    "imageAltLong_hint_cantTell": "Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.",
+    "imageAltLong_hint_cantTell": "Check that the alternative is short and concise for what the image conveys in context. A longer one can be right in the particular cases RGAA 1.3.9 allows. Put a detailed description in a long description next to the image or linked from it (RGAA 1.8).",
     "complexTableSummary_title": "Complex data tables have a summary",
     "complexTableSummary_description": "Flags a data table whose headers are not all in the first row or column, or head only a group of rows or columns, and that has no aria-describedby (nor, before HTML5, a summary attribute), for a person to check that a summary is available.",
     "complexTableSummary_summary_cantTell": "This table looks like a complex data table, and nothing marks a summary of its structure.",
@@ -105219,7 +105236,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Esta zona («{{hint}}») no tiene rol landmark. Un enlace interno lleva a ella: compruebe que el enlace es visible, al menos cuando recibe el foco.",
     "pageZonesReachable_summary_cantTell_none": "Esta zona («{{hint}}») no tiene rol landmark, ni encabezado que la abra, ni enlace o botón para alcanzarla, saltarla u ocultarla.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "La página no tiene landmark principal (<main> o role=\"main\"), así que no se pudo comprobar cómo se llega al contenido principal.",
-    "pageZonesReachable_hint_cantTell": "Dé a cada zona el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda. Si no, dele un encabezado que diga lo que contiene, o un enlace de salto o de acceso rápido (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Una zona a la que ya se llega por un encabezado que dice lo que contiene, por un enlace de salto o de acceso rápido, o por un botón que la oculta cumple el RGAA 12.6.1 tal como está. Si no, dele el landmark que le corresponde: <header>, <nav>, <main>, <footer>, o role=\"search\" en el formulario de búsqueda.",
     "contrastMinimumRgaa_title": "El texto cumple el contraste mínimo de color de RGAA",
     "contrastMinimumRgaa_description": "Comprueba que el texto visible tiene una relación de contraste de al menos 4,5:1, o 3:1 para el texto de 24px o más y el texto en negrita de 18,5px o más (RGAA 3.2), cuando el contraste se puede calcular a partir del CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto de 24px o más, o texto en negrita de 18,5px o más{{/isLargeText}}{{^isLargeText}}texto de menos de 24px, o texto en negrita de menos de 18,5px{{/isLargeText}}).",
@@ -105655,7 +105672,7 @@ const I18N = {
     "radioGroupPresent_title": "Los botones de opción con el mismo nombre están agrupados",
     "radioGroupPresent_description": "Señala un conjunto de botones de opción con el mismo nombre que no está dentro de un mismo fieldset, role=\"group\" o role=\"radiogroup\", para que una persona decida si necesita agruparse.",
     "radioGroupPresent_summary_cantTell": "Los {{count}} botones de opción llamados \"{{name}}\" no están agrupados en un mismo fieldset o grupo.",
-    "radioGroupPresent_hint_cantTell": "Colocar los botones de opción en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta que responden se anuncie con ellos.",
+    "radioGroupPresent_hint_cantTell": "Si los botones responden a una pregunta que sus propias etiquetas no dicen, colocarlos en un <fieldset> con un <legend>, o en un elemento con role=\"radiogroup\" y un nombre, para que la pregunta se anuncie con ellos. Un conjunto cuyas etiquetas ya dicen a qué responde, como un simple par sí/no, puede no necesitar agrupación (RGAA 11.5.1).",
     "fakeList_title": "El texto presentado como lista usa marcado de lista",
     "fakeList_description": "Señala líneas o párrafos consecutivos que empiezan con viñetas o números consecutivos pero no están marcados como lista, para que una persona decida si lo son.",
     "fakeList_summary_cantTell_unordered": "Estas {{items}} líneas empiezan con la misma viñeta pero no están marcadas como lista.",
@@ -105669,7 +105686,7 @@ const I18N = {
     "imageAltLong_title": "Las alternativas textuales de las imágenes son cortas",
     "imageAltLong_description": "Señala una imagen cuya alternativa textual supera los 80 caracteres, para que una persona decida si es lo bastante corta y concisa.",
     "imageAltLong_summary_cantTell": "La alternativa textual de esta imagen tiene {{length}} caracteres.",
-    "imageAltLong_hint_cantTell": "Limitar la alternativa textual a lo que la imagen transmite en su contexto, en pocas palabras. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella.",
+    "imageAltLong_hint_cantTell": "Comprobar que la alternativa es corta y concisa para lo que la imagen transmite en su contexto. Una más larga puede ser adecuada en los casos particulares que admite el RGAA 1.3.9. Poner una descripción detallada en una descripción larga junto a la imagen o enlazada desde ella (RGAA 1.8).",
     "complexTableSummary_title": "Las tablas de datos complejas tienen un resumen",
     "complexTableSummary_description": "Señala una tabla de datos cuyos encabezados no están todos en la primera fila o columna, o solo encabezan un grupo de filas o columnas, y que no tiene aria-describedby (ni, antes de HTML5, un atributo summary), para que una persona compruebe que hay un resumen.",
     "complexTableSummary_summary_cantTell": "Esta tabla parece una tabla de datos compleja, y nada indica un resumen de su estructura.",
@@ -106618,7 +106635,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "Cette zone (« {{hint}} ») n’a pas de rôle landmark. Un lien interne y mène : vérifiez que ce lien est visible, au moins à la prise de focus.",
     "pageZonesReachable_summary_cantTell_none": "Cette zone (« {{hint}} ») n’a ni rôle landmark, ni titre qui l’ouvre, ni lien ou bouton pour l’atteindre, l’éviter ou la masquer.",
     "pageZonesReachable_summary_cantTell_mainNotFound": "La page n’a pas de landmark principal (<main> ou role=\"main\") : impossible de vérifier comment atteindre le contenu principal.",
-    "pageZonesReachable_hint_cantTell": "Donnez à chaque zone le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche. À défaut, donnez-lui un titre qui dit ce qu’elle contient, ou un lien d’évitement ou d’accès rapide (RGAA 12.6.1).",
+    "pageZonesReachable_hint_cantTell": "Une zone déjà atteignable par un titre qui dit ce qu’elle contient, par un lien d’évitement ou d’accès rapide, ou par un bouton qui la masque respecte le RGAA 12.6.1 telle quelle. Sinon, donnez-lui le landmark qui lui correspond : <header>, <nav>, <main>, <footer>, ou role=\"search\" sur le formulaire de recherche.",
     "contrastMinimumRgaa_title": "Le texte respecte le contraste minimum du RGAA",
     "contrastMinimumRgaa_description": "Vérifie que le texte visible a un rapport de contraste d’au moins 4.5:1, ou 3:1 pour le texte d’une taille restituée de 24px ou plus et le texte en gras de 18,5px ou plus (RGAA 3.2), lorsque le contraste peut être calculé à partir des CSS.",
     "contrastMinimumRgaa_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le rapport de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de 24px ou plus, ou texte en gras de 18,5px ou plus{{/isLargeText}}{{^isLargeText}}texte de moins de 24px, ou texte en gras de moins de 18,5px{{/isLargeText}}).",
@@ -107054,7 +107071,7 @@ const I18N = {
     "radioGroupPresent_title": "Les boutons radio partageant un nom sont regroupés",
     "radioGroupPresent_description": "Signale un ensemble de boutons radio de même nom qui n’est pas dans un même fieldset, role=\"group\" ou role=\"radiogroup\", pour qu’une personne décide s’il doit être regroupé.",
     "radioGroupPresent_summary_cantTell": "Les {{count}} boutons radio nommés « {{name}} » ne sont pas regroupés dans un même fieldset ou groupe.",
-    "radioGroupPresent_hint_cantTell": "Placez les boutons radio dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question à laquelle ils répondent soit annoncée avec eux.",
+    "radioGroupPresent_hint_cantTell": "Si les boutons répondent à une question que leurs propres étiquettes ne disent pas, placez-les dans un <fieldset> avec un <legend>, ou dans un élément role=\"radiogroup\" doté d’un nom, pour que la question soit annoncée avec eux. Un ensemble dont les étiquettes disent déjà à quoi il répond, comme un simple couple oui/non, peut se passer de regroupement (RGAA 11.5.1).",
     "fakeList_title": "Le texte présenté en liste utilise un balisage de liste",
     "fakeList_description": "Signale des lignes ou paragraphes consécutifs commençant par des puces ou des numéros consécutifs mais non balisés en liste, pour qu’une personne décide s’il s’agit d’une liste.",
     "fakeList_summary_cantTell_unordered": "Ces {{items}} lignes commencent par la même puce mais ne sont pas balisées en liste.",
@@ -107068,7 +107085,7 @@ const I18N = {
     "imageAltLong_title": "Les alternatives textuelles des images sont courtes",
     "imageAltLong_description": "Signale une image dont l’alternative textuelle dépasse 80 caractères, pour qu’une personne décide si elle est assez courte et concise.",
     "imageAltLong_summary_cantTell": "L’alternative textuelle de cette image fait {{length}} caractères.",
-    "imageAltLong_hint_cantTell": "Limitez l’alternative textuelle à ce que l’image transmet dans son contexte, en quelques mots. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle.",
+    "imageAltLong_hint_cantTell": "Vérifiez que l’alternative est courte et concise pour ce que l’image transmet dans son contexte. Une alternative plus longue peut convenir dans les cas particuliers que prévoit le RGAA 1.3.9. Placez une description détaillée dans une description détaillée à côté de l’image ou liée depuis elle (RGAA 1.8).",
     "complexTableSummary_title": "Les tableaux de données complexes ont un résumé",
     "complexTableSummary_description": "Signale un tableau de données dont les en-têtes ne sont pas tous dans la première ligne ou colonne, ou ne portent que sur un groupe de lignes ou de colonnes, sans aria-describedby (ni, avant HTML5, d’attribut summary), pour qu’une personne vérifie qu’un résumé est disponible.",
     "complexTableSummary_summary_cantTell": "Ce tableau semble être un tableau de données complexe, et rien n’indique un résumé de sa structure.",
@@ -108017,7 +108034,7 @@ const I18N = {
     "pageZonesReachable_summary_cantTell_quickLink": "この領域（「{{hint}}」）にはランドマークロールがありません。ページ内リンクがこの領域へ移動するので、そのリンクが少なくともフォーカス時に見えるか確認してください。",
     "pageZonesReachable_summary_cantTell_none": "この領域（「{{hint}}」）には、ランドマークロールも、冒頭の見出しも、到達・スキップ・非表示のためのリンクやボタンもありません。",
     "pageZonesReachable_summary_cantTell_mainNotFound": "ページにメインのランドマーク（<main> または role=\"main\"）がないため、メインコンテンツへの到達方法を確認できませんでした。",
-    "pageZonesReachable_hint_cantTell": "各領域に対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。そうでなければ、内容を表す見出しか、スキップリンクやクイックアクセスリンクを付けてください（RGAA 12.6.1）。",
+    "pageZonesReachable_hint_cantTell": "内容を表す見出し、スキップリンクやクイックアクセスリンク、または領域を隠すボタンでたどり着ける領域は、そのままで RGAA 12.6.1 を満たします。そうでなければ、対応するランドマークを付けてください：<header>、<nav>、<main>、<footer>、または検索フォームに role=\"search\"。",
     "contrastMinimumRgaa_title": "テキストが RGAA の最低限の色のコントラストを満たしている",
     "contrastMinimumRgaa_description": "CSS からコントラストを計算できる場合に、表示されるテキストのコントラスト比が 4.5:1 以上 (24px 以上のテキストと 18.5px 以上の太字テキストは 3:1 以上) であるかを確認します (RGAA 3.2)。",
     "contrastMinimumRgaa_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}24px 以上のテキスト、または 18.5px 以上の太字テキスト{{/isLargeText}}{{^isLargeText}}24px 未満のテキスト、または 18.5px 未満の太字テキスト{{/isLargeText}})。",
@@ -108453,7 +108470,7 @@ const I18N = {
     "radioGroupPresent_title": "同じ name のラジオボタンがグループ化されている",
     "radioGroupPresent_description": "同じ name のラジオボタンの組が 1 つの fieldset、role=\"group\"、role=\"radiogroup\" に入っていない場合に示し、グループ化が必要かを人が判断できるようにします。",
     "radioGroupPresent_summary_cantTell": "name が「{{name}}」の {{count}} 個のラジオボタンが、1 つの fieldset またはグループにまとめられていません。",
-    "radioGroupPresent_hint_cantTell": "ラジオボタンを <legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、答える質問が一緒に読み上げられるようにしてください。",
+    "radioGroupPresent_hint_cantTell": "ボタンが答える質問がそれぞれのラベルで示されていない場合は、<legend> 付きの <fieldset>、または名前のある role=\"radiogroup\" 要素に入れ、質問が一緒に読み上げられるようにしてください。単独の「はい／いいえ」のように、ラベルだけで何に答えるかわかる組はグループ化が不要な場合があります（RGAA 11.5.1）。",
     "fakeList_title": "リストとして並べたテキストにリストのマークアップを使う",
     "fakeList_description": "箇条記号や連番で始まる連続した行や段落がリストとしてマークアップされていない場合に示し、リストかどうかを人が判断できるようにします。",
     "fakeList_summary_cantTell_unordered": "この {{items}} 行は同じ箇条記号で始まっていますが、リストとしてマークアップされていません。",
@@ -108467,7 +108484,7 @@ const I18N = {
     "imageAltLong_title": "画像の代替テキストが短い",
     "imageAltLong_description": "代替テキストが 80 文字を超える画像を示し、十分に短く簡潔かを人が判断できるようにします。",
     "imageAltLong_summary_cantTell": "この画像の代替テキストは {{length}} 文字あります。",
-    "imageAltLong_hint_cantTell": "代替テキストは、文脈の中で画像が伝える内容を数語で表してください。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください。",
+    "imageAltLong_hint_cantTell": "代替テキストが、文脈の中で画像が伝える内容に対して短く簡潔か確認してください。RGAA 1.3.9 が認める特別な場合には、より長いものが適切なこともあります。詳しい説明は、画像の隣またはリンク先の詳細な説明に記載してください（RGAA 1.8）。",
     "complexTableSummary_title": "複雑なデータテーブルに要約がある",
     "complexTableSummary_description": "見出しセルがすべて先頭行または先頭列にあるわけではない、または行や列のグループだけを対象とする見出しを持ち、aria-describedby も (HTML5 より前では summary 属性も) ないデータテーブルを示し、要約があるかを人が確認できるようにします。",
     "complexTableSummary_summary_cantTell": "このテーブルは複雑なデータテーブルのようですが、構造の要約を示すものがありません。",

@@ -11,7 +11,10 @@
  *   Applies to <fieldset> elements and elements with role="group" or
  *   role="radiogroup" that contain at least one form field (input other
  *   than hidden, select, textarea, or an element with a form field role).
- *   A page with none is notApplicable.
+ *   A page with none is notApplicable. When every group has a legend (or,
+ *   for an ARIA group, an aria-label or aria-labelledby), the rule passes:
+ *   11.6.1 asks that one exists, and whether it is relevant is 11.7's
+ *   question.
  * @expectation
  *   RGAA 11.6.1 step 2: a <fieldset> has a <legend> child with text; an
  *   element with role="group" or role="radiogroup" has an aria-label or an
@@ -140,8 +143,11 @@ function runInPage(ctx) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,

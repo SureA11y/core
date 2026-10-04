@@ -206,16 +206,21 @@
     ],
     "html-elements-attributes-valid": [
       "autocompleteControl",
+      "autocompleteType",
       "autocompleteValue",
       "dirValue",
+      "headersEmpty",
       "headersTarget",
       "idValue",
       "inputImageAlt",
       "langValue",
       "obsoleteElement",
       "optgroupLabel",
+      "otherDoctype",
+      "scopeElement",
       "scopeValue",
-      "unknownElement"
+      "unknownElement",
+      "xmlLangMismatch"
     ],
     "html-lang-code-valid": [
       "invalidLanguageCode"
@@ -225,11 +230,14 @@
       "dlGroupOrder",
       "dlItemParent",
       "dlMixedGroups",
+      "dlText",
       "extraMain",
       "interactiveDescendant",
       "ismapOutsideLink",
       "listChild",
       "listItemParent",
+      "listText",
+      "otherDoctype",
       "tabindexDescendant"
     ],
     "image-alt-long": [
@@ -280,7 +288,11 @@
       "ariaOptionGroups"
     ],
     "main-element-structure": [
-      "extraMain"
+      "allHidden",
+      "extraMain",
+      "hiddenByAncestor",
+      "noMain",
+      "roleMainOnly"
     ],
     "markup-validation-review": [
       "VALIDATOR_ERROR",
@@ -381,7 +393,8 @@
       "NAME_LACKS_VISIBLE_LABEL",
       "PARENTHESISED_TEXT_MISSING",
       "POSSIBLE_ABBREVIATION",
-      "POSSIBLE_SYMBOL"
+      "POSSIBLE_SYMBOL",
+      "SOURCE_LACKS_VISIBLE_LABEL"
     ]
   }
 }

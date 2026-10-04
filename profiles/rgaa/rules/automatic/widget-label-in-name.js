@@ -52,7 +52,10 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: ['SOURCE_LACKS_VISIBLE_LABEL']
 };
 
 function runInPage(ctx) {

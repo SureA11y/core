@@ -14,7 +14,8 @@
  *   alt (on <img>, <area> and <input type="image">), aria-label,
  *   aria-labelledby (the text it resolves to), title, or an <svg>'s own
  *   <title> child, the sources RGAA's image tests list. A page with none is
- *   notApplicable.
+ *   notApplicable. When every alternative is 80 characters or fewer, the
+ *   rule passes.
  * @expectation
  *   A text alternative longer than 80 characters (spaces collapsed), from
  *   any of those sources, is flagged for a person to decide whether it is
@@ -122,7 +123,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This image's text alternative is ${text.length} characters long.`,
-        hint: 'Keep the text alternative to what the image conveys in context, in a few words. Put a detailed description in a long description next to the image or linked from it.',
+        hint: 'Check that the alternative is short and concise for what the image conveys in context. A longer one can be right in the particular cases RGAA 1.3.9 allows. Put a detailed description in a long description next to the image or linked from it (RGAA 1.8).',
         i18n: {
           summaryKey: 'imageAltLong_summary_cantTell',
           hintKey: 'imageAltLong_hint_cantTell',
@@ -141,8 +142,11 @@ function runInPage(ctx) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,

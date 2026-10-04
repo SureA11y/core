@@ -46,7 +46,7 @@ const HTML4 =
 
 test(`${RULE_ID}: aria-describedby is taken as the summary`, () => {
   const body = `<p id="d">Quarters by region.</p><table aria-describedby="d">${TWO_HEADER_ROWS}</table>`;
-  assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
 });
 
 // RGAA 5.1.1 step 2 accepts summary only "dans les versions de HTML et de
@@ -55,7 +55,7 @@ test(`${RULE_ID}: a summary attribute counts before HTML5 (or with no doctype), 
   const table = `<table summary="Quarters by region">${TWO_HEADER_ROWS}</table>`;
   for (const doctype of [HTML4, '']) {
     const html = `${doctype}<html lang="en"><head><title>t</title></head><body>${table}</body></html>`;
-    assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+    assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
   }
   const occ = assertRule(runa11yCoreOnHtml(page(table), RUN), RULE_ID, 'cantTell', {
     minOccurrences: 1,
@@ -84,7 +84,7 @@ test(`${RULE_ID}: an ARIA table (role="table") with a header outside the first r
   assertRule(
     runa11yCoreOnHtml(`${HTML4}<html><body>${described}</body></html>`, RUN),
     RULE_ID,
-    'notApplicable'
+    'pass'
   );
   const summaryOnly = body.replace('id="t"', 'id="t" summary="x"');
   assertRule(

@@ -10,7 +10,10 @@
  * @applicability
  *   Applies to sets of two or more <input type="radio"> with the same name
  *   in the same form (or outside any form). A page with none is
- *   notApplicable.
+ *   notApplicable. When every set is grouped, the rule passes; under a
+ *   scoped scan it reports notApplicable instead, since a set can reach
+ *   past the scanned part of the page (ENGINE_OPTIONS.md, "What a scoped
+ *   result means").
  * @expectation
  *   Every radio button of the set sits in one <fieldset>, role="group" or
  *   role="radiogroup" element, one of the ways RGAA 11.5.1 accepts. That
@@ -92,7 +95,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(set[0], {
         summary: `The ${set.length} radio buttons named "${name}" are not grouped in one fieldset or group.`,
-        hint: 'Put the radio buttons in a <fieldset> with a <legend>, or in an element with role="radiogroup" and a name, so the question they answer is announced with them.',
+        hint: 'If the buttons answer a question their own labels don\'t state, put them in a <fieldset> with a <legend>, or in an element with role="radiogroup" and a name, so the question is announced with them. A set whose labels already say what they answer, such as a lone yes/no pair, may need no group (RGAA 11.5.1).',
         i18n: {
           summaryKey: 'radioGroupPresent_summary_cantTell',
           hintKey: 'radioGroupPresent_hint_cantTell',
@@ -106,8 +109,16 @@ function runInPage(ctx) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
   return {
     ruleId: rule.ruleId,

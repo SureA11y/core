@@ -90,7 +90,16 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: [
+    'autocompleteType',
+    'headersEmpty',
+    'otherDoctype',
+    'scopeElement',
+    'xmlLangMismatch'
+  ]
 };
 
 function runInPage(ctx) {

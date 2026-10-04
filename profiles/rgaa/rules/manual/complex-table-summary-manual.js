@@ -21,7 +21,10 @@
  *     headers each span several rows, so each heads a group of columns or
  *     rows rather than whole ones.
  *   Tables with role="presentation" or "none" are left out. A page with
- *   none is notApplicable.
+ *   none is notApplicable. When every complex table has its summary marked
+ *   (aria-describedby, or a summary attribute where it counts), the rule
+ *   passes: whether that summary is good is complex-table-summary-quality's
+ *   question.
  * @expectation
  *   A complex table without aria-describedby, and without a summary
  *   attribute where one still counts, is flagged for a person to check that
@@ -216,8 +219,11 @@ function runInPage(ctx) {
     );
   }
 
-  if (applicableCount === 0 || !occurrences.length) {
+  if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,

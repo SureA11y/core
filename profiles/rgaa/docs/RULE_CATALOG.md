@@ -226,7 +226,7 @@ Applies to complex data tables, in RGAA's sense: tables whose header cells are n
 - a header has scope="rowgroup" or scope="colgroup"; or
 - two or more first-row headers each span several columns (as in "2025" and "2026" over their quarters), or two or more first-column headers each span several rows, so each heads a group of columns or rows rather than whole ones.
 
-Tables with role="presentation" or "none" are left out. A page with none is notApplicable.
+Tables with role="presentation" or "none" are left out. A page with none is notApplicable. When every complex table has its summary marked (aria-describedby, or a summary attribute where it counts), the rule passes: whether that summary is good is complex-table-summary-quality's question.
 
 **Expectation.** A complex table without aria-describedby, and without a summary attribute where one still counts, is flagged for a person to check that a summary is available, as RGAA 5.1.1 asks: in the &lt;caption&gt;, or in a passage near the table. The summary attribute counts only on a &lt;table&gt; in a document whose doctype is not HTML5: 5.1.1 step 2 accepts it only "dans les versions de HTML et de XHTML antérieures à HTML 5". A document with no doctype is not HTML5. An ARIA table's summary comes only through aria-describedby.
 
@@ -398,7 +398,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity mod
 
 Flags a &lt;fieldset&gt; without a legend, or a role="group" or role="radiogroup" without aria-label or aria-labelledby, holding form fields, for a person to decide whether it groups fields of the same kind.
 
-**Applies to.** Applies to &lt;fieldset&gt; elements and elements with role="group" or role="radiogroup" that contain at least one form field (input other than hidden, select, textarea, or an element with a form field role). A page with none is notApplicable.
+**Applies to.** Applies to &lt;fieldset&gt; elements and elements with role="group" or role="radiogroup" that contain at least one form field (input other than hidden, select, textarea, or an element with a form field role). A page with none is notApplicable. When every group has a legend (or, for an ARIA group, an aria-label or aria-labelledby), the rule passes: 11.6.1 asks that one exists, and whether it is relevant is 11.7's question.
 
 **Expectation.** RGAA 11.6.1 step 2: a &lt;fieldset&gt; has a &lt;legend&gt; child with text; an element with role="group" or role="radiogroup" has an aria-label or an aria-labelledby that resolves to text. A fieldset that itself carries role="group" or role="radiogroup" may use either. aria-label on a plain fieldset, and title on a group, do not count: step 2 names only those mechanisms. A group without one is flagged for a person to decide whether it groups fields of the same kind, which is when RGAA 11.6.1 requires a legend, and, if so, whether every field instead carries a title, aria-label, aria-labelledby or aria-describedby that names the group (step 3).
 
@@ -597,7 +597,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Flags an image whose text alternative is longer than 80 characters, for a person to decide whether it is short and concise enough.
 
-**Applies to.** Applies to images that carry a text alternative: &lt;img&gt;, &lt;area&gt;, &lt;input type="image"&gt;, &lt;svg&gt;, &lt;canvas&gt;, &lt;object&gt;, &lt;embed&gt;, and any element whose role (first token) is img. The alternative can come from alt (on &lt;img&gt;, &lt;area&gt; and &lt;input type="image"&gt;), aria-label, aria-labelledby (the text it resolves to), title, or an &lt;svg&gt;'s own &lt;title&gt; child, the sources RGAA's image tests list. A page with none is notApplicable.
+**Applies to.** Applies to images that carry a text alternative: &lt;img&gt;, &lt;area&gt;, &lt;input type="image"&gt;, &lt;svg&gt;, &lt;canvas&gt;, &lt;object&gt;, &lt;embed&gt;, and any element whose role (first token) is img. The alternative can come from alt (on &lt;img&gt;, &lt;area&gt; and &lt;input type="image"&gt;), aria-label, aria-labelledby (the text it resolves to), title, or an &lt;svg&gt;'s own &lt;title&gt; child, the sources RGAA's image tests list. A page with none is notApplicable. When every alternative is 80 characters or fewer, the rule passes.
 
 **Expectation.** A text alternative longer than 80 characters (spaces collapsed), from any of those sources, is flagged for a person to decide whether it is short and concise, as RGAA 1.3.9 asks, or one of the particular cases it allows. RGAA's test gives no number: 80 characters is a threshold for asking, not a limit. The occurrence lists each source over the threshold. Fallback content of &lt;canvas&gt; and &lt;object&gt; is not measured.
 
@@ -961,7 +961,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity mod
 
 Flags a set of radio buttons with the same name that is not inside one fieldset, role="group" or role="radiogroup", for a person to decide whether it needs grouping.
 
-**Applies to.** Applies to sets of two or more &lt;input type="radio"&gt; with the same name in the same form (or outside any form). A page with none is notApplicable.
+**Applies to.** Applies to sets of two or more &lt;input type="radio"&gt; with the same name in the same form (or outside any form). A page with none is notApplicable. When every set is grouped, the rule passes; under a scoped scan it reports notApplicable instead, since a set can reach past the scanned part of the page (ENGINE_OPTIONS.md, "What a scoped result means").
 
 **Expectation.** Every radio button of the set sits in one &lt;fieldset&gt;, role="group" or role="radiogroup" element, one of the ways RGAA 11.5.1 accepts. That element need not be the closest group around each radio: an outer fieldset holding every radio of the set groups them even when inner groups split them. A set that is not is flagged: 11.5.1 applies "si nécessaire", so a person decides whether this set needs grouping.
 

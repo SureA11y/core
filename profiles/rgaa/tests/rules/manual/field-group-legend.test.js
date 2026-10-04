@@ -50,7 +50,7 @@ test(`${RULE_ID}: a fieldset legend, or aria-label/aria-labelledby on a group, i
     '<div role="radiogroup" aria-label="Civility"><input type="radio" name="c" aria-label="Mr"></div>',
     '<fieldset role="radiogroup" aria-label="Civility"><input type="radio" name="c" aria-label="Mr"></fieldset>'
   ]) {
-    assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+    assertRule(runa11yCoreOnHtml(page(body), RUN), RULE_ID, 'pass', { maxOccurrences: 0 });
   }
 });
 

@@ -36,11 +36,7 @@ test(`${RULE_ID}: an alt over 80 characters is flagged with its length`, () => {
 
 test(`${RULE_ID}: exactly 80 characters, spaces collapsed, is not flagged`, () => {
   const alt = `  ${'x'.repeat(40)}   ${'y'.repeat(39)} `;
-  assertRule(
-    runa11yCoreOnHtml(page(`<img src="a.png" alt="${alt}">`), RUN),
-    RULE_ID,
-    'notApplicable'
-  );
+  assertRule(runa11yCoreOnHtml(page(`<img src="a.png" alt="${alt}">`), RUN), RULE_ID, 'pass');
 });
 
 test(`${RULE_ID}: image buttons, image map areas and role="img" are checked`, () => {
@@ -58,7 +54,7 @@ test(`${RULE_ID}: image buttons, image map areas and role="img" are checked`, ()
 
 test(`${RULE_ID}: short or empty alternatives are not flagged`, () => {
   const html = page('<img src="a.png" alt="Logo"><img src="b.png" alt=""><img src="c.png">');
-  assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'notApplicable');
+  assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'pass');
 });
 
 test(`${RULE_ID}: opt-in, so a default run does not include it`, () => {

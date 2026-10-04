@@ -381,7 +381,7 @@ A real list; nothing is laid out as one with text alone.
 ```
 The address fields are grouped, but the group has no `<legend>` saying what it is.
 
-**Not applicable**
+**Passed**
 ```html
 <fieldset>
   <legend>Address</legend>
@@ -647,7 +647,7 @@ A `<ul>` may only hold `<li>`, `<script>` and `<template>`, whatever role the ch
 ```
 The text alternative runs to 88 characters; a person decides whether it should be shorter. The same question is asked of `aria-label`, `aria-labelledby`, `title` and an svg's `<title>`, on any kind of image.
 
-**Not applicable**
+**Passed**
 ```html
 <img src="chart.png" alt="Sales by shop in 2025">
 ```
@@ -1181,7 +1181,7 @@ The centring is left to CSS.
 ```
 The two choices are not grouped, so "Delivery" is not announced with them.
 
-**Not applicable**
+**Passed**
 ```html
 <fieldset>
   <legend>Delivery</legend>
