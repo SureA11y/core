@@ -858,6 +858,11 @@ const FACETS = {
                 "id": "form-control-single-label",
                 "label": "Form controls are associated with at most one <label>",
                 "automation": "full"
+            },
+            {
+                "id": "form-control-visible-label-quality",
+                "label": "Form controls have a label presented to all users, not only a title or placeholder",
+                "automation": "manual"
             }
         ]
     },
@@ -921,11 +926,6 @@ const FACETS = {
                 "id": "form-control-name-present",
                 "label": "Form controls expose an accessible name (label/aria-label/aria-labelledby/title/placeholder)",
                 "automation": "full"
-            },
-            {
-                "id": "form-control-name-quality",
-                "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
-                "automation": "manual"
             },
             {
                 "id": "aria-hidden-focusable",

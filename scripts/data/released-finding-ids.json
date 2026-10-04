@@ -547,6 +547,8 @@
   },
   "retired": {
     "ruleIds": {},
-    "reasonCodes": {}
+    "reasonCodes": {
+      "label-title-only/LABEL_TITLE_ONLY": "Retired with the duplicate finding it named: every element it reported, form-control-programmatic-label-quality also reports (label_from_title_primary). label-title-only is deprecated and reports notApplicable (docs/API_STABILITY.md, \"Rule-ID deprecation policy\")."
+    }
   }
 }

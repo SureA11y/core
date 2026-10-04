@@ -1,8 +1,8 @@
 {
   "summary": {
     "total": 134,
-    "withFixture": 133,
-    "withoutFixture": 1
+    "withFixture": 132,
+    "withoutFixture": 2
   },
   "rows": [
     {
@@ -914,7 +914,7 @@
       "title": "Form controls should not rely on placeholder or title as the primary label",
       "type": "manual",
       "wcagSc": [
-        "4.1.2"
+        "3.3.2"
       ],
       "ruleFile": "src/checks/manual/form-control-programmatic-label-quality-manual.js",
       "testFile": "tests/engine-checks/manual/form-control-programmatic-label-quality-manual.test.js",
@@ -1263,20 +1263,15 @@
     },
     {
       "ruleId": "label-title-only",
-      "title": "Form controls should not use title as their only label",
+      "title": "Title-only form labels (deprecated)",
       "type": "manual",
       "wcagSc": [],
       "ruleFile": "src/checks/manual/label-title-only-manual.js",
       "testFile": "tests/engine-checks/manual/label-title-only.test.js",
-      "hasFixture": true,
-      "fixtureFile": "tests/fixtures/label-title-only-all-scenarios.html",
-      "totalCases": 4,
-      "caseCounts": {
-        "PASS": 1,
-        "FAIL": 0,
-        "CANTTELL": 2,
-        "OTHER": 1
-      }
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "landmark-banner-is-top-level",

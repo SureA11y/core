@@ -154,7 +154,7 @@ The process:
 2. A superseded rule keeps running normally for at least one full minor version cycle after the deprecation, so integrators pinned to `^x.y.0` have a real chance to see it before it's gone. A rule whose findings were wrong or duplicated reports `notApplicable` from the release that deprecates it.
 3. Remove the rule file entirely in a future **major** version, documented under `### Removed`.
 
-`iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named, as the 1.8.0 changelog records (see [Finding identity](#finding-identity)).
+`iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named, as the 1.8.0 changelog records (see [Finding identity](#finding-identity)). `label-title-only` followed in 1.10.0: every field it reported, `form-control-programmatic-label-quality` also reported, so it now reports `notApplicable` and `LABEL_TITLE_ONLY` retired with the duplicate.
 
 ## See also
 

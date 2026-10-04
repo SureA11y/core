@@ -826,6 +826,12 @@ A persistent `<label>` provides the name; `placeholder` is just a format hint he
 ```
 The control's only name comes from `placeholder`, which disappears once the user starts typing.
 
+**Flagged (cantTell)**
+```html
+<input type="text" title="Name">
+```
+The control's only name comes from `title`, which is shown only on hover. Both give the control a name, so WCAG 4.1.2 is met; what is missing is a label shown to everyone, which is SC 3.3.2.
+
 ## form-control-single-label
 
 **Passed**
@@ -1113,17 +1119,13 @@ The accessible name doesn't contain the visible label text at all.
 
 ## label-title-only
 
-**Passed**
-```html
-<label>Name <input title="Enter your full name"></label>
-```
-A real `<label>` already names the field; `title` is just supplementary.
+*Deprecated since 1.10.0 in favour of [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality): this rule reports `notApplicable` on every page, so it has no passing or failing example of its own.*
 
-**Flagged (cantTell)**
+**Not applicable**
 ```html
 <input title="Name">
 ```
-The `title` attribute is the field's only naming mechanism — it shows as a tooltip, not a persistent visible label.
+Formerly flagged as `cantTell`. `form-control-programmatic-label-quality` reports this field once, under WCAG 3.3.2: the `title` gives it a name, but not a label that is shown to everyone.
 
 ## landmark-banner-is-top-level
 
