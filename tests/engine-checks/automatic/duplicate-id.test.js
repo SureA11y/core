@@ -222,13 +222,15 @@ test(`${RULE_ID}: an explicit wcagVersion beats whatever the tag set implies`, (
 test(`${RULE_ID}: the 4.1.1 composite follows the atomic rule down to cantTell`, () => {
   const html = page('<div id="a">1</div><div id="a">2</div>');
 
-  const under22 = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  // Selected by its own id: a composite is reported only when selected, and
+  // its id brings in duplicate-id, its one atomic rule.
+  const under22 = runa11yCoreOnHtml(html, { runOnly: ['wcag-4.1.1-parsing'] });
   const composite22 = under22.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');
   assert.ok(composite22, 'expected the 4.1.1 composite to be present');
   assert.strictEqual(composite22.outcome, 'cantTell');
 
   const under21 = runa11yCoreOnHtml(html, {
-    runOnly: [RULE_ID],
+    runOnly: ['wcag-4.1.1-parsing'],
     engineOptions: { wcagVersion: '2.1' }
   });
   const composite21 = under21.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');

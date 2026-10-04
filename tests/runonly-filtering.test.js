@@ -116,5 +116,19 @@ test('runOnly: an empty or unusable filter value still means no filter', () => {
 });
 
 test('runOnly: a bare array is still ignored, as documented', () => {
-  assert.strictEqual(ranRuleIds(['img-alt-present']).length, ALL_RULE_COUNT);
+  // Straight to the engine: the test helper reads a bare array as rule ids
+  // (see tests/helpers/runDomRulesOnHtml.js), which this test is not about.
+  const { JSDOM } = require('jsdom');
+  const { runa11yCoreInPage } = require('../src/index.js');
+  const dom = new JSDOM(FILTER_PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  const result = runa11yCoreInPage('https://example.test/', null, {}, ['img-alt-present']);
+  assert.strictEqual(result.checksResults.length, ALL_RULE_COUNT);
+});
+
+test('the test helper reads a bare array or string as rule ids, so a rule test runs that rule alone', () => {
+  assert.deepStrictEqual(ranRuleIds(['img-alt-present']), ['img-alt-present']);
+  assert.deepStrictEqual(ranRuleIds('img-alt-present'), ['img-alt-present']);
+  assert.strictEqual(ranRuleIds([]).length, ALL_RULE_COUNT);
 });
