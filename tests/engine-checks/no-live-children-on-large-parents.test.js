@@ -16,7 +16,7 @@ const { createDom, runa11yCoreOnDom } = require('../helpers/runa11yCoreOnHtml');
 
 const LARGE = 200;
 
-test('a full scan never reads children on a parent with many children', () => {
+test('a full scan, opt-in rules included, never reads children on a parent with many children', () => {
   const rows = '<div>Row</div>'.repeat(LARGE + 50);
   const dom = createDom(
     `<!doctype html><html lang="en"><head><title>t</title></head><body><main>Content</main>${rows}<ul>${'<li>Item</li>'.repeat(LARGE + 50)}</ul></body></html>`
@@ -33,7 +33,12 @@ test('a full scan never reads children on a parent with many children', () => {
     }
   });
 
-  const result = runa11yCoreOnDom(dom, { entryPointParity: false });
-  assert.ok(result.checksResults.length > 100, 'every default rule ran');
+  // optInRules: 'all' runs a standard's own rules too (a profile's), which a
+  // default scan leaves out.
+  const result = runa11yCoreOnDom(dom, {
+    entryPointParity: false,
+    engineOptions: { optInRules: 'all' }
+  });
+  assert.ok(result.checksResults.length > 100, 'every rule ran');
   assert.deepEqual(readers, []);
 });

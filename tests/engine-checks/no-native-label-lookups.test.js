@@ -13,7 +13,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createDom, runa11yCoreOnDom } = require('../helpers/runa11yCoreOnHtml');
 
-test('a full scan never reads the native .labels or .control getters', () => {
+test('a full scan, opt-in rules included, never reads the native .labels or .control getters', () => {
   let body = '';
   for (let i = 0; i < 5; i += 1) {
     body +=
@@ -45,7 +45,9 @@ test('a full scan never reads the native .labels or .control getters', () => {
     });
   }
 
-  const result = runa11yCoreOnDom(dom);
-  assert.ok(result.checksResults.length > 100, 'every default rule ran');
+  // optInRules: 'all' runs a standard's own rules too (a profile's), which a
+  // default scan leaves out.
+  const result = runa11yCoreOnDom(dom, { engineOptions: { optInRules: 'all' } });
+  assert.ok(result.checksResults.length > 100, 'every rule ran');
   assert.deepEqual(counts, { labels: 0, control: 0 });
 });
