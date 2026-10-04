@@ -13,7 +13,7 @@
  *   of clearly non-interactive, structural/document roles.
  * @expectation
  *   An element placed in the tab order on purpose should communicate
- *   why it's focusable: a role like `heading`, `list`, `region`, or
+ *   why it's focusable: a role like `heading`, `list`, `note`, or
  *   `presentation` gives assistive technology no interactive semantic to
  *   announce, which is confusing for keyboard users who land on it and
  *   get no indication of what activating it (if anything) would do.
@@ -39,8 +39,11 @@
  *   `role="region"` is also commonly made tabbable on its own merits
  *   (e.g. a cookie-consent banner or notification/toast region a keyboard
  *   user should be able to reach directly, as in
- *   `<div role="region" tabindex="0">`). Scoped to `region` only;
- *   navigation/status/tabpanel remain flagged pending their own evidence.
+ *   `<div role="region" tabindex="0">`).
+ * - `tabpanel` is not in the list for the same reason: the WAI-ARIA
+ *   Authoring Practices make a tab panel focusable (`tabindex="0"`) when it
+ *   holds no focusable content of its own. `navigation` and `status` stay
+ *   flagged until there is evidence of a legitimate tabbable pattern.
  */
 
 const id = 'focus-order-semantics';
@@ -48,7 +51,7 @@ const id = 'focus-order-semantics';
 const meta = {
   title: 'Elements added to the tab order should have interactive semantics',
   description:
-    'Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.',
+    'Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.',
   i18n: {
     titleKey: 'focusOrderSemantics_title',
     descriptionKey: 'focusOrderSemantics_description'

@@ -751,7 +751,7 @@
   "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
   "ariaText_hint_cantTell": "Remove role=\"text\" (or remove the focusable descendant); a \"plain text\" region should not contain focusable content.",
   "focusOrderSemantics_title": "Elements added to the tab order should have interactive semantics",
-  "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.",
+  "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
   "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
   "focusOrderSemantics_hint_cantTell": "Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.",
   "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
