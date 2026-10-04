@@ -66,3 +66,79 @@ test('a dialog that is open but not modal leaves the page as it is', () => {
   });
   assert.strictEqual(outcome(html, 'page-has-heading-one').outcome, 'pass');
 });
+
+// Rules that find their elements through the shared query (queryAllSmart) or
+// the contrast text scan, rather than checking accessibility-tree eligibility
+// themselves: they too leave out what an open modal makes inert.
+const BEHIND =
+  '<div id="behind-all">' +
+  '<p id="faint" style="color:#aaa">Faint text</p>' +
+  '<dl id="dl"><div>Not a term</div></dl>' +
+  '<div id="tab" tabindex="5">Jumps the tab order</div>' +
+  '<span id="lang" lang="xx-invalid-tag-zz">Text</span>' +
+  '<video id="vid" src="v.mp4" controls></video>' +
+  '</div>';
+const PAGE_BEHIND = (dialog) =>
+  '<!doctype html><html lang="en"><head><title>Shop</title></head>' +
+  '<body style="background:#ffffff;color:#000000"><main><h1>Shop</h1>' +
+  BEHIND +
+  '</main>' +
+  dialog +
+  '</body></html>';
+const PLAIN_MODAL =
+  '<dialog open aria-modal="true" aria-label="Sign in" style="background:#ffffff;color:#000000"><p>Sign in</p><button>Close</button></dialog>';
+
+for (const ruleId of [
+  'contrast-minimum',
+  'contrast-enhanced',
+  'definition-list-children-valid',
+  'tabindex',
+  'valid-lang',
+  'video-caption'
+]) {
+  test(`${ruleId}: content behind an open modal dialog is not judged`, () => {
+    const without = outcome(PAGE_BEHIND(''), ruleId);
+    assert.ok(
+      ['fail', 'cantTell'].includes(without.outcome),
+      `without a modal the page has something to report (${without.outcome})`
+    );
+    const withModal = outcome(PAGE_BEHIND(PLAIN_MODAL), ruleId);
+    assert.deepStrictEqual(
+      withModal.occurrences.filter((o) => /behind-all|id="(faint|dl|tab|lang|vid)"/.test(o.html)),
+      [],
+      `${ruleId} judged content behind the modal`
+    );
+  });
+}
+
+test('contrast-minimum: faint text inside the open modal dialog is still judged', () => {
+  const modal =
+    '<dialog open aria-modal="true" aria-label="Sign in" style="background:#ffffff"><p id="faint-in" style="color:#bbbbbb">Faint in the dialog</p></dialog>';
+  const rule = outcome(PAGE_BEHIND(modal), 'contrast-minimum');
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.ok(rule.occurrences.some((o) => /faint-in/.test(o.html)));
+  assert.ok(!rule.occurrences.some((o) => /id="faint"/.test(o.html)));
+});
+
+test('no-autoplay-audio still reports autoplaying media behind a modal: it plays all the same', () => {
+  const html = PAGE_BEHIND(PLAIN_MODAL).replace(
+    '<video id="vid" src="v.mp4" controls></video>',
+    '<audio id="aud" src="a.mp3" autoplay></audio>'
+  );
+  assert.strictEqual(outcome(html, 'no-autoplay-audio').outcome, 'cantTell');
+});
+
+test('a full scan with a modal open reports nothing behind it, apart from page-wide findings and sound', () => {
+  const result = runa11yCoreOnHtml(PAGE_BEHIND(PLAIN_MODAL));
+  // Findings about the page as a whole (its title, its language) and about
+  // sound, which an inert page still plays, are allowed to stay.
+  const allowed = new Set(['no-autoplay-audio', 'page-title-patterns', 'manual-review']);
+  const leaks = [];
+  for (const rule of result.checksResults) {
+    if (allowed.has(rule.ruleId)) continue;
+    for (const o of rule.occurrences || []) {
+      if (/behind-all|id="(faint|dl|tab|lang|vid)"/.test(o.html || '')) leaks.push(rule.ruleId);
+    }
+  }
+  assert.deepStrictEqual(leaks, []);
+});

@@ -14485,7 +14485,7 @@ const I18N = {
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
-    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください (WCAG 1.4.12)。動くコンテンツには一時停止する手段も必要です (WCAG 2.2.2)。",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
     "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -16279,6 +16279,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return hidden;
       };
 
+      // Text behind an open modal dialog is out of the scan, as everywhere
+      // else: the browser makes it inert, and the scan judges the dialog.
+      // Only that reason counts here, since aria-hidden text that is drawn
+      // still has to meet contrast. Asked once, so a page with no modal open
+      // pays nothing for it.
+      let modalOpen = false;
+      try {
+        modalOpen = !!(
+          helpers &&
+          typeof helpers.isModalDialogOpen === 'function' &&
+          helpers.isModalDialogOpen()
+        );
+      } catch {
+        modalOpen = false;
+      }
+      const isBehindModal = (el) => {
+        if (!modalOpen || typeof helpers.isAccTreeEligible !== 'function') return false;
+        const r = helpers.isAccTreeEligible(el);
+        return !!(
+          r &&
+          r.eligible === false &&
+          Array.isArray(r.reasons) &&
+          r.reasons.includes('modalInert')
+        );
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -16288,6 +16314,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
+          if (ok && isBehindModal(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -20145,7 +20172,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return results;
   }
 
+  // Content no rule should judge. `modalInert` is the page behind an open
+  // modal dialog, which the browser makes inert (see getOpenModalDialogs):
+  // a scan taken while one is open judges the dialog, not what it covers.
   const HARD_HIDDEN_REASONS = new Set([
+    'modalInert',
     'displayNone',
     'hiddenAttr',
     'detailsClosed',
@@ -66641,7 +66672,7 @@ const I18N = {
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
-    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください (WCAG 1.4.12)。動くコンテンツには一時停止する手段も必要です (WCAG 2.2.2)。",
+    "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
     "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -68435,6 +68466,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return hidden;
       };
 
+      // Text behind an open modal dialog is out of the scan, as everywhere
+      // else: the browser makes it inert, and the scan judges the dialog.
+      // Only that reason counts here, since aria-hidden text that is drawn
+      // still has to meet contrast. Asked once, so a page with no modal open
+      // pays nothing for it.
+      let modalOpen = false;
+      try {
+        modalOpen = !!(
+          helpers &&
+          typeof helpers.isModalDialogOpen === 'function' &&
+          helpers.isModalDialogOpen()
+        );
+      } catch {
+        modalOpen = false;
+      }
+      const isBehindModal = (el) => {
+        if (!modalOpen || typeof helpers.isAccTreeEligible !== 'function') return false;
+        const r = helpers.isAccTreeEligible(el);
+        return !!(
+          r &&
+          r.eligible === false &&
+          Array.isArray(r.reasons) &&
+          r.reasons.includes('modalInert')
+        );
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -68444,6 +68501,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
+          if (ok && isBehindModal(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -72301,7 +72359,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return results;
   }
 
+  // Content no rule should judge. `modalInert` is the page behind an open
+  // modal dialog, which the browser makes inert (see getOpenModalDialogs):
+  // a scan taken while one is open judges the dialog, not what it covers.
   const HARD_HIDDEN_REASONS = new Set([
+    'modalInert',
     'displayNone',
     'hiddenAttr',
     'detailsClosed',
