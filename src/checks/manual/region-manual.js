@@ -14,6 +14,8 @@
  *   anything in it. Live regions, dialogs, buttons, <svg>,
  *   <iframe>/<frame> and resolvable skip links are not content that needs
  *   a landmark.
+ *   Not while a modal dialog is open: the rest of the page is inert then,
+ *   so the scan sees the dialog, not the page.
  * @expectation
  *   Every top-level piece of page content lives inside a landmark region
  *   (main, navigation, banner, contentinfo, complementary, region, form,
@@ -96,8 +98,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+//
+// Also notApplicable while a modal dialog is open: the rest of the page is
+// inert then, so the scan saw the dialog, not the page's structure.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
 
 function runInPage(ctx) {

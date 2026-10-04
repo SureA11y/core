@@ -504,6 +504,10 @@ why:
   page-wide landmark structure, so flagging its absence there is a false positive, not a
   real finding. If you add a new rule to this category, add the same `applicability`
   export rather than letting it silently evaluate document-wide facts regardless of scope.
+  The four of them about the page's structure (`page-has-heading-one`,
+  `landmark-one-main`, `bypass-blocks-present`, `region`) are also `notApplicable` while
+  `helpers.isModalDialogOpen()`: the rest of the page is inert then, so the scan saw a
+  dialog, not the page.
 
 - **Page-relational checks** (`landmark-unique`, the `landmark-no-duplicate-*` and
   `landmark-*-is-top-level` rules, `accesskeys`, `heading-order`,

@@ -13,6 +13,8 @@
  *   "bypass blocks" is a whole-page concern, matching
  *   aria-hidden-body / page-title-present's pattern of
  *   evaluating the document directly rather than a scoped root.
+ *   Not while a modal dialog is open: the rest of the page is inert then,
+ *   so the scan sees the dialog, not the page.
  * @expectation
  *   At least one of the following recognized WCAG 2.4.1 techniques is
  *   present:
@@ -51,7 +53,10 @@
  *       so the page's real <main>/headings are (correctly) filtered out by
  *       isAccTreeEligible for the duration of that state and only the dialog
  *       is exposed, so a snapshot taken then would see "no mechanism" though
- *       the page has one once the dialog closes. The same applies to content
+ *       the page has one once the dialog closes. A modal <dialog> the engine
+ *       can detect (helpers.isModalDialogOpen) makes the rule notApplicable
+ *       instead; one built some other way, with inert or aria-hidden on the
+ *       page, still reaches this cantTell. The same applies to content
  *       that is display:none until revealed by script (tabs, accordions, an
  *       unmounted SPA view).
  *   Both cases would produce false positives under a hard `fail`, which this
@@ -106,8 +111,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+//
+// Also notApplicable while a modal dialog is open: the rest of the page is
+// inert then, so the scan saw the dialog, not the page's structure.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
 
 function runInPage(ctx) {

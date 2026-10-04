@@ -344,6 +344,38 @@ test('isAccTreeEligible: content outside an open, aria-modal dialog is ineligibl
   assert.equal(inside.eligible, true);
 });
 
+test('isAccTreeEligible: an element that contains an open modal dialog (body, a wrapper) stays eligible; it is not what assistive technology is denied', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="outside">Background</div>' +
+      '<div id="wrapper"><dialog id="dlg" open aria-modal="true"><p id="inside">Dialog</p></dialog></div>'
+  );
+  assert.equal(helpers.isAccTreeEligible(document.body).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'wrapper')).eligible, true);
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'outside')).reasons, ['modalInert']);
+});
+
+test('isAccTreeEligible: content of a shadow root inside an open modal dialog is inside it', () => {
+  const { helpers, document } = helpersFor(
+    '<dialog id="dlg" open aria-modal="true"><div id="host"></div></dialog><p id="outside">x</p>'
+  );
+  const root = byId(document, 'host').attachShadow({ mode: 'open' });
+  root.innerHTML = '<span id="shadowed">In the dialog</span>';
+  assert.equal(helpers.isAccTreeEligible(root.getElementById('shadowed')).eligible, true);
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'outside')).reasons, ['modalInert']);
+});
+
+test('isModalDialogOpen: true only while an open modal dialog is in the document', () => {
+  assert.equal(
+    helpersFor('<dialog open aria-modal="true">x</dialog>').helpers.isModalDialogOpen(),
+    true
+  );
+  assert.equal(helpersFor('<dialog open>x</dialog>').helpers.isModalDialogOpen(), false);
+  assert.equal(
+    helpersFor('<dialog aria-modal="true">x</dialog>').helpers.isModalDialogOpen(),
+    false
+  );
+});
+
 // ===== isDomVisibleEligible =====
 
 test('isDomVisibleEligible: display:none ancestor blocks (styleOnly, the default mode)', () => {
