@@ -33,6 +33,7 @@ jobs:
       - run: npm run fixtures:markers:check
       - run: npm run docs:rule-catalog:check
       - run: npm run rule-examples:coverage:check
+      - run: npm run rule-examples:outcomes:check
 
   act-corpus:
     runs-on: ubuntu-latest
