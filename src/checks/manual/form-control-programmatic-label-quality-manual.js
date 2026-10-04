@@ -14,6 +14,10 @@
  *     - select
  *     - textarea
  *   role="presentation"/"none" are excluded only when not focusable.
+ *   A control not drawn on screen is excluded: transparent (opacity 0, its
+ *   own or an ancestor's) or clipped away (as visually hidden text is), as
+ *   a checkbox hidden behind a styled toggle is. It has no visible label to
+ *   judge; its visible stand-in does.
  *   Only controls that have a programmatic name count: a control with none
  *   is form-control-programmatic-label-present's finding, not
  *   a question about how good its name is.
@@ -111,6 +115,7 @@ function runInPage(ctx) {
   const metrics = {
     applicableCount: 0,
     flaggedCount: 0,
+    notShownCount: 0,
     byMethod: { label: 0, 'aria-labelledby': 0, 'aria-label': 0, title: 0, placeholder: 0, none: 0 }
   };
 
@@ -134,6 +139,46 @@ function runInPage(ctx) {
     } catch {
       return true;
     }
+  }
+
+  // 3.3.2 is about the label people see, so a control that isn't drawn has
+  // no visible label to judge: a checkbox made transparent or clipped away
+  // behind a styled toggle, whose visible stand-in is labelled instead.
+  // Style only (opacity, clip on the control or an ancestor), so the result
+  // doesn't depend on layout.
+  function isShownOnScreen(el) {
+    try {
+      if (isDomVisibleEligible) {
+        const r = isDomVisibleEligible(el, ctx, { visibilityMode: 'styleOnly' });
+        if (r && r.eligible === false) return false;
+      }
+      if (helpers && typeof helpers.isClipHidden === 'function') {
+        const view = (el.ownerDocument && el.ownerDocument.defaultView) || null;
+        for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+          const cs = view && view.getComputedStyle ? view.getComputedStyle(n) : null;
+          if (cs && helpers.isClipHidden(cs)) return false;
+          // jsdom neither computes clip nor keeps its value intact
+          // (rect(0 0 0 0) reads back as rect(0px)), so read the declaration
+          // as written in the style attribute too.
+          const declared = String(n.getAttribute('style') || '');
+          const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
+          const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
+          if (
+            cs &&
+            (clip || clipPath) &&
+            helpers.isClipHidden({
+              position: cs.position,
+              clip: clip ? clip[1].trim() : '',
+              clipPath: clipPath ? clipPath[1].trim() : ''
+            })
+          )
+            return false;
+        }
+      }
+    } catch {
+      return true;
+    }
+    return true;
   }
 
   // getLabelMethod is provided by the shared dom-helpers bundle that
@@ -204,6 +249,10 @@ function runInPage(ctx) {
     if (!el || !el.getAttribute) continue;
 
     if (!isEligibleAcc(el)) continue;
+    if (!isShownOnScreen(el)) {
+      metrics.notShownCount += 1;
+      continue;
+    }
 
     const role = (() => {
       try {

@@ -1027,7 +1027,7 @@ Applies to labelable native form controls exposed to assistive technologies:
 - select
 - textarea
 
-role="presentation"/"none" are excluded only when not focusable. Only controls that have a programmatic name count: a control with none is form-control-programmatic-label-present's finding, not a question about how good its name is.
+role="presentation"/"none" are excluded only when not focusable. A control not drawn on screen is excluded: transparent (opacity 0, its own or an ancestor's) or clipped away (as visually hidden text is), as a checkbox hidden behind a styled toggle is. It has no visible label to judge; its visible stand-in does. Only controls that have a programmatic name count: a control with none is form-control-programmatic-label-present's finding, not a question about how good its name is.
 
 **Expectation.**
 

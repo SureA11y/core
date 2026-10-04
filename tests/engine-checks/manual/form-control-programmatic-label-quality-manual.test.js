@@ -329,3 +329,33 @@ test(`${RULE_ID}: a hidden <label> beside a shown control => the placeholder is 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'label_from_placeholder_primary');
 });
+
+test(`${RULE_ID}: a control not drawn on screen (transparent or clipped) is not judged`, () => {
+  const clipped = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)';
+  const cases = [
+    '<input id="t" type="checkbox" aria-label="Menu" style="opacity:0">',
+    '<div style="opacity:0"><input id="t" type="text" placeholder="Search"></div>',
+    `<input id="t" type="checkbox" aria-label="Menu" style="${clipped}">`,
+    `<span style="${clipped}"><input id="t" type="text" title="Search"></span>`
+  ];
+  for (const body of cases) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    const rule = assertRule(result, RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+    assert.equal(rule.data.details.metrics.notShownCount, 1, body);
+  }
+});
+
+test(`${RULE_ID}: a hidden control beside a shown one; only the shown one is judged`, () => {
+  const html = `<!doctype html><html><body>
+    <input id="hid" type="checkbox" aria-label="Menu" style="opacity:0">
+    <input id="shown" type="text" aria-label="Search">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'shown'));
+});
