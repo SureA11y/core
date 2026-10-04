@@ -540,6 +540,43 @@ test('getFocusableInfo: a plain button is focusable and tabbable via native mech
   assert.equal(info.mechanism, 'native');
 });
 
+// Measured in Chromium and Firefox: a frame and a media element with
+// controls take focus and sit in the tab order whatever they hold; a video
+// without controls (Firefox only) and <embed>/<object> (depends on what they
+// embed) are not counted.
+for (const [label, html] of [
+  ['an <iframe>', '<iframe id="x" title="f"></iframe>'],
+  ['an <audio controls>', '<audio id="x" controls src="a.mp3"></audio>'],
+  ['a <video controls>', '<video id="x" controls></video>']
+]) {
+  test(`getFocusableInfo: ${label} is focusable and tabbable natively`, () => {
+    const { helpers, document } = helpersFor(html);
+    const info = helpers.getFocusableInfo(byId(document, 'x'), {});
+    assert.equal(info.focusable, true);
+    assert.equal(info.tabbable, true);
+    assert.equal(info.mechanism, 'native');
+  });
+}
+
+for (const [label, html] of [
+  ['an <audio> without controls', '<audio id="x" src="a.mp3"></audio>'],
+  ['a <video> without controls', '<video id="x"></video>'],
+  ['an <embed>', '<embed id="x" src="a.png" type="image/png">'],
+  ['an <object>', '<object id="x" data="a.png" type="image/png"></object>']
+]) {
+  test(`getFocusableInfo: ${label} is not counted as focusable`, () => {
+    const { helpers, document } = helpersFor(html);
+    assert.equal(helpers.getFocusableInfo(byId(document, 'x'), {}).focusable, false);
+  });
+}
+
+test('getFocusableInfo: an <iframe> with tabindex="-1" is focusable but not tabbable', () => {
+  const { helpers, document } = helpersFor('<iframe id="x" title="f" tabindex="-1"></iframe>');
+  const info = helpers.getFocusableInfo(byId(document, 'x'), {});
+  assert.equal(info.focusable, true);
+  assert.equal(info.tabbable, false);
+});
+
 test('getFocusableInfo: tabindex="-1" is focusable but not tabbable', () => {
   const { helpers, document } = helpersFor('<div id="d" tabindex="-1"></div>');
   const info = helpers.getFocusableInfo(byId(document, 'd'), {});

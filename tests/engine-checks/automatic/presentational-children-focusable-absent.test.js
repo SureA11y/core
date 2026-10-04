@@ -182,3 +182,21 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentational-children-focus
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+for (const [label, body] of [
+  [
+    'a <button> holds a <video controls>',
+    '<button id="host">Play <video controls></video></button>'
+  ],
+  [
+    'a role="img" holds an <iframe>',
+    '<div id="host" role="img" aria-label="Map"><iframe title="f"></iframe></div>'
+  ]
+]) {
+  test(`${RULE_ID}: fail when ${label}, which takes focus in Chromium and Firefox`, () => {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  });
+}
