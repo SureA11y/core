@@ -35,10 +35,10 @@ test(`${RULE_ID}: notApplicable when autoplaying audio is muted`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when autoplaying audio has controls`, () => {
+test(`${RULE_ID}: pass when autoplaying audio has controls`, () => {
   const html = `<!doctype html><html><body><audio autoplay controls src="x.mp3"></audio></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
@@ -183,4 +183,27 @@ test(`${RULE_ID}: the fallback inside an <object> already asked about is not ask
     maxOccurrences: 1
   });
   assert.ok(hasOccurrenceForId(rule, 'a'));
+});
+
+for (const [label, markup] of [
+  ['display:none', '<video autoplay controls id="m" style="display:none" src="v.mp4"></video>'],
+  ['a hidden ancestor', '<div hidden><audio autoplay controls id="m" src="a.mp3"></audio></div>'],
+  [
+    'visibility:hidden',
+    '<video autoplay controls id="m" style="visibility:hidden" src="v.mp4"></video>'
+  ]
+]) {
+  test(`${RULE_ID}: cantTell when autoplaying media has controls but is hidden by ${label}, since the controls cannot be reached`, () => {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'AUTOPLAY_CONTROLS_HIDDEN');
+  });
+}
+
+test(`${RULE_ID}: an element without controls inside a hidden ancestor is still reported as having no mechanism`, () => {
+  const html = `<!doctype html><html><body><div style="display:none"><audio autoplay src="a.mp3"></audio></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'AUTOPLAY_NO_CONTROLS_MECHANISM');
 });

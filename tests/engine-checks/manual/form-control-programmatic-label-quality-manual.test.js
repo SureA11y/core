@@ -33,15 +33,14 @@ test(`${RULE_ID}: no native controls => notApplicable`, () => {
   assert.equal(rule.data.details.metrics.applicableCount, 0);
 });
 
-test(`${RULE_ID}: native input with associated <label> => notApplicable (not flagged)`, () => {
+test(`${RULE_ID}: native input with associated <label> => pass (not flagged)`, () => {
   const html = `<!doctype html><html><body>
     <label for="a">First name</label>
     <input id="a" type="text">
   </body></html>`;
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  // Manual rules may only emit cantTell/notApplicable, never pass.
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+  const rule = assertRule(result, RULE_ID, 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
@@ -52,14 +51,13 @@ test(`${RULE_ID}: native input with associated <label> => notApplicable (not fla
   assert.equal(m.byMethod.label, 1);
 });
 
-test(`${RULE_ID}: native input with aria-label => notApplicable (not flagged)`, () => {
+test(`${RULE_ID}: native input with aria-label => pass (not flagged)`, () => {
   const html = `<!doctype html><html><body>
     <input id="b" type="text" aria-label="Email address">
   </body></html>`;
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  // Manual rules may only emit cantTell/notApplicable, never pass.
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+  const rule = assertRule(result, RULE_ID, 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });
@@ -226,4 +224,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: a control with no name at all => notApplicable, since that is form-control-programmatic-label-present's finding, not a question of label quality`, () => {
+  const html = `<!doctype html><html><body><input id="n" type="text"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  assert.equal(rule.data.details.metrics.applicableCount, 0);
+  assert.equal(rule.data.details.metrics.byMethod.none, 1);
 });

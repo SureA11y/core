@@ -187,8 +187,9 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every scrollable-overflow candidate is already reachable by keyboard.
+  // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
+  // yet: the focusable-descendant check counts tabindex="-1", disabled and
+  // hidden elements, and does not confirm the region really overflows.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 

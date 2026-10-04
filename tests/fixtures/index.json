@@ -1763,10 +1763,10 @@
       "fixtureFile": "tests/fixtures/no-autoplay-audio-all-scenarios.html",
       "totalCases": 11,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 6,
-        "OTHER": 5
+        "OTHER": 4
       }
     },
     {

@@ -1795,7 +1795,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "bypass-blocks-present",
     "title": "Page must provide a way to bypass repeated blocks",
-    "description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
+    "description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
     "i18n": {
       "titleKey": "bypassBlocksPresent_title",
       "descriptionKey": "bypassBlocksPresent_description"
@@ -10950,7 +10950,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Dieses Element mit role=\"{{role}}\" macht seine Kindelemente präsentativ, enthält aber Inhalte, die weiterhin Teil der sequenziellen Fokusnavigation sind ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Verschieben Sie den fokussierbaren Inhalt aus diesem Element heraus oder entfernen Sie die Rolle, die die Kindelemente präsentativ macht — beim Fokussieren im Inneren gibt es weder Rolle noch Name zum Vorlesen.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
-    "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
+    "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Skip-Link oder eine Überschrift.",
     "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
     "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
@@ -11108,6 +11108,8 @@ const I18N = {
     "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Dieses Element spielt automatisch Audio ab und hat native Bedienelemente, ist aber ausgeblendet, sodass diese nicht erreichbar sind.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Wenn der Clip länger als 3 Sekunden läuft, blenden Sie das Element ein, damit seine Bedienelemente nutzbar sind, oder bieten Sie eine andere Möglichkeit, ihn anzuhalten/zu stoppen oder seine Lautstärke zu regeln.",
     "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
     "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
@@ -11800,7 +11802,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "This role=\"{{role}}\" element makes its children presentational, but it contains content that is still part of sequential focus navigation ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
-    "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
+    "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
     "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.",
     "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
@@ -11958,6 +11960,8 @@ const I18N = {
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.",
     "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
     "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
@@ -12650,7 +12654,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Este elemento con role=\"{{role}}\" convierte a sus hijos en presentacionales, pero contiene contenido que sigue formando parte de la navegación secuencial por foco ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Mueva el contenido enfocable fuera de este elemento o quite el rol que convierte a los hijos en presentacionales: al recibir el foco dentro de él no hay rol ni nombre que anunciar.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
-    "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: una región de referencia main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
+    "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: una región de referencia main, un enlace de salto funcional, o un encabezado.",
     "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
     "bypassBlocksPresent_hint_cantTell": "Confirmar que la página ofrece un mecanismo de omisión: una región de referencia main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "La región de referencia banner debe ser de nivel superior",
@@ -12808,6 +12812,8 @@ const I18N = {
     "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Este elemento reproduce audio automáticamente con controles nativos, pero está oculto, así que sus controles no se pueden alcanzar.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Si el clip dura más de 3 segundos, mostrar el elemento para que sus controles se puedan usar, u ofrecer otra forma de pausarlo/detenerlo o de controlar su volumen.",
     "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
     "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
@@ -13500,7 +13506,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Cet élément avec role=\"{{role}}\" rend ses enfants présentationnels, mais il contient du contenu qui fait toujours partie de la navigation séquentielle au clavier ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Déplacez le contenu focalisable hors de cet élément, ou supprimez le rôle qui rend les enfants présentationnels : le focus qui y arrive n’a ni rôle ni nom à annoncer.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
-    "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
+    "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’évitement fonctionnel, ou un titre.",
     "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
     "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
@@ -13658,6 +13664,8 @@ const I18N = {
     "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Cet élément lit de l’audio automatiquement avec des commandes natives, mais il est masqué : ses commandes sont inaccessibles.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Si l’extrait dure plus de 3 secondes, affichez l’élément pour que ses commandes soient utilisables, ou proposez un autre moyen de le mettre en pause/l’arrêter ou d’en régler le volume.",
     "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
     "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
@@ -14350,7 +14358,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "この role=\"{{role}}\" の要素は子要素をプレゼンテーショナルにしますが、順次フォーカスナビゲーションの対象となるコンテンツを含んでいます ({{focusableElements}})。",
     "presentationalChildrenFocusableAbsent_hint_fail": "フォーカス可能なコンテンツをこの要素の外に移動するか、子要素をプレゼンテーショナルにするロールを削除してください。この要素の中でフォーカスを受けても、読み上げるロールや名前がありません。",
     "bypassBlocksPresent_title": "繰り返されるブロックをスキップする手段がページにあること",
-    "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックスキップ) の手段として認識されるもの (main ランドマーク、機能する同一ページ内アンカーリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
+    "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックスキップ) の手段として認識されるもの (main ランドマーク、機能するスキップリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
     "bypassBlocksPresent_summary_cantTell": "このページでは、繰り返されるコンテンツのブロックをスキップする手段として認識できるものが検出されませんでした。スキップの手段があるか、人による確認が必要です。",
     "bypassBlocksPresent_hint_cantTell": "ページにスキップの手段があるか確認してください。main ランドマーク (<main> または role=\"main\")、機能する「本文へスキップ」リンク、または支援技術が繰り返しコンテンツを飛ばすのに使える見出し要素などです。(モーダルダイアログによってページが inert になっている間など、手段が一時的に隠れている場合や、サイト単位で提供されている場合もあるため、人による確認が必要です。)",
     "landmarkBannerIsTopLevel_title": "banner ランドマークは最上位にあること",
@@ -14508,6 +14516,8 @@ const I18N = {
     "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "この要素はネイティブのコントロール付きで音声を自動再生しますが、非表示のためコントロールを操作できません。",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "再生が 3 秒を超える場合は、コントロールを使えるよう要素を表示するか、一時停止・停止または音量調整の別の手段を用意してください。",
     "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
     "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
@@ -27363,7 +27373,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "bypass-blocks-present",
     "title": "Page must provide a way to bypass repeated blocks",
-    "description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
+    "description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
     "i18n": {
       "titleKey": "bypassBlocksPresent_title",
       "descriptionKey": "bypassBlocksPresent_description"
@@ -37553,7 +37563,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -41646,7 +41656,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // resolve each fragment in the link's own root before falling back to the
   // document. This credits a skip link encapsulated in a web component the
   // same way as one authored in the light DOM.
-  function hasWorkingAnchorLink() {
+  // A link's accessible name: aria-labelledby/aria-label, else its content.
+  function linkName(a) {
+    const aria = helpers.getAriaNameInfo(a, ctx);
+    if (aria.present && aria.value) return aria.value;
+    return helpers.getContentNameInfo(a, ctx).value || '';
+  }
+
+  function hasWorkingSkipLink() {
     let links;
     try {
       links =
@@ -41678,6 +41695,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } catch {
         root = document;
       }
+
+      if (!helpers.hasSkipLinkWording(linkName(a))) continue;
 
       let target = resolveInRoot(root, fragment);
       if (!target && root !== document) {
@@ -41713,12 +41732,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const mainLandmark = hasMainLandmark();
-  const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
+  const anchorLink = mainLandmark ? false : hasWorkingSkipLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
   // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = [
@@ -47437,13 +47456,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if ((role === 'presentation' || role === 'none') && !tabbable) continue;
 
-    metrics.applicableCount += 1;
-
     const label = getLabelMethodSafe(el);
     const method = label && typeof label.method === 'string' ? label.method : 'none';
     if (Object.prototype.hasOwnProperty.call(metrics.byMethod, method))
       metrics.byMethod[method] += 1;
     else metrics.byMethod.none += 1;
+    if (method === 'none') continue;
+
+    metrics.applicableCount += 1;
 
     // Flag only when the *primary* (best) method is title/placeholder
     const isWeakPrimary = method === 'title' || method === 'placeholder';
@@ -47502,12 +47522,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // no applicable control relied on a weak (title/placeholder) primary
-  // label, so there is nothing to flag for review.
+  // No named control relies on title or placeholder as its primary label.
   return {
     ruleId: rule.ruleId,
-    outcome: 'notApplicable',
+    outcome: 'pass',
     severity: 'minor',
     occurrences: [],
     data: { details: { metrics } }
@@ -48516,7 +48534,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('a[href], [role="link"]');
 
   const groups = new Map(); // normName -> [{ el, href }]
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -48570,8 +48587,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!href) href = resolveOnclickLocation(el);
     if (!href) continue;
 
-    applicableCount += 1;
-
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name).push({ el, href });
   }
@@ -48617,7 +48632,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  if (applicableCount === 0) {
+  // Only a name shared by two or more links makes the rule apply.
+  let sharedNameGroups = 0;
+  for (const entries of groups.values()) if (entries.length > 1) sharedNameGroups += 1;
+  if (sharedNameGroups === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -48630,9 +48648,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every name group already resolves to a single shared destination.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Every shared name leads to one destination.
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
   const { helpers, rule, document } = ctx;
@@ -53673,9 +53690,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail).
-  // Strong evidence was found for all applicable media elements, so there
-  // is nothing to flag for review.
+  // Strong evidence of a transcript was found for every applicable media
+  // element, so there is nothing to flag. Not a pass: the evidence is a
+  // heuristic, and says nothing about whether the transcript is complete.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "menuitem-name-present": { run: (function runInPage(ctx) {
@@ -54698,9 +54715,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    if (el.hasAttribute('controls')) continue;
-
     const mediaTag = (el.tagName || '').toLowerCase();
+    if (el.hasAttribute('controls')) {
+      const shown = helpers.isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        ignoreOpacity: true
+      });
+      if (shown.eligible) continue;
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.',
+          hint: 'If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.',
+          i18n: {
+            summaryKey: 'noAutoplayAudio_summary_cantTell_controlsHidden',
+            hintKey: 'noAutoplayAudio_hint_cantTell_controlsHidden',
+            params: { element: mediaTag }
+          },
+          data: {
+            details: { reasonCode: 'AUTOPLAY_CONTROLS_HIDDEN', mediaTag }
+          }
+        })
+      );
+      continue;
+    }
+
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
@@ -54804,9 +54843,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every applicable autoplaying element already has a controls mechanism.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Every autoplaying element found has usable native controls.
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "object-text-alternative-present": { run: (function runInPage(ctx) {
   const { document, root, helpers, rule } = ctx;
@@ -57332,8 +57370,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every scrollable-overflow candidate is already reachable by keyboard.
+  // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
+  // yet: the focusable-descendant check counts tabindex="-1", disabled and
+  // hidden elements, and does not confirm the region really overflows.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
@@ -61911,8 +61950,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every <video> already has a captions track.
+  // Every <video> has a captions track. Not a pass: a track existing says
+  // nothing about whether its captions are accurate or complete.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-poster-text-alternative-present": { run: (function runInPage(ctx) {
@@ -62650,7 +62689,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Dieses Element mit role=\"{{role}}\" macht seine Kindelemente präsentativ, enthält aber Inhalte, die weiterhin Teil der sequenziellen Fokusnavigation sind ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Verschieben Sie den fokussierbaren Inhalt aus diesem Element heraus oder entfernen Sie die Rolle, die die Kindelemente präsentativ macht — beim Fokussieren im Inneren gibt es weder Rolle noch Name zum Vorlesen.",
     "bypassBlocksPresent_title": "Die Seite muss eine Möglichkeit bieten, wiederkehrende Blöcke zu überspringen",
-    "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Anker-Link auf derselben Seite oder eine Überschrift.",
+    "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Skip-Link oder eine Überschrift.",
     "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine anerkannte Möglichkeit erkannt, wiederkehrende Inhaltsblöcke zu überspringen – prüfen Sie, ob ein Überspring-Mechanismus vorhanden ist.",
     "bypassBlocksPresent_hint_cantTell": "Bestätigen Sie, dass die Seite einen Überspring-Mechanismus bietet: eine main-Landmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften-Elemente, die assistive Technologien nutzen können, um wiederkehrende Inhalte zu überspringen. (Ein Mechanismus kann vorübergehend verborgen sein – z. B. während ein modaler Dialog die Seite inert macht – oder seitenweit bereitgestellt werden; dies erfordert eine menschliche Bestätigung.)",
     "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
@@ -62808,6 +62847,8 @@ const I18N = {
     "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne einen nativen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung.",
     "noAutoplayAudio_hint_cantTell": "Falls dieser Clip länger als 3 Sekunden abläuft, fügen Sie ein controls-Attribut (oder einen gleichwertigen benutzerdefinierten Mechanismus) hinzu, damit Nutzer ihn pausieren/stoppen oder seine Lautstärke unabhängig von der Systemlautstärke regeln können.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Dieses Element spielt automatisch Audio ab und hat native Bedienelemente, ist aber ausgeblendet, sodass diese nicht erreichbar sind.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Wenn der Clip länger als 3 Sekunden läuft, blenden Sie das Element ein, damit seine Bedienelemente nutzbar sind, oder bieten Sie eine andere Möglichkeit, ihn anzuhalten/zu stoppen oder seine Lautstärke zu regeln.",
     "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
     "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
     "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
@@ -63500,7 +63541,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "This role=\"{{role}}\" element makes its children presentational, but it contains content that is still part of sequential focus navigation ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.",
     "bypassBlocksPresent_title": "Page must provide a way to bypass repeated blocks",
-    "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.",
+    "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
     "bypassBlocksPresent_summary_cantTell": "No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.",
     "bypassBlocksPresent_hint_cantTell": "Confirm the page offers a bypass mechanism: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)",
     "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
@@ -63658,6 +63699,8 @@ const I18N = {
     "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "This element autoplays audio without a native pause/stop or volume-control mechanism.",
     "noAutoplayAudio_hint_cantTell": "If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.",
     "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
     "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
     "videoCaption_title": "Prerecorded video should provide a captions track",
@@ -64350,7 +64393,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Este elemento con role=\"{{role}}\" convierte a sus hijos en presentacionales, pero contiene contenido que sigue formando parte de la navegación secuencial por foco ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Mueva el contenido enfocable fuera de este elemento o quite el rol que convierte a los hijos en presentacionales: al recibir el foco dentro de él no hay rol ni nombre que anunciar.",
     "bypassBlocksPresent_title": "La página debe proporcionar una forma de omitir bloques repetidos",
-    "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: una región de referencia main, un enlace de anclaje funcional dentro de la misma página, o un encabezado.",
+    "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de éxito 2.4.1 de WCAG: una región de referencia main, un enlace de salto funcional, o un encabezado.",
     "bypassBlocksPresent_summary_cantTell": "No se detectó ninguna forma reconocida de omitir bloques de contenido repetidos en esta página; verifique que exista un mecanismo de omisión.",
     "bypassBlocksPresent_hint_cantTell": "Confirmar que la página ofrece un mecanismo de omisión: una región de referencia main (<main> o role=\"main\"), un enlace funcional de \"saltar al contenido\", o elementos de encabezado que las tecnologías de asistencia puedan usar para saltar el contenido repetido. (Un mecanismo puede estar oculto temporalmente —por ejemplo, mientras un diálogo modal deja la página inerte— o proporcionarse a nivel de sitio; esto requiere confirmación humana.)",
     "landmarkBannerIsTopLevel_title": "La región de referencia banner debe ser de nivel superior",
@@ -64508,6 +64551,8 @@ const I18N = {
     "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo de controles nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de éxito 1.4.2 de WCAG.",
     "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente sin un mecanismo nativo de pausa/detención o control de volumen.",
     "noAutoplayAudio_hint_cantTell": "Si este clip dura más de 3 segundos, agregar un atributo controls (o un mecanismo personalizado equivalente) para que los usuarios puedan pausarlo/detenerlo o controlar su volumen independientemente del volumen del sistema.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Este elemento reproduce audio automáticamente con controles nativos, pero está oculto, así que sus controles no se pueden alcanzar.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Si el clip dura más de 3 segundos, mostrar el elemento para que sus controles se puedan usar, u ofrecer otra forma de pausarlo/detenerlo o de controlar su volumen.",
     "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
     "noAutoplayAudio_hint_cantTell_embedded": "Compruebe si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
     "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
@@ -65200,7 +65245,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "Cet élément avec role=\"{{role}}\" rend ses enfants présentationnels, mais il contient du contenu qui fait toujours partie de la navigation séquentielle au clavier ({{focusableElements}}).",
     "presentationalChildrenFocusableAbsent_hint_fail": "Déplacez le contenu focalisable hors de cet élément, ou supprimez le rôle qui rend les enfants présentationnels : le focus qui y arrive n’a ni rôle ni nom à annoncer.",
     "bypassBlocksPresent_title": "La page doit proposer un moyen de contourner les blocs répétés",
-    "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’ancrage fonctionnel vers la même page, ou un titre.",
+    "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’évitement fonctionnel, ou un titre.",
     "bypassBlocksPresent_summary_cantTell": "Aucun moyen reconnu de contourner les blocs de contenu répétés n’a été détecté sur cette page — vérifiez qu’un mécanisme de contournement existe.",
     "bypassBlocksPresent_hint_cantTell": "Confirmez que la page propose un mécanisme de contournement : un point de repère main (<main> ou role=\"main\"), un lien « aller au contenu » fonctionnel, ou des éléments de titre que les technologies d’assistance peuvent utiliser pour passer le contenu répété. (Un mécanisme peut être temporairement masqué — par exemple pendant qu’une boîte de dialogue modale rend la page inerte — ou fourni à l’échelle du site ; cela nécessite une confirmation humaine.)",
     "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
@@ -65358,6 +65403,8 @@ const I18N = {
     "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une revue manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
     "noAutoplayAudio_summary_cantTell": "Cet élément lit un audio automatiquement sans mécanisme natif de pause/arrêt ou de contrôle du volume.",
     "noAutoplayAudio_hint_cantTell": "Si ce clip dure plus de 3 secondes, ajoutez un attribut controls (ou un mécanisme personnalisé équivalent) afin que les utilisateurs puissent le mettre en pause/l’arrêter ou contrôler son volume indépendamment du volume du système.",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "Cet élément lit de l’audio automatiquement avec des commandes natives, mais il est masqué : ses commandes sont inaccessibles.",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "Si l’extrait dure plus de 3 secondes, affichez l’élément pour que ses commandes soient utilisables, ou proposez un autre moyen de le mettre en pause/l’arrêter ou d’en régler le volume.",
     "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
     "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez s’il joue un son de lui-même. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir l’arrêter ou en régler le volume indépendamment du volume du système.",
     "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
@@ -66050,7 +66097,7 @@ const I18N = {
     "presentationalChildrenFocusableAbsent_summary_fail": "この role=\"{{role}}\" の要素は子要素をプレゼンテーショナルにしますが、順次フォーカスナビゲーションの対象となるコンテンツを含んでいます ({{focusableElements}})。",
     "presentationalChildrenFocusableAbsent_hint_fail": "フォーカス可能なコンテンツをこの要素の外に移動するか、子要素をプレゼンテーショナルにするロールを削除してください。この要素の中でフォーカスを受けても、読み上げるロールや名前がありません。",
     "bypassBlocksPresent_title": "繰り返されるブロックをスキップする手段がページにあること",
-    "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックスキップ) の手段として認識されるもの (main ランドマーク、機能する同一ページ内アンカーリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
+    "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックスキップ) の手段として認識されるもの (main ランドマーク、機能するスキップリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
     "bypassBlocksPresent_summary_cantTell": "このページでは、繰り返されるコンテンツのブロックをスキップする手段として認識できるものが検出されませんでした。スキップの手段があるか、人による確認が必要です。",
     "bypassBlocksPresent_hint_cantTell": "ページにスキップの手段があるか確認してください。main ランドマーク (<main> または role=\"main\")、機能する「本文へスキップ」リンク、または支援技術が繰り返しコンテンツを飛ばすのに使える見出し要素などです。(モーダルダイアログによってページが inert になっている間など、手段が一時的に隠れている場合や、サイト単位で提供されている場合もあるため、人による確認が必要です。)",
     "landmarkBannerIsTopLevel_title": "banner ランドマークは最上位にあること",
@@ -66208,6 +66255,8 @@ const I18N = {
     "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
     "noAutoplayAudio_summary_cantTell": "この要素はネイティブの一時停止/停止や音量調節の仕組みなしに音声を自動再生します。3 秒の例外に該当するか、人による確認が必要です。",
     "noAutoplayAudio_hint_cantTell": "このクリップが 3 秒を超えて再生される場合は、controls 属性 (または同等の独自の仕組み) を追加し、利用者が一時停止/停止したり、システムの音量とは別に音量を調節したりできるようにしてください。",
+    "noAutoplayAudio_summary_cantTell_controlsHidden": "この要素はネイティブのコントロール付きで音声を自動再生しますが、非表示のためコントロールを操作できません。",
+    "noAutoplayAudio_hint_cantTell_controlsHidden": "再生が 3 秒を超える場合は、コントロールを使えるよう要素を表示するか、一時停止・停止または音量調整の別の手段を用意してください。",
     "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
     "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
     "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",

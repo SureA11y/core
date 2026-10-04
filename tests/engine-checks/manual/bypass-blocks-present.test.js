@@ -19,34 +19,34 @@ const RULE_ID = 'bypass-blocks-present';
 // ("verify a mechanism exists"), never a hard fail. See the rule's
 // implementation-notes for why the no-mechanism case is not high-confidence.
 
-test(`${RULE_ID}: notApplicable when a <main> landmark is present`, () => {
+test(`${RULE_ID}: pass when a <main> landmark is present`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role="main" is present`, () => {
+test(`${RULE_ID}: pass when role="main" is present`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><div role="main">Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a working same-page anchor link is present`, () => {
+test(`${RULE_ID}: pass when a working skip link is present`, () => {
   const html = `<!doctype html><html><body><a href="#content">Skip to content</a><nav>Nav</nav><div id="content">Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a legacy <a name> anchor target is present`, () => {
+test(`${RULE_ID}: pass when a legacy <a name> anchor target is present`, () => {
   const html = `<!doctype html><html><body><a href="#content">Skip</a><nav>Nav</nav><a name="content"></a><div>Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when at least one heading is present`, () => {
+test(`${RULE_ID}: pass when at least one heading is present`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><h1>Title</h1><div>Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when an anchor link's target does not resolve and there is no other mechanism`, () => {
@@ -67,10 +67,10 @@ test(`${RULE_ID}: cantTell when the only heading sits inside a display:none ance
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: notApplicable when the only <main> is visually clipped off-screen but remains in the accessibility tree (must NOT regress)`, () => {
+test(`${RULE_ID}: pass when the only <main> is visually clipped off-screen but remains in the accessibility tree (must NOT regress)`, () => {
   const html = `<!doctype html><html><body><nav>Nav</nav><main style="position:absolute;clip-path:inset(50%);visibility:visible">Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the only heading is positioned off-screen (ACT 047fe0: heading navigation is not equivalent for sighted keyboard users if the heading isn't visible)`, () => {
@@ -109,7 +109,7 @@ test(`${RULE_ID}: shadow-aware, a skip link and its target inside the same shado
     runOnly: [RULE_ID],
     engineOptions: { includeShadowDom: true }
   });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
@@ -166,6 +166,24 @@ test(`${RULE_ID}: a legacy <a name> anchor with a backslash or quote in its name
   ]) {
     const html = `<!doctype html><html><body><a href="${href}">Skip</a><nav>Nav</nav><a name='${name}'></a><div>Content</div></body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
+});
+
+test(`${RULE_ID}: cantTell when the only same-page link is not a skip link, such as "Back to top", and there is no main landmark or heading`, () => {
+  const html = `<!doctype html><html><body><div id="top">Intro</div><nav>Nav</nav><a href="#top">Back to top</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: pass when a skip link is worded in another shipped language and its target resolves`, () => {
+  const html = `<!doctype html><html lang="es"><body><a href="#c">Saltar al contenido</a><nav>Nav</nav><div id="c">Contenido</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a skip link named by aria-label counts`, () => {
+  const html = `<!doctype html><html><body><a href="#c" aria-label="Skip to main content">↓</a><nav>Nav</nav><div id="c">Content</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

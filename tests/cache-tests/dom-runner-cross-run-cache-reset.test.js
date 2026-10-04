@@ -31,10 +31,10 @@ test('regression: bypass-blocks-present does not report stale occurrences[].html
   );
   const { document } = dom.window;
 
-  // Run 1: body has a <main>, so the rule finds a mechanism (notApplicable).
+  // Run 1: body has a <main>, so the rule finds a mechanism (pass).
   document.body.innerHTML = '<main><img src="dummy.png" alt="Decorative square" /></main>';
   const result1 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
-  assertRule(result1, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result1, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 
   // Run 2: mutate the SAME document.body in place (same object reference,
   // different content) so no main/anchor/heading remains.

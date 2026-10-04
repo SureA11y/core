@@ -14,6 +14,9 @@
  *     - select
  *     - textarea
  *   role="presentation"/"none" are excluded only when not focusable.
+ *   Only controls that have a programmatic name count: a control with none
+ *   is form-control-programmatic-label-present's finding, not
+ *   a question about how good its name is.
  * @expectation
  *   If a control has a programmatic name, it should not rely ONLY on:
  *     - placeholder (non-empty)
@@ -171,13 +174,14 @@ function runInPage(ctx) {
 
     if ((role === 'presentation' || role === 'none') && !tabbable) continue;
 
-    metrics.applicableCount += 1;
-
     const label = getLabelMethodSafe(el);
     const method = label && typeof label.method === 'string' ? label.method : 'none';
     if (Object.prototype.hasOwnProperty.call(metrics.byMethod, method))
       metrics.byMethod[method] += 1;
     else metrics.byMethod.none += 1;
+    if (method === 'none') continue;
+
+    metrics.applicableCount += 1;
 
     // Flag only when the *primary* (best) method is title/placeholder
     const isWeakPrimary = method === 'title' || method === 'placeholder';
@@ -236,12 +240,10 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // no applicable control relied on a weak (title/placeholder) primary
-  // label, so there is nothing to flag for review.
+  // No named control relies on title or placeholder as its primary label.
   return {
     ruleId: rule.ruleId,
-    outcome: 'notApplicable',
+    outcome: 'pass',
     severity: 'minor',
     occurrences: [],
     data: { details: { metrics } }
