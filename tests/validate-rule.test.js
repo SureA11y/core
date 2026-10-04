@@ -112,3 +112,35 @@ for (const [label, line] of [
     assert.equal(validateSource(withMeta(line)), false);
   });
 }
+
+// The outcome contract on its own: the script looks rules up by id, so a
+// modified copy of a built-in rule would run the built-in one.
+const { validateOutcomeOccurrenceInvariants } = require('../scripts/validate-rule.js');
+const accepts = (outcome, occurrences, isAutomatic) => {
+  try {
+    validateOutcomeOccurrenceInvariants({ outcome, occurrences }, isAutomatic);
+    return true;
+  } catch {
+    return false;
+  }
+};
+const OCC = [{ selector: 'html', html: '<html>' }];
+
+test('a manual rule may pass, with no occurrences, as RULE_TAXONOMY.md §1.1 allows', () => {
+  assert.equal(accepts('pass', [], false), true);
+  assert.equal(accepts('pass', OCC, false), false);
+});
+
+test('a manual rule never fails, and asks with at least one occurrence', () => {
+  assert.equal(accepts('fail', OCC, false), false);
+  assert.equal(accepts('cantTell', OCC, false), true);
+  assert.equal(accepts('cantTell', [], false), false);
+  assert.equal(accepts('notApplicable', [], false), true);
+});
+
+test('an automatic rule may give any outcome, with occurrences only on fail or cantTell', () => {
+  for (const o of ['fail', 'cantTell']) assert.equal(accepts(o, OCC, true), true, o);
+  for (const o of ['pass', 'notApplicable']) assert.equal(accepts(o, [], true), true, o);
+  assert.equal(accepts('fail', [], true), false);
+  assert.equal(accepts('pass', OCC, true), false);
+});
