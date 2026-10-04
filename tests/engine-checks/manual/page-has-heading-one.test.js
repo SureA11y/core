@@ -41,16 +41,16 @@ function assertNodeRule(html, opts, expectedOutcome, occCounts) {
   return rule;
 }
 
-test(`${RULE_ID}: notApplicable when the page has an h1`, () => {
+test(`${RULE_ID}: pass when the page has an h1`, () => {
   const html = `<!doctype html><html><body><h1>Title</h1></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the page has role="heading" aria-level="1"`, () => {
+test(`${RULE_ID}: pass when the page has role="heading" aria-level="1"`, () => {
   const html = `<!doctype html><html><body><div role="heading" aria-level="1">Title</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {
@@ -85,10 +85,10 @@ test(`${RULE_ID}: cantTell when the only h1 has visibility:hidden`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: notApplicable when the h1 is only visually clipped off-screen but remains in the accessibility tree (eBay's homepage pattern, must not regress)`, () => {
+test(`${RULE_ID}: pass when the h1 is only visually clipped off-screen but remains in the accessibility tree (eBay's homepage pattern, must not regress)`, () => {
   const html = `<!doctype html><html><body><h1 style="position:absolute;clip-path:inset(50%);visibility:visible">Site title</h1></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
@@ -136,14 +136,14 @@ test(`page-has-heading-one: notApplicable when engineOptions.fragment is true, e
   });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when the page has an h1`, () => {
+test(`${RULE_ID} (node runtime): pass when the page has an h1`, () => {
   const html = `<!doctype html><html><body><h1>Title</h1></body></html>`;
-  assertNodeRule(html, {}, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, {}, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when the page has role="heading" aria-level="1"`, () => {
+test(`${RULE_ID} (node runtime): pass when the page has role="heading" aria-level="1"`, () => {
   const html = `<!doctype html><html><body><div role="heading" aria-level="1">Title</div></body></html>`;
-  assertNodeRule(html, {}, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, {}, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID} (node runtime): cantTell when a role="heading" has the wrong aria-level`, () => {
@@ -167,7 +167,7 @@ test(`${RULE_ID} (node runtime): cantTell when the only h1 has aria-hidden="true
   assertNodeRule(html, {}, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when the h1 is only visually clipped off-screen but remains in the accessibility tree`, () => {
+test(`${RULE_ID} (node runtime): pass when the h1 is only visually clipped off-screen but remains in the accessibility tree`, () => {
   const html = `<!doctype html><html><body><h1 style="position:absolute;clip-path:inset(50%);visibility:visible">Site title</h1></body></html>`;
-  assertNodeRule(html, {}, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, {}, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

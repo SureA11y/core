@@ -8,10 +8,12 @@
  * @summary Page content should be contained within a landmark region
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to any element under <body> that directly carries visible text
- *   (or other own content, see @implementation-notes) and is not itself a
- *   landmark, live region, dialog, button, <svg>, <iframe>/<frame>, or a
- *   resolvable skip-link.
+ *   Applies to a page whose <body> has content: an element that directly
+ *   carries visible text (or other own content, see
+ *   @implementation-notes) outside any landmark, or a landmark with
+ *   anything in it. Live regions, dialogs, buttons, <svg>,
+ *   <iframe>/<frame> and resolvable skip links are not content that needs
+ *   a landmark.
  * @expectation
  *   Every top-level piece of page content lives inside a landmark region
  *   (main, navigation, banner, contentinfo, complementary, region, form,
@@ -219,6 +221,9 @@ function runInPage(ctx) {
   const MAX_VISITED_NODES = 20000;
   let visited = 0;
   let truncated = false;
+  // Whether some landmark holds anything: with nothing outside one, that is
+  // what makes the page a pass rather than an empty one.
+  let placedContent = false;
 
   const leaves = [];
   const stopperFlagged = new WeakSet();
@@ -252,6 +257,9 @@ function runInPage(ctx) {
 
     if (isStopper(el)) {
       markFlaggedUpToBody(el);
+      if (!placedContent && isLandmark(el) && (normalizeWs(el.textContent) || el.children.length)) {
+        placedContent = true;
+      }
       if (tag === 'iframe' || tag === 'frame') leaves.push(el);
       return;
     }
@@ -321,7 +329,10 @@ function runInPage(ctx) {
   });
 
   if (occurrences.length === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    // A walk cut short by the node budget cannot vouch for the rest of the
+    // page, so it never passes.
+    const outcome = placedContent && !truncated ? 'pass' : 'notApplicable';
+    return { ruleId: rule.ruleId, outcome, severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,

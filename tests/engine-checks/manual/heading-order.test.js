@@ -22,16 +22,16 @@ test(`${RULE_ID}: notApplicable when fewer than two headings exist`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable for consecutive heading levels`, () => {
+test(`${RULE_ID}: pass for consecutive heading levels`, () => {
   const html = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3>C</h3></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a later heading revisits a level already reached`, () => {
+test(`${RULE_ID}: pass when a later heading revisits a level already reached`, () => {
   const html = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3>C</h3><h2>D</h2><h4>E</h4></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when a heading skips a level`, () => {
@@ -48,7 +48,7 @@ test(`${RULE_ID}: aria-level on a native heading gives its level`, () => {
   const quiet = `<!doctype html><html><body><h1>S</h1><h4 aria-level="2">N</h4></body></html>`;
   for (const engineOptions of [{}]) {
     const result = runa11yCoreOnHtml(quiet, { runOnly: [RULE_ID], engineOptions });
-    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 
   const skip = `<!doctype html><html><body><h1>S</h1><h2 id="a" aria-level="4">N</h2></body></html>`;

@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no scope attribute is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when scope is valid`, () => {
+test(`${RULE_ID}: pass when scope is valid`, () => {
   const html = `<!doctype html><html><body><table><tr><th scope="col">Name</th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when scope value is invalid`, () => {

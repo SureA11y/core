@@ -16,10 +16,10 @@ function hasOccurrenceForId(rule, id) {
   );
 }
 
-test(`${RULE_ID}: notApplicable when all top-level content is inside a landmark`, () => {
+test(`${RULE_ID}: pass when all top-level content is inside a landmark`, () => {
   const html = `<!doctype html><html><body><header>H</header><main>Content</main><footer>F</footer></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: notApplicable when body has no text-bearing children`, () => {
@@ -39,7 +39,7 @@ test(`${RULE_ID}: cantTell when a direct child of body has text but is not a lan
 test(`${RULE_ID}: content inside a <search> element is inside a landmark`, () => {
   const html = `<!doctype html><html><body><main>Content</main><search><p>Find a product</p></search></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell for content inside an unnamed role="region", which is not a landmark (Core-AAM)`, () => {
@@ -105,40 +105,40 @@ test(`${RULE_ID}: recurses through a single SPA-style root wrapper div to find t
   assert.ok(!rule.occurrences[0].html.includes('Real content'));
 });
 
-test(`${RULE_ID}: notApplicable when a single SPA-style root div's content is entirely landmarked`, () => {
+test(`${RULE_ID}: pass when a single SPA-style root div's content is entirely landmarked`, () => {
   const html = `<!doctype html><html><body><div id="root"><header>H</header><main>Content</main><footer>F</footer></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a floating button outside any landmark is exempt (deliberate scope choice)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><button>Back to top</button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: an open dialog outside any landmark is exempt (it's its own modal context)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><div role="dialog" aria-label="x">Modal text</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a live region (role=status) outside any landmark is exempt (self-contained announced area)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><div role="status">Saved!</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: an <svg> outside any landmark is exempt (decorative/icon graphics, not text content)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><svg><text>icon label</text></svg></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a resolvable "skip to content" link outside any landmark is exempt`, () => {
   const html = `<!doctype html><html><body><a href="#main">Skip to content</a><main id="main">Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a skip-link-shaped anchor with an unresolvable target is NOT exempt (not a real skip link)`, () => {
@@ -152,6 +152,18 @@ test(`${RULE_ID}: a skip-link-shaped anchor with an unresolvable target is NOT e
 
 test(`${RULE_ID}: an empty, non-text focus-trap sentinel div (MUI-style <div tabindex="0">) is never flagged (no own content, no false positive)`, () => {
   const html = `<!doctype html><html><body><main>Content</main><div tabindex="0" data-testid="sentinelStart"></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: notApplicable when the only landmark is empty, since there is no content to place`, () => {
+  const html = `<!doctype html><html><body><main></main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: never passes when the walk stopped at its node budget, since the rest of the page went unchecked`, () => {
+  const html = `<!doctype html><html><body><main>Content</main>${'<div></div>'.repeat(20001)}</body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

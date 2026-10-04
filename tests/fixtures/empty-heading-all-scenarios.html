@@ -18,7 +18,7 @@
   <p class="note">Each target has a stable <code>id</code> of the form <code>eh_case_NN</code>.</p>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — NEUTRAL: heading with text content</div>
+    <div class="case-title">01 — PASS: heading with text content</div>
     <h2 id="eh_case_01">Section title</h2>
   </div>
 
@@ -28,12 +28,12 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — NEUTRAL: empty native heading but has aria-label</div>
+    <div class="case-title">03 — PASS: empty native heading but has aria-label</div>
     <h2 id="eh_case_03" aria-label="Section title"></h2>
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — NEUTRAL: empty heading but has a title attribute (last-resort naming fallback)</div>
+    <div class="case-title">04 — PASS: empty heading but has a title attribute (last-resort naming fallback)</div>
     <h2 id="eh_case_04" title="Section title"></h2>
   </div>
 
@@ -48,7 +48,7 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — NEUTRAL: heading has no direct text, but a named descendant (icon-only link with its own aria-label) contributes an accessible name</div>
+    <div class="case-title">07 — PASS: heading has no direct text, but a named descendant (icon-only link with its own aria-label) contributes an accessible name</div>
     <h2 id="eh_case_07"><a href="/" aria-label="Site homepage"><svg width="10" height="10"></svg></a></h2>
   </div>
 
@@ -63,7 +63,7 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — NEUTRAL: heading has no direct text, but a named descendant image (alt text, nested through an extra non-naming &lt;div&gt; wrapper) contributes an accessible name</div>
+    <div class="case-title">10 — PASS: heading has no direct text, but a named descendant image (alt text, nested through an extra non-naming &lt;div&gt; wrapper) contributes an accessible name</div>
     <h1 id="eh_case_10"><a href="/"><div><img src="logo.png" alt="Colorful 'Party City' logo"></div></a></h1>
   </div>
 

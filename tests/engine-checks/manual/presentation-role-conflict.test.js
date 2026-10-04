@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no role="presentation"/"none" is present`, 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role="presentation" has no naming attribute`, () => {
+test(`${RULE_ID}: pass when role="presentation" has no naming attribute`, () => {
   const html = `<!doctype html><html><body><div role="presentation"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when role="presentation" has aria-label`, () => {
@@ -74,10 +74,10 @@ test(`${RULE_ID}: cantTell when role="none" has tabindex="0"`, () => {
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when role="presentation" is on a disabled (non-focusable) button`, () => {
+test(`${RULE_ID}: pass when role="presentation" is on a disabled (non-focusable) button`, () => {
   const html = `<!doctype html><html><body><button id="a" role="presentation" disabled></button></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when <img alt=""> has aria-hidden="" (empty value, but still a specified global ARIA attribute: presence, not value, triggers the conflict)`, () => {
@@ -88,10 +88,10 @@ test(`${RULE_ID}: cantTell when <img alt=""> has aria-hidden="" (empty value, bu
   assert.deepStrictEqual(rule.occurrences[0].data.details.conflictingAttrs, ['aria-hidden']);
 });
 
-test(`${RULE_ID}: notApplicable when <img alt=""> has no conflicting attribute`, () => {
+test(`${RULE_ID}: pass when <img alt=""> has no conflicting attribute`, () => {
   const html = `<!doctype html><html><body><img id="a" src="x.png" alt=""></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: notApplicable when <img> has a non-empty alt (out of scope, not an implicit presentation role)`, () => {
@@ -107,22 +107,22 @@ test(`${RULE_ID}: cantTell when role="presentation" combined with aria-current (
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when role="presentation" has aria-hidden="true" (the exact truthy value removes it from the AT tree unconditionally, so the role restoration this rule warns about never reaches assistive tech)`, () => {
+test(`${RULE_ID}: pass when role="presentation" has aria-hidden="true" (the exact truthy value removes it from the AT tree unconditionally, so the role restoration this rule warns about never reaches assistive tech)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="presentation" aria-hidden="true"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when <img alt=""> has aria-hidden="true" (real-world pattern: decorative icon double-hidden via empty alt + aria-hidden)`, () => {
+test(`${RULE_ID}: pass when <img alt=""> has aria-hidden="true" (real-world pattern: decorative icon double-hidden via empty alt + aria-hidden)`, () => {
   const html = `<!doctype html><html><body><img id="a" src="x.png" alt="" aria-hidden="true"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role="none" has aria-hidden="true" AND another global attribute (aria-label), since the other attribute is equally inert, not just aria-hidden itself`, () => {
+test(`${RULE_ID}: pass when role="none" has aria-hidden="true" AND another global attribute (aria-label), since the other attribute is equally inert, not just aria-hidden itself`, () => {
   const html = `<!doctype html><html><body><div id="a" role="none" aria-hidden="true" aria-label="x"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when role="presentation" has aria-hidden="true" but is ALSO natively focusable, since focusability is a real, independent hazard aria-hidden does not neutralize`, () => {

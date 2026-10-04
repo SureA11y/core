@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no control has a title attribute`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the control has a real label in addition to title`, () => {
+test(`${RULE_ID}: pass when the control has a real label in addition to title`, () => {
   const html = `<!doctype html><html><body><label>Name <input title="Full name"></label></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when title is the only label mechanism`, () => {

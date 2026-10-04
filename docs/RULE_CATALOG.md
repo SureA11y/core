@@ -207,7 +207,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that no two elements on the page share the same accesskey attribute value.
 
-**Applies to.** Applies whenever two or more elements share the same non-empty accesskey attribute value (case-insensitive).
+**Applies to.** Applies whenever two or more elements carry a non-empty accesskey attribute: only then can two of them collide.
 
 **Expectation.** Every accesskey value on the page is unique. Duplicate accesskeys make keyboard-shortcut activation ambiguous: only one of the elements sharing the key can actually be reached by it, and which one is browser/platform-dependent.
 
@@ -1918,7 +1918,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that content under &lt;body&gt; is contained within a landmark region.
 
-**Applies to.** Applies to any element under &lt;body&gt; that directly carries visible text (or other own content, see @implementation-notes) and is not itself a landmark, live region, dialog, button, &lt;svg&gt;, &lt;iframe&gt;/&lt;frame&gt;, or a resolvable skip-link.
+**Applies to.** Applies to a page whose &lt;body&gt; has content: an element that directly carries visible text (or other own content, see
 
 **Expectation.** Every top-level piece of page content lives inside a landmark region (main, navigation, banner, contentinfo, complementary, region, form, search), so assistive technology users navigating by landmark do not miss content that was never placed inside one.
 

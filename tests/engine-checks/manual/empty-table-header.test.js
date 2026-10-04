@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no th is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when th has text content`, () => {
+test(`${RULE_ID}: pass when th has text content`, () => {
   const html = `<!doctype html><html><body><table><tr><th>Name</th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when th is empty`, () => {
@@ -48,10 +48,10 @@ test(`${RULE_ID}: cantTell when th is named only via aria-label, no visible text
   assert.equal(rule.occurrences[0].data.details.ariaName, 'Chrome');
 });
 
-test(`${RULE_ID}: notApplicable when th has visible text even alongside an aria-label`, () => {
+test(`${RULE_ID}: pass when th has visible text even alongside an aria-label`, () => {
   const html = `<!doctype html><html><body><table><tr><th id="a" aria-label="Chrome">Chrome</th></tr></table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when a non-<th> element has role="columnheader" and is empty`, () => {
