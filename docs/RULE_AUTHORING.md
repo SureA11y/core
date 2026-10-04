@@ -373,6 +373,11 @@ Automatic:
 Manual:
 - `notApplicable` if no applicable targets
 - `cantTell` if at least one target requires review
+- `pass` if applicable targets exist, none requires review, and nothing about
+  them needs a person to judge: `landmark-unique` passes when every same-role
+  group of landmarks has distinct names. A rule whose question is a judgment on
+  every target, such as `img-alt-quality`, has no such case and never passes.
+  See `RULE_TAXONOMY.md` §1.1.
 
 ---
 

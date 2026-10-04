@@ -1425,10 +1425,10 @@
       "fixtureFile": "tests/fixtures/landmark-unique-all-scenarios.html",
       "totalCases": 14,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 3,
         "FAIL": 0,
         "CANTTELL": 8,
-        "OTHER": 6
+        "OTHER": 3
       }
     },
     {

@@ -31,8 +31,15 @@ Encoded by: `meta.type`
           safety net (`contrast-minimum.js`/`contrast-enhanced.js`/
           `contrast-computable.js`/`target-size-minimum.js`)
 - `manual`
-    - Rule signals **human review required**: it cannot decide at all
-    - Allowed outcomes: `cantTell`, `notApplicable`
+    - Rule signals **human review required**: it cannot decide whether what
+      it found is a problem
+    - Allowed outcomes: `cantTell`, `notApplicable`, and `pass` only when the
+      answer that needs no judgment is the one found. `landmark-unique` cannot
+      decide whether two landmarks sharing a name are a problem (the APG
+      allows it when their content is identical), so that is `cantTell`; but
+      "every name differs" is a fact, so that is `pass`. A rule that asks a
+      person to judge every target it finds, such as whether an image's text
+      alternative is accurate, never reports `pass`.
 
 Manual rules MUST NOT make normative failure decisions. The dividing line
 between the two types is whether the rule can decide, not which outcome it

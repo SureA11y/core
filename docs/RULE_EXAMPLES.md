@@ -1259,19 +1259,26 @@ A `<main>` landmark exists, so there is nothing to flag.
 
 ## landmark-unique
 
-**Flagged (cantTell)**
-```html
-<nav aria-label="Site">First</nav>
-<nav aria-label="Site">Second</nav>
-```
-Two navigation landmarks share the identical accessible name, so a screen reader user can't tell them apart in the landmarks list.
-
-**Not applicable**
+**Passed**
 ```html
 <nav aria-label="Primary">Primary nav</nav>
 <nav aria-label="Footer">Footer nav</nav>
 ```
 Each navigation landmark has a distinct accessible name.
+
+**Flagged (cantTell)**
+```html
+<nav aria-label="Site">First</nav>
+<nav aria-label="Site">Second</nav>
+```
+Two navigation landmarks share the identical accessible name, so a screen reader user can't tell them apart in the landmarks list. A person checks whether their content is identical, the one case where the ARIA Authoring Practices allow a shared name.
+
+**Not applicable**
+```html
+<nav aria-label="Primary">Primary nav</nav>
+<main>Content</main>
+```
+No landmark role is used more than once.
 
 ## link-in-text-block
 

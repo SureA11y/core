@@ -24,10 +24,14 @@
  *     Empty when they are all unnamed.
  *   - `groupSize`: how many landmarks of that role share that name.
  * @implementation-notes
- * - Not WCAG-normative, authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see landmark-banner-is-top-level's
- *   header comment for the shared rationale/precedent and the landmark-
- *   detection model (`helpers.getLandmarkRole`).
+ * - Not WCAG-normative, authored as an advisory `type: 'manual'` rule; see
+ *   landmark-banner-is-top-level's header comment for the shared rationale
+ *   and the landmark-detection model (`helpers.getLandmarkRole`).
+ * - Reports `pass` when every same-role group has distinct names: that
+ *   needs no judgment. A shared name stays `cantTell` rather than `fail`
+ *   because the APG allows one when the landmarks' content is identical,
+ *   such as pagination above and below a table, which only a person can
+ *   confirm.
  * - Flags every element within a colliding-name cluster (two or more
  *   same-role landmarks sharing one normalized name), not just the
  *   "extra" ones.
@@ -119,9 +123,11 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  let applicable = false;
 
   for (const [role, entries] of byRole) {
     if (entries.length <= 1) continue;
+    applicable = true;
 
     const byName = new Map(); // normalized name -> entries[]
     for (const entry of entries) {
@@ -162,8 +168,11 @@ function runInPage(ctx) {
     }
   }
 
-  if (!occurrences.length) {
+  if (!applicable) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
