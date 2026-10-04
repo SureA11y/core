@@ -378,13 +378,23 @@ function createDomHelpers(opts) {
       __perfInc('modalDialogs.nocache');
     }
 
+    // A <dialog> opened with showModal() matches :modal in every current
+    // engine, whether or not it carries aria-modal; HTML then makes the rest
+    // of the document inert ("blocked by a modal dialog"). An open dialog
+    // with aria-modal="true" is kept as before. An engine without :modal
+    // (or a DOM without a top layer, such as jsdom) falls back to that.
+    // The whole document is searched, not the scan's scope: a modal outside
+    // a scoped scan still blocks what is inside it. A modal <dialog> inside
+    // a shadow root is not found (known limit).
     let list = [];
-    try {
-      const nl = document.querySelectorAll('dialog[open][aria-modal="true"]');
-      // Preserve document order, avoid Array.from allocation where possible.
-      for (const el of nl) list.push(el);
-    } catch {
-      list = [];
+    for (const sel of ['dialog:modal', 'dialog[open][aria-modal="true"]']) {
+      try {
+        for (const el of document.querySelectorAll(sel)) {
+          if (list.indexOf(el) === -1) list.push(el);
+        }
+      } catch {
+        // :modal unsupported: keep what the other selector finds
+      }
     }
 
     try {
@@ -2036,18 +2046,23 @@ function createDomHelpers(opts) {
     if (hasBlockingInert(node)) {
       return __cacheAndReturn({ eligible: false, reasons: ['inert'] });
     }
-    // Modal dialog (best effort)
+    // An open modal dialog blocks the rest of the document. An element is
+    // blocked unless it is in a modal dialog (by the flat tree, so content of
+    // a shadow root inside the dialog counts) or contains one (<body>, a
+    // wrapper): a container of the dialog is not what assistive technology
+    // is denied. With several modals open, inside any of them counts, since
+    // the DOM does not say which one is topmost.
     try {
       const openModals = getOpenModalDialogs();
       if (openModals.length) {
-        let inside = false;
+        let reachable = false;
         for (const d of openModals) {
-          if (d && d.contains && d.contains(node)) {
-            inside = true;
+          if (chain.indexOf(d) !== -1 || (node.contains && node.contains(d))) {
+            reachable = true;
             break;
           }
         }
-        if (!inside) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
+        if (!reachable) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
       }
     } catch {}
 
@@ -4945,6 +4960,19 @@ function createDomHelpers(opts) {
   // (roots doesn't include document.documentElement); `true` in the
   // default/unscoped case, so this is a no-op for the overwhelming
   // majority of existing (whole-page) scans.
+  // Whether a modal dialog is open, so that the rest of the document is
+  // inert and assistive technology gets only the dialog. A rule about the
+  // page's own structure (a level-one heading, a main landmark, a way to
+  // bypass blocks, content in landmarks) cannot judge the page then: the
+  // scan saw a dialog, not the page. See getOpenModalDialogs.
+  function isModalDialogOpen() {
+    try {
+      return getOpenModalDialogs().length > 0;
+    } catch {
+      return false;
+    }
+  }
+
   function isWholeDocumentScope() {
     if (fragment) return false;
     return roots.includes(document.documentElement);
@@ -4994,6 +5022,7 @@ function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    isModalDialogOpen,
     hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors

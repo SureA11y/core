@@ -12,6 +12,8 @@
  *   "does the page have a main landmark" is a whole-page concern,
  *   matching bypass-blocks-present's pattern of evaluating the
  *   document directly.
+ *   Not while a modal dialog is open: the rest of the page is inert then,
+ *   so the scan sees the dialog, not the page.
  * @expectation
  *   At least one main landmark (role="main" or <main>), exposed to
  *   assistive technology, exists on the page. A page with none gives
@@ -55,8 +57,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+//
+// Also notApplicable while a modal dialog is open: the rest of the page is
+// inert then, so the scan saw the dialog, not the page's structure.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
 
 function runInPage(ctx) {

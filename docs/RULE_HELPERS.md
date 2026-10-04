@@ -162,6 +162,16 @@ an `applicability(ctx)` export using this, per `RULE_AUTHORING.md` §4.2/§11.2,
 rule will wrongly fault a scoped subtree for lacking something it was never meant to
 have.
 
+### `isModalDialogOpen()` → `boolean`
+`true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
+`showModal()`), or an open `<dialog aria-modal="true">`. The rest of the document is
+inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). A rule
+about the page's own structure (a level-one heading, a main landmark, a bypass
+mechanism, content in landmarks) adds this to its `applicability(ctx)` next to
+`isWholeDocumentScope()`, since the scan saw the dialog, not the page. A rule about a
+document property a modal does not hide (`<title>`, `<html lang>`, the viewport) does
+not.
+
 ### `hasTruncatedAncestorWalk` (internal)
 Backs confidence scoring during result normalization when a 200-step ancestor walk
 didn't reach the root. Not something a rule calls directly.
