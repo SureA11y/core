@@ -234,10 +234,11 @@ function runInPage(ctx) {
   // the nearest role that removes it from the accessibility tree.
   function collectTabStops(root) {
     const out = [];
-    const top = root && root.children;
-    if (!top || !top.length) return out;
+    if (!root || !root.lastElementChild) return out;
+    // Sibling links, not root.children, which in jsdom stays live once read
+    // and is rebuilt on every later change under a large parent.
     const stack = [];
-    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
     while (stack.length) {
       const node = stack.pop();
       if (!node || node.nodeType !== 1) continue;
@@ -252,10 +253,8 @@ function runInPage(ctx) {
       // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
-      const kids = node.children;
-      if (kids && kids.length) {
-        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
-      }
+      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
+        stack.push(c);
     }
     return out;
   }

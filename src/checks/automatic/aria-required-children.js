@@ -163,9 +163,18 @@ function runInPage(ctx) {
   // internal structure count as this container's "owned children"?) with
   // no known case driving it yet; slot projection is the shape that
   // actually comes up.
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !node.children) return;
-    for (const child of Array.from(node.children)) {
+    if (!node || !node.firstElementChild) return;
+    for (const child of childElementsOf(node)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
@@ -290,7 +299,8 @@ function runInPage(ctx) {
           evidence: {
             role,
             requiredOwnedRoles: requiredOwned,
-            childElementCount: el.children ? el.children.length : null
+            childElementCount:
+              typeof el.childElementCount === 'number' ? el.childElementCount : null
           }
         },
         data: {

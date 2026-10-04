@@ -26,7 +26,7 @@
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child.
  * @implementation-notes
- * - Checked via el.children, which already excludes text/comment nodes,
+ * - Checked via the child elements, which already excludes text/comment nodes,
  *   no whitespace-node filtering needed.
  * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
@@ -114,16 +114,24 @@ function runInPage(ctx) {
     return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
   }
 
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   for (const el of nodes) {
-    if (!el || !el.children) continue;
-    if (!el.children.length) continue;
+    if (!el || !el.firstElementChild) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
     applicableCount += 1;
 
     const invalidTags = [];
-    for (const child of el.children) {
+    for (const child of childElementsOf(el)) {
       if (!child || !child.tagName) continue;
       if (!isExposedToAt(child)) continue;
       const tag = child.tagName.toLowerCase();

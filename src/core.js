@@ -23403,15 +23403,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let node = el;
     let guard = 0;
     try {
-      // The only unbounded walk here. A consistent tree ends it via the
-      // `idx < 0` check; this bound covers a parent chain that cycles while
-      // still reporting itself as each other's child, and sits far above any
-      // depth a real document reaches.
+      // The only unbounded walk here. A consistent tree ends it at the
+      // root; this bound covers a parent chain that cycles, and sits far
+      // above any depth a real document reaches.
       while (node && node.parentElement) {
         if (guard++ >= 10000) return null;
         const parent = node.parentElement;
-        const idx = Array.prototype.indexOf.call(parent.children, node);
-        if (idx < 0) return null;
+        // Counted by sibling links, not parent.children: in jsdom that
+        // collection stays live once read, and every later change under a
+        // large parent (body, say) rebuilds it, which made closing a
+        // scanned 20,000-node document take seconds.
+        let idx = 0;
+        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
         path.unshift(idx);
         node = parent;
       }
@@ -39210,9 +39213,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectOwnedRoles(el, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
-    const kids = el.children ? Array.prototype.slice.call(el.children) : [];
+    const kids = childElementsOf(el);
     for (const kid of kids) {
       if (!kid || kid.nodeType !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
@@ -39624,9 +39636,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // internal structure count as this container's "owned children"?) with
   // no known case driving it yet; slot projection is the shape that
   // actually comes up.
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !node.children) return;
-    for (const child of Array.from(node.children)) {
+    if (!node || !node.firstElementChild) return;
+    for (const child of childElementsOf(node)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
@@ -39751,7 +39772,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           evidence: {
             role,
             requiredOwnedRoles: requiredOwned,
-            childElementCount: el.children ? el.children.length : null
+            childElementCount:
+              typeof el.childElementCount === 'number' ? el.childElementCount : null
           }
         },
         data: {
@@ -45198,21 +45220,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   for (const el of nodes) {
-    if (!el || !el.children) continue;
+    if (!el || el.nodeType !== 1) continue;
     const dlHasText = hasDirectText(el);
-    if (!el.children.length && !dlHasText) continue;
+    if (!el.firstElementChild && !dlHasText) continue;
 
     applicableCount += 1;
 
     // Flatten one level of wrapping <div> (common dt/dd grouping pattern).
     const flattened = [];
     let hasText = dlHasText;
-    for (const child of el.children) {
+    for (const child of childElementsOf(el)) {
       if (!child || !child.tagName) continue;
       if (child.tagName.toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
-        for (const grandchild of child.children || []) {
+        for (const grandchild of childElementsOf(child)) {
           if (grandchild && grandchild.tagName) flattened.push(grandchild);
         }
       } else {
@@ -53092,16 +53123,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
   }
 
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   for (const el of nodes) {
-    if (!el || !el.children) continue;
-    if (!el.children.length) continue;
+    if (!el || !el.firstElementChild) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
     applicableCount += 1;
 
     const invalidTags = [];
-    for (const child of el.children) {
+    for (const child of childElementsOf(el)) {
       if (!child || !child.tagName) continue;
       if (!isExposedToAt(child)) continue;
       const tag = child.tagName.toLowerCase();
@@ -54770,10 +54809,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per node during the walk, so hidden or aria-hidden subtrees drop out.
   function collectNestedOperable(root) {
     const out = [];
-    const top = root && root.children;
-    if (!top || !top.length) return out;
+    if (!root || !root.lastElementChild) return out;
+    // Sibling links, not root.children, which in jsdom stays live once read
+    // and is rebuilt on every later change under a large parent.
     const stack = [];
-    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
     while (stack.length) {
       const node = stack.pop();
       if (node && node.nodeType === 1) {
@@ -54791,10 +54831,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           continue; // do not descend into a counted control
         }
       }
-      const kids = node && node.children;
-      if (kids && kids.length) {
-        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
-      }
+      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
+        stack.push(c);
     }
     return out;
   }
@@ -54947,7 +54985,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function startsDisabled(el) {
     const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
     if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
-    return Array.from(el.children || []).some((c) => {
+    const kids = [];
+    for (let c = el.firstElementChild; c; c = c.nextElementSibling) kids.push(c);
+    return kids.some((c) => {
       if ((c.tagName || '').toLowerCase() !== 'param') return false;
       const name = attr(c, 'name').toLowerCase();
       return (
@@ -56644,10 +56684,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the nearest role that removes it from the accessibility tree.
   function collectTabStops(root) {
     const out = [];
-    const top = root && root.children;
-    if (!top || !top.length) return out;
+    if (!root || !root.lastElementChild) return out;
+    // Sibling links, not root.children, which in jsdom stays live once read
+    // and is rebuilt on every later change under a large parent.
     const stack = [];
-    for (let i = top.length - 1; i >= 0; i--) stack.push(top[i]);
+    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
     while (stack.length) {
       const node = stack.pop();
       if (!node || node.nodeType !== 1) continue;
@@ -56662,10 +56703,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
-      const kids = node.children;
-      if (kids && kids.length) {
-        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
-      }
+      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
+        stack.push(c);
     }
     return out;
   }
@@ -57046,7 +57085,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (isStopper(el)) {
       markFlaggedUpToBody(el);
-      if (!placedContent && isLandmark(el) && (normalizeWs(el.textContent) || el.children.length)) {
+      if (
+        !placedContent &&
+        isLandmark(el) &&
+        (normalizeWs(el.textContent) || el.firstElementChild)
+      ) {
         placedContent = true;
       }
       if (tag === 'iframe' || tag === 'frame') leaves.push(el);
@@ -57058,14 +57101,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return;
     }
 
-    const kids = el.children || [];
-    for (let i = 0; i < kids.length; i++) {
-      walk(kids[i]);
+    // Sibling links, not el.children: in jsdom a children collection stays
+    // live once read, and each later change under a large parent rebuilds
+    // it, so reading body.children made a 20,000-node page slow to scan
+    // and to close.
+    for (let kid = el.firstElementChild; kid; kid = kid.nextElementSibling) {
+      walk(kid);
       if (truncated) return;
     }
   }
 
-  for (const child of body.children || []) walk(child);
+  for (let child = body.firstElementChild; child; child = child.nextElementSibling) walk(child);
 
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
@@ -75333,15 +75379,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let node = el;
     let guard = 0;
     try {
-      // The only unbounded walk here. A consistent tree ends it via the
-      // `idx < 0` check; this bound covers a parent chain that cycles while
-      // still reporting itself as each other's child, and sits far above any
-      // depth a real document reaches.
+      // The only unbounded walk here. A consistent tree ends it at the
+      // root; this bound covers a parent chain that cycles, and sits far
+      // above any depth a real document reaches.
       while (node && node.parentElement) {
         if (guard++ >= 10000) return null;
         const parent = node.parentElement;
-        const idx = Array.prototype.indexOf.call(parent.children, node);
-        if (idx < 0) return null;
+        // Counted by sibling links, not parent.children: in jsdom that
+        // collection stays live once read, and every later change under a
+        // large parent (body, say) rebuilds it, which made closing a
+        // scanned 20,000-node document take seconds.
+        let idx = 0;
+        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
         path.unshift(idx);
         node = parent;
       }
