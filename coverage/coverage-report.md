@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **133**
+Total rules (loaded without error): **134**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -641,6 +641,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
@@ -1276,6 +1277,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
 | empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |

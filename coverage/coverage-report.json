@@ -4,7 +4,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 133,
+    "totalRules": 134,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -2283,6 +2283,32 @@
           ]
         }
       },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/automatic/landmark-role-name-present.js",
+      "ruleId": "landmark-role-name-present",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Region and form roles must have an accessible name",
+      "tags": [
+        "best-practice",
+        "aria",
+        "landmarks",
+        "name",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {},
       "deprecated": false
     },
     {
