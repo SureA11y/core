@@ -23,7 +23,7 @@
   <h2>A. Valid</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — NEUTRAL: two navs with distinct accessible names</div>
+    <div class="case-title">01 — PASS: two navs with distinct accessible names</div>
     <nav aria-label="Primary" id="lu_case_01a">Primary nav</nav>
     <nav aria-label="Footer" id="lu_case_01b">Footer nav</nav>
   </div>
@@ -76,7 +76,7 @@
   </div>
 
   <div class="case" id="case_09">
-    <div class="case-title">09 — NEUTRAL: two navs distinguished only by a title attribute — title is a real accessible-name fallback source (aria-label &gt; aria-labelledby &gt; title)</div>
+    <div class="case-title">09 — PASS: two navs distinguished only by a title attribute — title is a real accessible-name fallback source (aria-label &gt; aria-labelledby &gt; title)</div>
     <nav title="navigation" id="lu_case_09a">Titled nav</nav>
     <nav id="lu_case_09b">Unnamed nav</nav>
   </div>
@@ -88,7 +88,7 @@
   </div>
 
   <div class="case" id="case_11">
-    <div class="case-title">11 — NEUTRAL: two navs named via aria-labelledby pointing at a CSS-hidden (display:none) target with genuinely distinct text — per the accname spec, a directly-referenced labelledby target's hidden state does not block name computation, and the bypass covers its whole subtree, not just the target element itself</div>
+    <div class="case-title">11 — PASS: two navs named via aria-labelledby pointing at a CSS-hidden (display:none) target with genuinely distinct text — per the accname spec, a directly-referenced labelledby target's hidden state does not block name computation, and the bypass covers its whole subtree, not just the target element itself</div>
     <div id="lu_case_11_lbl1" style="display:none">Product</div>
     <nav aria-labelledby="lu_case_11_lbl1" id="lu_case_11a">First</nav>
     <div id="lu_case_11_lbl2" style="display:none">Company</div>

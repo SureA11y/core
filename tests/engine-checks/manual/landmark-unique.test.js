@@ -26,10 +26,10 @@ test(`${RULE_ID}: notApplicable when no landmark role has more than one instance
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when same-role landmarks have distinct names`, () => {
+test(`${RULE_ID}: pass when same-role landmarks have distinct names`, () => {
   const html = `<!doctype html><html><body><nav aria-label="Primary">A</nav><nav aria-label="Footer">B</nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when two same-role landmarks are both unnamed`, () => {
@@ -152,10 +152,10 @@ test(`${RULE_ID}: cantTell when two aria-labelledby'd sections resolve to the sa
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when same-role landmarks are distinguished only by a title attribute (one <nav title="navigation">, one unnamed)`, () => {
+test(`${RULE_ID}: pass when same-role landmarks are distinguished only by a title attribute (one <nav title="navigation">, one unnamed)`, () => {
   const html = `<!doctype html><html><body><nav title="navigation">A</nav><nav>B</nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when two same-role landmarks share the same title (title is a real naming source, not exempt from the duplicate check)`, () => {
@@ -189,7 +189,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Landmarks with the same role must have unique names');
 });
 
-test(`${RULE_ID}: notApplicable when two navs are named via aria-labelledby pointing at a display:none target with distinct text (display:none targets still contribute their text per the accname spec's directly-referenced-target exception)`, () => {
+test(`${RULE_ID}: pass when two navs are named via aria-labelledby pointing at a display:none target with distinct text (display:none targets still contribute their text per the accname spec's directly-referenced-target exception)`, () => {
   const html = `<!doctype html><html><body>
     <div id="lbl1" style="display:none">Product</div>
     <nav aria-labelledby="lbl1" id="a">First</nav>
@@ -197,7 +197,7 @@ test(`${RULE_ID}: notApplicable when two navs are named via aria-labelledby poin
     <nav aria-labelledby="lbl2" id="b">Second</nav>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when two navs are named via aria-labelledby pointing at a display:none target that resolve to the SAME text (the hidden-target bypass makes the name resolve at all, it does not exempt the result from the duplicate check)`, () => {

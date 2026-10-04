@@ -51524,9 +51524,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  let applicable = false;
 
   for (const [role, entries] of byRole) {
     if (entries.length <= 1) continue;
+    applicable = true;
 
     const byName = new Map(); // normalized name -> entries[]
     for (const entry of entries) {
@@ -51567,8 +51569,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  if (!occurrences.length) {
+  if (!applicable) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
