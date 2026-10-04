@@ -65,6 +65,7 @@
     "src/core.js",
     "src/baseline.js",
     "src/report.js",
+    "src/i18n-coverage.js",
     "src/sarif.js",
     "src/junit.js",
     "src/earl.js",

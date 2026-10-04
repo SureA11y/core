@@ -49,6 +49,7 @@ The `exports` map above says which **paths** are importable. It does not say whi
 | `runDomRulesInPage` | Scanning in the same Node process, dispatching through real `require()`. What `@surea11y/test-matchers` uses. |
 | `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Cross-frame scanning without an automation driver. |
 | `getChecksCatalog()` / `getRulesCatalog()` | Reading the rule catalog; its stable fields are listed above. |
+| `getLocaleCoverage()` | How far each shipped translation covers English (`sourceLocale`, `totalKeys`, and per locale `locale`, `total`, `translated`, `missing`, `orphaned`, `percent`), from the dictionaries the package ships. See [`I18N.md`](./I18N.md#reading-coverage-from-the-package). |
 
 **Exported but internal** — reachable today, not supported, and free to change or disappear in a minor: `CHECK_DEFS`, `TEST_DEFS`, `COMPOSITE_RULES`, `DEFAULT_POLICY`, `POLICY_CONTRACTS`, `ENGINE_TAG`, `SCHEMA_VERSION`, `resolvePolicy`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getTestsForRunOnly`, `__internal`.
 

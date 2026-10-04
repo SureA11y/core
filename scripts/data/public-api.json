@@ -6,7 +6,8 @@
     "runa11yCoreAcrossFrames",
     "a11yCoreEnableFrameResponder",
     "getChecksCatalog",
-    "getRulesCatalog"
+    "getRulesCatalog",
+    "getLocaleCoverage"
   ],
   "internal": [
     "CHECK_DEFS",
