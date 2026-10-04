@@ -109,7 +109,7 @@ Total rules: **134**. With fixture: **133**. Without fixture: **1**.
 | meter-name-present | automatic | `tests/fixtures/meter-name-present-all-scenarios.html` | 7 | 3 | 3 | 0 | 1 |
 | mouse-only-event-handlers | manual | `tests/fixtures/mouse-only-event-handlers-all-scenarios.html` | 8 | 0 | 0 | 3 | 5 |
 | nested-interactive-controls-absent | automatic | `tests/fixtures/nested-interactive-controls-absent-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
-| no-autoplay-audio | manual | `tests/fixtures/no-autoplay-audio-all-scenarios.html` | 11 | 0 | 0 | 6 | 5 |
+| no-autoplay-audio | manual | `tests/fixtures/no-autoplay-audio-all-scenarios.html` | 11 | 1 | 0 | 6 | 4 |
 | object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
 | object-text-alternative-quality | manual | `tests/fixtures/object-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | option-name-present | automatic | `tests/fixtures/option-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |

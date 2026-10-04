@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when there are no links`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when same-name links share the same destination`, () => {
+test(`${RULE_ID}: pass when same-name links share the same destination`, () => {
   const html = `<!doctype html><html><body><a href="/contact">Contact us</a><a href="/contact">Contact us</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when same-name links lead to different destinations`, () => {
@@ -45,13 +45,13 @@ test(`${RULE_ID}: cantTell for role="link" elements whose destination comes from
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
 });
 
-test(`${RULE_ID}: notApplicable for role="link" elements whose onclick location assignment resolves to the same destination`, () => {
+test(`${RULE_ID}: pass for role="link" elements whose onclick location assignment resolves to the same destination`, () => {
   const html = `<!doctype html><html><body>
     <span role="link" tabindex="0" onclick="location='/contact.html'">Contact us</span>
     <span role="link" tabindex="0" onclick="location.href='/contact.html'">Contact us</span>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a role="link" element with no href and no recognizable onclick location is simply not resolved (not counted, not flagged)`, () => {
@@ -94,4 +94,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/identical-links-same-purpose-
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: notApplicable when no two links share a name, since there is nothing to compare (ACT b20e66)`, () => {
+  const html = `<!doctype html><html><body><a href="/a">Pricing</a><a href="/b">Contact</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });

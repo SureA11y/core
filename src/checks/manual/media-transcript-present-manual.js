@@ -449,9 +449,9 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail).
-  // Strong evidence was found for all applicable media elements, so there
-  // is nothing to flag for review.
+  // Strong evidence of a transcript was found for every applicable media
+  // element, so there is nothing to flag. Not a pass: the evidence is a
+  // heuristic, and says nothing about whether the transcript is complete.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 

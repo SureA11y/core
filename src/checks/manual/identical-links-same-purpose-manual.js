@@ -9,8 +9,10 @@
  * @standard WCAG 2.2
  * @sc 2.4.9
  * @applicability
- *   Any `a[href]` or `[role="link"]` with a non-empty accessible name,
- *   grouped by that name (trimmed, whitespace-collapsed, case-folded).
+ *   Sets of two or more `a[href]` or `[role="link"]` elements that share a
+ *   non-empty accessible name (trimmed, whitespace-collapsed,
+ *   case-folded), as in ACT b20e66. A link whose name no other link shares
+ *   has nothing to be compared with.
  * @expectation
  *   Within a page, links that share the same accessible name are expected
  *   to serve the same purpose (i.e. resolve to the same destination, the
@@ -110,7 +112,6 @@ function runInPage(ctx) {
     : helpers.queryAll('a[href], [role="link"]');
 
   const groups = new Map(); // normName -> [{ el, href }]
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
@@ -164,8 +165,6 @@ function runInPage(ctx) {
     if (!href) href = resolveOnclickLocation(el);
     if (!href) continue;
 
-    applicableCount += 1;
-
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name).push({ el, href });
   }
@@ -211,7 +210,10 @@ function runInPage(ctx) {
     }
   }
 
-  if (applicableCount === 0) {
+  // Only a name shared by two or more links makes the rule apply.
+  let sharedNameGroups = 0;
+  for (const entries of groups.values()) if (entries.length > 1) sharedNameGroups += 1;
+  if (sharedNameGroups === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -224,9 +226,8 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every name group already resolves to a single shared destination.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Every shared name leads to one destination.
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

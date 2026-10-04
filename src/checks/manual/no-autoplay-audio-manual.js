@@ -26,9 +26,16 @@
  *   flagged for human review rather than treated as a deterministic
  *   violation.
  * @implementation-notes
- * - Elements with `controls` present are not flagged: native controls
- *   provide pause/stop and volume adjustment, satisfying the SC's
- *   mechanism requirement regardless of duration.
+ * - Elements with `controls` present are not flagged while they are
+ *   rendered: native controls provide pause/stop and volume adjustment,
+ *   satisfying the SC's mechanism requirement regardless of duration. An
+ *   element hidden by `display: none`, `visibility: hidden` or `hidden`
+ *   (on itself or an ancestor) still plays, but its controls cannot be
+ *   reached, so it is asked about (`AUTOPLAY_CONTROLS_HIDDEN`).
+ * - Reports `pass` when every element found autoplays with usable native
+ *   controls, the one case that needs no judgment. Sound started by a
+ *   script, or inside a frame, is outside what this rule sees, so a pass
+ *   covers the elements it found.
  * - Elements with `muted` present are not flagged: muted playback is not
  *   audible, so the SC's condition ("plays automatically... audio")
  *   does not apply.
@@ -104,9 +111,31 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    if (el.hasAttribute('controls')) continue;
-
     const mediaTag = (el.tagName || '').toLowerCase();
+    if (el.hasAttribute('controls')) {
+      const shown = helpers.isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        ignoreOpacity: true
+      });
+      if (shown.eligible) continue;
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.',
+          hint: 'If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.',
+          i18n: {
+            summaryKey: 'noAutoplayAudio_summary_cantTell_controlsHidden',
+            hintKey: 'noAutoplayAudio_hint_cantTell_controlsHidden',
+            params: { element: mediaTag }
+          },
+          data: {
+            details: { reasonCode: 'AUTOPLAY_CONTROLS_HIDDEN', mediaTag }
+          }
+        })
+      );
+      continue;
+    }
+
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
 
@@ -210,9 +239,8 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every applicable autoplaying element already has a controls mechanism.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  // Every autoplaying element found has usable native controls.
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

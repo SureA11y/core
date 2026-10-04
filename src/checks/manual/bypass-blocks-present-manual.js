@@ -19,11 +19,12 @@
  *   (a) a main landmark (<main> or [role="main"]), technique ARIA11: a
  *       screen reader user can jump straight to it, bypassing everything
  *       before it (nav, header, repeated blocks) in one step;
- *   (b) a working same-page anchor link, technique G1/G123: an
- *       <a href="#id"> (or legacy <a name="id">) whose target resolves to
- *       a real element in the link's own tree (light DOM or the same shadow
- *       root). Not required to be positioned before a <nav> or be
- *       keyboard-focus-order-first;
+ *   (b) a working skip link, technique G1: an <a href="#id"> (or legacy
+ *       <a name="id">) whose name reads as a skip link in one of the
+ *       shipped languages (helpers.hasSkipLinkWording, as skip-link uses)
+ *       and whose target resolves to a real element in the link's own tree
+ *       (light DOM or the same shadow root). Not required to be positioned
+ *       before a <nav> or be keyboard-focus-order-first;
  *   (c) at least one heading (<h1>-<h6> or [role="heading"]) that is both
  *       included in the accessibility tree AND visible (not off-screen,
  *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:
@@ -35,8 +36,7 @@
  * @implementation-notes
  * - Outcome model: this rule is `type: 'manual'` (cantTell-capped, never
  *   `fail`). When a recognized mechanism is found the page has nothing to
- *   review here → `notApplicable` (matching page-has-heading-one-manual /
- *   skip-link-manual's "nothing to flag" convention). When none is found we
+ *   review here → `pass`, as ACT cf77f2 passes it. When none is found we
  *   return `cantTell`: "we could not detect a bypass mechanism, please
  *   verify," rather than a hard `fail`. The absence of a *detectable*
  *   mechanism is NOT high-confidence evidence that 2.4.1 is violated, for
@@ -58,13 +58,12 @@
  *   engine reserves for high-confidence violations; `cantTell` routes them to
  *   human review instead. No ACT rule hard-fails 2.4.1 by presence alone,
  *   for the same reason.
- * - This rule intentionally checks presence, not position, for the
- *   same-page-anchor condition (b): a full bypass algorithm is heuristic,
- *   and getting DOM-order / keyboard-focus-order positioning exactly right
- *   without introducing false positives is materially harder than checking
- *   presence alone. Being lenient about condition (b) can only make us
- *   *miss* a review prompt (a page whose only anchor link isn't a real
- *   skip mechanism, e.g. a "back to top" link), never raising a spurious one.
+ * - Condition (b) checks presence, not position: getting DOM-order /
+ *   keyboard-focus-order positioning right without false positives is much
+ *   harder than checking presence. Because a found mechanism is a pass,
+ *   the link has to read as a skip link: any working same-page link used
+ *   to count, so a lone "back to top" link passed the page. A page whose
+ *   only same-page links have other names gets the review prompt instead.
  * - Shadow DOM: all three conditions use `helpers.queryAllSmart`, which is
  *   shadow-DOM-aware (when the run enables includeShadowDom) and applies the
  *   engine's hidden-content policy. The same-page-anchor target is resolved
@@ -79,7 +78,7 @@ const id = 'bypass-blocks-present';
 const meta = {
   title: 'Page must provide a way to bypass repeated blocks',
   description:
-    'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working same-page anchor link, or a heading.',
+    'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.',
   i18n: {
     titleKey: 'bypassBlocksPresent_title',
     descriptionKey: 'bypassBlocksPresent_description'
@@ -189,7 +188,14 @@ function runInPage(ctx) {
   // resolve each fragment in the link's own root before falling back to the
   // document. This credits a skip link encapsulated in a web component the
   // same way as one authored in the light DOM.
-  function hasWorkingAnchorLink() {
+  // A link's accessible name: aria-labelledby/aria-label, else its content.
+  function linkName(a) {
+    const aria = helpers.getAriaNameInfo(a, ctx);
+    if (aria.present && aria.value) return aria.value;
+    return helpers.getContentNameInfo(a, ctx).value || '';
+  }
+
+  function hasWorkingSkipLink() {
     let links;
     try {
       links =
@@ -221,6 +227,8 @@ function runInPage(ctx) {
       } catch {
         root = document;
       }
+
+      if (!helpers.hasSkipLinkWording(linkName(a))) continue;
 
       let target = resolveInRoot(root, fragment);
       if (!target && root !== document) {
@@ -256,12 +264,12 @@ function runInPage(ctx) {
   }
 
   const mainLandmark = hasMainLandmark();
-  const anchorLink = mainLandmark ? false : hasWorkingAnchorLink();
+  const anchorLink = mainLandmark ? false : hasWorkingSkipLink();
   const heading = mainLandmark || anchorLink ? false : hasHeading();
 
   // A recognized mechanism is present -> nothing to review on this page.
   if (mainLandmark || anchorLink || heading) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = [

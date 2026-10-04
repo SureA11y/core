@@ -126,17 +126,17 @@ The braille label supplements a real accessible name ("Save changes"); non-brail
 
 ## aria-checked-state-mismatch
 
+**Passed**
+```html
+<input type="checkbox" checked aria-checked="true">
+```
+`aria-checked` matches the control's real checked state.
+
 **Flagged (cantTell)**
 ```html
 <input type="checkbox" checked aria-checked="false">
 ```
 The checkbox is actually checked, but `aria-checked="false"` tells assistive technology the opposite.
-
-**Not applicable**
-```html
-<input type="checkbox" checked aria-checked="true">
-```
-`aria-checked` matches the control's real checked state.
 
 ## aria-conditional-attr
 
@@ -414,14 +414,14 @@ The button has no text content, `aria-label`, or `aria-labelledby`.
 
 ## bypass-blocks-present
 
-**Not applicable**
+**Passed**
 ```html
 <body>
   <nav>Site nav</nav>
   <main>Primary content</main>
 </body>
 ```
-A main landmark exists — a recognized bypass mechanism, so there's nothing to flag.
+A main landmark exists, a recognized bypass mechanism.
 
 **Flagged (cantTell)**
 ```html
@@ -430,7 +430,7 @@ A main landmark exists — a recognized bypass mechanism, so there's nothing to 
   <div>Primary content, no landmark, no heading, no skip link.</div>
 </body>
 ```
-No main landmark, working same-page anchor link, or visible heading was detected — a review prompt, not a fail, since the engine can't confirm from one snapshot whether the page truly lacks a bypass mechanism.
+No main landmark, working skip link, or visible heading was detected — a review prompt, not a fail, since the engine can't confirm from one snapshot whether the page truly lacks a bypass mechanism.
 
 ## canvas-text-alternative-present
 
@@ -812,18 +812,18 @@ No `<label>`, `aria-label`, or `aria-labelledby` — nothing programmatic names 
 
 ## form-control-programmatic-label-quality
 
-**Flagged (cantTell)**
-```html
-<input type="text" placeholder="Email address">
-```
-The control's only name comes from `placeholder`, which disappears once the user starts typing.
-
-**Not applicable**
+**Passed**
 ```html
 <label for="email">Email address</label>
 <input type="text" id="email" placeholder="name@example.com">
 ```
 A persistent `<label>` provides the name; `placeholder` is just a format hint here.
+
+**Flagged (cantTell)**
+```html
+<input type="text" placeholder="Email address">
+```
+The control's only name comes from `placeholder`, which disappears once the user starts typing.
 
 ## form-control-single-label
 
@@ -929,6 +929,13 @@ Both frames share the name "Weather widget" and embed the same resource.
 Both frames share the same name but resolve to different resources — possibly two legitimately equivalent widgets, possibly a mislabeled frame; the markup alone doesn't settle it.
 
 ## identical-links-same-purpose
+
+**Passed**
+```html
+<a href="/contact">Contact us</a>
+<a href="/contact">Contact us</a>
+```
+Both links named "Contact us" lead to the same page.
 
 **Flagged (cantTell)**
 ```html
@@ -1551,17 +1558,17 @@ A `<button>` contains a nested `<input type="checkbox">`, another focusable cont
 
 ## no-autoplay-audio
 
+**Passed**
+```html
+<audio autoplay controls src="x.mp3"></audio>
+```
+Native `controls` gives the user a pause/volume mechanism.
+
 **Flagged (cantTell)**
 ```html
 <audio autoplay src="x.mp3"></audio>
 ```
 The audio autoplays unmuted with no `controls` attribute, giving the user no way to pause or stop it.
-
-**Not applicable**
-```html
-<audio autoplay controls src="x.mp3"></audio>
-```
-Native `controls` gives the user a pause/volume mechanism.
 
 **Flagged (cantTell)**
 ```html

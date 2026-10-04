@@ -34,10 +34,10 @@ test(`${RULE_ID}: notApplicable for role="checkbox" on a non-native element (sco
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when checkbox checked state matches aria-checked`, () => {
+test(`${RULE_ID}: pass when checkbox checked state matches aria-checked`, () => {
   const html = `<!doctype html><html><body><input type="checkbox" checked aria-checked="true" id="a"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when a checked checkbox has aria-checked="false"`, () => {

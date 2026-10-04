@@ -435,6 +435,7 @@
       "NESTED_INTERACTIVE_CONTROL"
     ],
     "no-autoplay-audio": [
+      "AUTOPLAY_CONTROLS_HIDDEN",
       "AUTOPLAY_NO_CONTROLS_MECHANISM",
       "EMBEDDED_SOUND_SOURCE"
     ],

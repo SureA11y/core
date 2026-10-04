@@ -145,8 +145,8 @@ function runInPage(ctx) {
     };
   }
 
-  // Manual rules may only emit cantTell/notApplicable (never pass/fail):
-  // every <video> already has a captions track.
+  // Every <video> has a captions track. Not a pass: a track existing says
+  // nothing about whether its captions are accurate or complete.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
