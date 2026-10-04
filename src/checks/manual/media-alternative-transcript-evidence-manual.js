@@ -384,7 +384,7 @@ function runInPage(ctx) {
       const baseOccurrence = {
         summary:
           'A transcript or other text alternative for this time-based media is not strongly evidenced on the page.',
-        hint: 'Provide a clearly identified transcript or other text alternative for audio-only/video-only prerecorded media (for example, a “Transcript” section or link).',
+        hint: 'Provide a clearly identified transcript or other text alternative for prerecorded audio-only or video-only media, for example a visible “Transcript” section or link. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one.',
         i18n: {
           summaryKey: 'mediaTranscriptPresent_summary_cantTell_missing',
           hintKey: 'mediaTranscriptPresent_hint_cantTell_missing',
@@ -412,7 +412,7 @@ function runInPage(ctx) {
       const baseOccurrence = {
         summary:
           'A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.',
-        hint: 'Ensure a clearly identified transcript or other text alternative is available and programmatically or visibly associated with the media on the page.',
+        hint: 'Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one.',
         i18n: {
           summaryKey: 'mediaTranscriptPresent_summary_cantTell_unverified',
           hintKey: 'mediaTranscriptPresent_hint_cantTell_unverified',

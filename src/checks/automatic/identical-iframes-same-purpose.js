@@ -182,7 +182,7 @@ function runInPage(ctx) {
         helpers.reportOccurrence(el, {
           summary:
             'This frame shares its accessible name with another frame that embeds a different resource.',
-          hint: 'Give each frame a name describing the resource it embeds, or point them at the same resource.',
+          hint: 'If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.',
           i18n: {
             summaryKey: 'identicalIframesSamePurpose_summary_cantTell',
             hintKey: 'identicalIframesSamePurpose_hint_cantTell',
