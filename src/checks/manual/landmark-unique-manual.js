@@ -177,7 +177,14 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    // A pass is a claim about the whole page, and a scoped scan saw only part
+    // of it (RULE_AUTHORING.md §11.2); what it found inside the scope stands.
+    return {
+      ruleId: rule.ruleId,
+      outcome: helpers.isWholeDocumentScope() ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
   return {
     ruleId: rule.ruleId,
