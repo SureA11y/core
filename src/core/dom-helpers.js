@@ -697,9 +697,7 @@ function createDomHelpers(opts) {
   // Landmark-role naming (nav/main/region/banner/contentinfo/etc.): these
   // roles don't derive a name from content (unlike a button/link), so per
   // the accname spec their only sources are aria-label, aria-labelledby,
-  // then a title-attribute fallback. Shared by the 7 landmark rule files
-  // (landmark-unique, landmark-no-duplicate-banner/-contentinfo,
-  // landmark-banner/-main/-contentinfo-is-top-level, region); title must
+  // then a title-attribute fallback. Shared by every landmark rule; title must
   // be included, otherwise e.g. two <nav>s distinguished only by
   // title="navigation" are both seen as unnamed and flagged as duplicates.
   function getLandmarkNameInfo(el, ctx) {
@@ -723,6 +721,62 @@ function createDomHelpers(opts) {
   }
 
   const lower = (v) => trim(v).toLowerCase();
+
+  // WAI-ARIA 1.2's landmark roles.
+  const LANDMARK_ROLES = new Set([
+    'banner',
+    'complementary',
+    'contentinfo',
+    'form',
+    'main',
+    'navigation',
+    'region',
+    'search'
+  ]);
+
+  // Every element that can expose a landmark role, implicitly or through role.
+  const LANDMARK_CANDIDATE_SELECTOR =
+    'header, footer, main, nav, aside, section, form, search, [role]';
+
+  // The landmark role el exposes to assistive technology, or '' for none.
+  // Shared by every landmark rule, so they all agree on what a landmark is.
+  //
+  // Implicit roles follow HTML-AAM: <header>/<footer> are banner/contentinfo
+  // only when not inside sectioning content or <main>; <aside> is
+  // complementary unless it sits in sectioning content without a name;
+  // <section> and <form> are region and form only when named; <search> is
+  // search. An explicit role is the role attribute's first token, as
+  // elsewhere in this engine.
+  //
+  // region and form need a name however the element got the role: Core-AAM
+  // maps "region without an accessible name" and "form without an accessible
+  // name" to "do not expose the element as a landmark", and Chromium exposes
+  // such an element as a generic container.
+  function getLandmarkRole(el, ctx) {
+    if (!isElement(el)) return '';
+    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    let role = '';
+    if (token) {
+      if (LANDMARK_ROLES.has(token)) role = token;
+    } else {
+      const tag = lower(el.tagName);
+      if (tag === 'header' || tag === 'footer') {
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
+          role = tag === 'header' ? 'banner' : 'contentinfo';
+        }
+      } else if (tag === 'aside') {
+        // Named, it stays complementary even inside sectioning content.
+        if (!aria.hasLandmarkScopingAncestor(el, { includeMain: false })) role = 'complementary';
+        else if (getLandmarkNameInfo(el, ctx).present) role = 'complementary';
+      } else if (tag === 'main') role = 'main';
+      else if (tag === 'nav') role = 'navigation';
+      else if (tag === 'search') role = 'search';
+      else if (tag === 'section') role = 'region';
+      else if (tag === 'form') role = 'form';
+    }
+    if ((role === 'region' || role === 'form') && !getLandmarkNameInfo(el, ctx).present) return '';
+    return role;
+  }
 
   const safeDocGetById = (id) => {
     const key = trim(id);
@@ -4959,6 +5013,11 @@ function createDomHelpers(opts) {
     // Landmark-role naming (aria-label -> aria-labelledby -> title; no content fallback --
     // see getLandmarkNameInfo's own header comment for why this replaced 7 duplicated copies)
     getLandmarkNameInfo,
+
+    // The landmark role an element exposes ('' for none), and the selector
+    // for every element that can carry one; see getLandmarkRole's header.
+    getLandmarkRole,
+    landmarkCandidateSelector: LANDMARK_CANDIDATE_SELECTOR,
 
     // "Does this element have a landmark-scoping ancestor" (role-aware
     // sectioning-content/<main> check backing <header>/<footer>/<aside>'s

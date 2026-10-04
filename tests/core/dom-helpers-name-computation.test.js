@@ -646,6 +646,85 @@ test('getLandmarkNameInfo: rendered content alone (no aria, no title) does not n
   assert.equal(info.present, false);
 });
 
+// ===== getLandmarkRole =====
+// (HTML-AAM implicit roles, an explicit role's first token, and region/form
+// only when named, whichever way the role was given -- Core-AAM.)
+
+test('getLandmarkRole: implicit roles follow HTML-AAM, <search> included', () => {
+  const { helpers, document } = helpersFor(`
+    <header id="h"></header><footer id="f"></footer><main id="m"></main><nav id="n"></nav>
+    <aside id="a"></aside><search id="s"></search><div id="d"></div>`);
+  const role = (id) => helpers.getLandmarkRole(byId(document, id), {});
+  assert.deepEqual(['h', 'f', 'm', 'n', 'a', 's', 'd'].map(role), [
+    'banner',
+    'contentinfo',
+    'main',
+    'navigation',
+    'complementary',
+    'search',
+    ''
+  ]);
+});
+
+test('getLandmarkRole: <header>/<footer> lose their role inside sectioning content or <main>, <aside> only when also unnamed', () => {
+  const { helpers, document } = helpersFor(`
+    <main><header id="h"></header><footer id="f"></footer><aside id="a1"></aside></main>
+    <article><aside id="a2"></aside><aside id="a3" aria-label="Related"></aside></article>`);
+  const role = (id) => helpers.getLandmarkRole(byId(document, id), {});
+  assert.deepEqual(['h', 'f', 'a1', 'a2', 'a3'].map(role), [
+    '',
+    '',
+    'complementary',
+    '',
+    'complementary'
+  ]);
+});
+
+test('getLandmarkRole: region and form need a name whether the role is implicit or explicit', () => {
+  const { helpers, document } = helpersFor(`
+    <section id="s1"></section><section id="s2" aria-label="News"></section>
+    <form id="f1"></form><form id="f2" aria-label="Login"></form>
+    <div id="r1" role="region"></div><div id="r2" role="region" title="News"></div>
+    <div id="g1" role="form"></div><div id="g2" role="form" aria-label="Login"></div>`);
+  const role = (id) => helpers.getLandmarkRole(byId(document, id), {});
+  assert.deepEqual(['s1', 's2', 'f1', 'f2', 'r1', 'r2', 'g1', 'g2'].map(role), [
+    '',
+    'region',
+    '',
+    'form',
+    '',
+    'region',
+    '',
+    'form'
+  ]);
+});
+
+test('getLandmarkRole: an explicit role wins over the tag, and a role other than a landmark removes it', () => {
+  const { helpers, document } = helpersFor(`
+    <form id="a" role="search"></form><section id="b" role="navigation"></section>
+    <nav id="c" role="presentation"></nav><nav id="d" role="NAVIGATION main"></nav>
+    <nav id="e" role=""></nav>`);
+  const role = (id) => helpers.getLandmarkRole(byId(document, id), {});
+  assert.deepEqual(['a', 'b', 'c', 'd', 'e'].map(role), [
+    'search',
+    'navigation',
+    '',
+    'navigation',
+    'navigation'
+  ]);
+});
+
+test('getLandmarkRole: landmarkCandidateSelector matches every element the function can give a role to', () => {
+  const { helpers, document } = helpersFor(`
+    <header></header><footer></footer><main></main><nav></nav><aside></aside>
+    <section aria-label="x"></section><form aria-label="x"></form><search></search>
+    <div role="banner"></div>`);
+  const all = [...document.body.querySelectorAll('*')];
+  const withRole = all.filter((el) => helpers.getLandmarkRole(el, {}));
+  assert.equal(withRole.length, 9);
+  for (const el of withRole) assert.ok(el.matches(helpers.landmarkCandidateSelector), el.outerHTML);
+});
+
 // ===== IDREF id-lookup resilience (safeDocGetById / safeRootQueryById) =====
 //
 // These two lookups exist specifically because a scan can be scoped to a

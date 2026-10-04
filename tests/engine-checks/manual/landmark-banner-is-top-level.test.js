@@ -140,3 +140,9 @@ test(`${RULE_ID}: a roleless <header> inside a blocking-but-not-suppressing land
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'h'));
 });
+
+test(`${RULE_ID}: an explicit role="banner" inside an unnamed role="region" is not nested in a landmark, since a region without a name is not one (Core-AAM)`, () => {
+  const html = `<!doctype html><html><body><div role="region"><div role="banner" id="b">Banner</div></div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

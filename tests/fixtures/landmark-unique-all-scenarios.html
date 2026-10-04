@@ -37,10 +37,9 @@
   </div>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — NEUTRAL: unnamed &lt;form role="search"&gt; nested inside an unnamed role="search" container is not a second landmark; the &lt;form&gt; only counts as a landmark once it has an accessible name, same as its implicit-role counterpart</div>
-    <div role="search" id="lu_case_03a">
-      <form role="search" id="lu_case_03b"><input type="search"></form>
-    </div>
+    <div class="case-title">03 — NEUTRAL: two unnamed role="region" elements are not landmarks at all — Core-AAM maps a region without an accessible name to "do not expose the element as a landmark", so nothing collides</div>
+    <div role="region" id="lu_case_03a">First</div>
+    <div role="region" id="lu_case_03b">Second</div>
   </div>
 
   <div class="case" id="case_04">
@@ -102,6 +101,19 @@
     <nav aria-labelledby="lu_case_12_lbl1" id="lu_case_12a">First</nav>
     <div id="lu_case_12_lbl2" style="display:none">Site</div>
     <nav aria-labelledby="lu_case_12_lbl2" id="lu_case_12b">Second</nav>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — CANTTELL: an unnamed &lt;form role="search"&gt; nested inside an unnamed role="search" container is a second search landmark — unlike the form role, search needs no name, and browsers expose both</div>
+    <div role="search" id="lu_case_13a">
+      <form role="search" id="lu_case_13b"><input type="search" aria-label="Search"></form>
+    </div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — CANTTELL: two unnamed &lt;search&gt; elements — the HTML search element's implicit role is search</div>
+    <search id="lu_case_14a"><input type="search" aria-label="Search products"></search>
+    <search id="lu_case_14b"><input type="search" aria-label="Search help"></search>
   </div>
 
   <p class="note">End of fixture.</p>
