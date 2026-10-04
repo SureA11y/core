@@ -95,21 +95,30 @@ function runInPage(ctx) {
     return false;
   }
 
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   for (const el of nodes) {
-    if (!el || !el.children) continue;
+    if (!el || el.nodeType !== 1) continue;
     const dlHasText = hasDirectText(el);
-    if (!el.children.length && !dlHasText) continue;
+    if (!el.firstElementChild && !dlHasText) continue;
 
     applicableCount += 1;
 
     // Flatten one level of wrapping <div> (common dt/dd grouping pattern).
     const flattened = [];
     let hasText = dlHasText;
-    for (const child of el.children) {
+    for (const child of childElementsOf(el)) {
       if (!child || !child.tagName) continue;
       if (child.tagName.toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
-        for (const grandchild of child.children || []) {
+        for (const grandchild of childElementsOf(child)) {
           if (grandchild && grandchild.tagName) flattened.push(grandchild);
         }
       } else {

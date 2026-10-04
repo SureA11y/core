@@ -264,7 +264,11 @@ function runInPage(ctx) {
 
     if (isStopper(el)) {
       markFlaggedUpToBody(el);
-      if (!placedContent && isLandmark(el) && (normalizeWs(el.textContent) || el.children.length)) {
+      if (
+        !placedContent &&
+        isLandmark(el) &&
+        (normalizeWs(el.textContent) || el.firstElementChild)
+      ) {
         placedContent = true;
       }
       if (tag === 'iframe' || tag === 'frame') leaves.push(el);
@@ -276,14 +280,17 @@ function runInPage(ctx) {
       return;
     }
 
-    const kids = el.children || [];
-    for (let i = 0; i < kids.length; i++) {
-      walk(kids[i]);
+    // Sibling links, not el.children: in jsdom a children collection stays
+    // live once read, and each later change under a large parent rebuilds
+    // it, so reading body.children made a 20,000-node page slow to scan
+    // and to close.
+    for (let kid = el.firstElementChild; kid; kid = kid.nextElementSibling) {
+      walk(kid);
       if (truncated) return;
     }
   }
 
-  for (const child of body.children || []) walk(child);
+  for (let child = body.firstElementChild; child; child = child.nextElementSibling) walk(child);
 
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content

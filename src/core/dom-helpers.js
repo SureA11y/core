@@ -4579,15 +4579,18 @@ function createDomHelpers(opts) {
     let node = el;
     let guard = 0;
     try {
-      // The only unbounded walk here. A consistent tree ends it via the
-      // `idx < 0` check; this bound covers a parent chain that cycles while
-      // still reporting itself as each other's child, and sits far above any
-      // depth a real document reaches.
+      // The only unbounded walk here. A consistent tree ends it at the
+      // root; this bound covers a parent chain that cycles, and sits far
+      // above any depth a real document reaches.
       while (node && node.parentElement) {
         if (guard++ >= 10000) return null;
         const parent = node.parentElement;
-        const idx = Array.prototype.indexOf.call(parent.children, node);
-        if (idx < 0) return null;
+        // Counted by sibling links, not parent.children: in jsdom that
+        // collection stays live once read, and every later change under a
+        // large parent (body, say) rebuilds it, which made closing a
+        // scanned 20,000-node document take seconds.
+        let idx = 0;
+        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
         path.unshift(idx);
         node = parent;
       }

@@ -180,7 +180,9 @@ function runInPage(ctx) {
   function startsDisabled(el) {
     const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
     if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
-    return Array.from(el.children || []).some((c) => {
+    const kids = [];
+    for (let c = el.firstElementChild; c; c = c.nextElementSibling) kids.push(c);
+    return kids.some((c) => {
       if ((c.tagName || '').toLowerCase() !== 'param') return false;
       const name = attr(c, 'name').toLowerCase();
       return (

@@ -249,9 +249,18 @@ function runInPage(ctx) {
   // containment tags (li, tr, td, ...), so a bare <li>/<tr>/... is a real
   // listitem/row boundary, not a transparent wrapper the walk should pass
   // through.
+  // An element's child elements by sibling links, not el.children: in jsdom
+  // that collection stays live once read, and each later change under a
+  // large parent (a list of thousands of items) rebuilds it.
+  function childElementsOf(el) {
+    const out = [];
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectOwnedRoles(el, out, depth, requiredSet) {
     if (depth > MAX_DEPTH) return;
-    const kids = el.children ? Array.prototype.slice.call(el.children) : [];
+    const kids = childElementsOf(el);
     for (const kid of kids) {
       if (!kid || kid.nodeType !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
