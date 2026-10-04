@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>landmark-role-name-present — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>landmark-role-name-present</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lrn_case_NN</code>.
+  </p>
+
+  <h2>A. Named</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: role="region" named by aria-label</div>
+    <div role="region" aria-label="Latest news" id="lrn_case_01">News</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: role="form" named by aria-labelledby pointing at its visible heading</div>
+    <div role="form" aria-labelledby="lrn_case_02_h" id="lrn_case_02">
+      <h3 id="lrn_case_02_h">Newsletter</h3>
+      <input type="email" aria-label="Email">
+    </div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: role="region" named by title, the last naming source landmarks have</div>
+    <section role="region" title="Related links" id="lrn_case_03">Links</section>
+  </div>
+
+  <h2>B. Unnamed</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: role="region" with no name</div>
+    <div role="region" id="lrn_case_04">Stray</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: role="form" with no name</div>
+    <div role="form" id="lrn_case_05"><input type="text" aria-label="Code"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: an explicit role="form" on a &lt;form&gt; asks for a landmark as much as on a &lt;div&gt;</div>
+    <form role="form" id="lrn_case_06"><input type="text" aria-label="Coupon"></form>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: the role is the role attribute's first token, so role="region note" is a region</div>
+    <div role="region note" id="lrn_case_07">Aside text</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: a whitespace-only aria-label is no name</div>
+    <div role="region" aria-label="   " id="lrn_case_08">Blank label</div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: aria-labelledby pointing at an id that does not exist is no name</div>
+    <div role="region" aria-labelledby="lrn_case_09_missing" id="lrn_case_09">Dangling reference</div>
+  </div>
+
+  <h2>C. Not applicable</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: an unnamed &lt;section&gt; with no role asks for no landmark</div>
+    <section id="lrn_case_10">Plain section</section>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: an unnamed &lt;form&gt; with no role asks for no landmark</div>
+    <form id="lrn_case_11"><input type="text" aria-label="Search"></form>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: role="navigation" needs no name; landmark-unique deals with repeated ones</div>
+    <div role="navigation" id="lrn_case_12">Links</div>
+  </div>
+
+  <h2>D. Ineligible</h2>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — INELIGIBLE: display:none removes it from the accessibility tree</div>
+    <div role="region" style="display:none" id="lrn_case_13">Hidden</div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — INELIGIBLE: aria-hidden on an ancestor removes it from the accessibility tree</div>
+    <div aria-hidden="true"><div role="region" id="lrn_case_14">Hidden</div></div>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

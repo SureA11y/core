@@ -5074,6 +5074,45 @@ const CHECK_DEFS = [
     "mappings": null
   },
   {
+    "ruleId": "landmark-role-name-present",
+    "title": "Region and form roles must have an accessible name",
+    "description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
+    "i18n": {
+      "titleKey": "landmarkRoleNamePresent_title",
+      "descriptionKey": "landmarkRoleNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "best-practice",
+      "aria",
+      "landmarks",
+      "name",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
     "ruleId": "landmark-unique",
     "title": "Landmarks with the same role must have unique names",
     "description": "Checks that when two or more landmarks share the same role, each has a distinct accessible name.",
@@ -10294,6 +10333,7 @@ const RULE_IMPLS = {
   "landmark-no-duplicate-contentinfo": { run: require("./checks/manual/landmark-no-duplicate-contentinfo-manual.js").runInPage, applicability: require("./checks/manual/landmark-no-duplicate-contentinfo-manual.js").applicability || null },
   "landmark-no-duplicate-main": { run: require("./checks/manual/landmark-no-duplicate-main-manual.js").runInPage, applicability: require("./checks/manual/landmark-no-duplicate-main-manual.js").applicability || null },
   "landmark-one-main": { run: require("./checks/manual/landmark-one-main-manual.js").runInPage, applicability: require("./checks/manual/landmark-one-main-manual.js").applicability || null },
+  "landmark-role-name-present": { run: require("./checks/automatic/landmark-role-name-present.js").runInPage, applicability: require("./checks/automatic/landmark-role-name-present.js").applicability || null },
   "landmark-unique": { run: require("./checks/manual/landmark-unique-manual.js").runInPage, applicability: require("./checks/manual/landmark-unique-manual.js").applicability || null },
   "link-in-text-block": { run: require("./checks/automatic/link-in-text-block.js").runInPage, applicability: require("./checks/automatic/link-in-text-block.js").applicability || null },
   "link-name-present": { run: require("./checks/automatic/link-name-present.js").runInPage, applicability: require("./checks/automatic/link-name-present.js").applicability || null },
@@ -10950,6 +10990,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Diese {{role}}-Landmarke teilt ihren zugänglichen Namen mit einer anderen {{role}}-Landmarke.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Diese {{role}}-Landmarke hat keinen zugänglichen Namen, und es gibt mehr als eine unbenannte {{role}}-Landmarke auf dieser Seite.",
     "landmarkUnique_hint_cantTell": "Geben Sie jeder {{role}}-Landmarke über aria-label oder aria-labelledby einen eigenen Namen.",
+    "landmarkRoleNamePresent_title": "Die Rollen region und form müssen einen zugänglichen Namen haben",
+    "landmarkRoleNamePresent_description": "Prüft, ob ein Element mit role=\"region\" oder role=\"form\" einen zugänglichen Namen hat, ohne den es nicht als Landmarke bereitgestellt wird.",
+    "landmarkRoleNamePresent_summary_cantTell": "Dieses Element hat role=\"{{role}}\", aber keinen zugänglichen Namen, daher wird es nicht als Landmarke bereitgestellt.",
+    "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
     "emptyHeading_title": "Überschriften dürfen nicht leer sein",
     "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
     "emptyHeading_summary_cantTell": "Diese Überschrift hat keinen zugänglichen Namen.",
@@ -11796,6 +11840,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "This {{role}} landmark shares its accessible name with another {{role}} landmark.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "This {{role}} landmark has no accessible name, and more than one unnamed {{role}} landmark exists on this page.",
     "landmarkUnique_hint_cantTell": "Give each {{role}} landmark a distinct name via aria-label or aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Region and form roles must have an accessible name",
+    "landmarkRoleNamePresent_description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
+    "landmarkRoleNamePresent_summary_cantTell": "This element has role=\"{{role}}\" but no accessible name, so it is not exposed as a landmark.",
+    "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
     "emptyHeading_title": "Headings must not be empty",
     "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
     "emptyHeading_summary_cantTell": "This heading has no accessible name.",
@@ -12642,6 +12690,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Esta región de referencia {{role}} comparte su nombre accesible con otra región de referencia {{role}}.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Esta región de referencia {{role}} no tiene nombre accesible, y existe más de una región de referencia {{role}} sin nombre en esta página.",
     "landmarkUnique_hint_cantTell": "Asignar a cada región de referencia {{role}} un nombre distinto mediante aria-label o aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Los roles region y form deben tener un nombre accesible",
+    "landmarkRoleNamePresent_description": "Comprueba que un elemento con role=\"region\" o role=\"form\" tenga un nombre accesible, sin el cual no se expone como región de referencia.",
+    "landmarkRoleNamePresent_summary_cantTell": "Este elemento tiene role=\"{{role}}\" pero no tiene nombre accesible, así que no se expone como región de referencia.",
+    "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
     "emptyHeading_title": "Los encabezados no deben estar vacíos",
     "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
     "emptyHeading_summary_cantTell": "Este encabezado no tiene nombre accesible.",
@@ -13488,6 +13540,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Ce point de repère {{role}} partage son nom accessible avec un autre point de repère {{role}}.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Ce point de repère {{role}} n’a pas de nom accessible, et plus d’un point de repère {{role}} sans nom existe sur cette page.",
     "landmarkUnique_hint_cantTell": "Donnez à chaque point de repère {{role}} un nom distinct via aria-label ou aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Les rôles region et form doivent avoir un nom accessible",
+    "landmarkRoleNamePresent_description": "Vérifie qu’un élément doté de role=\"region\" ou role=\"form\" a un nom accessible, sans lequel il n’est pas exposé comme point de repère.",
+    "landmarkRoleNamePresent_summary_cantTell": "Cet élément a role=\"{{role}}\" mais pas de nom accessible, il n’est donc pas exposé comme point de repère.",
+    "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
     "emptyHeading_title": "Les titres ne doivent pas être vides",
     "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
     "emptyHeading_summary_cantTell": "Ce titre n’a pas de nom accessible.",
@@ -14334,6 +14390,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "この {{role}} ランドマークは、別の {{role}} ランドマークと同じアクセシブルな名前を持っています。",
     "landmarkUnique_summary_cantTell_bothUnnamed": "この {{role}} ランドマークにはアクセシブルな名前がなく、このページには名前のない {{role}} ランドマークがほかにもあります。",
     "landmarkUnique_hint_cantTell": "aria-label または aria-labelledby で、各 {{role}} ランドマークに異なる名前を付けてください。",
+    "landmarkRoleNamePresent_title": "region および form ロールにはアクセシブルな名前が必要",
+    "landmarkRoleNamePresent_description": "role=\"region\" または role=\"form\" を指定した要素にアクセシブルな名前があるかを確認します。名前がないと、ランドマークとして公開されません。",
+    "landmarkRoleNamePresent_summary_cantTell": "この要素には role=\"{{role}}\" がありますが、アクセシブルな名前がないため、ランドマークとして公開されません。",
+    "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
     "emptyHeading_title": "見出しを空にしてはならない",
     "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
     "emptyHeading_summary_cantTell": "この見出しにはアクセシブルな名前がありません。",
@@ -30574,6 +30634,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null
+  },
+  {
+    "ruleId": "landmark-role-name-present",
+    "title": "Region and form roles must have an accessible name",
+    "description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
+    "i18n": {
+      "titleKey": "landmarkRoleNamePresent_title",
+      "descriptionKey": "landmarkRoleNamePresent_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "best-practice",
+      "aria",
+      "landmarks",
+      "name",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -51459,6 +51558,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
+    "landmark-role-name-present": { run: (function runInPage(ctx) {
+  const { helpers, rule } = ctx;
+
+  const NAME_REQUIRED_LANDMARK_ROLES = new Set(['region', 'form']);
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[role]')) {
+    const role = String(el.getAttribute('role') || '')
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)[0];
+    if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
+
+    if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
+
+    applicableCount += 1;
+    if (helpers.getLandmarkNameInfo(el, ctx).present) continue;
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: `This element has role="${role}" but no accessible name, so it is not exposed as a landmark.`,
+        hint: `Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role="${role}" if it is not meant to be a landmark.`,
+        i18n: {
+          summaryKey: 'landmarkRoleNamePresent_summary_cantTell',
+          hintKey: 'landmarkRoleNamePresent_hint_cantTell',
+          params: { role }
+        },
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether losing the landmark matters to people navigating this page by landmark.',
+          evidence: { role, source: 'WAI-ARIA 1.2, roles region and form', wcagSc: [] }
+        },
+        data: {
+          details: { reasonCode: 'LANDMARK_ROLE_NAME_MISSING', role }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  const resolved = helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'minor');
+  return { ruleId: rule.ruleId, ...resolved };
+}), applicability: null },
     "landmark-unique": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
@@ -62513,6 +62659,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Diese {{role}}-Landmarke teilt ihren zugänglichen Namen mit einer anderen {{role}}-Landmarke.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Diese {{role}}-Landmarke hat keinen zugänglichen Namen, und es gibt mehr als eine unbenannte {{role}}-Landmarke auf dieser Seite.",
     "landmarkUnique_hint_cantTell": "Geben Sie jeder {{role}}-Landmarke über aria-label oder aria-labelledby einen eigenen Namen.",
+    "landmarkRoleNamePresent_title": "Die Rollen region und form müssen einen zugänglichen Namen haben",
+    "landmarkRoleNamePresent_description": "Prüft, ob ein Element mit role=\"region\" oder role=\"form\" einen zugänglichen Namen hat, ohne den es nicht als Landmarke bereitgestellt wird.",
+    "landmarkRoleNamePresent_summary_cantTell": "Dieses Element hat role=\"{{role}}\", aber keinen zugänglichen Namen, daher wird es nicht als Landmarke bereitgestellt.",
+    "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
     "emptyHeading_title": "Überschriften dürfen nicht leer sein",
     "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
     "emptyHeading_summary_cantTell": "Diese Überschrift hat keinen zugänglichen Namen.",
@@ -63359,6 +63509,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "This {{role}} landmark shares its accessible name with another {{role}} landmark.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "This {{role}} landmark has no accessible name, and more than one unnamed {{role}} landmark exists on this page.",
     "landmarkUnique_hint_cantTell": "Give each {{role}} landmark a distinct name via aria-label or aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Region and form roles must have an accessible name",
+    "landmarkRoleNamePresent_description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
+    "landmarkRoleNamePresent_summary_cantTell": "This element has role=\"{{role}}\" but no accessible name, so it is not exposed as a landmark.",
+    "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
     "emptyHeading_title": "Headings must not be empty",
     "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
     "emptyHeading_summary_cantTell": "This heading has no accessible name.",
@@ -64205,6 +64359,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Esta región de referencia {{role}} comparte su nombre accesible con otra región de referencia {{role}}.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Esta región de referencia {{role}} no tiene nombre accesible, y existe más de una región de referencia {{role}} sin nombre en esta página.",
     "landmarkUnique_hint_cantTell": "Asignar a cada región de referencia {{role}} un nombre distinto mediante aria-label o aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Los roles region y form deben tener un nombre accesible",
+    "landmarkRoleNamePresent_description": "Comprueba que un elemento con role=\"region\" o role=\"form\" tenga un nombre accesible, sin el cual no se expone como región de referencia.",
+    "landmarkRoleNamePresent_summary_cantTell": "Este elemento tiene role=\"{{role}}\" pero no tiene nombre accesible, así que no se expone como región de referencia.",
+    "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
     "emptyHeading_title": "Los encabezados no deben estar vacíos",
     "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
     "emptyHeading_summary_cantTell": "Este encabezado no tiene nombre accesible.",
@@ -65051,6 +65209,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "Ce point de repère {{role}} partage son nom accessible avec un autre point de repère {{role}}.",
     "landmarkUnique_summary_cantTell_bothUnnamed": "Ce point de repère {{role}} n’a pas de nom accessible, et plus d’un point de repère {{role}} sans nom existe sur cette page.",
     "landmarkUnique_hint_cantTell": "Donnez à chaque point de repère {{role}} un nom distinct via aria-label ou aria-labelledby.",
+    "landmarkRoleNamePresent_title": "Les rôles region et form doivent avoir un nom accessible",
+    "landmarkRoleNamePresent_description": "Vérifie qu’un élément doté de role=\"region\" ou role=\"form\" a un nom accessible, sans lequel il n’est pas exposé comme point de repère.",
+    "landmarkRoleNamePresent_summary_cantTell": "Cet élément a role=\"{{role}}\" mais pas de nom accessible, il n’est donc pas exposé comme point de repère.",
+    "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
     "emptyHeading_title": "Les titres ne doivent pas être vides",
     "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
     "emptyHeading_summary_cantTell": "Ce titre n’a pas de nom accessible.",
@@ -65897,6 +66059,10 @@ const I18N = {
     "landmarkUnique_summary_cantTell_duplicateName": "この {{role}} ランドマークは、別の {{role}} ランドマークと同じアクセシブルな名前を持っています。",
     "landmarkUnique_summary_cantTell_bothUnnamed": "この {{role}} ランドマークにはアクセシブルな名前がなく、このページには名前のない {{role}} ランドマークがほかにもあります。",
     "landmarkUnique_hint_cantTell": "aria-label または aria-labelledby で、各 {{role}} ランドマークに異なる名前を付けてください。",
+    "landmarkRoleNamePresent_title": "region および form ロールにはアクセシブルな名前が必要",
+    "landmarkRoleNamePresent_description": "role=\"region\" または role=\"form\" を指定した要素にアクセシブルな名前があるかを確認します。名前がないと、ランドマークとして公開されません。",
+    "landmarkRoleNamePresent_summary_cantTell": "この要素には role=\"{{role}}\" がありますが、アクセシブルな名前がないため、ランドマークとして公開されません。",
+    "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
     "emptyHeading_title": "見出しを空にしてはならない",
     "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
     "emptyHeading_summary_cantTell": "この見出しにはアクセシブルな名前がありません。",

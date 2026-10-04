@@ -5,6 +5,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ## [Unreleased]
 
 ### Added
+- `landmark-role-name-present`, a best-practice rule for an element given `role="region"` or `role="form"` with no accessible name. WAI-ARIA requires a name for both, and without one the element is not exposed as a landmark, so the role the author asked for is lost. It reports `cantTell`, not `fail`, since the requirement names no WCAG criterion, and `pass` when every such element is named. An unnamed `<section>` or `<form>` with no role is not in scope: it is not meant to be a landmark. Siteimprove Alfa (SIA-R40) and IBM Equal Access report the region case; nothing in this engine did, although the ARIA table generator said `region` covered it.
 - The rule catalog says what each rule's findings report. A new `@reports` tag in a rule's header lists the fields its findings carry in `data.details` besides `reasonCode`, with what each one means and its unit, and `docs/RULE_CATALOG.md` shows it as "What a finding reports" for the 78 rules whose findings carry any. Fields that are only internal diagnostics are left out. These fields are still not a stable contract, as `OUTPUT_SCHEMA.md` says, and the catalog says so once. Nothing a rule reports changes.
 
 ### Changed

@@ -1257,6 +1257,26 @@ No `<main>` or `role="main"` anywhere on the page.
 ```
 A `<main>` landmark exists, so there is nothing to flag.
 
+## landmark-role-name-present
+
+**Passed**
+```html
+<div role="region" aria-labelledby="news-h"><h2 id="news-h">Latest news</h2>...</div>
+```
+The region is named by its visible heading, so it is exposed as a landmark called "Latest news".
+
+**Flagged (cantTell)**
+```html
+<div role="region"><h2>Latest news</h2>...</div>
+```
+`role="region"` with no name: WAI-ARIA requires one, and without it the element is exposed as a plain container, not a landmark. Not a failure, since the requirement names no WCAG criterion; a person decides whether the lost landmark matters.
+
+**Not applicable**
+```html
+<section><h2>Latest news</h2>...</section>
+```
+No `role` asks for a landmark. An unnamed `<section>` is not meant to be one.
+
 ## landmark-unique
 
 **Passed**

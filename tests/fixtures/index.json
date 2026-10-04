@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 133,
-    "withFixture": 132,
+    "total": 134,
+    "withFixture": 133,
     "withoutFixture": 1
   },
   "rows": [
@@ -1412,6 +1412,23 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "landmark-role-name-present",
+      "title": "Region and form roles must have an accessible name",
+      "type": "automatic",
+      "wcagSc": [],
+      "ruleFile": "src/checks/automatic/landmark-role-name-present.js",
+      "testFile": "tests/engine-checks/automatic/landmark-role-name-present.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/landmark-role-name-present-all-scenarios.html",
+      "totalCases": 14,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "CANTTELL": 6,
+        "OTHER": 5
       }
     },
     {

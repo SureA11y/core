@@ -254,7 +254,7 @@ function renderRoleless(list) {
 //   combobox             combobox-name-present
 //   img                  img-alt-present / role-img-text-alternative-present
 //   listbox              listbox-name-present
-//   region               region-manual
+//   region               landmark-role-name-present (best-practice, not 4.1.2)
 //   searchbox            searchbox-name-present
 //   slider               slider-name-present
 //   spinbutton           spinbutton-name-present

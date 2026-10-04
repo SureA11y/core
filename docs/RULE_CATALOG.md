@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**133 rules total: 80 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
+**134 rules total: 81 automatic (WCAG-normative, can return `fail`), 53 manual (advisory/judgment-required, capped at `cantTell`). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -10,7 +10,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (80), can return `fail`
+## Automatic rules (81), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -59,6 +59,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
+| [`landmark-role-name-present`](#landmark-role-name-present) | Region and form roles must have an accessible name | — | — | high | minor |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
 | [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
 | [`list-children-valid`](#list-children-valid) | Lists must only directly contain list items | 1.3.1 | A | high | serious |
@@ -1438,6 +1439,22 @@ Checks that the page has at least one main landmark (role="main" or &lt;main&gt;
 **Applies to.** Always applicable to any HTML document with a &lt;body&gt; element: "does the page have a main landmark" is a whole-page concern, matching bypass-blocks-present's pattern of evaluating the document directly.
 
 **Expectation.** At least one main landmark (role="main" or &lt;main&gt;), exposed to assistive technology, exists on the page. A page with none gives AT users no landmark to jump straight to for the primary content.
+
+### `landmark-role-name-present`
+
+**Region and form roles must have an accessible name**
+
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
+
+Checks that an element given role="region" or role="form" has an accessible name, without which it is not exposed as a landmark.
+
+**Applies to.** Applies to elements whose role attribute's first token is region or form, and that are included in the accessibility tree.
+
+**Expectation.** The element has a non-empty accessible name from aria-labelledby, aria-label or title. WAI-ARIA requires one ("Authors MUST give each element with role region a brief label", and the same for form), and without one the element is not exposed as a landmark at all, so the role the author asked for is lost. Reported at CANTTELL rather than FAIL: the requirement is WAI-ARIA's, not a WCAG Success Criterion's. Nothing false reaches assistive technology, which gets a plain container, so whether losing the landmark harms anyone depends on the page.
+
+**What a finding reports.**
+
+- `role`: the role that needs a name, `region` or `form`.
 
 ### `landmark-unique`
 
