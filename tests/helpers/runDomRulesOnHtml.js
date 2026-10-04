@@ -4,6 +4,15 @@ const { JSDOM } = require('jsdom');
 const { runa11yCoreInPage, runDomRulesInPage } = require('../../src/index.js');
 const { assertEntryPointParity } = require('./entryPointParity');
 
+// The engine's runOnly is an object ({ includeRuleIds, tags, ... }); a bare
+// array or string of rule ids, as tests write it, is not one and used to be
+// ignored, so every test ran every rule. Read it as rule ids.
+function normalizeRunOnly(runOnly) {
+  if (Array.isArray(runOnly)) return runOnly.length ? { includeRuleIds: runOnly } : null;
+  if (typeof runOnly === 'string') return runOnly ? { includeRuleIds: [runOnly] } : null;
+  return runOnly;
+}
+
 function normalizeEngineOptions(opts = {}) {
   const engineOptions = { ...(opts.engineOptions || {}) };
 
@@ -89,7 +98,7 @@ function runa11yCoreOnHtml(
       url,
       contextSelector,
       normalizedEngineOptions,
-      runOnly,
+      normalizeRunOnly(runOnly),
       entryPointParity
     );
     return result;
@@ -174,7 +183,7 @@ function runa11yCoreOnDom(
     url,
     contextSelector,
     normalizedEngineOptions,
-    runOnly,
+    normalizeRunOnly(runOnly),
     entryPointParity
   );
 }
