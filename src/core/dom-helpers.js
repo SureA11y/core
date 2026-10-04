@@ -3622,6 +3622,11 @@ function createDomHelpers(opts) {
 
       if (!isElement(node)) return;
 
+      // opts.skipNode: the control a <label> is being read for. Its own name
+      // is not part of the label's text (accname 2E), so a wrapping label
+      // with nothing else in it names nothing.
+      if (opts && opts.skipNode === node) return;
+
       // Skip anything not exposed to the accessibility tree (hidden,
       // aria-hidden, display:none, inert, etc.), same scope as
       // isAccTreeEligible, so a hidden descendant never contributes.
@@ -4639,13 +4644,13 @@ function createDomHelpers(opts) {
   // failing that, its rendered content (getContentNameInfo, which excludes
   // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
-  function labelContributesAccessibleName(lab) {
+  function labelContributesAccessibleName(lab, control) {
     try {
       const aria = getAriaNameInfo(lab, null, {});
       if (aria && aria.present && trim(aria.value)) return true;
     } catch {}
     try {
-      const info = getContentNameInfo(lab, null, {});
+      const info = getContentNameInfo(lab, null, { skipNode: control });
       if (info && info.present && trim(info.value)) return true;
     } catch {
       return true; // conservative on error: don't newly fail
@@ -4691,7 +4696,7 @@ function createDomHelpers(opts) {
     // this doesn't).
     const associatedLabels = getAssociatedLabelElements(el);
     const out = associatedLabels.length
-      ? associatedLabels.some(labelContributesAccessibleName)
+      ? associatedLabels.some((lab) => labelContributesAccessibleName(lab, el))
       : false;
 
     try {

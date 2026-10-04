@@ -4687,17 +4687,17 @@
       "file": "src/checks/manual/form-control-programmatic-label-quality-manual.js",
       "ruleId": "form-control-programmatic-label-quality",
       "wcagScNormative": [
-        "4.1.2"
+        "3.3.2"
       ],
       "wcagScAll": [
-        "4.1.2"
+        "3.3.2"
       ],
       "wcagScInformative": [],
       "type": "manual",
       "title": "Form controls should not rely on placeholder or title as the primary label",
       "tags": [
         "wcag2a",
-        "wcag412",
+        "wcag332",
         "forms",
         "labels",
         "quality",
@@ -4727,8 +4727,8 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
-          "4.1.2": [
-            "form-control-name-quality"
+          "3.3.2": [
+            "form-control-visible-label-quality"
           ]
         }
       },
@@ -5097,7 +5097,7 @@
       "wcagScAll": [],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Form controls should not use title as their only label",
+      "title": "Title-only form labels (deprecated)",
       "tags": [
         "best-practice",
         "forms",
@@ -5113,7 +5113,7 @@
       },
       "error": null,
       "coverage": {},
-      "deprecated": false
+      "deprecated": true
     },
     {
       "file": "src/checks/manual/landmark-banner-is-top-level-manual.js",
@@ -7221,11 +7221,12 @@
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 2,
-        "coveredFacets": 2,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7244,6 +7245,14 @@
             "automation": "full",
             "coveredBy": [
               "form-control-single-label"
+            ]
+          },
+          {
+            "id": "form-control-visible-label-quality",
+            "label": "Form controls have a label presented to all users, not only a title or placeholder",
+            "automation": "manual",
+            "coveredBy": [
+              "form-control-programmatic-label-quality"
             ]
           }
         ]
@@ -7295,13 +7304,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 37,
+        "coveredFacets": 37,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 35,
-          "manual": 2,
-          "partial": 1
+          "partial": 1,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7312,14 +7321,6 @@
             "automation": "full",
             "coveredBy": [
               "form-control-programmatic-label-present"
-            ]
-          },
-          {
-            "id": "form-control-name-quality",
-            "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
-            "automation": "manual",
-            "coveredBy": [
-              "form-control-programmatic-label-quality"
             ]
           },
           {
@@ -8622,11 +8623,12 @@
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 2,
-        "coveredFacets": 2,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8645,6 +8647,14 @@
             "automation": "full",
             "coveredBy": [
               "form-control-single-label"
+            ]
+          },
+          {
+            "id": "form-control-visible-label-quality",
+            "label": "Form controls have a label presented to all users, not only a title or placeholder",
+            "automation": "manual",
+            "coveredBy": [
+              "form-control-programmatic-label-quality"
             ]
           }
         ]
@@ -8696,13 +8706,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 37,
+        "coveredFacets": 37,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 35,
-          "manual": 2,
-          "partial": 1
+          "partial": 1,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8713,14 +8723,6 @@
             "automation": "full",
             "coveredBy": [
               "form-control-programmatic-label-present"
-            ]
-          },
-          {
-            "id": "form-control-name-quality",
-            "label": "Form controls accessible name quality (avoid placeholder/title as primary)",
-            "automation": "manual",
-            "coveredBy": [
-              "form-control-programmatic-label-quality"
             ]
           },
           {

@@ -5,33 +5,36 @@
 /**
  * @check label-title-only
  * @atomic true
- * @summary Form controls should not rely on the title attribute as their only label
+ * @summary Deprecated since 1.10.0, reports notApplicable; see form-control-programmatic-label-quality
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to labelable form controls (input, excluding
- *   hidden/submit/reset/button/image; select; textarea) that have a
- *   non-empty title attribute.
+ *   Nothing. The rule is deprecated and reports notApplicable on every
+ *   page. Its id stays in the catalog, with meta.deprecated set and
+ *   deprecation.replacedBy naming the rule that covers it, so a runOnly
+ *   list, a stored baseline or code that looks the result up by ruleId
+ *   keeps resolving until the file is removed in 2.0.0
+ *   (docs/API_STABILITY.md, "Rule-ID deprecation policy").
  * @expectation
- *   The control also has a real label (a wrapping/associated <label>,
- *   aria-label, or aria-labelledby), rather than depending on the title
- *   attribute alone. A title-only tooltip is not reliably exposed by all
- *   assistive technology and is not visible at all until hover/focus,
- *   unlike a persistent visible label.
+ *   None. The case it reported, a form control whose only label is its
+ *   title attribute, is reported by form-control-programmatic-label-quality
+ *   (label_from_title_primary), which also covers placeholder-only labels,
+ *   under SC 3.3.2. Every finding this rule made was a second report of
+ *   one that rule makes for the same element.
  * @implementation-notes
- * - Not WCAG-normative, authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see landmark-banner-is-top-level's
- *   header comment for the shared rationale/precedent.
- * - Distinct from form-control-programmatic-label-present (that
- *   rule accepts title as one of several valid presence mechanisms;
- *   this rule flags the narrower case where title is the ONLY one).
+ * - Reduced to notApplicable at once, as a duplicate finding is a bug:
+ *   the policy keeps a rule reporting until 2.0.0 only when it is being
+ *   superseded and its findings are still correct and its own.
+ * - LABEL_TITLE_ONLY is no longer emitted. It retires with the duplicate
+ *   finding it named, so a stored baseline entry or alert for it closes,
+ *   while the same element's label_from_title_primary finding stays.
  */
 
 const id = 'label-title-only';
 
 const meta = {
-  title: 'Form controls should not use title as their only label',
+  title: 'Title-only form labels (deprecated)',
   description:
-    'Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).',
+    'Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.',
   i18n: {
     titleKey: 'labelTitleOnly_title',
     descriptionKey: 'labelTitleOnly_description'
@@ -44,85 +47,19 @@ const meta = {
   category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
+  deprecated: true,
+  deprecation: {
+    replacedBy: 'form-control-programmatic-label-quality',
+    reason:
+      'Every finding it made duplicated one form-control-programmatic-label-quality makes for the same element, which also covers placeholder-only labels.',
+    sinceVersion: '1.10.0'
+  },
   coverage: {}
 };
 
 function runInPage(ctx) {
-  const { helpers, rule } = ctx;
-
-  const selector =
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
-
-  const occurrences = [];
-  let applicableCount = 0;
-
-  for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-
-    if (helpers.isAccTreeEligible) {
-      const elig = (() => {
-        try {
-          return helpers.isAccTreeEligible(el, ctx);
-        } catch {
-          return { eligible: true, reasons: [] };
-        }
-      })();
-      if (elig && elig.eligible === false) continue;
-    }
-
-    const title = String(el.getAttribute('title') || '').trim();
-    if (!title) continue;
-
-    applicableCount += 1;
-
-    // Delegates to the shared helpers.getAccessibleNameInfo (aria ->
-    // native <label> -> title, the same precedence every other
-    // name-dependent rule in this engine uses) rather than a local,
-    // hand-rolled "does a <label for>/wrapping <label> exist" check. A
-    // structural-association-only check (for="..."/wrapping) never verifies
-    // the label actually contributes a name -- an empty <label for="x">
-    // </label> or empty wrapping <label> would exempt the control even
-    // though title is functionally its only real label (see
-    // dom-helpers.js's hasLabelAssociation/labelContributesAccessibleName).
-    // If the resolved mechanism isn't 'title', some higher-priority
-    // mechanism (aria-label/aria-labelledby/a real contributing label)
-    // already won and this control isn't title-only.
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    if (!nameInfo || nameInfo.mechanism !== 'title') continue;
-
-    const tag = el.tagName.toLowerCase();
-
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary: 'This form control relies on the title attribute as its only label.',
-        hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
-        i18n: {
-          summaryKey: 'labelTitleOnly_summary_cantTell',
-          hintKey: 'labelTitleOnly_hint_cantTell',
-          params: { element: tag }
-        },
-        data: {
-          details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
-        }
-      })
-    );
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const { rule } = ctx;
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

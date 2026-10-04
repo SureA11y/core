@@ -4,15 +4,16 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **134**. With fixture: **133**. Without fixture: **1**.
+Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 
-## Rules WITHOUT a fixture (1)
+## Rules WITHOUT a fixture (2)
 
 | Rule ID | Type | Title | Rule file | Test file |
 |---|---|---|---|---|
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
+| label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 
-## Rules WITH a fixture (133)
+## Rules WITH a fixture (132)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -82,7 +83,6 @@ Total rules: **134**. With fixture: **133**. Without fixture: **1**.
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 23 | 8 | 7 | 0 | 8 |
-| label-title-only | manual | `tests/fixtures/label-title-only-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
 | landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 2 | 0 | 2 | 3 |
 | landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |

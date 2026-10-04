@@ -465,7 +465,6 @@ module.exports = [
       'treeitem-name-present',
       'aria-hidden-focus',
       'aria-hidden-body',
-      'form-control-programmatic-label-quality',
       'summary-name-present',
       'tooltip-name-present'
     ],
@@ -538,7 +537,11 @@ module.exports = [
 
   {
     id: 'wcag-3.3.2-labels-or-instructions',
-    checksIds: ['form-control-single-label', 'form-control-programmatic-label-present'],
+    checksIds: [
+      'form-control-single-label',
+      'form-control-programmatic-label-present',
+      'form-control-programmatic-label-quality'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_332_labels_or_instructions.title',
       descriptionKey: 'catalog.rules.wcag_332_labels_or_instructions.description',

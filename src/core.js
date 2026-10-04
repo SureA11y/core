@@ -3436,7 +3436,7 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag332",
       "forms",
       "labels",
       "quality",
@@ -3445,32 +3445,32 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "3.3.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "3.3.2",
+        "title": "Labels or Instructions",
         "conformanceLevel": "A"
       },
       {
         "standard": "EN 301 549",
         "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions",
         "wcagSc": [
-          "4.1.2"
+          "3.3.2"
         ]
       },
       {
         "standard": "EN 301 549",
         "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions",
         "wcagSc": [
-          "4.1.2"
+          "3.3.2"
         ]
       }
     ],
@@ -3479,8 +3479,8 @@ const CHECK_DEFS = [
     "type": "manual",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
-          "form-control-name-quality"
+        "3.3.2": [
+          "form-control-visible-label-quality"
         ]
       }
     },
@@ -3491,7 +3491,7 @@ const CHECK_DEFS = [
     "atomic": true,
     "deprecated": false,
     "deprecation": null,
-    "category": "robust",
+    "category": "understandable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -4733,8 +4733,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "label-title-only",
-    "title": "Form controls should not use title as their only label",
-    "description": "Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).",
+    "title": "Title-only form labels (deprecated)",
+    "description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
     "i18n": {
       "titleKey": "labelTitleOnly_title",
       "descriptionKey": "labelTitleOnly_description"
@@ -4759,8 +4759,12 @@ const CHECK_DEFS = [
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "form-control-programmatic-label-quality",
+      "reason": "Every finding it made duplicated one form-control-programmatic-label-quality makes for the same element, which also covers placeholder-only labels.",
+      "sinceVersion": "1.10.0"
+    },
     "category": "understandable",
     "standard": null,
     "applicability": "",
@@ -10034,7 +10038,6 @@ const COMPOSITE_RULES = [
       "treeitem-name-present",
       "aria-hidden-focus",
       "aria-hidden-body",
-      "form-control-programmatic-label-quality",
       "summary-name-present",
       "tooltip-name-present"
     ],
@@ -10193,7 +10196,8 @@ const COMPOSITE_RULES = [
     "id": "wcag-3.3.2-labels-or-instructions",
     "checksIds": [
       "form-control-single-label",
-      "form-control-programmatic-label-present"
+      "form-control-programmatic-label-present",
+      "form-control-programmatic-label-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_332_labels_or_instructions.title",
@@ -11024,10 +11028,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Fügen Sie dieser Kopfzelle Textinhalt (oder aria-label/aria-labelledby) hinzu, oder entfernen Sie sie, wenn sie nicht benötigt wird.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text — ihr einziger zugänglicher Name stammt von aria-label/aria-labelledby, was bekanntermaßen von realen Screenreader-/Browser-Kombinationen (z. B. NVDA+Firefox, iOS VoiceOver+Safari) bei <th>-Elementen ignoriert wird.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie dieser Kopfzelle sichtbaren Textinhalt hinzu (zusätzlich zu, oder anstelle von, aria-label/aria-labelledby) — sichtbarer Text ist der einzige Benennungsmechanismus, der bei getesteten Screenreadern nachweislich funktioniert.",
-    "labelTitleOnly_title": "Formularelemente sollten title nicht als einzige Beschriftung verwenden",
-    "labelTitleOnly_description": "Prüft, ob ein Formularelement mit einem title-Attribut auch eine echte Beschriftung hat (label-Element, aria-label oder aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Dieses Formularelement stützt sich auf das title-Attribut als einzige Beschriftung.",
-    "labelTitleOnly_hint_cantTell": "Fügen Sie zusätzlich zu, oder anstelle von, dem title-Attribut ein sichtbares <label> (oder aria-label/aria-labelledby) hinzu.",
+    "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
+    "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
     "imageRedundantAlt_description": "Prüft, ob der Alternativtext eines <img> nicht mit anderem, bereits in seinem unmittelbaren übergeordneten Element vorhandenem sichtbaren Text identisch ist.",
     "imageRedundantAlt_summary_cantTell": "Der Alternativtext dieses Bildes dupliziert anderen sichtbaren Text direkt daneben.",
@@ -11876,10 +11878,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.",
-    "labelTitleOnly_title": "Form controls should not use title as their only label",
-    "labelTitleOnly_description": "Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "This form control relies on the title attribute as its only label.",
-    "labelTitleOnly_hint_cantTell": "Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.",
+    "labelTitleOnly_title": "Title-only form labels (deprecated)",
+    "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
     "imageRedundantAlt_description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
     "imageRedundantAlt_summary_cantTell": "This image's alt text duplicates other visible text right next to it.",
@@ -12728,10 +12728,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Agregar contenido de texto (o aria-label/aria-labelledby) a esta celda de encabezado, o eliminarla si no es necesaria.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado de tabla no tiene texto visible; su único nombre accesible proviene de aria-label/aria-labelledby, que se sabe que ciertas combinaciones reales de lector de pantalla/navegador (por ejemplo, NVDA+Firefox, iOS VoiceOver+Safari) ignoran en elementos <th>.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar contenido de texto visible a esta celda de encabezado (además de, o en lugar de, aria-label/aria-labelledby); el texto visible es el único mecanismo de nombrado confirmado que funciona en los lectores de pantalla probados.",
-    "labelTitleOnly_title": "Los controles de formulario no deben usar title como única etiqueta",
-    "labelTitleOnly_description": "Comprueba que un control de formulario con un atributo title también tenga una etiqueta real (elemento label, aria-label o aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Este control de formulario depende del atributo title como única etiqueta.",
-    "labelTitleOnly_hint_cantTell": "Agregar una <label> visible (o aria-label/aria-labelledby) además de, o en lugar de, el atributo title.",
+    "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
+    "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
     "imageRedundantAlt_description": "Comprueba que el texto alt de un <img> no sea idéntico a otro texto visible ya presente en su elemento padre inmediato.",
     "imageRedundantAlt_summary_cantTell": "El texto alt de esta imagen duplica otro texto visible justo al lado.",
@@ -13580,10 +13578,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à cette cellule d’en-tête, ou retirez-la si elle n’est pas nécessaire.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez du contenu textuel visible à cette cellule d’en-tête (en plus de, ou à la place de, aria-label/aria-labelledby) — le texte visible est le seul mécanisme de nommage confirmé comme fonctionnel sur les lecteurs d’écran testés.",
-    "labelTitleOnly_title": "Les contrôles de formulaire ne devraient pas utiliser title comme seule étiquette",
-    "labelTitleOnly_description": "Vérifie qu’un contrôle de formulaire ayant un attribut title possède aussi une véritable étiquette (élément label, aria-label, ou aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Ce contrôle de formulaire repose sur l’attribut title comme seule étiquette.",
-    "labelTitleOnly_hint_cantTell": "Ajoutez une <label> visible (ou aria-label/aria-labelledby) en plus de, ou à la place de, l’attribut title.",
+    "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
+    "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
     "imageRedundantAlt_description": "Vérifie que le texte alt d’un <img> n’est pas identique à un autre texte visible déjà présent dans son élément parent immédiat.",
     "imageRedundantAlt_summary_cantTell": "Le texte alt de cette image duplique un autre texte visible juste à côté.",
@@ -14432,10 +14428,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "この見出しセルにテキスト (または aria-label/aria-labelledby) を追加するか、不要であれば削除してください。",
     "emptyTableHeader_summary_cantTell_ariaOnly": "この表の見出しセルには表示されるテキストがありません。アクセシブルな名前は aria-label/aria-labelledby からのみ取得されていますが、実際のスクリーンリーダーとブラウザーの組み合わせ (NVDA+Firefox、iOS の VoiceOver+Safari など) では、<th> 要素のこれらの属性が無視されることが知られています。",
     "emptyTableHeader_hint_cantTell_ariaOnly": "この見出しセルに、表示されるテキストを追加してください (aria-label/aria-labelledby と併用しても、置き換えてもかまいません)。検証したスクリーンリーダーすべてで機能が確認されている名前付けの方法は、表示テキストだけです。",
-    "labelTitleOnly_title": "フォームコントロールは title を唯一のラベルにしないことが望ましい",
-    "labelTitleOnly_description": "title 属性を持つフォームコントロールに、実際のラベル (label 要素、aria-label、または aria-labelledby) もあるかを確認します。",
-    "labelTitleOnly_summary_cantTell": "このフォームコントロールは、title 属性を唯一のラベルとしています。",
-    "labelTitleOnly_hint_cantTell": "title 属性に加えて、またはその代わりに、表示される <label> (または aria-label/aria-labelledby) を追加してください。",
+    "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
+    "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
     "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
     "imageRedundantAlt_description": "<img> の代替テキストが、すぐ上の親要素にすでにある表示テキストと同一でないかを確認します。",
     "imageRedundantAlt_summary_cantTell": "この画像の代替テキストは、すぐ隣に表示されているテキストと重複しています。",
@@ -22460,6 +22454,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!isElement(node)) return;
 
+      // opts.skipNode: the control a <label> is being read for. Its own name
+      // is not part of the label's text (accname 2E), so a wrapping label
+      // with nothing else in it names nothing.
+      if (opts && opts.skipNode === node) return;
+
       // Skip anything not exposed to the accessibility tree (hidden,
       // aria-hidden, display:none, inert, etc.), same scope as
       // isAccTreeEligible, so a hidden descendant never contributes.
@@ -23477,13 +23476,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // failing that, its rendered content (getContentNameInfo, which excludes
   // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
-  function labelContributesAccessibleName(lab) {
+  function labelContributesAccessibleName(lab, control) {
     try {
       const aria = getAriaNameInfo(lab, null, {});
       if (aria && aria.present && trim(aria.value)) return true;
     } catch {}
     try {
-      const info = getContentNameInfo(lab, null, {});
+      const info = getContentNameInfo(lab, null, { skipNode: control });
       if (info && info.present && trim(info.value)) return true;
     } catch {
       return true; // conservative on error: don't newly fail
@@ -23529,7 +23528,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // this doesn't).
     const associatedLabels = getAssociatedLabelElements(el);
     const out = associatedLabels.length
-      ? associatedLabels.some(labelContributesAccessibleName)
+      ? associatedLabels.some((lab) => labelContributesAccessibleName(lab, el))
       : false;
 
     try {
@@ -29014,7 +29013,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag412",
+      "wcag332",
       "forms",
       "labels",
       "quality",
@@ -29023,32 +29022,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "4.1.2"
+      "3.3.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
+        "requirement": "3.3.2",
+        "title": "Labels or Instructions",
         "conformanceLevel": "A"
       },
       {
         "standard": "EN 301 549",
         "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions",
         "wcagSc": [
-          "4.1.2"
+          "3.3.2"
         ]
       },
       {
         "standard": "EN 301 549",
         "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
+        "requirement": "9.3.3.2",
+        "title": "Labels or instructions",
         "wcagSc": [
-          "4.1.2"
+          "3.3.2"
         ]
       }
     ],
@@ -29057,8 +29056,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "manual",
     "coverage": {
       "facetsBySc": {
-        "4.1.2": [
-          "form-control-name-quality"
+        "3.3.2": [
+          "form-control-visible-label-quality"
         ]
       }
     },
@@ -29069,7 +29068,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "atomic": true,
     "deprecated": false,
     "deprecation": null,
-    "category": "robust",
+    "category": "understandable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -30311,8 +30310,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "label-title-only",
-    "title": "Form controls should not use title as their only label",
-    "description": "Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).",
+    "title": "Title-only form labels (deprecated)",
+    "description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
     "i18n": {
       "titleKey": "labelTitleOnly_title",
       "descriptionKey": "labelTitleOnly_description"
@@ -30337,8 +30336,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "ruleVersion": "0.0.0",
     "normative": true,
     "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
+    "deprecated": true,
+    "deprecation": {
+      "replacedBy": "form-control-programmatic-label-quality",
+      "reason": "Every finding it made duplicated one form-control-programmatic-label-quality makes for the same element, which also covers placeholder-only labels.",
+      "sinceVersion": "1.10.0"
+    },
     "category": "understandable",
     "standard": null,
     "applicability": "",
@@ -35612,7 +35615,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "treeitem-name-present",
       "aria-hidden-focus",
       "aria-hidden-body",
-      "form-control-programmatic-label-quality",
       "summary-name-present",
       "tooltip-name-present"
     ],
@@ -35771,7 +35773,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "wcag-3.3.2-labels-or-instructions",
     "checksIds": [
       "form-control-single-label",
-      "form-control-programmatic-label-present"
+      "form-control-programmatic-label-present",
+      "form-control-programmatic-label-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_332_labels_or_instructions.title",
@@ -50918,81 +50921,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-title-only": { run: (function runInPage(ctx) {
-  const { helpers, rule } = ctx;
-
-  const selector =
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
-
-  const occurrences = [];
-  let applicableCount = 0;
-
-  for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-
-    if (helpers.isAccTreeEligible) {
-      const elig = (() => {
-        try {
-          return helpers.isAccTreeEligible(el, ctx);
-        } catch {
-          return { eligible: true, reasons: [] };
-        }
-      })();
-      if (elig && elig.eligible === false) continue;
-    }
-
-    const title = String(el.getAttribute('title') || '').trim();
-    if (!title) continue;
-
-    applicableCount += 1;
-
-    // Delegates to the shared helpers.getAccessibleNameInfo (aria ->
-    // native <label> -> title, the same precedence every other
-    // name-dependent rule in this engine uses) rather than a local,
-    // hand-rolled "does a <label for>/wrapping <label> exist" check. A
-    // structural-association-only check (for="..."/wrapping) never verifies
-    // the label actually contributes a name -- an empty <label for="x">
-    // </label> or empty wrapping <label> would exempt the control even
-    // though title is functionally its only real label (see
-    // dom-helpers.js's hasLabelAssociation/labelContributesAccessibleName).
-    // If the resolved mechanism isn't 'title', some higher-priority
-    // mechanism (aria-label/aria-labelledby/a real contributing label)
-    // already won and this control isn't title-only.
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    if (!nameInfo || nameInfo.mechanism !== 'title') continue;
-
-    const tag = el.tagName.toLowerCase();
-
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary: 'This form control relies on the title attribute as its only label.',
-        hint: 'Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.',
-        i18n: {
-          summaryKey: 'labelTitleOnly_summary_cantTell',
-          hintKey: 'labelTitleOnly_hint_cantTell',
-          params: { element: tag }
-        },
-        data: {
-          details: { reasonCode: 'LABEL_TITLE_ONLY', element: tag }
-        }
-      })
-    );
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const { rule } = ctx;
+  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -62847,10 +62777,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Fügen Sie dieser Kopfzelle Textinhalt (oder aria-label/aria-labelledby) hinzu, oder entfernen Sie sie, wenn sie nicht benötigt wird.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Tabellen-Kopfzelle hat keinen sichtbaren Text — ihr einziger zugänglicher Name stammt von aria-label/aria-labelledby, was bekanntermaßen von realen Screenreader-/Browser-Kombinationen (z. B. NVDA+Firefox, iOS VoiceOver+Safari) bei <th>-Elementen ignoriert wird.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie dieser Kopfzelle sichtbaren Textinhalt hinzu (zusätzlich zu, oder anstelle von, aria-label/aria-labelledby) — sichtbarer Text ist der einzige Benennungsmechanismus, der bei getesteten Screenreadern nachweislich funktioniert.",
-    "labelTitleOnly_title": "Formularelemente sollten title nicht als einzige Beschriftung verwenden",
-    "labelTitleOnly_description": "Prüft, ob ein Formularelement mit einem title-Attribut auch eine echte Beschriftung hat (label-Element, aria-label oder aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Dieses Formularelement stützt sich auf das title-Attribut als einzige Beschriftung.",
-    "labelTitleOnly_hint_cantTell": "Fügen Sie zusätzlich zu, oder anstelle von, dem title-Attribut ein sichtbares <label> (oder aria-label/aria-labelledby) hinzu.",
+    "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
+    "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
     "imageRedundantAlt_description": "Prüft, ob der Alternativtext eines <img> nicht mit anderem, bereits in seinem unmittelbaren übergeordneten Element vorhandenem sichtbaren Text identisch ist.",
     "imageRedundantAlt_summary_cantTell": "Der Alternativtext dieses Bildes dupliziert anderen sichtbaren Text direkt daneben.",
@@ -63699,10 +63627,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.",
-    "labelTitleOnly_title": "Form controls should not use title as their only label",
-    "labelTitleOnly_description": "Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "This form control relies on the title attribute as its only label.",
-    "labelTitleOnly_hint_cantTell": "Add a visible <label> (or aria-label/aria-labelledby) in addition to, or instead of, the title attribute.",
+    "labelTitleOnly_title": "Title-only form labels (deprecated)",
+    "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
     "imageRedundantAlt_description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
     "imageRedundantAlt_summary_cantTell": "This image's alt text duplicates other visible text right next to it.",
@@ -64551,10 +64477,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Agregar contenido de texto (o aria-label/aria-labelledby) a esta celda de encabezado, o eliminarla si no es necesaria.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado de tabla no tiene texto visible; su único nombre accesible proviene de aria-label/aria-labelledby, que se sabe que ciertas combinaciones reales de lector de pantalla/navegador (por ejemplo, NVDA+Firefox, iOS VoiceOver+Safari) ignoran en elementos <th>.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar contenido de texto visible a esta celda de encabezado (además de, o en lugar de, aria-label/aria-labelledby); el texto visible es el único mecanismo de nombrado confirmado que funciona en los lectores de pantalla probados.",
-    "labelTitleOnly_title": "Los controles de formulario no deben usar title como única etiqueta",
-    "labelTitleOnly_description": "Comprueba que un control de formulario con un atributo title también tenga una etiqueta real (elemento label, aria-label o aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Este control de formulario depende del atributo title como única etiqueta.",
-    "labelTitleOnly_hint_cantTell": "Agregar una <label> visible (o aria-label/aria-labelledby) además de, o en lugar de, el atributo title.",
+    "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
+    "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
     "imageRedundantAlt_description": "Comprueba que el texto alt de un <img> no sea idéntico a otro texto visible ya presente en su elemento padre inmediato.",
     "imageRedundantAlt_summary_cantTell": "El texto alt de esta imagen duplica otro texto visible justo al lado.",
@@ -65403,10 +65327,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "Ajoutez du contenu textuel (ou aria-label/aria-labelledby) à cette cellule d’en-tête, ou retirez-la si elle n’est pas nécessaire.",
     "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête de tableau n’a pas de texte visible — son seul nom accessible provient de aria-label/aria-labelledby, que des combinaisons réelles de lecteur d’écran/navigateur (ex. NVDA+Firefox, iOS VoiceOver+Safari) sont connues pour ignorer sur les éléments <th>.",
     "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez du contenu textuel visible à cette cellule d’en-tête (en plus de, ou à la place de, aria-label/aria-labelledby) — le texte visible est le seul mécanisme de nommage confirmé comme fonctionnel sur les lecteurs d’écran testés.",
-    "labelTitleOnly_title": "Les contrôles de formulaire ne devraient pas utiliser title comme seule étiquette",
-    "labelTitleOnly_description": "Vérifie qu’un contrôle de formulaire ayant un attribut title possède aussi une véritable étiquette (élément label, aria-label, ou aria-labelledby).",
-    "labelTitleOnly_summary_cantTell": "Ce contrôle de formulaire repose sur l’attribut title comme seule étiquette.",
-    "labelTitleOnly_hint_cantTell": "Ajoutez une <label> visible (ou aria-label/aria-labelledby) en plus de, ou à la place de, l’attribut title.",
+    "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
+    "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
     "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
     "imageRedundantAlt_description": "Vérifie que le texte alt d’un <img> n’est pas identique à un autre texte visible déjà présent dans son élément parent immédiat.",
     "imageRedundantAlt_summary_cantTell": "Le texte alt de cette image duplique un autre texte visible juste à côté.",
@@ -66255,10 +66177,8 @@ const I18N = {
     "emptyTableHeader_hint_cantTell": "この見出しセルにテキスト (または aria-label/aria-labelledby) を追加するか、不要であれば削除してください。",
     "emptyTableHeader_summary_cantTell_ariaOnly": "この表の見出しセルには表示されるテキストがありません。アクセシブルな名前は aria-label/aria-labelledby からのみ取得されていますが、実際のスクリーンリーダーとブラウザーの組み合わせ (NVDA+Firefox、iOS の VoiceOver+Safari など) では、<th> 要素のこれらの属性が無視されることが知られています。",
     "emptyTableHeader_hint_cantTell_ariaOnly": "この見出しセルに、表示されるテキストを追加してください (aria-label/aria-labelledby と併用しても、置き換えてもかまいません)。検証したスクリーンリーダーすべてで機能が確認されている名前付けの方法は、表示テキストだけです。",
-    "labelTitleOnly_title": "フォームコントロールは title を唯一のラベルにしないことが望ましい",
-    "labelTitleOnly_description": "title 属性を持つフォームコントロールに、実際のラベル (label 要素、aria-label、または aria-labelledby) もあるかを確認します。",
-    "labelTitleOnly_summary_cantTell": "このフォームコントロールは、title 属性を唯一のラベルとしています。",
-    "labelTitleOnly_hint_cantTell": "title 属性に加えて、またはその代わりに、表示される <label> (または aria-label/aria-labelledby) を追加してください。",
+    "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
+    "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
     "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
     "imageRedundantAlt_description": "<img> の代替テキストが、すぐ上の親要素にすでにある表示テキストと同一でないかを確認します。",
     "imageRedundantAlt_summary_cantTell": "この画像の代替テキストは、すぐ隣に表示されているテキストと重複しています。",
@@ -74283,6 +74203,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!isElement(node)) return;
 
+      // opts.skipNode: the control a <label> is being read for. Its own name
+      // is not part of the label's text (accname 2E), so a wrapping label
+      // with nothing else in it names nothing.
+      if (opts && opts.skipNode === node) return;
+
       // Skip anything not exposed to the accessibility tree (hidden,
       // aria-hidden, display:none, inert, etc.), same scope as
       // isAccTreeEligible, so a hidden descendant never contributes.
@@ -75300,13 +75225,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // failing that, its rendered content (getContentNameInfo, which excludes
   // aria-hidden/display:none/inert descendants, so a label whose only
   // text is aria-hidden gives the control no name despite the association).
-  function labelContributesAccessibleName(lab) {
+  function labelContributesAccessibleName(lab, control) {
     try {
       const aria = getAriaNameInfo(lab, null, {});
       if (aria && aria.present && trim(aria.value)) return true;
     } catch {}
     try {
-      const info = getContentNameInfo(lab, null, {});
+      const info = getContentNameInfo(lab, null, { skipNode: control });
       if (info && info.present && trim(info.value)) return true;
     } catch {
       return true; // conservative on error: don't newly fail
@@ -75352,7 +75277,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // this doesn't).
     const associatedLabels = getAssociatedLabelElements(el);
     const out = associatedLabels.length
-      ? associatedLabels.some(labelContributesAccessibleName)
+      ? associatedLabels.some((lab) => labelContributesAccessibleName(lab, el))
       : false;
 
     try {

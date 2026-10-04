@@ -511,18 +511,20 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.3.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 2, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-labels-or-instructions-present | full | form-control-programmatic-label-present |
 | form-control-single-label | full | form-control-single-label |
+| form-control-visible-label-quality | manual | form-control-programmatic-label-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
 
@@ -552,13 +554,12 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 35, partial 1, manual 2**.
+Facet coverage: **37/37** facets covered.
+Automation mix: **full 35, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-name-present | full | form-control-programmatic-label-present |
-| form-control-name-quality | manual | form-control-programmatic-label-quality |
 | aria-hidden-focusable | full | aria-hidden-focus |
 | link-name-present | full | link-name-present |
 | button-name-present | full | button-name-present |
@@ -634,7 +635,6 @@ Automation mix: **full 35, partial 1, manual 2**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
-| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-name-quality |  |
 
 ### (unmapped)
 
@@ -649,7 +649,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
-| label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
+| label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
 | landmark-contentinfo-is-top-level | manual | Contentinfo landmark must be top-level | src/checks/manual/landmark-contentinfo-is-top-level-manual.js |  |  |
@@ -1147,18 +1147,20 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.3.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 2, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-labels-or-instructions-present | full | form-control-programmatic-label-present |
 | form-control-single-label | full | form-control-single-label |
+| form-control-visible-label-quality | manual | form-control-programmatic-label-quality |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
 | form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
 
@@ -1188,13 +1190,12 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 35, partial 1, manual 2**.
+Facet coverage: **37/37** facets covered.
+Automation mix: **full 35, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-name-present | full | form-control-programmatic-label-present |
-| form-control-name-quality | manual | form-control-programmatic-label-quality |
 | aria-hidden-focusable | full | aria-hidden-focus |
 | link-name-present | full | link-name-present |
 | button-name-present | full | button-name-present |
@@ -1270,7 +1271,6 @@ Automation mix: **full 35, partial 1, manual 2**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
-| form-control-programmatic-label-quality | manual | Form controls should not rely on placeholder or title as the primary label | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-name-quality |  |
 
 ### (unmapped)
 
@@ -1285,7 +1285,7 @@ Automation mix: **full 35, partial 1, manual 2**.
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
-| label-title-only | manual | Form controls should not use title as their only label | src/checks/manual/label-title-only-manual.js |  |  |
+| label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
 | landmark-contentinfo-is-top-level | manual | Contentinfo landmark must be top-level | src/checks/manual/landmark-contentinfo-is-top-level-manual.js |  |  |

@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Form controls should not rely on placeholder or title as the primary label
  * @standard WCAG 2.2
- * @sc 4.1.2
+ * @sc 3.3.2
  * @applicability
  *   Applies to labelable native form controls exposed to assistive technologies:
  *     - input (excluding type=hidden|submit|reset|button|image)
@@ -27,8 +27,13 @@
  *     or `title`.
  *   - `sourceText`: the label text, up to 120 characters.
  * @note
- *   This is a quality/best-practice signal. Controls may still meet SC 4.1.2
- *   while relying on placeholder/title; this rule surfaces that risk as cantTell.
+ *   Mapped to SC 3.3.2 Labels or Instructions, not 4.1.2: a control named
+ *   by title or placeholder has an accessible name, so 4.1.2 is met (WCAG
+ *   lists title as sufficient technique H65), but 3.3.2's label is "presented
+ *   to all users", which a title (shown only on hover) and a placeholder
+ *   (gone once the user types) are not. IBM Equal Access maps its visible-
+ *   label check to 3.3.2 the same way. It replaces label-title-only, whose
+ *   findings were a subset of this rule's.
  */
 
 const id = 'form-control-programmatic-label-quality';
@@ -42,24 +47,24 @@ const meta = {
     descriptionKey: 'formControl_programmaticLabelQuality_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'forms', 'labels', 'quality', 'atomic', 'manual'],
-  wcagSc: ['4.1.2'],
+  tags: ['wcag2a', 'wcag332', 'forms', 'labels', 'quality', 'atomic', 'manual'],
+  wcagSc: ['3.3.2'],
   normativeMappings: [
     {
       standard: 'WCAG',
       version: '2.2',
-      requirement: '4.1.2',
-      title: 'Name, Role, Value',
+      requirement: '3.3.2',
+      title: 'Labels or Instructions',
       conformanceLevel: 'A'
     }
   ],
   defaultSeverity: 'moderate',
-  category: 'robust',
+  category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
   coverage: {
     facetsBySc: {
-      '4.1.2': ['form-control-name-quality']
+      '3.3.2': ['form-control-visible-label-quality']
     }
   }
 };

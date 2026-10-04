@@ -351,9 +351,6 @@
     "label-in-name": [
       "VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME"
     ],
-    "label-title-only": [
-      "LABEL_TITLE_ONLY"
-    ],
     "landmark-banner-is-top-level": [
       "LANDMARK_BANNER_NOT_TOP_LEVEL"
     ],

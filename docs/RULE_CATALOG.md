@@ -113,7 +113,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
-| [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should not rely on placeholder or title as the primary label | 4.1.2 | A | medium | moderate |
+| [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should not rely on placeholder or title as the primary label | 3.3.2 | A | medium | moderate |
 | [`heading-order`](#heading-order) | Heading levels must not skip a level | — | — | medium | minor |
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
@@ -122,7 +122,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`img-alt-quality`](#img-alt-quality) | &lt;img&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-decorative`](#input-image-alt-decorative) | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-quality`](#input-image-alt-quality) | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
-| [`label-title-only`](#label-title-only) | Form controls should not use title as their only label | — | — | medium | minor |
+| [`label-title-only`](#label-title-only) | Title-only form labels (deprecated) | — | — | medium | minor |
 | [`landmark-banner-is-top-level`](#landmark-banner-is-top-level) | Banner landmark must be top-level | — | — | medium | minor |
 | [`landmark-complementary-is-top-level`](#landmark-complementary-is-top-level) | Complementary landmark must be top-level | — | — | medium | minor |
 | [`landmark-contentinfo-is-top-level`](#landmark-contentinfo-is-top-level) | Contentinfo landmark must be top-level | — | — | medium | minor |
@@ -189,11 +189,11 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-3.1.1-language-of-page` | Language of page | Rollup of checks ensuring the page language is specified. | 3.1.1 | A | 2 |
 | `wcag-3.1.2-language-of-parts` | Language of Parts | Rollup of checks ensuring elements whose language differs from the page default declare it correctly. | 3.1.2 | AA | 1 |
 | `wcag-3.2.5-change-on-request` | Change on Request | Rollup of checks ensuring context changes only happen at the user's request (AAA). | 3.2.5 | AAA | 1 |
-| `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 2 |
+| `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 3 |
 | `wcag-3.3.8-accessible-authentication-minimum` | Accessible Authentication (Minimum) | Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place. | 3.3.8 | AA | 1 |
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
 | `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 13 |
-| `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
+| `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 23 |
 
 ## Rule reference
 
@@ -1015,7 +1015,7 @@ Checks that form controls have a programmatic label via &lt;label&gt;, aria-labe
 
 **Form controls should not rely on placeholder or title as the primary label**
 
-manual · WCAG 4.1.2 (A) · confidence medium · default severity moderate
+manual · WCAG 3.3.2 (A) · confidence medium · default severity moderate
 
 Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer &lt;label&gt; or aria-labelledby.
 
@@ -1322,15 +1322,15 @@ Checks that when a control has a visible text label, the accessible name contain
 
 ### `label-title-only`
 
-**Form controls should not use title as their only label**
+**Title-only form labels (deprecated)**
 
 manual · no formal WCAG SC mapping · confidence medium · default severity minor
 
-Checks that a form control with a title attribute also has a real label (label element, aria-label, or aria-labelledby).
+Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.
 
-**Applies to.** Applies to labelable form controls (input, excluding hidden/submit/reset/button/image; select; textarea) that have a non-empty title attribute.
+**Applies to.** Nothing. The rule is deprecated and reports notApplicable on every page. Its id stays in the catalog, with meta.deprecated set and deprecation.replacedBy naming the rule that covers it, so a runOnly list, a stored baseline or code that looks the result up by ruleId keeps resolving until the file is removed in 2.0.0 (docs/API_STABILITY.md, "Rule-ID deprecation policy").
 
-**Expectation.** The control also has a real label (a wrapping/associated &lt;label&gt;, aria-label, or aria-labelledby), rather than depending on the title attribute alone. A title-only tooltip is not reliably exposed by all assistive technology and is not visible at all until hover/focus, unlike a persistent visible label.
+**Expectation.** None. The case it reported, a form control whose only label is its title attribute, is reported by form-control-programmatic-label-quality (label_from_title_primary), which also covers placeholder-only labels, under SC 3.3.2. Every finding this rule made was a second report of one that rule makes for the same element.
 
 ### `landmark-banner-is-top-level`
 
