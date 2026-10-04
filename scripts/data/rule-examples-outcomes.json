@@ -1,0 +1,34 @@
+{
+  "disagreements": [
+    {
+      "ruleId": "contrast-minimum",
+      "label": "Failed",
+      "engine": "notApplicable",
+      "example": "<div style=\"opacity:0.5; background:#ffffff;\"> <p style=\"color:#000000;\">Body text</p> </div>"
+    },
+    {
+      "ruleId": "link-in-text-block",
+      "label": "Passed",
+      "engine": "cantTell",
+      "example": "<p>Read <a href=\"#\" style=\"text-decoration:underline\">this underlined link</a> for more information.…"
+    },
+    {
+      "ruleId": "link-in-text-block",
+      "label": "Failed",
+      "engine": "cantTell",
+      "example": "<p style=\"color:#222222;\">Read <a href=\"#\" style=\"text-decoration:none; color:#2a2a2a;\">this link</a…"
+    },
+    {
+      "ruleId": "slider-name-present",
+      "label": "Passed",
+      "engine": "notApplicable",
+      "example": "<input type=\"range\" aria-label=\"Volume\">"
+    },
+    {
+      "ruleId": "target-size-minimum",
+      "label": "Failed",
+      "engine": "pass",
+      "example": "<button style=\"width:10px; height:10px;\">A</button> <button style=\"width:10px; height:10px; margin-l…"
+    }
+  ]
+}

@@ -9,14 +9,15 @@ this file adds one illustrative pair per rule, plus an extra `Flagged (cantTell)
 example where a rule's outcome is tiered. A profile's rules have theirs in the
 profile.
 
-Every example was verified against the built engine (`npm run build`, then
-replayed through `tests/helpers/runa11yCoreOnHtml`), not just read off a
-fixture's `.case-title` label or guessed from the rule's prose. Draft content:
-hand-curated, not generated, and not yet checked by CI the way
-`RULE_CATALOG.md` is. Once this feeds a real generator, it should get the
-same treatment as the fixture-marker check (`scripts/generate-fixture-markers.js`):
-a `--check` script wired into CI so a new or changed rule can't silently ship
-without a matching example.
+Every example is checked against the built engine in Chromium by
+`npm run rule-examples:outcomes:check`, which CI runs: a snippet without `<html>` is
+wrapped in a page (its leading `<title>`, `<meta>`, `<link>` and `<style>` go in the
+head), and the rule's outcome must match the label. A label may end in
+"(in a browser)" for a reader's benefit. Known disagreements are recorded in
+`scripts/data/rule-examples-outcomes.json` and can only shrink, as with the fixture-marker
+check (`scripts/generate-fixture-markers.js`); after fixing one, run
+`npm run rule-examples:outcomes` to update the record. `npm run rule-examples:coverage:check`
+checks that every rule has a section.
 
 Manual rules (`type: 'manual'`) never return `fail`: what needs a person is
 `Flagged (cantTell)`. Most of them show `Passed` for the case that needs no
