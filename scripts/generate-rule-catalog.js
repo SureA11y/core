@@ -255,7 +255,7 @@ ${compositeLines.join('\n')}
 
 ${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header. Run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
 
-**${rows.length} rules total: ${automatic.length} automatic (${isCore ? 'WCAG-normative, ' : ''}can return \`fail\`), ${manual.length} manual (advisory/judgment-required, capped at \`cantTell\`). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
+**${rows.length} rules total: ${automatic.length} automatic (decide deterministically; can return \`fail\`${isCore ? ' when they check a WCAG requirement' : ''}), ${manual.length} manual (a person judges what they find; never \`fail\`, and \`pass\` only when nothing needs judging). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
 
@@ -267,7 +267,7 @@ See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`con
 
 ${table(automatic)}
 
-## Manual rules (${manual.length}), advisory, capped at \`cantTell\`
+## Manual rules (${manual.length}), never \`fail\`
 
 ${table(manual)}
 
