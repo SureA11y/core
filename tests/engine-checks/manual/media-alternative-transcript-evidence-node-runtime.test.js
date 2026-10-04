@@ -44,7 +44,7 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     __dirname,
     '../..',
     'fixtures',
-    'media-transcript-present-manual-all-scenarios.html'
+    'media-alternative-transcript-evidence-all-scenarios.html'
   );
   const html = fs.readFileSync(fixturePath, 'utf8');
 

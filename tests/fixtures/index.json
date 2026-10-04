@@ -635,7 +635,7 @@
       "wcagSc": [
         "2.4.7"
       ],
-      "ruleFile": "src/checks/manual/css-hidden-focus.js",
+      "ruleFile": "src/checks/manual/css-hidden-focus-manual.js",
       "testFile": "tests/engine-checks/manual/css-hidden-focus.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-hidden-focus-all-scenarios.html",
@@ -1587,10 +1587,10 @@
       "wcagSc": [
         "1.2.1"
       ],
-      "ruleFile": "src/checks/manual/media-transcript-present-manual.js",
-      "testFile": "tests/engine-checks/manual/media-transcript-present.test.js",
+      "ruleFile": "src/checks/manual/media-alternative-transcript-evidence-manual.js",
+      "testFile": "tests/engine-checks/manual/media-alternative-transcript-evidence-node-runtime.test.js",
       "hasFixture": true,
-      "fixtureFile": "tests/fixtures/media-transcript-present-manual-all-scenarios.html",
+      "fixtureFile": "tests/fixtures/media-alternative-transcript-evidence-all-scenarios.html",
       "totalCases": 0,
       "caseCounts": {
         "PASS": 0,

@@ -4453,7 +4453,7 @@
       "deprecated": false
     },
     {
-      "file": "src/checks/manual/css-hidden-focus.js",
+      "file": "src/checks/manual/css-hidden-focus-manual.js",
       "ruleId": "css-hidden-focus",
       "wcagScNormative": [
         "2.4.7"
@@ -5391,7 +5391,7 @@
       "deprecated": false
     },
     {
-      "file": "src/checks/manual/media-transcript-present-manual.js",
+      "file": "src/checks/manual/media-alternative-transcript-evidence-manual.js",
       "ruleId": "media-alternative-transcript-evidence",
       "wcagScNormative": [
         "1.2.1"

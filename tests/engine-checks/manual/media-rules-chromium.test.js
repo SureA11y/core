@@ -119,8 +119,8 @@ test('media rules in Chromium', { skip }, async (t) => {
 
   for (const fixture of [
     'no-autoplay-audio-all-scenarios.html',
-    'media-transcript-present-manual-all-scenarios.html',
-    'media-transcript-present.html',
+    'media-alternative-transcript-evidence-all-scenarios.html',
+    'media-alternative-transcript-evidence.html',
     'video-caption-all-scenarios.html',
     'wcag-12x-media-scenarios.html'
   ]) {

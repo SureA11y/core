@@ -100,7 +100,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
+| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-alternative-transcript-evidence-manual.js | transcript-evidence |  |
 
 ### 1.2.2
 
@@ -426,7 +426,7 @@ Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
 |---|---|---|---|---|---|
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js |  |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
-| css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus.js | css-hidden-focusable |  |
+| css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
@@ -736,7 +736,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-transcript-present-manual.js | transcript-evidence |  |
+| media-alternative-transcript-evidence | manual | Time-based media: transcript or text alternative evidence | src/checks/manual/media-alternative-transcript-evidence-manual.js | transcript-evidence |  |
 
 ### 1.2.2
 
@@ -1062,7 +1062,7 @@ Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
 |---|---|---|---|---|---|
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js |  |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
-| css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus.js | css-hidden-focusable |  |
+| css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
