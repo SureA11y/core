@@ -271,6 +271,30 @@ function extractUncertaintyCodesFromSource(runFilePath) {
   return codes;
 }
 
+// meta.reasonCodes lists the reason codes a rule builds at runtime, which a
+// read of its source can't see (scripts/generate-finding-ids.js). Each has to
+// appear in the source as a string, so a typo can't register a code the rule
+// never reports.
+function validateDeclaredReasonCodes(meta, runFilePath) {
+  if (!meta || meta.reasonCodes === undefined) return;
+  assert.ok(
+    Array.isArray(meta.reasonCodes) && meta.reasonCodes.length > 0,
+    'meta.reasonCodes, when given, must be a non-empty array'
+  );
+  // The declaration itself doesn't count as the rule reporting a code.
+  const src = fs.readFileSync(runFilePath, 'utf8').replace(/\breasonCodes\s*:\s*\[[^\]]*\]/, '');
+  for (const code of meta.reasonCodes) {
+    assert.ok(
+      typeof code === 'string' && /^[A-Za-z][\w.-]*$/.test(code),
+      `meta.reasonCodes: "${code}" is not a reason code`
+    );
+    assert.ok(
+      src.includes(`'${code}'`) || src.includes(`"${code}"`),
+      `meta.reasonCodes: "${code}" does not appear in the rule's source`
+    );
+  }
+}
+
 function validateUncertaintyCodes(runFilePath) {
   const codes = extractUncertaintyCodesFromSource(runFilePath);
   for (const code of codes) {
@@ -734,6 +758,7 @@ function main() {
 
   // Keep the cantTell vocabulary closed (static extraction)
   validateUncertaintyCodes(codePath);
+  validateDeclaredReasonCodes(mod.meta, codePath);
 
   // Runtime validation via engine
   const RULE_ID = mod.id;

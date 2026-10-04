@@ -100,7 +100,10 @@ const meta = {
       '1.4.3': ['contrast-computability-143'],
       '1.4.6': ['contrast-computability-146']
     }
-  }
+  },
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: ['BACKGROUND_NOT_OPAQUE_AT_ROOT', 'FOREGROUND_UNPARSABLE', 'TEXT_SHADOW']
 };
 
 function runInPage(ctx) {

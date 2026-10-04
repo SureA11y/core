@@ -91,7 +91,10 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '1.4.12': ['text-spacing-content-loss'] } }
+  coverage: { facetsBySc: { '1.4.12': ['text-spacing-content-loss'] } },
+  // Reason codes built at runtime, which scripts/generate-finding-ids.js
+  // can't read from the source.
+  reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS']
 };
 
 function runInPage(ctx) {

@@ -105,3 +105,36 @@ test('the fingerprint is built from inventoried identities only', () => {
   assert.deepStrictEqual(parts, [ruleId, code, '<img src="x.png">']);
   assert.ok(committed.ruleIds.includes(parts[0]), 'the rule id is inventoried');
 });
+
+test('every reason code a rule declares in meta.reasonCodes is in the inventory', () => {
+  // Codes a rule builds at runtime, on a branch only a browser reaches, are
+  // in no fixture run and no `reasonCode: '...'` literal; the rule declares
+  // them, and the inventory has to hold them like any other.
+  const { ruleDirs } = require('../scripts/lib/rule-dirs');
+  let declared = 0;
+  for (const dir of ruleDirs()) {
+    for (const sub of fs.readdirSync(dir)) {
+      const full = path.join(dir, sub);
+      if (!fs.statSync(full).isDirectory()) continue;
+      for (const f of fs.readdirSync(full).filter((x) => x.endsWith('.js'))) {
+        const mod = require(path.join(full, f));
+        const codes = mod && mod.meta && mod.meta.reasonCodes;
+        if (!Array.isArray(codes)) continue;
+        for (const code of codes) {
+          declared += 1;
+          assert.ok(
+            (committed.reasonCodes[mod.id] || []).includes(code),
+            `${mod.id}: ${code} is declared but not in the inventory`
+          );
+        }
+      }
+    }
+  }
+  assert.ok(declared > 0, 'some rule declares meta.reasonCodes');
+  assert.deepEqual(
+    ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS'].filter(
+      (c) => !committed.reasonCodes['text-spacing-content-loss'].includes(c)
+    ),
+    []
+  );
+});
