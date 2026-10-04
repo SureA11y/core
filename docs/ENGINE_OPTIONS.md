@@ -18,7 +18,7 @@ runDomRulesInPage(url, null, {}, {
 });
 ```
 
-> ⚠️ **`runOnly` must be this object shape, not a bare array.** `runOnly: ['img-alt-present']` (a plain array) is **silently ignored**; the engine runs every rule instead. This is the single most common integration mistake — see [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md).
+A bare array or string works as shorthand, the way axe-core takes it: `runOnly: ['img-alt-present', 'button-name-present']` runs those rules (a composite id brings in its rules), and `runOnly: ['wcag2a', 'wcag2aa']` is the same as `{ tags: ['wcag2a', 'wcag2aa'] }`. An array can't mix rule ids and tags, and every value has to name a rule (built-in, composite or one of `engineOptions.customRules`) or a tag: anything else throws, so a typo can't quietly run every rule or none. Use the object form to combine ids and tags or to exclude. Before 1.10.0 a bare array was ignored and every rule ran.
 
 | Field | Type | Meaning |
 |---|---|---|

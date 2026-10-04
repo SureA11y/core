@@ -115,20 +115,51 @@ test('runOnly: an empty or unusable filter value still means no filter', () => {
   }
 });
 
-test('runOnly: a bare array is still ignored, as documented', () => {
-  // Straight to the engine: the test helper reads a bare array as rule ids
-  // (see tests/helpers/runDomRulesOnHtml.js), which this test is not about.
-  const { JSDOM } = require('jsdom');
-  const { runa11yCoreInPage } = require('../src/index.js');
-  const dom = new JSDOM(FILTER_PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
-  global.window = dom.window;
-  global.document = dom.window.document;
-  const result = runa11yCoreInPage('https://example.test/', null, {}, ['img-alt-present']);
-  assert.strictEqual(result.checksResults.length, ALL_RULE_COUNT);
-});
-
-test('the test helper reads a bare array or string as rule ids, so a rule test runs that rule alone', () => {
+test('runOnly: a bare array of rule ids selects those rules, as in axe-core', () => {
   assert.deepStrictEqual(ranRuleIds(['img-alt-present']), ['img-alt-present']);
   assert.deepStrictEqual(ranRuleIds('img-alt-present'), ['img-alt-present']);
+  assert.deepStrictEqual(ranRuleIds(['img-alt-present', 'button-name-present']).sort(), [
+    'button-name-present',
+    'img-alt-present'
+  ]);
+  // A composite id brings in its atomic rules, as includeRuleIds does.
+  assert.deepStrictEqual(ranRuleIds(['wcag-4.1.1-parsing']), ['duplicate-id']);
+});
+
+test('runOnly: a bare array of tags selects by tag, the same as { tags }', () => {
+  assert.deepStrictEqual(
+    ranRuleIds(['wcag2a', 'best-practice']).sort(),
+    ranRuleIds({ tags: ['wcag2a', 'best-practice'] }).sort()
+  );
+  assert.deepStrictEqual(ranRuleIds(['WCAG2A']).sort(), ranRuleIds({ tags: ['wcag2a'] }).sort());
+});
+
+test('runOnly: a bare array mixing rule ids and tags, or naming neither, throws', () => {
+  assert.throws(() => ranRuleIds(['img-alt-present', 'wcag2a']), /either rule ids or tags/);
+  assert.throws(() => ranRuleIds(['img-alt-presnt']), /no rule or tag named "img-alt-presnt"/);
+});
+
+test('runOnly: an empty array still means every rule', () => {
   assert.strictEqual(ranRuleIds([]).length, ALL_RULE_COUNT);
+});
+
+test('runOnly: a custom rule id in a bare array selects that rule', () => {
+  const customRules = [
+    {
+      id: 'acme-has-main',
+      meta: { title: 'Has main', description: 'A main element exists', tags: ['acme'] },
+      runInPage: (ctx) => ({
+        ruleId: ctx.rule.ruleId,
+        outcome: ctx.document.querySelector('main') ? 'pass' : 'fail',
+        severity: 'minor',
+        occurrences: []
+      })
+    }
+  ];
+  const run = (runOnly) =>
+    runa11yCoreOnHtml(FILTER_PAGE, { runOnly, engineOptions: { customRules } }).checksResults.map(
+      (r) => r.ruleId
+    );
+  assert.deepStrictEqual(run(['acme-has-main']), ['acme-has-main']);
+  assert.deepStrictEqual(run(['acme']), ['acme-has-main']);
 });

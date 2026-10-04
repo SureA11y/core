@@ -149,8 +149,9 @@ test(
     const reached = (f: FrameEntry) => ('topFrame' in f ? f.topFrame.checksResults.length : f.error.length);
     const code: string | undefined = b.checksResults[0]?.occurrences[0]?.uncertainty?.code;
     const tags: string[] = getChecksCatalog({ optInRules: 'all' })[0].tags;
-    // @ts-expect-error a bare array is not a runOnly
     runDomRulesInPage(null, null, {}, ['img-alt-present']);
+    // @ts-expect-error a runOnly is not a number
+    runDomRulesInPage(null, null, {}, 42);
     // @ts-expect-error outcomes are a closed set
     const o: typeof a.checksResults[number]['outcome'] = 'warning';
     void [b, p, off, width, reached, code, tags, o];

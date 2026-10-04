@@ -17,8 +17,9 @@ type Open<T extends string> = T | (string & {});
 export type StringList = string | string[];
 
 /**
- * The 4th scan argument. It must be this object shape: a bare array is
- * ignored and every rule runs. See docs/ENGINE_OPTIONS.md.
+ * The 4th scan argument. A bare array or string is shorthand, as in axe-core:
+ * rule ids select those rules, tags select by tag; mixing the two, or naming
+ * neither a rule nor a tag, throws. See docs/ENGINE_OPTIONS.md.
  */
 export interface RunOnly {
   includeRuleIds?: StringList;
@@ -326,7 +327,7 @@ export function runDomRulesInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
   engineOptions?: EngineOptions | null,
-  runOnly?: RunOnly | LegacyTagRunOnly | null
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
 
 /**
@@ -337,7 +338,7 @@ export function runa11yCoreInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
   engineOptions?: EngineOptions | null,
-  runOnly?: RunOnly | LegacyTagRunOnly | null
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
 
 /**
@@ -349,7 +350,7 @@ export function runa11yCoreAcrossFrames(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
   engineOptions?: EngineOptions | null,
-  runOnly?: RunOnly | LegacyTagRunOnly | null
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): Promise<CrossFrameResult>;
 
 /**

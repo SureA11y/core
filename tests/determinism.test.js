@@ -72,8 +72,6 @@ test('every rule reaches the same verdict alone as it does in a full scan', () =
     const whole = runa11yCoreOnHtml(html, { entryPointParity: false });
 
     for (const result of whole.checksResults) {
-      // The object form is what actually scopes a run; a bare array is
-      // accepted and then ignored, which would make this a second full scan.
       const alone = runa11yCoreOnHtml(html, {
         runOnly: { includeRuleIds: [result.ruleId] },
         entryPointParity: false
