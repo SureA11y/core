@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no element has role="text"`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when role="text" has no focusable descendant`, () => {
+test(`${RULE_ID}: pass when role="text" has no focusable descendant`, () => {
   const html = `<!doctype html><html><body><span role="text">Plain <b>bold</b> text</span></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when role="text" contains a link`, () => {
@@ -59,3 +59,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-text-all-scenarios.html)
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: pass when the only control inside is disabled, which cannot take focus`, () => {
+  const html = `<!doctype html><html><body><span role="text">Price <button disabled>info</button></span></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+for (const [label, inner] of [
+  ['a <summary>', '<details><summary>More</summary>x</details>'],
+  ['an <audio controls>', '<audio controls src="a.mp3"></audio>'],
+  ['a <video controls>', '<video controls></video>'],
+  ['an <iframe>', '<iframe title="f"></iframe>']
+]) {
+  test(`${RULE_ID}: cantTell when role="text" contains ${label}, which browsers focus`, () => {
+    const html = `<!doctype html><html><body><div role="text" id="t">Text ${inner}</div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 't'));
+  });
+}

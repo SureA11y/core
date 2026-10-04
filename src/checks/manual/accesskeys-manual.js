@@ -8,8 +8,8 @@
  * @summary accesskey values must be unique on the page
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies whenever two or more elements share the same non-empty
- *   accesskey attribute value (case-insensitive).
+ *   Applies whenever two or more elements carry a non-empty accesskey
+ *   attribute: only then can two of them collide.
  * @expectation
  *   Every accesskey value on the page is unique. Duplicate accesskeys
  *   make keyboard-shortcut activation ambiguous: only one of the
@@ -52,10 +52,12 @@ function runInPage(ctx) {
     : helpers.queryAll('[accesskey]');
 
   const groups = new Map(); // normalized key -> elements[]
+  let keyedCount = 0;
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const raw = String(el.getAttribute('accesskey') || '').trim();
     if (!raw) continue;
+    keyedCount += 1;
     const key = raw.toLowerCase();
     const list = groups.get(key) || [];
     list.push(el);
@@ -87,8 +89,12 @@ function runInPage(ctx) {
     }
   }
 
-  if (!occurrences.length) {
+  if (keyedCount < 2) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    // Every value differs, which needs no judgment.
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,

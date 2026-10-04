@@ -22,16 +22,16 @@ test(`${RULE_ID}: notApplicable when no tabindex is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when tabindex is 0`, () => {
+test(`${RULE_ID}: pass when tabindex is 0`, () => {
   const html = `<!doctype html><html><body><div tabindex="0">x</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when tabindex is negative`, () => {
+test(`${RULE_ID}: pass when tabindex is negative`, () => {
   const html = `<!doctype html><html><body><div tabindex="-1">x</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when tabindex is positive`, () => {

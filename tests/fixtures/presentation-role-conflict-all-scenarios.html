@@ -16,7 +16,7 @@
   <h1>Scenario fixture: <code>presentation-role-conflict</code></h1>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — NEUTRAL: role="presentation" with no naming attribute</div>
+    <div class="case-title">01 — PASS: role="presentation" with no naming attribute</div>
     <div role="presentation" id="prc_case_01">Decorative</div>
   </div>
 
@@ -42,7 +42,7 @@
   </div>
 
   <div class="case" id="case_06">
-    <div class="case-title">06 — NEUTRAL: role="presentation" on a disabled (non-focusable) button</div>
+    <div class="case-title">06 — PASS: role="presentation" on a disabled (non-focusable) button</div>
     <button role="presentation" disabled id="prc_case_06">Click</button>
   </div>
 
@@ -52,7 +52,7 @@
   </div>
 
   <div class="case" id="case_08">
-    <div class="case-title">08 — NEUTRAL: &lt;img alt=""&gt; alone (empty alt gives it an implicit presentation role via HTML-AAM, but no conflicting condition exists)</div>
+    <div class="case-title">08 — PASS: &lt;img alt=""&gt; alone (empty alt gives it an implicit presentation role via HTML-AAM, but no conflicting condition exists)</div>
     <img src="x.png" alt="" id="prc_case_08">
   </div>
 
@@ -67,12 +67,12 @@
   </div>
 
   <div class="case" id="case_11">
-    <div class="case-title">11 — NEUTRAL: role="presentation" combined with aria-hidden="true" (the exact truthy value removes the element from the AT tree unconditionally — the "role restoration" this rule warns about never reaches assistive tech, so flagging it is misleading)</div>
+    <div class="case-title">11 — PASS: role="presentation" combined with aria-hidden="true" (the exact truthy value removes the element from the AT tree unconditionally — the "role restoration" this rule warns about never reaches assistive tech, so flagging it is misleading)</div>
     <div role="presentation" aria-hidden="true" id="prc_case_11">Decorative</div>
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — NEUTRAL: &lt;img alt=""&gt; combined with aria-hidden="true" (a decorative icon double-hidden via empty alt + aria-hidden)</div>
+    <div class="case-title">12 — PASS: &lt;img alt=""&gt; combined with aria-hidden="true" (a decorative icon double-hidden via empty alt + aria-hidden)</div>
     <img src="x.png" alt="" aria-hidden="true" id="prc_case_12">
   </div>
 

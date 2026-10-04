@@ -16,10 +16,10 @@ test(`${RULE_ID}: notApplicable when there is no viewport meta tag`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when maximum-scale is 5 or above`, () => {
+test(`${RULE_ID}: pass when maximum-scale is 5 or above`, () => {
   const html = `<!doctype html><html><head><meta name="viewport" content="maximum-scale=5"></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when maximum-scale is below 5`, () => {

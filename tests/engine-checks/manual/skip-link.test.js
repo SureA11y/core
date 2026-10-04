@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when there is no skip-like link`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the skip link target resolves`, () => {
+test(`${RULE_ID}: pass when the skip link target resolves`, () => {
   const html = `<!doctype html><html><body><a href="#main">Skip to content</a><div id="main">Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the skip link target exists but is hidden/ineligible`, () => {
@@ -52,10 +52,10 @@ test(`${RULE_ID}: cantTell when a "Jump to ..." link (not literally containing "
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when a "Jump to ..." link's target resolves`, () => {
+test(`${RULE_ID}: pass when a "Jump to ..." link's target resolves`, () => {
   const html = `<!doctype html><html><body><a href="#main">Jump to main content</a><div id="main">Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
@@ -153,6 +153,6 @@ test(`${RULE_ID}: a legacy <a name> target with a backslash or quote in its name
   ]) {
     const html = `<!doctype html><html><body><a id="a" href="${href}">Skip to main content</a><a name='${name}'></a><main>x</main></body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });

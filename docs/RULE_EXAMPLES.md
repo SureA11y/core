@@ -25,19 +25,19 @@ never reach `fail` in practice — each says so where it applies.
 
 ## accesskeys
 
+**Passed**
+```html
+<a href="/a" accesskey="a">A</a>
+<a href="/b" accesskey="b">B</a>
+```
+Every `accesskey` value on the page is unique.
+
 **Flagged (cantTell)**
 ```html
 <a href="/s1" accesskey="s">S1</a>
 <a href="/s2" accesskey="s">S2</a>
 ```
 Two elements share the same `accesskey` value ("s"), which most browsers resolve unpredictably.
-
-**Not applicable**
-```html
-<a href="/a" accesskey="a">A</a>
-<a href="/b" accesskey="b">B</a>
-```
-Every `accesskey` value on the page is unique.
 
 ## area-alt-present
 
@@ -308,17 +308,17 @@ role="grid" requires an accessible name; none is present.
 
 ## aria-text
 
+**Passed**
+```html
+<span role="text">Plain text with no interactive content.</span>
+```
+No focusable descendant exists inside the `role="text"` element.
+
 **Flagged (cantTell)**
 ```html
 <span role="text">Some text with <a href="#">a link</a> inside it.</span>
 ```
 `role="text"` tells assistive technology to treat this as a single flat string, but the nested link is still focusable and interactive underneath it.
-
-**Not applicable**
-```html
-<span role="text">Plain text with no interactive content.</span>
-```
-No focusable descendant exists inside the `role="text"` element.
 
 ## aria-valid-attr
 
@@ -738,31 +738,31 @@ No aria-label, resolved aria-labelledby, or title exists to review; that's `embe
 
 ## empty-heading
 
+**Passed**
+```html
+<h2>Section title</h2>
+```
+The heading has visible text content.
+
 **Flagged (cantTell)**
 ```html
 <h2></h2>
 ```
 The heading has no accessible name at all — nothing for a screen reader to announce.
 
-**Not applicable**
-```html
-<h2>Section title</h2>
-```
-The heading has visible text content.
-
 ## empty-table-header
+
+**Passed**
+```html
+<table><tr><th>Name</th></tr></table>
+```
+The header cell has visible text content.
 
 **Flagged (cantTell)**
 ```html
 <table><tr><th></th></tr></table>
 ```
 The header cell has no text content and no accessible name.
-
-**Not applicable**
-```html
-<table><tr><th>Name</th></tr></table>
-```
-The header cell has visible text content.
 
 ## focus-order-semantics
 
@@ -843,20 +843,20 @@ Two separate `label[for]` elements both target the same control.
 
 ## heading-order
 
-**Flagged (cantTell)**
-```html
-<h1>Title</h1>
-<h3>Subsection</h3>
-```
-The heading level jumps from 1 to 3, skipping level 2.
-
-**Not applicable**
+**Passed**
 ```html
 <h1>Title</h1>
 <h2>Section</h2>
 <h3>Subsection</h3>
 ```
 Each heading level increases by at most one at a time.
+
+**Flagged (cantTell)**
+```html
+<h1>Title</h1>
+<h3>Subsection</h3>
+```
+The heading level jumps from 1 to 3, skipping level 2.
 
 ## heading-quality
 
@@ -1105,17 +1105,17 @@ The accessible name doesn't contain the visible label text at all.
 
 ## label-title-only
 
+**Passed**
+```html
+<label>Name <input title="Enter your full name"></label>
+```
+A real `<label>` already names the field; `title` is just supplementary.
+
 **Flagged (cantTell)**
 ```html
 <input title="Name">
 ```
 The `title` attribute is the field's only naming mechanism — it shows as a tooltip, not a persistent visible label.
-
-**Not applicable**
-```html
-<label>Name <input title="Enter your full name"></label>
-```
-A real `<label>` already names the field; `title` is just supplementary.
 
 ## landmark-banner-is-top-level
 
@@ -1473,17 +1473,17 @@ A 30-second delay refreshes the page on a timer the user cannot pause, stop, or 
 
 ## meta-viewport-large
 
+**Passed**
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+```
+`maximum-scale=5` (500%) already meets the best-practice ceiling this rule checks toward.
+
 **Flagged (cantTell)**
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 ```
 `user-scalable=no` blocks zooming past whatever scale the page loads at, short of the AAA 500% best-practice target.
-
-**Not applicable**
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-```
-`maximum-scale=5` (500%) already meets the best-practice ceiling this rule checks toward.
 
 ## meta-viewport-zoom-enabled
 
@@ -1636,6 +1636,14 @@ A `<div>` holding only text is checked like a `<p>`, and the bold can come from 
 
 ## page-has-heading-one
 
+**Passed**
+```html
+<body>
+  <h1>Page title</h1>
+</body>
+```
+A level-one heading exists.
+
 **Flagged (cantTell)**
 ```html
 <body>
@@ -1644,14 +1652,6 @@ A `<div>` holding only text is checked like a `<p>`, and the bold can come from 
 </body>
 ```
 No `<h1>` or `role="heading" aria-level="1"` exists.
-
-**Not applicable**
-```html
-<body>
-  <h1>Page title</h1>
-</body>
-```
-A level-one heading exists, so there is nothing to flag.
 
 ## page-title-patterns
 
@@ -1707,17 +1707,17 @@ No paste handler is attached at all.
 
 ## presentation-role-conflict
 
+**Passed**
+```html
+<div role="presentation">Decorative</div>
+```
+No conflicting naming attribute is present alongside the presentation role.
+
 **Flagged (cantTell)**
 ```html
 <div role="presentation" aria-label="Conflicting">Content</div>
 ```
 `role="presentation"` asks assistive technology to skip this element, but `aria-label` supplies a name — per WAI-ARIA conflict resolution, the global attribute wins and the presentation role is dropped, so the element (and its name) come back into the tree unexpectedly.
-
-**Not applicable**
-```html
-<div role="presentation">Decorative</div>
-```
-No conflicting naming attribute is present alongside the presentation role.
 
 ## presentational-children-focusable-absent
 
@@ -1752,15 +1752,7 @@ No accessible name from any supported mechanism.
 
 ## region
 
-**Flagged (cantTell)**
-```html
-<body>
-  <p>Stray paragraph, not inside any landmark.</p>
-</body>
-```
-This paragraph sits directly under `<body>`, outside every landmark.
-
-**Not applicable**
+**Passed**
 ```html
 <body>
   <main>
@@ -1769,6 +1761,14 @@ This paragraph sits directly under `<body>`, outside every landmark.
 </body>
 ```
 All page content is contained within a landmark region.
+
+**Flagged (cantTell)**
+```html
+<body>
+  <p>Stray paragraph, not inside any landmark.</p>
+</body>
+```
+This paragraph sits directly under `<body>`, outside every landmark.
 
 ## role-img-text-alternative-present
 
@@ -1786,17 +1786,17 @@ Text content is not a valid name source for an element with an explicit role="im
 
 ## scope-attr-valid
 
+**Passed**
+```html
+<table><tr><th scope="col">Name</th></tr></table>
+```
+"col" is a valid `scope` value.
+
 **Flagged (cantTell)**
 ```html
 <table><tr><th scope="column">Name</th></tr></table>
 ```
 "column" is not a valid `scope` value (the correct token is "col").
-
-**Not applicable**
-```html
-<table><tr><th scope="col">Name</th></tr></table>
-```
-"col" is a valid `scope` value.
 
 ## scrollable-region-focusable
 
@@ -1849,6 +1849,13 @@ A client-side image map has no `ismap` attribute, which satisfies the rule outri
 
 ## skip-link
 
+**Passed**
+```html
+<a href="#target">Skip to content</a>
+<div id="target">Target content</div>
+```
+The fragment target exists and is usable.
+
 **Flagged (cantTell)**
 ```html
 <a href="#missing">Skip to main content</a>
@@ -1860,13 +1867,6 @@ The link's fragment target doesn't exist anywhere on the page, so activating it 
 <a href="#contenu">Aller au contenu</a>
 ```
 French skip-link wording is recognised as well, and the target is missing.
-
-**Not applicable**
-```html
-<a href="#target">Skip to content</a>
-<div id="target">Target content</div>
-```
-The fragment target exists and is usable.
 
 ## slider-name-present
 
@@ -1980,17 +1980,17 @@ No name and no content.
 
 ## tabindex
 
+**Passed**
+```html
+<div tabindex="0">Focusable</div>
+```
+`tabindex="0"` places the element in the natural tab order without reordering anything.
+
 **Flagged (cantTell)**
 ```html
 <div tabindex="3">Reordered</div>
 ```
 A positive `tabindex` pulls this element out of the document's natural tab order and ahead of everything else, which usually surprises keyboard users.
-
-**Not applicable**
-```html
-<div tabindex="0">Focusable</div>
-```
-`tabindex="0"` places the element in the natural tab order without reordering anything.
 
 ## table-duplicate-name
 

@@ -192,7 +192,7 @@ function runInPage(ctx) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

@@ -35831,10 +35831,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('[accesskey]');
 
   const groups = new Map(); // normalized key -> elements[]
+  let keyedCount = 0;
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
     const raw = String(el.getAttribute('accesskey') || '').trim();
     if (!raw) continue;
+    keyedCount += 1;
     const key = raw.toLowerCase();
     const list = groups.get(key) || [];
     list.push(el);
@@ -35866,8 +35868,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  if (!occurrences.length) {
+  if (keyedCount < 2) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    // Every value differs, which needs no judgment.
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -40231,8 +40237,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "aria-text": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const FOCUSABLE_DESCENDANT_SELECTOR =
-    'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
+  // Focusable in browsers, but not counted by helpers.getFocusableInfo.
+  const ALSO_FOCUSABLE = 'iframe, audio[controls], video[controls]';
+
+  function findFocusableDescendant(el) {
+    for (const d of el.querySelectorAll('*')) {
+      if (helpers.getFocusableInfo(d, ctx).focusable || d.matches(ALSO_FOCUSABLE)) return d;
+    }
+    return null;
+  }
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role="text"]')
@@ -40248,7 +40261,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let focusableDescendant;
     try {
-      focusableDescendant = el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR);
+      focusableDescendant = findFocusableDescendant(el);
     } catch {
       focusableDescendant = null;
     }
@@ -40292,7 +40305,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -46249,7 +46262,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "empty-table-header": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -46382,7 +46395,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -47771,7 +47784,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-quality": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -50934,7 +50947,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -54068,7 +54081,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
@@ -55520,7 +55533,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   return {
@@ -56282,7 +56295,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentational-children-focusable-absent": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -56794,6 +56807,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const MAX_VISITED_NODES = 20000;
   let visited = 0;
   let truncated = false;
+  // Whether some landmark holds anything: with nothing outside one, that is
+  // what makes the page a pass rather than an empty one.
+  let placedContent = false;
 
   const leaves = [];
   const stopperFlagged = new WeakSet();
@@ -56827,6 +56843,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (isStopper(el)) {
       markFlaggedUpToBody(el);
+      if (!placedContent && isLandmark(el) && (normalizeWs(el.textContent) || el.children.length)) {
+        placedContent = true;
+      }
       if (tag === 'iframe' || tag === 'frame') leaves.push(el);
       return;
     }
@@ -56896,7 +56915,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   });
 
   if (occurrences.length === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    // A walk cut short by the node budget cannot vouch for the rest of the
+    // page, so it never passes.
+    const outcome = placedContent && !truncated ? 'pass' : 'notApplicable';
+    return { ruleId: rule.ruleId, outcome, severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
@@ -57198,7 +57220,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -57805,7 +57827,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "slider-name-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -59278,7 +59300,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;

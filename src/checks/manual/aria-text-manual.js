@@ -20,10 +20,12 @@
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see
  *   `landmark-unique`'s header comment for the shared rationale).
- * - "Focusable descendant" is a presence check (link/button/form
- *   control/`[tabindex]`/`iframe`/`[contenteditable]`), the same
- *   conservative selector `scrollable-region-focusable` uses, not a full
- *   focusability computation (disabled state, visibility, etc.).
+ * - "Focusable descendant" is decided by `helpers.getFocusableInfo`, so a
+ *   disabled control or `<input type="hidden">` does not count and a
+ *   `<summary>` does, plus `<iframe>` and `<audio>`/`<video>` with
+ *   `controls`, which browsers focus but that helper does not count yet.
+ *   With no focusable descendant the rule passes, which needs no
+ *   judgment.
  */
 
 const id = 'aria-text';
@@ -50,8 +52,15 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  const FOCUSABLE_DESCENDANT_SELECTOR =
-    'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
+  // Focusable in browsers, but not counted by helpers.getFocusableInfo.
+  const ALSO_FOCUSABLE = 'iframe, audio[controls], video[controls]';
+
+  function findFocusableDescendant(el) {
+    for (const d of el.querySelectorAll('*')) {
+      if (helpers.getFocusableInfo(d, ctx).focusable || d.matches(ALSO_FOCUSABLE)) return d;
+    }
+    return null;
+  }
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role="text"]')
@@ -67,7 +76,7 @@ function runInPage(ctx) {
 
     let focusableDescendant;
     try {
-      focusableDescendant = el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR);
+      focusableDescendant = findFocusableDescendant(el);
     } catch {
       focusableDescendant = null;
     }
@@ -111,7 +120,7 @@ function runInPage(ctx) {
     };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

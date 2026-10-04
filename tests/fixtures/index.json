@@ -16,10 +16,10 @@
       "fixtureFile": "tests/fixtures/accesskeys-all-scenarios.html",
       "totalCases": 3,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 2
+        "OTHER": 1
       }
     },
     {
@@ -355,10 +355,10 @@
       "fixtureFile": "tests/fixtures/aria-text-all-scenarios.html",
       "totalCases": 4,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 2,
-        "OTHER": 2
+        "OTHER": 1
       }
     },
     {
@@ -829,10 +829,10 @@
       "fixtureFile": "tests/fixtures/empty-heading-all-scenarios.html",
       "totalCases": 10,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 5,
         "FAIL": 0,
         "CANTTELL": 3,
-        "OTHER": 7
+        "OTHER": 2
       }
     },
     {
@@ -846,10 +846,10 @@
       "fixtureFile": "tests/fixtures/empty-table-header-all-scenarios.html",
       "totalCases": 6,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 4,
-        "OTHER": 2
+        "OTHER": 1
       }
     },
     {
@@ -1272,10 +1272,10 @@
       "fixtureFile": "tests/fixtures/label-title-only-all-scenarios.html",
       "totalCases": 4,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 2,
-        "OTHER": 2
+        "OTHER": 1
       }
     },
     {
@@ -1930,10 +1930,10 @@
       "fixtureFile": "tests/fixtures/presentation-role-conflict-all-scenarios.html",
       "totalCases": 15,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 5,
         "FAIL": 0,
         "CANTTELL": 8,
-        "OTHER": 7
+        "OTHER": 2
       }
     },
     {
@@ -2021,10 +2021,10 @@
       "fixtureFile": "tests/fixtures/scope-attr-valid-all-scenarios.html",
       "totalCases": 2,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 1
+        "OTHER": 0
       }
     },
     {
@@ -2096,10 +2096,10 @@
       "fixtureFile": "tests/fixtures/skip-link-all-scenarios.html",
       "totalCases": 11,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 3,
         "FAIL": 0,
         "CANTTELL": 7,
-        "OTHER": 4
+        "OTHER": 1
       }
     },
     {
@@ -2246,10 +2246,10 @@
       "fixtureFile": "tests/fixtures/tabindex-all-scenarios.html",
       "totalCases": 3,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 2,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 2
+        "OTHER": 0
       }
     },
     {

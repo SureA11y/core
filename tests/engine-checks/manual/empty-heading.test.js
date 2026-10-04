@@ -22,16 +22,16 @@ test(`${RULE_ID}: notApplicable when no heading is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the heading has text content`, () => {
+test(`${RULE_ID}: pass when the heading has text content`, () => {
   const html = `<!doctype html><html><body><h1>Title</h1></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the heading has aria-label`, () => {
+test(`${RULE_ID}: pass when the heading has aria-label`, () => {
   const html = `<!doctype html><html><body><h2 aria-label="Title"></h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the heading is empty`, () => {
@@ -42,10 +42,10 @@ test(`${RULE_ID}: cantTell when the heading is empty`, () => {
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'HEADING_EMPTY');
 });
 
-test(`${RULE_ID}: notApplicable when the empty heading has a title attribute`, () => {
+test(`${RULE_ID}: pass when the empty heading has a title attribute`, () => {
   const html = `<!doctype html><html><body><h2 title="Section title"></h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: notApplicable when the empty heading is aria-hidden`, () => {
@@ -60,12 +60,12 @@ test(`${RULE_ID}: notApplicable when the empty heading is display:none`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when a named descendant (icon-only link with aria-label) provides the heading's accessible name`, () => {
+test(`${RULE_ID}: pass when a named descendant (icon-only link with aria-label) provides the heading's accessible name`, () => {
   const html = `<!doctype html><html><body>
     <h1 id="a"><a href="/" aria-label="Site homepage"><svg width="10" height="10"></svg></a></h1>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the heading's only descendant link also has no accessible name`, () => {
@@ -86,12 +86,12 @@ test(`${RULE_ID}: cantTell when the heading's only text is inside a CSS display:
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when a named descendant image (alt text, nested through an extra wrapper) provides the heading's accessible name (<h1><a><div><img alt="..."></div></a></h1>)`, () => {
+test(`${RULE_ID}: pass when a named descendant image (alt text, nested through an extra wrapper) provides the heading's accessible name (<h1><a><div><img alt="..."></div></a></h1>)`, () => {
   const html = `<!doctype html><html><body>
     <h1 id="a"><a href="/"><div><img src="logo.png" alt="Colorful 'Party City' logo"></div></a></h1>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

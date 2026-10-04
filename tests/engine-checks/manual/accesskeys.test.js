@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no accesskey is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when accesskeys are distinct`, () => {
+test(`${RULE_ID}: pass when accesskeys are distinct`, () => {
   const html = `<!doctype html><html><body><a href="/a" accesskey="a">A</a><a href="/b" accesskey="b">B</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell with one occurrence per element sharing an accesskey`, () => {
@@ -72,4 +72,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/accesskeys-all-scenarios.html
   assert.ok(!hasOccurrenceForId(rule, 'ak_case_01a'));
   assert.ok(!hasOccurrenceForId(rule, 'ak_case_03a'));
   assert.ok(!hasOccurrenceForId(rule, 'ak_case_03b'));
+});
+
+test(`${RULE_ID}: notApplicable when only one element has an accesskey, since nothing can collide with it`, () => {
+  const html = `<!doctype html><html><body><a href="/" accesskey="h">Home</a><a href="/b">B</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
