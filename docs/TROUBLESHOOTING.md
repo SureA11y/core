@@ -1,16 +1,17 @@
 # Troubleshooting / FAQ
 
-## "I passed `runOnly: ['some-rule-id']` but every rule still ran"
+## "`runOnly` threw: no rule or tag named …, or either rule ids or tags"
 
-`runOnly` must be an object, not a bare array — `runOnly: ['img-alt-present']` is silently ignored (the engine falls through to "run everything"), because that shape has none of the fields the engine actually checks (`includeRuleIds`, `tags`, etc.). A bare array is easy to reach for, so this is worth checking first.
+Since 1.10.0, `runOnly` given as a bare array or string is read as rule ids or as tags, the way axe-core reads it (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument)). It throws in two cases:
 
-Fix:
+- **A value that names no rule and no tag**, usually a typo: `runOnly: ['img-alt-presnt']`. Check the id against `getChecksCatalog()`.
+- **Rule ids and tags in one array**: `runOnly: ['img-alt-present', 'wcag2a']`. Use the object form to combine them:
 
 ```js
-runOnly: { includeRuleIds: ['img-alt-present'] }
+runOnly: { includeRuleIds: ['img-alt-present'], tags: ['wcag2a'], includeMode: 'or' }
 ```
 
-See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument) for the full shape.
+Before 1.10.0, a bare array was ignored and every rule ran.
 
 ## "My custom rule always returns `cantTell` with no clear reason"
 

@@ -34,6 +34,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
   - `video-caption` and `media-alternative-transcript-evidence`: media that is an alternative for text on the page and clearly labelled as one (WCAG 1.2.1 and 1.2.2).
   - `manual-review`'s hint says what to check with the keyboard instead of pointing to guidance, and its French summary names the topic like the other locales.
   - Four unused `linksTargetBlankNoopener_*` strings are removed from the dictionaries.
+- `runOnly` given as a bare array or string is read the way axe-core reads it: rule ids select those rules (a composite id brings in its rules), and tags select by tag. It used to be ignored, so every rule ran. An array that mixes rule ids and tags, or names something that is neither a rule nor a tag, throws, so a typo can't quietly run every rule or none. The object form is unchanged.
 
 ### Deprecated
 - `label-title-only`, replaced by `form-control-programmatic-label-quality`. Every field it reported, a control labelled only by its `title`, that rule also reports, so each such field had two findings. It reports `notApplicable` from this release, as `API_STABILITY.md` now provides for a rule whose findings duplicate another's, and its reason code `LABEL_TITLE_ONLY` retires with the duplicate: a baseline entry or alert for it closes, while the same field's `label_from_title_primary` finding stays. The id keeps resolving until 2.0.0 removes it.

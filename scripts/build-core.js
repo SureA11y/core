@@ -1135,8 +1135,50 @@ function applyOptInRules(selection, requested) {
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
  * can report which.
  */
+// runOnly given as a bare array or string, as axe-core takes it: rule ids
+// (built-in, composite or engineOptions.customRules) select those rules, and
+// anything else is read as tags. A mix, or a value that is neither a known
+// rule id nor a known tag, is an error, so a typo can't quietly run every
+// rule or none.
+function expandRunOnlyShorthand(runOnly, engineOptions) {
+  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
+  const values = parseCommaList(runOnly, { lower: false });
+  if (!values.length) return null;
+
+  const customRules =
+    engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
+  const ruleIds = new Set();
+  const tags = new Set();
+  for (const d of CHECK_DEFS) {
+    if (d && d.ruleId) ruleIds.add(String(d.ruleId));
+    for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+  }
+  for (const r of customRules) {
+    if (r && r.id) ruleIds.add(String(r.id));
+    const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
+    for (const t of ct) tags.add(String(t).toLowerCase());
+  }
+  const isRuleId = (v) =>
+    !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
+  const isTag = (v) => tags.has(v.toLowerCase());
+
+  const asRules = values.filter(isRuleId);
+  const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
+  if (unknown.length) {
+    throw new Error(
+      'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
+    );
+  }
+  if (asRules.length === values.length) return { includeRuleIds: values };
+  if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
+  throw new Error(
+    'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
+  );
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
