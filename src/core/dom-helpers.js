@@ -914,6 +914,13 @@ function createDomHelpers(opts) {
     }
     if (tag === 'select' || tag === 'textarea' || tag === 'button' || tag === 'summary')
       return true;
+    // A frame and a media element with native controls take focus and sit in
+    // the tab order in Chromium and Firefox, whatever they hold. <video>
+    // without controls is focusable in Firefox only, and <embed>/<object>
+    // depend on the type of what they embed, so neither is counted.
+    if (tag === 'iframe' || tag === 'frame') return true;
+    if ((tag === 'audio' || tag === 'video') && el.hasAttribute && el.hasAttribute('controls'))
+      return true;
     if (el.hasAttribute && el.hasAttribute('contenteditable')) {
       // contenteditable="false" explicitly disables the editing host
       // and does not by itself add the element to the tab order.

@@ -187,3 +187,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/presentation-role-conflict-al
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+for (const body of [
+  '<iframe id="x" title="f" role="presentation"></iframe>',
+  '<video id="x" controls role="none"></video>'
+]) {
+  test(`${RULE_ID}: cantTell for ${body}, a focusable element that keeps its role`, () => {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  });
+}

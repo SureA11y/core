@@ -312,7 +312,11 @@ deliberately minimal implicit-role mapping (`a[href]`→`link`, `button`→`butt
 
 ### `getFocusableInfo(el, ctx, opts)` → `{ focusable, tabbable, mechanism, flags[] }`
 Platform focusability: whether `el` can receive focus at all, and whether it's in the
-default tab order.
+default tab order. Native focusability covers links and image-map areas with `href`,
+form controls, `<summary>`, editing hosts, `<iframe>`/`<frame>`, and `<audio>`/`<video>`
+with `controls`, as Chromium and Firefox both treat them. A `<video>` without controls
+(focusable in Firefox only) and `<embed>`/`<object>` (focusable or not depending on what
+they embed) are not counted.
 
 ### `hasLandmarkScopingAncestor(el, ctx)` → `boolean`
 Whether `el` sits inside a landmark-scoping ancestor — the role-aware

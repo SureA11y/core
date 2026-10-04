@@ -22,8 +22,8 @@
  *   `landmark-unique`'s header comment for the shared rationale).
  * - "Focusable descendant" is decided by `helpers.getFocusableInfo`, so a
  *   disabled control or `<input type="hidden">` does not count and a
- *   `<summary>` does, plus `<iframe>` and `<audio>`/`<video>` with
- *   `controls`, which browsers focus but that helper does not count yet.
+ *   `<summary>`, an `<iframe>` or an `<audio>`/`<video>` with `controls`
+ *   does.
  *   With no focusable descendant the rule passes, which needs no
  *   judgment.
  */
@@ -52,12 +52,9 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
-  // Focusable in browsers, but not counted by helpers.getFocusableInfo.
-  const ALSO_FOCUSABLE = 'iframe, audio[controls], video[controls]';
-
   function findFocusableDescendant(el) {
     for (const d of el.querySelectorAll('*')) {
-      if (helpers.getFocusableInfo(d, ctx).focusable || d.matches(ALSO_FOCUSABLE)) return d;
+      if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;
   }
