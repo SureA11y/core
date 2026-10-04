@@ -835,6 +835,12 @@ The control's only name comes from `placeholder`, which disappears once the user
 ```
 The control's only name comes from `title`, which is shown only on hover. Both give the control a name, so WCAG 4.1.2 is met; what is missing is a label shown to everyone, which is SC 3.3.2.
 
+**Flagged (cantTell)**
+```html
+<input type="search" aria-label="Search">
+```
+The control's only name comes from `aria-label`, which is never shown on screen. Visible text next to the field, such as a search button, may still tell sighted users what it is for, so this needs a look rather than a fail.
+
 ## form-control-single-label
 
 **Passed**

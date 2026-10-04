@@ -911,7 +911,7 @@
     },
     {
       "ruleId": "form-control-programmatic-label-quality",
-      "title": "Form controls should not rely on placeholder or title as the primary label",
+      "title": "Form controls should have a label shown on screen",
       "type": "manual",
       "wcagSc": [
         "3.3.2"
@@ -920,12 +920,12 @@
       "testFile": "tests/engine-checks/manual/form-control-programmatic-label-quality-manual.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 18,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 0,
-        "OTHER": 14
+        "OTHER": 18
       }
     },
     {

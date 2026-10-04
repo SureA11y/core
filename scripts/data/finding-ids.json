@@ -300,6 +300,8 @@
       "missing_programmatic_label"
     ],
     "form-control-programmatic-label-quality": [
+      "label_from_aria_label_only",
+      "label_from_hidden_labelledby",
       "label_from_placeholder_primary",
       "label_from_title_primary"
     ],

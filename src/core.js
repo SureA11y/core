@@ -3427,8 +3427,8 @@ const CHECK_DEFS = [
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
-    "title": "Form controls should not rely on placeholder or title as the primary label",
-    "description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
+    "title": "Form controls should have a label shown on screen",
+    "description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
     "i18n": {
       "titleKey": "formControl_programmaticLabelQuality_title",
       "descriptionKey": "formControl_programmaticLabelQuality_description"
@@ -10518,10 +10518,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
-    "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
-    "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Formularelemente sollten eine auf dem Bildschirm sichtbare Beschriftung haben",
+    "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren zugänglicher Name von placeholder, title, aria-label oder von aria-labelledby stammt, das nur auf verborgenen Text verweist; keines davon ist eine auf dem Bildschirm sichtbare Beschriftung. Bevorzugen Sie ein sichtbares <label> oder aria-labelledby, das auf sichtbaren Text verweist.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Bevorzugen Sie ein dauerhaftes <label> oder aria-labelledby. Verlassen Sie sich nicht auf placeholder/title als primäre Beschriftung.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Der Name des Formularelements stammt von {{method}}, das nicht auf dem Bildschirm angezeigt wird.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Prüfen Sie, ob neben dem Element eine sichtbare Beschriftung oder Anweisung steht. Falls nicht, fügen Sie ein <label> hinzu oder lassen Sie aria-labelledby auf sichtbaren Text verweisen.",
     "html_lang_attr_title": "Die Sprache der Seite ist deklariert",
     "html_lang_attr_description": "Prüft, ob die Standardsprache der Seite programmatisch deklariert ist.",
     "html_lang_attr_missing_absent": "Die Standardsprache der Seite ist nicht deklariert.",
@@ -11368,10 +11370,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.",
-    "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
-    "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Form controls should have a label shown on screen",
+    "formControl_programmaticLabelQuality_description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Form control’s name comes from {{method}}, which is not shown on screen.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Check that a visible label or instruction sits next to the control. If there is none, add a <label> or point aria-labelledby at visible text.",
     "html_lang_attr_title": "Page language is declared",
     "html_lang_attr_description": "Checks that the default language of the page is programmatically declared.",
     "html_lang_attr_missing_absent": "The default language of the page is not declared.",
@@ -12218,10 +12222,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
-    "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
-    "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Los controles de formulario deben tener una etiqueta visible en pantalla",
+    "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible proviene de placeholder, title, aria-label o de aria-labelledby que apunta solo a texto oculto; ninguno de ellos es una etiqueta visible en pantalla. Se prefiere un <label> visible, o aria-labelledby que apunte a texto visible.",
     "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Preferir un <label> persistente o aria-labelledby. Evitar depender de placeholder/title como etiqueta principal.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "El nombre del control de formulario proviene de {{method}}, que no se muestra en pantalla.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Comprobar que junto al control hay una etiqueta o instrucción visible. Si no la hay, añadir un <label> o hacer que aria-labelledby apunte a texto visible.",
     "html_lang_attr_title": "El idioma de la página está declarado",
     "html_lang_attr_description": "Comprueba que el idioma predeterminado de la página esté declarado de forma programática.",
     "html_lang_attr_missing_absent": "El idioma predeterminado de la página no está declarado.",
@@ -13068,10 +13074,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
-    "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
-    "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Les champs de formulaire devraient avoir un libellé affiché à l’écran",
+    "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible provient du placeholder, du title, d’aria-label ou d’aria-labelledby ne pointant que vers du texte masqué ; aucun d’eux n’est un libellé affiché à l’écran. Préférez un <label> visible, ou aria-labelledby pointant vers du texte visible.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Préférez un <label> persistant ou aria-labelledby. Évitez d’utiliser placeholder/title comme libellé principal.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Le nom du champ provient de {{method}}, qui n’est pas affiché à l’écran.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Vérifiez qu’un libellé ou une instruction visible se trouve à côté du champ. Sinon, ajoutez un <label> ou faites pointer aria-labelledby vers du texte visible.",
     "html_lang_attr_title": "La langue de la page est déclarée",
     "html_lang_attr_description": "Vérifie que la langue par défaut de la page est déclarée de manière programmatique.",
     "html_lang_attr_missing_absent": "La langue par défaut de la page n’est pas déclarée.",
@@ -13918,10 +13926,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "このフィールドのラベルは分割されています。表示されているのは「{{label}}」だけで、ラベルのほかの {{hiddenCount}} 個の部分は視覚的に隠れています。",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "表示されている部分だけでフィールドを特定できるか確認するか、ラベルの残りの部分も表示してください。",
     "formControlLabelQuality_hint_cantTell_duplicate": "フィールドごとに固有のラベルを付けるか、区別のための手がかりを画面に表示してください (各グループの上に見える見出しや fieldset の legend を置くなど)。",
-    "formControl_programmaticLabelQuality_title": "フォームコントロールは placeholder や title を主なラベルにしないことが望ましい",
-    "formControl_programmaticLabelQuality_description": "算出されたアクセシブルな名前が、主なラベル付けの方法として placeholder または title に依存しているフォームコントロールを検出します。<label> または aria-labelledby の使用を推奨します。",
+    "formControl_programmaticLabelQuality_title": "フォームコントロールには画面に表示されるラベルがあることが望ましい",
+    "formControl_programmaticLabelQuality_description": "アクセシブルな名前が placeholder、title、aria-label、または非表示のテキストだけを参照する aria-labelledby から取得されているフォームコントロールを検出します。これらはいずれも画面に表示されるラベルではありません。表示される <label>、または表示されているテキストを参照する aria-labelledby の使用を推奨します。",
     "formControl_programmaticLabelQuality_summary_cantTell": "フォームコントロールの主なラベルは {{method}} から取得されています。",
     "formControl_programmaticLabelQuality_hint_cantTell": "常に表示される <label> または aria-labelledby を使用してください。placeholder/title を主なラベルにすることは避けてください。",
+    "formControl_programmaticLabelQuality_summary_unseenName": "フォームコントロールの名前は {{method}} から取得されていますが、これは画面に表示されません。",
+    "formControl_programmaticLabelQuality_hint_unseenName": "コントロールの近くに表示されたラベルや説明があるか確認してください。ない場合は <label> を追加するか、aria-labelledby で表示されているテキストを参照してください。",
     "html_lang_attr_title": "ページの言語が指定されていること",
     "html_lang_attr_description": "ページの既定の言語が、プログラムで解釈できるように指定されているかを確認します。",
     "html_lang_attr_missing_absent": "ページの既定の言語が指定されていません。",
@@ -29040,8 +29050,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
-    "title": "Form controls should not rely on placeholder or title as the primary label",
-    "description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
+    "title": "Form controls should have a label shown on screen",
+    "description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
     "i18n": {
       "titleKey": "formControl_programmaticLabelQuality_title",
       "descriptionKey": "formControl_programmaticLabelQuality_description"
@@ -47403,6 +47413,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
 
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
+
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -47458,7 +47473,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // Native controls only (same as your current rule)
+  // Whether any element aria-labelledby points at is rendered. Style only,
+  // so visually hidden (clipped) text counts as rendered, as it does for a
+  // visually hidden <label>: someone placed that text on purpose, and markup
+  // can't tell whether it repeats a visible cue.
+  function hasRenderedLabelledByRef(el) {
+    const ids = trim(el.getAttribute('aria-labelledby')).split(/\s+/).filter(Boolean);
+    const scope =
+      el.getRootNode && typeof el.getRootNode().getElementById === 'function'
+        ? el.getRootNode()
+        : document;
+    for (const refId of ids) {
+      const ref = scope.getElementById(refId);
+      if (!ref) continue;
+      if (!isDomVisibleEligible) return true;
+      try {
+        const r = isDomVisibleEligible(ref, ctx, {
+          visibilityMode: 'styleOnly',
+          ignoreOpacity: true
+        });
+        if (r && r.eligible) return true;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Native controls only
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
 
@@ -47510,32 +47552,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     metrics.applicableCount += 1;
 
-    // Flag only when the *primary* (best) method is title/placeholder
     const isWeakPrimary = method === 'title' || method === 'placeholder';
-    if (!isWeakPrimary) continue;
+    const isUnseenName =
+      method === 'aria-label' || (method === 'aria-labelledby' && !hasRenderedLabelledByRef(el));
+    if (!isWeakPrimary && !isUnseenName) continue;
 
     metrics.flaggedCount += 1;
 
     const vf = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const element = (el.tagName || '').toLowerCase();
+    const sourceText = label && label.value ? String(label.value).slice(0, 120) : '';
 
-    const reasonCode =
-      method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
-    const baseOccurrence = {
-      summary: `Form control’s primary label is derived from ${method}.`,
-      hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
-      i18n: {
+    let reasonCode;
+    let message;
+    if (isWeakPrimary) {
+      reasonCode =
+        method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
+      message = {
+        summary: `Form control’s primary label is derived from ${method}.`,
+        hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
         summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
-        hintKey: 'formControl_programmaticLabelQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), method }
+        hintKey: 'formControl_programmaticLabelQuality_hint_cantTell'
+      };
+    } else {
+      reasonCode =
+        method === 'aria-label' ? 'label_from_aria_label_only' : 'label_from_hidden_labelledby';
+      message = {
+        summary: `Form control’s name comes from ${method}, which is not shown on screen.`,
+        hint: 'Check that a visible label or instruction sits next to the control. If there is none, add a <label> or point aria-labelledby at visible text.',
+        summaryKey: 'formControl_programmaticLabelQuality_summary_unseenName',
+        hintKey: 'formControl_programmaticLabelQuality_hint_unseenName'
+      };
+    }
+
+    const baseOccurrence = {
+      summary: message.summary,
+      hint: message.hint,
+      i18n: {
+        summaryKey: message.summaryKey,
+        hintKey: message.hintKey,
+        params: { element, method }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
           reasonCode,
           labelMethod: method,
-          labelStrength: 'weak',
+          labelStrength: isWeakPrimary ? 'weak' : 'medium',
           recommendedMethods: ['label', 'aria-labelledby'],
-          sourceText: label && label.value ? String(label.value).slice(0, 120) : ''
+          sourceText
         }
       }
     };
@@ -62341,10 +62406,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
-    "formControl_programmaticLabelQuality_title": "Formularelemente sollten sich nicht auf placeholder oder title als primäre Beschriftung verlassen",
-    "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren berechneter zugänglicher Name sich auf placeholder oder title als primäre Beschriftungsmethode stützt. Bevorzugen Sie <label> oder aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Formularelemente sollten eine auf dem Bildschirm sichtbare Beschriftung haben",
+    "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren zugänglicher Name von placeholder, title, aria-label oder von aria-labelledby stammt, das nur auf verborgenen Text verweist; keines davon ist eine auf dem Bildschirm sichtbare Beschriftung. Bevorzugen Sie ein sichtbares <label> oder aria-labelledby, das auf sichtbaren Text verweist.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Die primäre Beschriftung des Formularelements stammt von {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Bevorzugen Sie ein dauerhaftes <label> oder aria-labelledby. Verlassen Sie sich nicht auf placeholder/title als primäre Beschriftung.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Der Name des Formularelements stammt von {{method}}, das nicht auf dem Bildschirm angezeigt wird.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Prüfen Sie, ob neben dem Element eine sichtbare Beschriftung oder Anweisung steht. Falls nicht, fügen Sie ein <label> hinzu oder lassen Sie aria-labelledby auf sichtbaren Text verweisen.",
     "html_lang_attr_title": "Die Sprache der Seite ist deklariert",
     "html_lang_attr_description": "Prüft, ob die Standardsprache der Seite programmatisch deklariert ist.",
     "html_lang_attr_missing_absent": "Die Standardsprache der Seite ist nicht deklariert.",
@@ -63191,10 +63258,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.",
-    "formControl_programmaticLabelQuality_title": "Form controls should not rely on placeholder or title as the primary label",
-    "formControl_programmaticLabelQuality_description": "Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Form controls should have a label shown on screen",
+    "formControl_programmaticLabelQuality_description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Form control’s primary label is derived from {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Form control’s name comes from {{method}}, which is not shown on screen.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Check that a visible label or instruction sits next to the control. If there is none, add a <label> or point aria-labelledby at visible text.",
     "html_lang_attr_title": "Page language is declared",
     "html_lang_attr_description": "Checks that the default language of the page is programmatically declared.",
     "html_lang_attr_missing_absent": "The default language of the page is not declared.",
@@ -64041,10 +64110,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
-    "formControl_programmaticLabelQuality_title": "Los controles de formulario no deben depender de placeholder o title como etiqueta principal",
-    "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible calculado depende de placeholder o title como método de etiquetado principal. Se prefiere <label> o aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Los controles de formulario deben tener una etiqueta visible en pantalla",
+    "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible proviene de placeholder, title, aria-label o de aria-labelledby que apunta solo a texto oculto; ninguno de ellos es una etiqueta visible en pantalla. Se prefiere un <label> visible, o aria-labelledby que apunte a texto visible.",
     "formControl_programmaticLabelQuality_summary_cantTell": "La etiqueta principal del control de formulario proviene de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Preferir un <label> persistente o aria-labelledby. Evitar depender de placeholder/title como etiqueta principal.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "El nombre del control de formulario proviene de {{method}}, que no se muestra en pantalla.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Comprobar que junto al control hay una etiqueta o instrucción visible. Si no la hay, añadir un <label> o hacer que aria-labelledby apunte a texto visible.",
     "html_lang_attr_title": "El idioma de la página está declarado",
     "html_lang_attr_description": "Comprueba que el idioma predeterminado de la página esté declarado de forma programática.",
     "html_lang_attr_missing_absent": "El idioma predeterminado de la página no está declarado.",
@@ -64891,10 +64962,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
     "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
-    "formControl_programmaticLabelQuality_title": "Les champs de formulaire ne devraient pas dépendre du placeholder ou du title comme libellé principal",
-    "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible est principalement dérivé du placeholder ou de l’attribut title. Préférez un <label> ou aria-labelledby.",
+    "formControl_programmaticLabelQuality_title": "Les champs de formulaire devraient avoir un libellé affiché à l’écran",
+    "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible provient du placeholder, du title, d’aria-label ou d’aria-labelledby ne pointant que vers du texte masqué ; aucun d’eux n’est un libellé affiché à l’écran. Préférez un <label> visible, ou aria-labelledby pointant vers du texte visible.",
     "formControl_programmaticLabelQuality_summary_cantTell": "Le libellé principal du champ provient de {{method}}.",
     "formControl_programmaticLabelQuality_hint_cantTell": "Préférez un <label> persistant ou aria-labelledby. Évitez d’utiliser placeholder/title comme libellé principal.",
+    "formControl_programmaticLabelQuality_summary_unseenName": "Le nom du champ provient de {{method}}, qui n’est pas affiché à l’écran.",
+    "formControl_programmaticLabelQuality_hint_unseenName": "Vérifiez qu’un libellé ou une instruction visible se trouve à côté du champ. Sinon, ajoutez un <label> ou faites pointer aria-labelledby vers du texte visible.",
     "html_lang_attr_title": "La langue de la page est déclarée",
     "html_lang_attr_description": "Vérifie que la langue par défaut de la page est déclarée de manière programmatique.",
     "html_lang_attr_missing_absent": "La langue par défaut de la page n’est pas déclarée.",
@@ -65741,10 +65814,12 @@ const I18N = {
     "formControlLabelQuality_summary_cantTell_partiallyHidden": "このフィールドのラベルは分割されています。表示されているのは「{{label}}」だけで、ラベルのほかの {{hiddenCount}} 個の部分は視覚的に隠れています。",
     "formControlLabelQuality_hint_cantTell_partiallyHidden": "表示されている部分だけでフィールドを特定できるか確認するか、ラベルの残りの部分も表示してください。",
     "formControlLabelQuality_hint_cantTell_duplicate": "フィールドごとに固有のラベルを付けるか、区別のための手がかりを画面に表示してください (各グループの上に見える見出しや fieldset の legend を置くなど)。",
-    "formControl_programmaticLabelQuality_title": "フォームコントロールは placeholder や title を主なラベルにしないことが望ましい",
-    "formControl_programmaticLabelQuality_description": "算出されたアクセシブルな名前が、主なラベル付けの方法として placeholder または title に依存しているフォームコントロールを検出します。<label> または aria-labelledby の使用を推奨します。",
+    "formControl_programmaticLabelQuality_title": "フォームコントロールには画面に表示されるラベルがあることが望ましい",
+    "formControl_programmaticLabelQuality_description": "アクセシブルな名前が placeholder、title、aria-label、または非表示のテキストだけを参照する aria-labelledby から取得されているフォームコントロールを検出します。これらはいずれも画面に表示されるラベルではありません。表示される <label>、または表示されているテキストを参照する aria-labelledby の使用を推奨します。",
     "formControl_programmaticLabelQuality_summary_cantTell": "フォームコントロールの主なラベルは {{method}} から取得されています。",
     "formControl_programmaticLabelQuality_hint_cantTell": "常に表示される <label> または aria-labelledby を使用してください。placeholder/title を主なラベルにすることは避けてください。",
+    "formControl_programmaticLabelQuality_summary_unseenName": "フォームコントロールの名前は {{method}} から取得されていますが、これは画面に表示されません。",
+    "formControl_programmaticLabelQuality_hint_unseenName": "コントロールの近くに表示されたラベルや説明があるか確認してください。ない場合は <label> を追加するか、aria-labelledby で表示されているテキストを参照してください。",
     "html_lang_attr_title": "ページの言語が指定されていること",
     "html_lang_attr_description": "ページの既定の言語が、プログラムで解釈できるように指定されているかを確認します。",
     "html_lang_attr_missing_absent": "ページの既定の言語が指定されていません。",

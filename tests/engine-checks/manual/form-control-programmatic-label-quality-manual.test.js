@@ -51,21 +51,89 @@ test(`${RULE_ID}: native input with associated <label> => pass (not flagged)`, (
   assert.equal(m.byMethod.label, 1);
 });
 
-test(`${RULE_ID}: native input with aria-label => pass (not flagged)`, () => {
+test(`${RULE_ID}: aria-label only => cantTell with label_from_aria_label_only`, () => {
   const html = `<!doctype html><html><body>
     <input id="b" type="text" aria-label="Email address">
   </body></html>`;
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'pass', {
-    minOccurrences: 0,
-    maxOccurrences: 0
-  });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+
+  const o = rule.occurrences[0];
+  assert.ok(hasOccurrenceForId(rule, 'b'), 'Expected an occurrence for #b');
+  assert.equal(o.data.details.reasonCode, 'label_from_aria_label_only');
+  assert.equal(o.data.details.labelMethod, 'aria-label');
+  assert.equal(o.i18n.summaryKey, 'formControl_programmaticLabelQuality_summary_unseenName');
+  assert.equal(o.i18n.hintKey, 'formControl_programmaticLabelQuality_hint_unseenName');
 
   const m = rule.data.details.metrics;
   assert.equal(m.applicableCount, 1);
-  assert.equal(m.flaggedCount, 0);
+  assert.equal(m.flaggedCount, 1);
   assert.equal(m.byMethod['aria-label'], 1);
+});
+
+test(`${RULE_ID}: aria-label on a checkbox, radio, select and range is flagged too`, () => {
+  const html = `<!doctype html><html><body>
+    <input id="cb" type="checkbox" aria-label="Subscribe">
+    <input id="rd" type="radio" name="x" aria-label="Yes">
+    <select id="sel" aria-label="Country"><option>Spain</option></select>
+    <input id="rng" type="range" aria-label="Volume">
+  </body></html>`;
+
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+  for (const id of ['cb', 'rd', 'sel', 'rng']) {
+    assert.ok(hasOccurrenceForId(rule, id), `Expected an occurrence for #${id}`);
+  }
+});
+
+test(`${RULE_ID}: a visible <label> wins over aria-label => pass`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="v">Email</label><input id="v" type="text" aria-label="Email address">
+  </body></html>`;
+
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: aria-labelledby to hidden text => cantTell with label_from_hidden_labelledby`, () => {
+  for (const hiding of ['hidden', 'style="display:none"', 'style="visibility:hidden"']) {
+    const html = `<!doctype html><html><body>
+      <span id="l" ${hiding}>Search</span>
+      <input id="h" type="text" aria-labelledby="l">
+    </body></html>`;
+
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const d = rule.occurrences[0].data.details;
+    assert.equal(d.reasonCode, 'label_from_hidden_labelledby', hiding);
+    assert.equal(d.labelMethod, 'aria-labelledby', hiding);
+  }
+});
+
+test(`${RULE_ID}: aria-labelledby to visible, clipped, or partly visible text => pass`, () => {
+  const clipped = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)';
+  const cases = [
+    '<span id="l">Search</span><input id="t" type="text" aria-labelledby="l">',
+    `<span id="l" style="${clipped}">Search</span><input id="t" type="text" aria-labelledby="l">`,
+    '<span id="l" hidden>Search</span><span id="m">Site</span><input id="t" type="text" aria-labelledby="l m">'
+  ];
+  for (const body of cases) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: a visually hidden (clipped) <label> => pass`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="s" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search</label>
+    <input id="s" type="text">
+  </body></html>`;
+
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: placeholder-only => cantTell with occurrence + reasonCode`, () => {
@@ -196,26 +264,30 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
 
   // Manual rule: automatic outcomes are restricted to cantTell / notApplicable.
   // Never assert pass/fail here.
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedFailIds = [
     'fcq_case_01',
     'fcq_case_02',
     'fcq_case_03',
     'fcq_case_04',
-    'fcq_case_09'
+    'fcq_case_08',
+    'fcq_case_09',
+    'fcq_case_15'
   ];
 
   const expectedNoOccIds = [
     'fcq_case_05',
     'fcq_case_06',
     'fcq_case_07',
-    'fcq_case_08',
     'fcq_case_10',
     'fcq_case_11',
     'fcq_case_12',
     'fcq_case_13',
-    'fcq_case_14'
+    'fcq_case_14',
+    'fcq_case_16',
+    'fcq_case_17',
+    'fcq_case_18'
   ];
 
   for (const id of expectedFailIds) {

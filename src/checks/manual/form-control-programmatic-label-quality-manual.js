@@ -5,7 +5,7 @@
 /**
  * @check form-control-programmatic-label-quality
  * @atomic true
- * @summary Form controls should not rely on placeholder or title as the primary label
+ * @summary Form controls should have a label shown on screen
  * @standard WCAG 2.2
  * @sc 3.3.2
  * @applicability
@@ -18,13 +18,18 @@
  *   is form-control-programmatic-label-present's finding, not
  *   a question about how good its name is.
  * @expectation
- *   If a control has a programmatic name, it should not rely ONLY on:
+ *   If a control has a programmatic name, it should not come ONLY from:
  *     - placeholder (non-empty)
  *     - title (non-empty)
- *   Prefer an associated <label> or aria-labelledby.
+ *     - aria-label
+ *     - aria-labelledby whose every referenced element is unrendered
+ *       (hidden, display:none, visibility:hidden)
+ *   Prefer an associated <label> or aria-labelledby pointing at visible text.
  * @reports
- *   - `labelMethod`: where the control's label comes from: `placeholder`
- *     or `title`.
+ *   - `labelMethod`: where the control's label comes from: `placeholder`,
+ *     `title`, `aria-label` or `aria-labelledby`.
+ *   - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`,
+ *     `label_from_aria_label_only` or `label_from_hidden_labelledby`.
  *   - `sourceText`: the label text, up to 120 characters.
  * @note
  *   Mapped to SC 3.3.2 Labels or Instructions, not 4.1.2: a control named
@@ -34,14 +39,23 @@
  *   (gone once the user types) are not. IBM Equal Access maps its visible-
  *   label check to 3.3.2 the same way. It replaces label-title-only, whose
  *   findings were a subset of this rule's.
+ *
+ *   aria-label and aria-labelledby to hidden text are flagged as IBM Equal
+ *   Access's input_label_visible flags them, as a potential issue: visible
+ *   text beside the control that is not linked to it still meets 3.3.2,
+ *   and markup can't tell. Two scope choices also match IBM: a visually
+ *   hidden (clipped) <label> or aria-labelledby target is not flagged, since
+ *   that text was placed on purpose and often repeats a visible cue; and
+ *   aria-labelledby with at least one rendered target is not flagged.
+ *   axe and Alfa have no equivalent check.
  */
 
 const id = 'form-control-programmatic-label-quality';
 
 const meta = {
-  title: 'Form controls should not rely on placeholder or title as the primary label',
+  title: 'Form controls should have a label shown on screen',
   description:
-    'Flags form controls whose computed accessible name relies on placeholder or title as the primary labeling method. Prefer <label> or aria-labelledby.',
+    'Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.',
   i18n: {
     titleKey: 'formControl_programmaticLabelQuality_title',
     descriptionKey: 'formControl_programmaticLabelQuality_description'
@@ -80,6 +94,11 @@ function runInPage(ctx) {
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
+
+  const isDomVisibleEligible =
+    helpers && typeof helpers.isDomVisibleEligible === 'function'
+      ? helpers.isDomVisibleEligible
+      : null;
 
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
@@ -136,7 +155,34 @@ function runInPage(ctx) {
     }
   }
 
-  // Native controls only (same as your current rule)
+  // Whether any element aria-labelledby points at is rendered. Style only,
+  // so visually hidden (clipped) text counts as rendered, as it does for a
+  // visually hidden <label>: someone placed that text on purpose, and markup
+  // can't tell whether it repeats a visible cue.
+  function hasRenderedLabelledByRef(el) {
+    const ids = trim(el.getAttribute('aria-labelledby')).split(/\s+/).filter(Boolean);
+    const scope =
+      el.getRootNode && typeof el.getRootNode().getElementById === 'function'
+        ? el.getRootNode()
+        : document;
+    for (const refId of ids) {
+      const ref = scope.getElementById(refId);
+      if (!ref) continue;
+      if (!isDomVisibleEligible) return true;
+      try {
+        const r = isDomVisibleEligible(ref, ctx, {
+          visibilityMode: 'styleOnly',
+          ignoreOpacity: true
+        });
+        if (r && r.eligible) return true;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Native controls only
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
 
@@ -188,32 +234,55 @@ function runInPage(ctx) {
 
     metrics.applicableCount += 1;
 
-    // Flag only when the *primary* (best) method is title/placeholder
     const isWeakPrimary = method === 'title' || method === 'placeholder';
-    if (!isWeakPrimary) continue;
+    const isUnseenName =
+      method === 'aria-label' || (method === 'aria-labelledby' && !hasRenderedLabelledByRef(el));
+    if (!isWeakPrimary && !isUnseenName) continue;
 
     metrics.flaggedCount += 1;
 
     const vf = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const element = (el.tagName || '').toLowerCase();
+    const sourceText = label && label.value ? String(label.value).slice(0, 120) : '';
 
-    const reasonCode =
-      method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
-    const baseOccurrence = {
-      summary: `Form control’s primary label is derived from ${method}.`,
-      hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
-      i18n: {
+    let reasonCode;
+    let message;
+    if (isWeakPrimary) {
+      reasonCode =
+        method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
+      message = {
+        summary: `Form control’s primary label is derived from ${method}.`,
+        hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
         summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
-        hintKey: 'formControl_programmaticLabelQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), method }
+        hintKey: 'formControl_programmaticLabelQuality_hint_cantTell'
+      };
+    } else {
+      reasonCode =
+        method === 'aria-label' ? 'label_from_aria_label_only' : 'label_from_hidden_labelledby';
+      message = {
+        summary: `Form control’s name comes from ${method}, which is not shown on screen.`,
+        hint: 'Check that a visible label or instruction sits next to the control. If there is none, add a <label> or point aria-labelledby at visible text.',
+        summaryKey: 'formControl_programmaticLabelQuality_summary_unseenName',
+        hintKey: 'formControl_programmaticLabelQuality_hint_unseenName'
+      };
+    }
+
+    const baseOccurrence = {
+      summary: message.summary,
+      hint: message.hint,
+      i18n: {
+        summaryKey: message.summaryKey,
+        hintKey: message.hintKey,
+        params: { element, method }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
           reasonCode,
           labelMethod: method,
-          labelStrength: 'weak',
+          labelStrength: isWeakPrimary ? 'weak' : 'medium',
           recommendedMethods: ['label', 'aria-labelledby'],
-          sourceText: label && label.value ? String(label.value).slice(0, 120) : ''
+          sourceText
         }
       }
     };

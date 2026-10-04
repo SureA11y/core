@@ -86,9 +86,43 @@
 </div>
 
 <div class="case" id="case_08">
-  <div class="case-title">08 — NOT FLAGGED: aria-label (medium)</div>
+  <div class="case-title">08 — FLAGGED: aria-label only, never shown on screen</div>
   <div class="row">
     <input id="fcq_case_08" type="text" aria-label="Search products" title="ignored" />
+  </div>
+</div>
+
+<h2>B2. aria-labelledby: flagged only when every target is unrendered</h2>
+
+<div class="case" id="case_15">
+  <div class="case-title">15 — FLAGGED: aria-labelledby to hidden text</div>
+  <div class="row">
+    <span id="fcq_case_15_lbl" hidden>Search</span>
+    <input id="fcq_case_15" type="text" aria-labelledby="fcq_case_15_lbl" />
+  </div>
+</div>
+
+<div class="case" id="case_16">
+  <div class="case-title">16 — NOT FLAGGED: aria-labelledby to visually hidden (clipped) text</div>
+  <div class="row">
+    <span id="fcq_case_16_lbl" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search</span>
+    <input id="fcq_case_16" type="text" aria-labelledby="fcq_case_16_lbl" />
+  </div>
+</div>
+
+<div class="case" id="case_17">
+  <div class="case-title">17 — NOT FLAGGED: aria-labelledby to hidden and visible text</div>
+  <div class="row">
+    <span id="fcq_case_17_a" hidden>Search</span><span id="fcq_case_17_b">Site</span>
+    <input id="fcq_case_17" type="text" aria-labelledby="fcq_case_17_a fcq_case_17_b" />
+  </div>
+</div>
+
+<div class="case" id="case_18">
+  <div class="case-title">18 — NOT FLAGGED: visually hidden (clipped) &lt;label&gt;</div>
+  <div class="row">
+    <label for="fcq_case_18" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Search</label>
+    <input id="fcq_case_18" type="text" />
   </div>
 </div>
 
