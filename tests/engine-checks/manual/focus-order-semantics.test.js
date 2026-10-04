@@ -47,6 +47,12 @@ test(`${RULE_ID}: notApplicable when tabindex="0" has role="region"`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: notApplicable when tabindex="0" has role="tabpanel", which the APG makes focusable when it holds no focusable content`, () => {
+  const html = `<!doctype html><html><body><div role="tablist"><button role="tab" aria-selected="true" aria-controls="p">One</button></div><div role="tabpanel" id="p" tabindex="0">Text only</div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: cantTell when tabindex="0" has role="navigation" (only region was removed from the non-interactive-role list, not the whole landmark family)`, () => {
   const html = `<!doctype html><html><body><div id="a" role="navigation" tabindex="0">Nav</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

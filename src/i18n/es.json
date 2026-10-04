@@ -751,7 +751,7 @@
   "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
   "ariaText_hint_cantTell": "Eliminar role=\"text\" (o eliminar el descendiente enfocable); una región de \"texto sin formato\" no debería contener contenido enfocable.",
   "focusOrderSemantics_title": "Los elementos agregados al orden de tabulación deberían tener semántica interactiva",
-  "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, region, presentation), para su revisión manual.",
+  "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, note, presentation), para su revisión manual.",
   "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
   "focusOrderSemantics_hint_cantTell": "Eliminar tabindex si este elemento no está pensado para ser interactivo, o usar un rol interactivo que coincida con su comportamiento real.",
   "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",

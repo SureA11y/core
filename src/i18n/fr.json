@@ -751,7 +751,7 @@
   "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
   "ariaText_hint_cantTell": "Retirez role=\"text\" (ou retirez le descendant focalisable) — une région de « texte brut » ne devrait pas contenir de contenu focalisable.",
   "focusOrderSemantics_title": "Les éléments ajoutés à l’ordre de tabulation devraient avoir une sémantique interactive",
-  "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, region, presentation), pour une revue manuelle.",
+  "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, note, presentation), pour une revue manuelle.",
   "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
   "focusOrderSemantics_hint_cantTell": "Retirez tabindex si cet élément n’est pas censé être interactif, ou utilisez un rôle interactif correspondant à son comportement réel.",
   "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",

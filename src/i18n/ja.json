@@ -751,7 +751,7 @@
   "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",
   "ariaText_hint_cantTell": "role=\"text\" を削除する (またはフォーカス可能な子孫要素を取り除く) ようにしてください。「プレーンテキスト」の領域にフォーカス可能なコンテンツを含めるべきではありません。",
   "focusOrderSemantics_title": "タブ順序に加えた要素にはインタラクティブなセマンティクスがあることが望ましい",
-  "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、region、presentation など) である要素を検出し、人が確認できるようにします。",
+  "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、note、presentation など) である要素を検出し、人が確認できるようにします。",
   "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
   "focusOrderSemantics_hint_cantTell": "この要素を操作可能にする意図がなければ tabindex を削除し、そうでなければ実際の動作に合ったインタラクティブなロールを使用してください。",
   "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",

@@ -970,11 +970,11 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 manual · no formal WCAG SC mapping · confidence medium · default severity minor
 
-Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, region, presentation), for manual review.
+Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.
 
 **Applies to.** Elements with an explicit `tabindex` of `0` or greater (in the tab order) AND an explicit `role` attribute that is one of a curated set of clearly non-interactive, structural/document roles.
 
-**Expectation.** An element placed in the tab order on purpose should communicate why it's focusable: a role like `heading`, `list`, `region`, or `presentation` gives assistive technology no interactive semantic to announce, which is confusing for keyboard users who land on it and get no indication of what activating it (if anything) would do.
+**Expectation.** An element placed in the tab order on purpose should communicate why it's focusable: a role like `heading`, `list`, `note`, or `presentation` gives assistive technology no interactive semantic to announce, which is confusing for keyboard users who land on it and get no indication of what activating it (if anything) would do.
 
 **What a finding reports.**
 

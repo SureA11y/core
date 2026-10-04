@@ -751,7 +751,7 @@
   "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
   "ariaText_hint_cantTell": "Entfernen Sie role=\"text\" (oder entfernen Sie den fokussierbaren Nachfahren) — ein Bereich mit „reinem Text“ sollte keinen fokussierbaren Inhalt enthalten.",
   "focusOrderSemantics_title": "Zur Tab-Reihenfolge hinzugefügte Elemente sollten interaktive Semantik haben",
-  "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, region, presentation), zur manuellen Überprüfung.",
+  "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, note, presentation), zur manuellen Überprüfung.",
   "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
   "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn dieses Element nicht interaktiv sein soll, oder verwenden Sie eine interaktive Rolle, die seinem tatsächlichen Verhalten entspricht.",
   "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
