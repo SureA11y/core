@@ -586,7 +586,7 @@
   "landmarkUnique_description": "Checks that when two or more landmarks share the same role, each has a distinct accessible name.",
   "landmarkUnique_summary_cantTell_duplicateName": "This {{role}} landmark shares its accessible name with another {{role}} landmark.",
   "landmarkUnique_summary_cantTell_bothUnnamed": "This {{role}} landmark has no accessible name, and more than one unnamed {{role}} landmark exists on this page.",
-  "landmarkUnique_hint_cantTell": "Give each {{role}} landmark a distinct name via aria-label or aria-labelledby.",
+  "landmarkUnique_hint_cantTell": "Give each {{role}} landmark a distinct name via aria-label or aria-labelledby, unless they have the same content and purpose, such as pagination repeated above and below a table, where the ARIA Authoring Practices allow the same name.",
   "landmarkRoleNamePresent_title": "Region and form roles must have an accessible name",
   "landmarkRoleNamePresent_description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
   "landmarkRoleNamePresent_summary_cantTell": "This element has role=\"{{role}}\" but no accessible name, so it is not exposed as a landmark.",

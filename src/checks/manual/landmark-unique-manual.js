@@ -17,6 +17,11 @@
  *   content). Two same-role landmarks with the same name (including two
  *   both left unnamed) are indistinguishable to assistive technology
  *   users navigating by landmark.
+ *   A shared name is reported as CANTTELL, never as a failure: the ARIA
+ *   Authoring Practices allow one when the landmarks have the same content
+ *   and purpose, such as pagination repeated above and below a table,
+ *   which only a person can confirm. Two unnamed landmarks need names
+ *   either way, and the same allowance then applies to those names.
  * @reports
  *   - `role`: the landmark role the colliding landmarks share, such as
  *     `navigation`.
@@ -146,7 +151,7 @@ function runInPage(ctx) {
             summary: normalizedName
               ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
               : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
-            hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby.`,
+            hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby, unless they have the same content and purpose, such as pagination repeated above and below a table, where the ARIA Authoring Practices allow the same name.`,
             i18n: {
               summaryKey: normalizedName
                 ? 'landmarkUnique_summary_cantTell_duplicateName'

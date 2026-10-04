@@ -252,3 +252,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-unique-all-scenarios
   assert.ok(!hasOccurrenceForId(rule, 'lu_case_11a'));
   assert.ok(!hasOccurrenceForId(rule, 'lu_case_11b'));
 });
+
+test(`${RULE_ID}: the hint says when a shared name is allowed, since that is why a shared name is cantTell and not a failure`, () => {
+  for (const html of [
+    `<!doctype html><html><body><nav aria-label="Pages">A</nav><nav aria-label="Pages">B</nav></body></html>`,
+    `<!doctype html><html><body><nav>A</nav><nav>B</nav></body></html>`
+  ]) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+    for (const o of rule.occurrences) {
+      assert.match(o.hint, /same content and purpose/);
+      assert.match(o.hint, /ARIA Authoring Practices allow the same name/);
+    }
+  }
+});

@@ -586,7 +586,7 @@
   "landmarkUnique_description": "同じロールを持つランドマークが 2 つ以上ある場合に、それぞれに異なるアクセシブルな名前があるかを確認します。",
   "landmarkUnique_summary_cantTell_duplicateName": "この {{role}} ランドマークは、別の {{role}} ランドマークと同じアクセシブルな名前を持っています。",
   "landmarkUnique_summary_cantTell_bothUnnamed": "この {{role}} ランドマークにはアクセシブルな名前がなく、このページには名前のない {{role}} ランドマークがほかにもあります。",
-  "landmarkUnique_hint_cantTell": "aria-label または aria-labelledby で、各 {{role}} ランドマークに異なる名前を付けてください。",
+  "landmarkUnique_hint_cantTell": "aria-label または aria-labelledby で、各 {{role}} ランドマークに異なる名前を付けてください。ただし、表の上下に繰り返されるページ送りのように内容と目的が同じ場合は、ARIA Authoring Practices により同じ名前が認められます。",
   "landmarkRoleNamePresent_title": "region および form ロールにはアクセシブルな名前が必要",
   "landmarkRoleNamePresent_description": "role=\"region\" または role=\"form\" を指定した要素にアクセシブルな名前があるかを確認します。名前がないと、ランドマークとして公開されません。",
   "landmarkRoleNamePresent_summary_cantTell": "この要素には role=\"{{role}}\" がありますが、アクセシブルな名前がないため、ランドマークとして公開されません。",

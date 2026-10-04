@@ -1466,7 +1466,7 @@ Checks that when two or more landmarks share the same role, each has a distinct 
 
 **Applies to.** Applies whenever two or more landmark regions on the page share the same landmark role (banner, contentinfo, main, navigation, complementary, region, form, or search).
 
-**Expectation.** Among landmarks sharing a role, each has a distinct accessible name (via aria-label/aria-labelledby; landmarks are not named from content). Two same-role landmarks with the same name (including two both left unnamed) are indistinguishable to assistive technology users navigating by landmark.
+**Expectation.** Among landmarks sharing a role, each has a distinct accessible name (via aria-label/aria-labelledby; landmarks are not named from content). Two same-role landmarks with the same name (including two both left unnamed) are indistinguishable to assistive technology users navigating by landmark. A shared name is reported as CANTTELL, never as a failure: the ARIA Authoring Practices allow one when the landmarks have the same content and purpose, such as pagination repeated above and below a table, which only a person can confirm. Two unnamed landmarks need names either way, and the same allowance then applies to those names.
 
 **What a finding reports.**
 

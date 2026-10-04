@@ -586,7 +586,7 @@
   "landmarkUnique_description": "Vérifie que lorsque deux points de repère ou plus partagent le même rôle, chacun a un nom accessible distinct.",
   "landmarkUnique_summary_cantTell_duplicateName": "Ce point de repère {{role}} partage son nom accessible avec un autre point de repère {{role}}.",
   "landmarkUnique_summary_cantTell_bothUnnamed": "Ce point de repère {{role}} n’a pas de nom accessible, et plus d’un point de repère {{role}} sans nom existe sur cette page.",
-  "landmarkUnique_hint_cantTell": "Donnez à chaque point de repère {{role}} un nom distinct via aria-label ou aria-labelledby.",
+  "landmarkUnique_hint_cantTell": "Donnez à chaque point de repère {{role}} un nom distinct via aria-label ou aria-labelledby, sauf s’ils ont le même contenu et le même rôle, comme une pagination répétée au-dessus et au-dessous d’un tableau : les ARIA Authoring Practices autorisent alors le même nom.",
   "landmarkRoleNamePresent_title": "Les rôles region et form doivent avoir un nom accessible",
   "landmarkRoleNamePresent_description": "Vérifie qu’un élément doté de role=\"region\" ou role=\"form\" a un nom accessible, sans lequel il n’est pas exposé comme point de repère.",
   "landmarkRoleNamePresent_summary_cantTell": "Cet élément a role=\"{{role}}\" mais pas de nom accessible, il n’est donc pas exposé comme point de repère.",

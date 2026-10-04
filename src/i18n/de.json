@@ -586,7 +586,7 @@
   "landmarkUnique_description": "Prüft, ob bei zwei oder mehr Landmarken mit derselben Rolle jede einen eigenen zugänglichen Namen hat.",
   "landmarkUnique_summary_cantTell_duplicateName": "Diese {{role}}-Landmarke teilt ihren zugänglichen Namen mit einer anderen {{role}}-Landmarke.",
   "landmarkUnique_summary_cantTell_bothUnnamed": "Diese {{role}}-Landmarke hat keinen zugänglichen Namen, und es gibt mehr als eine unbenannte {{role}}-Landmarke auf dieser Seite.",
-  "landmarkUnique_hint_cantTell": "Geben Sie jeder {{role}}-Landmarke über aria-label oder aria-labelledby einen eigenen Namen.",
+  "landmarkUnique_hint_cantTell": "Geben Sie jeder {{role}}-Landmarke über aria-label oder aria-labelledby einen eigenen Namen, außer sie haben denselben Inhalt und Zweck, etwa eine über und unter einer Tabelle wiederholte Seitennavigation; dann erlauben die ARIA Authoring Practices denselben Namen.",
   "landmarkRoleNamePresent_title": "Die Rollen region und form müssen einen zugänglichen Namen haben",
   "landmarkRoleNamePresent_description": "Prüft, ob ein Element mit role=\"region\" oder role=\"form\" einen zugänglichen Namen hat, ohne den es nicht als Landmarke bereitgestellt wird.",
   "landmarkRoleNamePresent_summary_cantTell": "Dieses Element hat role=\"{{role}}\", aber keinen zugänglichen Namen, daher wird es nicht als Landmarke bereitgestellt.",
