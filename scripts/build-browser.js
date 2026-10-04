@@ -38,6 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
+const { waitForPageReady } = require('../src/core/page-ready');
 
 const {
   loadRuleModules,
@@ -134,6 +135,8 @@ ${inPageRunnerSource}
       if (!messages || typeof messages !== 'object') return;
       registered[locale.trim()] = messages;
     },
+    // Waits for the page to load before a scan (src/core/page-ready.js).
+    waitForPageReady: ${waitForPageReady.toString()},
     runa11yCoreInPage: function (pageUrl, contextSelector, engineOptions, runOnly) {
       return runa11yCoreInPage(
         pageUrl,

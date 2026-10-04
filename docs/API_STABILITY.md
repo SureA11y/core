@@ -48,6 +48,7 @@ The `exports` map above says which **paths** are importable. It does not say whi
 | `runa11yCoreInPage` | Scanning from another JS realm: the whole engine is inlined, so `fn.toString()` re-evaluated in a browser tab works. What all five browser bindings use. |
 | `runDomRulesInPage` | Scanning in the same Node process, dispatching through real `require()`. What `@surea11y/test-matchers` uses. |
 | `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Cross-frame scanning without an automation driver. |
+| `waitForPageReady(options)` | Waiting for a page to finish loading (load event, fonts, images, and optionally a quiet DOM) before a scan, with a timeout; it never rejects. See [`INTEGRATION.md`](./INTEGRATION.md#waiting-for-the-page-before-a-scan). |
 | `getChecksCatalog()` / `getRulesCatalog()` | Reading the rule catalog; its stable fields are listed above. |
 | `getLocaleCoverage()` | How far each shipped translation covers English (`sourceLocale`, `totalKeys`, and per locale `locale`, `total`, `translated`, `missing`, `orphaned`, `percent`), from the dictionaries the package ships. See [`I18N.md`](./I18N.md#reading-coverage-from-the-package). |
 

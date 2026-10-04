@@ -137,8 +137,8 @@ test(
   { skip: !ts && 'typescript not installed' },
   () => {
     const errors = compile(`
-    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog } from ${JSON.stringify(TYPES)};
-    import type { ScanResult, CrossFrameResult, FrameEntry } from ${JSON.stringify(TYPES)};
+    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog, waitForPageReady } from ${JSON.stringify(TYPES)};
+    import type { ScanResult, CrossFrameResult, FrameEntry, PageReadyResult } from ${JSON.stringify(TYPES)};
     const a: ScanResult = runDomRulesInPage('https://example.test/', null, { profile: 'wcag22-aa' }, null);
     const b: ScanResult = runa11yCoreInPage(null, ['main', 'nav'], { rules: { include: 'img-alt-present', 'region': { excludeSelectors: ['.ad'] } } }, { includeRuleIds: ['img-alt-present'], includeMode: 'or' });
     runDomRulesInPage();
@@ -150,6 +150,11 @@ test(
     const code: string | undefined = b.checksResults[0]?.occurrences[0]?.uncertainty?.code;
     const tags: string[] = getChecksCatalog({ optInRules: 'all' })[0].tags;
     runDomRulesInPage(null, null, {}, ['img-alt-present']);
+    const ready: Promise<PageReadyResult> = waitForPageReady({ timeoutMs: 3000, quietMs: 500 });
+    void waitForPageReady();
+    void ready.then((r) => r.ready && r.pending.images === 0 && r.pending.domChanging !== true);
+    // @ts-expect-error timeoutMs is a number
+    void waitForPageReady({ timeoutMs: '3000' });
     // @ts-expect-error a runOnly is not a number
     runDomRulesInPage(null, null, {}, 42);
     // @ts-expect-error outcomes are a closed set
