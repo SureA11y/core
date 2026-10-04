@@ -420,6 +420,32 @@ function createContrastHelpers(opts, shared) {
         return hidden;
       };
 
+      // Text behind an open modal dialog is out of the scan, as everywhere
+      // else: the browser makes it inert, and the scan judges the dialog.
+      // Only that reason counts here, since aria-hidden text that is drawn
+      // still has to meet contrast. Asked once, so a page with no modal open
+      // pays nothing for it.
+      let modalOpen = false;
+      try {
+        modalOpen = !!(
+          helpers &&
+          typeof helpers.isModalDialogOpen === 'function' &&
+          helpers.isModalDialogOpen()
+        );
+      } catch {
+        modalOpen = false;
+      }
+      const isBehindModal = (el) => {
+        if (!modalOpen || typeof helpers.isAccTreeEligible !== 'function') return false;
+        const r = helpers.isAccTreeEligible(el);
+        return !!(
+          r &&
+          r.eligible === false &&
+          Array.isArray(r.reasons) &&
+          r.reasons.includes('modalInert')
+        );
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -429,6 +455,7 @@ function createContrastHelpers(opts, shared) {
           const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
+          if (ok && isBehindModal(el)) ok = false;
         } catch {
           ok = false;
         }

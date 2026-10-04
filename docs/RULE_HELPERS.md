@@ -32,7 +32,8 @@ traversal `queryAllSmart` builds on.
 ### `queryAllSmart(selector)` → `Element[]`
 **The one almost every rule should use.** Honors `engineOptions.includeShadowDom`
 (shadow-aware by default), applies the default hidden-content policy (filters out
-`display:none`/`hidden`/etc. unless `includeHiddenElements:true`), and applies any
+`display:none`/`hidden`/etc., and the page behind an open modal dialog, which the
+browser makes inert, unless `includeHiddenElements:true`), and applies any
 rule-scoped `excludeSelectors`. See `RULE_AUTHORING.md` §6.1 — write rules assuming
 open shadow roots are in scope and let this helper honor the caller's choice.
 

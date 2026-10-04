@@ -1269,7 +1269,11 @@ function createDomHelpers(opts) {
     return results;
   }
 
+  // Content no rule should judge. `modalInert` is the page behind an open
+  // modal dialog, which the browser makes inert (see getOpenModalDialogs):
+  // a scan taken while one is open judges the dialog, not what it covers.
   const HARD_HIDDEN_REASONS = new Set([
+    'modalInert',
     'displayNone',
     'hiddenAttr',
     'detailsClosed',
