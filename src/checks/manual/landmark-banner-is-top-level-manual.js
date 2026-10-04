@@ -20,9 +20,9 @@
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule per the design doc's policy model
  *   ("Advisory / best-practice rules may exist, but must not produce
- *   `fail`"). Matches the existing `page-title-patterns-manual.js`
- *   precedent: deterministic DOM analysis, no human required, but
- *   capped at `cantTell`/`notApplicable` rather than `fail`/`pass`.
+ *   `fail`"). Deterministic DOM analysis: a banner that is nested is
+ *   `cantTell`, never `fail`, and banners that are all top-level are
+ *   `pass`, since that needs no judgment (docs/RULE_TAXONOMY.md 1.1).
  * - Landmark detection is `helpers.getLandmarkRole`, shared by every
  *   landmark rule: HTML-AAM's implicit roles, an explicit role's first
  *   token, and region/form only when named (Core-AAM). See its header
@@ -150,7 +150,7 @@ function runInPage(ctx) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
 module.exports = { id, meta, runInPage };

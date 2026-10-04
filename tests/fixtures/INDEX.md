@@ -83,10 +83,10 @@ Total rules: **134**. With fixture: **133**. Without fixture: **1**.
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 23 | 8 | 7 | 0 | 8 |
 | label-title-only | manual | `tests/fixtures/label-title-only-all-scenarios.html` | 4 | 0 | 0 | 2 | 2 |
-| landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
-| landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 0 | 0 | 2 | 5 |
-| landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
-| landmark-main-is-top-level | manual | `tests/fixtures/landmark-main-is-top-level-all-scenarios.html` | 2 | 0 | 0 | 1 | 1 |
+| landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
+| landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 2 | 0 | 2 | 3 |
+| landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
+| landmark-main-is-top-level | manual | `tests/fixtures/landmark-main-is-top-level-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
 | landmark-no-duplicate-banner | manual | `tests/fixtures/landmark-no-duplicate-banner-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-no-duplicate-contentinfo | manual | `tests/fixtures/landmark-no-duplicate-contentinfo-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-no-duplicate-main | manual | `tests/fixtures/landmark-no-duplicate-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |

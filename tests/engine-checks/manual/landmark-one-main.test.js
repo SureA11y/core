@@ -40,10 +40,10 @@ function assertNodeRule(html, expectedOutcome, occCounts) {
   return rule;
 }
 
-test(`${RULE_ID}: notApplicable when there is exactly one main`, () => {
+test(`${RULE_ID}: pass when there is exactly one main`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when there is no main at all`, () => {
@@ -55,10 +55,10 @@ test(`${RULE_ID}: cantTell when there is no main at all`, () => {
 
 // Presence-only: this is a plain "a main exists" descendant check. "More than
 // one main" is landmark-no-duplicate-main's job, a fully separate rule.
-test(`${RULE_ID}: notApplicable when more than one main exists (out of this rule's scope)`, () => {
+test(`${RULE_ID}: pass when more than one main exists (out of this rule's scope)`, () => {
   const html = `<!doctype html><html><body><main id="a">A</main><main id="b">B</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when the only main is hidden from the accessibility tree`, () => {
@@ -113,19 +113,19 @@ test(`landmark-one-main: notApplicable when engineOptions.fragment is true, even
   });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when there is exactly one <main>`, () => {
+test(`${RULE_ID} (node runtime): pass when there is exactly one <main>`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
-  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when there is one role="main"`, () => {
+test(`${RULE_ID} (node runtime): pass when there is one role="main"`, () => {
   const html = `<!doctype html><html><body><div role="main">Content</div></body></html>`;
-  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when more than one main exists (out of this rule's scope)`, () => {
+test(`${RULE_ID} (node runtime): pass when more than one main exists (out of this rule's scope)`, () => {
   const html = `<!doctype html><html><body><main id="a">A</main><main id="b">B</main></body></html>`;
-  assertNodeRule(html, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertNodeRule(html, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID} (node runtime): cantTell when a non-main role is present (explicit role short-circuits the <main> tag fallback)`, () => {

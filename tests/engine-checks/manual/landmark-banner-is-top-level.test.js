@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no banner landmark is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the banner is top-level`, () => {
+test(`${RULE_ID}: pass when the banner is top-level`, () => {
   const html = `<!doctype html><html><body><header>Site header</header><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: notApplicable when a <header> is nested inside <main>, since per HTML-AAM it has no banner role there, so there is no landmark to be nested`, () => {
@@ -144,5 +144,5 @@ test(`${RULE_ID}: a roleless <header> inside a blocking-but-not-suppressing land
 test(`${RULE_ID}: an explicit role="banner" inside an unnamed role="region" is not nested in a landmark, since a region without a name is not one (Core-AAM)`, () => {
   const html = `<!doctype html><html><body><div role="region"><div role="banner" id="b">Banner</div></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

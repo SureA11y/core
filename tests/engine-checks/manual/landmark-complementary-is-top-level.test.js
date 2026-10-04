@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no complementary landmark is present`, () =
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the complementary landmark is top-level`, () => {
+test(`${RULE_ID}: pass when the complementary landmark is top-level`, () => {
   const html = `<!doctype html><html><body><aside id="a">Related</aside><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when an explicit role="complementary" sits inside another landmark`, () => {
@@ -68,7 +68,7 @@ test(`${RULE_ID}: the ancestor walk stops at the scanned scope`, () => {
   // and must not count as the landmark ancestor.
   const html = `<!doctype html><html><body><nav aria-label="Outer"><div id="scope"><aside aria-label="Related" id="a">Related</aside></div></nav></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], contextSelector: '#scope' });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

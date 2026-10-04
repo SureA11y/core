@@ -1119,6 +1119,12 @@ A real `<label>` already names the field; `title` is just supplementary.
 
 ## landmark-banner-is-top-level
 
+**Passed**
+```html
+<header>Site header</header>
+```
+The banner is not nested inside any other landmark.
+
 **Flagged (cantTell)**
 ```html
 <div role="navigation">
@@ -1127,13 +1133,13 @@ A real `<label>` already names the field; `title` is just supplementary.
 ```
 A banner landmark nested inside another landmark no longer functions as the page's single top-level header.
 
-**Not applicable**
-```html
-<header>Site header</header>
-```
-The banner is not nested inside any other landmark.
-
 ## landmark-complementary-is-top-level
+
+**Passed**
+```html
+<aside>Related links</aside>
+```
+The complementary landmark is not nested inside any other landmark.
 
 **Flagged (cantTell)**
 ```html
@@ -1143,13 +1149,13 @@ The banner is not nested inside any other landmark.
 ```
 A complementary landmark nested inside a navigation landmark.
 
-**Not applicable**
-```html
-<aside>Related links</aside>
-```
-The complementary landmark is not nested inside any other landmark.
-
 ## landmark-contentinfo-is-top-level
+
+**Passed**
+```html
+<footer>Site footer</footer>
+```
+The contentinfo is not nested inside any other landmark.
 
 **Flagged (cantTell)**
 ```html
@@ -1159,13 +1165,13 @@ The complementary landmark is not nested inside any other landmark.
 ```
 A contentinfo landmark nested inside another landmark no longer functions as the page's single top-level footer.
 
-**Not applicable**
-```html
-<footer>Site footer</footer>
-```
-The contentinfo is not nested inside any other landmark.
-
 ## landmark-main-is-top-level
+
+**Passed**
+```html
+<main>Content</main>
+```
+The main landmark is not nested inside any other landmark.
 
 **Flagged (cantTell)**
 ```html
@@ -1175,13 +1181,15 @@ The contentinfo is not nested inside any other landmark.
 ```
 The main landmark is nested inside a navigation landmark instead of being top-level.
 
-**Not applicable**
-```html
-<main>Content</main>
-```
-The main landmark is not nested inside any other landmark.
-
 ## landmark-no-duplicate-banner
+
+**Passed**
+```html
+<body>
+  <header>Site header</header>
+</body>
+```
+Only one banner landmark exists.
 
 **Flagged (cantTell)**
 ```html
@@ -1192,15 +1200,15 @@ The main landmark is not nested inside any other landmark.
 ```
 Two top-level `<header>` elements both resolve to the banner role.
 
-**Not applicable**
+## landmark-no-duplicate-contentinfo
+
+**Passed**
 ```html
 <body>
-  <header>Site header</header>
+  <footer>Site footer</footer>
 </body>
 ```
-Only one banner landmark exists.
-
-## landmark-no-duplicate-contentinfo
+Only one contentinfo landmark exists.
 
 **Flagged (cantTell)**
 ```html
@@ -1211,15 +1219,15 @@ Only one banner landmark exists.
 ```
 Two top-level `<footer>` elements both resolve to the contentinfo role.
 
-**Not applicable**
+## landmark-no-duplicate-main
+
+**Passed**
 ```html
 <body>
-  <footer>Site footer</footer>
+  <main>Only one</main>
 </body>
 ```
-Only one contentinfo landmark exists.
-
-## landmark-no-duplicate-main
+Only one main landmark exists.
 
 **Flagged (cantTell)**
 ```html
@@ -1230,15 +1238,15 @@ Only one contentinfo landmark exists.
 ```
 Two `<main>` elements are both exposed to assistive technology as main landmarks.
 
-**Not applicable**
+## landmark-one-main
+
+**Passed**
 ```html
 <body>
-  <main>Only one</main>
+  <main>Primary content</main>
 </body>
 ```
-Only one main landmark exists.
-
-## landmark-one-main
+A `<main>` landmark exists.
 
 **Flagged (cantTell)**
 ```html
@@ -1248,14 +1256,6 @@ Only one main landmark exists.
 </body>
 ```
 No `<main>` or `role="main"` anywhere on the page.
-
-**Not applicable**
-```html
-<body>
-  <main>Primary content</main>
-</body>
-```
-A `<main>` landmark exists, so there is nothing to flag.
 
 ## landmark-role-name-present
 

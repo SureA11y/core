@@ -81,8 +81,11 @@ function runInPage(ctx) {
     if (helpers.getLandmarkRole(el, ctx) === 'contentinfo') contentinfos.push(el);
   }
 
-  if (contentinfos.length <= 1) {
+  if (contentinfos.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (contentinfos.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = contentinfos.map((el) => {

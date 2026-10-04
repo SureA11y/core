@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no contentinfo landmark is present`, () => 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the contentinfo is top-level`, () => {
+test(`${RULE_ID}: pass when the contentinfo is top-level`, () => {
   const html = `<!doctype html><html><body><footer>Site footer</footer></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role has been overridden away from a landmark-scoping role (<aside role="dialog">) still keeps its implicit contentinfo role, and is correctly flagged non-top-level when that ancestor is itself nested inside a real landmark (the outer wrapper uses role="search" rather than <nav> on purpose, so this test isolates the <aside role="dialog"> handling from an unrelated, already-suppressing <nav> ancestor)`, () => {

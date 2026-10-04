@@ -153,11 +153,12 @@ test("landmark-banner-is-top-level: a real page's outer <nav> does not leak into
   });
 
   // Scoped to #widget: the <nav> is outside the analyzed subtree and must not leak in.
+  // Within the scope the banner is top-level, so the rule passes for the scope.
   const scoped = runa11yCoreOnHtml(html, {
     runOnly: ['landmark-banner-is-top-level'],
     contextSelector: '#widget'
   });
-  assertRule(scoped, 'landmark-banner-is-top-level', 'notApplicable', {
+  assertRule(scoped, 'landmark-banner-is-top-level', 'pass', {
     minOccurrences: 0,
     maxOccurrences: 0
   });

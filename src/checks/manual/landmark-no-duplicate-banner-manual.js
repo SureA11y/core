@@ -89,8 +89,11 @@ function runInPage(ctx) {
     if (helpers.getLandmarkRole(el, ctx) === 'banner') banners.push(el);
   }
 
-  if (banners.length <= 1) {
+  if (banners.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (banners.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = banners.map((el) => {
