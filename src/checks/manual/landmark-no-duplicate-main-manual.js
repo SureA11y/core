@@ -82,8 +82,11 @@ function runInPage(ctx) {
     if (helpers.getLandmarkRole(el, ctx) === 'main') mains.push(el);
   }
 
-  if (mains.length <= 1) {
+  if (mains.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (mains.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = mains.map((el) => {

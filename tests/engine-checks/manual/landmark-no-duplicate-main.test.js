@@ -22,10 +22,10 @@ test(`${RULE_ID}: notApplicable when no main is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when there is exactly one main`, () => {
+test(`${RULE_ID}: pass when there is exactly one main`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell with one occurrence per main when more than one exists`, () => {
@@ -37,13 +37,13 @@ test(`${RULE_ID}: cantTell with one occurrence per main when more than one exist
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LANDMARK_DUPLICATE_MAIN');
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" main is display:none (a responsive desktop/mobile pattern)`, () => {
+test(`${RULE_ID}: pass when the only "duplicate" main is display:none (a responsive desktop/mobile pattern)`, () => {
   const html = `<!doctype html><html><body>
     <main id="a">Visible</main>
     <main id="b" style="display:none">Hidden duplicate</main>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

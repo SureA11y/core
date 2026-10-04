@@ -1289,10 +1289,10 @@
       "fixtureFile": "tests/fixtures/landmark-banner-is-top-level-all-scenarios.html",
       "totalCases": 4,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 3
+        "OTHER": 2
       }
     },
     {
@@ -1306,10 +1306,10 @@
       "fixtureFile": "tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html",
       "totalCases": 7,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 2,
         "FAIL": 0,
         "CANTTELL": 2,
-        "OTHER": 5
+        "OTHER": 3
       }
     },
     {
@@ -1323,10 +1323,10 @@
       "fixtureFile": "tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html",
       "totalCases": 4,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 3
+        "OTHER": 2
       }
     },
     {
@@ -1340,10 +1340,10 @@
       "fixtureFile": "tests/fixtures/landmark-main-is-top-level-all-scenarios.html",
       "totalCases": 2,
       "caseCounts": {
-        "PASS": 0,
+        "PASS": 1,
         "FAIL": 0,
         "CANTTELL": 1,
-        "OTHER": 1
+        "OTHER": 0
       }
     },
     {

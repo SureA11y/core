@@ -51029,7 +51029,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-complementary-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51122,7 +51122,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51217,7 +51217,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
   const { root, helpers, rule } = ctx;
@@ -51305,7 +51305,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences
     };
   }
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-no-duplicate-banner": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
@@ -51342,8 +51342,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.getLandmarkRole(el, ctx) === 'banner') banners.push(el);
   }
 
-  if (banners.length <= 1) {
+  if (banners.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (banners.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = banners.map((el) => {
@@ -51403,8 +51406,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.getLandmarkRole(el, ctx) === 'contentinfo') contentinfos.push(el);
   }
 
-  if (contentinfos.length <= 1) {
+  if (contentinfos.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (contentinfos.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = contentinfos.map((el) => {
@@ -51464,8 +51470,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.getLandmarkRole(el, ctx) === 'main') mains.push(el);
   }
 
-  if (mains.length <= 1) {
+  if (mains.length === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (mains.length === 1) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = mains.map((el) => {
@@ -51533,7 +51542,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   if (hasMain) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   return {

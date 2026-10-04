@@ -38,10 +38,10 @@ test(`${RULE_ID}: notApplicable when no main landmark is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when main is top-level`, () => {
+test(`${RULE_ID}: pass when main is top-level`, () => {
   const html = `<!doctype html><html><body><main>Content</main></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when main is nested inside another landmark`, () => {
@@ -97,12 +97,12 @@ test(`${RULE_ID}: an aria-hidden nested main is not flagged (it isn't part of th
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when a top-level explicit role="main" is used instead of <main>`, () => {
+test(`${RULE_ID} (node runtime): pass when a top-level explicit role="main" is used instead of <main>`, () => {
   const html = `<!doctype html><html><body><div role="main">Content</div></body></html>`;
   const result = runNode(html);
   const rule = ruleFrom(result);
   assert.ok(rule);
-  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });
 
@@ -126,7 +126,7 @@ test(`${RULE_ID} (node runtime): cantTell when main is nested inside an implicit
   }
 });
 
-test(`${RULE_ID} (node runtime): notApplicable when main is nested inside an unnamed (not a landmark) <section>/<form>`, () => {
+test(`${RULE_ID} (node runtime): pass when main is nested inside an unnamed (not a landmark) <section>/<form>`, () => {
   const cases = [
     '<section><main id="m">Not nested in a landmark</main></section>',
     '<form><main id="m">Not nested in a landmark</main></form>'
@@ -137,7 +137,7 @@ test(`${RULE_ID} (node runtime): notApplicable when main is nested inside an unn
     const result = runNode(html);
     const rule = ruleFrom(result);
     assert.ok(rule);
-    assert.strictEqual(rule.outcome, 'notApplicable');
+    assert.strictEqual(rule.outcome, 'pass');
     assert.strictEqual(rule.occurrences.length, 0);
   }
 });
@@ -166,6 +166,6 @@ test(`${RULE_ID} (node runtime): a main scoped to the top of a contextSelector-n
   );
   const rule = ruleFrom(result);
   assert.ok(rule);
-  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });

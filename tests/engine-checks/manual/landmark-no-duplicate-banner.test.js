@@ -40,10 +40,10 @@ test(`${RULE_ID}: notApplicable when no banner is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when there is exactly one banner`, () => {
+test(`${RULE_ID}: pass when there is exactly one banner`, () => {
   const html = `<!doctype html><html><body><header>Site header</header></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell with one occurrence per banner when more than one exists`, () => {
@@ -66,22 +66,22 @@ test(`${RULE_ID}: cantTell when a <header> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a <header> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag still suppresses banner; only an explicit role override on the ancestor changes the outcome`, () => {
+test(`${RULE_ID}: pass when a second <header> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag suppresses its banner role, leaving one banner; only an explicit role override on the ancestor changes the outcome`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Site header</header>
     <aside aria-label="Related"><header id="b">Not a landmark</header></aside>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern)`, () => {
+test(`${RULE_ID}: pass when the only "duplicate" banner is display:none (a responsive desktop/mobile pattern)`, () => {
   const html = `<!doctype html><html><body>
     <header id="a">Visible</header>
     <header id="b" style="display:none">Hidden duplicate</header>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
@@ -157,6 +157,6 @@ test(`${RULE_ID} (node runtime): a display:none duplicate header is excluded (no
   const result = runNode(html);
   const rule = ruleFrom(result);
   assert.ok(rule);
-  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });

@@ -102,7 +102,7 @@ function runInPage(ctx) {
   }
 
   if (hasMain) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
   return {

@@ -41,10 +41,10 @@ test(`${RULE_ID}: notApplicable when no contentinfo is present`, () => {
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when there is exactly one contentinfo`, () => {
+test(`${RULE_ID}: pass when there is exactly one contentinfo`, () => {
   const html = `<!doctype html><html><body><footer>Site footer</footer></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell with one occurrence per contentinfo when more than one exists`, () => {
@@ -67,22 +67,22 @@ test(`${RULE_ID}: cantTell when a <footer> nested inside an ancestor whose role 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
-test(`${RULE_ID}: notApplicable when a <footer> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag still suppresses contentinfo; only an explicit role override on the ancestor changes the outcome`, () => {
+test(`${RULE_ID}: pass when a second <footer> is nested inside a plain (no role override) <aside>, since the ancestor's bare tag suppresses its contentinfo role, leaving one contentinfo; only an explicit role override on the ancestor changes the outcome`, () => {
   const html = `<!doctype html><html><body>
     <footer id="a">Site footer</footer>
     <aside aria-label="Related"><footer id="b">Not a landmark</footer></aside>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the only "duplicate" contentinfo is display:none (a responsive desktop/mobile pattern)`, () => {
+test(`${RULE_ID}: pass when the only "duplicate" contentinfo is display:none (a responsive desktop/mobile pattern)`, () => {
   const html = `<!doctype html><html><body>
     <footer id="a">Visible</footer>
     <footer id="b" style="display:none">Hidden duplicate</footer>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: cantTell when a second contentinfo landmark lives inside a shadow root`, () => {
@@ -174,6 +174,6 @@ test(`${RULE_ID} (node runtime): a display:none duplicate footer is excluded (no
   const result = runNode(html);
   const rule = ruleFrom(result);
   assert.ok(rule);
-  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });
