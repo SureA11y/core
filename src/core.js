@@ -23019,24 +23019,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B), matching getAriaNameInfo's own precedence.
-      const labelledBy = trim(getAttr(el, 'aria-labelledby'));
-      if (labelledBy) {
-        const parts = labelledBy.split(/\s+/).filter(Boolean);
-        const texts = [];
-        for (const id of parts) {
-          let ref = safeDocGetById(id);
-          if (!ref) ref = safeRootQueryById(id);
-          if (ref && isElement(ref)) {
-            const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
-            if (t) texts.push(t);
-          }
-        }
-        const joined = trim(texts.join(' '));
-        if (joined) return joined;
-      }
-
+      // A referenced node's own aria-labelledby is not followed: accname 1.2
+      // step 2B applies only to a node not already part of an
+      // aria-labelledby traversal, and every node here is. So a target named
+      // by a further aria-labelledby gives its own text, and an element that
+      // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
+      // its content, as Chrome computes them.
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -77515,24 +77503,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B), matching getAriaNameInfo's own precedence.
-      const labelledBy = trim(getAttr(el, 'aria-labelledby'));
-      if (labelledBy) {
-        const parts = labelledBy.split(/\s+/).filter(Boolean);
-        const texts = [];
-        for (const id of parts) {
-          let ref = safeDocGetById(id);
-          if (!ref) ref = safeRootQueryById(id);
-          if (ref && isElement(ref)) {
-            const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
-            if (t) texts.push(t);
-          }
-        }
-        const joined = trim(texts.join(' '));
-        if (joined) return joined;
-      }
-
+      // A referenced node's own aria-labelledby is not followed: accname 1.2
+      // step 2B applies only to a node not already part of an
+      // aria-labelledby traversal, and every node here is. So a target named
+      // by a further aria-labelledby gives its own text, and an element that
+      // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
+      // its content, as Chrome computes them.
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
