@@ -452,14 +452,23 @@ function runInPage(ctx) {
     return hasVisibleImageChild(el) || hasPseudoContent(el);
   }
 
+  // Whether the link's parent holds text of its own beside it. The link is
+  // an element, so that is a property of the parent alone, and it is read
+  // once per parent: scanning every sibling for every link made a parent
+  // with thousands of links take seconds, quadratic in the links.
+  const parentHasText = new Map();
   function hasSurroundingText(el, parent) {
-    if (!parent || !parent.childNodes) return false;
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const n = parent.childNodes[i];
-      if (n === el) continue;
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) return true;
+    if (!parent) return false;
+    if (parentHasText.has(parent)) return parentHasText.get(parent);
+    let found = false;
+    for (let n = parent.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) {
+        found = true;
+        break;
+      }
     }
-    return false;
+    parentHasText.set(parent, found);
+    return found;
   }
 
   const contrastOpts =
