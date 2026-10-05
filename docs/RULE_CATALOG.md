@@ -2287,6 +2287,8 @@ WCAG 1.4.12: with line height at 1.5 times the font size, spacing after paragrap
 
 Without a layout and with no such rule, the rule is notApplicable, with `data.reason: 'noLayout'`.
 
+- Margin (`overflow-px`): of the text a clipping box keeps in full, the line that came closest to being cut off. `value` is how far it reaches past the box's edge, negative while it is still inside, against the same threshold as a finding; `context.axis` and `context.text` say which edge and which text. It is measured where text grows with more spacing, the inline end (the right, or the left in right-to-left text) and the bottom; a start edge counts only once a line is past it. An axis on which the box grew with the spacing (a block of auto height) follows its content and is left out, and vertical text gets no margin. `measuredCount` counts the pairs of text and clipping box compared.
+
 **What a finding reports.**
 
 - `text`: the start of the text, up to 60 characters. Not on a style sheet rule's finding.
@@ -2297,6 +2299,8 @@ Without a layout and with no such rule, the rule is notApplicable, with `data.re
 - `viewport.width`, `viewport.height` (cut-off or overlapping text): the viewport the page was laid out in, in CSS pixels. Text that fits at one width can be cut off at another.
 - `other` (overlapping text): the text it comes to overlap.
 - `selector`, `property`, `value` (a style sheet rule): the rule's selector and the declaration that forces the spacing.
+
+**Margin.** `overflow-px`, in CSS pixels: the value must stay under the threshold, and the result's `margin` names the element that came closest while meeting it.
 
 ### `textbox-name-present`
 
