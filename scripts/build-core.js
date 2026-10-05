@@ -1537,6 +1537,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
           o.html = '';
         }
       }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
 
     // A more robust element-identity mechanism than the CSS selector string

@@ -124,6 +124,12 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {
