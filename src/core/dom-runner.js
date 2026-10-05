@@ -1321,17 +1321,24 @@ function runCoreSettled(
   // are data the run read, not a setting, and repeating them on every result
   // made a scan with a loaded locale tens of megabytes. engine.locale says
   // which dictionary the run used.
+  // Two more options are echoed as the rules saw them rather than as given,
+  // so a result stays plain data that JSON.stringify and structuredClone
+  // (postMessage to an extension or a worker) can carry: `probes` as the
+  // capped copy rules read (the raw object could be circular, or megabytes
+  // repeated on every result), and `customRules` as their ids (the rules'
+  // functions cannot be cloned, and their source repeated on every result).
+  const echoedCustomRules = rawCustomRules
+    .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
+    .map((c) => ({ id: c.id.trim() }));
   for (const r of checksResults.concat(rulesResults)) {
-    if (
-      r &&
-      r.engineOptions &&
-      typeof r.engineOptions === 'object' &&
-      'messages' in r.engineOptions
-    ) {
-      const echoed = { ...r.engineOptions };
-      delete echoed.messages;
-      r.engineOptions = echoed;
-    }
+    if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
+    const eo = r.engineOptions;
+    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    const echoed = { ...eo };
+    delete echoed.messages;
+    if ('probes' in echoed) echoed.probes = probes;
+    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    r.engineOptions = echoed;
   }
 
   // Each rule result names the rollups that group it in this run. An empty
