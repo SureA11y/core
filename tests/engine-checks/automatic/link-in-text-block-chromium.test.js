@@ -119,3 +119,53 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 });
+
+test(
+  `${RULE_ID} in Chromium: cues on the link's content, wrappers and transparent lines`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const A = 'href="/" style="text-decoration:none;color:#222"';
+    async function outcome(paragraph) {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(
+          '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
+            `<body><main><p style="color:#000">Read the ${paragraph} today.</p></main></body></html>`
+        );
+        await p.addScriptTag({ content: BUNDLE });
+        return await p.evaluate(
+          (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
+          RULE_ID
+        );
+      } finally {
+        await p.close();
+      }
+    }
+    // The cue sits on an element inside the link.
+    assert.equal(await outcome(`<a ${A}><strong>guide</strong></a>`), 'pass');
+    assert.equal(await outcome(`<a ${A}><em>guide</em></a>`), 'pass');
+    assert.equal(
+      await outcome(`<a ${A}><span style="text-decoration:underline">guide</span></a>`),
+      'pass'
+    );
+    // A wrapper holding only the link takes its parent's text, unless the
+    // wrapper sets the link apart itself, as a footnote's <sup> does.
+    assert.equal(await outcome(`<span><a ${A}>guide</a></span>`), 'fail');
+    assert.equal(await outcome(`<sup><a ${A}>[1]</a></sup>`), 'notApplicable');
+    // A line in a transparent color shows nothing.
+    assert.equal(
+      await outcome(
+        '<a href="/" style="color:#222;text-decoration:underline;text-decoration-color:transparent">guide</a>'
+      ),
+      'fail'
+    );
+    assert.equal(
+      await outcome(
+        '<a href="/" style="color:#222;text-decoration:none;border-bottom:1px solid transparent">guide</a>'
+      ),
+      'fail'
+    );
+  }
+);
