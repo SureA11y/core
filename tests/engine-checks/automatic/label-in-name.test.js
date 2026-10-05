@@ -411,3 +411,12 @@ test(`${RULE_ID}: a <select> whose visible <label> is missing from its aria-labe
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: a link listed in its own aria-labelledby keeps its text in the name`, () => {
+  // accname 1.2 step 2B: the link's own aria-labelledby is not followed again
+  // when the traversal reaches it, so it contributes its content, as in
+  // Chrome: "Read more Pricing".
+  const html = `<a id="r1" href="/p" aria-labelledby="r1 t1">Read more</a> <span id="t1">Pricing</span>`;
+  const res = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(res, RULE_ID, 'pass');
+});
