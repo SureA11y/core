@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>&lt;img src=x onerror=alert(&quot;title&quot;)&gt; — Oct 5, 2026, 12:52:23 PM</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0 0 48px; background: #fafafa; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #16181c; color: #e6e6e6; }
+    .tile, .wcag-table, .findings-table, .hero, .card, details { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    .wcag-table th, .findings-table th { background: #262a30 !important; color: #e6e6e6 !important; }
+    a { color: #7db6ff; }
+    input, select { background: #1f2227; color: #e6e6e6; border-color: #3a3d44; }
+    .meta-bar { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    .hero-bar { background: #2a2d33; }
+    summary { color: #e6e6e6 !important; }
+  }
+  header { padding: 24px 32px; background: #202531; color: #fff; }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header .sub { opacity: 0.8; font-size: 13px; }
+  .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 12px 32px; background: #fff; border-bottom: 1px solid #ddd; font-size: 13px; }
+  .meta-bar b { display: block; font-size: 15px; }
+  main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+  h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin: 32px 0 12px; }
+  h3.wcag-level-heading { font-size: 14px; margin: 20px 0 8px; }
+
+  .hero { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
+  .hero-headline { font-size: 17px; margin: 0 0 16px; line-height: 1.5; }
+  .hero-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #eee; }
+  .hero-bar-seg { height: 100%; }
+  .hero-bar-seg:not(:last-child) { border-right: 2px solid #fff; }
+  @media (prefers-color-scheme: dark) { .hero-bar-seg:not(:last-child) { border-right-color: #16181c; } }
+  .hero-legend { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 16px; }
+  .hero-legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .hero-legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .hero-legend-count { opacity: 0.65; font-variant-numeric: tabular-nums; }
+
+  .cards { display: grid; gap: 10px; margin-bottom: 8px; }
+  .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; background: #fff; }
+  .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .card-title { font-size: 13.5px; }
+  .card-count { font-weight: 700; opacity: 0.65; font-variant-numeric: tabular-nums; }
+  .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .card-selector { font-size: 12px; margin-bottom: 6px; word-break: break-all; }
+  .card-selector-label { opacity: 0.65; margin-right: 4px; }
+  .card-selector code { font-family: ui-monospace, monospace; background: #f0f0f2; border-radius: 4px; padding: 1px 5px; user-select: all; }
+  @media (prefers-color-scheme: dark) { .card-selector code { background: #2a2d33 !important; } }
+  .card-snippet { font-family: ui-monospace, monospace; font-size: 11.5px; background: #f7f7f8; border-radius: 5px; padding: 6px 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  @media (prefers-color-scheme: dark) { .card-snippet { background: #262a30 !important; } }
+  .card-note { font-size: 11px; opacity: 0.6; margin: 6px 0 0; }
+
+  details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
+  details.tech-details summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: #333; list-style: none; }
+  details.tech-details summary::-webkit-details-marker { display: none; }
+  details.tech-details summary::before { content: '▶'; display: inline-block; margin-right: 8px; font-size: 11px; transition: transform 0.15s; }
+  details.tech-details[open] summary::before { transform: rotate(90deg); }
+  details.tech-details > .tech-body { padding: 0 18px 20px; }
+
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tile { border: 1.5px solid; border-radius: 8px; padding: 12px 14px; }
+  .tile-num { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .tile-pct { font-size: 12px; opacity: 0.75; }
+  .tile-label { font-size: 12.5px; margin-top: 4px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  .wcag-table, .findings-table { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .wcag-table th, .wcag-table td, .findings-table th, .findings-table td { padding: 5px 8px; border-bottom: 1px solid #eee; text-align: left; }
+  .wcag-table th, .findings-table th { background: #f2f2f4; position: sticky; top: 0; font-size: 11px; }
+  .sc-cell { font-family: ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
+  .filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
+  .filters label { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; cursor: pointer; user-select: none; }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+  .findings-table td.snippet { font-family: ui-monospace, monospace; font-size: 11px; max-width: 320px; overflow-x: auto; white-space: pre; }
+  .pager { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 13px; }
+  .pager button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
+  .pager button:disabled { opacity: 0.4; cursor: default; }
+  .note { font-size: 12.5px; opacity: 0.75; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&lt;img src=x onerror=alert(&quot;title&quot;)&gt;</h1>
+  <div class="sub">http://127.0.0.1:34849/empty — generated Oct 5, 2026, 12:52:23 PM</div>
+</header>
+
+<div class="meta-bar">
+  <div><b>134</b>rules run</div>
+  <div><b>5</b>total occurrences</div>
+  <div><b>a11ycore</b>engine</div>
+  <div><b>1.0.0</b>schema version</div>
+  <div><b>WCAG 2.2</b>target</div>
+  <div><b>1280×720</b>viewport</div>
+  <div><b>light</b>color scheme</div>
+  <div><b>en</b>locale</div>
+</div>
+
+<main>
+  <div class="hero">
+    <p class="hero-headline"><strong>5</strong> of <strong>10</strong> applicable checks passed, with <strong>5</strong> needing manual review.</p>
+    <div class="hero-bar"><div class="hero-bar-seg" style="width:3.731343283582089%; background:#8a6400" title="Needs review: 5 (3.7%)"></div><div class="hero-bar-seg" style="width:3.731343283582089%; background:#0ca30c" title="Pass: 5 (3.7%)"></div><div class="hero-bar-seg" style="width:92.53731343283582%; background:#5f6368" title="Not applicable: 124 (92.5%)"></div></div>
+    <div class="hero-legend"><div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="hero-legend-label">Fail</span>
+        <span class="hero-legend-count">0 (0.0%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="hero-legend-label">Needs review</span>
+        <span class="hero-legend-count">5 (3.7%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#0ca30c">✓</span>
+        <span class="hero-legend-label">Pass</span>
+        <span class="hero-legend-count">5 (3.7%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#5f6368">–</span>
+        <span class="hero-legend-label">Not applicable</span>
+        <span class="hero-legend-count">124 (92.5%)</span>
+      </div></div>
+  </div>
+
+  <h2>Worth reviewing</h2>
+  <div class="cards"><div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>bypass-blocks-present</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists. — Confirm the page offers a bypass mechanism: a main landmark (&lt;main&gt; or role=&quot;main&quot;), a working &quot;skip to content&quot; link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>landmark-one-main</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">This page has no main landmark. — Add a main landmark (&lt;main&gt; or role=&quot;main&quot;) around the page&#39;s primary content.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>manual-review</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.1.1</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.3</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.7</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html</code></div>
+        <div class="card-snippet">Manual review: keyboard navigation and focus order — Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>page-has-heading-one</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">This page has no level-one heading. — Add a level-one heading (&lt;h1&gt; or role=&quot;heading&quot; aria-level=&quot;1&quot;) that identifies the page&#39;s main content.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>page-title-patterns</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>head &gt; title</code></div>
+        <div class="card-snippet">The page title is very short and may not identify the page topic or purpose. — Review the page title and ensure it clearly identifies the page topic or purpose and helps distinguish the page from others.</div>
+        
+      </div>
+    </div></div>
+  
+
+  <h2>WCAG rollup</h2>
+  <h3 class="wcag-level-heading">Level A</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.1.1</td>
+            <td>Non-text content: text alternatives</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 21 n/a</td>
+            <td class="note">area-alt-present, img-alt-decorative, img-alt-quality, area-alt-quality, canvas-text-alternative-quality, canvas-text-alternative-present, embed-text-alternative-present, img-alt-present, input-image-alt-present, object-text-alternative-present, role-img-text-alternative-present, svg-image-text-alternative-present, svg-text-alternative-present, video-poster-text-alternative-present, embed-text-alternative-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality, meter-name-present, progressbar-name-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.2.1</td>
+            <td>Audio-only and video-only (prerecorded): transcript</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">media-alternative-transcript-evidence</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.2.2</td>
+            <td>Captions (Prerecorded)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">video-caption</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.3.1</td>
+            <td>Info and Relationships</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 13 n/a</td>
+            <td class="note">table-headers-attr-valid, table-th-has-data-cells, aria-hidden-body, list-children-valid, listitem-parent-valid, definition-list-children-valid, dlitem-parent-valid, aria-required-children, aria-prohibited-children, aria-required-parent, form-control-programmatic-label-present, p-as-heading, table-fake-caption, td-has-header</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.1</td>
+            <td>Use of Color</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">link-in-text-block</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.2</td>
+            <td>Audio Control</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">no-autoplay-audio</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.1.1</td>
+            <td>Keyboard</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">1 pass / 0 fail / 1 needs review / 3 n/a</td>
+            <td class="note">manual-review, iframe-focusable-content, server-side-image-map-absent, scrollable-region-focusable, mouse-only-event-handlers</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.1</td>
+            <td>Timing Adjustable</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-timing-absent</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.2</td>
+            <td>Pause, Stop, Hide</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 0 n/a</td>
+            <td class="note">deprecated-elements-not-used</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.1</td>
+            <td>Bypass Blocks</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">bypass-blocks-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.2</td>
+            <td>Page titled</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">1 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">page-title-patterns, page-title-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.3</td>
+            <td>Focus order</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">manual-review</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.4</td>
+            <td>Link Purpose (In Context)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">link-name-present, link-name-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.5.3</td>
+            <td>Label in name</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">label-in-name</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.1.1</td>
+            <td>Language of page</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">html-lang-attr-present, html-xml-lang-mismatch</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.3.2</td>
+            <td>Labels or Instructions</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 3 n/a</td>
+            <td class="note">form-control-single-label, form-control-programmatic-label-present, form-control-programmatic-label-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.1</td>
+            <td>Parsing</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">duplicate-id</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.2</td>
+            <td>Name, role, value: accessible name</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 22 n/a</td>
+            <td class="note">aria-role-name-present, binary-control-name-present, button-name-present, combobox-name-present, dialog-name-present, form-control-programmatic-label-present, iframe-name-present, iframe-title-unique, identical-iframes-same-purpose, link-name-present, listbox-name-present, menuitem-name-present, option-name-present, searchbox-name-present, slider-name-present, spinbutton-name-present, tab-name-present, textbox-name-present, treeitem-name-present, aria-hidden-focus, aria-hidden-body, summary-name-present, tooltip-name-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.2</td>
+            <td>Name, role, value: ARIA validity</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 13 n/a</td>
+            <td class="note">aria-roles-valid, aria-deprecated-role, aria-valid-attr, aria-valid-attr-value, aria-allowed-attr, aria-prohibited-attr, aria-required-attr, duplicate-id-aria, nested-interactive-controls-absent, presentational-children-focusable-absent, aria-braille-equivalent, aria-conditional-attr, aria-checked-state-mismatch</td>
+          </tr></tbody>
+      </table>
+<h3 class="wcag-level-heading">Level AA</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.3.4</td>
+            <td>Orientation</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">css-orientation-lock</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.3.5</td>
+            <td>Identify Input Purpose</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">autocomplete-valid</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.3</td>
+            <td>Contrast: minimum</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">contrast-computable, contrast-minimum</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.4</td>
+            <td>Resize Text</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-viewport-zoom-enabled</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.12</td>
+            <td>Text Spacing</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">avoid-inline-spacing, text-spacing-content-loss</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.6</td>
+            <td>Headings and Labels</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">heading-quality, form-control-label-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.7</td>
+            <td>Focus visible</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 3 n/a</td>
+            <td class="note">aria-hidden-focus, css-hidden-focus, css-focus-indicator-suppressed, manual-review</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.5.8</td>
+            <td>Target size: minimum</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">target-size-minimum</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.1.2</td>
+            <td>Language of Parts</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">valid-lang</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.3.8</td>
+            <td>Accessible Authentication (Minimum)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">password-paste-enabled</td>
+          </tr></tbody>
+      </table>
+<h3 class="wcag-level-heading">Level AAA</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.4.6</td>
+            <td>Contrast: enhanced</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">contrast-computable, contrast-enhanced</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.1.3</td>
+            <td>Keyboard (No Exception)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">scrollable-region-focusable</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.4</td>
+            <td>Interruptions</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-no-exceptions</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.9</td>
+            <td>Link Purpose (Link Only)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">identical-links-same-purpose</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.2.5</td>
+            <td>Change on Request</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-no-exceptions</td>
+          </tr></tbody>
+      </table>
+
+  <details class="tech-details">
+    <summary>Full technical data — scorecard, searchable occurrence browser</summary>
+    <div class="tech-body">
+      <h2>Scorecard</h2>
+      <div class="scorecard"><div class="tile" style="border-color:#c1502e; background:#fdece5">
+      <div class="tile-num" style="color:#c1502e">0</div>
+      <div class="tile-pct">0.0%</div>
+      <div class="tile-label">Fail</div>
+    </div>
+<div class="tile" style="border-color:#8a6400; background:#fdf3d9">
+      <div class="tile-num" style="color:#8a6400">5</div>
+      <div class="tile-pct">3.7%</div>
+      <div class="tile-label">Needs review</div>
+    </div>
+<div class="tile" style="border-color:#0ca30c; background:#e9f7e9">
+      <div class="tile-num" style="color:#0ca30c">5</div>
+      <div class="tile-pct">3.7%</div>
+      <div class="tile-label">Pass</div>
+    </div>
+<div class="tile" style="border-color:#5f6368; background:#f1f2f3">
+      <div class="tile-num" style="color:#5f6368">124</div>
+      <div class="tile-pct">92.5%</div>
+      <div class="tile-label">Not applicable</div>
+    </div></div>
+
+      <h2>Occurrences</h2>
+      <div class="filters" id="filters"></div>
+      <input type="search" id="search" aria-label="Search rule id / selector / html…" placeholder="Search rule id / selector / html…" style="margin-bottom:10px; padding:6px 10px; border:1px solid #ccc; border-radius:5px; font-size:13px; width:100%; max-width:480px;">
+      <div style="overflow-x:auto;">
+        <table class="findings-table" id="findings-table">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Outcome</th>
+              <th>Severity</th>
+              <th>Selector</th>
+              <th>Summary</th>
+            </tr>
+          </thead>
+          <tbody id="findings-body"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button id="prev-page">&larr; Prev</button>
+        <span id="page-info"></span>
+        <button id="next-page">Next &rarr;</button>
+      </div>
+    </div>
+  </details>
+</main>
+
+<script type="application/json" id="report-data">[{"ruleId":"bypass-blocks-present","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body","html":"\u003cbody>\u003c/body>","summary":"No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.","summaryLang":"","hint":"Confirm the page offers a bypass mechanism: a main landmark (\u003cmain> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)"},{"ruleId":"landmark-one-main","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body","html":"\u003cbody>\u003c/body>","summary":"This page has no main landmark.","summaryLang":"","hint":"Add a main landmark (\u003cmain> or role=\"main\") around the page's primary content."},{"ruleId":"manual-review","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html","html":"","summary":"Manual review: keyboard navigation and focus order","summaryLang":"","hint":"Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible."},{"ruleId":"page-has-heading-one","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body","html":"\u003cbody>\u003c/body>","summary":"This page has no level-one heading.","summaryLang":"","hint":"Add a level-one heading (\u003ch1> or role=\"heading\" aria-level=\"1\") that identifies the page's main content."},{"ruleId":"page-title-patterns","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"head > title","html":"\u003ctitle>E\u003c/title>","summary":"The page title is very short and may not identify the page topic or purpose.","summaryLang":"","hint":"Review the page title and ensure it clearly identifies the page topic or purpose and helps distinguish the page from others."}]</script>
+<script>
+(function () {
+  var OUTCOME_INFO = {"fail":{"label":"Fail","defaultOn":true,"color":"#c1502e","bg":"#fdece5","icon":"⚠"},"cantTell":{"label":"Needs review","defaultOn":true,"color":"#8a6400","bg":"#fdf3d9","icon":"ℹ"},"pass":{"label":"Pass","defaultOn":false,"color":"#0ca30c","bg":"#e9f7e9","icon":"✓"},"notApplicable":{"label":"Not applicable","defaultOn":false,"color":"#5f6368","bg":"#f1f2f3","icon":"–"}};
+  var ORDER = ["fail","cantTell","pass","notApplicable"];
+  var DEFAULT_ON = ["fail","cantTell"];
+  var rows = JSON.parse(document.getElementById('report-data').textContent);
+
+  var PAGE_SIZE = 100;
+  var TEXT = {"none":"No matching occurrences","info":"Page {{page}} / {{pages}}  ({{matching}} matching, {{total}} total)"};
+  var numberFormat = new Intl.NumberFormat("en");
+  function fill(template, values) {
+    return template.replace(/\{\{(\w+)\}\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m;
+    });
+  }
+  var page = 0;
+  var active = {};
+  DEFAULT_ON.forEach(function (c) { active[c] = true; });
+
+  var filtersEl = document.getElementById('filters');
+  ORDER.forEach(function (c) {
+    var info = OUTCOME_INFO[c];
+    var id = 'chk-' + c;
+    var label = document.createElement('label');
+    var checked = DEFAULT_ON.indexOf(c) !== -1;
+    label.innerHTML = '<input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '> ' +
+      '<span class="chip" style="background:' + info.bg + ';color:' + info.color + '">' + c + '</span>';
+    filtersEl.appendChild(label);
+    label.querySelector('input').addEventListener('change', function (e) {
+      active[c] = e.target.checked;
+      page = 0;
+      render();
+    });
+  });
+
+  var searchEl = document.getElementById('search');
+  var bodyEl = document.getElementById('findings-body');
+  var pageInfoEl = document.getElementById('page-info');
+  var prevBtn = document.getElementById('prev-page');
+  var nextBtn = document.getElementById('next-page');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function matches(r, q) {
+    if (!active[r.outcome]) return false;
+    if (!q) return true;
+    var hay = (r.ruleId + ' ' + r.selector + ' ' + r.html + ' ' + r.summary).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function render() {
+    var q = searchEl.value.trim().toLowerCase();
+    var filtered = rows.filter(function (r) { return matches(r, q); });
+    var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (page >= totalPages) page = totalPages - 1;
+    if (page < 0) page = 0;
+
+    var slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+    bodyEl.innerHTML = slice.map(function (r) {
+      var info = OUTCOME_INFO[r.outcome];
+      var chip = '<span class="chip" style="background:' + info.bg + ';color:' + info.color + '">' + r.outcome + '</span>';
+      return '<tr>' +
+        '<td class="snippet">' + esc(r.ruleId) + '</td>' +
+        '<td>' + chip + '</td>' +
+        '<td>' + esc(r.severityLabel) + '</td>' +
+        '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
+        '<td class="snippet"' + (r.summaryLang ? ' lang="' + esc(r.summaryLang) + '"' : '') + '>' + esc(r.summary) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    pageInfoEl.textContent = filtered.length === 0
+      ? TEXT.none
+      : fill(TEXT.info, {
+          page: numberFormat.format(page + 1),
+          pages: numberFormat.format(totalPages),
+          matching: numberFormat.format(filtered.length),
+          total: numberFormat.format(rows.length)
+        });
+    prevBtn.disabled = page <= 0;
+    nextBtn.disabled = page >= totalPages - 1;
+  }
+
+  searchEl.addEventListener('input', function () { page = 0; render(); });
+  prevBtn.addEventListener('click', function () { page--; render(); });
+  nextBtn.addEventListener('click', function () { page++; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

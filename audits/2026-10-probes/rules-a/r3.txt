@@ -1,0 +1,25 @@
+OTHER [allowed-attr 2 <label><input type=checkbox aria-checked=mixed> All</label>] aria-checked-state-mismatch=cantTell | <input type="checkbox" aria-checked="mixed"> :: This element’s aria-checked value does not match its actual checked/indeterminate state.
+OTHER [allowed-attr 18 <input type=text aria-label=n aria-required=true aria-readon] form-control-programmatic-label-quality=cantTell | <input type="text" aria-label="n" aria-required="true" aria-readonly="true"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [allowed-attr 22 <img src=x.png alt="Chart" aria-describedby=dd3><p id=dd3>lo] img-alt-quality=cantTell | <img src="x.png" alt="Chart" aria-describedby="dd3"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [allowed-attr 26 <div role=row aria-rowindex=2></div>] aria-required-children=cantTell | <div role="row" aria-rowindex="2"></div> :: role="row" has no owned child with one of the required roles: cell, gridcell, columnheader, rowheader.
+OTHER [allowed-attr 26 <div role=row aria-rowindex=2></div>] aria-required-parent=fail | <div role="row" aria-rowindex="2"></div> :: role="row" requires a context role of one of: rowgroup, grid, table, treegrid, which was not found.
+OTHER [allowed-attr 27 <input type=checkbox aria-label=x aria-pressed=true>] aria-allowed-attr=fail | <input type="checkbox" aria-label="x" aria-pressed="true"> :: aria-pressed is not permitted on role="checkbox".
+OTHER [allowed-attr 27 <input type=checkbox aria-label=x aria-pressed=true>] form-control-programmatic-label-quality=cantTell | <input type="checkbox" aria-label="x" aria-pressed="true"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [allowed-attr 29 <div role=tabpanel aria-label=p aria-expanded=true>x</div>] aria-allowed-attr=fail | <div role="tabpanel" aria-label="p" aria-expanded="true">x</div> :: aria-expanded is not permitted on role="tabpanel".
+OTHER [select size listbox] form-control-programmatic-label-present=fail | <select size="4"><option>a</option></select> :: Form control is missing a programmatic label.
+OTHER [link aria-label role=presentation] aria-allowed-role=cantTell | <a href="/" role="presentation" aria-label="Home"></a> :: role="presentation" is not permitted on <a>.
+OTHER [link aria-label role=presentation] aria-prohibited-attr=fail | <a href="/" role="presentation" aria-label="Home"></a> :: aria-label is prohibited on role="presentation".
+OTHER [link aria-label role=presentation] presentation-role-conflict=cantTell | <a href="/" role="presentation" aria-label="Home"></a> :: This role="presentation" element also has a conflicting condition (aria-label, focusable), which restores its implicit role and cancels the 
+OTHER [img alt empty + aria-label] img-alt-decorative=cantTell | <img src="x.png" alt="" aria-label="Cat"> :: Review whether this <img> is decorative.
+OTHER [img alt empty + aria-label] presentation-role-conflict=cantTell | <img src="x.png" alt="" aria-label="Cat"> :: This role="presentation" element also has a conflicting condition (aria-label), which restores its implicit role and cancels the presentatio
+OTHER [label for + aria-label] form-control-programmatic-label-quality=cantTell | <input id="lab" type="text" aria-label="Name"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [tab with img alt] img-alt-quality=cantTell | <img src="x.png" alt="Home"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [heading in shadow order] heading-order=cantTell | <h4>Deep</h4> :: This heading jumps from level 1 to level 4, skipping a level.
+MISMATCH J [slotted li into shadow ul] listitem-parent-valid: expected pass got fail | <li>a</li> :: This list item's parent (<x-list>) is not a list container.
+MISMATCH C [slotted li into shadow ul] listitem-parent-valid: expected pass got fail | <li>a</li> :: This list item's parent (<x-list>) is not a list container.
+OTHER [slotted li into shadow ul] list-children-valid=fail | <ul><slot></slot></ul> :: This <ul> contains a direct child that is not a list item: slot.
+MISMATCH J [nested interactive via shadow] nested-interactive-controls-absent: expected fail got pass | 
+MISMATCH C [nested interactive via shadow] nested-interactive-controls-absent: expected fail got pass | 
+MISMATCH J [aria-valid-attr-value labelledby to light from shadow] aria-valid-attr-value: expected !pass got pass | 
+MISMATCH C [aria-valid-attr-value labelledby to light from shadow] aria-valid-attr-value: expected !pass got pass | 
+OTHER [aria-valid-attr-value labelledby to light from shadow] form-control-programmatic-label-quality=cantTell | <input aria-labelledby="onlylight"> :: Form control’s name comes from aria-labelledby, which is not shown on screen.

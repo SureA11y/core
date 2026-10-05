@@ -1,0 +1,2 @@
+const {launch}=require('./lib.cjs'); const fs=require('fs');
+(async()=>{ const b=await launch(); const p=await b.newPage(); p.on('pageerror',e=>console.log('ERR',e.message)); await p.goto('data:text/html,<p>x</p>'); await p.addScriptTag({content:fs.readFileSync('proj/bundled.js','utf8'),type:'module'}); await p.waitForTimeout(500); console.log(JSON.stringify(await p.evaluate(()=>window.__res))); await b.close(); })();

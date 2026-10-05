@@ -1,0 +1,12 @@
+const { run, pick } = require('./h');
+const fs=require('fs');
+let cap;
+const o = run({ rules:{'z-ctx':{foo:1, excludeSelectors:['.skip']}}, probes:{a:{b:1}, fn:()=>1}, customRules:[{ id:'z-ctx', meta:{title:'C'}, data:{d:1}, runInPage: (ctx)=>{ cap = { keys:Object.keys(ctx), helpers:Object.keys(ctx.helpers).sort(), contrast: ctx.helpers.contrast?Object.keys(ctx.helpers.contrast).sort():null, aria: ctx.helpers.aria?Object.keys(ctx.helpers.aria).sort():null, config:ctx.config, probes:ctx.inputs.probes, ruleKeys:Object.keys(ctx.rule), data:ctx.rule.data, onclick: ctx.helpers.queryAll('[onclick]').length, standard: ctx.standard, ctxSel: ctx.contextSelector }; return {outcome:'pass',occurrences:[]}; } }] }, ['z-ctx']);
+console.log(JSON.stringify({...cap, helpers: cap.helpers.length}, null, 0));
+const doc = fs.readFileSync('/home/user/core/docs/RULE_HELPERS.md','utf8');
+const documented = new Set([...doc.matchAll(/`([A-Za-z_]\w*)\(/g)].map(m=>m[1]).concat([...doc.matchAll(/^###\s+`([A-Za-z_]\w*)/gm)].map(m=>m[1])));
+const undocumented = cap.helpers.filter(h=>!documented.has(h) && !doc.includes('`'+h+'`') && !doc.includes(h+'('));
+const ghost = [...new Set([...doc.matchAll(/^###\s+`([A-Za-z_]\w*)/gm)].map(m=>m[1]))].filter(h=>!cap.helpers.includes(h));
+console.log('helpers total', cap.helpers.length, '\nundocumented:', undocumented.join(', '), '\ndocumented-but-missing:', ghost.join(', '));
+const undocC = (cap.contrast||[]).filter(h=>!doc.includes(h)); const undocA=(cap.aria||[]).filter(h=>!doc.includes(h));
+console.log('contrast undocumented', undocC.join(','), '\naria undocumented', undocA.join(','));

@@ -2,6 +2,8 @@
 
 Stress test of `main` at `63af298` (package version 1.9.0 plus the unreleased 1.10.0 changes). It looks for regressions, gaps between the docs and what the code does, and problems for anyone who extends or consumes the engine: custom rules and profiles, bindings, the browser extension, the CLI and surea11y-lab.
 
+> **Status: in progress.** Sections 2–5 are complete as a list of findings. Section 6 is incomplete (only unverified leads). Only R-4 is written to full depth. See [§8 Continuing this audit](#8-continuing-this-audit) for what's left.
+
 **How it was run.** About 2,000 scans:
 - under jsdom (`runDomRulesInPage`);
 - in Chromium through Playwright, with both `page.evaluate(runa11yCoreInPage)` and the standalone `surea11y.browser.js`;
@@ -488,7 +490,57 @@ What a third party meets when adding rules (`engineOptions.customRules`) or a st
 
 ## 6. Rules — ARIA, names, forms and structure
 
-_In progress — will be added when that pass completes._
+**Status: incomplete.** This pass was stopped before it reported. Nothing below has been reviewed or re-checked yet: these are **leads**, taken from the probe output files, to verify in the next session. Do not quote them as findings until they are verified.
+
+**What was done**
+- **Corpus:** `corpus.js`, `corpus2.js` and `corpus3.js` hold real-world markup with the outcome expected for each case. The cases cover:
+  - accessible-name edge cases;
+  - role conflicts;
+  - labels and duplicate ids;
+  - shadow DOM and slots;
+  - `lang` values;
+  - `autocomplete` tokens;
+  - tables, lists, SVG and media.
+- **Runs:** `harness.js` runs each case under jsdom (`J`) and in Chromium (`C`). The output is in `report.txt` (first corpus), `r2.txt` and `r3.txt`.
+- **Fuzz and timing scripts:** `fuzz.js`, `perf.js`, `full1.js`, `full2.js`, `perrule.js` and `sib1.js`, with output in `sib.txt`.
+- **Location:** everything is in [`2026-10-probes/rules-a/`](./2026-10-probes/rules-a/). The large `results.json`, `r2.json` and `r3.json` were not kept.
+
+**Do not trust `report.txt`'s Chromium column.**
+- It shows dozens of "expected pass, got `notApplicable`" across unrelated rules: `textbox-name-present`, `valid-lang`, `td-has-header`, `svg-image-text-alternative-present`, `autocomplete-valid` and others.
+- `r2.txt` and `r3.txt`, run later with the same harness, don't show this pattern.
+- So it is most likely a harness problem in the first run (for example the content not loaded, or the wrong scope), not an engine bug. Re-run `corpus.js` before reading anything from it.
+
+**Leads where jsdom and Chromium agree** (`r2.txt`, `r3.txt`)
+
+| Rule | Markup | Got | Lead |
+|---|---|---|---|
+| label-in-name | `<a id="r1" aria-labelledby="r1 t1">Read more</a>` + `<h3 id="t1">Pricing</h3>` | fail | The name is "Read more Pricing", which contains the visible label. Likely false positive (self-reference in `aria-labelledby`). |
+| link-name-present | `<a href="/" role="none">Home</a>` | fail "no accessible name" | A focusable element ignores `role=none` (the presentational-roles conflict), so the name is "Home". Likely false positive. |
+| button-name-present | `<button role="presentation">Save</button>` | fail | Same conflict. Likely false positive. |
+| form-control-programmatic-label-present | Two inputs share `id="dup"`; `<label for="dup">` names only the first | pass | The second input has no label. Likely false negative. |
+| aria-valid-attr-value | `aria-hidden="TRUE"`, `aria-expanded="False"` | fail | Check whether ARIA token values are matched case-insensitively (spec and browser behaviour) before calling this either way. |
+| label-in-name | `aria-label="Download (PDF, 2 MB)"` on visible "Download PDF" | fail | Probably correct under ACT 2ee8b8; check the punctuation normalisation. |
+| listitem-parent-valid, list-children-valid | `<li>` slotted into a shadow `<ul><slot></slot></ul>` | fail | Rendered in the flattened tree, the `<li>` sits inside the `<ul>`. Likely false positive for web components. |
+| nested-interactive-controls-absent | Interactive content nested across a shadow boundary | pass | Likely false negative. |
+| aria-valid-attr-value | `aria-labelledby` inside a shadow root pointing to a light-DOM id | pass | IDREFs don't cross shadow boundaries. Likely false negative. |
+| valid-lang | `lang="qaa"` | fail | `qaa`–`qtz` is a valid private-use range. Likely false positive. |
+| valid-lang | `lang="en-"` (trailing dash) | pass | Likely false negative. |
+| video-poster-text-alternative-present | `<video poster>` inside a `<figure>` with a `<figcaption>` | fail | Check whether a figcaption should count. |
+| img-alt-decorative | Icon `<img>` inside a link that already has a name | cantTell | Possible noise. |
+
+**Timing leads**
+- On a 5,000-sibling page under jsdom (`sib1.js`, `sib.txt`) the whole scan took 17 s.
+- link-in-text-block took 11.8 s of that, and aria-valid-attr 2.2 s.
+- Not re-measured or doubled yet; compare with R-4 and check Chromium.
+
+**What is missing to finish this section**
+1. Fix or rule out the harness problem, then re-run `corpus.js` (jsdom and Chromium).
+2. Re-check every lead above with a minimal repro in both environments. Decide it against the spec (accname 1.2, HTML-AAM, ARIA 1.2, ACT rules) and cite the file and line of the cause.
+3. Timing: confirm the link-in-text-block and aria-valid-attr figures, double the input to check the growth rate, and find the cause.
+4. Run `fuzz.js` and review its invariants: no rule `error`, outcomes in the allowed set, `fail` ⇒ occurrences, selectors that resolve, and no throws on malformed DOMs (deep nesting, 20k siblings, documents without body/head, XHTML, frameset).
+5. Manual rules: check whether their `cantTell`s fire on pages with no relevant content (noise). Not started.
+6. Skim `tests/fixtures` so findings don't repeat existing coverage.
+7. Write the section in the same format as sections 2–5, and add the top items to the priorities table.
 
 ---
 
@@ -507,3 +559,38 @@ Gathered from the findings above, ordered by value to bindings, the extension an
 9. **An option-validation mode** (`strictOptions: true`) that throws on unknown keys, wrong types or unknown ids and tags, instead of warning or falling back (S-4, S-5, S-6).
 10. **Types for the subpaths and for rule authoring** (`RuleContext`, `RuleHelpers`, `RuleReturn`) (O-10, C-19).
 11. **Stable fingerprints:** attributes sorted and page-level rules reporting only the start tag (O-1, O-2).
+
+---
+
+## 8. Continuing this audit
+
+This document was written in one session and stopped on purpose part-way through. What is left, in order:
+
+1. **Finish section 6** (ARIA, names, forms and structure rules). The steps are listed at the end of that section.
+2. **Bring every item up to R-4's depth.** Only [R-4](#r-4) currently has every part: repro, impact, cause, proposed fix and test to add. For every other item in sections 2–5:
+   - re-check it with a minimal repro, and correct it or move it to a "did not hold up" list if it doesn't reproduce;
+   - add **Repro**, **Impact**, **Cause** (file and line), **Proposed fix** (with its semver impact under `docs/API_STABILITY.md`) and **Test to add**.
+   - Items marked **[V]** have already been re-checked once; the others have been reproduced only by the probe that found them.
+3. **Update the priorities table** once steps 1 and 2 have changed any status.
+4. **No code was changed in this audit.** Fixes are for separate branches, one concern per branch, and the doc should be updated to link to them.
+
+**Probe scripts**
+- [`2026-10-probes/`](./2026-10-probes/) holds every probe script behind this document, one folder per section:
+
+| Folder | Section |
+|---|---|
+| `custom/` | 2, custom rules |
+| `options/` | 3, options |
+| `outputs/` | 4, outputs |
+| `rules-b/` | 5, contrast and layout rules |
+| `rules-a/` | 6, ARIA and forms rules |
+
+- `perfcmp.js` is the R-4 benchmark; `verify*.js` are the independent re-checks.
+- Files over 100 KB (raw JSON results), the packed-tarball test project and a copy of the repo were left out.
+- The scripts are throwaway code: they are not linted (`audits/**` is in the eslint ignores) and they don't run in CI.
+
+**Environment the probes assume**
+- The repo is at `/home/user/core`, with `npm ci` and `npm run build` done. Several scripts `require('/home/user/core/...')` by absolute path.
+- Chromium is launched with an explicit `executablePath`: `/opt/pw-browsers/chromium`, or `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` in a few scripts. Playwright's default headless shell wasn't present.
+- Some scripts write to or read from `/tmp/scratchpad/...`. Change those paths to a local folder when re-running.
+- The benchmark at the commit before margins was built in a separate worktree: `git worktree add <dir> 2750774`, link `node_modules`, then `npm run build`. Pass the resulting `surea11y.browser.js` to `perfcmp.js`.

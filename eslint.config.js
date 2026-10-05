@@ -36,6 +36,10 @@ module.exports = [
       // source. Linting them fails on whatever conventions their own tools
       // use, and none of it ships.
       '**/.*/**',
+      // Audit write-ups and the throwaway probe scripts behind them. They
+      // are kept for whoever continues an audit, never ship, and are not
+      // held to the project's code conventions.
+      'audits/**',
       // Generated bundles -- see .prettierignore for why these aren't hand-edited.
       'src/core.js',
       'surea11y.browser.js'

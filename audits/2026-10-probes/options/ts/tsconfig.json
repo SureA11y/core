@@ -1,0 +1,1 @@
+{ "compilerOptions": { "strict": true, "noEmit": true, "module": "commonjs", "target": "es2020", "moduleResolution": "node", "baseUrl": ".", "paths": { "@surea11y/core": ["/home/user/core/src/index.d.ts"] }, "skipLibCheck": false, "lib": ["es2020","dom"] }, "files": ["consumer.ts"] }

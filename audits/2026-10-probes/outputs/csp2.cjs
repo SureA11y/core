@@ -1,0 +1,11 @@
+const {launch,serve,scanPage}=require('./lib.cjs');
+const pg=`<!doctype html><html lang="en"><head><title>B</title></head><body><main><p>x</p></main></body></html>`;
+(async()=>{ const {server,base}=await serve({'/csp':{body:pg,headers:{'content-type':'text/html','content-security-policy':"script-src 'self'"}}});
+ const b=await launch(); const page=await b.newPage(); const msgs=[]; page.on('console',m=>msgs.push(m.type()+': '+m.text().slice(0,200)));
+ await page.goto(base+'/csp');
+ const r=await scanPage(page, base+'/csp', null, {customRules:[{id:'c-str',meta:{title:'t',description:'d'},runInPage:"function(ctx){return {outcome:'fail',occurrences:[{__node:document.body,summary:'s',hint:'h'}]};}"}]});
+ const c=r.checksResults.find(c=>c.ruleId==='c-str'); console.log('Playwright evaluate + string custom rule under CSP:', c?c.outcome:'MISSING (silently dropped)'); console.log(msgs);
+ const p2=await b.newPage(); await p2.goto('data:text/html,<p>x</p>');
+ const r2=await scanPage(p2, null, null, {customRules:[{id:'c-str',meta:{title:'t',description:'d'},runInPage:"function(ctx){return {outcome:'fail',occurrences:[{__node:document.body,summary:'s',hint:'h'}]};}"}]});
+ const c2=r2.checksResults.find(c=>c.ruleId==='c-str'); console.log('no CSP:', c2.outcome, JSON.stringify(c2.occurrences[0]).slice(0,200));
+ await b.close(); server.close(); })();

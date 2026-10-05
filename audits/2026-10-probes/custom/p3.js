@@ -1,0 +1,10 @@
+const { run, pick, core } = require('./h');
+let o = run({ customRules:[{ id:'img-alt-present', meta:{title:'mine'}, runInPage: (c)=>({outcome:'pass',occurrences:[]}) }] }, ['img-alt-present']);
+console.log('builtin', o.res.overriddenBuiltinIds, o.warns, pick(o.res,'img-alt-present').title, o.res.rulesResults.map(r=>r.ruleId+':'+r.outcome));
+o = run({ customRules:[{ id:'z-x', meta:{}, runInPage: ()=>({outcome:'pass',occurrences:[], foo:1, ruleId:'hijack', title:'T2', type:'manual', engineOptions:{locale:'xx'}, wcagVersionScope:'fake', rollupIds:['bogus']}) }] }, ['z-x']);
+console.log('extra', JSON.stringify(pick(o.res,'z-x')).slice(0,600));
+const comp='wcag-1.1.1-non-text-content';
+o = run({ customRules:[{ id: comp, meta:{title:'mine'}, runInPage: (c)=>({outcome:'fail',occurrences:[{summary:'s'}]}) }] }, [comp]);
+console.log('compcollide checks with id:', o.res.checksResults.filter(r=>r.ruleId===comp).map(r=>r.outcome), 'rules:', o.res.rulesResults.map(r=>r.ruleId+':'+r.outcome), 'overridden', o.res.overriddenBuiltinIds, o.warns);
+o = run({ customRules:[{ id:'z-n', meta:{}, runInPage: ()=>({outcome:'fail',occurrences:[{__node:'notanode'},{__node:{nodeType:1}}]}) }] }, ['z-n']);
+console.log('nonnode', JSON.stringify(pick(o.res,'z-n').occurrences));
