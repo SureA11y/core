@@ -125,3 +125,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/${RULE_ID}-all-scenarios.html
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
   assert.deepEqual(ids, ['pzr_case_01', 'pzr_case_02', 'pzr_case_03', 'pzr_case_06']);
 });
+
+// "Just before" means the last element the keyboard reaches before the area:
+// one taken out of the tab order (tabindex="-1", disabled) is not it.
+test(`${RULE_ID}: a skip link still counts with an element outside the tab order in between`, () => {
+  for (const between of [
+    '<span tabindex="-1">Note</span>',
+    '<button disabled>Off</button>',
+    '<input type="hidden" name="t">'
+  ]) {
+    const rule = assertRule(
+      run(
+        `<a href="#suite">Passer</a>${between}<div class="menu"><a href="/a">A</a></div><p id="suite">x</p>` +
+          MAIN
+      ),
+      RULE_ID,
+      'cantTell'
+    );
+    assert.deepEqual(reasons(rule), [['navigation', 'ZONE_SKIP_LINK']], between);
+  }
+});

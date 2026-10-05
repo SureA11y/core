@@ -262,7 +262,7 @@ function runInPage(ctx) {
     const getInfo =
       typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
     const candidates = query(
-      'a[href],area[href],button,input,select,textarea,summary,iframe,[tabindex],[contenteditable]'
+      'a[href],area[href],button,input,select,textarea,summary,iframe,frame,audio[controls],video[controls],[tabindex],[contenteditable]'
     );
     const positive = [];
     const rest = [];

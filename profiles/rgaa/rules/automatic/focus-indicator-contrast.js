@@ -1154,7 +1154,7 @@ function runInPage(ctx) {
   };
 
   const CANDIDATES =
-    'a[href],area[href],button,input,select,textarea,summary,iframe,[tabindex],[contenteditable]';
+    'a[href],area[href],button,input,select,textarea,summary,iframe,frame,audio[controls],video[controls],[tabindex],[contenteditable]';
   const candidates = helpers.queryAllSmart
     ? helpers.queryAllSmart(CANDIDATES)
     : helpers.queryAll(CANDIDATES);

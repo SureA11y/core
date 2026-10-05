@@ -237,8 +237,23 @@ function runInPage(ctx) {
     return false;
   }
 
+  // The last element before el that the keyboard reaches: the candidates
+  // core's rules use, kept only when helpers.getFocusableInfo says they are
+  // in the tab order (a disabled control, a hidden one, tabindex="-1" not).
+  const getFocusable =
+    typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
+  function inTabOrder(f) {
+    if (!getFocusable) return true;
+    try {
+      return !!(getFocusable(f, ctx) || {}).tabbable;
+    } catch {
+      return false;
+    }
+  }
   function previousFocusable(el) {
-    const all = query('a[href], button, input, select, textarea, [tabindex]');
+    const all = query(
+      'a[href],area[href],button,input,select,textarea,summary,iframe,frame,audio[controls],video[controls],[tabindex],[contenteditable]'
+    );
     let prev = null;
     for (const f of all) {
       if (el.contains(f)) break;
@@ -247,7 +262,7 @@ function runInPage(ctx) {
         before = !!(f.compareDocumentPosition(el) & FOLLOWING);
       } catch {}
       if (!before) break;
-      prev = f;
+      if (inTabOrder(f)) prev = f;
     }
     return prev;
   }
