@@ -57,8 +57,13 @@ export interface EngineOptions {
     mode?: 'strictConformance' | 'auditorAssist';
     rootCanvasFallback?: string;
   };
-  visibilityMode?: string;
+  visibilityMode?: Open<'styleOnly' | 'styleAndGeometry'>;
   includeMode?: 'and' | 'or';
+  /** A built-in contract's name, or an inline contract. See docs/POLICY.md. */
+  policyContract?: Open<'a11y' | 'generic'> | PolicyContract;
+  /** Overrides on top of the contract. See docs/POLICY.md. */
+  policy?: Partial<Omit<PolicyContract, 'id'>>;
+  output?: { includeSelector?: boolean; includeHtml?: boolean };
   /** `include`/`exclude` select rules; any other key is that rule's `ctx.config`. */
   rules?: { include?: StringList; exclude?: StringList; [ruleId: string]: unknown };
   tags?: { include?: StringList; exclude?: StringList };
@@ -72,6 +77,20 @@ export interface EngineOptions {
   frameWaitTime?: number;
   [option: string]: unknown;
 }
+
+/** Which outcomes and confidence values a scan may report. See docs/POLICY.md. */
+export interface PolicyContract {
+  id?: string;
+  allowedOutcomes?: Outcome[];
+  allowedConfidence?: Confidence[];
+  coerceManualFailToCantTell?: boolean;
+}
+
+/**
+ * The `code` on an error the engine throws: an unparseable contextSelector,
+ * or a runOnly that names nothing.
+ */
+export type EngineErrorCode = 'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY';
 
 /** A rule registered for one scan. See docs/ENGINE_OPTIONS.md, `customRules`. */
 export interface CustomRule {
