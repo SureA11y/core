@@ -35,7 +35,7 @@ Names are checked, here and in `engineOptions.rules`/`.tags` below. An include l
 
 Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
 
-A **legacy tag-filter shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` — equivalent to `{ tags: ['wcag2a', 'wcag2aa'] }`.
+axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` is `{ tags: ['wcag2a', 'wcag2aa'] }`, and `{ type: 'rule', values: ['img-alt-present'] }` is `{ includeRuleIds: ['img-alt-present'] }` (`'tags'` and `'rules'` work too). Any other `type` throws `INVALID_RUN_ONLY`, and so does a `runOnly` that is a number or a boolean, or an object none of whose keys the engine reads (`{ includeRuleId: [...] }`): each used to run every rule. An empty array, string or object still means every rule.
 
 ### Filtering by WCAG version (2.1 vs 2.2)
 
