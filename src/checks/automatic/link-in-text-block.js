@@ -321,12 +321,23 @@ function runInPage(ctx) {
     return /^0(\.0+)?[a-z%]*$/i.test(String(v || '').trim());
   }
 
+  // A color that draws nothing: a line in it is no cue.
+  function isTransparentColor(v) {
+    const raw = String(v || '').trim();
+    if (!raw) return false;
+    const parsed =
+      c && typeof c.parseCssColorToRgba === 'function' ? c.parseCssColorToRgba(raw) : null;
+    if (parsed) return parsed.a === 0;
+    return /^transparent$/i.test(raw);
+  }
+
   function hasBorder(cs) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
         .trim()
         .toLowerCase();
       if (!style || style === 'none' || style === 'hidden') continue;
+      if (isTransparentColor(cs['border' + side + 'Color'])) continue;
       if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
     }
     return false;
@@ -502,6 +513,78 @@ function runInPage(ctx) {
     undecided.push({ el, reasonCode });
   }
 
+  // An inline element that holds nothing but the link (<span><a>...</a></span>,
+  // as frameworks often wrap one) is part of the link as far as the text
+  // around it goes: the surrounding text is its parent's.
+  function wrapperHasCue(wrapper, cs) {
+    const outerCs = safeComputedStyle(wrapper.parentElement);
+    if (
+      c &&
+      outerCs &&
+      c.normalizeFontWeight(cs.fontWeight) !== c.normalizeFontWeight(outerCs.fontWeight)
+    ) {
+      return true;
+    }
+    if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
+    if (hasBorder(cs)) return true;
+    const deco = decorationInfo(cs);
+    return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+  }
+
+  function textParentOf(el) {
+    let child = el;
+    let parent = el.parentElement;
+    for (let depth = 0; parent && depth < 5; depth++) {
+      if (hasSurroundingText(child, parent)) break;
+      if (parent.firstElementChild !== child || parent.lastElementChild !== child) break;
+      const wcs = safeComputedStyle(parent) || {};
+      const display = String(wcs.display || '');
+      if (!display.startsWith('inline') || display === 'inline-block') break;
+      // A wrapper that sets the link apart itself is not transparent: a
+      // footnote marker raised by <sup>, or a bold or underlined wrapper.
+      const valign = String(wcs.verticalAlign || 'baseline');
+      if (valign !== 'baseline' || wrapperHasCue(parent, wcs)) break;
+      child = parent;
+      parent = parent.parentElement;
+    }
+    return parent;
+  }
+
+  // Whether the cue that sets a link apart can sit on an element inside it:
+  // every piece of the link's text is inside an element, between the text
+  // and the link, that is bold, italic, underlined or bordered where the
+  // surrounding text is not (<a><strong>guide</strong></a>).
+  function cueOnContent(el, parentCs) {
+    const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
+    const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
+    const hasCue = (node) => {
+      const cs = safeComputedStyle(node);
+      if (!cs) return false;
+      if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
+      if ((cs.fontStyle || 'normal') !== parentStyle) return true;
+      if (hasBorder(cs)) return true;
+      const deco = decorationInfo(cs);
+      return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+    };
+    let sawText = false;
+    const doc = el.ownerDocument;
+    const walker = doc && doc.createTreeWalker ? doc.createTreeWalker(el, 4) : null;
+    if (!walker) return false;
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!n.nodeValue || !n.nodeValue.trim()) continue;
+      sawText = true;
+      let cued = false;
+      for (let a = n.parentElement; a && a !== el; a = a.parentElement) {
+        if (hasCue(a)) {
+          cued = true;
+          break;
+        }
+      }
+      if (!cued) return false;
+    }
+    return sawText;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
@@ -510,7 +593,7 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const parent = el.parentElement;
+    const parent = textParentOf(el);
     if (!hasSurroundingText(el, parent)) continue;
 
     applicableCount += 1;
@@ -536,7 +619,7 @@ function runInPage(ctx) {
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
-    if (hasNonColorMark(el, linkCs)) {
+    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parentCs)) {
       decidedCount += 1;
       continue;
     }
@@ -554,7 +637,9 @@ function runInPage(ctx) {
     let underlined = null;
     const decoration = decorationInfo(linkCs);
     if (decoration.trustworthy) {
-      underlined = decoration.underlined;
+      // An underline drawn in a transparent color shows nothing.
+      underlined =
+        decoration.underlined && !isTransparentColor(linkCs && linkCs.textDecorationColor);
     } else {
       const fromCssom = resolveUnderlineFromCssom(el);
       if (fromCssom.resolved) underlined = fromCssom.underlined;
