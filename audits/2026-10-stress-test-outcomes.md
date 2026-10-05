@@ -25,7 +25,7 @@ What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-s
 | P11 | `policyContract: 'constructor'` crashes the scan | Yes | Fixed | `19a4698` |
 | P12 | A typo in object-form `runOnly` runs 0 rules | Yes (silent wrong result) | Fixed: throws `INVALID_RUN_ONLY` | `5c1f8de` |
 | P13 | Ancestor opacity counted twice | Yes | Fixed | `007c025` |
-| P14 | No `helpUrl` / SC URLs / engine version | No: feature | `engine.version` only: branch `feat/engine-version` (`11eebd4`); help and Understanding URLs not done | — |
+| P14 | No `helpUrl` / SC URLs / engine version | No: feature | `engine.version` only, merged through #78; help and Understanding URLs not done | — |
 
 ---
 
@@ -180,7 +180,7 @@ Both are fixed in the same commit.
 
 **Not a bug.** No doc promised any of these: `OUTPUT_SCHEMA.md` documented `engine.tag` only, and SARIF's `driver.version` was `"0.0.0"` only when the caller passed no `toolVersion`.
 
-**Done, as decided** (branch `feat/engine-version`, from `main` after #77):
+**Done, as decided** (merged through #78):
 - `scripts/build-core.js` bakes the `package.json` version into the generated engine, next to `ENGINE_TAG`, and every result carries it as `engine.version`.
 - SARIF's `tool.driver.version` falls back to it.
 - EARL's assertor `release` falls back to it when every result comes from one release; results from two releases claim none.
@@ -290,6 +290,26 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 Everything in the audit not fixed by #77 or `feat/engine-version`, grouped by how sure it is. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed in #77.
 
+### 6.0 Progress since this list was written
+
+PR #79 (branch `fix/small-output-and-doc-fixes`, open):
+
+| Item | Verdict | Change |
+|---|---|---|
+| O-6 | Bug | Fixed in part (`614f798`). An empty `message.text` falls back to the rule's title or id. Artifact URIs are percent-encoded relative references inside the working directory and absolute `file:` URLs outside it; Windows `file:///C:/` paths are read correctly. **Left:** the long raw fingerprints, since changing them changes finding identity. |
+| O-11 | Bug | Fixed (`8a886d3`). The HTML report is dated by `result.timestamp` when present, in UTC, so it is deterministic. |
+| C-18 | Bug (in unreleased code) | Fixed (`9af2682`). The `runOnly` name check trims custom rule ids and tags, as the runner does. |
+| S-9, S-10 | Doc bugs | Fixed (`133c4a1`). A thrown rule is `cantTell` with `error`; `allowedConfidence` falls back to the rule's default confidence and never changes the outcome. |
+| O-15 (reporter list) | Doc bug | Fixed (`18d22ee`). The rest of O-15 is left. |
+| C-21 | **Not a bug** | No change. A scaffold's profile is `<key>-1.0`, and core uses `section508` as neither a tag nor a mappings name, so nothing collides. |
+
+Section 6 leads checked against ACT de46e4:
+
+| Lead | Verdict |
+|---|---|
+| `valid-lang`, `lang="en-"` passes | **Not a bug.** The rule judges only the primary subtag, as ACT de46e4 does: its "known primary language tag" accepts a tag that breaks RFC 5646 grammar (its example is `de-hello`). `"en-"` names English. |
+| `valid-lang`, `lang="qaa"` fails | **Open, decision for the maintainer.** ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
+
 ### 6.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
 
 The audit stopped before checking these. They are leads, not findings.
@@ -306,8 +326,8 @@ The audit stopped before checking these. They are leads, not findings.
   | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | false positive |
   | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | false negative |
   | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | false negative |
-  | `valid-lang` | `lang="qaa"` (private use) | fail | false positive |
-  | `valid-lang` | `lang="en-"` | pass | false negative |
+  | `valid-lang` | `lang="qaa"` (private use) | fail | open: see 6.0 |
+  | `valid-lang` | `lang="en-"` | pass | not a bug: see 6.0 |
   | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | to decide |
   | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | possible noise |
 
@@ -318,16 +338,15 @@ The audit stopped before checking these. They are leads, not findings.
 
 **Outputs.**
 - [O-2] Attribute and class order change a finding's identity (baseline, SARIF).
-- [O-6] SARIF can be invalid: an occurrence with no summary gives an empty `message.text`; artifact URIs aren't percent-encoded; fingerprints carry raw separators and up to 2 KB of HTML.
+- [O-6] Left: fingerprints carry raw separators and up to 2 KB of HTML. Empty messages and unencoded URIs are fixed (6.0).
 - [O-7] A string custom rule is skipped under a strict CSP. Now documented and warned about (#77); no fallback.
 - [O-8] The `/browser` subpath is empty for bundlers.
 - [O-9] `./i18n/*` can't be used from Node and isn't documented.
 - [O-10] The subpaths have no types.
-- [O-11] The HTML report's title uses `new Date()`, so it isn't deterministic.
 - [O-12] Payload size: 204 KB for an empty page; a compact output mode was suggested.
 - [O-13] Cross-frame entries don't identify their `<iframe>`.
 - [O-14] `src/explain/` isn't shipped and is incomplete.
-- [O-15] Small items: `/junit` is missing from the reporter list, `waitForPageReady` accepts bad timeouts silently, and EARL merges results without a URL into one subject.
+- [O-15] Left: `waitForPageReady` accepts bad timeouts silently, and EARL merges results without a URL into one subject.
 
 **Contrast, layout and visual rules.**
 - [R-6] `link-in-text-block` misses a cue on a child (`<strong>` in a link), and passes a transparent underline.
@@ -349,10 +368,9 @@ The audit stopped before checking these. They are leads, not findings.
 - [C-13, C-14] Custom rules can't join WCAG composites by mapping; under a profile a custom rule without WCAG tags never runs, and an override that drops a built-in's tags removes it.
 - [C-15] The catalog APIs ignore `customRules`.
 - [C-16, C-17] A custom rule's `helpUrl` and custom tags are lost in outputs; EARL leaves out `isPartOf` without `conformanceLevel`.
-- [C-18] Shorthand `runOnly` doesn't trim ids.
 - [C-19] `index.d.ts` gives rule authors nothing, and `RULE_HELPERS.md` misses three helpers.
 - [C-20] A profile can only be added by forking core: `profile-kit` isn't exported.
-- [C-21, C-22] `profile:new` accepts the key `section508`, and `acme-std` trips the boundary test.
+- [C-22] The key `acme-std` trips the boundary test. (C-21 turned out not to be a bug, 6.0.)
 
 **Options.**
 - [S-4] Remaining part: `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are case-sensitive.
@@ -360,8 +378,6 @@ The audit stopped before checking these. They are leads, not findings.
 - [S-6] Wrong option types fall back without a warning.
 - [S-7] [V] `duplicate-id` and two other rules `pass` on an empty scope.
 - [S-8] The contrast rules attach a page-level occurrence to `pass`, against `OUTPUT_SCHEMA.md`.
-- [S-9] The docs disagree on what a rule that threw looks like.
-- [S-10] `POLICY.md`'s inline-contract example is wrong.
 - [S-11] `includeHiddenElements: true` changes nothing for common rules.
 - [S-12] `index.d.ts` gaps (`policyContract`, `policy`, `output`, error codes) and a stray `occurrence.outcome`.
 - [S-13] Smaller doc slips.
