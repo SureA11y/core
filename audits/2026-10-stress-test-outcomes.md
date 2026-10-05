@@ -303,6 +303,14 @@ PR #79 (branch `fix/small-output-and-doc-fixes`), merged 2026-10-05:
 | O-15 (reporter list) | Doc bug | Fixed (`18d22ee`). The rest of O-15 is left. |
 | C-21 | **Not a bug** | No change. A scaffold's profile is `<key>-1.0`, and core uses `section508` as neither a tag nor a mappings name, so nothing collides. |
 
+PR #81 (branch `fix/scoped-duplicate-id-doc-and-hidden-contrast`, open):
+
+| Item | Verdict | Change |
+|---|---|---|
+| S-7 | Doc bug, not a rule bug | `989ed2c`. A scoped `duplicate-id` pass is true for the scope (each element in scope is compared with the whole page); `ENGINE_OPTIONS.md` no longer says it holds for the page. Decided with the maintainer: keep `pass`, fix the doc. The `deprecated-elements-not-used` and `server-side-image-map-absent` part of S-7 is not looked at. |
+| R-8 | Bug | Fixed (`d4eb828`) for `font-size: 0`, `color: transparent` (gradient text becomes cantTell), and under `styleAndGeometry` off-page and fully clipped text. **Left:** the unselected options of a closed `<select>` (unclear: the browser draws the open list) and `rgba(0,0,0,.02)` text (drawn, so not a bug). `visibilityMode` stays `styleOnly` by default. |
+| R-9 | Bug | Fixed (`1c58e23`). `css-orientation-lock` walks `@layer`, `@supports`, nested `@media`, `@container`, `@import`, CSS nesting and `<style media>`; `css-focus-indicator-suppressed` follows CSS nesting. |
+
 Section 6 leads checked against ACT de46e4:
 
 | Lead | Verdict |
@@ -352,8 +360,7 @@ The audit stopped before checking these. They are leads, not findings.
 **Contrast, layout and visual rules.**
 - [R-6] `link-in-text-block` misses a cue on a child (`<strong>` in a link), and passes a transparent underline.
 - [R-7] SVG `<text>` is judged by `color`, not `fill`.
-- [R-8] `contrast-minimum` reports text nobody sees: options of a closed select, off-screen text, `font-size: 0`, `color: transparent`.
-- [R-9] `css-orientation-lock` and `css-focus-indicator-suppressed` don't walk `@layer`, `@supports`, nested `@media`, `@container` or CSS nesting.
+- [R-8] Left: unselected options of a closed select. The rest is fixed (6.0).
 - [R-10] `text-spacing-content-loss` skips partly clipped text, and its margin is measured against half the line height while findings start at 2 px.
 - [R-11] `target-size-minimum` uses the bounding box: clipped or covered targets pass, a rotated one is measured too large, `display: contents` links are not applicable, and a rounding slip appears in the message.
 - [R-12] `contrast.mode: 'auditorAssist'` ignores `color-scheme: dark`.
@@ -377,7 +384,7 @@ The audit stopped before checking these. They are leads, not findings.
 - [S-4] Remaining part: `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are case-sensitive.
 - [S-5] An invalid `excludeSelectors` is ignored silently.
 - [S-6] Wrong option types fall back without a warning.
-- [S-7] [V] `duplicate-id` and two other rules `pass` on an empty scope. Analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
+- [S-7] [V] Doc part fixed in PR #81 (6.0). Left: `deprecated-elements-not-used` and `server-side-image-map-absent` `pass` on an empty scope. Earlier analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
 - [S-8] The contrast rules attach a page-level occurrence to `pass`, against `OUTPUT_SCHEMA.md`.
 - [S-11] `includeHiddenElements: true` changes nothing for common rules.
 - [S-12] `index.d.ts` gaps (`policyContract`, `policy`, `output`, error codes) and a stray `occurrence.outcome`.
