@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert');
-const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('./helpers/runa11yCoreOnHtml');
 const { assertRule } = require('./helpers/assertRule');
 
 test('contextSelector scopes evaluation to a subtree', () => {
@@ -280,4 +280,21 @@ test('contextSelector: overlapping and duplicate regions report each element onc
   assert.strictEqual(imgOccurrences('#outer'), 2);
   assert.strictEqual(imgOccurrences(['#outer', '#inner']), 2, 'nested region adds nothing new');
   assert.strictEqual(imgOccurrences(['#outer', '#outer']), 2, 'the same region twice adds nothing');
+});
+
+test("contextSelector naming a shadow host scans that host's own shadow root", () => {
+  // querySelectorAll('*') never returns the scope element itself, so a scope
+  // that was itself a shadow host skipped its shadow root: the <img> and the
+  // <button> below were notApplicable scoped to #host, but fail scoped to body.
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="host"></div></main></body></html>'
+  );
+  dom.window.document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML =
+    '<img src="x.png"><button></button>';
+
+  for (const contextSelector of ['#host', 'main']) {
+    const result = runa11yCoreOnDom(dom, { contextSelector });
+    assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
+    assertRule(result, 'button-name-present', 'fail', { minOccurrences: 1 });
+  }
 });

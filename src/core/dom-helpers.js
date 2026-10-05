@@ -1268,6 +1268,11 @@ function createDomHelpers(opts) {
 
       pushMatches(curRoot);
 
+      // querySelectorAll('*') never returns curRoot itself, so a scope
+      // that is a shadow host would leave out its own shadow root.
+      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
+        q.push(curRoot.shadowRoot);
+      }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
     }
