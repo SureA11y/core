@@ -163,3 +163,46 @@ test(
     );
   }
 );
+
+test('contrast in Chromium: SVG text is judged by its fill, not its color', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  async function scan(attrs, style) {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
+          '<body><main><h1>T</h1><svg width="300" height="40" role="img" aria-label="Chart">' +
+          `<text x="5" y="25" font-size="16" ${attrs} style="${style}">Chart label text</text></svg></main></body></html>`
+      );
+      await p.addScriptTag({ content: BUNDLE });
+      return await p.evaluate(() => {
+        const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
+          'contrast-minimum',
+          'contrast-computable'
+        ]);
+        return r.checksResults.map((c) => c.ruleId + ':' + c.outcome).sort();
+      });
+    } finally {
+      await p.close();
+    }
+  }
+  // color only feeds currentColor: a black fill on a light color is black.
+  assert.deepEqual(await scan('fill="#000"', 'color:#eee'), [
+    'contrast-computable:pass',
+    'contrast-minimum:pass'
+  ]);
+  assert.deepEqual(await scan('fill="#eee"', 'color:#000'), [
+    'contrast-computable:pass',
+    'contrast-minimum:fail'
+  ]);
+  assert.deepEqual(await scan('', 'fill:#eee;color:#000'), [
+    'contrast-computable:pass',
+    'contrast-minimum:fail'
+  ]);
+  // Outline-only text has no fill to measure.
+  assert.deepEqual(await scan('fill="none" stroke="#000"', ''), [
+    'contrast-computable:cantTell',
+    'contrast-minimum:pass'
+  ]);
+});
