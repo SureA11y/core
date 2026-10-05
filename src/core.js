@@ -16934,10 +16934,198 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s;
   }
 
+  // The CSS Color 4 functions a browser keeps as written in a computed
+  // style: oklab(), oklch(), lab(), lch() and color(<space> ...). color-mix()
+  // and relative colors resolve to one of them. Converted to sRGB with the
+  // matrices CSS Color 4 gives; a color outside sRGB is clipped to it. null
+  // for anything else, or a value that does not parse.
+  function __parseCssColor4(s) {
+    const m = /^(oklab|oklch|lab|lch|color)\((.*)\)$/.exec(s);
+    if (!m) return null;
+    const fn = m[1];
+    const slash = m[2].split('/');
+    if (slash.length > 2) return null;
+    const tokens = trim(slash[0]).split(/\s+/).filter(Boolean);
+    let space = fn;
+    if (fn === 'color') space = tokens.shift() || '';
+    if (tokens.length !== 3) return null;
+
+    // A channel: 'none' is 0, a percentage is a fraction of `full`.
+    const num = (t, full) => {
+      if (t === 'none') return 0;
+      if (t.endsWith('%')) {
+        const p = Number.parseFloat(t);
+        return Number.isFinite(p) ? (p / 100) * full : NaN;
+      }
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const hue = (t) => {
+      if (t === 'none') return 0;
+      const u = /^(-?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/.exec(t);
+      if (!u) return NaN;
+      const n = Number(u[1]);
+      const unit = u[2] || 'deg';
+      const deg =
+        unit === 'rad'
+          ? (n * 180) / Math.PI
+          : unit === 'grad'
+            ? n * 0.9
+            : unit === 'turn'
+              ? n * 360
+              : n;
+      return (deg * Math.PI) / 180;
+    };
+    let alpha = 1;
+    if (slash.length === 2) {
+      alpha = num(trim(slash[1]), 1);
+      if (!Number.isFinite(alpha)) return null;
+    }
+
+    const mul = (M, v) => [
+      M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+      M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+      M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+    ];
+    const D50_TO_D65 = [
+      [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+      [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+      [0.012314014864481998, -0.020507649298898964, 1.330365926242124]
+    ];
+    const XYZ65_TO_LSRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    const srgbDecode = (v) => {
+      const a = Math.abs(v);
+      return a <= 0.04045 ? v / 12.92 : Math.sign(v) * Math.pow((a + 0.055) / 1.055, 2.4);
+    };
+    const labToXyz65 = (L, a, b) => {
+      const k = 24389 / 27;
+      const e = 216 / 24389;
+      const f1 = (L + 16) / 116;
+      const f0 = a / 500 + f1;
+      const f2 = f1 - b / 200;
+      const xyz = [
+        Math.pow(f0, 3) > e ? Math.pow(f0, 3) : (116 * f0 - 16) / k,
+        L > k * e ? Math.pow(f1, 3) : L / k,
+        Math.pow(f2, 3) > e ? Math.pow(f2, 3) : (116 * f2 - 16) / k
+      ];
+      const white = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
+      return mul(D50_TO_D65, [xyz[0] * white[0], xyz[1] * white[1], xyz[2] * white[2]]);
+    };
+    const oklabToLinear = (L, a, b) => {
+      const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+      const mm = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+      const ss = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+      return [
+        4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * ss,
+        -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * ss,
+        -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * ss
+      ];
+    };
+
+    let linear = null;
+    let encoded = null;
+    if (space === 'oklab' || space === 'oklch') {
+      const L = num(tokens[0], 1);
+      let a;
+      let b;
+      if (space === 'oklab') {
+        a = num(tokens[1], 0.4);
+        b = num(tokens[2], 0.4);
+      } else {
+        const C = num(tokens[1], 0.4);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = oklabToLinear(L, a, b);
+    } else if (space === 'lab' || space === 'lch') {
+      const L = num(tokens[0], 100);
+      let a;
+      let b;
+      if (space === 'lab') {
+        a = num(tokens[1], 125);
+        b = num(tokens[2], 125);
+      } else {
+        const C = num(tokens[1], 150);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = mul(XYZ65_TO_LSRGB, labToXyz65(L, a, b));
+    } else if (fn === 'color') {
+      const v = tokens.map((t) => num(t, 1));
+      if (!v.every(Number.isFinite)) return null;
+      if (space === 'srgb') encoded = v;
+      else if (space === 'srgb-linear') linear = v;
+      else if (space === 'xyz' || space === 'xyz-d65') linear = mul(XYZ65_TO_LSRGB, v);
+      else if (space === 'xyz-d50') linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, v));
+      else if (space === 'display-p3') {
+        const P3_TO_XYZ65 = [
+          [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+          [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+          [0, 0.04511338185890264, 1.043944368900976]
+        ];
+        linear = mul(XYZ65_TO_LSRGB, mul(P3_TO_XYZ65, v.map(srgbDecode)));
+      } else if (space === 'a98-rgb') {
+        const A98_TO_XYZ65 = [
+          [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
+          [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
+          [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
+        ];
+        const dec = v.map((c) => Math.sign(c) * Math.pow(Math.abs(c), 563 / 256));
+        linear = mul(XYZ65_TO_LSRGB, mul(A98_TO_XYZ65, dec));
+      } else if (space === 'prophoto-rgb') {
+        const PROPHOTO_TO_XYZ50 = [
+          [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
+          [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
+          [0, 0, 0.8251046025104602]
+        ];
+        const dec = v.map((c) =>
+          Math.abs(c) <= 16 / 512 ? c / 16 : Math.sign(c) * Math.pow(Math.abs(c), 1.8)
+        );
+        linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, mul(PROPHOTO_TO_XYZ50, dec)));
+      } else if (space === 'rec2020') {
+        const REC2020_TO_XYZ65 = [
+          [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
+          [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
+          [0, 0.028072693049087428, 1.060985057710791]
+        ];
+        const al = 1.09929682680944;
+        const be = 0.018053968510807;
+        const dec = v.map((c) => {
+          const a = Math.abs(c);
+          return a < be * 4.5 ? c / 4.5 : Math.sign(c) * Math.pow((a + al - 1) / al, 1 / 0.45);
+        });
+        linear = mul(XYZ65_TO_LSRGB, mul(REC2020_TO_XYZ65, dec));
+      } else return null;
+    } else return null;
+
+    if (!encoded) {
+      encoded = linear.map((c) => {
+        const a = Math.abs(c);
+        return a <= 0.0031308 ? c * 12.92 : Math.sign(c) * (1.055 * Math.pow(a, 1 / 2.4) - 0.055);
+      });
+    }
+    if (!encoded.every(Number.isFinite)) return null;
+    const to255 = (c) => clamp255(Math.round(Math.min(1, Math.max(0, c)) * 255));
+    return { r: to255(encoded[0]), g: to255(encoded[1]), b: to255(encoded[2]), a: clamp01(alpha) };
+  }
+
   function __parseCssColorToRgbaUncached(input) {
     const s = trim(input).toLowerCase();
     if (!s) return null;
     if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+
+    // A CSS Color 4 function the converter can't read (an unknown color()
+    // space, say) is not parsed: the platform would only hand the same
+    // value back.
+    if (/^(oklab|oklch|lab|lch|color)\(/.test(s)) return __parseCssColor4(s);
 
     if (s[0] === '#') {
       const hex = s.slice(1);
@@ -17077,6 +17265,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         probe.style.top = '-9999px';
         probe.style.opacity = '0';
         probe.style.color = String(input);
+        // A value the platform rejects leaves the property unset, and the
+        // probe would then report the color it inherits.
+        if (!probe.style.color) return null;
         const parent = d.body || d.documentElement;
         if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
 
@@ -17447,6 +17638,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let acc = { r: 0, g: 0, b: 0, a: 0 };
     let cur = el;
     let guard = 0;
+    // A background color this parser can't read, met while what is in front
+    // of it still lets it show through. Skipping it as if transparent would
+    // judge the text against whatever lies further out.
+    let unparsable = null;
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -17457,6 +17652,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
       const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+
+      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+        unparsable = {
+          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          value: truncateCssValue(trim(cs.backgroundColor), 80)
+        };
+        break;
+      }
 
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
@@ -17493,7 +17696,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out;
     const allowAssumptions = mode === 'auditorAssist';
 
-    if (acc.a < 1) {
+    if (unparsable) {
+      out = {
+        ok: false,
+        rgba: acc,
+        alpha: acc.a,
+        stack: stack || [],
+        reasonCode: 'BACKGROUND_UNPARSABLE',
+        blockerSelector: unparsable.selector,
+        blockerProperty: 'background-color',
+        blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1) {
       if (allowAssumptions) {
         // If the root is not opaque, apply an explicit canvas fallback.
         const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
@@ -17651,6 +17865,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (!bg && bgAcc.a < 1 && trim(cs && cs.backgroundColor)) return __cacheAndReturn(null);
         if (bg) {
           const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
           bgAcc = compositeRgba(bgAcc, layer);
@@ -43702,7 +43917,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
       let hintKind = 'generic';
-      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') hintKind = 'background';
+      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT' || rc === 'BACKGROUND_UNPARSABLE')
+        hintKind = 'background';
       else if (
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
@@ -43888,7 +44104,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
             background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
             backgroundAlpha:
-              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''
+              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
+            // A background color the engine can't read names the element
+            // and the value, as the other blockers do.
+            ...(bg && bg.blockerProperty
+              ? {
+                  blockerSelector: bg.blockerSelector || '',
+                  blockerProperty: bg.blockerProperty,
+                  blockerValue: bg.blockerValue || ''
+                }
+              : {})
           });
           continue;
         }
@@ -70268,10 +70493,198 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s;
   }
 
+  // The CSS Color 4 functions a browser keeps as written in a computed
+  // style: oklab(), oklch(), lab(), lch() and color(<space> ...). color-mix()
+  // and relative colors resolve to one of them. Converted to sRGB with the
+  // matrices CSS Color 4 gives; a color outside sRGB is clipped to it. null
+  // for anything else, or a value that does not parse.
+  function __parseCssColor4(s) {
+    const m = /^(oklab|oklch|lab|lch|color)\((.*)\)$/.exec(s);
+    if (!m) return null;
+    const fn = m[1];
+    const slash = m[2].split('/');
+    if (slash.length > 2) return null;
+    const tokens = trim(slash[0]).split(/\s+/).filter(Boolean);
+    let space = fn;
+    if (fn === 'color') space = tokens.shift() || '';
+    if (tokens.length !== 3) return null;
+
+    // A channel: 'none' is 0, a percentage is a fraction of `full`.
+    const num = (t, full) => {
+      if (t === 'none') return 0;
+      if (t.endsWith('%')) {
+        const p = Number.parseFloat(t);
+        return Number.isFinite(p) ? (p / 100) * full : NaN;
+      }
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const hue = (t) => {
+      if (t === 'none') return 0;
+      const u = /^(-?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/.exec(t);
+      if (!u) return NaN;
+      const n = Number(u[1]);
+      const unit = u[2] || 'deg';
+      const deg =
+        unit === 'rad'
+          ? (n * 180) / Math.PI
+          : unit === 'grad'
+            ? n * 0.9
+            : unit === 'turn'
+              ? n * 360
+              : n;
+      return (deg * Math.PI) / 180;
+    };
+    let alpha = 1;
+    if (slash.length === 2) {
+      alpha = num(trim(slash[1]), 1);
+      if (!Number.isFinite(alpha)) return null;
+    }
+
+    const mul = (M, v) => [
+      M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+      M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+      M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+    ];
+    const D50_TO_D65 = [
+      [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+      [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+      [0.012314014864481998, -0.020507649298898964, 1.330365926242124]
+    ];
+    const XYZ65_TO_LSRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    const srgbDecode = (v) => {
+      const a = Math.abs(v);
+      return a <= 0.04045 ? v / 12.92 : Math.sign(v) * Math.pow((a + 0.055) / 1.055, 2.4);
+    };
+    const labToXyz65 = (L, a, b) => {
+      const k = 24389 / 27;
+      const e = 216 / 24389;
+      const f1 = (L + 16) / 116;
+      const f0 = a / 500 + f1;
+      const f2 = f1 - b / 200;
+      const xyz = [
+        Math.pow(f0, 3) > e ? Math.pow(f0, 3) : (116 * f0 - 16) / k,
+        L > k * e ? Math.pow(f1, 3) : L / k,
+        Math.pow(f2, 3) > e ? Math.pow(f2, 3) : (116 * f2 - 16) / k
+      ];
+      const white = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
+      return mul(D50_TO_D65, [xyz[0] * white[0], xyz[1] * white[1], xyz[2] * white[2]]);
+    };
+    const oklabToLinear = (L, a, b) => {
+      const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+      const mm = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+      const ss = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+      return [
+        4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * ss,
+        -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * ss,
+        -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * ss
+      ];
+    };
+
+    let linear = null;
+    let encoded = null;
+    if (space === 'oklab' || space === 'oklch') {
+      const L = num(tokens[0], 1);
+      let a;
+      let b;
+      if (space === 'oklab') {
+        a = num(tokens[1], 0.4);
+        b = num(tokens[2], 0.4);
+      } else {
+        const C = num(tokens[1], 0.4);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = oklabToLinear(L, a, b);
+    } else if (space === 'lab' || space === 'lch') {
+      const L = num(tokens[0], 100);
+      let a;
+      let b;
+      if (space === 'lab') {
+        a = num(tokens[1], 125);
+        b = num(tokens[2], 125);
+      } else {
+        const C = num(tokens[1], 150);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = mul(XYZ65_TO_LSRGB, labToXyz65(L, a, b));
+    } else if (fn === 'color') {
+      const v = tokens.map((t) => num(t, 1));
+      if (!v.every(Number.isFinite)) return null;
+      if (space === 'srgb') encoded = v;
+      else if (space === 'srgb-linear') linear = v;
+      else if (space === 'xyz' || space === 'xyz-d65') linear = mul(XYZ65_TO_LSRGB, v);
+      else if (space === 'xyz-d50') linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, v));
+      else if (space === 'display-p3') {
+        const P3_TO_XYZ65 = [
+          [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+          [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+          [0, 0.04511338185890264, 1.043944368900976]
+        ];
+        linear = mul(XYZ65_TO_LSRGB, mul(P3_TO_XYZ65, v.map(srgbDecode)));
+      } else if (space === 'a98-rgb') {
+        const A98_TO_XYZ65 = [
+          [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
+          [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
+          [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
+        ];
+        const dec = v.map((c) => Math.sign(c) * Math.pow(Math.abs(c), 563 / 256));
+        linear = mul(XYZ65_TO_LSRGB, mul(A98_TO_XYZ65, dec));
+      } else if (space === 'prophoto-rgb') {
+        const PROPHOTO_TO_XYZ50 = [
+          [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
+          [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
+          [0, 0, 0.8251046025104602]
+        ];
+        const dec = v.map((c) =>
+          Math.abs(c) <= 16 / 512 ? c / 16 : Math.sign(c) * Math.pow(Math.abs(c), 1.8)
+        );
+        linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, mul(PROPHOTO_TO_XYZ50, dec)));
+      } else if (space === 'rec2020') {
+        const REC2020_TO_XYZ65 = [
+          [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
+          [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
+          [0, 0.028072693049087428, 1.060985057710791]
+        ];
+        const al = 1.09929682680944;
+        const be = 0.018053968510807;
+        const dec = v.map((c) => {
+          const a = Math.abs(c);
+          return a < be * 4.5 ? c / 4.5 : Math.sign(c) * Math.pow((a + al - 1) / al, 1 / 0.45);
+        });
+        linear = mul(XYZ65_TO_LSRGB, mul(REC2020_TO_XYZ65, dec));
+      } else return null;
+    } else return null;
+
+    if (!encoded) {
+      encoded = linear.map((c) => {
+        const a = Math.abs(c);
+        return a <= 0.0031308 ? c * 12.92 : Math.sign(c) * (1.055 * Math.pow(a, 1 / 2.4) - 0.055);
+      });
+    }
+    if (!encoded.every(Number.isFinite)) return null;
+    const to255 = (c) => clamp255(Math.round(Math.min(1, Math.max(0, c)) * 255));
+    return { r: to255(encoded[0]), g: to255(encoded[1]), b: to255(encoded[2]), a: clamp01(alpha) };
+  }
+
   function __parseCssColorToRgbaUncached(input) {
     const s = trim(input).toLowerCase();
     if (!s) return null;
     if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+
+    // A CSS Color 4 function the converter can't read (an unknown color()
+    // space, say) is not parsed: the platform would only hand the same
+    // value back.
+    if (/^(oklab|oklch|lab|lch|color)\(/.test(s)) return __parseCssColor4(s);
 
     if (s[0] === '#') {
       const hex = s.slice(1);
@@ -70411,6 +70824,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         probe.style.top = '-9999px';
         probe.style.opacity = '0';
         probe.style.color = String(input);
+        // A value the platform rejects leaves the property unset, and the
+        // probe would then report the color it inherits.
+        if (!probe.style.color) return null;
         const parent = d.body || d.documentElement;
         if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
 
@@ -70781,6 +71197,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let acc = { r: 0, g: 0, b: 0, a: 0 };
     let cur = el;
     let guard = 0;
+    // A background color this parser can't read, met while what is in front
+    // of it still lets it show through. Skipping it as if transparent would
+    // judge the text against whatever lies further out.
+    let unparsable = null;
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -70791,6 +71211,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
       const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+
+      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+        unparsable = {
+          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          value: truncateCssValue(trim(cs.backgroundColor), 80)
+        };
+        break;
+      }
 
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
@@ -70827,7 +71255,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out;
     const allowAssumptions = mode === 'auditorAssist';
 
-    if (acc.a < 1) {
+    if (unparsable) {
+      out = {
+        ok: false,
+        rgba: acc,
+        alpha: acc.a,
+        stack: stack || [],
+        reasonCode: 'BACKGROUND_UNPARSABLE',
+        blockerSelector: unparsable.selector,
+        blockerProperty: 'background-color',
+        blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1) {
       if (allowAssumptions) {
         // If the root is not opaque, apply an explicit canvas fallback.
         const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
@@ -70985,6 +71424,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (!bg && bgAcc.a < 1 && trim(cs && cs.backgroundColor)) return __cacheAndReturn(null);
         if (bg) {
           const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
           bgAcc = compositeRgba(bgAcc, layer);
