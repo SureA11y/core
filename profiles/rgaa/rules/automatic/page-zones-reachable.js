@@ -32,10 +32,11 @@
  *     ZONE_QUICK_LINK); and when it has none of these (ZONE_NO_MECHANISM).
  *     A page with no main landmark is asked about too (MAIN_NOT_FOUND).
  * @implementation-notes
- * - Landmarks are read from the role attribute, then the element:
- *   <header> and <footer> are banner and contentinfo only outside
- *   sectioning content (helpers.hasLandmarkScopingAncestor), <nav> is
- *   navigation, <main> main, and <search> search.
+ * - Landmarks are read with helpers.getLandmarkRole, as core's landmark
+ *   rules read them: the role attribute's first token, else the element's
+ *   implicit role under HTML-AAM (<header> and <footer> are banner and
+ *   contentinfo only outside sectioning content and <main>, <nav> is
+ *   navigation, <main> main, <search> search).
  * - An area found from its name inside, or around, a landmark of the same
  *   kind is that landmark, not a second area.
  * - bypass-blocks-present (WCAG 2.4.1) is satisfied by one bypass
@@ -95,25 +96,17 @@ function runInPage(ctx) {
   }
 
   // The landmark role an element carries, or ''.
+  // The landmark role el exposes, among the five RGAA 12.6.1 names areas
+  // after: helpers.getLandmarkRole, as core's landmark rules read it.
+  const ZONE_LANDMARKS = ['banner', 'navigation', 'main', 'contentinfo', 'search'];
   function landmarkOf(el) {
-    const explicit = String(attr(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    if (explicit) {
-      return ['banner', 'navigation', 'main', 'contentinfo', 'search'].includes(explicit)
-        ? explicit
-        : '';
+    let role;
+    try {
+      role = helpers.getLandmarkRole ? helpers.getLandmarkRole(el, ctx) : '';
+    } catch {
+      role = '';
     }
-    const tag = String(el.localName || '').toLowerCase();
-    const scoped = () =>
-      helpers.hasLandmarkScopingAncestor ? helpers.hasLandmarkScopingAncestor(el, ctx) : false;
-    if (tag === 'header') return scoped() ? '' : 'banner';
-    if (tag === 'footer') return scoped() ? '' : 'contentinfo';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'main') return 'main';
-    if (tag === 'search') return 'search';
-    return '';
+    return ZONE_LANDMARKS.includes(role) ? role : '';
   }
 
   // The five areas, the landmark that matches each, and the names that

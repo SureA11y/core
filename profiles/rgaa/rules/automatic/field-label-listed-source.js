@@ -131,8 +131,25 @@ function runInPage(ctx) {
     return typeof r === 'boolean' ? r : !!(r && r.eligible);
   }
 
-  // <label> elements in the field's own tree whose for equals its id.
+  // The field's <label> elements, as core's rules find them
+  // (helpers.getAssociatedLabelElements: a for that names it, or a wrapping
+  // label it is the first labelable element of), for a field a label can
+  // name.
+  function associatedLabels(el) {
+    if (!isLabelable(el) || typeof helpers.getAssociatedLabelElements !== 'function') return null;
+    try {
+      return Array.from(helpers.getAssociatedLabelElements(el) || []);
+    } catch {
+      return null;
+    }
+  }
+
+  // <label> elements in the field's own tree whose for equals its id. A
+  // field a label cannot name is still looked up, so that case is reported
+  // apart.
   function labelsFor(el) {
+    const shared = associatedLabels(el);
+    if (shared) return shared.filter((label) => label.hasAttribute('for'));
     const idValue = el.getAttribute('id');
     if (!idValue) return [];
     const root = el.getRootNode ? el.getRootNode() : null;
@@ -152,6 +169,8 @@ function runInPage(ctx) {
   // labelable element inside it).
   function wrappingLabel(el) {
     if (!isLabelable(el)) return null;
+    const shared = associatedLabels(el);
+    if (shared) return shared.find((label) => !label.hasAttribute('for')) || null;
     const wrap = el.closest ? el.closest('label') : null;
     if (!wrap || wrap.hasAttribute('for')) return null;
     for (const candidate of wrap.querySelectorAll(LABELABLE.join(', '))) {

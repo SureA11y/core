@@ -72493,8 +72493,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return typeof r === 'boolean' ? r : !!(r && r.eligible);
   }
 
-  // <label> elements in the field's own tree whose for equals its id.
+  // The field's <label> elements, as core's rules find them
+  // (helpers.getAssociatedLabelElements: a for that names it, or a wrapping
+  // label it is the first labelable element of), for a field a label can
+  // name.
+  function associatedLabels(el) {
+    if (!isLabelable(el) || typeof helpers.getAssociatedLabelElements !== 'function') return null;
+    try {
+      return Array.from(helpers.getAssociatedLabelElements(el) || []);
+    } catch {
+      return null;
+    }
+  }
+
+  // <label> elements in the field's own tree whose for equals its id. A
+  // field a label cannot name is still looked up, so that case is reported
+  // apart.
   function labelsFor(el) {
+    const shared = associatedLabels(el);
+    if (shared) return shared.filter((label) => label.hasAttribute('for'));
     const idValue = el.getAttribute('id');
     if (!idValue) return [];
     const root = el.getRootNode ? el.getRootNode() : null;
@@ -72514,6 +72531,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // labelable element inside it).
   function wrappingLabel(el) {
     if (!isLabelable(el)) return null;
+    const shared = associatedLabels(el);
+    if (shared) return shared.find((label) => !label.hasAttribute('for')) || null;
     const wrap = el.closest ? el.closest('label') : null;
     if (!wrap || wrap.hasAttribute('for')) return null;
     for (const candidate of wrap.querySelectorAll(LABELABLE.join(', '))) {
@@ -90961,25 +90980,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The landmark role an element carries, or ''.
+  // The landmark role el exposes, among the five RGAA 12.6.1 names areas
+  // after: helpers.getLandmarkRole, as core's landmark rules read it.
+  const ZONE_LANDMARKS = ['banner', 'navigation', 'main', 'contentinfo', 'search'];
   function landmarkOf(el) {
-    const explicit = String(attr(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    if (explicit) {
-      return ['banner', 'navigation', 'main', 'contentinfo', 'search'].includes(explicit)
-        ? explicit
-        : '';
+    let role;
+    try {
+      role = helpers.getLandmarkRole ? helpers.getLandmarkRole(el, ctx) : '';
+    } catch {
+      role = '';
     }
-    const tag = String(el.localName || '').toLowerCase();
-    const scoped = () =>
-      helpers.hasLandmarkScopingAncestor ? helpers.hasLandmarkScopingAncestor(el, ctx) : false;
-    if (tag === 'header') return scoped() ? '' : 'banner';
-    if (tag === 'footer') return scoped() ? '' : 'contentinfo';
-    if (tag === 'nav') return 'navigation';
-    if (tag === 'main') return 'main';
-    if (tag === 'search') return 'search';
-    return '';
+    return ZONE_LANDMARKS.includes(role) ? role : '';
   }
 
   // The five areas, the landmark that matches each, and the names that
