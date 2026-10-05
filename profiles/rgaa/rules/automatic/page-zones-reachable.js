@@ -65,8 +65,13 @@ const meta = {
   coverage: {}
 };
 
+// Not applicable while a modal dialog is open either: the rest of the page
+// is inert then, so the scan sees the dialog, not the page's own zones and
+// links (helpers.isModalDialogOpen, as core's whole-page rules use it).
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }
 
 function runInPage(ctx) {

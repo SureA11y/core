@@ -91191,7 +91191,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "password-paste-enabled": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -94416,7 +94418,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     data
   };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "skip-link-present": { run: (function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
@@ -94744,7 +94748,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'moderate')
   };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
+  return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "slider-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
