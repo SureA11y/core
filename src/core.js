@@ -5315,7 +5315,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "link-name-present",
@@ -31775,7 +31779,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "link-name-present",
@@ -53382,6 +53390,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const contrastOnly = [];
   let applicableCount = 0;
   let decidedCount = 0;
+  // Links whose only cue is color, compared with the surrounding text.
+  let colorCompared = 0;
 
   // Applicable, but not evaluable. Held separately so the outcome below can
   // tell "checked and sound" apart from "never decided".
@@ -53531,6 +53541,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
     // non-color cue on hover and focus, which a static scan cannot see.
+    colorCompared += 1;
     if (!flagged) {
       contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
       continue;
@@ -53624,6 +53635,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
   });
 
+  // Links told apart by color alone that reach 3:1 against the surrounding
+  // text: the closest is the result's margin (src/core/margin.js).
+  const margin = {
+    marginCandidates: contrastOnly.map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
+    measuredCount: colorCompared
+  };
+
   // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
   // violation outranks an undecided candidate for the rule's own outcome, but
   // never discards it, so an unevaluable link survives a failure elsewhere in
@@ -53637,7 +53655,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       ruleId: rule.ruleId,
       ...resolved,
-      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
+      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null),
+      ...margin
     };
   }
 
