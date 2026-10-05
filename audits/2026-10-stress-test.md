@@ -27,7 +27,7 @@ Ordered by how much damage each does to trust in CI results or to integrators.
 | P6 | [Scoping to a shadow host skips that host's own shadow root](#s-1) **[V]** | options | bug |
 | P7 | [A custom rule written with method shorthand (as in the docs' own example) is silently dropped once stringified](#c-2) **[V]** | custom rules | bug / doc |
 | P8 | [A bad `meta.deprecated` / `meta.i18n` in a custom rule aborts the whole scan](#c-1) **[V]** | custom rules | bug |
-| P9 | [The margin tie-break is O(n²): 15 s for contrast-minimum on 40k paragraphs](#r-4) | rules | perf (regression) |
+| P9 | [The margin tie-break is O(n²): contrast-minimum on 40k paragraphs went from 2.4–2.7 s to 16 s](#r-4) **[V]** | rules | perf (regression) |
 | P10 | [Results with function custom rules or rich `probes` can't be cloned or serialised](#s-2) | options | bug |
 | P11 | [`policyContract: 'constructor'` (or any inherited property name) crashes the scan](#s-3) **[V]** | options | bug |
 | P12 | [A typo in an object-form `runOnly` or in `engineOptions.rules.include` silently runs 0 rules](#s-4) **[V]** | options | ergonomics |
@@ -370,10 +370,25 @@ What a third party meets when adding rules (`engineOptions.customRules`) or a st
 - Cause: the same-colour check (`contrast-helpers.js:561`, which calls `:507`) caches the naive foreground before `resolveGroupOpacityColors` stores its override, and `computeEffectiveForeground` reads that cache first (`:1176` before `:1179`).
 - link-in-text-block is affected too.
 
-<a id="r-4"></a>**R-4. The margin tie-break is O(n²)** — perf, regression from the margin feature
-- `resolveMargin` calls `compareDocumentPosition` on every tie (`src/core/margin.js:52-63`), and in Blink each call is O(n) over siblings.
-- contrast-minimum time grows from 330 ms at 10k paragraphs of the same colour to 3.3 s at 20k and 15 s at 40k.
-- Candidates are already pushed in document order, so replacing only on a strict `<` gives the same answer in O(n).
+<a id="r-4"></a>**R-4. The margin tie-break is O(n²)** — perf, **regression from the margin feature (`6fc8d33`)** **[V]**
+- `resolveMargin` calls `compareDocumentPosition` on every tie (`src/core/margin.js:52-63`). In Blink each call is O(n) over siblings, and on a page where many text runs share a colour every candidate ties.
+- Measured in Chromium with `perfStats.ruleTimings['contrast-minimum']`, two runs each. The page is N `<p style="color:#000">` (all passing, all tied), either as siblings or each wrapped in its own `<div>`:
+
+| Page | Before margins (`2750774`) | HEAD (`63af298`) | HEAD with the tie-break disabled |
+|---|---|---|---|
+| 5k siblings | 359 / 321 ms | 468 / 315 ms | 410 / 322 ms |
+| 10k siblings | 793 / 579 ms | 1,065 / 921 ms | 836 / 662 ms |
+| 20k siblings | 1,648 / 1,376 ms | 3,358 / 3,003 ms | 1,136 / 1,164 ms |
+| 40k siblings | 2,683 / 2,410 ms | **15,981 / 16,008 ms** | 2,698 / 2,529 ms |
+| 5k wrapped | 618 / 428 ms | 517 / 522 ms | 528 / 369 ms |
+| 10k wrapped | 1,022 / 1,137 ms | 1,160 / 976 ms | 900 / 797 ms |
+| 20k wrapped | 2,156 / 1,647 ms | 3,456 / 3,119 ms | 2,074 / 1,819 ms |
+| 40k wrapped | 4,480 / 3,259 ms | **20,494 / 20,071 ms** | 3,812 / 3,512 ms |
+
+- Disabling only the tie-break brings HEAD back to pre-margin timings, so the regression is entirely the tie-break. On the largest pages that is about 6× slower.
+- Fix: when candidates are pushed in document order (true for the contrast rules' text walk), keep the first candidate on a tie (`headroom < best.headroom`, no `compareDocumentPosition`).
+- Where order isn't guaranteed (several roots, shadow trees), compare positions once at the end, among the tied candidates only, rather than on every tie as the loop goes.
+- A perf test with 20k tied candidates would keep this from coming back.
 
 **R-5. Margins disappear, and `measuredCount` is undercounted, after 50 failures**
 - Both contrast rules `break` at 50 occurrences (`contrast-minimum.js:553`, `contrast-enhanced.js:530`), and that also stops collecting margin candidates.
