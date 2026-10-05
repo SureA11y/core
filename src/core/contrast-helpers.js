@@ -1421,6 +1421,16 @@ function createContrastHelpers(opts, shared) {
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
+  const __SVG_NS = 'http://www.w3.org/2000/svg';
+  const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  function __isSvgTextElement(el) {
+    return (
+      !!el &&
+      el.namespaceURI === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+    );
+  }
+
   function computeEffectiveForeground(el) {
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
@@ -1445,7 +1455,16 @@ function createContrastHelpers(opts, shared) {
     } catch {}
 
     const cs = __contrastComputedStyle(el);
-    const c = parseCssColorToRgba(cs && cs.color);
+    // SVG text is painted with `fill`, not `color` (which only feeds
+    // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
+    // of none (outline-only text) or a paint server (url(#gradient)) does
+    // not parse, and leaves the text not computable.
+    const svgText = __isSvgTextElement(el);
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    if (c && svgText) {
+      const fillOpacity = Number.parseFloat(cs.fillOpacity);
+      if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
+    }
     if (!c) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
@@ -1728,7 +1747,9 @@ function createContrastHelpers(opts, shared) {
       if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
-      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      const elColor = parseCssColorToRgba(
+        elCs && (__isSvgTextElement(el) ? elCs.fill : elCs.color)
+      );
       if (!elColor) return __cacheAndReturn(null);
 
       let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
