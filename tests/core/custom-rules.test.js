@@ -117,7 +117,8 @@ test('customRules: a throwing runInPage is contained as cantTell, not a crash, s
   assert.match(r.error || '', /boom/);
 });
 
-test('customRules: an invalid entry (unresolvable runInPage) is silently skipped, and the rest of the scan still runs', () => {
+test('customRules: an invalid entry (unresolvable runInPage) is skipped with a warning, and the rest of the scan still runs', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
       customRules: [
@@ -134,6 +135,85 @@ test('customRules: an invalid entry (unresolvable runInPage) is silently skipped
   assert.ok(!result.checksResults.some((x) => x.ruleId === 'bad-rule'));
   // built-in rules still ran normally
   assert.ok(result.checksResults.length > 100);
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /skipped rule "bad-rule".*could not be turned back/.test(w)));
+  assert.ok(warnings.some((w) => /skipped a rule \(no id\)/.test(w)));
+});
+
+test('customRules: a method written in shorthand survives toString(), as the docs example does', () => {
+  const methods = {
+    runInPage(ctx) {
+      const el = ctx.document.getElementById('target');
+      return { outcome: 'fail', occurrences: [{ __node: el }] };
+    },
+    async asyncRun() {
+      return { outcome: 'pass', occurrences: [] };
+    },
+    applicability(ctx) {
+      return !!ctx.document.getElementById('target');
+    }
+  };
+  class Rule {
+    runInPage() {
+      return { outcome: 'pass', occurrences: [] };
+    }
+  }
+  const sources = {
+    shorthand: methods.runInPage.toString(),
+    asyncShorthand: methods.asyncRun.toString(),
+    classMethod: Rule.prototype.runInPage.toString()
+  };
+  assert.ok(sources.shorthand.startsWith('runInPage('), 'the shape this test is about');
+
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        {
+          id: 'shorthand',
+          meta: { title: 'Shorthand' },
+          runInPage: sources.shorthand,
+          applicability: methods.applicability.toString()
+        },
+        { id: 'class-method', meta: { title: 'Class' }, runInPage: sources.classMethod }
+      ],
+      runOnly: ['shorthand', 'class-method']
+    }
+  });
+  const byId = (id) => result.checksResults.find((x) => x.ruleId === id);
+  assert.strictEqual(byId('shorthand').outcome, 'fail');
+  assert.strictEqual(byId('shorthand').occurrences.length, 1);
+  assert.strictEqual(byId('class-method').outcome, 'pass');
+
+  // An async method revives as a function; what it returns is another matter.
+  const asyncResult = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [{ id: 'async-shorthand', meta: {}, runInPage: sources.asyncShorthand }]
+    }
+  });
+  assert.ok(asyncResult.checksResults.some((x) => x.ruleId === 'async-shorthand'));
+});
+
+test('customRules: a meta that fails validation skips that rule, not the scan', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'bad-deprecated', meta: { deprecated: true }, runInPage: ok },
+        { id: 'bad-i18n', meta: { i18n: {} }, runInPage: ok },
+        { id: 'good', meta: { title: 'Good' }, runInPage: ok }
+      ]
+    }
+  });
+
+  const ids = result.checksResults.map((x) => x.ruleId);
+  assert.ok(!ids.includes('bad-deprecated'));
+  assert.ok(!ids.includes('bad-i18n'));
+  assert.ok(ids.includes('good'));
+  assert.ok(result.checksResults.length > 100, 'built-in rules still ran');
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /skipped rule "bad-deprecated" \(invalid meta: /.test(w)));
+  assert.ok(warnings.some((w) => /skipped rule "bad-i18n" \(invalid meta: /.test(w)));
 });
 
 test('customRules: a custom rule id colliding with a built-in one overrides it for that scan (reference-engine configure()-like semantics)', () => {
