@@ -63772,23 +63772,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    function isMovedForEver(from, stop) {
-      for (let el = from; el && el !== stop; el = el.parentElement) {
-        let animations;
+    // The elements such an animation targets, read once from the document's
+    // animations: asking each ancestor of each text for its own costs an
+    // animation lookup per element.
+    let movedForEver = null;
+    function movedForEverTargets() {
+      if (movedForEver) return movedForEver;
+      movedForEver = new Set();
+      let animations;
+      try {
+        animations = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+      } catch {
+        animations = [];
+      }
+      for (const a of animations) {
         try {
-          animations = typeof el.getAnimations === 'function' ? el.getAnimations() : [];
-        } catch {
-          animations = [];
-        }
-        for (const a of animations) {
-          try {
-            if (a.playState !== 'running' || !a.effect) continue;
-            if (a.effect.getComputedTiming().iterations !== Infinity) continue;
-            const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
-            const moves = frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)));
-            if (moves) return true;
-          } catch {}
-        }
+          if (a.playState !== 'running' || !a.effect || !a.effect.target) continue;
+          if (a.effect.getComputedTiming().iterations !== Infinity) continue;
+          const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
+          if (frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)))) {
+            movedForEver.add(a.effect.target);
+          }
+        } catch {}
+      }
+      return movedForEver;
+    }
+    function isMovedForEver(from, stop) {
+      const targets = movedForEverTargets();
+      if (!targets.size) return false;
+      for (let el = from; el && el !== stop; el = el.parentElement) {
+        if (targets.has(el)) return true;
       }
       return false;
     }
