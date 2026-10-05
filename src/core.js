@@ -16051,6 +16051,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
           o.html = '';
         }
       }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
 
     // A more robust element-identity mechanism than the CSS selector string
@@ -24739,10 +24747,41 @@ const createDomHelpers = (function createDomHelpers(opts) {
         path.unshift(idx);
         node = parent;
       }
+      // The path is from documentElement down. An element in a shadow tree
+      // is not under it: its path would count from the shadow root's first
+      // element and name an element in the document instead.
+      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
     } catch {
       return null;
     }
     return path;
+  }
+
+  // For an element in a shadow tree, the selectors of the shadow hosts that
+  // lead to it, outermost first, each resolved in the tree that holds it;
+  // the element's own selector is resolved in its shadow root. null for an
+  // element in the document, or when a host gets no selector.
+  function buildShadowHostSelectors(el) {
+    try {
+      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      const hosts = [];
+      let root = el.getRootNode();
+      let guard = 0;
+      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
+        hosts.unshift(root.host);
+        root = root.host.getRootNode();
+      }
+      if (!hosts.length) return null;
+      const out = [];
+      for (const host of hosts) {
+        const sel = String(buildSelector(host) || '');
+        if (!sel) return null;
+        out.push(sel);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // Occurrence-level structural path: prefers the actual element reference
@@ -24757,6 +24796,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
       if (p) return p;
+      // In a shadow tree the selector holds only inside its shadow root;
+      // read against the document it would find another element.
+      if (buildShadowHostSelectors(node)) return null;
     }
     if (
       selector &&
@@ -25217,6 +25259,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllSource,
     getDoctypeInfo,
     getOuterHtmlSnippet,
+    buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
     buildStructuralPath,
@@ -25441,6 +25484,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {
@@ -70025,6 +70074,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
           o.html = '';
         }
       }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
 
     // A more robust element-identity mechanism than the CSS selector string
@@ -78713,10 +78770,41 @@ const createDomHelpers = (function createDomHelpers(opts) {
         path.unshift(idx);
         node = parent;
       }
+      // The path is from documentElement down. An element in a shadow tree
+      // is not under it: its path would count from the shadow root's first
+      // element and name an element in the document instead.
+      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
     } catch {
       return null;
     }
     return path;
+  }
+
+  // For an element in a shadow tree, the selectors of the shadow hosts that
+  // lead to it, outermost first, each resolved in the tree that holds it;
+  // the element's own selector is resolved in its shadow root. null for an
+  // element in the document, or when a host gets no selector.
+  function buildShadowHostSelectors(el) {
+    try {
+      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      const hosts = [];
+      let root = el.getRootNode();
+      let guard = 0;
+      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
+        hosts.unshift(root.host);
+        root = root.host.getRootNode();
+      }
+      if (!hosts.length) return null;
+      const out = [];
+      for (const host of hosts) {
+        const sel = String(buildSelector(host) || '');
+        if (!sel) return null;
+        out.push(sel);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // Occurrence-level structural path: prefers the actual element reference
@@ -78731,6 +78819,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
       if (p) return p;
+      // In a shadow tree the selector holds only inside its shadow root;
+      // read against the document it would find another element.
+      if (buildShadowHostSelectors(node)) return null;
     }
     if (
       selector &&
@@ -79191,6 +79282,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllSource,
     getDoctypeInfo,
     getOuterHtmlSnippet,
+    buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
     buildStructuralPath,
@@ -79415,6 +79507,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {

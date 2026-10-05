@@ -125,6 +125,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     headroom: number,      // >= 0
     measuredCount: number,
     selector?: string,
+    shadowHostSelectors?: string[],  // as on an occurrence
     structuralPath?: number[],
     context?: object       // rule-specific; not a stable contract
   },
@@ -160,6 +161,7 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
   selector: string,
   html: string,
   structuralPath: number[] | null,
+  shadowHostSelectors?: string[],
   summary: string,
   hint: string,
   i18n: { summaryKey: string, hintKey: string, params: object } | null,
@@ -179,9 +181,10 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
 
 | Field | Meaning |
 |---|---|
-| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. The exception is a rule whose finding *is* an absent element: `page-title-present` reports `head > title` with an `html` of `<title>(missing)</title>`, neither of which is on the page. Both are constants, so the fingerprint they feed stays stable, but do not treat `selector` as resolvable or `html` as real markup without checking the rule reported something that exists. |
-| `html` | An outer-HTML snippet of the flagged element, cut at 2,000 characters — use this as your primary "which element" signal when `includeShadowDom: true` (selectors don't pierce shadow boundaries). For `<html>`, `<head>` and `<body>`, which hold the whole page, it is the start tag alone (`<html class="x">`), so a page-level finding keeps its identity when other content changes. |
-| `structuralPath` | The flagged element's sibling-index path from `documentElement` down to it (e.g. `[1, 0, 2]`) — `[]` if the element *is* `documentElement`, `null` if it couldn't be determined. A more robust element-identity mechanism than `selector` alone: it survives DOM changes a selector string wouldn't (an id/class rename, for instance), at the cost of not being usable as an actual CSS selector. Computed from the element reference when the rule kept one, otherwise by re-resolving `selector` against the document (same caveat as `selector` itself: a non-unique selector could resolve to a different element than intended). |
+| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. The exception is a rule whose finding *is* an absent element: `page-title-present` reports `head > title` with an `html` of `<title>(missing)</title>`, neither of which is on the page. Both are constants, so the fingerprint they feed stays stable, but do not treat `selector` as resolvable or `html` as real markup without checking the rule reported something that exists. For an element in a shadow tree, `selector` resolves inside its shadow root, and `shadowHostSelectors` says how to get there. |
+| `shadowHostSelectors` | Present only for an element inside a shadow tree: the selectors of the shadow hosts that lead to it, outermost first, each resolved in the tree that holds it, so `document.querySelector(s[0]).shadowRoot.querySelector(s[1])…shadowRoot.querySelector(selector)` finds the element. Two components with the same content give the same `selector` and differ here. Like `selector`, it is not part of a finding's identity. |
+| `html` | An outer-HTML snippet of the flagged element, cut at 2,000 characters — useful to show the element, and for an element in a shadow tree read beside `shadowHostSelectors`. For `<html>`, `<head>` and `<body>`, which hold the whole page, it is the start tag alone (`<html class="x">`), so a page-level finding keeps its identity when other content changes. |
+| `structuralPath` | The flagged element's sibling-index path from `documentElement` down to it (e.g. `[1, 0, 2]`) — `[]` if the element *is* `documentElement`, `null` if it couldn't be determined, which includes every element inside a shadow tree (use `shadowHostSelectors` and `selector` there). A more robust element-identity mechanism than `selector` alone: it survives DOM changes a selector string wouldn't (an id/class rename, for instance), at the cost of not being usable as an actual CSS selector. Computed from the element reference when the rule kept one, otherwise by re-resolving `selector` against the document (same caveat as `selector` itself: a non-unique selector could resolve to a different element than intended). |
 | `summary` | Human-readable, already localized ("This button has no accessible name."). |
 | `hint` | Human-readable remediation guidance, already localized. |
 | `i18n` | The raw translation keys behind `summary`/`hint`, if you want to re-render them in a different locale yourself without re-running the scan. `null` if the occurrence didn't use key-based i18n. |

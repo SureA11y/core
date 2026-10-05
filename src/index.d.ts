@@ -196,6 +196,12 @@ export interface Occurrence {
   selector: string;
   html: string;
   structuralPath: number[] | null;
+  /**
+   * For an element in a shadow tree: the selectors of the shadow hosts that
+   * lead to it, outermost first, each resolved in the tree that holds it.
+   * `selector` then resolves inside the last host's shadow root.
+   */
+  shadowHostSelectors?: string[];
   summary: string;
   hint: string;
   i18n: { summaryKey: string; hintKey: string; params: Record<string, unknown> } | null;
@@ -241,6 +247,8 @@ export interface Margin extends MarginDeclaration {
   measuredCount: number;
   /** Absent with `output.includeSelector: false`. */
   selector?: string;
+  /** As on an occurrence: present for an element in a shadow tree. */
+  shadowHostSelectors?: string[];
   structuralPath?: number[];
   /** Rule-specific detail; not a stable contract. */
   context?: Record<string, unknown>;
