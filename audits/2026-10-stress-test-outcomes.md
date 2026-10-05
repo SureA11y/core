@@ -307,8 +307,9 @@ Section 6 leads checked against ACT de46e4:
 
 | Lead | Verdict |
 |---|---|
+| `link-name-present`, `button-name-present`: `role="none"`/`"presentation"` on a focusable link or button | **Bug, fixed in PR #80** (`70f9a51`). WAI-ARIA 1.2's conflict resolution keeps a focusable element's implicit role, so the name comes from its content. An empty one still fails. |
 | `valid-lang`, `lang="en-"` passes | **Not a bug.** The rule judges only the primary subtag, as ACT de46e4 does: its "known primary language tag" accepts a tag that breaks RFC 5646 grammar (its example is `de-hello`). `"en-"` names English. |
-| `valid-lang`, `lang="qaa"` fails | **Open, decision for the maintainer.** ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
+| `valid-lang`, `lang="qaa"` fails | **Kept as it is** (maintainer undecided, 2026-10-05): no change, since failing is the documented behaviour. Revisit if a user reports private-use tags being flagged. ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
 
 ### 6.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
 
@@ -320,13 +321,13 @@ The audit stopped before checking these. They are leads, not findings.
   | Rule | Case | Got | Likely |
   |---|---|---|---|
   | `label-in-name` | `aria-labelledby` referencing the link itself | fail | false positive |
-  | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | false positive |
+  | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | fixed, see 6.0 |
   | `form-control-programmatic-label-present` | two inputs sharing an `id`, one `<label for>` | pass | false negative |
   | `aria-valid-attr-value` | `aria-hidden="TRUE"` | fail | check case-insensitivity first |
   | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | false positive |
   | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | false negative |
   | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | false negative |
-  | `valid-lang` | `lang="qaa"` (private use) | fail | open: see 6.0 |
+  | `valid-lang` | `lang="qaa"` (private use) | fail | kept: see 6.0 |
   | `valid-lang` | `lang="en-"` | pass | not a bug: see 6.0 |
   | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | to decide |
   | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | possible noise |
