@@ -212,6 +212,14 @@ function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
       : `**${label}** ${body}`;
   }
 
+  // A rule that declares meta.margin reports how close its closest
+  // measurement came to the threshold (OUTPUT_SCHEMA.md, check result).
+  function marginLine(margin) {
+    if (!margin) return '';
+    const limit = margin.limit === 'min' ? 'must reach' : 'must stay under';
+    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it.`;
+  }
+
   function reference(r) {
     const sc = r.wcagSc ? `WCAG ${r.wcagSc} (${r.level || '—'})` : 'no formal WCAG SC mapping';
 
@@ -221,7 +229,8 @@ function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
       escapeAngles(r.description),
       proseBlock('Applies to.', r.applicability),
       proseBlock('Expectation.', r.expectation),
-      proseBlock('What a finding reports.', r.reports)
+      proseBlock('What a finding reports.', r.reports),
+      marginLine(r.margin)
     ].filter(Boolean);
 
     return `### \`${r.ruleId}\`\n\n${parts.join('\n\n')}`;
@@ -258,6 +267,8 @@ ${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`
 **${rows.length} rules total: ${automatic.length} automatic (decide deterministically; can return \`fail\`${isCore ? ' when they check a WCAG requirement' : ''}), ${manual.length} manual (a person judges what they find; never \`fail\`, and \`pass\` only when nothing needs judging). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
+
+A rule with a **Margin** line measures a value against a threshold, and its check result's \`margin\` says how close the closest element came while still meeting it (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
 Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
@@ -313,7 +324,8 @@ function main() {
         severity: r.defaultSeverity,
         applicability: (prose.get(r.ruleId) || {}).applicability || '',
         expectation: (prose.get(r.ruleId) || {}).expectation || '',
-        reports: (prose.get(r.ruleId) || {}).reports || ''
+        reports: (prose.get(r.ruleId) || {}).reports || '',
+        margin: r.margin || null
       }))
       .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
     const name = isCore ? 'core' : (profiles.get(src.key) || {}).standard || src.key;

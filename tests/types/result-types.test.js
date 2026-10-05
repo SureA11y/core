@@ -114,6 +114,20 @@ test(
         contextSelector: ['main', 'body'],
         engineOptions: { optInRules: 'all' }
       }),
+      // A margin, from a rule that declares one.
+      runa11yCoreOnHtml('<!doctype html><html><body><p id="a">x</p></body></html>', {
+        runOnly: { includeRuleIds: ['typed-margin'] },
+        engineOptions: {
+          customRules: [
+            {
+              id: 'typed-margin',
+              meta: { title: 't', margin: { measure: 'overflow-px', unit: 'px', limit: 'max' } },
+              runInPage:
+                "(ctx) => ({ outcome: 'pass', occurrences: [], marginCandidates: [{ el: ctx.document.getElementById('a'), value: 1.25, threshold: 7.5, context: { axis: 'x' } }] })"
+            }
+          ]
+        }
+      }),
       // A scope that matched nothing.
       runa11yCoreOnHtml('<!doctype html><html><body><p>x</p></body></html>', {
         contextSelector: '#missing'
@@ -125,6 +139,10 @@ test(
       for (const c of r.checksResults)
         for (const o of c.occurrences) for (const k of Object.keys(o)) fields.add(k);
     assert.ok(fields.has('uncertainty'), 'the scans include a cantTell occurrence');
+    assert.ok(
+      results.some((r) => r.checksResults.some((c) => c.margin)),
+      'the scans include a margin'
+    );
 
     const errors = compile(
       `import type { ScanResult, CheckCatalogEntry, RuleCatalogEntry } from ${JSON.stringify(TYPES)};\n` +
@@ -141,7 +159,7 @@ test(
   { skip: !ts && 'typescript not installed' },
   () => {
     const errors = compile(`
-    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog, waitForPageReady } from ${JSON.stringify(TYPES)};
+    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog, waitForPageReady, getMargins } from ${JSON.stringify(TYPES)};
     import type { ScanResult, CrossFrameResult, FrameEntry, PageReadyResult } from ${JSON.stringify(TYPES)};
     const a: ScanResult = runDomRulesInPage('https://example.test/', null, { profile: 'wcag22-aa' }, null);
     const b: ScanResult = runa11yCoreInPage(null, ['main', 'nav'], { rules: { include: 'img-alt-present', 'region': { excludeSelectors: ['.ad'] } } }, { includeRuleIds: ['img-alt-present'], includeMode: 'or' });
@@ -154,6 +172,9 @@ test(
     const code: string | undefined = b.checksResults[0]?.occurrences[0]?.uncertainty?.code;
     const tags: string[] = getChecksCatalog({ optInRules: 'all' })[0].tags;
     const unmatched: string[] = a.contextMatch ? a.contextMatch.unmatchedSelectors : [];
+    const headroom: number | undefined = a.checksResults[0]?.margin?.headroom;
+    const closest: string[] = getMargins(a).map((m) => m.ruleId + m.unit + m.limit);
+    const declared: string | undefined = getChecksCatalog()[0].margin?.measure;
     const scanned: number | undefined = a.contextMatch?.elementCount;
     runDomRulesInPage(null, null, {}, ['img-alt-present']);
     const ready: Promise<PageReadyResult> = waitForPageReady({ timeoutMs: 3000, quietMs: 500 });
@@ -165,7 +186,7 @@ test(
     runDomRulesInPage(null, null, {}, 42);
     // @ts-expect-error outcomes are a closed set
     const o: typeof a.checksResults[number]['outcome'] = 'warning';
-    void [b, p, off, width, reached, code, tags, unmatched, scanned, o];
+    void [b, p, off, width, reached, code, tags, unmatched, scanned, headroom, closest, declared, o];
   `);
     assert.deepEqual(errors, []);
   }

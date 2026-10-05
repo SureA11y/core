@@ -39,6 +39,7 @@ const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
 const { waitForPageReady } = require('../src/core/page-ready');
+const { getMargins } = require('../src/core/margin');
 
 const {
   loadRuleModules,
@@ -137,6 +138,8 @@ ${inPageRunnerSource}
     },
     // Waits for the page to load before a scan (src/core/page-ready.js).
     waitForPageReady: ${waitForPageReady.toString()},
+    // Every margin in a scan result (src/core/margin.js).
+    getMargins: ${getMargins.toString()},
     runa11yCoreInPage: function (pageUrl, contextSelector, engineOptions, runOnly) {
       return runa11yCoreInPage(
         pageUrl,

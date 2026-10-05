@@ -874,7 +874,8 @@ function runCoreSettled(
         expectation: normalizedMeta.expectation,
         references: normalizedMeta.references,
         requirements: normalizedMeta.requirements,
-        mappings: normalizedMeta.mappings
+        mappings: normalizedMeta.mappings,
+        margin: normalizedMeta.margin
       });
       extraImpls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
     }

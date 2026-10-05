@@ -34,6 +34,7 @@
 
 const assert = require('node:assert');
 const fs = require('node:fs');
+const { MARGIN_UNITS, MARGIN_LIMITS } = require('../src/core/margin');
 const path = require('node:path');
 
 // Adjust these imports to match your repo layout if needed
@@ -293,6 +294,33 @@ function validateDeclaredReasonCodes(meta, runFilePath) {
       `meta.reasonCodes: "${code}" does not appear in the rule's source`
     );
   }
+}
+
+// meta.margin declares what a rule measures against a threshold (see
+// src/core/margin.js). A malformed one would silently report no margin, so a
+// built-in rule's has to be complete, and its source has to hand candidates
+// over, or the declaration promises a field the rule never fills.
+function validateMarginDeclaration(meta, runFilePath) {
+  if (!meta || meta.margin === undefined) return;
+  const g = meta.margin;
+  assert.ok(g && typeof g === 'object' && !Array.isArray(g), 'meta.margin must be an object');
+  assert.ok(
+    typeof g.measure === 'string' && /^[a-z][a-z0-9-]*$/.test(g.measure),
+    `meta.margin.measure must be a lowercase, hyphenated name, got ${JSON.stringify(g.measure)}`
+  );
+  assert.ok(
+    MARGIN_UNITS.includes(g.unit),
+    `meta.margin.unit must be one of ${MARGIN_UNITS.join(', ')}, got ${JSON.stringify(g.unit)}`
+  );
+  assert.ok(
+    MARGIN_LIMITS.includes(g.limit),
+    `meta.margin.limit must be one of ${MARGIN_LIMITS.join(', ')}, got ${JSON.stringify(g.limit)}`
+  );
+  const src = fs.readFileSync(runFilePath, 'utf8');
+  assert.ok(
+    /\bmarginCandidates\b/.test(src.replace(/\bmargin\s*:\s*\{[^}]*\}/, '')),
+    "meta.margin is declared but the rule's source never returns marginCandidates"
+  );
 }
 
 function validateUncertaintyCodes(runFilePath) {
@@ -762,6 +790,7 @@ function main() {
   // Keep the cantTell vocabulary closed (static extraction)
   validateUncertaintyCodes(codePath);
   validateDeclaredReasonCodes(mod.meta, codePath);
+  validateMarginDeclaration(mod.meta, codePath);
 
   // Runtime validation via engine
   const RULE_ID = mod.id;
