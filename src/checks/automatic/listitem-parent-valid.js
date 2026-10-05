@@ -20,6 +20,10 @@
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  * @implementation-notes
+ * - The parent is the <li>'s parent in the flat tree, as the page renders
+ *   it: an <li> slotted into a shadow <ul><slot></slot></ul> is in that
+ *   list, and a <slot> in between is seen through. An <li> a shadow host
+ *   doesn't slot is not rendered and is left out.
  * - Distinct, atomic decision from list-children-valid (the
  *   inverse relationship: does a given list container have valid
  *   children).
@@ -78,6 +82,24 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // The element an <li> renders in: its parent in the flat tree, through an
+  // assigned slot and past any <slot> or shadow root on the way. undefined
+  // for a child of a shadow host that no slot takes: it isn't rendered.
+  function flatParent(el) {
+    const parent = el.parentElement;
+    if (parent && parent.shadowRoot && !el.assignedSlot) return undefined;
+    const up = (n) =>
+      typeof helpers.composedParent === 'function'
+        ? helpers.composedParent(n)
+        : n.assignedSlot || n.parentNode || n.host || null;
+    let p = up(el);
+    for (let guard = 0; p && guard < 100; guard++) {
+      if (p.nodeType === 1 && String(p.localName) !== 'slot') return p;
+      p = up(p);
+    }
+    return null;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
@@ -85,7 +107,7 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = el.parentElement;
+    const parent = flatParent(el);
     if (!parent) continue;
 
     // An explicit role on the <li> ITSELF overrides its native "listitem"
