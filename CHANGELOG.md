@@ -4,6 +4,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+
+- `contrast-computable` no longer counts collapsed content as paint behind text. The content of a closed `<details>` (everything but its `<summary>`) keeps its layout box in Chromium but is never drawn, so text near a collapsed drop-down menu was asked about with `BACKGROUND_OVERLAP`, naming the hidden menu, on every page with one. Content under `content-visibility: hidden` or `hidden="until-found"` was counted the same way. Text beside such content is judged against its own background again, as in 1.9.0. ([#86](https://github.com/SureA11y/core/issues/86))
+- `region`'s "Applies to" in `RULE_CATALOG.md` stopped at "see": a line of the rule's header comment started with `@implementation-notes)`, which the catalog generators read as a new tag. The header is rewrapped, and the rule validator now fails on any rule header line that starts with `@` without being a tag. ([#87](https://github.com/SureA11y/core/issues/87))
+
 ## [1.10.0] - 2026-10-06
 
 ### Added
