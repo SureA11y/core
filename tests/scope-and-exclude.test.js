@@ -298,3 +298,21 @@ test("contextSelector naming a shadow host scans that host's own shadow root", (
     assertRule(result, 'button-name-present', 'fail', { minOccurrences: 1 });
   }
 });
+
+test('an invalid excludeSelectors entry is warned about once, and the others still apply', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<div class="ad"><img src="a.png"></div><img src="b.png"><img src="c.png"></main></body></html>';
+  const result = runa11yCoreOnHtml(html, {
+    excludeSelectors: ['.ad', 'div[', 'div['],
+    runOnly: ['img-alt-present'],
+    // One scan: the helper otherwise runs both entry points, each warning.
+    entryPointParity: false
+  });
+  assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const warnings = warn.mock.calls
+    .map((c) => c.arguments.join(' '))
+    .filter((w) => w.includes('div['));
+  assert.equal(warnings.length, 1);
+});
