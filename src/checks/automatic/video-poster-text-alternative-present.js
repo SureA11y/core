@@ -23,6 +23,14 @@
  *   exposed to assistive technologies in practice. <video> is also not a
  *   labelable element, so native <label for="..."> associations are not
  *   accepted either.
+ *   A <video> with no name that is the only content of a <figure> with a
+ *   non-empty <figcaption> is asked about (cantTell) rather than failed: the
+ *   caption names the figure, not the video (HTML-AAM; Chromium gives the
+ *   video no name), but it may describe the poster, and only a person can
+ *   tell.
+ * @reports
+ *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell
+ *     finding, with `figcaption`, the caption's text up to 100 characters.
  */
 
 const id = 'video-poster-text-alternative-present';
@@ -146,7 +154,26 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The caption of the <figure> a video is the only content of: its
+  // <figcaption>'s text, or '' when the video shares the figure with other
+  // content, or the caption is empty.
+  function soleFigureCaption(el) {
+    const figure = el.parentElement;
+    if (!figure || String(figure.localName) !== 'figure') return '';
+    let caption = null;
+    for (let c = figure.firstElementChild; c; c = c.nextElementSibling) {
+      if (c === el) continue;
+      if (String(c.localName) === 'figcaption' && !caption) caption = c;
+      else return '';
+    }
+    for (let n = figure.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && trim(n.nodeValue)) return '';
+    }
+    return caption ? trim(caption.textContent).replace(/\s+/g, ' ') : '';
+  }
 
   for (const el of videos) {
     if (!el || !el.getAttribute) continue;
@@ -201,6 +228,34 @@ function runInPage(ctx) {
       }
     }
 
+    const caption = soleFigureCaption(el);
+    if (caption) {
+      const text = caption.length > 100 ? caption.slice(0, 99) + '…' : caption;
+      const occ = {
+        summary:
+          'This <video> has no name, but its figure has a caption that may describe its poster.',
+        hint: 'Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).',
+        i18n: {
+          summaryKey: 'videoPoster_textAltPresent_summary_cantTell_figcaption',
+          hintKey: 'videoPoster_textAltPresent_hint_cantTell_figcaption',
+          params: { figcaption: text }
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed: 'Whether the figure caption describes what the poster image shows.',
+          evidence: { figcaption: text }
+        },
+        data: {
+          poster,
+          details: { reasonCode: 'VIDEO_POSTER_FIGCAPTION_REVIEW', figcaption: text }
+        }
+      };
+      cantTellOccurrences.push(
+        reportOccurrence ? reportOccurrence(el, occ) : { selector: '', html: '', ...occ }
+      );
+      continue;
+    }
+
     const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
       hint: 'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).',
@@ -225,13 +280,23 @@ function runInPage(ctx) {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (!occurrences.length)
+  if (!occurrences.length && !cantTellOccurrences.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  if (helpers && typeof helpers.resolveTieredOutcome === 'function') {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(
+        occurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'minor'
+      )
+    };
+  }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: occurrences.length ? 'fail' : 'cantTell',
     severity: rule.defaultSeverity || 'minor',
-    occurrences
+    occurrences: occurrences.concat(cantTellOccurrences)
   };
 }
 

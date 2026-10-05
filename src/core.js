@@ -10651,6 +10651,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
     "videoPoster_textAltPresent_summary_fail": "Fehlende Textalternative für das Vorschaubild (poster) von <video>.",
     "videoPoster_textAltPresent_hint_fail": "Stellen Sie für das Vorschaubild einen zugänglichen Namen bereit (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
     "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
@@ -11516,6 +11518,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
     "videoPoster_textAltPresent_summary_fail": "Missing text alternative for <video> poster.",
     "videoPoster_textAltPresent_hint_fail": "Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
     "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
@@ -12381,6 +12385,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de póster proporcionen una alternativa textual (nombre accesible).",
     "videoPoster_textAltPresent_summary_fail": "Falta la alternativa textual para el póster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Proporcionar un nombre accesible para la imagen del póster (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de reserva).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Compruebe que el pie describe lo que muestra la imagen de portada. Si no, dé al vídeo un nombre accesible (aria-label o aria-labelledby).",
     "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
     "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
@@ -13246,6 +13252,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent une alternative textuelle (nom accessible).",
     "videoPoster_textAltPresent_summary_fail": "Alternative textuelle manquante pour l’image poster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
     "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir une alternative textuelle",
     "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent une alternative textuelle via <title>/<desc> ou un nom accessible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
@@ -14111,6 +14119,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
     "videoPoster_textAltPresent_summary_fail": "<video> のポスター画像にテキストによる代替がありません。",
     "videoPoster_textAltPresent_hint_fail": "ポスター画像にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。代わりに title 属性も使えます)。",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
     "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
     "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
     "svgImage_textAltPresent_summary_fail": "SVG の <image> にテキストによる代替がありません。",
@@ -65027,7 +65037,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The caption of the <figure> a video is the only content of: its
+  // <figcaption>'s text, or '' when the video shares the figure with other
+  // content, or the caption is empty.
+  function soleFigureCaption(el) {
+    const figure = el.parentElement;
+    if (!figure || String(figure.localName) !== 'figure') return '';
+    let caption = null;
+    for (let c = figure.firstElementChild; c; c = c.nextElementSibling) {
+      if (c === el) continue;
+      if (String(c.localName) === 'figcaption' && !caption) caption = c;
+      else return '';
+    }
+    for (let n = figure.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && trim(n.nodeValue)) return '';
+    }
+    return caption ? trim(caption.textContent).replace(/\s+/g, ' ') : '';
+  }
 
   for (const el of videos) {
     if (!el || !el.getAttribute) continue;
@@ -65082,6 +65111,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    const caption = soleFigureCaption(el);
+    if (caption) {
+      const text = caption.length > 100 ? caption.slice(0, 99) + '…' : caption;
+      const occ = {
+        summary:
+          'This <video> has no name, but its figure has a caption that may describe its poster.',
+        hint: 'Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).',
+        i18n: {
+          summaryKey: 'videoPoster_textAltPresent_summary_cantTell_figcaption',
+          hintKey: 'videoPoster_textAltPresent_hint_cantTell_figcaption',
+          params: { figcaption: text }
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed: 'Whether the figure caption describes what the poster image shows.',
+          evidence: { figcaption: text }
+        },
+        data: {
+          poster,
+          details: { reasonCode: 'VIDEO_POSTER_FIGCAPTION_REVIEW', figcaption: text }
+        }
+      };
+      cantTellOccurrences.push(
+        reportOccurrence ? reportOccurrence(el, occ) : { selector: '', html: '', ...occ }
+      );
+      continue;
+    }
+
     const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
       hint: 'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).',
@@ -65106,13 +65163,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (!occurrences.length)
+  if (!occurrences.length && !cantTellOccurrences.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  if (helpers && typeof helpers.resolveTieredOutcome === 'function') {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(
+        occurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'minor'
+      )
+    };
+  }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: occurrences.length ? 'fail' : 'cantTell',
     severity: rule.defaultSeverity || 'minor',
-    occurrences
+    occurrences: occurrences.concat(cantTellOccurrences)
   };
 }), applicability: null }
   };
@@ -65216,6 +65283,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
     "videoPoster_textAltPresent_summary_fail": "Fehlende Textalternative für das Vorschaubild (poster) von <video>.",
     "videoPoster_textAltPresent_hint_fail": "Stellen Sie für das Vorschaubild einen zugänglichen Namen bereit (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
     "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
@@ -66081,6 +66150,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
     "videoPoster_textAltPresent_summary_fail": "Missing text alternative for <video> poster.",
     "videoPoster_textAltPresent_hint_fail": "Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
     "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
@@ -66946,6 +67017,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de póster proporcionen una alternativa textual (nombre accesible).",
     "videoPoster_textAltPresent_summary_fail": "Falta la alternativa textual para el póster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Proporcionar un nombre accesible para la imagen del póster (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de reserva).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Compruebe que el pie describe lo que muestra la imagen de portada. Si no, dé al vídeo un nombre accesible (aria-label o aria-labelledby).",
     "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
     "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
@@ -67811,6 +67884,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent une alternative textuelle (nom accessible).",
     "videoPoster_textAltPresent_summary_fail": "Alternative textuelle manquante pour l’image poster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
     "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir une alternative textuelle",
     "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent une alternative textuelle via <title>/<desc> ou un nom accessible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
@@ -68676,6 +68751,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
     "videoPoster_textAltPresent_summary_fail": "<video> のポスター画像にテキストによる代替がありません。",
     "videoPoster_textAltPresent_hint_fail": "ポスター画像にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。代わりに title 属性も使えます)。",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
     "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
     "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
     "svgImage_textAltPresent_summary_fail": "SVG の <image> にテキストによる代替がありません。",

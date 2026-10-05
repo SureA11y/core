@@ -89,6 +89,8 @@
   "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
   "videoPoster_textAltPresent_summary_fail": "<video> のポスター画像にテキストによる代替がありません。",
   "videoPoster_textAltPresent_hint_fail": "ポスター画像にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。代わりに title 属性も使えます)。",
+  "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
+  "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
   "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
   "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
   "svgImage_textAltPresent_summary_fail": "SVG の <image> にテキストによる代替がありません。",

@@ -89,6 +89,8 @@
   "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de póster proporcionen una alternativa textual (nombre accesible).",
   "videoPoster_textAltPresent_summary_fail": "Falta la alternativa textual para el póster de <video>.",
   "videoPoster_textAltPresent_hint_fail": "Proporcionar un nombre accesible para la imagen del póster (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de reserva).",
+  "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
+  "videoPoster_textAltPresent_hint_cantTell_figcaption": "Compruebe que el pie describe lo que muestra la imagen de portada. Si no, dé al vídeo un nombre accesible (aria-label o aria-labelledby).",
   "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
   "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
   "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",

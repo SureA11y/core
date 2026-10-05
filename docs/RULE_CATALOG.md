@@ -2397,4 +2397,8 @@ Each applicable &lt;video&gt; element provides a text alternative for the poster
 
 - an accessible name (aria-label / aria-labelledby / title).
 
-Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only rendered by browsers that don't support &lt;video&gt;, so it is not reliably exposed to assistive technologies in practice. &lt;video&gt; is also not a labelable element, so native &lt;label for="..."&gt; associations are not accepted either.
+Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only rendered by browsers that don't support &lt;video&gt;, so it is not reliably exposed to assistive technologies in practice. &lt;video&gt; is also not a labelable element, so native &lt;label for="..."&gt; associations are not accepted either. A &lt;video&gt; with no name that is the only content of a &lt;figure&gt; with a non-empty &lt;figcaption&gt; is asked about (cantTell) rather than failed: the caption names the figure, not the video (HTML-AAM; Chromium gives the video no name), but it may describe the poster, and only a person can tell.
+
+**What a finding reports.**
+
+- `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell finding, with `figcaption`, the caption's text up to 100 characters.
