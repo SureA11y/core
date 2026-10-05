@@ -446,6 +446,64 @@ function createContrastHelpers(opts, shared) {
         );
       };
 
+      // Text the page draws nowhere a reader can see it. From CSS alone:
+      // a font size of 0, or a fully transparent color, unless the color is
+      // left transparent for a background to show through the glyphs
+      // (background-clip: text, gradient text), which the computability
+      // check then asks about. With layout (styleAndGeometry): text entirely
+      // above or left of the page, where no scrolling reaches (the
+      // left: -9999px technique), or clipped to nothing by an ancestor that
+      // hides its overflow (height: 0; overflow: hidden).
+      const isUndrawn = (el) => {
+        const cs = __contrastComputedStyle(el);
+        if (!cs) return false;
+        if (Number.parseFloat(cs.fontSize) === 0) return true;
+        const color = parseCssColorToRgba(cs.color);
+        if (color && color.a === 0) {
+          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
+          if (!/\btext\b/.test(clip)) return true;
+        }
+        if (
+          visibilityMode !== 'styleAndGeometry' ||
+          typeof el.getBoundingClientRect !== 'function'
+        ) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const sx = (win && win.scrollX) || 0;
+        const sy = (win && win.scrollY) || 0;
+        if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
+        let left = r.left;
+        let top = r.top;
+        let right = r.right;
+        let bottom = r.bottom;
+        let cur = composedParent(el);
+        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+          const acs = __contrastComputedStyle(cur);
+          // hidden and clip cut content off; auto and scroll let a reader
+          // scroll to it.
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          if (clipsX || clipsY) {
+            const a = cur.getBoundingClientRect();
+            if (clipsX) {
+              left = Math.max(left, a.left);
+              right = Math.min(right, a.right);
+            }
+            if (clipsY) {
+              top = Math.max(top, a.top);
+              bottom = Math.min(bottom, a.bottom);
+            }
+            if (right - left < 1 || bottom - top < 1) return true;
+          }
+          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          cur = composedParent(cur);
+        }
+        return false;
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -456,6 +514,7 @@ function createContrastHelpers(opts, shared) {
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
+          if (ok && isUndrawn(el)) ok = false;
         } catch {
           ok = false;
         }

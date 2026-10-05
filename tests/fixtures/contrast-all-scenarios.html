@@ -49,7 +49,7 @@
       border: 0;
     }
 
-    /* Potential future policy decision: zero-size (currently still eligible) */
+    /* Zero-size text draws nothing: excluded, same as display:none */
     .zeroSize { font-size: 0; line-height: 0; }
 
     /* Computability blockers */
@@ -395,9 +395,9 @@
 <!-- ========================================================= -->
 <!-- 25) Zero-size text (policy decision; currently eligible) -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-zero-size" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
-  <p class="case-title">27 — MIXED: zero-size text is still eligible, same ~2.85:1 gray-on-white as case 03 fails AA and AAA</p>
-  <p class="text normalText zeroSize" id="eligible_zero_size_text" style="color:#999999;">
+<section class="case bgWhite" id="case-zero-size">
+  <p class="case-title">27 — NEUTRAL: zero-size text draws nothing and is excluded, though its ~2.85:1 gray-on-white would fail AA and AAA</p>
+  <p class="text normalText zeroSize" id="excluded_zero_size_text" style="color:#999999;">
     Zero-size text.
   </p>
 </section>
