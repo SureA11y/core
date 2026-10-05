@@ -21764,8 +21764,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
+      // A `for` label labels the first element in its tree with that id
+      // (HTML's labeled control), so a second element sharing the id has no
+      // label from it; Chromium names only the first.
       const forLabels = __getLabelElementsForId(id);
-      for (const l of forLabels) out.push(l);
+      for (const l of forLabels) {
+        let target = el;
+        try {
+          const root = l.getRootNode ? l.getRootNode() : null;
+          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+        } catch {}
+        if (target === el) out.push(l);
+      }
     }
     try {
       const wrap = el.closest ? el.closest('label') : null;
@@ -76248,8 +76258,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
+      // A `for` label labels the first element in its tree with that id
+      // (HTML's labeled control), so a second element sharing the id has no
+      // label from it; Chromium names only the first.
       const forLabels = __getLabelElementsForId(id);
-      for (const l of forLabels) out.push(l);
+      for (const l of forLabels) {
+        let target = el;
+        try {
+          const root = l.getRootNode ? l.getRootNode() : null;
+          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+        } catch {}
+        if (target === el) out.push(l);
+      }
     }
     try {
       const wrap = el.closest ? el.closest('label') : null;
