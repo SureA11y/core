@@ -15735,8 +15735,32 @@ function checkSelectionNames(lists, engineOptions) {
   }
 }
 
+// The keys the object form of runOnly reads.
+const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // A number or a boolean, and an object none of whose keys the engine
+  // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
+  // does: a typo that looks like a full scan.
+  if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
+    throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
+  }
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const keys = Object.keys(runOnly);
+    const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    if (unknownKeys.length && unknownKeys.length === keys.length) {
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+    }
+  }
+  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
+    const kind = String(runOnly.type).trim().toLowerCase();
+    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+  }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 
@@ -70158,8 +70182,32 @@ function checkSelectionNames(lists, engineOptions) {
   }
 }
 
+// The keys the object form of runOnly reads.
+const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // A number or a boolean, and an object none of whose keys the engine
+  // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
+  // does: a typo that looks like a full scan.
+  if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
+    throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
+  }
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const keys = Object.keys(runOnly);
+    const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    if (unknownKeys.length && unknownKeys.length === keys.length) {
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+    }
+  }
+  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
+    const kind = String(runOnly.type).trim().toLowerCase();
+    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+  }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 

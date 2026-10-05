@@ -213,3 +213,33 @@ test('runOnly: a custom rule id or tag with spaces around it is found trimmed, a
   assert.deepStrictEqual(ran({ includeRuleIds: ['acme-padded'] }), ['acme-padded']);
   assert.deepStrictEqual(ran(['acme']), ['acme-padded']);
 });
+
+test('runOnly: a number, a boolean or an object with no key the engine reads throws', () => {
+  const invalid = (runOnly, re) =>
+    assert.throws(
+      () => ranRuleIds(runOnly),
+      (e) => e.code === 'INVALID_RUN_ONLY' && re.test(e.message)
+    );
+  invalid(42, /must be an array, a string or an object/);
+  invalid(true, /must be an array, a string or an object/);
+  invalid({ includeRuleId: ['img-alt-present'] }, /no key named "includeRuleId"/);
+  invalid({ type: 'wcag', values: ['x'] }, /runOnly.type must be "rule" or "tag"/);
+  assert.strictEqual(
+    ranRuleIds({}).length,
+    ALL_RULE_COUNT,
+    'an empty object still means every rule'
+  );
+});
+
+test("runOnly: axe-core's { type: 'rule' | 'rules' | 'tag' | 'tags', values } is read", () => {
+  assert.deepStrictEqual(ranRuleIds({ type: 'rule', values: ['img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(ranRuleIds({ type: 'rules', values: ['img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(
+    ranRuleIds({ type: 'tags', values: ['wcag2a'] }).sort(),
+    ranRuleIds({ tags: ['wcag2a'] }).sort()
+  );
+});
