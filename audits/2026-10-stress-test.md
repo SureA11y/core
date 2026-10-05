@@ -385,10 +385,23 @@ What a third party meets when adding rules (`engineOptions.customRules`) or a st
 | 20k wrapped | 2,156 / 1,647 ms | 3,456 / 3,119 ms | 2,074 / 1,819 ms |
 | 40k wrapped | 4,480 / 3,259 ms | **20,494 / 20,071 ms** | 3,812 / 3,512 ms |
 
-- Disabling only the tie-break brings HEAD back to pre-margin timings, so the regression is entirely the tie-break. On the largest pages that is about 6× slower.
-- Fix: when candidates are pushed in document order (true for the contrast rules' text walk), keep the first candidate on a tie (`headroom < best.headroom`, no `compareDocumentPosition`).
-- Where order isn't guaranteed (several roots, shadow trees), compare positions once at the end, among the tied candidates only, rather than on every tie as the loop goes.
-- A perf test with 20k tied candidates would keep this from coming back.
+**What it means in practice.** Below about 10k text runs the cost is small. On long pages (documentation sites, long tables, infinite-scroll feeds) contrast-minimum becomes about 6× slower: 40k paragraphs take about 16 s instead of about 2.5 s. contrast-enhanced has the same pattern, and so does any rule that reports a margin over many tied candidates.
+
+**Cause.**
+- When two candidates are equally close to the threshold, `resolveMargin` (`src/core/margin.js:52-63`) calls `best.el.compareDocumentPosition(c.el)` to keep the one earlier in the page.
+- On a page where most text shares a colour, nearly every candidate ties, so the loop makes one such call per candidate.
+- In Blink each call can walk the siblings between the two elements, and the current best is always the first element, so the distance grows with every candidate. The total work is therefore quadratic in the number of candidates.
+- Disabling only the tie-break (patched into a copy of the built browser bundle; nothing in `src` changed) brings HEAD back to pre-margin timings, so the tie-break is the whole cost.
+
+**Proposed fix** (not applied):
+- **The contract to keep.** A tie goes to the element first in document order, whatever order the rule pushed candidates in. This is stated in OUTPUT_SCHEMA.md and RULE_AUTHORING.md, and tested in `tests/core/margin.test.js` ("a tie goes to the element first in document order", which pushes `c, a, b`). So "keep the first candidate pushed" alone is only correct when the rule pushes in document order.
+- **Settle ties once, at the end.**
+  - While looping, keep only the list of candidates tied at the smallest headroom (resetting it when a strictly smaller headroom appears), with no `compareDocumentPosition` in the loop.
+  - At the end, check whether the tied list is already in document order by comparing each element with the *next* one. Neighbours are close in the tree, so each call is cheap. If it is in order, the first tie is the answer.
+  - Only when it is not in order (several scan roots, shadow trees, a custom rule pushing out of order) fall back to finding the earliest among the tied candidates.
+  - All the contrast, target-size, text-spacing and link-in-text-block rules collect candidates in page order, so in practice they always take the fast path.
+- **Same answer as today.** On in-order ties the current loop also ends with the first tie. The fallback keeps today's rules for a tie with no element, the same element twice, and disconnected trees.
+- **Regression test.** A test with about 20k tied candidates and a time budget, and a test that pushes ties out of document order (the existing `c, a, b` case already covers this).
 
 **R-5. Margins disappear, and `measuredCount` is undercounted, after 50 failures**
 - Both contrast rules `break` at 50 occurrences (`contrast-minimum.js:553`, `contrast-enhanced.js:530`), and that also stops collecting margin candidates.
