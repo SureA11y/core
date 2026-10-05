@@ -20039,6 +20039,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __domSharedCache = {};
   var __selectorCache = null;
   var __outerHtmlCache = null;
+  var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
@@ -21293,6 +21294,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __outerHtmlCache = null;
   }
 
+  try {
+    __siblingIndexCache =
+      __domSharedCache.siblingIndexCache instanceof WeakMap
+        ? __domSharedCache.siblingIndexCache
+        : (__domSharedCache.siblingIndexCache = new WeakMap());
+  } catch {
+    __siblingIndexCache = null;
+  }
+
   // ID lookups: cache getElementById / root.querySelector(#id) results within a run
   try {
     __idLookupDocCache =
@@ -21772,6 +21782,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const allowTitle = !!(opts && opts.allowTitle === true);
     const maxRefs = opts && opts.maxRefs != null ? Number(opts.maxRefs) | 0 : -1;
     return (allowTitle ? 'at1' : 'at0') + '|mr' + String(maxRefs);
+  }
+
+  // Where an element sits among its element siblings: `index` from 0,
+  // `ofType` from 1 among siblings with its tag, and `sameType`, how many
+  // siblings share the tag. A selector or a structural path needs this for
+  // every occurrence, and counting siblings each time made a rule that
+  // reports thousands of siblings quadratic. A parent's children are indexed
+  // once per run. The scan is synchronous, so only the engine changes the
+  // DOM meanwhile, and only by inserting a style sheet first in <head> or a
+  // probe last in <body>: a parent whose first or last element child has
+  // changed since is indexed again.
+  function __siblingInfo(node) {
+    const parent = node && node.parentElement;
+    if (!parent) return null;
+    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const build = () => {
+      const info = new Map();
+      const tagCounts = new Map();
+      let index = 0;
+      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+        const tag = tagOf(c);
+        const ofType = (tagCounts.get(tag) || 0) + 1;
+        tagCounts.set(tag, ofType);
+        info.set(c, { index: index++, ofType, tag });
+      }
+      return {
+        first: parent.firstElementChild,
+        last: parent.lastElementChild,
+        info,
+        tagCounts
+      };
+    };
+    let entry = null;
+    try {
+      entry = __siblingIndexCache ? __siblingIndexCache.get(parent) : null;
+    } catch {}
+    if (
+      !entry ||
+      entry.first !== parent.firstElementChild ||
+      entry.last !== parent.lastElementChild ||
+      !entry.info.has(node)
+    ) {
+      entry = build();
+      try {
+        if (__siblingIndexCache) __siblingIndexCache.set(parent, entry);
+      } catch {}
+    }
+    const own = entry.info.get(node);
+    if (!own) return null;
+    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
   }
 
   function getOuterHtmlSnippet(el) {
@@ -24546,32 +24606,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const t = (node.tagName || '').toLowerCase() || '*';
         const p = node.parentElement;
         if (!p) return t;
-
-        let i = 1;
-        let sib = node.previousElementSibling;
-        while (sib) {
-          if ((sib.tagName || '').toLowerCase() === t) i++;
-          sib = sib.previousElementSibling;
-        }
-
-        // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous, so there's no need
-        // to also scan forward in that case. Only scan
-        // nextElementSibling when this node is the first of its tag
-        // among its siblings, to catch the case where the
-        // disambiguating sibling comes after it instead.
-        let hasSame = i > 1;
-        if (!hasSame) {
-          sib = node.nextElementSibling;
-          while (sib) {
-            if ((sib.tagName || '').toLowerCase() === t) {
-              hasSame = true;
-              break;
-            }
-            sib = sib.nextElementSibling;
-          }
-        }
-        return hasSame ? t + ':nth-of-type(' + i + ')' : t;
+        // A tag shared with another sibling needs :nth-of-type to be
+        // unambiguous; a tag of its own does not.
+        const info = __siblingInfo(node);
+        if (!info) return t;
+        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
       let node = el;
@@ -24742,8 +24781,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
         // scanned 20,000-node document take seconds.
-        let idx = 0;
-        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        const info = __siblingInfo(node);
+        let idx = info ? info.index : -1;
+        if (idx < 0) {
+          idx = 0;
+          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        }
         path.unshift(idx);
         node = parent;
       }
@@ -74071,6 +74114,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __domSharedCache = {};
   var __selectorCache = null;
   var __outerHtmlCache = null;
+  var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
@@ -75325,6 +75369,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __outerHtmlCache = null;
   }
 
+  try {
+    __siblingIndexCache =
+      __domSharedCache.siblingIndexCache instanceof WeakMap
+        ? __domSharedCache.siblingIndexCache
+        : (__domSharedCache.siblingIndexCache = new WeakMap());
+  } catch {
+    __siblingIndexCache = null;
+  }
+
   // ID lookups: cache getElementById / root.querySelector(#id) results within a run
   try {
     __idLookupDocCache =
@@ -75804,6 +75857,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const allowTitle = !!(opts && opts.allowTitle === true);
     const maxRefs = opts && opts.maxRefs != null ? Number(opts.maxRefs) | 0 : -1;
     return (allowTitle ? 'at1' : 'at0') + '|mr' + String(maxRefs);
+  }
+
+  // Where an element sits among its element siblings: `index` from 0,
+  // `ofType` from 1 among siblings with its tag, and `sameType`, how many
+  // siblings share the tag. A selector or a structural path needs this for
+  // every occurrence, and counting siblings each time made a rule that
+  // reports thousands of siblings quadratic. A parent's children are indexed
+  // once per run. The scan is synchronous, so only the engine changes the
+  // DOM meanwhile, and only by inserting a style sheet first in <head> or a
+  // probe last in <body>: a parent whose first or last element child has
+  // changed since is indexed again.
+  function __siblingInfo(node) {
+    const parent = node && node.parentElement;
+    if (!parent) return null;
+    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const build = () => {
+      const info = new Map();
+      const tagCounts = new Map();
+      let index = 0;
+      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+        const tag = tagOf(c);
+        const ofType = (tagCounts.get(tag) || 0) + 1;
+        tagCounts.set(tag, ofType);
+        info.set(c, { index: index++, ofType, tag });
+      }
+      return {
+        first: parent.firstElementChild,
+        last: parent.lastElementChild,
+        info,
+        tagCounts
+      };
+    };
+    let entry = null;
+    try {
+      entry = __siblingIndexCache ? __siblingIndexCache.get(parent) : null;
+    } catch {}
+    if (
+      !entry ||
+      entry.first !== parent.firstElementChild ||
+      entry.last !== parent.lastElementChild ||
+      !entry.info.has(node)
+    ) {
+      entry = build();
+      try {
+        if (__siblingIndexCache) __siblingIndexCache.set(parent, entry);
+      } catch {}
+    }
+    const own = entry.info.get(node);
+    if (!own) return null;
+    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
   }
 
   function getOuterHtmlSnippet(el) {
@@ -78578,32 +78681,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const t = (node.tagName || '').toLowerCase() || '*';
         const p = node.parentElement;
         if (!p) return t;
-
-        let i = 1;
-        let sib = node.previousElementSibling;
-        while (sib) {
-          if ((sib.tagName || '').toLowerCase() === t) i++;
-          sib = sib.previousElementSibling;
-        }
-
-        // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous, so there's no need
-        // to also scan forward in that case. Only scan
-        // nextElementSibling when this node is the first of its tag
-        // among its siblings, to catch the case where the
-        // disambiguating sibling comes after it instead.
-        let hasSame = i > 1;
-        if (!hasSame) {
-          sib = node.nextElementSibling;
-          while (sib) {
-            if ((sib.tagName || '').toLowerCase() === t) {
-              hasSame = true;
-              break;
-            }
-            sib = sib.nextElementSibling;
-          }
-        }
-        return hasSame ? t + ':nth-of-type(' + i + ')' : t;
+        // A tag shared with another sibling needs :nth-of-type to be
+        // unambiguous; a tag of its own does not.
+        const info = __siblingInfo(node);
+        if (!info) return t;
+        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
       let node = el;
@@ -78774,8 +78856,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
         // scanned 20,000-node document take seconds.
-        let idx = 0;
-        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        const info = __siblingInfo(node);
+        let idx = info ? info.index : -1;
+        if (idx < 0) {
+          idx = 0;
+          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        }
         path.unshift(idx);
         node = parent;
       }
