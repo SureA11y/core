@@ -30,6 +30,8 @@
  *   no whitespace-node filtering needed.
  * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
+ * - Children are read in the flat tree: a <slot> stands for the elements
+ *   assigned to it, or its fallback content when none is.
  * - Direct children that are not exposed to the accessibility tree (e.g.
  *   display:none, [hidden], aria-hidden="true") are excluded from
  *   consideration entirely. An element not reachable by assistive
@@ -117,9 +119,26 @@ function runInPage(ctx) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
-  function childElementsOf(el) {
+  // Children in the flat tree, as the page renders them: a <slot> stands
+  // for the elements assigned to it (a shadow <ul><slot></slot></ul> lists
+  // the host's <li> children), or for its fallback content when none is.
+  function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
+      if (String(c.localName) !== 'slot' || depth > 20) {
+        out.push(c);
+        continue;
+      }
+      let assigned;
+      try {
+        assigned =
+          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+      } catch {
+        assigned = [];
+      }
+      if (assigned.length) out.push(...assigned);
+      else out.push(...childElementsOf(c, depth + 1));
+    }
     return out;
   }
 

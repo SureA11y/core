@@ -55594,9 +55594,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
-  function childElementsOf(el) {
+  // Children in the flat tree, as the page renders them: a <slot> stands
+  // for the elements assigned to it (a shadow <ul><slot></slot></ul> lists
+  // the host's <li> children), or for its fallback content when none is.
+  function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
+      if (String(c.localName) !== 'slot' || depth > 20) {
+        out.push(c);
+        continue;
+      }
+      let assigned;
+      try {
+        assigned =
+          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+      } catch {
+        assigned = [];
+      }
+      if (assigned.length) out.push(...assigned);
+      else out.push(...childElementsOf(c, depth + 1));
+    }
     return out;
   }
 
@@ -55858,6 +55875,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "listitem-parent-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // The element an <li> renders in: its parent in the flat tree, through an
+  // assigned slot and past any <slot> or shadow root on the way. undefined
+  // for a child of a shadow host that no slot takes: it isn't rendered.
+  function flatParent(el) {
+    const parent = el.parentElement;
+    if (parent && parent.shadowRoot && !el.assignedSlot) return undefined;
+    const up = (n) =>
+      typeof helpers.composedParent === 'function'
+        ? helpers.composedParent(n)
+        : n.assignedSlot || n.parentNode || n.host || null;
+    let p = up(el);
+    for (let guard = 0; p && guard < 100; guard++) {
+      if (p.nodeType === 1 && String(p.localName) !== 'slot') return p;
+      p = up(p);
+    }
+    return null;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
@@ -55865,7 +55900,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = el.parentElement;
+    const parent = flatParent(el);
     if (!parent) continue;
 
     // An explicit role on the <li> ITSELF overrides its native "listitem"
@@ -57275,14 +57310,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // inside another operable control is attributed to its nearest operable
   // ancestor rather than to every enclosing container. Eligibility is applied
   // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  //
+  // The walk follows the flat tree, as the page renders it: a shadow host's
+  // children are its shadow root's, and a <slot> stands for the elements
+  // assigned to it (its fallback content when none is). So a <button>
+  // around a <slot> nests the link a page slots into it.
+  // Sibling links, not node.children, which in jsdom stays live once read
+  // and is rebuilt on every later change under a large parent.
+  function flatChildren(node) {
+    if (!node) return [];
+    let assigned = null;
+    if (String(node.localName) === 'slot' && typeof node.assignedElements === 'function') {
+      try {
+        assigned = node.assignedElements({ flatten: true });
+      } catch {
+        assigned = null;
+      }
+    }
+    if (assigned && assigned.length) return assigned;
+    const from = node.shadowRoot || node;
+    const out = [];
+    for (let c = from.firstElementChild; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectNestedOperable(root) {
     const out = [];
-    if (!root || !root.lastElementChild) return out;
-    // Sibling links, not root.children, which in jsdom stays live once read
-    // and is rebuilt on every later change under a large parent.
-    const stack = [];
-    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
-    while (stack.length) {
+    const stack = flatChildren(root).reverse();
+    if (!stack.length) return out;
+    let guard = 0;
+    while (stack.length && guard++ < 200000) {
       const node = stack.pop();
       if (node && node.nodeType === 1) {
         // A composite-owned child (option in a listbox/combobox, tab in a
@@ -57299,8 +57356,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           continue; // do not descend into a counted control
         }
       }
-      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
-        stack.push(c);
+      const kids = flatChildren(node);
+      for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
     }
     return out;
   }
