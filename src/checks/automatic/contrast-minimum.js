@@ -20,6 +20,10 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
+ *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
+ *   element closest to it, with the ratio unrounded against the one its size
+ *   requires; `context.largeText` says which. `measuredCount` counts the
+ *   elements whose contrast was computed.
  * @reports
  *   - `metrics.ratio` (text below the threshold): the text's contrast
  *     ratio against its background (4.5 for 4.5:1), against
@@ -77,7 +81,8 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } }
+  coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } },
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 };
 
 function runInPage(ctx) {
@@ -217,6 +222,10 @@ function runInPage(ctx) {
   let eligibleTextCount = 0;
   let computableTextCount = 0;
   let failCount = 0;
+  // Text that reached its ratio, for the result's margin (src/core/margin.js),
+  // and how many elements were compared.
+  const marginCandidates = [];
+  let measuredElements = 0;
 
   const seenFailEls = new Set();
 
@@ -457,6 +466,16 @@ function runInPage(ctx) {
         const fgOpaque = analysis.fgOpaque;
         const bgOpaque = analysis.bgOpaque;
 
+        measuredElements += 1;
+        if (ratio >= threshold) {
+          marginCandidates.push({
+            el,
+            value: ratio,
+            threshold,
+            context: { largeText: !!font.isLargeText }
+          });
+        }
+
         if (!(ratio >= threshold)) {
           failCount += textCount;
 
@@ -600,7 +619,9 @@ function runInPage(ctx) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences
+      occurrences,
+      marginCandidates,
+      measuredCount: measuredElements
     };
   }
 
@@ -614,7 +635,9 @@ function runInPage(ctx) {
     outcome: 'pass',
     severity: rule.defaultSeverity || 'serious',
     confidence: rule.defaultConfidence || 'high',
-    occurrences
+    occurrences,
+    marginCandidates,
+    measuredCount: measuredElements
   };
 }
 
