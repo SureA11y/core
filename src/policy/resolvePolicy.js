@@ -5,7 +5,25 @@
 function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
-    if (typeof contract === 'string') return POLICY_CONTRACTS[contract] || fallback;
+    if (typeof contract === 'string') {
+      // Own properties only: 'constructor' or 'toString' would otherwise
+      // resolve to a function from Object.prototype and crash the scan.
+      if (Object.prototype.hasOwnProperty.call(POLICY_CONTRACTS, contract)) {
+        return POLICY_CONTRACTS[contract];
+      }
+      try {
+        console.warn(
+          '[surea11y] Unknown policyContract "' +
+            contract +
+            '"; using "' +
+            fallback.id +
+            '". Use one of: ' +
+            Object.keys(POLICY_CONTRACTS).join(', ') +
+            ', or an inline contract object.'
+        );
+      } catch {}
+      return fallback;
+    }
 
     if (contract && typeof contract === 'object') {
       const allowedOutcomes = Array.isArray(contract.allowedOutcomes)
