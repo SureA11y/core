@@ -254,36 +254,21 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 Everything in the audit not yet fixed, after #77–#79 and #81–#83 (all merged), grouped by how sure it is; 5.4 says when each is planned. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed since the audit.
 
-### What is left, at a glance (updated 2026-10-05, evening)
+### What is left, at a glance (updated 2026-10-06)
 
 Everything else in this section is the detail behind this list.
 
-**Before releasing 1.10.0, in this order**
+**Before releasing 1.10.0**
 
-1. **Merge PR #84** (`perf/contrast-computable`): the two safe speed fixes from the performance check (5.4, step 1). Results don't change.
-2. **Section 6 leads (5.1)**, one PR from branch `fix/aria-name-form-leads` (at `main`, no commits yet). Verdicts so far, each reproduced in jsdom and Chromium:
-
-   | Lead | Verdict so far | For 1.10.0 |
-   |---|---|---|
-   | `label-in-name`, the link itself in its own `aria-labelledby` | **Bug.** The engine names it "Pricing"; accname 1.2 and Chrome give "Read more Pricing". | Fix first |
-   | `form-control-programmatic-label-present`, duplicate `id` | Likely bug: `<label for>` resolves to the first element only | Fix if confirmed |
-   | `listitem-parent-valid`, `list-children-valid`, slotted `<li>` | Likely bug: the rules don't follow the flat tree | Fix if confirmed |
-   | `nested-interactive-controls-absent` across a shadow boundary | Likely bug (false negative) | Fix if confirmed |
-   | `aria-valid-attr-value`, `TRUE` / `False` | Undecided: check WAI-ARIA 1.2 and Chrome's case handling | Decide |
-   | `label-in-name`, "Download (PDF, 2 MB)" | Undecided: check ACT 2ee8b8 on punctuation | Decide |
-   | IDREF from a shadow root to the light DOM | Likely defer: needs a broad rework of name computation in shadow DOM | 1.11.0 |
-   | `video-poster-text-alternative-present` with a `<figcaption>` | Needs the maintainer's decision | Ask |
-   | `img-alt-decorative` on an icon in a named link | Likely not a bug: ACT e88epe asks for review by design | Confirm |
-   | `aria-valid-attr` time on 5,000 siblings | Not started | Measure at N and 4N |
-
-   Also not started: re-running the audit's `corpus.js` harness.
+1. **Merge PR #84** (`perf/contrast-computable`). It holds the two safe speed fixes from the performance check (5.4, step 1) and the section 6 leads (5.0, last table): six fixes, one decision taken with the maintainer, three leads that are not bugs. Nothing else is left from section 6 for 1.10.0.
+2. **Close branch `fix/aria-name-form-leads`**: it never got a commit; the leads went into PR #84.
 3. **Release 1.10.0** (5.4, step 3): diff `v1.9.0` against `main`, bump and build, `npm run finding-ids:release -- 1.10.0`, changelog heading, npm publish, GitHub release, then a core-perf run of 1.10.0 from npm as the new baseline.
 
-**1.11.0 (core):** engine improvement D (a question per cantTell), the section 6 leads deferred, slow jsdom scans of CSS-heavy pages, about 40 KB left behind per repeated browser scan, the rule edge cases R-10 to R-14, the contracts and the integration features. The full list is in 5.4.
+**1.11.0 (core):** engine improvement D (a question per cantTell), name computation across a shadow boundary (from section 6), the audit harness's 126 wrong expectations if it is to be reused, slow jsdom scans of CSS-heavy pages, about 40 KB left behind per repeated browser scan, the rule edge cases R-10 to R-14, the contracts and the integration features. The full list is in 5.4.
 
 **After 1.10.0 is on npm, outside core:** the bindings adopting the 1.10.0 changes, the CLI's `--junit`, surea11y.dev, housekeeping, and the CVE for GHSA-ph4m-g9wf-96h6 (waiting on others). See the end of 5.4.
 
-**Done today, not in a PR table below:** the core-perf benchmark was built and run (5.4, step 1).
+**Done 2026-10-05 and 06, beyond the PR tables below:** the core-perf benchmark was built and run (5.4, step 1).
 
 ### 5.0 Progress since this list was written
 
@@ -335,28 +320,45 @@ Section 6 leads checked against ACT de46e4:
 | `valid-lang`, `lang="en-"` passes | **Not a bug.** The rule judges only the primary subtag, as ACT de46e4 does: its "known primary language tag" accepts a tag that breaks RFC 5646 grammar (its example is `de-hello`). `"en-"` names English. |
 | `valid-lang`, `lang="qaa"` fails | **Kept as it is** (maintainer undecided, 2026-10-05): no change, since failing is the documented behaviour. Revisit if a user reports private-use tags being flagged. ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
 
+PR #84 (branch `perf/contrast-computable`), open: the performance fixes (5.4, step 1) and the rest of section 6. Each lead was reproduced in jsdom and Chromium and checked against the spec and Chromium's accessibility tree.
+
+| Lead | Verdict | Change |
+|---|---|---|
+| `label-in-name`, an element listed in its own `aria-labelledby` | **Bug** | `12a8e9f`. A referenced element's own `aria-labelledby` is no longer followed (accname 1.2 step 2B). The self-reference gives its content, "Read more Pricing" as in Chrome, and a nested chain stops at the first target ("B text", not "C text"). A test that pinned the old order now expects the target's `aria-label`, as Chrome computes it. |
+| `form-control-programmatic-label-present`, two inputs sharing an `id` | **Bug** | `5c595e8`. A `for` label names only the first element with that `id` in its tree, HTML's labeled control. Also makes a light-DOM label for an input inside a shadow root label nothing, as in Chrome. |
+| `aria-valid-attr-value`, `TRUE` / `False` | **Bug** | `d455259`. Boolean and tristate values are read in any case: Chromium exposes `aria-checked="TRUE"` as checked, and the rule already read token values that way. |
+| `listitem-parent-valid`, `list-children-valid`, `<li>` slotted into a shadow `<ul>` | **Bug** | `edde85d`. Both rules read the flat tree: assigned slots, `<slot>` seen through, fallback content, unslotted children left out. |
+| `nested-interactive-controls-absent` across a shadow boundary | **Bug** | `edde85d`. The descendant walk follows the flat tree, so a link slotted into a shadow `<button>` is nested in it. |
+| `aria-valid-attr-value`, IDREFs and shadow roots | **Bug, in part** | `8d3fc50`. An `id` resolves in the element's own tree: a reference to an `id` in the same shadow root was asked about as missing, and one from a shadow root to the light DOM passed. **Left for 1.11.0:** name computation still follows a reference across the boundary. |
+| `video-poster-text-alternative-present` with a `<figcaption>` | **Decided with the maintainer** | `d0ff178`. cantTell, reason code `VIDEO_POSTER_FIGCAPTION_REVIEW`, when the video is the figure's only content and the caption has text: the caption names the figure, not the video (HTML-AAM, Chrome), but may describe the poster. Strings in five languages. |
+| `label-in-name`, "Download (PDF, 2 MB)" on visible "Download PDF" | **Not a bug** | ACT 2ee8b8's label-in-name algorithm removes text in parentheses, so the name is "download" and lacks "pdf". The engine matches ACT's five punctuation examples. |
+| `img-alt-decorative`, icon `<img>` in an already named link | **Not a bug** | A link named by `aria-label`, `aria-labelledby`, `title` or a label is already skipped. An empty-alt icon beside link text is still asked about, the review ACT e88epe calls for. |
+| `aria-valid-attr` timing | **Not a bug** | 279 ms at 1,250 siblings, 1,173 ms at 5,000 under jsdom: linear. |
+
+**The audit's harness, re-run** (`corpus.js`, `corpus2.js`, `corpus3.js`, against `main` and the branch): 18 mismatches fixed, none new. The 126 left in `corpus.js` are identical on `main`. They are the harness's own wrong expectations, from rule scopes it guessed: for example `textbox-name-present` covers only custom `role="textbox"` widgets, and `img-alt-present` does not apply to `role="none"` images. Four findings are new, and each is right: the duplicate-id and cross-shadow cases above, and two buttons that label each other, named "B" and "A" as in Chrome and asked about by `label-in-name`.
+
 ### 5.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
 
 The audit stopped before checking these. They are leads, not findings.
 
-- **Harness first.** The Chromium column of `rules-a/report.txt` shows dozens of unrelated "expected pass, got `notApplicable`", which `r2.txt` and `r3.txt` do not. Re-run `corpus.js` before reading anything from it.
+- **Harness first.** The Chromium column of `rules-a/report.txt` shows dozens of unrelated "expected pass, got `notApplicable`", which `r2.txt` and `r3.txt` do not. Re-run 2026-10-06 (5.0, PR #84): they are the harness's own wrong expectations, the same on `main`.
 - **Leads where jsdom and Chromium agree.** Each is to be decided against accname 1.2, HTML-AAM, ARIA 1.2 and the ACT rules:
 
   | Rule | Case | Got | Likely |
   |---|---|---|---|
-  | `label-in-name` | `aria-labelledby` referencing the link itself | fail | false positive |
+  | `label-in-name` | `aria-labelledby` referencing the link itself | fail | **bug, fixed in PR #84** |
   | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | fixed, see 5.0 |
-  | `form-control-programmatic-label-present` | two inputs sharing an `id`, one `<label for>` | pass | false negative |
-  | `aria-valid-attr-value` | `aria-hidden="TRUE"` | fail | check case-insensitivity first |
-  | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | false positive |
-  | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | false negative |
-  | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | false negative |
+  | `form-control-programmatic-label-present` | two inputs sharing an `id`, one `<label for>` | pass | **bug, fixed in PR #84** |
+  | `aria-valid-attr-value` | `aria-hidden="TRUE"` | fail | **bug, fixed in PR #84** |
+  | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | **bug, fixed in PR #84** |
+  | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | **bug, fixed in PR #84** |
+  | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | **bug, fixed in PR #84**; name computation left for 1.11.0 |
   | `valid-lang` | `lang="qaa"` (private use) | fail | kept: see 5.0 |
   | `valid-lang` | `lang="en-"` | pass | not a bug: see 5.0 |
-  | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | to decide |
-  | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | possible noise |
+  | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | **decided: cantTell, PR #84** |
+  | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | **not a bug**, see 5.0 |
 
-- **Timing.** `aria-valid-attr` took 2.2 s on a 5,000-sibling page under jsdom. Not re-measured. (The `link-in-text-block` lead from the same probe is fixed, §5.)
+- **Timing.** `aria-valid-attr` took 2.2 s on a 5,000-sibling page under jsdom. Re-measured 2026-10-06: linear (5.0, PR #84). (The `link-in-text-block` lead from the same probe is fixed, §5.)
 - **Not started:** the `fuzz.js` invariants (no rule `error`, outcomes in the allowed set, `fail` ⇒ occurrences, resolvable selectors, no throws on malformed DOMs), and checking manual rules for `cantTell` noise on pages with no relevant content.
 
 ### 5.2 Reproduced by the audit, not fixed
@@ -419,13 +421,13 @@ As agreed on 2026-10-05. Everything merged so far ships in 1.10.0: #77–#79 and
    - **Stable:** no leak, and no rule whose answer changed between scans of one page.
 
    **Merge PR #84 before the release.**
-2. **Section 6 leads (5.1), time-boxed.** Fix the audit's harness, then verify every remaining lead in jsdom and Chromium against the specs. Fix the clear, contained bugs in one PR. Move anything that needs a design decision, or broad changes to shadow-DOM name computation, to 1.11.0 below.
+2. **Section 6 leads (5.1): done 2026-10-06** in PR #84 (5.0, last table).
 3. **Release 1.10.0.** Diff `v1.9.0` against `main` first. Bump the version and run `npm run build`: `tests/engine-version.test.js` fails while the built engine still carries the old version. Then `npm run finding-ids:release -- 1.10.0`, the CHANGELOG release heading, the npm publish and the GitHub release. Then run core-perf on 1.10.0 from npm (about 10 minutes) and commit it as the new baseline.
 
 **1.11.0 (core)**
 
 - **Engine improvement D:** a stable code and a plain-language question for every cantTell, in five languages. Decide first whether it extends `uncertainty` or is a new field, and draft the 52 manual rules' questions.
-- Section 6 leads deferred from 1.10.0, and the `aria-valid-attr` timing lead.
+- From section 6: name computation across a shadow boundary (a reference from a shadow root to a light-DOM `id` still names the element). The audit harness's 126 wrong expectations, if it is reused.
 - **jsdom on CSS-heavy pages:** a CLI scan of the Daily Mail home page takes about 110 s and CNN about 140 s, mostly `contrast-computable` and `aria-hidden-focus` on jsdom's style computation. It was already so in 1.9.0, which ran out of memory on CNN.
 - **Memory:** repeated scans of one page in a browser leave about 40 KB each, from 1.8.0 to `main` alike. Small; find what keeps it.
 - Rule edge cases:
