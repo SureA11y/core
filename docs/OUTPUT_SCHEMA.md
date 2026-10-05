@@ -35,6 +35,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   timestamp: string | null,
   perfStats: object | null,
   contextSelector: string | string[] | null,
+  contextMatch: { elementCount: number, unmatchedSelectors: string[] } | null,
   checksResults: CheckResult[],
   rulesResults: CompositeResult[],
   overriddenBuiltinIds: string[]
@@ -58,6 +59,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `timestamp` | **Not auto-generated.** Only set if you pass `engineOptions.timestamp` as a non-empty string — the engine has no built-in clock (deterministic-by-design). If you want a scan timestamp in the result, supply it yourself. |
 | `perfStats` | `null` unless `engineOptions.perfStats: true`. Internal timing/counters — shape not covered by this document, treat as debug-only. |
 | `contextSelector` | The (trimmed) `contextSelector` argument you passed — a string, an array of strings (multi-region scanning, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), or `null` if none/empty. |
+| `contextMatch` | How the `contextSelector` resolved, or `null` when none was given. `elementCount` is how many distinct elements it matched, the roots of the scan. `unmatchedSelectors` lists each selector, as you gave it, that matched no element; a comma-separated string is one selector here, as it is one `querySelectorAll` call. **An `elementCount` of 0 means nothing was scanned**: the page has no such scope, every entry in `checksResults` and `rulesResults` is `notApplicable`, and the result says nothing about the page. Report it as a scope that wasn't found, not as a clean scan. A selector the browser can't parse never reaches a result: the scan throws with `code: 'INVALID_CONTEXT_SELECTOR'` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)). |
 | `checksResults` | One entry per **atomic rule** that ran (every rule not filtered out by `runOnly` — see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). **Every loaded rule produces an entry, even ones that outcome `notApplicable`** — this is not a "violations only" list. |
 | `rulesResults` | One entry per **composite (rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Normally one per WCAG Success Criterion; a run under the profile of a standard with rollups of its own also gets those (`meta.standard` set). Empty array if no composite matched the current `runOnly`/tag filter. |
 | `overriddenBuiltinIds` | Rule ids where an `engineOptions.customRules` entry shared its `id` with a built-in rule, so the custom implementation replaced the built-in one for this scan (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Always an array; empty when no collision occurred. Also logged via `console.warn` at scan time, since a same-named custom rule is as likely to be an accidental collision as a deliberate override. |
@@ -262,6 +264,7 @@ const result = runDomRulesInPage(
   "timestamp": null,
   "perfStats": null,
   "contextSelector": null,
+  "contextMatch": null,
   "checksResults": [
     {
       "ruleId": "button-name-present",

@@ -208,19 +208,57 @@ function imgOccurrences(contextSelector, engineOptions = {}) {
   return rule.outcome === 'fail' ? rule.occurrences.length : 0;
 }
 
-// Documented in ENGINE_OPTIONS.md: an unresolvable context widens to the whole
-// document rather than scanning nothing. Worth pinning precisely because it is
-// surprising -- a typo in a scoping selector quietly scans everything.
-test('contextSelector: a selector matching nothing falls back to the whole document', () => {
+function scan(contextSelector) {
+  return runa11yCoreOnHtml(NESTED_PAGE, { contextSelector });
+}
+
+// A scope the page doesn't have used to widen to the whole document, so a typo
+// in a scoping selector quietly scanned everything. Now it scans nothing and
+// the result says so.
+test('contextSelector: no selector scans the whole document', () => {
   assert.strictEqual(imgOccurrences(null), 3);
-  assert.strictEqual(imgOccurrences('#does-not-exist'), 3);
   assert.strictEqual(imgOccurrences([]), 3);
   assert.strictEqual(imgOccurrences(['', '   ']), 3);
+  assert.strictEqual(scan(null).contextMatch, null);
 });
 
-test('contextSelector: a malformed selector is ignored rather than throwing', () => {
-  assert.strictEqual(imgOccurrences('>>>bad'), 3, 'unusable on its own, so the scope widens');
-  assert.strictEqual(imgOccurrences(['#outer', '>>>bad']), 2, 'the usable selector still applies');
+test('contextSelector: a selector matching nothing scans nothing and says so', () => {
+  const result = scan('#does-not-exist');
+
+  assert.strictEqual(result.contextSelector, '#does-not-exist');
+  assert.deepStrictEqual(result.contextMatch, {
+    elementCount: 0,
+    unmatchedSelectors: ['#does-not-exist']
+  });
+  for (const r of result.checksResults.concat(result.rulesResults)) {
+    assert.strictEqual(r.outcome, 'notApplicable', r.ruleId);
+  }
+  // Page-level rules too: the page outside the requested scope is never judged.
+  const title = result.checksResults.find((r) => r.ruleId === 'page-title-present');
+  assert.strictEqual(title.outcome, 'notApplicable');
+});
+
+test('contextSelector: a selector that matches is counted, and unmatched ones are named', () => {
+  assert.deepStrictEqual(scan('#outer').contextMatch, {
+    elementCount: 1,
+    unmatchedSelectors: []
+  });
+  const partial = scan(['#outer', '#does-not-exist']);
+  assert.deepStrictEqual(partial.contextMatch, {
+    elementCount: 1,
+    unmatchedSelectors: ['#does-not-exist']
+  });
+  assert.strictEqual(imgOccurrences(['#outer', '#does-not-exist']), 2, 'the match still scans');
+});
+
+test('contextSelector: a malformed selector throws, alone or in a list', () => {
+  for (const contextSelector of ['>>>bad', ['#outer', '>>>bad']]) {
+    assert.throws(
+      () => scan(contextSelector),
+      (err) => err.code === 'INVALID_CONTEXT_SELECTOR' && err.selector === '>>>bad',
+      JSON.stringify(contextSelector)
+    );
+  }
 });
 
 test('excludeSelectors: a malformed selector excludes nothing rather than throwing', () => {

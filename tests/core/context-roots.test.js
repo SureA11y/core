@@ -10,8 +10,9 @@
  * about "what does this contextSelector resolve to" splits the frame tree away
  * from the page scan. Every engine test reaches them through a full scan,
  * which only ever exercises the single-string form on a well-formed document;
- * the comma-separated string, the array form, an unparseable selector and a
- * document with no elements to fall back to are all pinned here instead.
+ * the comma-separated string, the array form, a selector that matches nothing,
+ * an unparseable selector and a document with no elements are all pinned here
+ * instead.
  */
 
 const test = require('node:test');
@@ -101,29 +102,43 @@ test('resolveContextRoots: an array with only blanks in it is the same as no sel
   assert.deepStrictEqual(roots, [document.documentElement]);
 });
 
-test('resolveContextRoots: a selector that matches nothing falls back to the whole document', () => {
+test('resolveContextRoots: a selector that matches nothing resolves to no roots', () => {
   const document = docFrom(PAGE);
-  const { ctxSelector, roots } = resolveContextRoots(document, '#nothing-here');
+  const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, '#nothing-here');
 
   assert.strictEqual(ctxSelector, '#nothing-here', 'the requested scope is still reported back');
-  assert.deepStrictEqual(roots, [document.documentElement]);
+  assert.deepStrictEqual(roots, [], 'never widened to the whole document');
+  assert.deepStrictEqual(unmatchedSelectors, ['#nothing-here']);
 });
 
-test('resolveContextRoots: an unparseable selector is skipped rather than thrown on', () => {
+test('resolveContextRoots: an array names each selector that matched nothing', () => {
   const document = docFrom(PAGE);
+  const { roots, unmatchedSelectors } = resolveContextRoots(document, ['#main', '#gone', '.none']);
 
-  const { roots } = resolveContextRoots(document, ['>>> not a selector', '#main']);
   assert.deepStrictEqual(
     roots.map((el) => el.id),
-    ['main'],
-    'the valid selector in the list still resolves'
+    ['main']
   );
+  assert.deepStrictEqual(unmatchedSelectors, ['#gone', '.none']);
+});
 
-  assert.deepStrictEqual(
-    resolveContextRoots(document, '>>> not a selector').roots,
-    [document.documentElement],
-    'an unparseable selector alone falls back to the whole document'
-  );
+test('resolveContextRoots: an unparseable selector throws a coded error', () => {
+  const document = docFrom(PAGE);
+
+  for (const contextSelector of ['>>> not a selector', ['#main', '>>> not a selector']]) {
+    assert.throws(
+      () => resolveContextRoots(document, contextSelector),
+      (err) =>
+        err.code === 'INVALID_CONTEXT_SELECTOR' &&
+        err.selector === '>>> not a selector' &&
+        /^contextSelector: ">>> not a selector" is not a valid CSS selector\.$/.test(err.message),
+      JSON.stringify(contextSelector)
+    );
+  }
+});
+
+test('resolveContextRoots: no selector reports no unmatched selectors', () => {
+  assert.deepStrictEqual(resolveContextRoots(docFrom(PAGE), null).unmatchedSelectors, []);
 });
 
 test('resolveContextRoots: a document with no elements at all resolves to no roots', () => {

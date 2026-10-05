@@ -82,7 +82,14 @@ function getFrameElementUrl(el) {
  * @returns {Promise<{ topFrame: object, frames: Array<{url:string|null, topFrame?:object, frames?:Array, error?:string}> }>}
  */
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
-  const topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+  // An invalid contextSelector (or runOnly) throws in the local scan; reject
+  // with it, as any other failure of this promise-returning call would.
+  let topFrame;
+  try {
+    topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;

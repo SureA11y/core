@@ -77,6 +77,44 @@ test(
     });
 
     await t.test(
+      'a scope the page lacks: no match scans nothing, an invalid selector rejects',
+      async () => {
+        const page = await browser.newPage();
+        await page.setContent(
+          '<!doctype html><html><body><img src="x.png"><iframe src="about:blank"></iframe></body></html>'
+        );
+        await page.addScriptTag({ content: CROSS_FRAME_CHUNK });
+
+        const unmatched = await page.evaluate(() =>
+          window.runa11yCoreAcrossFrames(null, '#missing', {}, null)
+        );
+        assert.deepStrictEqual(unmatched.topFrame.contextMatch, {
+          elementCount: 0,
+          unmatchedSelectors: ['#missing']
+        });
+        assert.ok(
+          unmatched.topFrame.checksResults.every((r) => r.outcome === 'notApplicable'),
+          'nothing outside the requested scope is judged'
+        );
+        assert.deepStrictEqual(unmatched.frames, [], 'no frame lies inside an empty scope');
+
+        const rejected = await page.evaluate(() =>
+          window.runa11yCoreAcrossFrames(null, 'div[', {}, null).then(
+            () => null,
+            (err) => ({ code: err.code, selector: err.selector, message: err.message })
+          )
+        );
+        assert.deepStrictEqual(rejected, {
+          code: 'INVALID_CONTEXT_SELECTOR',
+          selector: 'div[',
+          message: 'contextSelector: "div[" is not a valid CSS selector.'
+        });
+
+        await page.close();
+      }
+    );
+
+    await t.test(
       'a child frame with no responder enabled is reported as { url, error }, not fatal',
       async () => {
         const page = await browser.newPage();

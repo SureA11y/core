@@ -114,6 +114,10 @@ test(
         contextSelector: ['main', 'body'],
         engineOptions: { optInRules: 'all' }
       }),
+      // A scope that matched nothing.
+      runa11yCoreOnHtml('<!doctype html><html><body><p>x</p></body></html>', {
+        contextSelector: '#missing'
+      }),
       ...(await browserResults())
     ];
     const fields = new Set();
@@ -149,6 +153,8 @@ test(
     const reached = (f: FrameEntry) => ('topFrame' in f ? f.topFrame.checksResults.length : f.error.length);
     const code: string | undefined = b.checksResults[0]?.occurrences[0]?.uncertainty?.code;
     const tags: string[] = getChecksCatalog({ optInRules: 'all' })[0].tags;
+    const unmatched: string[] = a.contextMatch ? a.contextMatch.unmatchedSelectors : [];
+    const scanned: number | undefined = a.contextMatch?.elementCount;
     runDomRulesInPage(null, null, {}, ['img-alt-present']);
     const ready: Promise<PageReadyResult> = waitForPageReady({ timeoutMs: 3000, quietMs: 500 });
     void waitForPageReady();
@@ -159,7 +165,7 @@ test(
     runDomRulesInPage(null, null, {}, 42);
     // @ts-expect-error outcomes are a closed set
     const o: typeof a.checksResults[number]['outcome'] = 'warning';
-    void [b, p, off, width, reached, code, tags, o];
+    void [b, p, off, width, reached, code, tags, unmatched, scanned, o];
   `);
     assert.deepEqual(errors, []);
   }

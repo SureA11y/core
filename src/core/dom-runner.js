@@ -649,7 +649,24 @@ function runCoreSettled(
   // querySelector, so "matches this selector" means all matches, not just
   // the first. Shared with frame-scan.js (same resolution used to discover
   // which child <iframe>/<frame> elements fall within the same scan scope).
-  const { ctxSelector, roots } = resolveContextRoots(document, contextSelector);
+  // An unparseable selector throws here, before any rule runs.
+  const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, contextSelector);
+  // Reported on the result whenever a selector was given, so a caller can
+  // tell a scope that matched nothing (every rule notApplicable) from a clean
+  // scan of what it asked for.
+  const contextMatch = ctxSelector
+    ? { elementCount: roots.length, unmatchedSelectors: unmatchedSelectors.slice() }
+    : null;
+  const scopeIsEmpty = !!contextMatch && contextMatch.elementCount === 0;
+  if (scopeIsEmpty) {
+    try {
+      console.warn(
+        '[surea11y] contextSelector matched no element (' +
+          unmatchedSelectors.map((s) => '"' + s + '"').join(', ') +
+          '); nothing was scanned and every rule reports notApplicable.'
+      );
+    } catch {}
+  }
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
@@ -1100,6 +1117,31 @@ function runCoreSettled(
       }
     };
 
+    // A scope that matched nothing has nothing for any rule to judge, the
+    // page-level rules included: they would otherwise read the document the
+    // caller scoped away from.
+    if (scopeIsEmpty) {
+      checksResults.push(
+        normalizeRuleResult(
+          defResolved,
+          {
+            outcome: 'notApplicable',
+            occurrences: [],
+            engineOptions: {
+              ...(ctx.engineOptions || {}),
+              locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+            }
+          },
+          SCHEMA_VERSION,
+          policy,
+          sharedHelpers
+        )
+      );
+      if (ruleTimings)
+        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
+      continue;
+    }
+
     if (typeof applicabilityFn === 'function') {
       let applicable = true;
       try {
@@ -1289,6 +1331,7 @@ function runCoreSettled(
     timestamp,
     perfStats,
     contextSelector: ctxSelector,
+    contextMatch,
     checksResults,
     rulesResults,
     overriddenBuiltinIds

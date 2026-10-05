@@ -54,11 +54,17 @@ function normalizeSelectorList(value) {
 /**
  * Resolves a raw contextSelector (string | string[] | null) to the
  * normalized selector value (`ctxSelector`) plus the actual root elements to
- * scan (`roots`, deduped, in resolution order), falling back to
- * documentElement/body/html when nothing matches. Extracted out of
+ * scan (`roots`, deduped, in resolution order). Extracted out of
  * dom-runner.js's runCore so frame-scan.js can discover which child
  * <iframe>/<frame> elements fall within the same scan scope, without
  * duplicating this resolution logic a second time.
+ *
+ * With no selector the whole document is the root. A selector the browser
+ * cannot parse throws (`code: 'INVALID_CONTEXT_SELECTOR'`); a valid one that
+ * matches nothing scans nothing. Either way the caller asked for a scope
+ * the page doesn't have, and widening it to the whole document would report
+ * on content they never asked about. `unmatchedSelectors` lists each selector
+ * that matched no element, so a run can say so on its result.
  */
 function resolveContextRoots(document, contextSelector) {
   const ctxSelector = Array.isArray(contextSelector)
@@ -72,35 +78,35 @@ function resolveContextRoots(document, contextSelector) {
       ? contextSelector.trim()
       : null;
 
-  let roots = [];
-  {
-    const selectorList = Array.isArray(ctxSelector)
-      ? ctxSelector
-      : ctxSelector
-        ? [ctxSelector]
-        : [];
-    const seen = new Set();
-    for (const sel of selectorList) {
-      let matches;
-      try {
-        matches = document.querySelectorAll(sel);
-      } catch {
-        matches = [];
-      }
-      for (const el of matches) {
-        if (el && !seen.has(el)) {
-          seen.add(el);
-          roots.push(el);
-        }
+  if (!ctxSelector) {
+    const whole = document.documentElement || document.body || document.querySelector('html');
+    return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
+  }
+
+  const selectorList = Array.isArray(ctxSelector) ? ctxSelector : [ctxSelector];
+  const roots = [];
+  const unmatchedSelectors = [];
+  const seen = new Set();
+  for (const sel of selectorList) {
+    let matches;
+    try {
+      matches = document.querySelectorAll(sel);
+    } catch {
+      const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      err.selector = sel;
+      throw err;
+    }
+    if (!matches.length) unmatchedSelectors.push(sel);
+    for (const el of matches) {
+      if (el && !seen.has(el)) {
+        seen.add(el);
+        roots.push(el);
       }
     }
   }
-  if (!roots.length) {
-    const fallback = document.documentElement || document.body || document.querySelector('html');
-    if (fallback) roots = [fallback];
-  }
 
-  return { ctxSelector, roots };
+  return { ctxSelector, roots, unmatchedSelectors };
 }
 
 function createDomHelpers(opts) {
@@ -4430,7 +4436,7 @@ function createDomHelpers(opts) {
 
       // Only apply the "stop climbing once we reach a contextSelector-
       // matched root" shortcut when there's a single (or no) matched
-      // root -- resolveContextRoots() falls back to `[documentElement]`
+      // root -- resolveContextRoots() resolves to `[documentElement]`
       // when no contextSelector is given, so this is the overwhelmingly
       // common case and behaves exactly as before.
       //
