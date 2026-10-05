@@ -82277,7 +82277,17 @@ async function waitForPageReady(options) {
   const opts = options && typeof options === 'object' ? options : {};
   const doc = opts.document || (typeof document !== 'undefined' ? document : null);
   const win = doc && doc.defaultView ? doc.defaultView : null;
-  const timeoutMs = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0 ? opts.timeoutMs : 5000;
+  const validTimeout = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0;
+  if (opts.timeoutMs !== undefined && !validTimeout) {
+    try {
+      console.warn(
+        '[surea11y] waitForPageReady: timeoutMs must be a finite number of milliseconds, 0 or more; got ' +
+          String(opts.timeoutMs) +
+          ', so the default 5000 applies.'
+      );
+    } catch {}
+  }
+  const timeoutMs = validTimeout ? opts.timeoutMs : 5000;
   const quietMs = Number.isFinite(opts.quietMs) && opts.quietMs > 0 ? opts.quietMs : 0;
   const started = Date.now();
   const left = () => Math.max(0, timeoutMs - (Date.now() - started));

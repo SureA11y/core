@@ -54,7 +54,7 @@ The graph groups by subject rather than being a flat list of assertions:
 }
 ```
 
-- **`source`** is the scanned URL, or `about:blank` when a result carries none.
+- **`source`** is the scanned URL, or `about:blank` when a result carries none. When several results carry none, each is a subject of its own, `about:blank#result-<n>` by its position in the list (from 1), rather than all merging into one.
 - **`test.title`** is the engine's own rule id. In ACT terms a rule is the *procedure* the implementation ran, which is exactly what a rule id names.
 - **`test.isPartOf`** lists the Success Criteria that rule maps to, as `WCAG2:<criterion-id>`. Omitted entirely for a rule claiming no criterion — `aria-allowed-role` is the engine's one automatic rule in that position, and asserting an empty list would read as "maps to nothing we could find" rather than "deliberately maps to none".
 - **`assertedBy`** and **`mode`** appear only when you supply them.
