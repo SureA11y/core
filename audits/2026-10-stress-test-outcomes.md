@@ -311,7 +311,7 @@ PR #81 (branch `fix/scoped-duplicate-id-doc-and-hidden-contrast`), merged 2026-1
 | R-8 | Bug | Fixed (`d4eb828`) for `font-size: 0`, `color: transparent` (gradient text becomes cantTell), and under `styleAndGeometry` off-page and fully clipped text. **Left:** the unselected options of a closed `<select>` (unclear: the browser draws the open list) and `rgba(0,0,0,.02)` text (drawn, so not a bug). `visibilityMode` stays `styleOnly` by default. |
 | R-9 | Bug | Fixed (`1c58e23`). `css-orientation-lock` walks `@layer`, `@supports`, nested `@media`, `@container`, `@import`, CSS nesting and `<style media>`; `css-focus-indicator-suppressed` follows CSS nesting. |
 
-PR #82 (branch `fix/link-cue-and-svg-fill`, open):
+PR #82 (branch `fix/link-cue-and-svg-fill`), merged 2026-10-05:
 
 | Item | Verdict | Change |
 |---|---|---|
@@ -319,6 +319,18 @@ PR #82 (branch `fix/link-cue-and-svg-fill`, open):
 | R-7 | Bug | Fixed (`240004f`). SVG text is judged by `fill` (with `fill-opacity`); outline-only or gradient-filled text is not computable. |
 | O-2 | Bug | Fixed (`96bfabe`), decided with the maintainer for 1.10.0: identity sorts attributes and class names, with a single-pass scanner (a first regex version was flagged by CodeQL as polynomial ReDoS). Baseline files keep matching; SARIF fingerprints of elements with 2+ attributes change once. |
 | C-3, C-4, C-5, C-6, C-10, C-11 | Bugs | Fixed (`82600b6`). Unusable returns, Promises and unknown outcomes are `cantTell` with an `error`; duplicate and composite ids are skipped with a warning; new result field `skippedCustomRules`. |
+
+PR #83 (branch `fix/small-contract-and-doc-gaps`, open):
+
+| Item | Verdict | Change |
+|---|---|---|
+| S-12 | Bug | `0d817df`: `label-in-name` tiers in `occurrenceOutcome`; `policyContract`, `policy`, `output`, `visibilityMode` and `EngineErrorCode` typed. |
+| S-5 | Bug | `f10c7c0`: an invalid `excludeSelectors` entry warns once per scan. |
+| O-15 (rest) | Bugs | `1c328f0`: URL-less EARL results are separate subjects; a bad `waitForPageReady` `timeoutMs` warns. |
+| C-12, C-19, S-8, S-11, S-13 | Doc bugs | `10c7a1d`. |
+| S-4 (rest) | Bug | `bf69642`: axe-core's `{ type: 'rule', values }` is read; a number, boolean or all-unknown-keys object throws `INVALID_RUN_ONLY`. `[]`, `''` and `{}` still mean every rule (pinned by a test, kept). Case-insensitive ids not done. |
+| C-7 | Bug | `dd53db4`: `defaultSeverity`, `defaultConfidence` and `type` checked against their sets; `type` read in any case. |
+| C-22 | **Not a bug** | `profile-new.test.js` scaffolds into a temporary copy; nothing trips the boundary test. |
 
 Section 6 leads checked against ACT de46e4:
 
@@ -363,7 +375,6 @@ The audit stopped before checking these. They are leads, not findings.
 - [O-12] Payload size: 204 KB for an empty page; a compact output mode was suggested.
 - [O-13] Cross-frame entries don't identify their `<iframe>`.
 - [O-14] `src/explain/` isn't shipped and is incomplete.
-- [O-15] Left: `waitForPageReady` accepts bad timeouts silently, and EARL merges results without a URL into one subject.
 
 **Contrast, layout and visual rules.**
 - [R-8] Left: unselected options of a closed select. The rest is fixed (6.0).
@@ -374,24 +385,16 @@ The audit stopped before checking these. They are leads, not findings.
 - [R-14] Input values and placeholders are never contrast-checked, `zoom` isn't treated as large text, some alt-quality wording is off, and two alt rules have no occurrence cap.
 
 **Custom rules and profiles.**
-- [C-7, C-8, C-9] Severity, confidence and type aren't validated; a rule can overwrite engine-owned fields; the result-shape contract isn't enforced.
-- [C-12] The docs' custom-rule example ignores exclusions and hidden content.
+- [C-8, C-9] Left: a rule can return engine-owned fields; the result-shape contract isn't enforced for custom rules.
+- [C-19] Left: `index.d.ts` gives rule authors no `RuleContext`/`RuleHelpers` types (the missing helpers are now documented).
 - [C-13, C-14] Custom rules can't join WCAG composites by mapping; under a profile a custom rule without WCAG tags never runs, and an override that drops a built-in's tags removes it.
 - [C-15] The catalog APIs ignore `customRules`.
 - [C-16, C-17] A custom rule's `helpUrl` and custom tags are lost in outputs; EARL leaves out `isPartOf` without `conformanceLevel`.
-- [C-19] `index.d.ts` gives rule authors nothing, and `RULE_HELPERS.md` misses three helpers.
 - [C-20] A profile can only be added by forking core: `profile-kit` isn't exported.
-- [C-22] The key `acme-std` trips the boundary test. (C-21 turned out not to be a bug, 6.0.)
 
 **Options.**
-- [S-4] Remaining part: `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are case-sensitive.
-- [S-5] An invalid `excludeSelectors` is ignored silently.
 - [S-6] Wrong option types fall back without a warning.
 - [S-7] [V] Doc part fixed in PR #81 (6.0). Left: `deprecated-elements-not-used` and `server-side-image-map-absent` `pass` on an empty scope. Earlier analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
-- [S-8] The contrast rules attach a page-level occurrence to `pass`, against `OUTPUT_SCHEMA.md`.
-- [S-11] `includeHiddenElements: true` changes nothing for common rules.
-- [S-12] `index.d.ts` gaps (`policyContract`, `policy`, `output`, error codes) and a stray `occurrence.outcome`.
-- [S-13] Smaller doc slips.
 
 **Suspected by the audit** (in each section's "Suspected" list): invalid `applicability` strings and `uncertainty.code` values passing silently, surrogate pairs split at 2,000 characters, Windows `file:///` SARIF paths, `getChecksCatalog({ profile: 'bogus' })`, an orientation lock on a rotated icon, float digits differing between jsdom and Chromium, and text-spacing overlap growth within one band.
 
