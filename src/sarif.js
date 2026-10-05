@@ -259,7 +259,9 @@ function renderSarifReport(result, options = {}) {
           driver: {
             name: 'surea11y',
             informationUri: informationUri || 'https://github.com/SureA11y/core',
-            version: toolVersion || '0.0.0',
+            // The caller's own version (a CLI wrapping the engine), or else
+            // the engine release that produced the result.
+            version: toolVersion || (result.engine && result.engine.version) || '0.0.0',
             rules
           }
         },

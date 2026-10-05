@@ -121,6 +121,8 @@ export interface RenderingEnvironment {
 
 export interface EngineInfo {
   tag: string;
+  /** The @surea11y/core release that produced the result, e.g. "1.10.0". */
+  version: string;
   schemaVersion: string;
   locale: LocaleResolution;
   wcagVersion: '2.0' | '2.1' | '2.2';

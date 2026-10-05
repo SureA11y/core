@@ -17,14 +17,15 @@
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
- *   profileStandardOf (ctx.standard: the standard a profile targets).
+ *   profileStandardOf (ctx.standard: the standard a profile targets),
+ *   ENGINE_VERSION (the package version, baked in at build time).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf */
+   profileStandardOf, ENGINE_VERSION */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -1380,6 +1381,7 @@ function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
