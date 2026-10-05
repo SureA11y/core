@@ -473,7 +473,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
@@ -488,7 +488,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'eligible_aria_hidden_tabbable_fail',
     'eligible_aria_hidden_prog_focus_fail',
     'eligible_offscreen_fail',
-    'eligible_zero_size_text',
     'eligible_enabled_button_fail',
     // <input type="submit"|"button">'s visible label comes from the
     // value attribute, not a DOM text node, and must still be evaluated
@@ -508,6 +507,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'excluded_details_closed_fail',
     'excluded_template_fail',
     'excluded_sr_only_clip_fail', // never visually presented; no contrast requirement
+    'excluded_zero_size_text', // font-size 0 draws nothing
     'whitespace_only',
     'blocker_gradient_bg',
     'blocker_image_bg',
@@ -544,7 +544,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 16);
+  assert.strictEqual(rule.occurrences.length, 15);
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white',
@@ -559,7 +559,6 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'eligible_aria_hidden_tabbable_fail',
     'eligible_aria_hidden_prog_focus_fail',
     'eligible_offscreen_fail',
-    'eligible_zero_size_text',
     'eligible_enabled_button_fail',
     'eligible_submit_input_fail',
     'eligible_button_input_fail'
@@ -569,6 +568,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'bg_alpha_white_50_black_text',
     'bg_alpha_80_over_gray_black_text',
     'excluded_sr_only_clip_fail',
+    'excluded_zero_size_text', // font-size 0 draws nothing
     'blocker_gradient_bg',
     'blocker_image_bg',
     'blocker_mix_blend_mode',

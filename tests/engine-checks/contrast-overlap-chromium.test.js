@@ -118,3 +118,48 @@ test('contrast over paint that is not an ancestor background, in Chromium', { sk
     });
   }
 });
+
+test(
+  'contrast in Chromium: text no scrolling reaches is not judged under styleAndGeometry',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    async function outcome(body) {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(
+          '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
+            `<body><main><h1>Title</h1>${body}</main></body></html>`
+        );
+        await p.addScriptTag({ content: BUNDLE });
+        return await p.evaluate(
+          () =>
+            window.a11ycore.runa11yCoreInPage(null, null, { visibilityMode: 'styleAndGeometry' }, [
+              'contrast-minimum'
+            ]).checksResults[0].outcome
+        );
+      } finally {
+        await p.close();
+      }
+    }
+    // Off screen (the left: -9999px technique), and clipped to nothing.
+    assert.equal(
+      await outcome('<p style="position:absolute;left:-9999px;color:#ccc">Off</p>'),
+      'pass'
+    );
+    assert.equal(
+      await outcome(
+        '<div style="height:0;overflow:hidden"><p style="color:#ccc">Clipped</p></div>'
+      ),
+      'pass'
+    );
+    // A box that scrolls lets a reader reach its text, so it still counts.
+    assert.equal(
+      await outcome(
+        '<div style="height:40px;overflow:auto"><p style="margin-top:200px;color:#ccc">Scroll</p></div>'
+      ),
+      'fail'
+    );
+  }
+);

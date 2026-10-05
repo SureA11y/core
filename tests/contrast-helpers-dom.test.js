@@ -812,3 +812,18 @@ test('computeEffectiveBackground: a background color it cannot read is a blocker
   const ok = covered.helpers.computeEffectiveBackground(covered.document.getElementById('b'), {});
   assert.strictEqual(ok.ok, true);
 });
+
+test('contrast-minimum: text drawn nowhere is not judged (font-size 0, transparent color)', () => {
+  const page = (p) =>
+    `<!doctype html><html lang="en" style="background:#fff"><head><title>t</title></head><body><main>${p}</main></body></html>`;
+  const outcome = (p) =>
+    runa11yCoreOnHtml(page(p), { runOnly: ['contrast-minimum'] }).checksResults[0].outcome;
+  // Each used to fail: #ccc at 1.6:1, and transparent text at 1:1.
+  assert.equal(outcome('<p style="font-size:0;color:#ccc">Zero size</p><p>Body</p>'), 'pass');
+  assert.equal(outcome('<p style="color:transparent">Transparent</p><p>Body</p>'), 'pass');
+  assert.equal(
+    outcome('<p style="color:#ccc">Light but drawn</p>'),
+    'fail',
+    'drawn text still counts'
+  );
+});
