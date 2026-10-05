@@ -29,6 +29,11 @@
  *   a static scan cannot see, so the link is reported as cantTell. Below
  *   3:1, with contrast confidently computable, color is demonstrably the
  *   only cue and the link fails.
+ *   Margin (`contrast-ratio`): of the links told apart by color alone that
+ *   reach 3:1, the one closest to it, with its ratio unrounded. Those links
+ *   are also asked about (the hover and focus cue), so the margin appears on
+ *   a cantTell or fail result. `measuredCount` counts the links whose only
+ *   cue is color.
  * @reports
  *   - `metrics.ratio` (a link set apart by color only): the contrast
  *     between the link's text color and the surrounding text's, as a ratio
@@ -105,7 +110,8 @@ const meta = {
     'CONTRAST_HELPERS_UNAVAILABLE',
     'ENGINE_EXCEPTION',
     'TEXT_DECORATION_NOT_RESOLVABLE'
-  ]
+  ],
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 };
 
 function runInPage(ctx) {
@@ -477,6 +483,8 @@ function runInPage(ctx) {
   const contrastOnly = [];
   let applicableCount = 0;
   let decidedCount = 0;
+  // Links whose only cue is color, compared with the surrounding text.
+  let colorCompared = 0;
 
   // Applicable, but not evaluable. Held separately so the outcome below can
   // tell "checked and sound" apart from "never decided".
@@ -626,6 +634,7 @@ function runInPage(ctx) {
 
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
     // non-color cue on hover and focus, which a static scan cannot see.
+    colorCompared += 1;
     if (!flagged) {
       contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
       continue;
@@ -719,6 +728,13 @@ function runInPage(ctx) {
     });
   });
 
+  // Links told apart by color alone that reach 3:1 against the surrounding
+  // text: the closest is the result's margin (src/core/margin.js).
+  const margin = {
+    marginCandidates: contrastOnly.map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
+    measuredCount: colorCompared
+  };
+
   // See helpers.resolveTieredOutcome (src/core/dom-helpers.js): a proven
   // violation outranks an undecided candidate for the rule's own outcome, but
   // never discards it, so an unevaluable link survives a failure elsewhere in
@@ -732,7 +748,8 @@ function runInPage(ctx) {
     return {
       ruleId: rule.ruleId,
       ...resolved,
-      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null)
+      ...(resolved.outcome === 'cantTell' ? { confidence: 'low' } : null),
+      ...margin
     };
   }
 

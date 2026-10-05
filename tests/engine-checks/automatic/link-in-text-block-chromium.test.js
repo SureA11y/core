@@ -89,4 +89,33 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       ]);
     }
   );
+
+  // Links told apart by color alone that reach 3:1 are asked about (the hover
+  // and focus cue); the closest to 3:1 is the margin, on a fail result too.
+  await t.test('the color-only link closest to 3:1 is the margin', async () => {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        '<!doctype html><html lang="en"><head><title>t</title><style>body{color:#000;background:#fff} a{text-decoration:none}</style></head><body>' +
+          '<p>Read <a id="far" href="#a" style="color:#888">the guide</a> first.</p>' +
+          '<p>Then <a id="near" href="#b" style="color:#666">the notes</a> below.</p>' +
+          '<p>And <a id="low" href="#c" style="color:#444">the archive</a> too.</p></body></html>'
+      );
+      await p.addScriptTag({ content: BUNDLE });
+      const r = await p.evaluate((id) => {
+        const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
+        return res.checksResults.find((x) => x.ruleId === id);
+      }, RULE_ID);
+      assert.equal(r.outcome, 'fail', '#444 against black is under 3:1');
+      const m = r.margin;
+      assert.equal(m.measure, 'contrast-ratio');
+      assert.equal(m.selector, '#near');
+      assert.equal(m.threshold, 3);
+      assert.ok(m.value > 3 && m.value < 4, String(m.value));
+      assert.equal(m.headroom, m.value - 3);
+      assert.equal(m.measuredCount, 3);
+    } finally {
+      await p.close();
+    }
+  });
 });
