@@ -2,7 +2,7 @@
 
 What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-stress-test.md#1-priorities). That document is left as it was written; this one records, for each priority, whether it reproduced, whether it is a bug, what changed and what is left.
 
-**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*. No pull request has been opened yet.
+**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*, plus three commits from the margin performance review in §5. No pull request has been opened yet.
 
 **How each item was judged.** Every item was reproduced on `main` before any change: the **[V]** items with the audit's own `verify*.js` probes, adjusted to local paths, and the others with a minimal repro. An item counts as a bug when the engine does something its docs or its own contract say it doesn't, or gives a wrong result. A missing capability nobody promised counts as a feature. The full suite (`node scripts/run-tests.js`), `lint`, `format:check` and `validate:rules` pass at the branch head.
 
@@ -209,6 +209,36 @@ Taken on 2026-10-05, after an explanation of each with examples, pros and cons.
 | 5,000-row table | 3.33–3.39 s | 3.36–3.38 s (about +1%) |
 
 On the twelve real sites the difference was within run-to-run noise. Over 20,000 painting elements the check switches itself off, and under jsdom it costs nothing.
+
+---
+
+## 5. Margin performance review
+
+Asked after the priorities: did the margin feature (`6fc8d33` and the five rules that report one, `8cac290`–`428941b`) slow any rule down, and what about the timing lead in §6 and R-5?
+
+**Method.** Each margin rule was timed alone (`perfStats.ruleTimings`) at three points: before margins (`2750774`), `main` (`63af298`) and the branch. Each was run under jsdom and in Chromium, on pages built so that thousands of elements tie for the margin, the case that hurt R-4.
+
+**What margins cost, after the branch's fixes.** Chromium, 10,000 elements:
+
+| Rule | Before margins | `main` | Branch | Cause on `main` |
+|---|---|---|---|---|
+| `contrast-minimum` / `-enhanced` | 0.30 s | 0.64 s | 0.37 s | Tie-break, R-4 (fixed by P9); the rest is P1's overlap check and collecting candidates |
+| `target-size-minimum` | 65 ms | 430 ms | 70 ms | Tie-break, R-4 (fixed by P9) |
+| `text-spacing-content-loss` | 81 ms | 124 ms | 100 ms | Measuring each box's margin; linear |
+| `link-in-text-block` | 2.4 s | 2.4 s | 0.7 s | None: the same as before margins. See below |
+
+Under jsdom the five rules time the same at all three points. Every rule's remaining margin overhead grows linearly with the page.
+
+**The §6 lead, `link-in-text-block` 11.8 s under jsdom.** Real, but older than margins (identical at `2750774`), and in two parts:
+
+1. **`a62c81f`.** For each link the rule scanned every child of its parent for text beside it. With thousands of sibling links that is quadratic: 8,000 links took 34 s under jsdom, all to conclude the rule did not apply. The answer belongs to the parent and is now read once per parent: 8,000 links in 0.87 s. A test counts the rule's own reads of the siblings.
+2. **`632ead4`.** In Chromium, a rule reporting thousands of siblings paid for `buildSelector`'s `:nth-of-type` and for `structuralPath`, which both counted an element's earlier siblings per occurrence. A parent's children are now indexed once per run, and indexed again if the engine inserts an element first or last in it (`text-spacing-content-loss`'s style sheet in `<head>`, the color probe at the end of `<body>`). 10,000 color-only links: 2.4 s → 0.7 s. On six public sites every occurrence's selector and path is identical before and after, and each full scan is 7–15% faster. This affects every rule, not only margin ones.
+
+What is left is the native `el.matches(selector)` check of each selector, about 0.4 s of those 0.7 s. It stays O(siblings) per call in Blink, but it is the safety net against selector engines that count differently, so it was kept.
+
+**R-5, `97dc7ea`.** The contrast rules stopped walking the page at their 50th failure, so later text never became a margin candidate, and the margin and `measuredCount` depended on where the 50th failure fell. A failure past the cap is now only counted and the walk goes on; occurrences stay capped at 50. On a page where every paragraph fails, the three contrast rules take 3–5% longer, since `contrast-computable` already analyses every element. Margins are unreleased, so this has no changelog entry.
+
+**Not looked at.** `aria-valid-attr`'s 2.2 s in the same §6 probe. It has nothing to do with margins and is still an unverified lead.
 
 ---
 
