@@ -15672,10 +15672,12 @@ function knownSelectionNames(engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
+  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
   for (const r of customRules) {
-    if (r && r.id) ruleIds.add(String(r.id));
+    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).toLowerCase());
+    for (const t of ct) tags.add(String(t).trim().toLowerCase());
   }
   return {
     isRuleId: (v) =>
@@ -69755,10 +69757,12 @@ function knownSelectionNames(engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
+  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
   for (const r of customRules) {
-    if (r && r.id) ruleIds.add(String(r.id));
+    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).toLowerCase());
+    for (const t of ct) tags.add(String(t).trim().toLowerCase());
   }
   return {
     isRuleId: (v) =>

@@ -196,3 +196,20 @@ test('runOnly: a custom rule id in a bare array selects that rule', () => {
   assert.deepStrictEqual(run(['acme-has-main']), ['acme-has-main']);
   assert.deepStrictEqual(run(['acme']), ['acme-has-main']);
 });
+
+test('runOnly: a custom rule id or tag with spaces around it is found trimmed, as it runs', () => {
+  const customRules = [
+    {
+      id: ' acme-padded ',
+      meta: { title: 'Padded', tags: [' Acme '] },
+      runInPage: () => ({ outcome: 'pass', occurrences: [] })
+    }
+  ];
+  const ran = (runOnly) =>
+    runa11yCoreOnHtml(FILTER_PAGE, { runOnly, engineOptions: { customRules } }).checksResults.map(
+      (r) => r.ruleId
+    );
+  assert.deepStrictEqual(ran(['acme-padded']), ['acme-padded']);
+  assert.deepStrictEqual(ran({ includeRuleIds: ['acme-padded'] }), ['acme-padded']);
+  assert.deepStrictEqual(ran(['acme']), ['acme-padded']);
+});
