@@ -2258,7 +2258,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "contrast-minimum",
@@ -2334,7 +2338,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    },
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -28710,7 +28718,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "contrast-minimum",
@@ -28786,7 +28798,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    },
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -43876,6 +43892,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let eligibleTextCount = 0;
   let computableTextCount = 0;
   let failCount = 0;
+  // Text that reached its ratio, for the result's margin (src/core/margin.js),
+  // and how many elements were compared.
+  const marginCandidates = [];
+  let measuredElements = 0;
 
   const seenFailEls = new Set();
 
@@ -44110,6 +44130,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const fgOpaque = analysis.fgOpaque;
         const bgOpaque = analysis.bgOpaque;
 
+        measuredElements += 1;
+        if (ratio >= threshold) {
+          marginCandidates.push({
+            el,
+            value: ratio,
+            threshold,
+            context: { largeText: !!font.isLargeText }
+          });
+        }
+
         if (!(ratio >= threshold)) {
           failCount += textCount;
 
@@ -44255,7 +44285,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences
+      occurrences,
+      marginCandidates,
+      measuredCount: measuredElements
     };
   }
 
@@ -44269,7 +44301,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     outcome: 'pass',
     severity: rule.defaultSeverity || 'serious',
     confidence: rule.defaultConfidence || 'high',
-    occurrences
+    occurrences,
+    marginCandidates,
+    measuredCount: measuredElements
   };
 }), applicability: null },
     "contrast-minimum": { run: (function runInPage(ctx) {
@@ -44409,6 +44443,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let eligibleTextCount = 0;
   let computableTextCount = 0;
   let failCount = 0;
+  // Text that reached its ratio, for the result's margin (src/core/margin.js),
+  // and how many elements were compared.
+  const marginCandidates = [];
+  let measuredElements = 0;
 
   const seenFailEls = new Set();
 
@@ -44649,6 +44687,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const fgOpaque = analysis.fgOpaque;
         const bgOpaque = analysis.bgOpaque;
 
+        measuredElements += 1;
+        if (ratio >= threshold) {
+          marginCandidates.push({
+            el,
+            value: ratio,
+            threshold,
+            context: { largeText: !!font.isLargeText }
+          });
+        }
+
         if (!(ratio >= threshold)) {
           failCount += textCount;
 
@@ -44792,7 +44840,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'fail',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences
+      occurrences,
+      marginCandidates,
+      measuredCount: measuredElements
     };
   }
 
@@ -44806,7 +44856,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     outcome: 'pass',
     severity: rule.defaultSeverity || 'serious',
     confidence: rule.defaultConfidence || 'high',
-    occurrences
+    occurrences,
+    marginCandidates,
+    measuredCount: measuredElements
   };
 }), applicability: null },
     "css-focus-indicator-suppressed": { run: (function runInPage(ctx) {

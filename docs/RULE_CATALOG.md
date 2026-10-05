@@ -726,7 +726,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 
 **Applies to.** Applies to the visible text contrast-computable applies to, see that rule for the eligibility gates, narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
-**Expectation.** Every computable text node reaches the ratio SC 1.4.6 requires for its size: 4.5:1 for large text, 7:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher.
+**Expectation.** Every computable text node reaches the ratio SC 1.4.6 requires for its size: 4.5:1 for large text, 7:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed.
 
 **What a finding reports.**
 
@@ -739,6 +739,8 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless the page background never became opaque and was taken to sit on a canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and `assumedRootCanvasColor` is the color assumed.
 - `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
 
+**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+
 ### `contrast-minimum`
 
 **Text meets minimum color contrast (AA)**
@@ -749,7 +751,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 
 **Applies to.** Applies to the visible text contrast-computable applies to, see that rule for the eligibility gates, narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
-**Expectation.** Every computable text node reaches the ratio SC 1.4.3 requires for its size: 3:1 for large text, 4.5:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher.
+**Expectation.** Every computable text node reaches the ratio SC 1.4.3 requires for its size: 3:1 for large text, 4.5:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed.
 
 **What a finding reports.**
 
@@ -760,6 +762,8 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `typography.isBold`, `typography.isLargeText` (text below the threshold): whether the text counts as bold, and as large text, the size that only needs 3:1.
 - `assumptionsApplied`, `assumedRootCanvasColor` (text below the threshold): `null` unless the `auditorAssist` contrast mode had to assume a page background because the page sets none that is opaque. Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and `assumedRootCanvasColor` is the color assumed (white by default).
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
+
+**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
 
 ### `css-focus-indicator-suppressed`
 

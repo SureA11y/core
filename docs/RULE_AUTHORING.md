@@ -228,7 +228,7 @@ margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 
 The rule then returns, beside its outcome, `marginCandidates`: one `{ el, value, threshold, context? }` per element that met the limit, with the threshold that element was judged against (it may differ per element, as large text's does), and optionally `measuredCount`, how many elements it compared. Return candidates whatever the outcome, `fail` included: the closest pass still matters on a page with other failures. The runner does the rest (`src/core/margin.js`): it keeps only candidates that really met the limit, picks the smallest headroom, gives a tie to the element first in document order, rounds, and builds the selector and structural path. A rule never builds `margin` itself; anything it puts there is dropped.
 
-`npm run validate:rules` checks the declaration (a measure, a known unit and limit) and that the rule's source returns `marginCandidates`.
+`npm run validate:rules` checks the declaration (a measure, a known unit and limit) and that the rule's source returns `marginCandidates`. A variant (see "Rule variants") has a meta of its own, so it declares `meta.margin` too when its base's code reports one.
 
 ---
 
