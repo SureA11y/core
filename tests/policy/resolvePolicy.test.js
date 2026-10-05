@@ -26,11 +26,23 @@ test('resolvePolicy: selects contract by id', () => {
   assert.deepEqual(pol.allowedConfidence, POLICY_CONTRACTS[otherId].allowedConfidence);
 });
 
-test('resolvePolicy: unknown contract id falls back to a11y', () => {
+test('resolvePolicy: unknown contract id falls back to a11y, with a warning', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
   const pol = resolvePolicy(POLICY_CONTRACTS, { policyContract: 'does-not-exist' });
 
   assert.deepEqual(pol.allowedOutcomes, POLICY_CONTRACTS.a11y.allowedOutcomes);
   assert.deepEqual(pol.allowedConfidence, POLICY_CONTRACTS.a11y.allowedConfidence);
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(warn.mock.calls[0].arguments[0], /Unknown policyContract "does-not-exist"/);
+});
+
+test('resolvePolicy: an inherited property name is an unknown contract, not a crash', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  for (const name of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+    const pol = resolvePolicy(POLICY_CONTRACTS, { policyContract: name });
+    assert.equal(pol.contractId, POLICY_CONTRACTS.a11y.id, name);
+    assert.deepEqual(pol.allowedOutcomes, POLICY_CONTRACTS.a11y.allowedOutcomes, name);
+  }
 });
 
 test('resolvePolicy: inline contract object works and sets a stable id', () => {
