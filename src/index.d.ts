@@ -289,6 +289,19 @@ export interface CompositeResult {
   };
 }
 
+/**
+ * How a scan's `contextSelector` resolved. An `elementCount` of 0 means the
+ * selector matched nothing, so nothing was scanned and every rule reports
+ * `notApplicable`. An invalid selector throws instead, with
+ * `code: 'INVALID_CONTEXT_SELECTOR'`.
+ */
+export interface ContextMatch {
+  /** Distinct elements the selectors matched, the roots of the scan. */
+  elementCount: number;
+  /** Each selector, as given, that matched no element. */
+  unmatchedSelectors: string[];
+}
+
 /** What runDomRulesInPage and runa11yCoreInPage return. */
 export interface ScanResult {
   engine: EngineInfo;
@@ -299,6 +312,8 @@ export interface ScanResult {
   /** Debug only, when `engineOptions.perfStats` is set; not a stable shape. */
   perfStats: Record<string, unknown> | null;
   contextSelector: ContextSelector | null;
+  /** How the `contextSelector` resolved; `null` when none was given. */
+  contextMatch: ContextMatch | null;
   checksResults: CheckResult[];
   rulesResults: CompositeResult[];
   overriddenBuiltinIds: string[];

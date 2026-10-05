@@ -61,6 +61,7 @@ test('result schema is stable', () => {
   const result = runa11yCoreOnHtml('<img src="x">');
   assert.deepStrictEqual(Object.keys(result).sort(), [
     'checksResults',
+    'contextMatch',
     'contextSelector',
     'engine',
     'overriddenBuiltinIds',

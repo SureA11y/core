@@ -13,6 +13,15 @@ runOnly: { includeRuleIds: ['img-alt-present'], tags: ['wcag2a'], includeMode: '
 
 Before 1.10.0, a bare array was ignored and every rule ran.
 
+## "My scoped scan reports everything as `notApplicable`", or "`contextSelector` threw: … is not a valid CSS selector"
+
+Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one the browser can't parse throws (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)).
+
+- **Everything is `notApplicable`**: look at `result.contextMatch`. `elementCount: 0` means the selector matched nothing, and `unmatchedSelectors` names it. Check it for a typo, or whether the element is on the page yet when you scan (content rendered by a script after load, say).
+- **The scan threw with `code: 'INVALID_CONTEXT_SELECTOR'`**: the selector in the message, and in the error's `selector`, isn't valid CSS, for example `'#main['` or a `>>>` combinator.
+
+Before 1.10.0, both cases scanned the whole page instead.
+
 ## "My custom rule always returns `cantTell` with no clear reason"
 
 Check the result's `error` field first — if it says `"<something> is not defined"`, your `runInPage` references a variable from outside the function body (a module-scope `const`, an imported helper, anything not reached through `ctx.*`). This is a real, common footgun: `runInPage` is serialized to source text and re-evaluated later in the page context, so **the build never catches this — only running the rule does**, and the failure looks like a normal (if uninformative) result, not a crash. See [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §1.1 for the full explanation and the fix (move the value inside `runInPage`, or route it through `ctx.rule`/`ctx.helpers`).

@@ -18976,35 +18976,35 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       ? contextSelector.trim()
       : null;
 
-  let roots = [];
-  {
-    const selectorList = Array.isArray(ctxSelector)
-      ? ctxSelector
-      : ctxSelector
-        ? [ctxSelector]
-        : [];
-    const seen = new Set();
-    for (const sel of selectorList) {
-      let matches;
-      try {
-        matches = document.querySelectorAll(sel);
-      } catch {
-        matches = [];
-      }
-      for (const el of matches) {
-        if (el && !seen.has(el)) {
-          seen.add(el);
-          roots.push(el);
-        }
+  if (!ctxSelector) {
+    const whole = document.documentElement || document.body || document.querySelector('html');
+    return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
+  }
+
+  const selectorList = Array.isArray(ctxSelector) ? ctxSelector : [ctxSelector];
+  const roots = [];
+  const unmatchedSelectors = [];
+  const seen = new Set();
+  for (const sel of selectorList) {
+    let matches;
+    try {
+      matches = document.querySelectorAll(sel);
+    } catch {
+      const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      err.selector = sel;
+      throw err;
+    }
+    if (!matches.length) unmatchedSelectors.push(sel);
+    for (const el of matches) {
+      if (el && !seen.has(el)) {
+        seen.add(el);
+        roots.push(el);
       }
     }
   }
-  if (!roots.length) {
-    const fallback = document.documentElement || document.body || document.querySelector('html');
-    if (fallback) roots = [fallback];
-  }
 
-  return { ctxSelector, roots };
+  return { ctxSelector, roots, unmatchedSelectors };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
   // <generated:language-subtags>
@@ -23333,7 +23333,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // Only apply the "stop climbing once we reach a contextSelector-
       // matched root" shortcut when there's a single (or no) matched
-      // root -- resolveContextRoots() falls back to `[documentElement]`
+      // root -- resolveContextRoots() resolves to `[documentElement]`
       // when no contextSelector is given, so this is the overwhelmingly
       // common case and behaves exactly as before.
       //
@@ -24823,7 +24823,24 @@ const runCoreSettled = (function runCoreSettled(
   // querySelector, so "matches this selector" means all matches, not just
   // the first. Shared with frame-scan.js (same resolution used to discover
   // which child <iframe>/<frame> elements fall within the same scan scope).
-  const { ctxSelector, roots } = resolveContextRoots(document, contextSelector);
+  // An unparseable selector throws here, before any rule runs.
+  const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, contextSelector);
+  // Reported on the result whenever a selector was given, so a caller can
+  // tell a scope that matched nothing (every rule notApplicable) from a clean
+  // scan of what it asked for.
+  const contextMatch = ctxSelector
+    ? { elementCount: roots.length, unmatchedSelectors: unmatchedSelectors.slice() }
+    : null;
+  const scopeIsEmpty = !!contextMatch && contextMatch.elementCount === 0;
+  if (scopeIsEmpty) {
+    try {
+      console.warn(
+        '[surea11y] contextSelector matched no element (' +
+          unmatchedSelectors.map((s) => '"' + s + '"').join(', ') +
+          '); nothing was scanned and every rule reports notApplicable.'
+      );
+    } catch {}
+  }
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
@@ -25274,6 +25291,31 @@ const runCoreSettled = (function runCoreSettled(
       }
     };
 
+    // A scope that matched nothing has nothing for any rule to judge, the
+    // page-level rules included: they would otherwise read the document the
+    // caller scoped away from.
+    if (scopeIsEmpty) {
+      checksResults.push(
+        normalizeRuleResult(
+          defResolved,
+          {
+            outcome: 'notApplicable',
+            occurrences: [],
+            engineOptions: {
+              ...(ctx.engineOptions || {}),
+              locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+            }
+          },
+          SCHEMA_VERSION,
+          policy,
+          sharedHelpers
+        )
+      );
+      if (ruleTimings)
+        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
+      continue;
+    }
+
     if (typeof applicabilityFn === 'function') {
       let applicable = true;
       try {
@@ -25463,6 +25505,7 @@ const runCoreSettled = (function runCoreSettled(
     timestamp,
     perfStats,
     contextSelector: ctxSelector,
+    contextMatch,
     checksResults,
     rulesResults,
     overriddenBuiltinIds
@@ -71163,35 +71206,35 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       ? contextSelector.trim()
       : null;
 
-  let roots = [];
-  {
-    const selectorList = Array.isArray(ctxSelector)
-      ? ctxSelector
-      : ctxSelector
-        ? [ctxSelector]
-        : [];
-    const seen = new Set();
-    for (const sel of selectorList) {
-      let matches;
-      try {
-        matches = document.querySelectorAll(sel);
-      } catch {
-        matches = [];
-      }
-      for (const el of matches) {
-        if (el && !seen.has(el)) {
-          seen.add(el);
-          roots.push(el);
-        }
+  if (!ctxSelector) {
+    const whole = document.documentElement || document.body || document.querySelector('html');
+    return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
+  }
+
+  const selectorList = Array.isArray(ctxSelector) ? ctxSelector : [ctxSelector];
+  const roots = [];
+  const unmatchedSelectors = [];
+  const seen = new Set();
+  for (const sel of selectorList) {
+    let matches;
+    try {
+      matches = document.querySelectorAll(sel);
+    } catch {
+      const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      err.selector = sel;
+      throw err;
+    }
+    if (!matches.length) unmatchedSelectors.push(sel);
+    for (const el of matches) {
+      if (el && !seen.has(el)) {
+        seen.add(el);
+        roots.push(el);
       }
     }
   }
-  if (!roots.length) {
-    const fallback = document.documentElement || document.body || document.querySelector('html');
-    if (fallback) roots = [fallback];
-  }
 
-  return { ctxSelector, roots };
+  return { ctxSelector, roots, unmatchedSelectors };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
   // <generated:language-subtags>
@@ -75520,7 +75563,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // Only apply the "stop climbing once we reach a contextSelector-
       // matched root" shortcut when there's a single (or no) matched
-      // root -- resolveContextRoots() falls back to `[documentElement]`
+      // root -- resolveContextRoots() resolves to `[documentElement]`
       // when no contextSelector is given, so this is the overwhelmingly
       // common case and behaves exactly as before.
       //
@@ -77010,7 +77053,24 @@ const runCoreSettled = (function runCoreSettled(
   // querySelector, so "matches this selector" means all matches, not just
   // the first. Shared with frame-scan.js (same resolution used to discover
   // which child <iframe>/<frame> elements fall within the same scan scope).
-  const { ctxSelector, roots } = resolveContextRoots(document, contextSelector);
+  // An unparseable selector throws here, before any rule runs.
+  const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, contextSelector);
+  // Reported on the result whenever a selector was given, so a caller can
+  // tell a scope that matched nothing (every rule notApplicable) from a clean
+  // scan of what it asked for.
+  const contextMatch = ctxSelector
+    ? { elementCount: roots.length, unmatchedSelectors: unmatchedSelectors.slice() }
+    : null;
+  const scopeIsEmpty = !!contextMatch && contextMatch.elementCount === 0;
+  if (scopeIsEmpty) {
+    try {
+      console.warn(
+        '[surea11y] contextSelector matched no element (' +
+          unmatchedSelectors.map((s) => '"' + s + '"').join(', ') +
+          '); nothing was scanned and every rule reports notApplicable.'
+      );
+    } catch {}
+  }
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
@@ -77461,6 +77521,31 @@ const runCoreSettled = (function runCoreSettled(
       }
     };
 
+    // A scope that matched nothing has nothing for any rule to judge, the
+    // page-level rules included: they would otherwise read the document the
+    // caller scoped away from.
+    if (scopeIsEmpty) {
+      checksResults.push(
+        normalizeRuleResult(
+          defResolved,
+          {
+            outcome: 'notApplicable',
+            occurrences: [],
+            engineOptions: {
+              ...(ctx.engineOptions || {}),
+              locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+            }
+          },
+          SCHEMA_VERSION,
+          policy,
+          sharedHelpers
+        )
+      );
+      if (ruleTimings)
+        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
+      continue;
+    }
+
     if (typeof applicabilityFn === 'function') {
       let applicable = true;
       try {
@@ -77650,6 +77735,7 @@ const runCoreSettled = (function runCoreSettled(
     timestamp,
     perfStats,
     contextSelector: ctxSelector,
+    contextMatch,
     checksResults,
     rulesResults,
     overriddenBuiltinIds
@@ -78180,35 +78266,35 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       ? contextSelector.trim()
       : null;
 
-  let roots = [];
-  {
-    const selectorList = Array.isArray(ctxSelector)
-      ? ctxSelector
-      : ctxSelector
-        ? [ctxSelector]
-        : [];
-    const seen = new Set();
-    for (const sel of selectorList) {
-      let matches;
-      try {
-        matches = document.querySelectorAll(sel);
-      } catch {
-        matches = [];
-      }
-      for (const el of matches) {
-        if (el && !seen.has(el)) {
-          seen.add(el);
-          roots.push(el);
-        }
+  if (!ctxSelector) {
+    const whole = document.documentElement || document.body || document.querySelector('html');
+    return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
+  }
+
+  const selectorList = Array.isArray(ctxSelector) ? ctxSelector : [ctxSelector];
+  const roots = [];
+  const unmatchedSelectors = [];
+  const seen = new Set();
+  for (const sel of selectorList) {
+    let matches;
+    try {
+      matches = document.querySelectorAll(sel);
+    } catch {
+      const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      err.selector = sel;
+      throw err;
+    }
+    if (!matches.length) unmatchedSelectors.push(sel);
+    for (const el of matches) {
+      if (el && !seen.has(el)) {
+        seen.add(el);
+        roots.push(el);
       }
     }
   }
-  if (!roots.length) {
-    const fallback = document.documentElement || document.body || document.querySelector('html');
-    if (fallback) roots = [fallback];
-  }
 
-  return { ctxSelector, roots };
+  return { ctxSelector, roots, unmatchedSelectors };
 });
 
 function findChildFrameElements(roots) {
@@ -78245,7 +78331,14 @@ function getFrameElementUrl(el) {
 }
 
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
-  const topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+  // An invalid contextSelector (or runOnly) throws in the local scan; reject
+  // with it, as any other failure of this promise-returning call would.
+  let topFrame;
+  try {
+    topFrame = runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly);
+  } catch (err) {
+    return Promise.reject(err);
+  }
 
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const pingWaitTime = typeof eo.pingWaitTime === 'number' ? eo.pingWaitTime : undefined;
