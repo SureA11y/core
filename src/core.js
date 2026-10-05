@@ -17946,6 +17946,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // el and its ancestors up to the first with an opaque background.
+    const chain = [];
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -18099,6 +18101,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
+        chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
       }
@@ -18106,17 +18109,411 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       cur = composedParent(cur);
     }
 
-    const out = {
-      ok: true,
-      reasonCode: null,
-      blockerSelector: '',
-      blockerProperty: '',
-      blockerValue: ''
-    };
+    const overlap = __findPaintUnderText(el, chain);
+    const out = overlap
+      ? {
+          ok: false,
+          reasonCode: 'BACKGROUND_OVERLAP',
+          blockerSelector: overlap.selector,
+          blockerProperty: overlap.property,
+          blockerValue: overlap.value
+        }
+      : {
+          ok: true,
+          reasonCode: null,
+          blockerSelector: '',
+          blockerProperty: '',
+          blockerValue: ''
+        };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
     } catch {}
     return out;
+  }
+
+  // -------- Paint behind the text that is not an ancestor's --------
+  //
+  // The background above is the stack of el's ancestors' backgrounds. What a
+  // page paints behind text can come from elsewhere: an <img> hero under a
+  // heading positioned over it, a dark sibling block the text is pulled
+  // over with a negative margin, an absolutely positioned overlay or a
+  // ::before. The ratio against the ancestors is then confidently wrong,
+  // so the text is not computable. Needs a layout (a real browser); without
+  // one nothing is found and nothing changes.
+  //
+  // Only paint inside the nearest ancestor whose own background is opaque
+  // counts: anything outside it sits behind that background (a hero image
+  // under a white card) or is a page-level overlay this check does not try
+  // to order. The text's own line boxes are measured, not its element's
+  // box, so a float the text wraps around does not count.
+
+  const __OVERLAP_CELL = 256;
+  const __OVERLAP_MAX_PAINTERS = 20000;
+  const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  let __overlapIndex;
+
+  function __paintOf(node, cs) {
+    if (!cs) return null;
+    if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    const tag = String(node.localName || '').toLowerCase();
+    if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
+      return { property: 'element', value: tag };
+    }
+    const raw = trim(cs.backgroundColor);
+    const bg = parseCssColorToRgba(raw);
+    if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    if (hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(cs.backgroundImage, 80) };
+    }
+    return null;
+  }
+
+  // Fixed and sticky boxes, and what is inside them, sit over the page as
+  // it scrolls: a cookie banner, a sticky header. They cover text rather
+  // than paint behind it, and where they stand depends on the scroll
+  // position the scan was taken at.
+  const __pinnedCache = new WeakMap();
+  function __isPinned(node) {
+    const path = [];
+    let cur = node;
+    let pinned = false;
+    let guard = 0;
+    while (cur && cur.nodeType === 1 && guard++ < 200) {
+      if (__pinnedCache.has(cur)) {
+        pinned = __pinnedCache.get(cur);
+        break;
+      }
+      path.push(cur);
+      const cs = __contrastComputedStyle(cur);
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        pinned = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    for (const n of path) __pinnedCache.set(n, pinned);
+    return pinned;
+  }
+
+  function __buildOverlapIndex() {
+    const doc = window && window.document;
+    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    try {
+      const rootRects = doc.documentElement.getClientRects();
+      if (!rootRects || !rootRects.length) return null;
+    } catch {
+      return null;
+    }
+    const painters = [];
+    const cells = new Map();
+    const roots = [doc];
+    for (let ri = 0; ri < roots.length; ri++) {
+      let all;
+      try {
+        all = roots[ri].querySelectorAll('*');
+      } catch {
+        continue;
+      }
+      for (const node of all) {
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        const cs = __contrastComputedStyle(node);
+        const paint = __paintOf(node, cs);
+        if (!paint) continue;
+        if (__isPinned(node)) continue;
+        // An inline box that wraps has one fragment per line, and its
+        // bounding box spans the lines between: what it paints is the
+        // fragments.
+        let boxes;
+        try {
+          boxes =
+            cs &&
+            String(cs.display).startsWith('inline') &&
+            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
+              ? Array.from(node.getClientRects())
+              : [node.getBoundingClientRect()];
+        } catch {
+          continue;
+        }
+        for (const r of boxes) {
+          if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
+          if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
+          const index = painters.length;
+          painters.push({ el: node, rect: r, paint });
+          const x0 = Math.floor(r.left / __OVERLAP_CELL);
+          const x1 = Math.floor(r.right / __OVERLAP_CELL);
+          const y0 = Math.floor(r.top / __OVERLAP_CELL);
+          const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+          for (let cx = x0; cx <= x1; cx++) {
+            for (let cy = y0; cy <= y1; cy++) {
+              const key = cx + ',' + cy;
+              const list = cells.get(key);
+              if (list) list.push(index);
+              else cells.set(key, [index]);
+            }
+          }
+        }
+      }
+    }
+    return { painters, cells };
+  }
+
+  function __getOverlapIndex() {
+    if (__overlapIndex === undefined) {
+      try {
+        const sc = shared && shared.__contrastSharedCache;
+        if (sc && sc.__overlapIndex !== undefined) __overlapIndex = sc.__overlapIndex;
+        else {
+          __overlapIndex = __buildOverlapIndex();
+          if (sc) sc.__overlapIndex = __overlapIndex;
+        }
+      } catch {
+        __overlapIndex = null;
+      }
+    }
+    return __overlapIndex;
+  }
+
+  // The line boxes of el's own text.
+  function __ownTextRects(el) {
+    const doc = el.ownerDocument;
+    const out = [];
+    let range;
+    try {
+      range = doc.createRange();
+    } catch {
+      return out;
+    }
+    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
+      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+      try {
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width >= 1 && r.height >= 1) out.push(r);
+        }
+      } catch {}
+    }
+    return out;
+  }
+
+  // Two boxes meet when they share at least 2px across. Against a line of
+  // text, paint has to cover about a glyph of it, half the line's height
+  // across and a third down: a glyph box runs past a tight line-height into
+  // the block above or below, and an icon can nudge into the text beside
+  // it, and neither puts the line on that paint.
+  const __intersects = (a, b) =>
+    Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
+    Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  const __coversLine = (paint, line) =>
+    Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
+      Math.max(2, Math.min(line.width, line.height / 2)) &&
+    Math.min(paint.bottom, line.bottom) - Math.max(paint.top, line.top) >=
+      Math.max(2, line.height / 3);
+
+  function __isComposedInside(node, container) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 1000) {
+      if (cur === container) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Where an absolutely positioned pseudo-element of a positioned host sits,
+  // from its resolved offsets and size, which a browser reports in pixels
+  // for an element positioned out of flow. Its containing block is the
+  // host's padding box. A scale or translation is applied about the
+  // transform origin; a pseudo-element scaled to nothing paints nothing
+  // (an underline waiting for hover), so it is `false`. null when the
+  // browser does not give pixels, or the transform rotates or skews, and
+  // then the host's box stands in.
+  function __pseudoBox(host, hostCs, pcs) {
+    try {
+      if (pcs.position !== 'absolute') return null;
+      const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const left = px(pcs.left);
+      const top = px(pcs.top);
+      const width = px(pcs.width);
+      const height = px(pcs.height);
+      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let m = [1, 0, 0, 1, 0, 0];
+      const t = trim(pcs.transform);
+      if (t && t !== 'none') {
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        if (!mm) return null;
+        m = mm[1].split(',').map((v) => Number.parseFloat(v));
+        if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
+        if (m[0] === 0 || m[3] === 0) return false;
+      }
+      const origin = String(pcs.transformOrigin || '').split(/\s+/);
+      const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
+      const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
+      const r = host.getBoundingClientRect();
+      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
+      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
+      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+      const box = {
+        left: Math.min(xs[0], xs[1]),
+        right: Math.max(xs[0], xs[1]),
+        top: Math.min(ys[0], ys[1]),
+        bottom: Math.max(ys[0], ys[1])
+      };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
+    } catch {
+      return null;
+    }
+  }
+
+  // A positioned element's ::before or ::after when it is positioned out of
+  // flow and paints a color or gradient, as { name, property, value }; null
+  // otherwise.
+  const __positionedPaintPseudoCache = new WeakMap();
+  function __hasPositionedPaintPseudo(host) {
+    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
+    let found = null;
+    // The overlay pattern positions the pseudo-element against its own
+    // element, which is then positioned itself; reading every element's
+    // pseudo-elements would cost a style lookup per text element.
+    const hostCs = __contrastComputedStyle(host);
+    const positioned = !!hostCs && !!hostCs.position && hostCs.position !== 'static';
+    if (positioned && window && typeof window.getComputedStyle === 'function') {
+      for (const name of ['::before', '::after']) {
+        let pcs;
+        try {
+          pcs = window.getComputedStyle(host, name);
+        } catch {
+          continue;
+        }
+        if (!pcs) continue;
+        const content = trim(pcs.content);
+        if (!content || content === 'none' || content === 'normal') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        if (pcs.display === 'none') continue;
+        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        const bg = parseCssColorToRgba(pcs.backgroundColor);
+        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
+        if (!(bg && bg.a > 0) && !gradient) continue;
+        const box = __pseudoBox(host, hostCs, pcs);
+        if (box === false) continue;
+        found = {
+          name,
+          property: gradient ? 'background-image' : 'background-color',
+          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
+          box
+        };
+        break;
+      }
+    }
+    __positionedPaintPseudoCache.set(host, found);
+    return found;
+  }
+
+  // `chain` is el and its ancestors up to and including the first with an
+  // opaque background of its own (all of them when none has one).
+  function __findPaintUnderText(el, chain) {
+    try {
+      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      const index = __getOverlapIndex();
+      if (!index) return null;
+      const opaque = chain[chain.length - 1];
+      const ancestors = new Set(chain);
+      // Painters near el's box at all, before measuring its text, which
+      // costs more: on most pages nothing but ancestors paints there.
+      const near = (r) => {
+        const x0 = Math.floor(r.left / __OVERLAP_CELL);
+        const x1 = Math.floor(r.right / __OVERLAP_CELL);
+        const y0 = Math.floor(r.top / __OVERLAP_CELL);
+        const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              const p = index.painters[i];
+              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
+            }
+          }
+        }
+        return false;
+      };
+      let box = null;
+      try {
+        box = el.getBoundingClientRect();
+      } catch {}
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
+      if (box && !pseudoCandidates && !near(box)) return null;
+      const rects = __ownTextRects(el);
+      if (!rects.length) return null;
+      // Solid paint the same color as the background the text is measured
+      // against changes nothing (a white fade-out over white text).
+      let measured = null;
+      try {
+        const bg = computeEffectiveBackground(el, {});
+        measured = bg && bg.ok && bg.rgba ? bg.rgba : null;
+      } catch {}
+      const sameAsMeasured = (value) => {
+        const c = measured && parseCssColorToRgba(value);
+        return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
+      };
+
+      const seen = new Set();
+      for (const tr of rects) {
+        const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+        const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+        const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+        const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              if (seen.has(i)) continue;
+              seen.add(i);
+              const p = index.painters[i];
+              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // An ancestor beyond `opaque` is behind its background.
+              if (__isComposedInside(el, p.el)) continue;
+              // Inside el: paint of its own descendants, beside its text.
+              if (__isComposedInside(p.el, el)) continue;
+              if (!__isComposedInside(p.el, opaque)) continue;
+              if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
+                continue;
+              return {
+                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                property: p.paint.property,
+                value: p.paint.value
+              };
+            }
+          }
+        }
+      }
+
+      // A positioned ::before or ::after on el or an ancestor, painting a
+      // color or gradient: the overlay pattern. Its box can't be measured,
+      // so its element's box stands in for it.
+      for (const host of chain) {
+        const pseudo = __hasPositionedPaintPseudo(host);
+        if (!pseudo) continue;
+        if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
+        let hostRect = pseudo.box;
+        if (!hostRect) {
+          try {
+            hostRect = host.getBoundingClientRect();
+          } catch {
+            hostRect = null;
+          }
+        }
+        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          property: pseudo.property,
+          value: pseudo.value
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   return {
@@ -43917,7 +44314,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
       let hintKind = 'generic';
-      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT' || rc === 'BACKGROUND_UNPARSABLE')
+      if (
+        rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
+        rc === 'BACKGROUND_OVERLAP' ||
+        rc === 'BACKGROUND_UNPARSABLE'
+      )
         hintKind = 'background';
       else if (
         rc === 'MIX_BLEND_MODE' ||
@@ -53934,7 +54335,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     try {
       const blocker = c.getComputabilityBlocker(el);
-      if (blocker && blocker.ok === false) {
+      // Paint under the text that is not an ancestor's leaves the link's
+      // color and the surrounding text's as they are: only a translucent
+      // one depends on what is behind it, checked below.
+      const overlapOnly =
+        !!blocker && blocker.ok === false && blocker.reasonCode === 'BACKGROUND_OVERLAP';
+      if (blocker && blocker.ok === false && !overlapOnly) {
         // Not confidently computable: recorded below rather than skipped, so
         // it cannot be mistaken for a clean result.
         if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
@@ -53946,7 +54352,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const fgLink = c.computeEffectiveForeground(el);
         const fgParent = c.computeEffectiveForeground(parent);
 
-        if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
+        if (
+          overlapOnly &&
+          fgLink &&
+          fgLink.rgba &&
+          fgParent &&
+          fgParent.rgba &&
+          (fgLink.rgba.a < 1 || fgParent.rgba.a < 1)
+        ) {
+          undecidedReason = 'BACKGROUND_OVERLAP';
+        } else if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
           const fgLinkOpaque =
             fgLink.rgba.a < 1
               ? c.compositeRgba(fgLink.rgba, bg.rgba)
@@ -71505,6 +71920,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // el and its ancestors up to the first with an opaque background.
+    const chain = [];
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -71658,6 +72075,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
+        chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
       }
@@ -71665,17 +72083,411 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       cur = composedParent(cur);
     }
 
-    const out = {
-      ok: true,
-      reasonCode: null,
-      blockerSelector: '',
-      blockerProperty: '',
-      blockerValue: ''
-    };
+    const overlap = __findPaintUnderText(el, chain);
+    const out = overlap
+      ? {
+          ok: false,
+          reasonCode: 'BACKGROUND_OVERLAP',
+          blockerSelector: overlap.selector,
+          blockerProperty: overlap.property,
+          blockerValue: overlap.value
+        }
+      : {
+          ok: true,
+          reasonCode: null,
+          blockerSelector: '',
+          blockerProperty: '',
+          blockerValue: ''
+        };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
     } catch {}
     return out;
+  }
+
+  // -------- Paint behind the text that is not an ancestor's --------
+  //
+  // The background above is the stack of el's ancestors' backgrounds. What a
+  // page paints behind text can come from elsewhere: an <img> hero under a
+  // heading positioned over it, a dark sibling block the text is pulled
+  // over with a negative margin, an absolutely positioned overlay or a
+  // ::before. The ratio against the ancestors is then confidently wrong,
+  // so the text is not computable. Needs a layout (a real browser); without
+  // one nothing is found and nothing changes.
+  //
+  // Only paint inside the nearest ancestor whose own background is opaque
+  // counts: anything outside it sits behind that background (a hero image
+  // under a white card) or is a page-level overlay this check does not try
+  // to order. The text's own line boxes are measured, not its element's
+  // box, so a float the text wraps around does not count.
+
+  const __OVERLAP_CELL = 256;
+  const __OVERLAP_MAX_PAINTERS = 20000;
+  const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  let __overlapIndex;
+
+  function __paintOf(node, cs) {
+    if (!cs) return null;
+    if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    const tag = String(node.localName || '').toLowerCase();
+    if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
+      return { property: 'element', value: tag };
+    }
+    const raw = trim(cs.backgroundColor);
+    const bg = parseCssColorToRgba(raw);
+    if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    if (hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(cs.backgroundImage, 80) };
+    }
+    return null;
+  }
+
+  // Fixed and sticky boxes, and what is inside them, sit over the page as
+  // it scrolls: a cookie banner, a sticky header. They cover text rather
+  // than paint behind it, and where they stand depends on the scroll
+  // position the scan was taken at.
+  const __pinnedCache = new WeakMap();
+  function __isPinned(node) {
+    const path = [];
+    let cur = node;
+    let pinned = false;
+    let guard = 0;
+    while (cur && cur.nodeType === 1 && guard++ < 200) {
+      if (__pinnedCache.has(cur)) {
+        pinned = __pinnedCache.get(cur);
+        break;
+      }
+      path.push(cur);
+      const cs = __contrastComputedStyle(cur);
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        pinned = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    for (const n of path) __pinnedCache.set(n, pinned);
+    return pinned;
+  }
+
+  function __buildOverlapIndex() {
+    const doc = window && window.document;
+    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    try {
+      const rootRects = doc.documentElement.getClientRects();
+      if (!rootRects || !rootRects.length) return null;
+    } catch {
+      return null;
+    }
+    const painters = [];
+    const cells = new Map();
+    const roots = [doc];
+    for (let ri = 0; ri < roots.length; ri++) {
+      let all;
+      try {
+        all = roots[ri].querySelectorAll('*');
+      } catch {
+        continue;
+      }
+      for (const node of all) {
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        const cs = __contrastComputedStyle(node);
+        const paint = __paintOf(node, cs);
+        if (!paint) continue;
+        if (__isPinned(node)) continue;
+        // An inline box that wraps has one fragment per line, and its
+        // bounding box spans the lines between: what it paints is the
+        // fragments.
+        let boxes;
+        try {
+          boxes =
+            cs &&
+            String(cs.display).startsWith('inline') &&
+            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
+              ? Array.from(node.getClientRects())
+              : [node.getBoundingClientRect()];
+        } catch {
+          continue;
+        }
+        for (const r of boxes) {
+          if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
+          if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
+          const index = painters.length;
+          painters.push({ el: node, rect: r, paint });
+          const x0 = Math.floor(r.left / __OVERLAP_CELL);
+          const x1 = Math.floor(r.right / __OVERLAP_CELL);
+          const y0 = Math.floor(r.top / __OVERLAP_CELL);
+          const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+          for (let cx = x0; cx <= x1; cx++) {
+            for (let cy = y0; cy <= y1; cy++) {
+              const key = cx + ',' + cy;
+              const list = cells.get(key);
+              if (list) list.push(index);
+              else cells.set(key, [index]);
+            }
+          }
+        }
+      }
+    }
+    return { painters, cells };
+  }
+
+  function __getOverlapIndex() {
+    if (__overlapIndex === undefined) {
+      try {
+        const sc = shared && shared.__contrastSharedCache;
+        if (sc && sc.__overlapIndex !== undefined) __overlapIndex = sc.__overlapIndex;
+        else {
+          __overlapIndex = __buildOverlapIndex();
+          if (sc) sc.__overlapIndex = __overlapIndex;
+        }
+      } catch {
+        __overlapIndex = null;
+      }
+    }
+    return __overlapIndex;
+  }
+
+  // The line boxes of el's own text.
+  function __ownTextRects(el) {
+    const doc = el.ownerDocument;
+    const out = [];
+    let range;
+    try {
+      range = doc.createRange();
+    } catch {
+      return out;
+    }
+    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
+      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+      try {
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width >= 1 && r.height >= 1) out.push(r);
+        }
+      } catch {}
+    }
+    return out;
+  }
+
+  // Two boxes meet when they share at least 2px across. Against a line of
+  // text, paint has to cover about a glyph of it, half the line's height
+  // across and a third down: a glyph box runs past a tight line-height into
+  // the block above or below, and an icon can nudge into the text beside
+  // it, and neither puts the line on that paint.
+  const __intersects = (a, b) =>
+    Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
+    Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  const __coversLine = (paint, line) =>
+    Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
+      Math.max(2, Math.min(line.width, line.height / 2)) &&
+    Math.min(paint.bottom, line.bottom) - Math.max(paint.top, line.top) >=
+      Math.max(2, line.height / 3);
+
+  function __isComposedInside(node, container) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 1000) {
+      if (cur === container) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Where an absolutely positioned pseudo-element of a positioned host sits,
+  // from its resolved offsets and size, which a browser reports in pixels
+  // for an element positioned out of flow. Its containing block is the
+  // host's padding box. A scale or translation is applied about the
+  // transform origin; a pseudo-element scaled to nothing paints nothing
+  // (an underline waiting for hover), so it is `false`. null when the
+  // browser does not give pixels, or the transform rotates or skews, and
+  // then the host's box stands in.
+  function __pseudoBox(host, hostCs, pcs) {
+    try {
+      if (pcs.position !== 'absolute') return null;
+      const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const left = px(pcs.left);
+      const top = px(pcs.top);
+      const width = px(pcs.width);
+      const height = px(pcs.height);
+      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let m = [1, 0, 0, 1, 0, 0];
+      const t = trim(pcs.transform);
+      if (t && t !== 'none') {
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        if (!mm) return null;
+        m = mm[1].split(',').map((v) => Number.parseFloat(v));
+        if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
+        if (m[0] === 0 || m[3] === 0) return false;
+      }
+      const origin = String(pcs.transformOrigin || '').split(/\s+/);
+      const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
+      const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
+      const r = host.getBoundingClientRect();
+      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
+      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
+      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+      const box = {
+        left: Math.min(xs[0], xs[1]),
+        right: Math.max(xs[0], xs[1]),
+        top: Math.min(ys[0], ys[1]),
+        bottom: Math.max(ys[0], ys[1])
+      };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
+    } catch {
+      return null;
+    }
+  }
+
+  // A positioned element's ::before or ::after when it is positioned out of
+  // flow and paints a color or gradient, as { name, property, value }; null
+  // otherwise.
+  const __positionedPaintPseudoCache = new WeakMap();
+  function __hasPositionedPaintPseudo(host) {
+    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
+    let found = null;
+    // The overlay pattern positions the pseudo-element against its own
+    // element, which is then positioned itself; reading every element's
+    // pseudo-elements would cost a style lookup per text element.
+    const hostCs = __contrastComputedStyle(host);
+    const positioned = !!hostCs && !!hostCs.position && hostCs.position !== 'static';
+    if (positioned && window && typeof window.getComputedStyle === 'function') {
+      for (const name of ['::before', '::after']) {
+        let pcs;
+        try {
+          pcs = window.getComputedStyle(host, name);
+        } catch {
+          continue;
+        }
+        if (!pcs) continue;
+        const content = trim(pcs.content);
+        if (!content || content === 'none' || content === 'normal') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        if (pcs.display === 'none') continue;
+        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        const bg = parseCssColorToRgba(pcs.backgroundColor);
+        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
+        if (!(bg && bg.a > 0) && !gradient) continue;
+        const box = __pseudoBox(host, hostCs, pcs);
+        if (box === false) continue;
+        found = {
+          name,
+          property: gradient ? 'background-image' : 'background-color',
+          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
+          box
+        };
+        break;
+      }
+    }
+    __positionedPaintPseudoCache.set(host, found);
+    return found;
+  }
+
+  // `chain` is el and its ancestors up to and including the first with an
+  // opaque background of its own (all of them when none has one).
+  function __findPaintUnderText(el, chain) {
+    try {
+      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      const index = __getOverlapIndex();
+      if (!index) return null;
+      const opaque = chain[chain.length - 1];
+      const ancestors = new Set(chain);
+      // Painters near el's box at all, before measuring its text, which
+      // costs more: on most pages nothing but ancestors paints there.
+      const near = (r) => {
+        const x0 = Math.floor(r.left / __OVERLAP_CELL);
+        const x1 = Math.floor(r.right / __OVERLAP_CELL);
+        const y0 = Math.floor(r.top / __OVERLAP_CELL);
+        const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              const p = index.painters[i];
+              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
+            }
+          }
+        }
+        return false;
+      };
+      let box = null;
+      try {
+        box = el.getBoundingClientRect();
+      } catch {}
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
+      if (box && !pseudoCandidates && !near(box)) return null;
+      const rects = __ownTextRects(el);
+      if (!rects.length) return null;
+      // Solid paint the same color as the background the text is measured
+      // against changes nothing (a white fade-out over white text).
+      let measured = null;
+      try {
+        const bg = computeEffectiveBackground(el, {});
+        measured = bg && bg.ok && bg.rgba ? bg.rgba : null;
+      } catch {}
+      const sameAsMeasured = (value) => {
+        const c = measured && parseCssColorToRgba(value);
+        return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
+      };
+
+      const seen = new Set();
+      for (const tr of rects) {
+        const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+        const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+        const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+        const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              if (seen.has(i)) continue;
+              seen.add(i);
+              const p = index.painters[i];
+              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // An ancestor beyond `opaque` is behind its background.
+              if (__isComposedInside(el, p.el)) continue;
+              // Inside el: paint of its own descendants, beside its text.
+              if (__isComposedInside(p.el, el)) continue;
+              if (!__isComposedInside(p.el, opaque)) continue;
+              if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
+                continue;
+              return {
+                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                property: p.paint.property,
+                value: p.paint.value
+              };
+            }
+          }
+        }
+      }
+
+      // A positioned ::before or ::after on el or an ancestor, painting a
+      // color or gradient: the overlay pattern. Its box can't be measured,
+      // so its element's box stands in for it.
+      for (const host of chain) {
+        const pseudo = __hasPositionedPaintPseudo(host);
+        if (!pseudo) continue;
+        if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
+        let hostRect = pseudo.box;
+        if (!hostRect) {
+          try {
+            hostRect = host.getBoundingClientRect();
+          } catch {
+            hostRect = null;
+          }
+        }
+        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          property: pseudo.property,
+          value: pseudo.value
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   return {

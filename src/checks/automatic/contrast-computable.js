@@ -105,6 +105,7 @@ const meta = {
   // can't read from the source.
   reasonCodes: [
     'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+    'BACKGROUND_OVERLAP',
     'BACKGROUND_UNPARSABLE',
     'FOREGROUND_UNPARSABLE',
     'TEXT_SHADOW'
@@ -199,7 +200,11 @@ function runInPage(ctx) {
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
       let hintKind = 'generic';
-      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT' || rc === 'BACKGROUND_UNPARSABLE')
+      if (
+        rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
+        rc === 'BACKGROUND_OVERLAP' ||
+        rc === 'BACKGROUND_UNPARSABLE'
+      )
         hintKind = 'background';
       else if (
         rc === 'MIX_BLEND_MODE' ||
