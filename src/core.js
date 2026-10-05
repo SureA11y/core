@@ -122,7 +122,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "area-alt-quality",
     "title": "<area> text alternative must be appropriate (manual review)",
-    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "area_altQuality_title",
       "descriptionKey": "area_altQuality_description"
@@ -4589,7 +4589,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "input-image-alt-quality",
     "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
-    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "inputImage_altQuality_title",
       "descriptionKey": "inputImage_altQuality_description"
@@ -10450,26 +10450,26 @@ const I18N = {
     "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit und weist darauf hin, wenn der Alternativtext wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "img_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <img> auf Genauigkeit und Angemessenheit.",
     "img_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext den Zweck/die Information des Bildes im Kontext vermittelt (nicht redundant, kein Dateiname).",
-    "img_altQuality_summary_cantTellFileName": "Der Alternativtext dieses <img> sieht wie ein Dateiname aus.",
-    "img_altQuality_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
-    "img_altQuality_summary_cantTellUrl": "Der Alternativtext dieses <img> ist eine Webadresse.",
-    "img_altQuality_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
-    "img_altQuality_summary_cantTellPlaceholder": "Der Alternativtext dieses <img> ist ein Platzhalter oder ein allgemeines Wort.",
-    "img_altQuality_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Schreiben Sie einen Text, der seinen Zweck im Kontext erfüllt, oder verwenden Sie alt=\"\", wenn das Bild dekorativ ist. Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "Der Alternativtext dieses <img> beginnt damit, dass es ein Bild ist.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
-    "img_altQuality_summary_cantTellTooLong": "Der Alternativtext dieses <img> ist {{length}} Zeichen lang.",
-    "img_altQuality_hint_cantTellTooLong": "Alternativtext wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie den Alternativtext kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Ein langer Alternativtext passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
+    "textAlternative_summary_cantTellFileName": "Die Textalternative dieses <{{element}}> sieht wie ein Dateiname aus.",
+    "textAlternative_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
+    "textAlternative_summary_cantTellUrl": "Die Textalternative dieses <{{element}}> ist eine Webadresse.",
+    "textAlternative_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
+    "textAlternative_summary_cantTellPlaceholder": "Die Textalternative dieses <{{element}}> ist ein Platzhalter oder ein allgemeines Wort.",
+    "textAlternative_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Ersetzen Sie es durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut; ein rein dekoratives <img> erhält stattdessen alt=\"\". Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "textAlternative_summary_cantTellRedundantPrefix": "Die Textalternative dieses <{{element}}> beginnt damit, dass es ein Bild ist.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
+    "textAlternative_summary_cantTellTooLong": "Die Textalternative dieses <{{element}}> ist {{length}} Zeichen lang.",
+    "textAlternative_hint_cantTellTooLong": "Eine Textalternative wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie die Textalternative kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Eine lange passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
     "img_altDecorative_title": "Ausgeschlossene <img>/<canvas>/<svg> müssen dekorativ sein (manuelle Überprüfung)",
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
     "img_altDecorative_hint_cantTell": "Bestätigen Sie, dass das Element rein dekorativ ist. Falls es Information oder Funktion vermittelt, geben Sie ihm einen echten Alternativtext (oder einen zugänglichen Namen), statt es auszuschließen.",
     "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
-    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <area> ({{sources}}) auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
     "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
-    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <input type=\"image\"> ({{sources}}) auf Genauigkeit und Angemessenheit.",
     "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
     "inputImage_altDecorative_title": "<input type=\"image\"> mit alt=\"\" muss angemessen sein (manuelle Überprüfung)",
@@ -11306,26 +11306,26 @@ const I18N = {
     "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "img_altQuality_summary_cantTell": "Review alt text on <img> for accuracy and appropriateness.",
     "img_altQuality_hint_cantTell": "Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).",
-    "img_altQuality_summary_cantTellFileName": "The alt text of this <img> looks like a file name.",
-    "img_altQuality_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
-    "img_altQuality_summary_cantTellUrl": "The alt text of this <img> is a web address.",
-    "img_altQuality_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
-    "img_altQuality_summary_cantTellPlaceholder": "The alt text of this <img> is a placeholder or a generic word.",
-    "img_altQuality_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt=\"\" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "The alt text of this <img> starts by saying it is an image.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
-    "img_altQuality_summary_cantTellTooLong": "The alt text of this <img> is {{length}} characters long.",
-    "img_altQuality_hint_cantTellTooLong": "Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.",
+    "textAlternative_summary_cantTellFileName": "The text alternative of this <{{element}}> looks like a file name.",
+    "textAlternative_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
+    "textAlternative_summary_cantTellUrl": "The text alternative of this <{{element}}> is a web address.",
+    "textAlternative_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
+    "textAlternative_summary_cantTellPlaceholder": "The text alternative of this <{{element}}> is a placeholder or a generic word.",
+    "textAlternative_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt=\"\" instead. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "textAlternative_summary_cantTellRedundantPrefix": "The text alternative of this <{{element}}> starts by saying it is an image.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
+    "textAlternative_summary_cantTellTooLong": "The text alternative of this <{{element}}> is {{length}} characters long.",
+    "textAlternative_hint_cantTellTooLong": "A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.",
     "img_altDecorative_title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
     "img_altDecorative_hint_cantTell": "Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.",
     "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
-    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "area_altQuality_summary_cantTell": "Review the text alternative of this <area> ({{sources}}) for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure each listed text alternative identifies the destination/action of the image map area in context.",
     "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
-    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "inputImage_altQuality_summary_cantTell": "Review the text alternative of this <input type=\"image\"> ({{sources}}) for accuracy and appropriateness.",
     "inputImage_altQuality_hint_cantTell": "Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.",
     "inputImage_altDecorative_title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
@@ -12162,26 +12162,26 @@ const I18N = {
     "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad, e indica cuándo el texto alt parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "img_altQuality_summary_cantTell": "Revisar el texto alt de <img> en cuanto a exactitud e idoneidad.",
     "img_altQuality_hint_cantTell": "Asegurarse de que el texto alt transmita el propósito o la información de la imagen en su contexto (que no sea redundante ni parezca un nombre de archivo).",
-    "img_altQuality_summary_cantTellFileName": "El texto alt de este <img> parece un nombre de archivo.",
-    "img_altQuality_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que cumpla el propósito de la imagen en su contexto. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
-    "img_altQuality_summary_cantTellUrl": "El texto alt de este <img> es una dirección web.",
-    "img_altQuality_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que cumpla el propósito de la imagen en su contexto. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
-    "img_altQuality_summary_cantTellPlaceholder": "El texto alt de este <img> es un marcador de posición o una palabra genérica.",
-    "img_altQuality_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Escribir un texto que cumpla su propósito en el contexto, o usar alt=\"\" si la imagen es decorativa. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "El texto alt de este <img> empieza diciendo que es una imagen.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
-    "img_altQuality_summary_cantTellTooLong": "El texto alt de este <img> tiene {{length}} caracteres.",
-    "img_altQuality_hint_cantTellTooLong": "El texto alt se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener el texto alt breve y dar los detalles en texto en la página o en una descripción enlazada. Un texto alt largo está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
+    "textAlternative_summary_cantTellFileName": "La alternativa textual de este <{{element}}> parece un nombre de archivo.",
+    "textAlternative_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
+    "textAlternative_summary_cantTellUrl": "La alternativa textual de este <{{element}}> es una dirección web.",
+    "textAlternative_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
+    "textAlternative_summary_cantTellPlaceholder": "La alternativa textual de este <{{element}}> es un marcador de posición o una palabra genérica.",
+    "textAlternative_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace; un <img> solo decorativo lleva alt=\"\" en su lugar. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "textAlternative_summary_cantTellRedundantPrefix": "La alternativa textual de este <{{element}}> empieza diciendo que es una imagen.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
+    "textAlternative_summary_cantTellTooLong": "La alternativa textual de este <{{element}}> tiene {{length}} caracteres.",
+    "textAlternative_hint_cantTellTooLong": "Una alternativa textual se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener la alternativa textual breve y dar los detalles en texto en la página o en una descripción enlazada. Una larga está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
     "img_altDecorative_title": "Los <img>/<canvas>/<svg> excluidos deben ser decorativos (revisión manual)",
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
     "img_altDecorative_hint_cantTell": "Confirmar que el elemento es puramente decorativo. Si transmite información o función, darle un texto alternativo real (o un nombre accesible) en lugar de excluirlo.",
     "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
-    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "area_altQuality_summary_cantTell": "Revisar la alternativa textual de este <area> ({{sources}}) en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada identifique el destino o la acción del área del mapa de imagen en su contexto.",
     "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
-    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "inputImage_altQuality_summary_cantTell": "Revisar la alternativa textual de este <input type=\"image\"> ({{sources}}) en cuanto a exactitud e idoneidad.",
     "inputImage_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
     "inputImage_altDecorative_title": "<input type=\"image\"> con alt=\"\" debe ser apropiado (revisión manual)",
@@ -13018,26 +13018,26 @@ const I18N = {
     "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence, et indique quand le texte alt ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "img_altQuality_summary_cantTell": "Vérifiez le texte alt de <img> (exactitude et pertinence).",
     "img_altQuality_hint_cantTell": "Assurez-vous que le texte alt exprime le but/l’information de l’image dans son contexte (ni redondant, ni nom de fichier).",
-    "img_altQuality_summary_cantTellFileName": "Le texte alt de cet <img> ressemble à un nom de fichier.",
-    "img_altQuality_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui remplit la fonction de l’image dans son contexte. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
-    "img_altQuality_summary_cantTellUrl": "Le texte alt de cet <img> est une adresse web.",
-    "img_altQuality_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui remplit la fonction de l’image dans son contexte. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
-    "img_altQuality_summary_cantTellPlaceholder": "Le texte alt de cet <img> est un texte provisoire ou un mot générique.",
-    "img_altQuality_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Écrivez un texte qui remplit sa fonction dans son contexte, ou utilisez alt=\"\" si l’image est décorative. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "Le texte alt de cet <img> commence par dire qu’il s’agit d’une image.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
-    "img_altQuality_summary_cantTellTooLong": "Le texte alt de cet <img> compte {{length}} caractères.",
-    "img_altQuality_hint_cantTellTooLong": "Le texte alt est lu d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez un texte alt court et donnez les détails dans le texte de la page ou dans une description liée. Un texte alt long convient quand l’image contient elle-même autant de texte, comme une courte citation.",
+    "textAlternative_summary_cantTellFileName": "L’alternative textuelle de cet <{{element}}> ressemble à un nom de fichier.",
+    "textAlternative_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
+    "textAlternative_summary_cantTellUrl": "L’alternative textuelle de cet <{{element}}> est une adresse web.",
+    "textAlternative_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
+    "textAlternative_summary_cantTellPlaceholder": "L’alternative textuelle de cet <{{element}}> est un texte provisoire ou un mot générique.",
+    "textAlternative_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait ; un <img> purement décoratif prend alt=\"\" à la place. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "textAlternative_summary_cantTellRedundantPrefix": "L’alternative textuelle de cet <{{element}}> commence par dire qu’il s’agit d’une image.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
+    "textAlternative_summary_cantTellTooLong": "L’alternative textuelle de cet <{{element}}> compte {{length}} caractères.",
+    "textAlternative_hint_cantTellTooLong": "Une alternative textuelle est lue d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez une alternative courte et donnez les détails dans le texte de la page ou dans une description liée. Une alternative longue convient quand l’image contient elle-même autant de texte, comme une courte citation.",
     "img_altDecorative_title": "Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)",
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
     "img_altDecorative_hint_cantTell": "Confirmez que l’élément est purement décoratif. S’il transmet une information ou une fonction, donnez-lui un vrai texte alternatif (ou un nom accessible) plutôt que de l’exclure.",
     "area_altQuality_title": "<area> : alternative textuelle à vérifier (revue manuelle)",
-    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "area_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <area> ({{sources}}) (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée identifie la destination/l’action de la zone dans son contexte.",
     "inputImage_altQuality_title": "<input type=\"image\"> : alternative textuelle à vérifier (revue manuelle)",
-    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <input type=\"image\"> ({{sources}}) (exactitude et pertinence).",
     "inputImage_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
     "inputImage_altDecorative_title": "<input type=\"image\"> avec alt=\"\" : à vérifier (revue manuelle)",
@@ -13874,26 +13874,26 @@ const I18N = {
     "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。代替テキストがファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "img_altQuality_summary_cantTell": "<img> の代替テキストが正確かつ適切か、人による確認が必要です。",
     "img_altQuality_hint_cantTell": "代替テキストが、文脈の中で画像の目的や情報を伝えているか確認してください (冗長な表現やファイル名のような文字列になっていないか)。",
-    "img_altQuality_summary_cantTellFileName": "この <img> の代替テキストはファイル名のように見えます。",
-    "img_altQuality_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。文脈の中で画像の目的を果たすテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellUrl": "この <img> の代替テキストは Web アドレスです。",
-    "img_altQuality_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。文脈の中で画像の目的を果たすテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellPlaceholder": "この <img> の代替テキストは仮の文字列か、汎用的な語です。",
-    "img_altQuality_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。文脈の中で目的を果たすテキストを書くか、装飾的な画像であれば alt=\"\" にしてください。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellRedundantPrefix": "この <img> の代替テキストは、画像であることを述べています。",
-    "img_altQuality_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
-    "img_altQuality_summary_cantTellTooLong": "この <img> の代替テキストは {{length}} 文字あります。",
-    "img_altQuality_hint_cantTellTooLong": "代替テキストは一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、代替テキストは短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長い代替テキストで構いません。",
+    "textAlternative_summary_cantTellFileName": "この <{{element}}> のテキストによる代替はファイル名のように見えます。",
+    "textAlternative_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellUrl": "この <{{element}}> のテキストによる代替は Web アドレスです。",
+    "textAlternative_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellPlaceholder": "この <{{element}}> のテキストによる代替は仮の文字列か、汎用的な語です。",
+    "textAlternative_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。装飾のみの <img> であれば、代わりに alt=\"\" にします。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellRedundantPrefix": "この <{{element}}> のテキストによる代替は、画像であることを述べています。",
+    "textAlternative_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
+    "textAlternative_summary_cantTellTooLong": "この <{{element}}> のテキストによる代替は {{length}} 文字あります。",
+    "textAlternative_hint_cantTellTooLong": "テキストによる代替は一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、テキストによる代替は短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長くても構いません。",
     "img_altDecorative_title": "支援技術から除外された <img>/<canvas>/<svg> が装飾であること (手動確認)",
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
     "img_altDecorative_hint_cantTell": "この要素が純粋な装飾であることを確認してください。情報や機能を伝えている場合は、除外せずに適切なテキストによる代替 (またはアクセシブルな名前) を指定してください。",
     "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
-    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
     "area_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
     "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
-    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
     "inputImage_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
     "inputImage_altDecorative_title": "alt=\"\" の <input type=\"image\"> が適切であること (手動確認)",
@@ -22399,6 +22399,291 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // getTextAlternativeSignal: placeholder and generic words, matched against
+  // the whole text alternative.
+  const TA_PLACEHOLDER_WORDS = {
+    en: [
+      'image',
+      'img',
+      'picture',
+      'pic',
+      'photo',
+      'photograph',
+      'graphic',
+      'icon',
+      'logo',
+      'banner',
+      'alt',
+      'alt text',
+      'alternative text',
+      'image description',
+      'description',
+      'placeholder',
+      'image placeholder',
+      'tbd',
+      'todo',
+      'untitled',
+      'spacer',
+      'blank',
+      'null',
+      'undefined',
+      'test'
+    ],
+    de: [
+      'bild',
+      'foto',
+      'grafik',
+      'abbildung',
+      'symbol',
+      'logo',
+      'platzhalter',
+      'bildbeschreibung',
+      'alternativtext',
+      'ohne titel',
+      'unbenannt'
+    ],
+    es: [
+      'imagen',
+      'foto',
+      'fotografía',
+      'gráfico',
+      'icono',
+      'ícono',
+      'logo',
+      'logotipo',
+      'marcador de posición',
+      'descripción de la imagen',
+      'texto alternativo',
+      'sin título'
+    ],
+    fr: [
+      'image',
+      'photo',
+      'photographie',
+      'illustration',
+      'graphique',
+      'icône',
+      'logo',
+      'espace réservé',
+      "description de l'image",
+      'texte alternatif',
+      'sans titre'
+    ],
+    ja: [
+      '画像',
+      '写真',
+      'イメージ',
+      '図',
+      'アイコン',
+      'ロゴ',
+      '代替テキスト',
+      '画像の説明',
+      '無題',
+      'ダミー'
+    ]
+  };
+
+  // Openings that say the image is an image, followed by what it shows.
+  const TA_REDUNDANT_PREFIXES = {
+    en: [
+      'image of ',
+      'an image of ',
+      'picture of ',
+      'a picture of ',
+      'photo of ',
+      'a photo of ',
+      'photograph of ',
+      'a photograph of ',
+      'graphic of ',
+      'image: ',
+      'picture: ',
+      'photo: '
+    ],
+    de: ['bild von ', 'ein bild von ', 'foto von ', 'ein foto von ', 'bild: ', 'foto: '],
+    es: [
+      'imagen de ',
+      'una imagen de ',
+      'foto de ',
+      'una foto de ',
+      'fotografía de ',
+      'imagen: ',
+      'foto: '
+    ],
+    fr: [
+      'image de ',
+      "image d'",
+      'une image de ',
+      "une image d'",
+      'photo de ',
+      "photo d'",
+      'une photo de ',
+      "une photo d'",
+      'image : ',
+      'photo : ',
+      'image: ',
+      'photo: '
+    ],
+    ja: ['画像:', '写真:']
+  };
+  // Japanese says it at the end: 「富士山の写真」.
+  const TA_REDUNDANT_SUFFIXES_JA = ['の画像', 'の写真', 'のイメージ'];
+
+  const TA_MAX_LENGTH = 150;
+  const TA_IMAGE_FILE_RE =
+    /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
+  // Names cameras, phones and screenshot tools give files.
+  const TA_GENERATED_NAME_RE =
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+  const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
+
+  // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
+  // as in link-name-quality; trailing punctuation is not part of the word.
+  function normalizeTextAlternative(s) {
+    return String(s || '')
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function stripTrailingPunctuationTA(s) {
+    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared.
+  function textAlternativeLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function textAlternativeWordsFor(byLang, lang) {
+    const out = byLang.en.slice();
+    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    return out;
+  }
+
+  function textAlternativeFileName(el) {
+    if (!el || typeof el.getAttribute !== 'function') return '';
+    let src;
+    try {
+      src = String(el.getAttribute('src') || '');
+    } catch {
+      return '';
+    }
+    const path = src.split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {}
+    return normalizeTextAlternative(name);
+  }
+
+  // What makes a text alternative look like something other than a
+  // description: { altSignal } ('file-name', 'url', 'placeholder',
+  // 'redundant-prefix', or 'too-long' with length and limit), or null for
+  // ordinary text. `text` is the alternative to judge (an img's alt, an
+  // area's or input's name); `el` gives its language and, through src, its
+  // own file name. Word lists: English always, plus the element's language.
+  function getTextAlternativeSignal(el, rawAlt) {
+    if (rawAlt == null || !String(rawAlt).trim()) return null;
+    const alt = normalizeTextAlternative(rawAlt);
+    const word = stripTrailingPunctuationTA(alt);
+
+    if (TA_IMAGE_FILE_RE.test(alt) || TA_GENERATED_NAME_RE.test(word))
+      return { altSignal: 'file-name' };
+    const fileName = textAlternativeFileName(el);
+    const stem = fileName.replace(/\.[a-z0-9]+$/, '');
+    if (
+      fileName &&
+      (alt === fileName || (stem && word === stem && !/\s/.test(word) && /_|\d\d|-.*-/.test(word)))
+    ) {
+      return { altSignal: 'file-name' };
+    }
+
+    if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
+
+    const lang = textAlternativeLangOf(el);
+    if (
+      !/[\p{L}\p{N}]/u.test(alt) ||
+      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
+    ) {
+      return { altSignal: 'placeholder' };
+    }
+
+    const prefixed = textAlternativeWordsFor(TA_REDUNDANT_PREFIXES, lang).some(
+      (p) => alt.length > p.length && alt.startsWith(p)
+    );
+    const suffixed =
+      lang === 'ja' &&
+      TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
+    if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
+
+    const length = Array.from(String(rawAlt).trim()).length;
+    if (length > TA_MAX_LENGTH) {
+      return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
+    }
+    return null;
+  }
+
+  // The message for a getTextAlternativeSignal result, shared by the rules
+  // that report one: summary and hint in English, and the i18n keys and
+  // params that translate them. `element` is how the summary names the
+  // element: 'img', 'area', 'input type="image"'.
+  const TA_SIGNAL_MESSAGES = {
+    'file-name': [
+      'FileName',
+      'The text alternative of this <{{element}}> looks like a file name.',
+      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+    ],
+    url: [
+      'Url',
+      'The text alternative of this <{{element}}> is a web address.',
+      'An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
+    ],
+    placeholder: [
+      'Placeholder',
+      'The text alternative of this <{{element}}> is a placeholder or a generic word.',
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    'redundant-prefix': [
+      'RedundantPrefix',
+      'The text alternative of this <{{element}}> starts by saying it is an image.',
+      'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
+    ],
+    'too-long': [
+      'TooLong',
+      'The text alternative of this <{{element}}> is {{length}} characters long.',
+      'A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.'
+    ]
+  };
+
+  function describeTextAlternativeSignal(signal, element) {
+    const entry = signal && TA_SIGNAL_MESSAGES[signal.altSignal];
+    if (!entry) return null;
+    const params = { element: String(element || '') };
+    if (signal.length) params.length = signal.length;
+    const fill = (t) =>
+      t.replace(/\{\{(\w+)\}\}/g, (m, k) => (params[k] != null ? String(params[k]) : m));
+    return {
+      summary: fill(entry[1]),
+      hint: entry[2],
+      i18n: {
+        summaryKey: 'textAlternative_summary_cantTell' + entry[0],
+        hintKey: 'textAlternative_hint_cantTell' + entry[0],
+        params
+      }
+    };
+  }
+
   // C) Text alternative helper (mechanism-aware by element/type)
   function getTextAlternativeInfo(el, _ctx, opts) {
     const flags = [];
@@ -24067,6 +24352,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Text alternatives
     getTextAlternativeInfo,
+    getTextAlternativeSignal,
+    describeTextAlternativeSignal,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
@@ -26020,7 +26307,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "area-alt-quality",
     "title": "<area> text alternative must be appropriate (manual review)",
-    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "area_altQuality_title",
       "descriptionKey": "area_altQuality_description"
@@ -30487,7 +30774,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "input-image-alt-quality",
     "title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
-    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "inputImage_altQuality_title",
       "descriptionKey": "inputImage_altQuality_description"
@@ -36709,15 +36996,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const details = { name: alt.name, sources: alt.sources.slice() };
     if (alt.alt) details.alt = alt.alt;
+    // A name that looks like something other than a description gets the
+    // shared message for its signal (helpers.getTextAlternativeSignal).
+    const signal = (() => {
+      try {
+        return helpers && typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, alt.name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const message =
+      signal && typeof helpers.describeTextAlternativeSignal === 'function'
+        ? helpers.describeTextAlternativeSignal(signal, 'area')
+        : null;
+    if (message) Object.assign(details, signal);
 
     const baseOccurrence = {
-      summary: `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
-      hint: 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
-      i18n: {
-        summaryKey: 'area_altQuality_summary_cantTell',
-        hintKey: 'area_altQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
-      },
+      summary: message
+        ? message.summary
+        : `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: message
+        ? message.hint
+        : 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
+      i18n: message
+        ? message.i18n
+        : {
+            summaryKey: 'area_altQuality_summary_cantTell',
+            hintKey: 'area_altQuality_hint_cantTell',
+            params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
+          },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details
@@ -50168,260 +50477,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !focusable;
   }
 
-  // Placeholder and generic words, matched against the whole alt text.
-  const PLACEHOLDER_WORDS = {
-    en: [
-      'image',
-      'img',
-      'picture',
-      'pic',
-      'photo',
-      'photograph',
-      'graphic',
-      'icon',
-      'logo',
-      'banner',
-      'alt',
-      'alt text',
-      'alternative text',
-      'image description',
-      'description',
-      'placeholder',
-      'image placeholder',
-      'tbd',
-      'todo',
-      'untitled',
-      'spacer',
-      'blank',
-      'null',
-      'undefined',
-      'test'
-    ],
-    de: [
-      'bild',
-      'foto',
-      'grafik',
-      'abbildung',
-      'symbol',
-      'logo',
-      'platzhalter',
-      'bildbeschreibung',
-      'alternativtext',
-      'ohne titel',
-      'unbenannt'
-    ],
-    es: [
-      'imagen',
-      'foto',
-      'fotografía',
-      'gráfico',
-      'icono',
-      'ícono',
-      'logo',
-      'logotipo',
-      'marcador de posición',
-      'descripción de la imagen',
-      'texto alternativo',
-      'sin título'
-    ],
-    fr: [
-      'image',
-      'photo',
-      'photographie',
-      'illustration',
-      'graphique',
-      'icône',
-      'logo',
-      'espace réservé',
-      "description de l'image",
-      'texte alternatif',
-      'sans titre'
-    ],
-    ja: [
-      '画像',
-      '写真',
-      'イメージ',
-      '図',
-      'アイコン',
-      'ロゴ',
-      '代替テキスト',
-      '画像の説明',
-      '無題',
-      'ダミー'
-    ]
-  };
-
-  // Openings that say the image is an image, followed by what it shows.
-  const REDUNDANT_PREFIXES = {
-    en: [
-      'image of ',
-      'an image of ',
-      'picture of ',
-      'a picture of ',
-      'photo of ',
-      'a photo of ',
-      'photograph of ',
-      'a photograph of ',
-      'graphic of ',
-      'image: ',
-      'picture: ',
-      'photo: '
-    ],
-    de: ['bild von ', 'ein bild von ', 'foto von ', 'ein foto von ', 'bild: ', 'foto: '],
-    es: [
-      'imagen de ',
-      'una imagen de ',
-      'foto de ',
-      'una foto de ',
-      'fotografía de ',
-      'imagen: ',
-      'foto: '
-    ],
-    fr: [
-      'image de ',
-      "image d'",
-      'une image de ',
-      "une image d'",
-      'photo de ',
-      "photo d'",
-      'une photo de ',
-      "une photo d'",
-      'image : ',
-      'photo : ',
-      'image: ',
-      'photo: '
-    ],
-    ja: ['画像:', '写真:']
-  };
-  // Japanese says it at the end: 「富士山の写真」.
-  const REDUNDANT_SUFFIXES_JA = ['の画像', 'の写真', 'のイメージ'];
-
-  const MAX_ALT_LENGTH = 150;
-  const IMAGE_FILE_RE =
-    /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
-  // Names cameras, phones and screenshot tools give files.
-  const GENERATED_NAME_RE =
-    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
-  const URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
-
-  // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
-  // as in link-name-quality; trailing punctuation is not part of the word.
-  function normalizeAlt(s) {
-    return String(s || '')
-      .normalize('NFKC')
-      .replace(/[\u2018\u2019]/g, "'")
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-  }
-
-  function stripTrailingPunctuation(s) {
-    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
-  }
-
-  // Primary language subtag of the nearest lang attribute, crossing shadow
-  // roots; '' when none is declared.
-  function primaryLangOf(node) {
-    let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
-        if (v != null) return v.trim().split('-')[0].toLowerCase();
-      }
-      n = n.parentNode || n.host || null;
-    }
-    return '';
-  }
-
-  function listsFor(byLang, lang) {
-    const out = byLang.en.slice();
-    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
-    return out;
-  }
-
-  function srcFileName(el) {
-    let src;
-    try {
-      src = String(el.getAttribute('src') || '');
-    } catch {
-      return '';
-    }
-    const path = src.split(/[?#]/)[0];
-    let name = path.slice(path.lastIndexOf('/') + 1);
-    try {
-      name = decodeURIComponent(name);
-    } catch {}
-    return normalizeAlt(name);
-  }
-
-  // What makes this alt look like something other than a description, or
-  // null for ordinary alt text.
-  function altSignalOf(el, rawAlt) {
-    const alt = normalizeAlt(rawAlt);
-    const word = stripTrailingPunctuation(alt);
-
-    if (IMAGE_FILE_RE.test(alt) || GENERATED_NAME_RE.test(word)) return { altSignal: 'file-name' };
-    const fileName = srcFileName(el);
-    const stem = fileName.replace(/\.[a-z0-9]+$/, '');
-    if (
-      fileName &&
-      (alt === fileName || (stem && word === stem && !/\s/.test(word) && /_|\d\d|-.*-/.test(word)))
-    ) {
-      return { altSignal: 'file-name' };
-    }
-
-    if (URL_RE.test(alt)) return { altSignal: 'url' };
-
-    const lang = primaryLangOf(el);
-    if (!/[\p{L}\p{N}]/u.test(alt) || listsFor(PLACEHOLDER_WORDS, lang).includes(word)) {
-      return { altSignal: 'placeholder' };
-    }
-
-    const prefixed = listsFor(REDUNDANT_PREFIXES, lang).some(
-      (p) => alt.length > p.length && alt.startsWith(p)
-    );
-    const suffixed =
-      lang === 'ja' &&
-      REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
-    if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
-
-    const length = Array.from(String(rawAlt).trim()).length;
-    if (length > MAX_ALT_LENGTH) {
-      return { altSignal: 'too-long', length, limit: MAX_ALT_LENGTH };
-    }
-    return null;
-  }
-
-  // Message keys per signal; ordinary alt keeps the rule's original ones.
-  const SIGNAL_KEYS = {
-    'file-name': 'FileName',
-    url: 'Url',
-    placeholder: 'Placeholder',
-    'redundant-prefix': 'RedundantPrefix',
-    'too-long': 'TooLong'
-  };
-  const SIGNAL_TEXT = {
-    'file-name': [
-      'The alt text of this <img> looks like a file name.',
-      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
-    ],
-    url: [
-      'The alt text of this <img> is a web address.',
-      'An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
-    ],
-    placeholder: [
-      'The alt text of this <img> is a placeholder or a generic word.',
-      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt="" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.'
-    ],
-    'redundant-prefix': [
-      'The alt text of this <img> starts by saying it is an image.',
-      'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
-    ],
-    'too-long': [
-      'The alt text of this <img> is {{length}} characters long.',
-      'Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.'
-    ]
-  };
+  // What makes an alt look like something other than a description, shared
+  // with area-alt-quality and input-image-alt-quality.
+  const getTextAlternativeSignal =
+    helpers && typeof helpers.getTextAlternativeSignal === 'function'
+      ? helpers.getTextAlternativeSignal
+      : () => null;
+  const describeTextAlternativeSignal =
+    helpers && typeof helpers.describeTextAlternativeSignal === 'function'
+      ? helpers.describeTextAlternativeSignal
+      : () => null;
 
   const selector = 'img[alt]:not([alt=""])';
   const els = (() => {
@@ -50487,27 +50552,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     const signal = (() => {
       try {
-        return altSignalOf(el, el.getAttribute('alt'));
+        return getTextAlternativeSignal(el, el.getAttribute('alt'));
       } catch {
         return null;
       }
     })();
-    const keySuffix = signal ? SIGNAL_KEYS[signal.altSignal] : '';
-    const text = signal ? SIGNAL_TEXT[signal.altSignal] : null;
-    const params = { element: 'img' };
-    if (signal && signal.length) params.length = signal.length;
+    // Alt that looks like something other than a description gets the
+    // shared message for its signal; ordinary alt keeps this rule's own.
+    const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
     const baseOccurrence = {
-      summary: text
-        ? text[0].replace('{{length}}', String(params.length || ''))
+      summary: message
+        ? message.summary
         : 'Review alt text on <img> for accuracy and appropriateness.',
-      hint: text
-        ? text[1]
+      hint: message
+        ? message.hint
         : 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
-      i18n: {
-        summaryKey: 'img_altQuality_summary_cantTell' + keySuffix,
-        hintKey: 'img_altQuality_hint_cantTell' + keySuffix,
-        params
-      },
+      i18n: message
+        ? message.i18n
+        : {
+            summaryKey: 'img_altQuality_summary_cantTell',
+            hintKey: 'img_altQuality_hint_cantTell',
+            params: { element: 'img' }
+          },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: signal
@@ -51065,15 +51131,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const details = { name: alt.name, sources: alt.sources.slice() };
     if (alt.alt) details.alt = alt.alt;
+    // A name that looks like something other than a description gets the
+    // shared message for its signal (helpers.getTextAlternativeSignal).
+    const signal = (() => {
+      try {
+        return helpers && typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, alt.name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const message =
+      signal && typeof helpers.describeTextAlternativeSignal === 'function'
+        ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
+        : null;
+    if (message) Object.assign(details, signal);
 
     const baseOccurrence = {
-      summary: `Review the text alternative of this <input type="image"> (${sourcesText}) for accuracy and appropriateness.`,
-      hint: 'Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.',
-      i18n: {
-        summaryKey: 'inputImage_altQuality_summary_cantTell',
-        hintKey: 'inputImage_altQuality_hint_cantTell',
-        params: { element: 'input[type=image]', sources: sourcesText }
-      },
+      summary: message
+        ? message.summary
+        : `Review the text alternative of this <input type="image"> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: message
+        ? message.hint
+        : 'Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.',
+      i18n: message
+        ? message.i18n
+        : {
+            summaryKey: 'inputImage_altQuality_summary_cantTell',
+            hintKey: 'inputImage_altQuality_hint_cantTell',
+            params: { element: 'input[type=image]', sources: sourcesText }
+          },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details
@@ -62980,26 +63068,26 @@ const I18N = {
     "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit und weist darauf hin, wenn der Alternativtext wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "img_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <img> auf Genauigkeit und Angemessenheit.",
     "img_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext den Zweck/die Information des Bildes im Kontext vermittelt (nicht redundant, kein Dateiname).",
-    "img_altQuality_summary_cantTellFileName": "Der Alternativtext dieses <img> sieht wie ein Dateiname aus.",
-    "img_altQuality_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
-    "img_altQuality_summary_cantTellUrl": "Der Alternativtext dieses <img> ist eine Webadresse.",
-    "img_altQuality_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
-    "img_altQuality_summary_cantTellPlaceholder": "Der Alternativtext dieses <img> ist ein Platzhalter oder ein allgemeines Wort.",
-    "img_altQuality_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Schreiben Sie einen Text, der seinen Zweck im Kontext erfüllt, oder verwenden Sie alt=\"\", wenn das Bild dekorativ ist. Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "Der Alternativtext dieses <img> beginnt damit, dass es ein Bild ist.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
-    "img_altQuality_summary_cantTellTooLong": "Der Alternativtext dieses <img> ist {{length}} Zeichen lang.",
-    "img_altQuality_hint_cantTellTooLong": "Alternativtext wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie den Alternativtext kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Ein langer Alternativtext passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
+    "textAlternative_summary_cantTellFileName": "Die Textalternative dieses <{{element}}> sieht wie ein Dateiname aus.",
+    "textAlternative_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
+    "textAlternative_summary_cantTellUrl": "Die Textalternative dieses <{{element}}> ist eine Webadresse.",
+    "textAlternative_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
+    "textAlternative_summary_cantTellPlaceholder": "Die Textalternative dieses <{{element}}> ist ein Platzhalter oder ein allgemeines Wort.",
+    "textAlternative_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Ersetzen Sie es durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut; ein rein dekoratives <img> erhält stattdessen alt=\"\". Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "textAlternative_summary_cantTellRedundantPrefix": "Die Textalternative dieses <{{element}}> beginnt damit, dass es ein Bild ist.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
+    "textAlternative_summary_cantTellTooLong": "Die Textalternative dieses <{{element}}> ist {{length}} Zeichen lang.",
+    "textAlternative_hint_cantTellTooLong": "Eine Textalternative wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie die Textalternative kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Eine lange passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
     "img_altDecorative_title": "Ausgeschlossene <img>/<canvas>/<svg> müssen dekorativ sein (manuelle Überprüfung)",
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
     "img_altDecorative_hint_cantTell": "Bestätigen Sie, dass das Element rein dekorativ ist. Falls es Information oder Funktion vermittelt, geben Sie ihm einen echten Alternativtext (oder einen zugänglichen Namen), statt es auszuschließen.",
     "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
-    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "area_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <area> ({{sources}}) auf Genauigkeit und Angemessenheit.",
     "area_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative das Ziel/die Aktion des Bereichs der Image-Map im Kontext identifiziert.",
     "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
-    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit.",
+    "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "inputImage_altQuality_summary_cantTell": "Überprüfen Sie die Textalternative dieses <input type=\"image\"> ({{sources}}) auf Genauigkeit und Angemessenheit.",
     "inputImage_altQuality_hint_cantTell": "Stellen Sie sicher, dass jede genannte Textalternative die Aktion des Elements beschreibt (z. B. „Suchen“, „Bestellung abschicken“) im jeweiligen Kontext.",
     "inputImage_altDecorative_title": "<input type=\"image\"> mit alt=\"\" muss angemessen sein (manuelle Überprüfung)",
@@ -63836,26 +63924,26 @@ const I18N = {
     "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "img_altQuality_summary_cantTell": "Review alt text on <img> for accuracy and appropriateness.",
     "img_altQuality_hint_cantTell": "Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).",
-    "img_altQuality_summary_cantTellFileName": "The alt text of this <img> looks like a file name.",
-    "img_altQuality_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
-    "img_altQuality_summary_cantTellUrl": "The alt text of this <img> is a web address.",
-    "img_altQuality_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
-    "img_altQuality_summary_cantTellPlaceholder": "The alt text of this <img> is a placeholder or a generic word.",
-    "img_altQuality_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt=\"\" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "The alt text of this <img> starts by saying it is an image.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
-    "img_altQuality_summary_cantTellTooLong": "The alt text of this <img> is {{length}} characters long.",
-    "img_altQuality_hint_cantTellTooLong": "Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.",
+    "textAlternative_summary_cantTellFileName": "The text alternative of this <{{element}}> looks like a file name.",
+    "textAlternative_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
+    "textAlternative_summary_cantTellUrl": "The text alternative of this <{{element}}> is a web address.",
+    "textAlternative_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
+    "textAlternative_summary_cantTellPlaceholder": "The text alternative of this <{{element}}> is a placeholder or a generic word.",
+    "textAlternative_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt=\"\" instead. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "textAlternative_summary_cantTellRedundantPrefix": "The text alternative of this <{{element}}> starts by saying it is an image.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
+    "textAlternative_summary_cantTellTooLong": "The text alternative of this <{{element}}> is {{length}} characters long.",
+    "textAlternative_hint_cantTellTooLong": "A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.",
     "img_altDecorative_title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
     "img_altDecorative_hint_cantTell": "Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.",
     "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
-    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "area_altQuality_summary_cantTell": "Review the text alternative of this <area> ({{sources}}) for accuracy and appropriateness.",
     "area_altQuality_hint_cantTell": "Ensure each listed text alternative identifies the destination/action of the image map area in context.",
     "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
-    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.",
+    "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "inputImage_altQuality_summary_cantTell": "Review the text alternative of this <input type=\"image\"> ({{sources}}) for accuracy and appropriateness.",
     "inputImage_altQuality_hint_cantTell": "Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.",
     "inputImage_altDecorative_title": "<input type=\"image\"> with alt=\"\" must be appropriate (manual review)",
@@ -64692,26 +64780,26 @@ const I18N = {
     "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad, e indica cuándo el texto alt parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "img_altQuality_summary_cantTell": "Revisar el texto alt de <img> en cuanto a exactitud e idoneidad.",
     "img_altQuality_hint_cantTell": "Asegurarse de que el texto alt transmita el propósito o la información de la imagen en su contexto (que no sea redundante ni parezca un nombre de archivo).",
-    "img_altQuality_summary_cantTellFileName": "El texto alt de este <img> parece un nombre de archivo.",
-    "img_altQuality_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que cumpla el propósito de la imagen en su contexto. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
-    "img_altQuality_summary_cantTellUrl": "El texto alt de este <img> es una dirección web.",
-    "img_altQuality_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que cumpla el propósito de la imagen en su contexto. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
-    "img_altQuality_summary_cantTellPlaceholder": "El texto alt de este <img> es un marcador de posición o una palabra genérica.",
-    "img_altQuality_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Escribir un texto que cumpla su propósito en el contexto, o usar alt=\"\" si la imagen es decorativa. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "El texto alt de este <img> empieza diciendo que es una imagen.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
-    "img_altQuality_summary_cantTellTooLong": "El texto alt de este <img> tiene {{length}} caracteres.",
-    "img_altQuality_hint_cantTellTooLong": "El texto alt se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener el texto alt breve y dar los detalles en texto en la página o en una descripción enlazada. Un texto alt largo está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
+    "textAlternative_summary_cantTellFileName": "La alternativa textual de este <{{element}}> parece un nombre de archivo.",
+    "textAlternative_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
+    "textAlternative_summary_cantTellUrl": "La alternativa textual de este <{{element}}> es una dirección web.",
+    "textAlternative_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
+    "textAlternative_summary_cantTellPlaceholder": "La alternativa textual de este <{{element}}> es un marcador de posición o una palabra genérica.",
+    "textAlternative_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace; un <img> solo decorativo lleva alt=\"\" en su lugar. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "textAlternative_summary_cantTellRedundantPrefix": "La alternativa textual de este <{{element}}> empieza diciendo que es una imagen.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
+    "textAlternative_summary_cantTellTooLong": "La alternativa textual de este <{{element}}> tiene {{length}} caracteres.",
+    "textAlternative_hint_cantTellTooLong": "Una alternativa textual se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener la alternativa textual breve y dar los detalles en texto en la página o en una descripción enlazada. Una larga está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
     "img_altDecorative_title": "Los <img>/<canvas>/<svg> excluidos deben ser decorativos (revisión manual)",
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
     "img_altDecorative_hint_cantTell": "Confirmar que el elemento es puramente decorativo. Si transmite información o función, darle un texto alternativo real (o un nombre accesible) en lugar de excluirlo.",
     "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
-    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "area_altQuality_summary_cantTell": "Revisar la alternativa textual de este <area> ({{sources}}) en cuanto a exactitud e idoneidad.",
     "area_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada identifique el destino o la acción del área del mapa de imagen en su contexto.",
     "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
-    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad.",
+    "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "inputImage_altQuality_summary_cantTell": "Revisar la alternativa textual de este <input type=\"image\"> ({{sources}}) en cuanto a exactitud e idoneidad.",
     "inputImage_altQuality_hint_cantTell": "Asegurarse de que cada alternativa textual indicada describa la acción del control (por ejemplo, \"Buscar\", \"Enviar pedido\") en su contexto.",
     "inputImage_altDecorative_title": "<input type=\"image\"> con alt=\"\" debe ser apropiado (revisión manual)",
@@ -65548,26 +65636,26 @@ const I18N = {
     "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence, et indique quand le texte alt ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "img_altQuality_summary_cantTell": "Vérifiez le texte alt de <img> (exactitude et pertinence).",
     "img_altQuality_hint_cantTell": "Assurez-vous que le texte alt exprime le but/l’information de l’image dans son contexte (ni redondant, ni nom de fichier).",
-    "img_altQuality_summary_cantTellFileName": "Le texte alt de cet <img> ressemble à un nom de fichier.",
-    "img_altQuality_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui remplit la fonction de l’image dans son contexte. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
-    "img_altQuality_summary_cantTellUrl": "Le texte alt de cet <img> est une adresse web.",
-    "img_altQuality_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui remplit la fonction de l’image dans son contexte. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
-    "img_altQuality_summary_cantTellPlaceholder": "Le texte alt de cet <img> est un texte provisoire ou un mot générique.",
-    "img_altQuality_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Écrivez un texte qui remplit sa fonction dans son contexte, ou utilisez alt=\"\" si l’image est décorative. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
-    "img_altQuality_summary_cantTellRedundantPrefix": "Le texte alt de cet <img> commence par dire qu’il s’agit d’une image.",
-    "img_altQuality_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
-    "img_altQuality_summary_cantTellTooLong": "Le texte alt de cet <img> compte {{length}} caractères.",
-    "img_altQuality_hint_cantTellTooLong": "Le texte alt est lu d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez un texte alt court et donnez les détails dans le texte de la page ou dans une description liée. Un texte alt long convient quand l’image contient elle-même autant de texte, comme une courte citation.",
+    "textAlternative_summary_cantTellFileName": "L’alternative textuelle de cet <{{element}}> ressemble à un nom de fichier.",
+    "textAlternative_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
+    "textAlternative_summary_cantTellUrl": "L’alternative textuelle de cet <{{element}}> est une adresse web.",
+    "textAlternative_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
+    "textAlternative_summary_cantTellPlaceholder": "L’alternative textuelle de cet <{{element}}> est un texte provisoire ou un mot générique.",
+    "textAlternative_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait ; un <img> purement décoratif prend alt=\"\" à la place. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "textAlternative_summary_cantTellRedundantPrefix": "L’alternative textuelle de cet <{{element}}> commence par dire qu’il s’agit d’une image.",
+    "textAlternative_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
+    "textAlternative_summary_cantTellTooLong": "L’alternative textuelle de cet <{{element}}> compte {{length}} caractères.",
+    "textAlternative_hint_cantTellTooLong": "Une alternative textuelle est lue d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez une alternative courte et donnez les détails dans le texte de la page ou dans une description liée. Une alternative longue convient quand l’image contient elle-même autant de texte, comme une courte citation.",
     "img_altDecorative_title": "Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)",
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
     "img_altDecorative_hint_cantTell": "Confirmez que l’élément est purement décoratif. S’il transmet une information ou une fonction, donnez-lui un vrai texte alternatif (ou un nom accessible) plutôt que de l’exclure.",
     "area_altQuality_title": "<area> : alternative textuelle à vérifier (revue manuelle)",
-    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "area_altQuality_description": "Signale les éléments <area> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "area_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <area> ({{sources}}) (exactitude et pertinence).",
     "area_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée identifie la destination/l’action de la zone dans son contexte.",
     "inputImage_altQuality_title": "<input type=\"image\"> : alternative textuelle à vérifier (revue manuelle)",
-    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’alternative textuelle (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "inputImage_altQuality_summary_cantTell": "Vérifiez l’alternative textuelle de cet élément <input type=\"image\"> ({{sources}}) (exactitude et pertinence).",
     "inputImage_altQuality_hint_cantTell": "Assurez-vous que chaque alternative textuelle indiquée décrit l’action du contrôle (ex. « Rechercher », « Envoyer ») dans son contexte.",
     "inputImage_altDecorative_title": "<input type=\"image\"> avec alt=\"\" : à vérifier (revue manuelle)",
@@ -66404,26 +66492,26 @@ const I18N = {
     "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。代替テキストがファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "img_altQuality_summary_cantTell": "<img> の代替テキストが正確かつ適切か、人による確認が必要です。",
     "img_altQuality_hint_cantTell": "代替テキストが、文脈の中で画像の目的や情報を伝えているか確認してください (冗長な表現やファイル名のような文字列になっていないか)。",
-    "img_altQuality_summary_cantTellFileName": "この <img> の代替テキストはファイル名のように見えます。",
-    "img_altQuality_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。文脈の中で画像の目的を果たすテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellUrl": "この <img> の代替テキストは Web アドレスです。",
-    "img_altQuality_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。文脈の中で画像の目的を果たすテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellPlaceholder": "この <img> の代替テキストは仮の文字列か、汎用的な語です。",
-    "img_altQuality_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。文脈の中で目的を果たすテキストを書くか、装飾的な画像であれば alt=\"\" にしてください。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
-    "img_altQuality_summary_cantTellRedundantPrefix": "この <img> の代替テキストは、画像であることを述べています。",
-    "img_altQuality_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
-    "img_altQuality_summary_cantTellTooLong": "この <img> の代替テキストは {{length}} 文字あります。",
-    "img_altQuality_hint_cantTellTooLong": "代替テキストは一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、代替テキストは短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長い代替テキストで構いません。",
+    "textAlternative_summary_cantTellFileName": "この <{{element}}> のテキストによる代替はファイル名のように見えます。",
+    "textAlternative_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellUrl": "この <{{element}}> のテキストによる代替は Web アドレスです。",
+    "textAlternative_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellPlaceholder": "この <{{element}}> のテキストによる代替は仮の文字列か、汎用的な語です。",
+    "textAlternative_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。装飾のみの <img> であれば、代わりに alt=\"\" にします。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellRedundantPrefix": "この <{{element}}> のテキストによる代替は、画像であることを述べています。",
+    "textAlternative_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
+    "textAlternative_summary_cantTellTooLong": "この <{{element}}> のテキストによる代替は {{length}} 文字あります。",
+    "textAlternative_hint_cantTellTooLong": "テキストによる代替は一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、テキストによる代替は短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長くても構いません。",
     "img_altDecorative_title": "支援技術から除外された <img>/<canvas>/<svg> が装飾であること (手動確認)",
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
     "img_altDecorative_hint_cantTell": "この要素が純粋な装飾であることを確認してください。情報や機能を伝えている場合は、除外せずに適切なテキストによる代替 (またはアクセシブルな名前) を指定してください。",
     "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
-    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
     "area_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でイメージマップの領域のリンク先や操作を示しているか確認してください。",
     "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
-    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確かつ適切か、人による確認が必要です。",
     "inputImage_altQuality_hint_cantTell": "挙げられた各テキストによる代替が、文脈の中でコントロールの操作 (例:「検索」「注文を確定」) を説明しているか確認してください。",
     "inputImage_altDecorative_title": "alt=\"\" の <input type=\"image\"> が適切であること (手動確認)",
@@ -74929,6 +75017,291 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // getTextAlternativeSignal: placeholder and generic words, matched against
+  // the whole text alternative.
+  const TA_PLACEHOLDER_WORDS = {
+    en: [
+      'image',
+      'img',
+      'picture',
+      'pic',
+      'photo',
+      'photograph',
+      'graphic',
+      'icon',
+      'logo',
+      'banner',
+      'alt',
+      'alt text',
+      'alternative text',
+      'image description',
+      'description',
+      'placeholder',
+      'image placeholder',
+      'tbd',
+      'todo',
+      'untitled',
+      'spacer',
+      'blank',
+      'null',
+      'undefined',
+      'test'
+    ],
+    de: [
+      'bild',
+      'foto',
+      'grafik',
+      'abbildung',
+      'symbol',
+      'logo',
+      'platzhalter',
+      'bildbeschreibung',
+      'alternativtext',
+      'ohne titel',
+      'unbenannt'
+    ],
+    es: [
+      'imagen',
+      'foto',
+      'fotografía',
+      'gráfico',
+      'icono',
+      'ícono',
+      'logo',
+      'logotipo',
+      'marcador de posición',
+      'descripción de la imagen',
+      'texto alternativo',
+      'sin título'
+    ],
+    fr: [
+      'image',
+      'photo',
+      'photographie',
+      'illustration',
+      'graphique',
+      'icône',
+      'logo',
+      'espace réservé',
+      "description de l'image",
+      'texte alternatif',
+      'sans titre'
+    ],
+    ja: [
+      '画像',
+      '写真',
+      'イメージ',
+      '図',
+      'アイコン',
+      'ロゴ',
+      '代替テキスト',
+      '画像の説明',
+      '無題',
+      'ダミー'
+    ]
+  };
+
+  // Openings that say the image is an image, followed by what it shows.
+  const TA_REDUNDANT_PREFIXES = {
+    en: [
+      'image of ',
+      'an image of ',
+      'picture of ',
+      'a picture of ',
+      'photo of ',
+      'a photo of ',
+      'photograph of ',
+      'a photograph of ',
+      'graphic of ',
+      'image: ',
+      'picture: ',
+      'photo: '
+    ],
+    de: ['bild von ', 'ein bild von ', 'foto von ', 'ein foto von ', 'bild: ', 'foto: '],
+    es: [
+      'imagen de ',
+      'una imagen de ',
+      'foto de ',
+      'una foto de ',
+      'fotografía de ',
+      'imagen: ',
+      'foto: '
+    ],
+    fr: [
+      'image de ',
+      "image d'",
+      'une image de ',
+      "une image d'",
+      'photo de ',
+      "photo d'",
+      'une photo de ',
+      "une photo d'",
+      'image : ',
+      'photo : ',
+      'image: ',
+      'photo: '
+    ],
+    ja: ['画像:', '写真:']
+  };
+  // Japanese says it at the end: 「富士山の写真」.
+  const TA_REDUNDANT_SUFFIXES_JA = ['の画像', 'の写真', 'のイメージ'];
+
+  const TA_MAX_LENGTH = 150;
+  const TA_IMAGE_FILE_RE =
+    /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
+  // Names cameras, phones and screenshot tools give files.
+  const TA_GENERATED_NAME_RE =
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+  const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
+
+  // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
+  // as in link-name-quality; trailing punctuation is not part of the word.
+  function normalizeTextAlternative(s) {
+    return String(s || '')
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function stripTrailingPunctuationTA(s) {
+    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared.
+  function textAlternativeLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function textAlternativeWordsFor(byLang, lang) {
+    const out = byLang.en.slice();
+    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    return out;
+  }
+
+  function textAlternativeFileName(el) {
+    if (!el || typeof el.getAttribute !== 'function') return '';
+    let src;
+    try {
+      src = String(el.getAttribute('src') || '');
+    } catch {
+      return '';
+    }
+    const path = src.split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {}
+    return normalizeTextAlternative(name);
+  }
+
+  // What makes a text alternative look like something other than a
+  // description: { altSignal } ('file-name', 'url', 'placeholder',
+  // 'redundant-prefix', or 'too-long' with length and limit), or null for
+  // ordinary text. `text` is the alternative to judge (an img's alt, an
+  // area's or input's name); `el` gives its language and, through src, its
+  // own file name. Word lists: English always, plus the element's language.
+  function getTextAlternativeSignal(el, rawAlt) {
+    if (rawAlt == null || !String(rawAlt).trim()) return null;
+    const alt = normalizeTextAlternative(rawAlt);
+    const word = stripTrailingPunctuationTA(alt);
+
+    if (TA_IMAGE_FILE_RE.test(alt) || TA_GENERATED_NAME_RE.test(word))
+      return { altSignal: 'file-name' };
+    const fileName = textAlternativeFileName(el);
+    const stem = fileName.replace(/\.[a-z0-9]+$/, '');
+    if (
+      fileName &&
+      (alt === fileName || (stem && word === stem && !/\s/.test(word) && /_|\d\d|-.*-/.test(word)))
+    ) {
+      return { altSignal: 'file-name' };
+    }
+
+    if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
+
+    const lang = textAlternativeLangOf(el);
+    if (
+      !/[\p{L}\p{N}]/u.test(alt) ||
+      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
+    ) {
+      return { altSignal: 'placeholder' };
+    }
+
+    const prefixed = textAlternativeWordsFor(TA_REDUNDANT_PREFIXES, lang).some(
+      (p) => alt.length > p.length && alt.startsWith(p)
+    );
+    const suffixed =
+      lang === 'ja' &&
+      TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
+    if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
+
+    const length = Array.from(String(rawAlt).trim()).length;
+    if (length > TA_MAX_LENGTH) {
+      return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
+    }
+    return null;
+  }
+
+  // The message for a getTextAlternativeSignal result, shared by the rules
+  // that report one: summary and hint in English, and the i18n keys and
+  // params that translate them. `element` is how the summary names the
+  // element: 'img', 'area', 'input type="image"'.
+  const TA_SIGNAL_MESSAGES = {
+    'file-name': [
+      'FileName',
+      'The text alternative of this <{{element}}> looks like a file name.',
+      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+    ],
+    url: [
+      'Url',
+      'The text alternative of this <{{element}}> is a web address.',
+      'An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
+    ],
+    placeholder: [
+      'Placeholder',
+      'The text alternative of this <{{element}}> is a placeholder or a generic word.',
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    'redundant-prefix': [
+      'RedundantPrefix',
+      'The text alternative of this <{{element}}> starts by saying it is an image.',
+      'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
+    ],
+    'too-long': [
+      'TooLong',
+      'The text alternative of this <{{element}}> is {{length}} characters long.',
+      'A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.'
+    ]
+  };
+
+  function describeTextAlternativeSignal(signal, element) {
+    const entry = signal && TA_SIGNAL_MESSAGES[signal.altSignal];
+    if (!entry) return null;
+    const params = { element: String(element || '') };
+    if (signal.length) params.length = signal.length;
+    const fill = (t) =>
+      t.replace(/\{\{(\w+)\}\}/g, (m, k) => (params[k] != null ? String(params[k]) : m));
+    return {
+      summary: fill(entry[1]),
+      hint: entry[2],
+      i18n: {
+        summaryKey: 'textAlternative_summary_cantTell' + entry[0],
+        hintKey: 'textAlternative_hint_cantTell' + entry[0],
+        params
+      }
+    };
+  }
+
   // C) Text alternative helper (mechanism-aware by element/type)
   function getTextAlternativeInfo(el, _ctx, opts) {
     const flags = [];
@@ -76597,6 +76970,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Text alternatives
     getTextAlternativeInfo,
+    getTextAlternativeSignal,
+    describeTextAlternativeSignal,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,

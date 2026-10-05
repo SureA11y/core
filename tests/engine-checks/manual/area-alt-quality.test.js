@@ -32,7 +32,7 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 13, maxOccurrences: 13 });
 
   const expected = [
     'area_q_01',
@@ -42,7 +42,12 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     'area_q_08', // named by title only
     'area_q_09', // named by aria-label only
     'area_q_10', // named by aria-labelledby only
-    'area_q_11' // alt="" but named by title
+    'area_q_11', // alt="" but named by title
+    'area_q_12',
+    'area_q_13',
+    'area_q_14',
+    'area_q_15',
+    'area_q_16'
   ];
   const notExpected = ['area_q_02', 'area_q_03', 'area_q_04'];
 
@@ -76,7 +81,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   );
   assert.strictEqual(
     rule.description,
-    'Signale les \u00e9l\u00e9ments <area> dont l\u2019alternative textuelle (alt, aria-label, aria-labelledby ou title) n\u2019est pas vide afin de v\u00e9rifier manuellement sa pertinence.'
+    'Signale les \u00e9l\u00e9ments <area> dont l\u2019alternative textuelle (alt, aria-label, aria-labelledby ou title) n\u2019est pas vide afin de v\u00e9rifier manuellement sa pertinence. Indique quand le nom ressemble \u00e0 un nom de fichier, \u00e0 une adresse web ou \u00e0 un texte provisoire, commence par \u00ab image de \u00bb ou est tr\u00e8s long.'
   );
 
   const occ = rule.occurrences[0];
@@ -184,4 +189,41 @@ test(`${RULE_ID}: a title-only area is asked about under wcag22-aa`, () => {
   );
   const wcag = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
   assertRule(wcag, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+// A name that looks like something other than a description gets the shared
+// signal message (helpers.getTextAlternativeSignal), as img-alt-quality does.
+// The finding stays cantTell and gains no reasonCode.
+
+test(`${RULE_ID}: a suspicious name reports its signal and the shared message`, () => {
+  const html = fs.readFileSync(
+    path.join(__dirname, '../..', 'fixtures', 'area-alt-quality-manual-all-scenarios.html'),
+    'utf8'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occurrenceFor = (id) =>
+    rule.occurrences.find((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
+  const expected = {
+    area_q_12: 'file-name',
+    area_q_13: 'url',
+    area_q_14: 'placeholder',
+    area_q_15: 'too-long',
+    area_q_16: 'redundant-prefix'
+  };
+  for (const [id, signal] of Object.entries(expected)) {
+    const o = occurrenceFor(id);
+    assert.ok(o, id);
+    assert.strictEqual(o.data.details.altSignal, signal, id);
+    assert.ok(!('reasonCode' in o.data.details), `${id} carries no reasonCode`);
+    assert.ok(Array.isArray(o.data.details.sources), `${id} keeps its sources`);
+    assert.match(o.i18n.summaryKey, /^textAlternative_summary_cantTell[A-Z]/, id);
+    assert.strictEqual(o.i18n.params.element, 'area', id);
+    assert.ok(o.summary.startsWith('The text alternative of this <area>'), o.summary);
+  }
+  for (const id of ['area_q_01', 'area_q_08']) {
+    const o = occurrenceFor(id);
+    assert.ok(o, id);
+    assert.ok(!('altSignal' in o.data.details), id);
+    assert.doesNotMatch(o.i18n.summaryKey, /^textAlternative_/, id);
+  }
 });
