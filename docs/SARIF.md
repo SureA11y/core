@@ -47,7 +47,7 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | SARIF field | Source |
 |---|---|
 | `results[].ruleId` | `checksResults[i].ruleId` |
-| `results[].message.text` | `occurrence.summary` + `occurrence.hint` |
+| `results[].message.text` | `occurrence.summary` + `occurrence.hint`. An occurrence with no summary (a custom rule's, say) uses the rule's title, or its id, since GitHub rejects a result with empty text. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | The scanned target — see "Locations" below. |
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when present. |
 | `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one, for consumers that read it. |
@@ -62,7 +62,7 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 
 DOM-based scanning has no line/column to report, so `physicalLocation.artifactLocation.uri` is the scanned target itself, not a source-file position:
 
-- **Local file scans**: a path relative to the current working directory (forward-slashed). If this matches a real file in your repository, GitHub Code Scanning can render the finding as an inline annotation.
+- **Local file scans**: a file inside the current working directory is a path relative to it, forward-slashed, with each segment percent-encoded (`build%20out/index.html`). If this matches a real file in your repository, GitHub Code Scanning can render the finding as an inline annotation. A file outside the working directory is an absolute `file:` URL, not a relative path climbing out of the repository with `../`, which a consumer could not resolve.
 - **URL scans**: the scanned URL itself. GitHub Code Scanning will still list the finding, but can't attach an inline annotation to a URL that isn't a file in the repository — this is inherent to how SARIF/Code Scanning associate findings with source, not a surea11y limitation. If you need inline annotations, scan the rendered HTML file (e.g. a build output artifact) rather than a live URL.
 
 `occurrence.selector` is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.
