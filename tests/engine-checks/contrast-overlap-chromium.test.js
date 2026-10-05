@@ -52,7 +52,8 @@ const OVERLAPS = {
   'an absolutely positioned sibling': `<div style="position:relative;height:100px"><div style="position:absolute;inset:0;background:#000"></div><p style="position:absolute;top:0;margin:0;color:#ddd">${TEXT}</p></div>`,
   'an <img> hero': `<div style="position:relative;height:200px"><img src="${BLACK}" alt="" style="position:absolute;inset:0;width:100%;height:100%"><h2 style="position:relative;margin:0;color:#ddd">${TEXT}</h2></div>`,
   'a ::before overlay': `<style>.h{position:relative;z-index:0}.h::before{content:"";position:absolute;inset:0;background:#000;z-index:-1}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`,
-  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`
+  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`,
+  'the menu of an open <details>': `<details open style="position:relative"><summary></summary><div style="position:absolute;top:100%;left:0;width:300px;height:200px;background:#000"></div></details><p style="color:#ddd">${TEXT}</p>`
 };
 
 // Light text on the white page, with paint near it that is not under it,
@@ -64,7 +65,11 @@ const NO_OVERLAP = {
   'a heading with a tight line-height above a dark block': `<h1 style="line-height:0.8;margin:0;color:#ddd">Big heading text</h1><div style="background:#000;height:40px"></div>`,
   'a fixed banner over it': `<p style="color:#ddd">${TEXT}</p><div style="position:fixed;top:0;left:0;right:0;height:200px;background:#000"></div>`,
   'a white fade-out over white': `<style>.f{position:relative}.f::after{content:"";position:absolute;right:0;top:0;width:60px;height:100%;background:#fff}</style><p class="f" style="color:#ddd">${TEXT}</p>`,
-  'an underline scaled to nothing': `<style>.u{position:relative}.u::after{content:"";position:absolute;left:0;top:0;width:100%;height:100%;background:#000;transform:scaleX(0)}</style><p class="u" style="color:#ddd">${TEXT}</p>`
+  'an underline scaled to nothing': `<style>.u{position:relative}.u::after{content:"";position:absolute;left:0;top:0;width:100%;height:100%;background:#000;transform:scaleX(0)}</style><p class="u" style="color:#ddd">${TEXT}</p>`,
+  // Collapsed content keeps a layout box in Chromium but is not painted.
+  'the menu of a closed <details>': `<details style="position:relative"><summary>Menu</summary><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></details><p style="color:#ddd">${TEXT}</p>`,
+  'a panel under content-visibility: hidden': `<div style="position:relative;content-visibility:hidden;height:0"><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></div><p style="color:#ddd">${TEXT}</p>`,
+  'a hidden="until-found" panel': `<div hidden="until-found" style="position:relative;height:0"><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></div><p style="color:#ddd">${TEXT}</p>`
 };
 
 test('contrast over paint that is not an ancestor background, in Chromium', { skip }, async (t) => {

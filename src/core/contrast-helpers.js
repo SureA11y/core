@@ -2117,6 +2117,35 @@ function createContrastHelpers(opts, shared) {
     return pinned;
   }
 
+  // The content of a closed <details> (everything but its <summary>), and
+  // whatever sits under content-visibility: hidden (hidden="until-found"
+  // too), keeps its layout box in Chromium, so it has a rect, but none of it
+  // is painted. checkVisibility() answers that; without it, the two are
+  // looked for along the composed ancestors.
+  function __isUnpainted(node) {
+    if (typeof node.checkVisibility === 'function') {
+      try {
+        return !node.checkVisibility();
+      } catch {}
+    }
+    let child = node;
+    let cur = composedParent(node);
+    for (let guard = 0; cur && cur.nodeType === 1 && guard < 1000; guard++) {
+      if (
+        String(cur.localName || '').toLowerCase() === 'details' &&
+        !cur.hasAttribute('open') &&
+        !(String(child.localName || '').toLowerCase() === 'summary' && child.parentNode === cur)
+      ) {
+        return true;
+      }
+      const cs = __contrastComputedStyle(cur);
+      if (cs && cs.contentVisibility === 'hidden') return true;
+      child = cur;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
   function __buildOverlapIndex() {
     const doc = window && window.document;
     if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
@@ -2140,7 +2169,7 @@ function createContrastHelpers(opts, shared) {
         if (node.shadowRoot) roots.push(node.shadowRoot);
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
-        if (!paint) continue;
+        if (!paint || __isUnpainted(node)) continue;
         // An inline box that wraps has one fragment per line, and its
         // bounding box spans the lines between: what it paints is the
         // fragments.
