@@ -463,7 +463,9 @@ function runInPage(ctx) {
     }
 
     if (tag === 'optgroup' && !el.hasAttribute('label')) {
-      const legend = Array.from(el.children || []).some((c) => tagOf(c) === 'legend');
+      const legend = Array.from(el.querySelectorAll(':scope > *')).some(
+        (c) => tagOf(c) === 'legend'
+      );
       if (!legend) report(el, 'optgroupLabel', {});
     }
 

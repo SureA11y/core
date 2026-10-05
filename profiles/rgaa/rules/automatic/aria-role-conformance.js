@@ -296,7 +296,7 @@ function runInPage(ctx) {
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.children || []) {
+    for (const c of p.querySelectorAll(':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;

@@ -182,7 +182,7 @@ function runInPage(ctx) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.children || [])) {
+      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
         if (tagOf(child) === 'title') parts.push(norm(child.textContent));
       }
       for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {

@@ -77,7 +77,7 @@ function runInPage(ctx) {
   function hasCaption(el) {
     const figure = el.closest ? el.closest('figure') : null;
     if (!figure) return false;
-    return Array.from(figure.children).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
   }
 
   // The alternatives 1.2.5 forbids, on the canvas and its children.

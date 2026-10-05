@@ -59596,7 +59596,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.children || []) {
+    for (const c of p.querySelectorAll(':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
@@ -61166,7 +61166,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = String(el.tagName).toLowerCase();
     if (tag === 'ul' || tag === 'ol') continue;
 
-    const items = Array.from(el.children || []).filter((c) => {
+    const items = Array.from(el.querySelectorAll(':scope > *')).filter((c) => {
       const t = String(c.tagName).toLowerCase();
       return t !== 'script' && t !== 'template';
     });
@@ -62685,7 +62685,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.children || []) {
+    for (const c of p.querySelectorAll(':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
@@ -64765,7 +64765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasCaption(el) {
     const figure = el.closest ? el.closest('figure') : null;
     if (!figure) return false;
-    return Array.from(figure.children).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
   }
 
   // The alternatives 1.2.5 forbids, on the canvas and its children.
@@ -65700,7 +65700,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rows = Array.from(table.querySelectorAll('[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.children).filter((cell) => ARIA_CELL_ROLES.includes(firstRole(cell)))
+        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+          ARIA_CELL_ROLES.includes(firstRole(cell))
+        )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
   }
@@ -65857,7 +65859,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rows = Array.from(table.querySelectorAll('[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.children).filter((cell) => ARIA_CELL_ROLES.includes(firstRole(cell)))
+        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+          ARIA_CELL_ROLES.includes(firstRole(cell))
+        )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
   }
@@ -69630,7 +69634,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rows = Array.from(table.querySelectorAll('[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.children).filter((cell) => ARIA_CELL_ROLES.includes(firstRole(cell)))
+        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+          ARIA_CELL_ROLES.includes(firstRole(cell))
+        )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
   }
@@ -71684,7 +71690,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Lines split by <br> inside one element.
   for (const el of candidates) {
     if (!el || !el.querySelector || el.closest(SKIP)) continue;
-    if (!Array.from(el.children).some((c) => String(c.tagName).toLowerCase() === 'br')) continue;
+    if (
+      !Array.from(el.querySelectorAll(':scope > *')).some(
+        (c) => String(c.tagName).toLowerCase() === 'br'
+      )
+    )
+      continue;
     const lines = linesOf(el);
     const kind = listKind(lines);
     if (kind) report(el, kind, lines.length);
@@ -71795,7 +71806,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // aria-labelledby for role="group"/"radiogroup".
     if (isAriaGroup && hasAriaName(group)) continue;
     if (isFieldset) {
-      const legend = Array.from(group.children).find(
+      const legend = Array.from(group.querySelectorAll(':scope > *')).find(
         (c) => String(c.tagName).toLowerCase() === 'legend'
       );
       if (legend && hasText(legend.textContent)) continue;
@@ -72699,7 +72710,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const figure of figures) {
     if (!figure || !figure.getAttribute) continue;
-    const caption = Array.from(figure.children).find(
+    const caption = Array.from(figure.querySelectorAll(':scope > *')).find(
       (c) => String(c.tagName).toLowerCase() === 'figcaption'
     );
     const captionText = caption ? collapse(caption.textContent) : '';
@@ -76368,7 +76379,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.children || [])) {
+      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
         if (tagOf(child) === 'title') parts.push(norm(child.textContent));
       }
       for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {
@@ -77562,7 +77573,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (tag === 'optgroup' && !el.hasAttribute('label')) {
-      const legend = Array.from(el.children || []).some((c) => tagOf(c) === 'legend');
+      const legend = Array.from(el.querySelectorAll(':scope > *')).some(
+        (c) => tagOf(c) === 'legend'
+      );
       if (!legend) report(el, 'optgroupLabel', {});
     }
 
@@ -77945,7 +77958,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ul, ol, menu: li, script and template children only.
   for (const list of lists) {
     const parent = tagOf(list);
-    for (const child of Array.from(list.children || [])) {
+    for (const child of Array.from(list.querySelectorAll(':scope > *'))) {
       const tag = tagOf(child);
       if (!isHtml(child)) {
         report(child, 'listChild', { element: tag, parent });
@@ -77977,7 +77990,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const dl of dls) {
-    const kids = Array.from(dl.children || []).filter(
+    const kids = Array.from(dl.querySelectorAll(':scope > *')).filter(
       (c) => !(isHtml(c) && SCRIPT_SUPPORTING.has(tagOf(c)))
     );
     if (hasText(dl)) report(dl, 'dlText', { element: 'dl' });
@@ -78000,7 +78013,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const div of divs) {
       if (hasText(div)) report(div, 'dlText', { element: 'div' });
       const groupTags = [];
-      for (const c of Array.from(div.children || [])) {
+      for (const c of Array.from(div.querySelectorAll(':scope > *'))) {
         const tag = tagOf(c);
         if (isHtml(c) && SCRIPT_SUPPORTING.has(tag)) continue;
         if (isHtml(c) && (tag === 'dt' || tag === 'dd')) groupTags.push(tag);
@@ -79060,7 +79073,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     add('title', el.getAttribute('title'));
     if (tag === 'svg') {
-      const titleChild = Array.from(el.children || []).find(
+      const titleChild = Array.from(el.querySelectorAll(':scope > *')).find(
         (c) => String(c.localName || c.tagName).toLowerCase() === 'title'
       );
       if (titleChild) add('<title>', titleChild.textContent);
@@ -79942,7 +79955,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasCaption(el) {
     const figure = el.closest ? el.closest('figure') : null;
     if (!figure) return false;
-    return Array.from(figure.children).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
@@ -82555,7 +82568,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.children || [])) {
+      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
         if (tagOf(child) === 'title') parts.push(norm(child.textContent));
       }
       for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {
@@ -88714,7 +88727,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasFallback(el) {
     if (trim(el.textContent)) return true;
-    return Array.from(el.children || []).some((c) => tagOf(c) !== 'param');
+    return Array.from(el.querySelectorAll(':scope > *')).some((c) => tagOf(c) !== 'param');
   }
 
   const nodes = helpers.queryAllSmart
@@ -92427,7 +92440,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function svgTitleChildText(el) {
     if (el.namespaceURI !== SVG_NS) return '';
-    for (const child of Array.from(el.children || [])) {
+    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
       if (tagOf(child) === 'title') return trim(child.textContent);
     }
     return '';
@@ -95681,7 +95694,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function titleChildText(el) {
-    for (const child of Array.from(el.children || [])) {
+    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
       if (tagOf(child) === 'title') return trim(child.textContent);
     }
     return '';
@@ -100544,8 +100557,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const video of videos) {
-    if (!video || !video.children) continue;
-    const tracks = Array.from(video.children)
+    if (!video) continue;
+    const tracks = Array.from(video.querySelectorAll(':scope > *'))
       .filter((c) => String(c.tagName).toLowerCase() === 'track')
       .filter((t) => String(t.getAttribute('src') || '').trim())
       .map((t) => ({

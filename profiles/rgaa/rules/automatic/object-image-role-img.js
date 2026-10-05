@@ -130,7 +130,7 @@ function runInPage(ctx) {
 
   function hasFallback(el) {
     if (trim(el.textContent)) return true;
-    return Array.from(el.children || []).some((c) => tagOf(c) !== 'param');
+    return Array.from(el.querySelectorAll(':scope > *')).some((c) => tagOf(c) !== 'param');
   }
 
   const nodes = helpers.queryAllSmart

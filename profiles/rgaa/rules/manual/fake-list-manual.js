@@ -139,7 +139,12 @@ function runInPage(ctx) {
   // Lines split by <br> inside one element.
   for (const el of candidates) {
     if (!el || !el.querySelector || el.closest(SKIP)) continue;
-    if (!Array.from(el.children).some((c) => String(c.tagName).toLowerCase() === 'br')) continue;
+    if (
+      !Array.from(el.querySelectorAll(':scope > *')).some(
+        (c) => String(c.tagName).toLowerCase() === 'br'
+      )
+    )
+      continue;
     const lines = linesOf(el);
     const kind = listKind(lines);
     if (kind) report(el, kind, lines.length);

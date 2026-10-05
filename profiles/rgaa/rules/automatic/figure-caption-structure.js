@@ -64,7 +64,7 @@ function runInPage(ctx) {
 
   for (const figure of figures) {
     if (!figure || !figure.getAttribute) continue;
-    const caption = Array.from(figure.children).find(
+    const caption = Array.from(figure.querySelectorAll(':scope > *')).find(
       (c) => String(c.tagName).toLowerCase() === 'figcaption'
     );
     const captionText = caption ? collapse(caption.textContent) : '';

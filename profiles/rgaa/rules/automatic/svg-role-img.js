@@ -92,7 +92,7 @@ function runInPage(ctx) {
   }
 
   function titleChildText(el) {
-    for (const child of Array.from(el.children || [])) {
+    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
       if (tagOf(child) === 'title') return trim(child.textContent);
     }
     return '';

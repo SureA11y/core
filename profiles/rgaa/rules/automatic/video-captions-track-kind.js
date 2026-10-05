@@ -81,8 +81,8 @@ function runInPage(ctx) {
   }
 
   for (const video of videos) {
-    if (!video || !video.children) continue;
-    const tracks = Array.from(video.children)
+    if (!video) continue;
+    const tracks = Array.from(video.querySelectorAll(':scope > *'))
       .filter((c) => String(c.tagName).toLowerCase() === 'track')
       .filter((t) => String(t.getAttribute('src') || '').trim())
       .map((t) => ({

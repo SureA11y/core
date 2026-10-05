@@ -103,7 +103,9 @@ function runInPage(ctx) {
     const rows = Array.from(table.querySelectorAll('[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.children).filter((cell) => ARIA_CELL_ROLES.includes(firstRole(cell)))
+        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+          ARIA_CELL_ROLES.includes(firstRole(cell))
+        )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
   }

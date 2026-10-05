@@ -230,7 +230,7 @@ function runInPage(ctx) {
   // ul, ol, menu: li, script and template children only.
   for (const list of lists) {
     const parent = tagOf(list);
-    for (const child of Array.from(list.children || [])) {
+    for (const child of Array.from(list.querySelectorAll(':scope > *'))) {
       const tag = tagOf(child);
       if (!isHtml(child)) {
         report(child, 'listChild', { element: tag, parent });
@@ -262,7 +262,7 @@ function runInPage(ctx) {
   }
 
   for (const dl of dls) {
-    const kids = Array.from(dl.children || []).filter(
+    const kids = Array.from(dl.querySelectorAll(':scope > *')).filter(
       (c) => !(isHtml(c) && SCRIPT_SUPPORTING.has(tagOf(c)))
     );
     if (hasText(dl)) report(dl, 'dlText', { element: 'dl' });
@@ -285,7 +285,7 @@ function runInPage(ctx) {
     for (const div of divs) {
       if (hasText(div)) report(div, 'dlText', { element: 'div' });
       const groupTags = [];
-      for (const c of Array.from(div.children || [])) {
+      for (const c of Array.from(div.querySelectorAll(':scope > *'))) {
         const tag = tagOf(c);
         if (isHtml(c) && SCRIPT_SUPPORTING.has(tag)) continue;
         if (isHtml(c) && (tag === 'dt' || tag === 'dd')) groupTags.push(tag);

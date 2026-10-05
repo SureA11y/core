@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { getLocaleCoverage } = require('../../src/index.js');
-const { computeLocaleReport } = require('../../src/i18n-coverage.js');
+const { computeLocaleReport, sameAsEnglishFor } = require('../../src/i18n-coverage.js');
 const { i18nSources, loadDictionaries } = require('../../scripts/lib/dictionaries.js');
 
 // What the package ships: core's dictionaries with every built-in profile's
@@ -30,7 +30,10 @@ test('getLocaleCoverage counts the dictionaries the package ships, core and prof
   const expected = Object.keys(shipped)
     .filter((locale) => locale !== 'en')
     .sort()
-    .map((locale) => ({ locale, ...computeLocaleReport(shipped.en, shipped[locale]) }));
+    .map((locale) => ({
+      locale,
+      ...computeLocaleReport(shipped.en, shipped[locale], null, sameAsEnglishFor(locale))
+    }));
   assert.deepEqual(fromPackage, expected);
 });
 

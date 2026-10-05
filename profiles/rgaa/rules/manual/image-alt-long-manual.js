@@ -90,7 +90,7 @@ function runInPage(ctx) {
     }
     add('title', el.getAttribute('title'));
     if (tag === 'svg') {
-      const titleChild = Array.from(el.children || []).find(
+      const titleChild = Array.from(el.querySelectorAll(':scope > *')).find(
         (c) => String(c.localName || c.tagName).toLowerCase() === 'title'
       );
       if (titleChild) add('<title>', titleChild.textContent);

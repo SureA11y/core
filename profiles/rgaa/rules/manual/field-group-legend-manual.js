@@ -115,7 +115,7 @@ function runInPage(ctx) {
     // aria-labelledby for role="group"/"radiogroup".
     if (isAriaGroup && hasAriaName(group)) continue;
     if (isFieldset) {
-      const legend = Array.from(group.children).find(
+      const legend = Array.from(group.querySelectorAll(':scope > *')).find(
         (c) => String(c.tagName).toLowerCase() === 'legend'
       );
       if (legend && hasText(legend.textContent)) continue;
