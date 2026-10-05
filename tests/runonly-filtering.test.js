@@ -139,6 +139,39 @@ test('runOnly: a bare array mixing rule ids and tags, or naming neither, throws'
   assert.throws(() => ranRuleIds(['img-alt-presnt']), /no rule or tag named "img-alt-presnt"/);
 });
 
+test('runOnly: an object-form include list that names nothing throws, so a typo cannot run no rule', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const invalid = (fn, re) =>
+    assert.throws(fn, (e) => e.code === 'INVALID_RUN_ONLY' && re.test(e.message));
+  invalid(() => ranRuleIds({ tags: ['nonsense'] }), /runOnly\.tags: no tag named "nonsense"/);
+  invalid(() => ranRuleIds({ includeRuleIds: ['nope'] }), /runOnly\.includeRuleIds: no rule/);
+  invalid(() => ranRuleIds({ type: 'tag', values: ['nonsense'] }), /runOnly\.tags/);
+  invalid(
+    () => runa11yCoreOnHtml(FILTER_PAGE, { engineOptions: { rules: { include: 'typo' } } }),
+    /engineOptions\.rules\.include: no rule named "typo"/
+  );
+  invalid(
+    () => runa11yCoreOnHtml(FILTER_PAGE, { engineOptions: { tags: { include: ['wcag2.2aa'] } } }),
+    /engineOptions\.tags\.include: no tag named "wcag2\.2aa"/
+  );
+  // The bare-array form carries the same code.
+  invalid(() => ranRuleIds(['img-alt-presnt']), /no rule or tag named/);
+});
+
+test('runOnly: an unknown name beside known ones, or in an exclude list, is warned about and ignored', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  assert.deepStrictEqual(ranRuleIds({ includeRuleIds: ['nope', 'img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(
+    ranRuleIds({ tags: ['wcag2a'], excludeTags: ['zzz'] }).sort(),
+    ranRuleIds({ tags: ['wcag2a'] }).sort()
+  );
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /runOnly\.includeRuleIds: no rule named "nope"; ignored/.test(w)));
+  assert.ok(warnings.some((w) => /runOnly\.excludeTags: no tag named "zzz"; ignored/.test(w)));
+});
+
 test('runOnly: an empty array still means every rule', () => {
   assert.strictEqual(ranRuleIds([]).length, ALL_RULE_COUNT);
 });
