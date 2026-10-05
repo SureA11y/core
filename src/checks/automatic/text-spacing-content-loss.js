@@ -33,6 +33,11 @@
  *     sheet to the page cannot override it, though a user style sheet can.
  *   Without a layout and with no such rule, the rule is notApplicable, with
  *   `data.reason: 'noLayout'`.
+ *   - Only text inside the scan's scope (contextSelector) and not excluded
+ *     (excludeSelectors) is judged. Text elsewhere on the page is still
+ *     measured, since text in scope can come to overlap it. While a modal
+ *     dialog is open, the page behind it is left out altogether: the
+ *     browser makes it inert, and the scan judges the dialog.
  *   - Margin (`overflow-px`): of the text a clipping box keeps in full, the
  *     line that came closest to being cut off. `value` is how far it reaches
  *     past the box's edge, negative while it is still inside, against the
@@ -42,8 +47,11 @@
  *     text) and the bottom; a start edge counts only once a line is past it.
  *     An axis on which the box grew with the spacing (a block of auto
  *     height) follows its content and is left out, and vertical text gets
- *     no margin. `measuredCount` counts the pairs of text and clipping box
- *     compared.
+ *     no margin. Text a repeating animation moves (a marquee) is left out,
+ *     since where it stands depends on the point the animation was held
+ *     at, and so is a box that cuts off other text: it is a finding.
+ *     `measuredCount` counts the pairs of text and clipping box compared;
+ *     like the findings, the margin covers the first 3,000 text nodes.
  * @reports
  *   - `text`: the start of the text, up to 60 characters. Not on a style
  *     sheet rule's finding.
@@ -250,16 +258,69 @@ function runInPage(ctx) {
   // full: the margin's measuredCount and candidates (src/core/margin.js).
   let measuredPairs = 0;
   const marginCandidates = [];
+  // Clipping boxes already reported as a finding.
+  const reportedClip = new Set();
 
   if (hasLayout() && document.body) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
+
+    // The text this scan judges: inside the scope (contextSelector), not
+    // excluded (excludeSelectors), and not behind an open modal dialog. Text
+    // elsewhere on the page is still measured, since in-scope text can come
+    // to overlap it, but never reported, and never the margin. The page
+    // behind an open modal is left out altogether: the browser makes it
+    // inert, and the scan judges the dialog.
+    const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
+    const wholeDocument =
+      !roots.length || roots.some((r) => r === document || r === document.documentElement);
+    function inScope(el) {
+      if (wholeDocument) return true;
+      return roots.some((r) => {
+        try {
+          return r === el || (typeof r.contains === 'function' && r.contains(el));
+        } catch {
+          return false;
+        }
+      });
+    }
+    function isExcluded(el) {
+      try {
+        return typeof helpers.isExcluded === 'function' && !!helpers.isExcluded(el);
+      } catch {
+        return false;
+      }
+    }
+    let modalOpen = false;
+    try {
+      modalOpen = typeof helpers.isModalDialogOpen === 'function' && !!helpers.isModalDialogOpen();
+    } catch {
+      modalOpen = false;
+    }
+    function isBehindModal(el) {
+      if (!modalOpen || typeof helpers.isAccTreeEligible !== 'function') return false;
+      try {
+        const r = helpers.isAccTreeEligible(el);
+        return !!(
+          r &&
+          r.eligible === false &&
+          Array.isArray(r.reasons) &&
+          r.reasons.includes('modalInert')
+        );
+      } catch {
+        return false;
+      }
+    }
+
     const nodes = [];
+    const judged = new Set();
     const walker = document.createTreeWalker(document.body, 4);
     for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
       if (!/\S/.test(n.nodeValue || '')) continue;
       const parent = n.parentElement;
       if (!parent || SKIP.has(String(parent.localName))) continue;
+      if (isBehindModal(parent)) continue;
       nodes.push(n);
+      if (inScope(parent) && !isExcluded(parent)) judged.add(n);
     }
 
     const clipCache = new Map();
@@ -491,10 +552,9 @@ function runInPage(ctx) {
       return best;
     }
 
-    const reportedClip = new Set();
     for (const n of nodes) {
       const linesAfter = (after && after.lines.get(n)) || [];
-      if (!linesAfter.length || !visibleBefore.has(n)) continue;
+      if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
       for (const c of clippersOf(n.parentElement)) {
@@ -521,13 +581,10 @@ function runInPage(ctx) {
             if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
           }
         }
+        const moved = isMovedForEver(n.parentElement, c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = isMovedForEver(n.parentElement, c.el)
-            ? moving
-            : worst.lost
-              ? clipped
-              : partly;
+          const list = moved ? moving : worst.lost ? clipped : partly;
           list.push({
             el: c.el,
             text: textOf(n.parentElement),
@@ -544,6 +601,9 @@ function runInPage(ctx) {
           break;
         }
         // Text this box keeps in full: how close it came to being cut off.
+        // Text a repeating animation moves is left out: where it stands
+        // depends on the point the animation was held at, not on the layout.
+        if (moved) continue;
         const approach = closestApproach(
           linesAfter,
           b1,
@@ -613,8 +673,10 @@ function runInPage(ctx) {
       for (const list of buckets.values()) {
         for (let i = 0; i < list.length; i++) {
           for (let j = i + 1; j < list.length; j++) {
-            const a = list[i];
-            const b = list[j];
+            // The finding goes on text this scan judges; the other text may
+            // be anywhere on the page.
+            const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
+            if (!judged.has(a.n)) continue;
             const pa = a.n.parentElement;
             const pb = b.n.parentElement;
             if (pa === pb || pa.contains(pb) || pb.contains(pa)) continue;
@@ -721,8 +783,13 @@ function runInPage(ctx) {
   }
 
   // The text that came closest to being cut off while staying readable,
-  // reported as the result's margin whatever the outcome.
-  const margin = { marginCandidates, measuredCount: measuredPairs };
+  // reported as the result's margin whatever the outcome. A box that cuts
+  // off other text is a finding, so it is not the margin, even when the
+  // first text measured in it fit.
+  const margin = {
+    marginCandidates: marginCandidates.filter((m) => !reportedClip.has(m.el)),
+    measuredCount: measuredPairs
+  };
   if (fails.length || questions.length) {
     return {
       ruleId: rule.ruleId,
