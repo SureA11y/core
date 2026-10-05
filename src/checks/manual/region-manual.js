@@ -9,11 +9,10 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to a page whose <body> has content: an element that directly
- *   carries visible text (or other own content, see
- *   @implementation-notes) outside any landmark, or a landmark with
- *   anything in it. Live regions, dialogs, buttons, <svg>,
- *   <iframe>/<frame> and resolvable skip links are not content that needs
- *   a landmark.
+ *   carries visible text (or other own content, see the implementation
+ *   notes) outside any landmark, or a landmark with anything in it. Live
+ *   regions, dialogs, buttons, <svg>, <iframe>/<frame> and resolvable skip
+ *   links are not content that needs a landmark.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
  * @expectation
