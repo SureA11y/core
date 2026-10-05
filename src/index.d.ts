@@ -360,6 +360,8 @@ export interface ScanResult {
   checksResults: CheckResult[];
   rulesResults: CompositeResult[];
   overriddenBuiltinIds: string[];
+  /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
+  skippedCustomRules: { id: string | null; reason: string }[];
 }
 
 /** A child frame that answered, with its own frames, recursively. */

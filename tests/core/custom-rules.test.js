@@ -322,3 +322,57 @@ test('customRules: meta gets the same defaulting as a build-time rule module (se
   assert.strictEqual(r.type, 'automatic');
   assert.ok(r.title);
 });
+
+test('customRules: an unusable return, a Promise or an unknown outcome is reported as cantTell with why', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'returns-nothing', meta: {}, runInPage: () => undefined },
+        { id: 'returns-string', meta: {}, runInPage: () => 'done' },
+        { id: 'async-run', meta: {}, runInPage: async () => ok() },
+        { id: 'async-applicability', meta: {}, applicability: async () => false, runInPage: ok },
+        {
+          id: 'unknown-outcome',
+          meta: {},
+          runInPage: () => ({ outcome: 'failed', occurrences: [] })
+        }
+      ]
+    }
+  });
+  const errorOf = (id) => {
+    const r = result.checksResults.find((x) => x.ruleId === id);
+    assert.ok(r, id + ' is in the results');
+    assert.strictEqual(r.outcome, 'cantTell', id);
+    return r.error;
+  };
+  assert.match(errorOf('returns-nothing'), /returned undefined instead of a result object/);
+  assert.match(errorOf('returns-string'), /returned string/);
+  assert.match(errorOf('async-run'), /returned a Promise/);
+  assert.match(errorOf('async-applicability'), /applicability returned a Promise/);
+  assert.match(errorOf('unknown-outcome'), /outcome "failed"/);
+});
+
+test('customRules: a duplicate id or a composite id is skipped and listed in skippedCustomRules', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'acme', meta: { title: 'First' }, runInPage: ok },
+        { id: 'acme', meta: { title: 'Second' }, runInPage: ok },
+        { id: 'wcag-1.1.1-non-text-content', meta: {}, runInPage: ok },
+        { runInPage: ok }
+      ]
+    }
+  });
+  assert.strictEqual(result.checksResults.filter((x) => x.ruleId === 'acme').length, 1);
+  assert.strictEqual(result.checksResults.find((x) => x.ruleId === 'acme').title, 'First');
+  assert.ok(!result.checksResults.some((x) => x.ruleId === 'wcag-1.1.1-non-text-content'));
+  assert.deepStrictEqual(
+    result.skippedCustomRules.map((s) => s.id),
+    ['acme', 'wcag-1.1.1-non-text-content', null]
+  );
+  assert.deepStrictEqual(runa11yCoreOnHtml(HTML).skippedCustomRules, []);
+});
