@@ -135,9 +135,18 @@ function renderEarlReport(results, options = {}) {
   // the same page under different engineOptions still describes one resource,
   // and the context has no way to express two subjects with the same source.
   const bySource = new Map();
+  // Results without a URL are separate pages as far as anyone can tell:
+  // one is about:blank, as before; several are told apart by their place in
+  // the list rather than merged into one subject.
+  const hasUrl = (r) => typeof r.url === 'string' && !!r.url;
+  const unnamed = list.filter((r) => !hasUrl(r)).length;
 
-  for (const result of list) {
-    const source = typeof result.url === 'string' && result.url ? result.url : 'about:blank';
+  for (const [index, result] of list.entries()) {
+    const source = hasUrl(result)
+      ? result.url
+      : unnamed > 1
+        ? `about:blank#result-${index + 1}`
+        : 'about:blank';
     const checks = Array.isArray(result.checksResults) ? result.checksResults : [];
 
     if (!bySource.has(source)) bySource.set(source, new Map());

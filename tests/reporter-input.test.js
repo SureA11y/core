@@ -95,3 +95,15 @@ test('renderEarlReport takes a cross-frame result, each answering frame a subjec
   assert.deepEqual(earl, renderEarlReport([crossFrame]));
   assert.throws(() => renderEarlReport('x'), TypeError);
 });
+
+test('renderEarlReport keeps several results without a URL apart', () => {
+  const r = page(undefined);
+  const a = { ...r, url: null };
+  const b = { ...r, url: null };
+  const sources = (doc) => doc['@graph'].map((s) => s.source).sort();
+  assert.deepEqual(sources(renderEarlReport([a, b])), [
+    'about:blank#result-1',
+    'about:blank#result-2'
+  ]);
+  assert.deepEqual(sources(renderEarlReport(a)), ['about:blank'], 'one alone is about:blank');
+});
