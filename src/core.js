@@ -18278,19 +18278,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
   let __overlapIndex;
 
+  // Called for every element on the page, and most paint nothing: a
+  // transparent background and no image are told from the computed values
+  // as the browser serializes them, before anything is parsed.
   function __paintOf(node, cs) {
     if (!cs) return null;
+    const paint = __paintCandidate(node, cs);
+    if (!paint) return null;
     if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
     if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    return paint;
+  }
+
+  function __paintCandidate(node, cs) {
     const tag = String(node.localName || '').toLowerCase();
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
-    const raw = trim(cs.backgroundColor);
-    const bg = parseCssColorToRgba(raw);
-    if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
-    if (hasBackgroundImageOrGradient(cs)) {
-      return { property: 'background-image', value: truncateCssValue(cs.backgroundImage, 80) };
+    const rawBg = cs.backgroundColor;
+    if (rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent') {
+      const raw = trim(rawBg);
+      const bg = parseCssColorToRgba(raw);
+      if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    }
+    const img = cs.backgroundImage;
+    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
   }
@@ -18346,7 +18359,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
         if (!paint) continue;
-        if (__isPinned(node)) continue;
         // An inline box that wraps has one fragment per line, and its
         // bounding box spans the lines between: what it paints is the
         // fragments.
@@ -18558,7 +18570,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (let cy = y0; cy <= y1; cy++) {
             for (const i of index.cells.get(cx + ',' + cy) || []) {
               const p = index.painters[i];
-              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
+              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
             }
           }
         }
@@ -18597,6 +18609,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               seen.add(i);
               const p = index.painters[i];
               if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // Pinned paint is in the index but never counts; asked only
+              // of the few painters that reach text, since it walks the
+              // ancestors.
+              if (__isPinned(p.el)) continue;
               // An ancestor beyond `opaque` is behind its background.
               if (__isComposedInside(el, p.el)) continue;
               // Inside el: paint of its own descendants, beside its text.
@@ -72758,19 +72774,32 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
   let __overlapIndex;
 
+  // Called for every element on the page, and most paint nothing: a
+  // transparent background and no image are told from the computed values
+  // as the browser serializes them, before anything is parsed.
   function __paintOf(node, cs) {
     if (!cs) return null;
+    const paint = __paintCandidate(node, cs);
+    if (!paint) return null;
     if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
     if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    return paint;
+  }
+
+  function __paintCandidate(node, cs) {
     const tag = String(node.localName || '').toLowerCase();
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
-    const raw = trim(cs.backgroundColor);
-    const bg = parseCssColorToRgba(raw);
-    if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
-    if (hasBackgroundImageOrGradient(cs)) {
-      return { property: 'background-image', value: truncateCssValue(cs.backgroundImage, 80) };
+    const rawBg = cs.backgroundColor;
+    if (rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent') {
+      const raw = trim(rawBg);
+      const bg = parseCssColorToRgba(raw);
+      if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    }
+    const img = cs.backgroundImage;
+    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
   }
@@ -72826,7 +72855,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
         if (!paint) continue;
-        if (__isPinned(node)) continue;
         // An inline box that wraps has one fragment per line, and its
         // bounding box spans the lines between: what it paints is the
         // fragments.
@@ -73038,7 +73066,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (let cy = y0; cy <= y1; cy++) {
             for (const i of index.cells.get(cx + ',' + cy) || []) {
               const p = index.painters[i];
-              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
+              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
             }
           }
         }
@@ -73077,6 +73105,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               seen.add(i);
               const p = index.painters[i];
               if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // Pinned paint is in the index but never counts; asked only
+              // of the few painters that reach text, since it walks the
+              // ancestors.
+              if (__isPinned(p.el)) continue;
               // An ancestor beyond `opaque` is behind its background.
               if (__isComposedInside(el, p.el)) continue;
               // Inside el: paint of its own descendants, beside its text.
