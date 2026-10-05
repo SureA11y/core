@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
 const { createContrastHelpers } = require('../src/core/contrast-helpers.js');
+const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
 
 // DOM-facing functions (computeEffectiveForeground/Background,
 // getComputabilityBlocker, getTextScan, isInactiveUiComponent) need a real
@@ -708,4 +709,21 @@ test('getTextScan: an exception thrown while resolving ctx.root degrades to an e
   };
   const scan = helpers.getTextScan({ document, window, root: poisonedRoot }, {}, {});
   assert.deepStrictEqual(scan, { eligibleTextCount: 0, elements: [], visibilityMode: 'styleOnly' });
+});
+
+test('contrast-minimum: an ancestor opacity is counted once, however the colors were first asked for', () => {
+  // The rule's same-color filter asks for the text color before the
+  // computability check resolves the group opacity. The naive color it
+  // cached (black at half opacity) used to win over the composited one, so
+  // the text was faded twice: 2.63:1 against #808080, where the page paints
+  // black on #808080, 5.32:1.
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en" style="background:#000"><head><title>t</title></head><body><main>' +
+      '<div style="opacity:.5"><p style="background:#fff;color:#000">Hello world text</p></div>' +
+      '</main></body></html>',
+    { runOnly: ['contrast-minimum'] }
+  );
+  const check = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  assert.equal(check.outcome, 'pass');
+  assert.ok(Math.abs(check.margin.value - 5.317) < 0.01, String(check.margin.value));
 });

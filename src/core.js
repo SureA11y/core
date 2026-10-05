@@ -17344,10 +17344,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
   function computeEffectiveForeground(el) {
-    try {
-      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch {}
-
+    // The override first, as computeEffectiveBackground does: a caller can
+    // ask for the foreground before the computability check resolves the
+    // group opacity (the contrast rules' same-color filter does), and the
+    // cached naive color would then count the ancestor's opacity twice,
+    // once on the text and once more in the composited background.
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
       if (override) {
@@ -17359,6 +17360,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __effectiveForegroundCache.set(el, out);
         return out;
       }
+    } catch {}
+
+    try {
+      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
     } catch {}
 
     const cs = __contrastComputedStyle(el);
@@ -70673,10 +70678,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
   function computeEffectiveForeground(el) {
-    try {
-      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch {}
-
+    // The override first, as computeEffectiveBackground does: a caller can
+    // ask for the foreground before the computability check resolves the
+    // group opacity (the contrast rules' same-color filter does), and the
+    // cached naive color would then count the ancestor's opacity twice,
+    // once on the text and once more in the composited background.
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
       if (override) {
@@ -70688,6 +70694,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __effectiveForegroundCache.set(el, out);
         return out;
       }
+    } catch {}
+
+    try {
+      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
     } catch {}
 
     const cs = __contrastComputedStyle(el);
