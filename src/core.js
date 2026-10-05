@@ -43383,6 +43383,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = (el.tagName || '').toLowerCase();
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = normalizeWs(role).toLowerCase();
+    // The role the name is computed for: the explicit one, unless the
+    // presentational-role conflict below restores the implicit role.
+    let nameRole = roleNorm;
 
     // role="none"/"presentation" removes this element from the accessibility
     // tree as a button (WAI-ARIA Presentational Roles Conflict Resolution),
@@ -43436,6 +43439,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!hasConflict && !isFocusable) continue;
       }
+      // The conflict restores the native role, a button, which takes its
+      // name from its content: <button role="presentation">Save</button>
+      // is a button named "Save".
+      nameRole = '';
     }
 
     applicableCount += 1;
@@ -43490,7 +43497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
         ? (() => {
             try {
-              return !!helpers.aria.isKnownRole(roleNorm);
+              return !!helpers.aria.isKnownRole(nameRole);
             } catch {
               return false;
             }
@@ -43498,7 +43505,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : false;
     const isContentNameCandidate =
       (tag === 'button' || role === 'button') &&
-      (!roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm));
+      (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -54699,10 +54706,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = String(role || '')
+    let roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
+    // WAI-ARIA's presentational-roles conflict resolution: a focusable
+    // element keeps its implicit role whatever role="none"/"presentation"
+    // says, so <a href="/" role="none">Home</a> is a link named "Home".
+    if (roleNorm === 'none' || roleNorm === 'presentation') {
+      try {
+        const fi = helpers.getFocusableInfo ? helpers.getFocusableInfo(el, ctx) : null;
+        if (fi && fi.focusable) roleNorm = '';
+      } catch {
+        // Not known to be focusable: the explicit role stands.
+      }
+    }
     // ARIA 1.2 "Name From: author, contents". Every other known role is
     // name-from-author-only. An unknown role falls back to the implicit role.
     // <generated:aria-name-from-content>
