@@ -722,3 +722,15 @@ test('report: no margins, no margins table', () => {
   const report = renderHtmlReport(makeScanResult([makeCheckResult()]));
   assert.ok(!report.includes('Closest to the limit'));
 });
+
+test('renderHtmlReport: a result with a timestamp renders the same page every time, dated by it', () => {
+  const result = { ...makeScanResult([]), timestamp: '2026-10-05T12:34:56.000Z' };
+  const first = renderHtmlReport(result);
+  assert.equal(renderHtmlReport(result), first);
+  assert.match(first, /<title>[^<]*2026[^<]*12:34:56[^<]*UTC[^<]*<\/title>/);
+  // Without one, the time of rendering stands in, as before.
+  assert.match(
+    renderHtmlReport(makeScanResult([])),
+    new RegExp(String(new Date().getUTCFullYear()))
+  );
+});
