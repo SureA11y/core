@@ -46068,15 +46068,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const suppressors = []; // { selector, base }
   const providers = []; // { base, subject }
 
-  function collectFromStyleRule(cssRule) {
-    const style = cssRule.style;
-    if (!style) return;
+  function collectFromStyleRule(style, selectorText) {
+    if (!style || !selectorText) return;
 
     const suppresses = suppressesOutline(style);
     const provides = providesReplacement(style);
     if (!suppresses && !provides) return;
 
-    for (const part of splitSelectorList(cssRule.selectorText)) {
+    for (const part of splitSelectorList(selectorText)) {
       if (!hasFocusPseudo(part)) {
         // A rule with no focus state still applies while the element has
         // focus, and an author declaration beats the user agent's focus
@@ -46113,22 +46112,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function walkRules(rules, depth) {
+  // A nested rule's selector, resolved against its parent's: `&` stands for
+  // the parent, and a selector without one is a descendant of it.
+  function resolveNested(selectorText, parentSelector) {
+    const sel = trim(selectorText);
+    if (!parentSelector) return sel;
+    const parent = ':is(' + parentSelector + ')';
+    return sel.includes('&') ? sel.split('&').join(parent) : parent + ' ' + sel;
+  }
+
+  function readRules(cssRule) {
+    try {
+      return cssRule.cssRules || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function walkRules(rules, depth, parentSelector) {
     if (!rules || depth > MAX_DEPTH) return;
     for (const cssRule of rules) {
       if (!cssRule) continue;
+      const nested = readRules(cssRule);
       if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
-        collectFromStyleRule(cssRule);
+        // CSS nesting: `a { &:focus { outline: none } }`.
+        const selectorText = resolveNested(cssRule.selectorText, parentSelector);
+        collectFromStyleRule(cssRule.style, selectorText);
+        if (nested && nested.length) walkRules(nested, depth + 1, selectorText);
+        continue;
+      }
+      // Declarations nested straight inside an at-rule within a style rule
+      // (`a:focus { @media (hover) { outline: none } }`) belong to that
+      // style rule's selector.
+      if (parentSelector && cssRule.style && !cssRule.selectorText && !nested) {
+        collectFromStyleRule(cssRule.style, parentSelector);
         continue;
       }
       // @media, @supports, @layer, ...: recurse into grouping rules.
-      let nested;
-      try {
-        nested = cssRule.cssRules || null;
-      } catch {
-        nested = null;
-      }
-      if (nested) walkRules(nested, depth + 1);
+      if (nested) walkRules(nested, depth + 1, parentSelector);
     }
   }
 
@@ -46144,7 +46165,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (!rules) continue;
       sheetCount += 1;
-      walkRules(rules, 0);
+      walkRules(rules, 0, '');
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -46868,6 +46889,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const CSS_MEDIA_RULE = 4;
   const CSS_STYLE_RULE = 1;
+  const CSS_IMPORT_RULE = 3;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -47016,16 +47038,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
   }
 
-  function scanRuleList(rules, mediaText, findings, hidings) {
-    if (!rules) return;
+  function judgeStyle(style, selectorText, mediaText, findings, hidings) {
+    if (!selectorText) return;
+    if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
+    if (hidesContent(style)) hidings.push({ mediaText, selectorText });
+  }
+
+  // A nested rule's selector, resolved against its parent's: `&` stands for
+  // the parent, and a selector without one is a descendant of it.
+  function resolveNested(selectorText, parentSelector) {
+    const sel = trim(selectorText);
+    if (!parentSelector) return sel;
+    const parent = ':is(' + parentSelector + ')';
+    return sel.includes('&') ? sel.split('&').join(parent) : parent + ' ' + sel;
+  }
+
+  // Every style rule a stylesheet applies, with the media conditions it
+  // applies under, wherever it sits: inside @media (nested or not),
+  // @supports, @layer, @container, an @import, or CSS nesting. A lock is
+  // only judged under a condition that names an orientation.
+  const MAX_DEPTH = 20;
+  // A rule list, or null when it is missing or not readable (cross-origin).
+  function readRules(get) {
+    try {
+      return get() || null;
+    } catch {
+      return null;
+    }
+  }
+  function walkRules(rules, mediaTexts, parentSelector, depth, findings, hidings) {
+    if (!rules || depth > MAX_DEPTH) return;
     for (const r of rules) {
-      if (!r || r.type !== CSS_STYLE_RULE) continue;
-      if (isLockingRotation(r.style)) {
-        findings.push({ mediaText, selectorText: trim(r.selectorText) });
+      if (!r) continue;
+      const nested = readRules(() => r.cssRules);
+      if (r.type === CSS_STYLE_RULE) {
+        const selectorText = parentSelector
+          ? resolveNested(r.selectorText, parentSelector)
+          : trim(r.selectorText);
+        const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
+        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings);
+        if (nested && nested.length) {
+          walkRules(nested, mediaTexts, selectorText, depth + 1, findings, hidings);
+        }
+        continue;
       }
-      if (r.selectorText && hidesContent(r.style)) {
-        hidings.push({ mediaText, selectorText: trim(r.selectorText) });
+      // Declarations nested straight inside an at-rule within a style rule
+      // (`.x { @media (orientation: portrait) { rotate: 90deg } }`) belong
+      // to that style rule's selector.
+      if (parentSelector && r.style && !r.selectorText && !nested) {
+        const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
+        if (mediaText) judgeStyle(r.style, parentSelector, mediaText, findings, hidings);
+        continue;
       }
+      let texts = mediaTexts;
+      if (r.type === CSS_MEDIA_RULE && r.media) texts = mediaTexts.concat([r.media.mediaText]);
+      if (r.type === CSS_IMPORT_RULE) {
+        const imported = readRules(() => r.styleSheet && r.styleSheet.cssRules);
+        const importMedia = r.media && r.media.mediaText ? [r.media.mediaText] : [];
+        walkRules(
+          imported,
+          mediaTexts.concat(importMedia),
+          parentSelector,
+          depth + 1,
+          findings,
+          hidings
+        );
+        continue;
+      }
+      if (nested) walkRules(nested, texts, parentSelector, depth + 1, findings, hidings);
     }
   }
 
@@ -47071,12 +47151,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!rules) continue;
       sheetCount += 1;
 
-      for (const rule2 of rules) {
-        if (!rule2 || rule2.type !== CSS_MEDIA_RULE) continue;
-        const mediaText = rule2.media ? rule2.media.mediaText : '';
-        if (!isOrientationMedia(mediaText)) continue;
-        scanRuleList(rule2.cssRules, mediaText, findings, hidings);
-      }
+      // A <style media="..."> or <link media="..."> applies its whole sheet
+      // under that condition.
+      const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
+      walkRules(rules, sheetMedia, '', 0, findings, hidings);
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
