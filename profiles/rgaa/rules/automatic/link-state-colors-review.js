@@ -34,6 +34,10 @@
  *   when the browser's visited color applies, or when a style sheet cannot
  *   be read. A link whose states raise no question is left out there.
  *   A page with no link in scope is notApplicable.
+ *   Margin (`contrast-ratio`): of the link states shown by another color
+ *   that reach 3:1 with the surrounding text, the one closest to it,
+ *   unrounded; `context.state` names it (hover, focus, visited, active).
+ *   `measuredCount` counts the links whose states were read in a browser.
  * @implementation-notes
  * - Transitions are held off while the states are read: a style sheet in
  *   a cascade layer declared before any other sets `transition: none
@@ -86,7 +90,8 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 };
 
 function runInPage(ctx) {
@@ -668,7 +673,7 @@ function runInPage(ctx) {
   }
 
   // For each link: { failing: [{ state, ratio, color, textColor }],
-  // visitedUnknown, uncomputable }.
+  // passing: [{ state, ratio }], visitedUnknown, uncomputable }.
   function judgeAll(pairs, bgOpts) {
     const list = [];
     for (const [el, parent] of pairs) {
@@ -676,7 +681,7 @@ function runInPage(ctx) {
       if (rest) list.push([el, parent, rest]);
     }
     const verdicts = new Map(
-      list.map(([el]) => [el, { failing: [], uncomputable: [], visitedSame: false }])
+      list.map(([el]) => [el, { failing: [], passing: [], uncomputable: [], visitedSame: false }])
     );
     for (const state of STATES) {
       const looks = looksInState(list, state);
@@ -692,6 +697,7 @@ function runInPage(ctx) {
         const m = ratioOf(el, look, bgOpts);
         if (!m) v.uncomputable.push(state);
         else if (m.ratio < 3) v.failing.push({ state, ...m });
+        else v.passing.push({ state, ratio: m.ratio });
       }
     }
     for (const [el, v] of verdicts) {
@@ -853,9 +859,25 @@ function runInPage(ctx) {
     occurrences.push(report(el, reasonCode, { states: states.join(', ') }, { states }));
   }
 
+  // Each link's lowest state color that still reaches 3:1, for the result's
+  // margin (src/core/margin.js); measuredCount counts the links whose states
+  // were read.
+  const marginCandidates = [];
+  for (const [el, verdict] of judged) {
+    if (!verdict.passing.length) continue;
+    const closest = verdict.passing.slice().sort((a, b) => a.ratio - b.ratio)[0];
+    marginCandidates.push({
+      el,
+      value: closest.ratio,
+      threshold: 3,
+      context: { state: closest.state }
+    });
+  }
+  const margin = { marginCandidates, measuredCount: judged.size };
+
   if (!failOccurrences.length && !occurrences.length) {
     return passCount
-      ? { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] }
+      ? { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...margin }
       : { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
@@ -864,7 +886,8 @@ function runInPage(ctx) {
       failOccurrences,
       occurrences,
       rule.defaultSeverity || 'moderate'
-    )
+    ),
+    ...margin
   };
 }
 

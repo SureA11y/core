@@ -50,7 +50,9 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // Its base's code reports the closest passing text as a margin.
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 };
 
 // RGAA 3.2.2/3.2.4: bold text is large from 18.5px.

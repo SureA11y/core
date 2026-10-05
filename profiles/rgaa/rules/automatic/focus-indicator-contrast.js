@@ -34,6 +34,11 @@
  *   other changes (background, text color, underline, a pseudo-element, a
  *   rule that styles another element), or a cascade the engine cannot
  *   settle.
+ *   Margin (`contrast-ratio`): of the focus indicators that reach 3:1
+ *   against every color next to them, the one closest to it, with its
+ *   lowest ratio unrounded; `context.property` names the outline, border or
+ *   box-shadow. `measuredCount` counts the elements whose focus style was
+ *   judged.
  * @implementation-notes
  * - WCAG 2.4.7 has no contrast requirement (2.4.13 is AAA and not
  *   checked), so css-focus-indicator-suppressed only asks whether some
@@ -87,7 +92,8 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 };
 
 function runInPage(ctx) {
@@ -816,7 +822,10 @@ function runInPage(ctx) {
     });
 
     const full = indicators.find((i) => !i.blurred && i.m.ratios.every((r) => r >= MIN_RATIO));
-    if (full) return { verdict: 'pass', details: details(full) };
+    if (full) {
+      // The lowest of its ratios, unrounded, for the result's margin.
+      return { verdict: 'pass', details: details(full), ratio: Math.min(...full.m.ratios) };
+    }
 
     if (unsettled) {
       return { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'cascade' } };
@@ -1162,6 +1171,10 @@ function runInPage(ctx) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let passCount = 0;
+  // Indicators that reach 3:1, for the result's margin (src/core/margin.js),
+  // and how many elements' focus styles were judged.
+  const marginCandidates = [];
+  let judgedCount = 0;
 
   for (const el of candidates) {
     if (!el || el.nodeType !== 1) continue;
@@ -1174,8 +1187,17 @@ function runInPage(ctx) {
       res = { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'error' } };
     }
     if (!res) continue;
+    judgedCount += 1;
     if (res.verdict === 'pass') {
       passCount += 1;
+      if (Number.isFinite(res.ratio)) {
+        marginCandidates.push({
+          el,
+          value: res.ratio,
+          threshold: MIN_RATIO,
+          context: { property: (res.details && res.details.property) || '' }
+        });
+      }
       continue;
     }
     const d = res.details || {};
@@ -1225,7 +1247,9 @@ function runInPage(ctx) {
       failOccurrences,
       cantTellOccurrences,
       rule.defaultSeverity || 'serious'
-    )
+    ),
+    marginCandidates,
+    measuredCount: judgedCount
   };
 }
 

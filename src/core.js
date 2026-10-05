@@ -2950,7 +2950,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    },
     "variant": {
       "of": "contrast-minimum",
       "config": {
@@ -4600,7 +4604,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "focus-order-semantics",
@@ -8096,7 +8104,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "list-children-valid",
@@ -42822,7 +42834,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    },
     "variant": {
       "of": "contrast-minimum",
       "config": {
@@ -44472,7 +44488,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "focus-order-semantics",
@@ -47968,7 +47988,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "contrast-ratio",
+      "unit": "ratio",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "list-children-valid",
@@ -73523,7 +73547,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
 
     const full = indicators.find((i) => !i.blurred && i.m.ratios.every((r) => r >= MIN_RATIO));
-    if (full) return { verdict: 'pass', details: details(full) };
+    if (full) {
+      // The lowest of its ratios, unrounded, for the result's margin.
+      return { verdict: 'pass', details: details(full), ratio: Math.min(...full.m.ratios) };
+    }
 
     if (unsettled) {
       return { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'cascade' } };
@@ -73869,6 +73896,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let passCount = 0;
+  // Indicators that reach 3:1, for the result's margin (src/core/margin.js),
+  // and how many elements' focus styles were judged.
+  const marginCandidates = [];
+  let judgedCount = 0;
 
   for (const el of candidates) {
     if (!el || el.nodeType !== 1) continue;
@@ -73881,8 +73912,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       res = { verdict: 'cantTell', reasonCode: 'notComputable', details: { cause: 'error' } };
     }
     if (!res) continue;
+    judgedCount += 1;
     if (res.verdict === 'pass') {
       passCount += 1;
+      if (Number.isFinite(res.ratio)) {
+        marginCandidates.push({
+          el,
+          value: res.ratio,
+          threshold: MIN_RATIO,
+          context: { property: (res.details && res.details.property) || '' }
+        });
+      }
       continue;
     }
     const d = res.details || {};
@@ -73932,7 +73972,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences,
       cantTellOccurrences,
       rule.defaultSeverity || 'serious'
-    )
+    ),
+    marginCandidates,
+    measuredCount: judgedCount
   };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
@@ -85761,7 +85803,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // For each link: { failing: [{ state, ratio, color, textColor }],
-  // visitedUnknown, uncomputable }.
+  // passing: [{ state, ratio }], visitedUnknown, uncomputable }.
   function judgeAll(pairs, bgOpts) {
     const list = [];
     for (const [el, parent] of pairs) {
@@ -85769,7 +85811,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (rest) list.push([el, parent, rest]);
     }
     const verdicts = new Map(
-      list.map(([el]) => [el, { failing: [], uncomputable: [], visitedSame: false }])
+      list.map(([el]) => [el, { failing: [], passing: [], uncomputable: [], visitedSame: false }])
     );
     for (const state of STATES) {
       const looks = looksInState(list, state);
@@ -85785,6 +85827,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const m = ratioOf(el, look, bgOpts);
         if (!m) v.uncomputable.push(state);
         else if (m.ratio < 3) v.failing.push({ state, ...m });
+        else v.passing.push({ state, ratio: m.ratio });
       }
     }
     for (const [el, v] of verdicts) {
@@ -85946,9 +85989,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences.push(report(el, reasonCode, { states: states.join(', ') }, { states }));
   }
 
+  // Each link's lowest state color that still reaches 3:1, for the result's
+  // margin (src/core/margin.js); measuredCount counts the links whose states
+  // were read.
+  const marginCandidates = [];
+  for (const [el, verdict] of judged) {
+    if (!verdict.passing.length) continue;
+    const closest = verdict.passing.slice().sort((a, b) => a.ratio - b.ratio)[0];
+    marginCandidates.push({
+      el,
+      value: closest.ratio,
+      threshold: 3,
+      context: { state: closest.state }
+    });
+  }
+  const margin = { marginCandidates, measuredCount: judged.size };
+
   if (!failOccurrences.length && !occurrences.length) {
     return passCount
-      ? { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] }
+      ? { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...margin }
       : { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
@@ -85957,7 +86016,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences,
       occurrences,
       rule.defaultSeverity || 'moderate'
-    )
+    ),
+    ...margin
   };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
