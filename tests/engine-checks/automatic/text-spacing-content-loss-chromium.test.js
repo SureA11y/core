@@ -58,12 +58,14 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   t.after(() => browser.close());
 
   // `pageOptions` go to Playwright's newPage (viewport, colorScheme);
-  // `setup` runs once the content is in, before the scan.
+  // `setup` runs once the content is in, before the scan; `contextSelector`
+  // scopes the scan.
   async function scan(
     html,
     engineOptions = { rules: { include: RULE_ID } },
     pageOptions = {},
-    setup
+    setup,
+    contextSelector = null
   ) {
     const p = await browser.newPage(pageOptions);
     try {
@@ -83,8 +85,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.addScriptTag({ content: BUNDLE });
       const before = await p.evaluate(() => [document.head.innerHTML, window.scrollY]);
       const result = await p.evaluate(
-        (opts) => window.a11ycore.runa11yCoreInPage(null, null, opts, null),
-        engineOptions
+        ([opts, scope]) => window.a11ycore.runa11yCoreInPage(null, scope, opts, null),
+        [engineOptions, contextSelector]
       );
       const after = await p.evaluate(() => [document.head.innerHTML, window.scrollY]);
       assert.deepEqual(after, before, 'the spacing sheet is removed and the scroll put back');
@@ -251,6 +253,96 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   });
 
   // Both seen on a news site's home page, where they were reported as cut off.
+  await t.test('a moving line with room to spare is not the margin', async () => {
+    // Where a marquee's text stands depends on the point its animation was
+    // held at, so how close it came says nothing about the layout.
+    const result = await scan(
+      page(
+        '@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}' +
+          '#box{white-space:nowrap;overflow:hidden} #run{display:inline-block;animation:slide 20s linear infinite}',
+        `<div class="fit" id="box" data-text="${TEXT}" data-extra="200"><span id="run">${TEXT}</span></div>`
+      )
+    );
+    assert.equal(outcome(result), 'pass');
+    assert.equal(margin(result), undefined);
+  });
+
+  await t.test('a box that cuts off some of its text is not the margin', async () => {
+    // The short line fits and is measured first, but the box cuts off the
+    // long one: it is a finding, not text kept in full.
+    const result = await scan(
+      page(
+        '#box{white-space:nowrap;overflow:hidden;height:200px} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
+        `<div class="fit" id="box" data-text="${TEXT}"><div>Hi</div><span>${TEXT}</span></div>` +
+          `<div class="gap" id="roomy">${TEXT}</div>`
+      )
+    );
+    assert.deepEqual(findings(result), [['box', 'fail', 'TEXT_CLIPPED']]);
+    assert.equal(margin(result).selector, '#roomy');
+  });
+
+  await t.test('text outside the scope, excluded or behind a modal is not judged', async () => {
+    const clipped = (attrs) => `<div class="fit" ${attrs}>${TEXT}</div>`;
+    const css = '.fit{white-space:nowrap;overflow:hidden}';
+
+    // contextSelector: only the text inside the scope is judged.
+    const scoped = await scan(
+      page(css, `<main id="scope">${clipped('id="in"')}</main>${clipped('id="out"')}`),
+      undefined,
+      {},
+      null,
+      '#scope'
+    );
+    assert.deepEqual(findings(scoped), [['in', 'fail', 'TEXT_CLIPPED']]);
+
+    // Text in scope can still come to overlap text outside it.
+    const overlap = await scan(
+      page(
+        '#box{height:20px}',
+        `<main id="scope"><div class="fit" id="box">${TEXT}</div></main><div>Closed on Sundays</div>`
+      ),
+      undefined,
+      {},
+      null,
+      '#scope'
+    );
+    assert.deepEqual(findings(overlap), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
+
+    // Outside the scope, the margin is not taken either.
+    const roomy =
+      '<div class="gap" id="roomy" style="white-space:nowrap;overflow:hidden;height:200px">';
+    const scopedPass = await scan(
+      page('', `<main id="scope"><p>${TEXT}</p></main>${roomy}${TEXT}</div>`),
+      undefined,
+      {},
+      null,
+      '#scope'
+    );
+    assert.equal(outcome(scopedPass), 'pass');
+    assert.equal(margin(scopedPass), undefined);
+
+    // excludeSelectors: an excluded box is neither a finding nor the margin.
+    const excluded = await scan(
+      page(css, `<p>${TEXT}</p>${clipped('id="ex"')}${roomy}${TEXT}</div>`),
+      { rules: { include: RULE_ID }, excludeSelectors: ['#ex', '#roomy'] }
+    );
+    assert.deepEqual(findings(excluded), []);
+    assert.equal(margin(excluded), undefined);
+
+    // An open modal dialog: the page behind it is inert, the dialog is judged.
+    const modal = await scan(
+      page(
+        css,
+        `${clipped('id="behind"')}${roomy}${TEXT}</div><dialog id="dialog">${clipped('id="inside"')}</dialog>`
+      ),
+      undefined,
+      {},
+      (p) => p.evaluate(() => document.getElementById('dialog').showModal())
+    );
+    assert.deepEqual(findings(modal), [['inside', 'fail', 'TEXT_CLIPPED']]);
+    assert.equal(margin(modal), undefined);
+  });
+
   await t.test('text hidden before, or reachable by scrolling, is not cut off', async () => {
     for (const [css, body] of [
       // Visually hidden text in a card that clips its content, sized so
