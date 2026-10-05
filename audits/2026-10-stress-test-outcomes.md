@@ -311,6 +311,13 @@ PR #81 (branch `fix/scoped-duplicate-id-doc-and-hidden-contrast`), merged 2026-1
 | R-8 | Bug | Fixed (`d4eb828`) for `font-size: 0`, `color: transparent` (gradient text becomes cantTell), and under `styleAndGeometry` off-page and fully clipped text. **Left:** the unselected options of a closed `<select>` (unclear: the browser draws the open list) and `rgba(0,0,0,.02)` text (drawn, so not a bug). `visibilityMode` stays `styleOnly` by default. |
 | R-9 | Bug | Fixed (`1c58e23`). `css-orientation-lock` walks `@layer`, `@supports`, nested `@media`, `@container`, `@import`, CSS nesting and `<style media>`; `css-focus-indicator-suppressed` follows CSS nesting. |
 
+PR #82 (branch `fix/link-cue-and-svg-fill`, open):
+
+| Item | Verdict | Change |
+|---|---|---|
+| R-6 | Bug | Fixed (`2d1e24b`). A cue on the link's content (`<a><strong>`) counts; a link alone in an inline wrapper takes the wrapper's surrounding text, unless the wrapper sets it apart (a footnote `<sup>`); transparent underlines and borders are no cue. |
+| R-7 | Bug | Fixed (`240004f`). SVG text is judged by `fill` (with `fill-opacity`); outline-only or gradient-filled text is not computable. |
+
 Section 6 leads checked against ACT de46e4:
 
 | Lead | Verdict |
@@ -358,8 +365,6 @@ The audit stopped before checking these. They are leads, not findings.
 - [O-15] Left: `waitForPageReady` accepts bad timeouts silently, and EARL merges results without a URL into one subject.
 
 **Contrast, layout and visual rules.**
-- [R-6] `link-in-text-block` misses a cue on a child (`<strong>` in a link), and passes a transparent underline.
-- [R-7] SVG `<text>` is judged by `color`, not `fill`.
 - [R-8] Left: unselected options of a closed select. The rest is fixed (6.0).
 - [R-10] `text-spacing-content-loss` skips partly clipped text, and its margin is measured against half the line height while findings start at 2 px.
 - [R-11] `target-size-minimum` uses the bounding box: clipped or covered targets pass, a rotated one is measured too large, `display: contents` links are not applicable, and a rounding slip appears in the message.
