@@ -150,4 +150,53 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       assert.equal((await scan(body, '#widget'))[0], 'pass');
     }
   );
+
+  async function marginOf(body) {
+    const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0;font:16px sans-serif} button{position:absolute;padding:0;border:0}</style></head><body>${body}</body></html>`
+      );
+      await p.addScriptTag({ content: BUNDLE });
+      const result = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+        RULE_ID
+      );
+      const r = result.checksResults.find((c) => c.ruleId === RULE_ID);
+      return { outcome: r.outcome, margin: r.margin };
+    } finally {
+      await p.close();
+    }
+  }
+
+  await t.test('the smallest target of at least 24 by 24 is the margin', async () => {
+    const { outcome, margin } = await marginOf(
+      '<button id="big" style="top:0;left:0;width:48px;height:48px">A</button>' +
+        '<button id="snug" style="top:100px;left:0;width:60px;height:24.4px">B</button>' +
+        '<button id="square" style="top:200px;left:0;width:30px;height:30px">C</button>'
+    );
+    assert.equal(outcome, 'pass');
+    assert.equal(margin.measure, 'target-size-px');
+    assert.equal(margin.limit, 'min');
+    assert.equal(margin.selector, '#snug');
+    assert.equal(margin.threshold, 24);
+    assert.equal(margin.value, 24.4);
+    assert.equal(margin.headroom, 0.4);
+    assert.equal(margin.measuredCount, 3);
+    assert.deepEqual(margin.context, { widthPx: 60, heightPx: 24.4 });
+  });
+
+  await t.test('a small target passing on spacing is not a size candidate', async () => {
+    const { outcome, margin } = await marginOf(
+      '<button id="tiny" style="top:0;left:0;width:16px;height:16px">A</button>' +
+        '<button id="big" style="top:200px;left:0;width:40px;height:40px">B</button>'
+    );
+    assert.equal(outcome, 'pass', 'the small one is far from the other');
+    assert.equal(margin.selector, '#big');
+    assert.equal(margin.measuredCount, 2);
+    const onlySmall = await marginOf(
+      '<button id="tiny" style="top:0;left:0;width:16px;height:16px">A</button>'
+    );
+    assert.equal(onlySmall.margin, undefined);
+  });
 });
