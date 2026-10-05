@@ -379,14 +379,24 @@ As agreed on 2026-10-05. Everything merged so far ships in 1.10.0: #77–#79 and
 
 **Before releasing 1.10.0**
 
-1. **Performance check.** Run the new `SureA11y/core-perf` benchmark (private; see below) on 1.8.0, 1.9.0 and `main`, and read its report for regressions, superlinear growth and leaks before releasing. A real regression gets fixed before the release.
+1. **Performance check: done 2026-10-05.** The `SureA11y/core-perf` run (1.8.0, 1.9.0, `main` at `5e83acc`, axe-core 4.14.0) found:
+   - **Slower:** `main` was 10–21% slower than 1.9.0 in Chromium on every large page, and within 3% in jsdom.
+   - **Where the time went:** a bisect put it on the P1 overlap check (+24 to +44 ms a page), the marquee check in `text-spacing-content-loss` (+21 ms on Times of India) and margins (about +20 ms).
+   - **Fixed in PR #84:** the marquee check now reads the page's animations once, and the overlap index does less work per element. No result changes on the benchmark pages; Times of India went from 1.21× to 1.09× of 1.9.0.
+   - **Kept:** the rest is what the overlap check and margins cost. Narrowing the overlap index would risk confident wrong results, so the maintainer chose to keep it, and the CHANGELOG gives the cost (15 to 35 ms a scan on large pages).
+   - **Faster:** the sibling-links hot path is 2.5× faster and no longer superlinear.
+   - **Stable:** no leak, and no rule whose answer changed between scans of one page.
+
+   **Merge PR #84 before the release.**
 2. **Section 6 leads (5.1), time-boxed.** Fix the audit's harness, then verify every remaining lead in jsdom and Chromium against the specs. Fix the clear, contained bugs in one PR. Move anything that needs a design decision, or broad changes to shadow-DOM name computation, to 1.11.0 below.
-3. **Release 1.10.0.** Diff `v1.9.0` against `main` first. Bump the version and run `npm run build`: `tests/engine-version.test.js` fails while the built engine still carries the old version. Then `npm run finding-ids:release -- 1.10.0`, the CHANGELOG release heading, the npm publish and the GitHub release. Then add a core-perf run for 1.10.0 to its history.
+3. **Release 1.10.0.** Diff `v1.9.0` against `main` first. Bump the version and run `npm run build`: `tests/engine-version.test.js` fails while the built engine still carries the old version. Then `npm run finding-ids:release -- 1.10.0`, the CHANGELOG release heading, the npm publish and the GitHub release. Then run core-perf on 1.10.0 from npm (about 10 minutes) and commit it as the new baseline.
 
 **1.11.0 (core)**
 
 - **Engine improvement D:** a stable code and a plain-language question for every cantTell, in five languages. Decide first whether it extends `uncertainty` or is a new field, and draft the 52 manual rules' questions.
 - Section 6 leads deferred from 1.10.0, and the `aria-valid-attr` timing lead.
+- **jsdom on CSS-heavy pages:** a CLI scan of the Daily Mail home page takes about 110 s and CNN about 140 s, mostly `contrast-computable` and `aria-hidden-focus` on jsdom's style computation. It was already so in 1.9.0, which ran out of memory on CNN.
+- **Memory:** repeated scans of one page in a browser leave about 40 KB each, from 1.8.0 to `main` alike. Small; find what keeps it.
 - Rule edge cases:
   - R-10: text-spacing on partly clipped text, and its margin threshold.
   - R-11: target size from the bounding box, `display: contents`, rounding.
