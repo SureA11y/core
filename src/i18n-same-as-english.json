@@ -1,0 +1,15 @@
+{
+  "$comment": "Strings that are rightly the same in a language as in English, so translation coverage counts them as translated. Each entry records the English text it was checked against: if the English changes, the entry no longer applies and the string counts as untranslated until someone checks it again. tests/i18n/same-as-english.test.js keeps the list current. See docs/I18N.md.",
+  "de": {
+    "report_margins_col_element": "Element"
+  },
+  "es": {
+    "report_col_selector": "Selector",
+    "report_card_selector": "Selector:"
+  },
+  "fr": {
+    "catalog.rules.wcag_134_orientation.title": "Orientation",
+    "catalog.rules.wcag_224_interruptions.title": "Interruptions",
+    "report_heading_occurrences": "Occurrences"
+  }
+}
