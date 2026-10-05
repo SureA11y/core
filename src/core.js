@@ -20994,6 +20994,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // chain once per selector per rule; the memo makes the whole document cost
   // one walk. An element is excluded when it or an ancestor matches, so a
   // parent's answer settles its descendants.
+  function __warnBadExclude(selector) {
+    try {
+      const seen =
+        __domSharedCache.badExcludeSelectors instanceof Set
+          ? __domSharedCache.badExcludeSelectors
+          : (__domSharedCache.badExcludeSelectors = new Set());
+      if (seen.has(selector)) return;
+      seen.add(selector);
+      console.warn(
+        '[surea11y] excludeSelectors: "' +
+          selector +
+          '" is not a valid CSS selector and excludes nothing; the other selectors still apply.'
+      );
+    } catch {}
+  }
+
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
     if (!eff.length || !el || !el.matches) return false;
@@ -21017,7 +21033,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       } catch {
         // An unparseable selector matches nothing rather than excluding
-        // everything; the remaining selectors still apply.
+        // everything; the remaining selectors still apply. Said once per
+        // scan, so a typo does not go unnoticed.
+        __warnBadExclude(eff[i]);
       }
     }
     if (!result) {
@@ -75399,6 +75417,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // chain once per selector per rule; the memo makes the whole document cost
   // one walk. An element is excluded when it or an ancestor matches, so a
   // parent's answer settles its descendants.
+  function __warnBadExclude(selector) {
+    try {
+      const seen =
+        __domSharedCache.badExcludeSelectors instanceof Set
+          ? __domSharedCache.badExcludeSelectors
+          : (__domSharedCache.badExcludeSelectors = new Set());
+      if (seen.has(selector)) return;
+      seen.add(selector);
+      console.warn(
+        '[surea11y] excludeSelectors: "' +
+          selector +
+          '" is not a valid CSS selector and excludes nothing; the other selectors still apply.'
+      );
+    } catch {}
+  }
+
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
     if (!eff.length || !el || !el.matches) return false;
@@ -75422,7 +75456,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       } catch {
         // An unparseable selector matches nothing rather than excluding
-        // everything; the remaining selectors still apply.
+        // everything; the remaining selectors still apply. Said once per
+        // scan, so a typo does not go unnoticed.
+        __warnBadExclude(eff[i]);
       }
     }
     if (!result) {
