@@ -214,6 +214,22 @@ reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEX
 
 `npm run validate:rules` checks that each code is written in the rule's source as a string, outside this list, so a typo can't register a code the rule never reports. A rule whose codes are all `reasonCode: '...'` literals doesn't need it.
 
+#### `meta.margin`
+
+Optional. Declares that the rule measures a value against a threshold and reports how close the closest element came to it while still meeting it: the check result's `margin` (`docs/OUTPUT_SCHEMA.md`). Declare it when the rule measures something rendered, such as a contrast ratio, a size or an overflow, which can sit just inside the limit and move with a viewport, a font or a copy change. Don't declare it for a fixed value typed in the markup (`maximum-scale`, a refresh delay, inline spacing values): that never drifts, and the source already shows it.
+
+```js
+margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
+```
+
+- `measure`: what is measured, lowercase and hyphenated. Reuse an existing one when it is the same measurement (`contrast-ratio`, `overflow-px`, `target-size-px`), so a tool can compare it across rules.
+- `unit`: `px` (reported to one decimal) or `ratio` (not rounded, since WCAG does not round contrast).
+- `limit`: `min` when the value must reach the threshold, `max` when it must stay under it.
+
+The rule then returns, beside its outcome, `marginCandidates`: one `{ el, value, threshold, context? }` per element that met the limit, with the threshold that element was judged against (it may differ per element, as large text's does), and optionally `measuredCount`, how many elements it compared. Return candidates whatever the outcome, `fail` included: the closest pass still matters on a page with other failures. The runner does the rest (`src/core/margin.js`): it keeps only candidates that really met the limit, picks the smallest headroom, gives a tie to the element first in document order, rounds, and builds the selector and structural path. A rule never builds `margin` itself; anything it puts there is dropped.
+
+`npm run validate:rules` checks the declaration (a measure, a known unit and limit) and that the rule's source returns `marginCandidates`.
+
 ---
 
 ## 4.3 Reporting an occurrence

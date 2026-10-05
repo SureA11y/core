@@ -131,6 +131,19 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
       ? m.mappings
       : null;
 
+  // What the rule measures against a threshold, when it reports a margin
+  // (src/core/margin.js): { measure, unit, limit }. Malformed = no margin;
+  // scripts/validate-rule.js rejects one on a built-in rule.
+  const margin = (() => {
+    const g = m.margin;
+    if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
+    const measure = typeof g.measure === 'string' ? g.measure.trim() : '';
+    if (!measure) return null;
+    if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
+    if (['min', 'max'].indexOf(g.limit) === -1) return null;
+    return { measure, unit: g.unit, limit: g.limit };
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -171,7 +184,8 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     expectation,
     references,
     requirements,
-    mappings
+    mappings,
+    margin
   };
 }
 

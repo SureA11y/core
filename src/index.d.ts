@@ -215,6 +215,37 @@ export interface Occurrence {
   };
 }
 
+/** What a rule measures against a threshold, as `meta.margin` declares it. */
+export interface MarginDeclaration {
+  /** An open set: `contrast-ratio`, `overflow-px`, `target-size-px`, and more in a minor. */
+  measure: 'contrast-ratio' | 'overflow-px' | 'target-size-px' | (string & {});
+  /** An open set; pixels keep one decimal, a ratio is not rounded. */
+  unit: 'px' | 'ratio' | (string & {});
+  /** `min`: the value must reach the threshold. `max`: it must stay under it. */
+  limit: 'min' | 'max';
+}
+
+/**
+ * The measurement that came closest to its threshold while meeting it. Never
+ * a finding: it does not change the outcome or the occurrences. See
+ * docs/OUTPUT_SCHEMA.md.
+ */
+export interface Margin extends MarginDeclaration {
+  /** The threshold that element was judged against. */
+  threshold: number;
+  /** That element's measurement. */
+  value: number;
+  /** How far inside the limit, in `unit`; never negative. */
+  headroom: number;
+  /** How many elements the rule compared. */
+  measuredCount: number;
+  /** Absent with `output.includeSelector: false`. */
+  selector?: string;
+  structuralPath?: number[];
+  /** Rule-specific detail; not a stable contract. */
+  context?: Record<string, unknown>;
+}
+
 export interface CheckResult {
   ruleId: string;
   outcome: Outcome;
@@ -234,6 +265,8 @@ export interface CheckResult {
   rollupIds: string[];
   /** Page-level data a rule reports whatever its outcome; not a stable contract. */
   data?: Record<string, unknown>;
+  /** Present only on a rule that declares `meta.margin`, when an element met its threshold. */
+  margin?: Margin;
   /** Present only when the target WCAG version changed this outcome. */
   wcagVersionScope?: { target: '2.0' | '2.1' | '2.2'; removedSc: string[]; coercedFrom: 'fail' };
   /** Present only if the rule threw, or a manual rule's fail was coerced. */
@@ -400,6 +433,11 @@ export interface PageReadyResult {
  */
 export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
 
+/** Every margin in a scan result, as `{ ruleId, ...margin }`, sorted by `ruleId`. */
+export function getMargins(
+  result: ScanResult | null | undefined
+): Array<Margin & { ruleId: string }>;
+
 /**
  * Scans this frame and every child frame that called
  * a11yCoreEnableFrameResponder(), over postMessage. For code running inside
@@ -435,6 +473,8 @@ export interface CheckCatalogEntry {
   type: RuleType;
   deprecated: boolean;
   deprecation: RuleMeta['deprecation'];
+  /** What the rule measures against a threshold, when it reports a margin; else null. */
+  margin: MarginDeclaration | null;
   [field: string]: unknown;
 }
 

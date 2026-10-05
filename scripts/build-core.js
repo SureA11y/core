@@ -64,6 +64,7 @@ const {
   isUncertaintyCode,
   normalizeUncertainty
 } = require('../src/core/uncertainty');
+const { resolveMargin, getMargins } = require('../src/core/margin');
 const {
   FRAME_RPC_CHANNEL,
   getFrameRpcRegistry,
@@ -469,6 +470,8 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
     references: m.meta.references,
     requirements: m.meta.requirements,
     mappings: m.meta.mappings,
+    // What the rule measures against a threshold (src/core/margin.js), or null.
+    margin: m.meta.margin,
 
     // A variant: the base rule it runs, its settings and its message prefix
     // (scripts/lib/rule-variants.js). The runner reads both.
@@ -1435,6 +1438,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 
   out.schemaVersion = schemaVersion;
 
+  // A rule that declares meta.margin hands over the elements that met its
+  // threshold; the closest becomes the result's margin (src/core/margin.js).
+  // Whatever a rule put in these fields itself, only the resolved one stays.
+  const resolvedMargin = def.margin
+    ? resolveMargin(def.margin, out.marginCandidates, out.measuredCount, helpers, { includeSelector })
+    : null;
+  delete out.marginCandidates;
+  delete out.measuredCount;
+  if (resolvedMargin) out.margin = resolvedMargin;
+  else delete out.margin;
+
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
   let __truncatedOccurrences = 0;
   let __placedOccurrences = 0;
@@ -1586,7 +1600,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     expectation: r.expectation || '',
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
-    mappings: r.mappings || null
+    mappings: r.mappings || null,
+    margin: r.margin ? { ...r.margin } : null
   };
 }
 
@@ -1606,6 +1621,10 @@ ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 const UNCERTAINTY_CODE_VALUES = ${jsStringify(UNCERTAINTY_CODE_VALUES)};
 ${inlineConstFunction('isUncertaintyCode', isUncertaintyCode)}
 ${inlineConstFunction('normalizeUncertainty', normalizeUncertainty)}
+
+// Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
+// margin candidates into the result's margin in-page.
+${inlineConstFunction('resolveMargin', resolveMargin)}
 
 // Inlined from src/core/rule-meta.js (also used at build time by loadRuleModules
 // above -- single source of truth -- and here so runtime-registered custom
@@ -1730,6 +1749,9 @@ const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrame
 // Waits for the page to load before a scan; the scan itself never calls it
 // (src/core/page-ready.js).
 ${waitForPageReady.toString()}
+
+// Every margin in a scan result, for tools that read them (src/core/margin.js).
+${getMargins.toString()}
 `.trim();
 
   return `'use strict';
@@ -1900,6 +1922,7 @@ module.exports = {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
   waitForPageReady,
+  getMargins,
   // translate/resolveLocale let src/report.js label its own page from the
   // same dictionaries as the findings, without a second table to maintain.
   __internal: {

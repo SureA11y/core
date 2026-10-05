@@ -113,6 +113,39 @@ for (const [label, line] of [
   });
 }
 
+const MARGIN = "margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' },";
+const withCandidates = (source) =>
+  source.replace(
+    'function runInPage(ctx) {',
+    'function runInPage(ctx) {\n  const marginCandidates = [];'
+  );
+
+test('validate-rule accepts meta.margin on a rule that returns marginCandidates', () => {
+  assert.equal(validateSource(withCandidates(withMeta(MARGIN))), true);
+});
+
+for (const [label, source] of [
+  ['meta.margin on a rule that never returns marginCandidates', withMeta(MARGIN)],
+  [
+    'meta.margin with an unknown unit',
+    withCandidates(withMeta("margin: { measure: 'contrast-ratio', unit: 'em', limit: 'min' },"))
+  ],
+  [
+    'meta.margin with an unknown limit',
+    withCandidates(
+      withMeta("margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'at-least' },")
+    )
+  ],
+  [
+    'meta.margin without a measure',
+    withCandidates(withMeta("margin: { unit: 'ratio', limit: 'min' },"))
+  ]
+]) {
+  test(`validate-rule rejects ${label}`, () => {
+    assert.equal(validateSource(source), false);
+  });
+}
+
 // The outcome contract on its own: the script looks rules up by id, so a
 // modified copy of a built-in rule would run the built-in one.
 const { validateOutcomeOccurrenceInvariants } = require('../scripts/validate-rule.js');

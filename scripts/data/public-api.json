@@ -8,7 +8,8 @@
     "getChecksCatalog",
     "getRulesCatalog",
     "getLocaleCoverage",
-    "waitForPageReady"
+    "waitForPageReady",
+    "getMargins"
   ],
   "internal": [
     "CHECK_DEFS",
