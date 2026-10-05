@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -78,6 +78,7 @@
     "landmark-no-duplicate-contentinfo",
     "landmark-no-duplicate-main",
     "landmark-one-main",
+    "landmark-role-name-present",
     "landmark-unique",
     "link-in-text-block",
     "link-name-present",
@@ -232,8 +233,13 @@
       "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
       "BACKGROUND_IMAGE_OR_GRADIENT",
       "BACKGROUND_NOT_COMPUTABLE",
+      "BACKGROUND_NOT_OPAQUE_AT_ROOT",
+      "BACKGROUND_OVERLAP",
+      "BACKGROUND_UNPARSABLE",
       "ENGINE_EXCEPTION",
-      "MIX_BLEND_MODE"
+      "FOREGROUND_UNPARSABLE",
+      "MIX_BLEND_MODE",
+      "TEXT_SHADOW"
     ],
     "contrast-enhanced": [
       "ALL_ABOVE_THRESHOLD",
@@ -300,6 +306,8 @@
       "missing_programmatic_label"
     ],
     "form-control-programmatic-label-quality": [
+      "label_from_aria_label_only",
+      "label_from_hidden_labelledby",
       "label_from_placeholder_primary",
       "label_from_title_primary"
     ],
@@ -349,10 +357,11 @@
       "missing_alt"
     ],
     "label-in-name": [
+      "HYPHENATION_DIFFERS",
+      "POSSIBLE_ABBREVIATION",
+      "POSSIBLE_ICON_FONT_GLYPH",
+      "POSSIBLE_SYMBOLIC_CHARACTER",
       "VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME"
-    ],
-    "label-title-only": [
-      "LABEL_TITLE_ONLY"
     ],
     "landmark-banner-is-top-level": [
       "LANDMARK_BANNER_NOT_TOP_LEVEL"
@@ -378,13 +387,21 @@
     "landmark-one-main": [
       "LANDMARK_MAIN_MISSING"
     ],
+    "landmark-role-name-present": [
+      "LANDMARK_ROLE_NAME_MISSING"
+    ],
     "landmark-unique": [
       "LANDMARK_NOT_UNIQUE"
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
+      "BACKGROUND_OVERLAP",
+      "COLOR_NOT_COMPUTABLE",
       "COLOR_ONLY_DIFFERENTIATION",
-      "LINK_COLOR_CONTRAST_ONLY"
+      "CONTRAST_HELPERS_UNAVAILABLE",
+      "ENGINE_EXCEPTION",
+      "LINK_COLOR_CONTRAST_ONLY",
+      "TEXT_DECORATION_NOT_RESOLVABLE"
     ],
     "link-name-present": [
       "name_missing"
@@ -432,6 +449,7 @@
       "NESTED_INTERACTIVE_CONTROL"
     ],
     "no-autoplay-audio": [
+      "AUTOPLAY_CONTROLS_HIDDEN",
       "AUTOPLAY_NO_CONTROLS_MECHANISM",
       "EMBEDDED_SOUND_SOURCE"
     ],
@@ -526,7 +544,11 @@
       "TD_NO_ASSOCIATED_HEADER"
     ],
     "text-spacing-content-loss": [
-      "STYLESHEET_IMPORTANT"
+      "STYLESHEET_IMPORTANT",
+      "TEXT_CLIPPED",
+      "TEXT_CLIPPED_MOVING",
+      "TEXT_CLIPPED_PARTLY",
+      "TEXT_OVERLAPS"
     ],
     "textbox-name-present": [
       "name_missing"
@@ -543,12 +565,13 @@
     "video-caption": [
       "CAPTIONS_TRACK_NOT_DETECTED",
       "SUBTITLES_TRACK_ONLY"
+    ],
+    "video-poster-text-alternative-present": [
+      "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ]
   },
   "retired": {
     "ruleIds": {},
-    "reasonCodes": {
-      "label-title-only/LABEL_TITLE_ONLY": "Retired with the duplicate finding it named: every element it reported, form-control-programmatic-label-quality also reports (label_from_title_primary). label-title-only is deprecated and reports notApplicable (docs/API_STABILITY.md, \"Rule-ID deprecation policy\")."
-    }
+    "reasonCodes": {}
   }
 }
