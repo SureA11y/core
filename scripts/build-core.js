@@ -87,6 +87,10 @@ const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
+// The package version, baked in at build time so a result says which release
+// produced it (engine.version). A version bump needs a rebuild; a test checks
+// the two agree.
+const ENGINE_VERSION = require('../package.json').version;
 
 // Emitted into the generated core from the registry (src/coverage/standards.js):
 // the standards engineOptions.mappings can switch on, and the conformance
@@ -1719,6 +1723,7 @@ ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
+  const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
   // Rule catalog (data only)
   const CHECK_DEFS = ${jsStringify(defs)};
@@ -1820,6 +1825,7 @@ ${getMargins.toString()}
 
 const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
 const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
+const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
 // Rule catalog (data only)
 const CHECK_DEFS = ${jsStringify(defs)};

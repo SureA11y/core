@@ -4,6 +4,7 @@
 
 const ENGINE_TAG = "a11ycore";
 const SCHEMA_VERSION = "1.0.0";
+const ENGINE_VERSION = "1.9.0";
 
 // Rule catalog (data only)
 const CHECK_DEFS = [
@@ -27005,6 +27006,7 @@ const runCoreSettled = (function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
@@ -27391,6 +27393,7 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
+  const ENGINE_VERSION = "1.9.0";
 
   // Rule catalog (data only)
   const CHECK_DEFS = [
@@ -81086,6 +81089,7 @@ const runCoreSettled = (function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,

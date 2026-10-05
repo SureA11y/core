@@ -92,7 +92,7 @@ Output is deterministic: subjects sort by source, assertions by rule id, and the
 
 | Option | Meaning |
 |---|---|
-| `assertor` | `{ name, version }`. Defaults the name to `surea11y`; pass `null` to omit `assertedBy` entirely. |
+| `assertor` | `{ name, version }`. Defaults the name to `surea11y`, and the version, given as the assertor's `release`, to the `engine.version` the results carry when they all carry the same one; results from different releases get no release unless you give one. Pass `null` to omit `assertedBy` entirely. |
 | `mode` | An EARL test mode such as `'earl:automatic'`. Omitted when not supplied. |
 
 ## See also

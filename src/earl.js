@@ -91,12 +91,19 @@ function assertionFor(check, assertor, mode) {
   return assertion;
 }
 
-function normalizeAssertor(options) {
+// The release defaults to the engine version the results carry, when they
+// all carry the same one: results from two releases have no one assertor
+// release, and then none is claimed.
+function normalizeAssertor(options, results) {
   if (options.assertor === null) return null;
 
   const supplied = options.assertor || {};
   const assertor = { '@type': 'Assertor', name: supplied.name || 'surea11y' };
-  const revision = supplied.version || supplied.revision;
+  const versions = new Set(
+    results.map((r) => (r.engine && typeof r.engine.version === 'string' ? r.engine.version : ''))
+  );
+  const engineVersion = versions.size === 1 ? [...versions][0] : '';
+  const revision = supplied.version || supplied.revision || engineVersion;
   if (revision) assertor.release = { '@type': 'Version', revision: String(revision) };
   return assertor;
 }
@@ -104,7 +111,8 @@ function normalizeAssertor(options) {
 /**
  * @param {object|object[]} results one scan result, or several to report together
  * @param {object} [options]
- * @param {object|null} [options.assertor] `{ name, version }`; null omits it
+ * @param {object|null} [options.assertor] `{ name, version }`; null omits it. The
+ *   version defaults to the engine version the results carry.
  * @param {string} [options.mode] an EARL test mode, e.g. `'earl:automatic'`
  * @returns {object} the JSON-LD document
  */
@@ -120,7 +128,7 @@ function renderEarlReport(results, options = {}) {
     }
   }
 
-  const assertor = normalizeAssertor(options);
+  const assertor = normalizeAssertor(options, list);
   const mode = typeof options.mode === 'string' && options.mode ? options.mode : null;
 
   // Several results for one URL merge into a single subject: a caller scanning
