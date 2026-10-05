@@ -317,6 +317,8 @@ PR #82 (branch `fix/link-cue-and-svg-fill`, open):
 |---|---|---|
 | R-6 | Bug | Fixed (`2d1e24b`). A cue on the link's content (`<a><strong>`) counts; a link alone in an inline wrapper takes the wrapper's surrounding text, unless the wrapper sets it apart (a footnote `<sup>`); transparent underlines and borders are no cue. |
 | R-7 | Bug | Fixed (`240004f`). SVG text is judged by `fill` (with `fill-opacity`); outline-only or gradient-filled text is not computable. |
+| O-2 | Bug | Fixed (`96bfabe`), decided with the maintainer for 1.10.0: identity sorts attributes and class names, with a single-pass scanner (a first regex version was flagged by CodeQL as polynomial ReDoS). Baseline files keep matching; SARIF fingerprints of elements with 2+ attributes change once. |
+| C-3, C-4, C-5, C-6, C-10, C-11 | Bugs | Fixed (`82600b6`). Unusable returns, Promises and unknown outcomes are `cantTell` with an `error`; duplicate and composite ids are skipped with a warning; new result field `skippedCustomRules`. |
 
 Section 6 leads checked against ACT de46e4:
 
@@ -353,7 +355,6 @@ The audit stopped before checking these. They are leads, not findings.
 ### 6.2 Reproduced by the audit, not fixed
 
 **Outputs.**
-- [O-2] Attribute and class order change a finding's identity (baseline, SARIF).
 - [O-6] Left: fingerprints carry raw separators and up to 2 KB of HTML. Empty messages and unencoded URIs are fixed (6.0).
 - [O-7] A string custom rule is skipped under a strict CSP. Now documented and warned about (#77); no fallback.
 - [O-8] The `/browser` subpath is empty for bundlers.
@@ -373,10 +374,7 @@ The audit stopped before checking these. They are leads, not findings.
 - [R-14] Input values and placeholders are never contrast-checked, `zoom` isn't treated as large text, some alt-quality wording is off, and two alt rules have no occurrence cap.
 
 **Custom rules and profiles.**
-- [C-3] There's no `skippedCustomRules` field; warnings were added in #77.
-- [C-4, C-5, C-6] A rule returning nothing usable disappears; async rules and unknown outcomes become `cantTell` with an empty `error`.
 - [C-7, C-8, C-9] Severity, confidence and type aren't validated; a rule can overwrite engine-owned fields; the result-shape contract isn't enforced.
-- [C-10, C-11] Duplicate custom ids, and a custom id equal to a composite id, aren't detected.
 - [C-12] The docs' custom-rule example ignores exclusions and hidden content.
 - [C-13, C-14] Custom rules can't join WCAG composites by mapping; under a profile a custom rule without WCAG tags never runs, and an override that drops a built-in's tags removes it.
 - [C-15] The catalog APIs ignore `customRules`.
