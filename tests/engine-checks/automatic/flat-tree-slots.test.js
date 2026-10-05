@@ -1,8 +1,8 @@
 'use strict';
 
-// List and nesting rules read the flat tree, as the page renders it: an
-// element slotted into a shadow tree sits where its slot is, which is what
-// Chromium's accessibility tree shows.
+// Rules read shadow DOM as the page renders it. List and nesting rules
+// follow the flat tree: an element slotted into a shadow tree sits where its
+// slot is, which is what Chromium's accessibility tree shows.
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -83,4 +83,25 @@ test('nested-interactive-controls-absent: a button whose shadow tree slots nothi
     (doc) => shadow(doc, 'h', '<button><slot></slot></button>')
   );
   assert.strictEqual(r.outcome, 'pass');
+});
+
+// ID references resolve in the referring element's own tree (its shadow root
+// or the document), as Chromium resolves them.
+
+test('aria-valid-attr-value: an IDREF to an id in the same shadow root resolves', () => {
+  const r = run('aria-valid-attr-value', '<div id="h"></div>', (doc) =>
+    shadow(doc, 'h', '<span id="in">In shadow</span><button aria-labelledby="in">x</button>')
+  );
+  assert.strictEqual(r.outcome, 'pass');
+});
+
+test('aria-valid-attr-value: an IDREF from a shadow root to a light-DOM id resolves to nothing', () => {
+  const r = run('aria-valid-attr-value', '<span id="light">Light</span><div id="h"></div>', (doc) =>
+    shadow(
+      doc,
+      'h',
+      '<div role="combobox" tabindex="0" aria-expanded="true" aria-activedescendant="light">c</div>'
+    )
+  );
+  assert.strictEqual(r.outcome, 'fail');
 });

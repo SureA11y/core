@@ -59,6 +59,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `aria-valid-attr-value` resolves an ID reference in the referring element's own tree, its shadow root or the document, as Chromium does. A reference to an `id` in the same shadow root was asked about as unresolved, since the lookup only searched the document, and a reference from a shadow root to a light-DOM `id` passed, though it resolves to nothing.
 - `listitem-parent-valid` and `list-children-valid` read the page as it renders, through shadow DOM slots. An `<li>` slotted into a web component's shadow `<ul><slot></slot></ul>` failed both rules, though Chromium exposes it as an item of that list; it now passes, and an `<li>` slotted under a `<div>` still fails. An `<li>` no slot takes isn't rendered and is left out.
 - `nested-interactive-controls-absent` finds a control nested across a shadow boundary: a link slotted into a component whose shadow tree wraps the slot in a `<button>` is inside that button, as in Chromium's accessibility tree, and fails. The rule walked only the light DOM and passed it.
 - `aria-valid-attr-value` no longer fails `true`, `false`, `undefined` or `mixed` written in another case (`aria-checked="TRUE"`, `aria-pressed="False"`). Chromium reads them in any case, the rule already did so for token values, and the engine's own readers of these states lowercase them.
