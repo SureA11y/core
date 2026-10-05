@@ -40,13 +40,15 @@ runDomRulesInPage(url, null, {
   policyContract: {
     id: 'my-custom-policy',
     allowedOutcomes: ['fail', 'pass', 'cantTell', 'notApplicable'],
-    allowedConfidence: ['high', 'medium'],   // drop 'low' — anything low-confidence becomes cantTell
+    allowedConfidence: ['high', 'medium'],   // a confidence outside this list falls back to the rule's default
     coerceManualFailToCantTell: true
   }
 }, null);
 ```
 
 Any field you omit from an inline contract object falls back to the `a11y` contract's value for that field — you're overriding, not replacing wholesale.
+
+`allowedConfidence` filters the confidence a rule reports, not the outcome. A result whose confidence is not in the list gets the rule's default confidence instead (`defaultConfidence` in the rule catalog), which is not checked against the list again, so a rule whose default is `low` still reports `low`. The outcome is left as it is: dropping `'low'` does not turn low-confidence results into `cantTell`. `allowedOutcomes` is what changes an outcome: one outside the list becomes `cantTell`.
 
 ## Fine-grained overrides
 
