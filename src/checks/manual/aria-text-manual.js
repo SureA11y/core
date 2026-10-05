@@ -52,8 +52,11 @@ const meta = {
 function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Content the page does not show (a closed <details>, hidden="until-found")
+  // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
     for (const d of el.querySelectorAll('*')) {
+      if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;

@@ -120,6 +120,16 @@ Whether a node is eligible for the accessibility tree, per an ordered set of che
 Deliberately keeps a focusable-but-`aria-hidden` element *eligible* — see the header
 comment on `isIncludedInAccessibilityTree` below for why.
 
+### `isHiddenContent(el)` → `boolean`
+Whether the default hidden-content policy leaves `el` out: the same filter
+`queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
+closed `<details>` other than its first `<summary>`, content under
+`content-visibility:hidden` or `hidden="until-found"`, the page behind an open modal
+dialog). For a rule that reaches elements another way, such as a container's
+descendants or the other side of a relationship, so that content the page does not
+show is not counted: a link in a collapsed panel takes no focus. Always `false` under
+`includeHiddenElements:true`.
+
 ### `isIncludedInAccessibilityTree(el)` → `boolean`
 The narrower question most accessible-name rules actually want: `isAccTreeEligible`,
 minus anything eligible only because of an `ariaHiddenOverridden*` reason. ACT scopes

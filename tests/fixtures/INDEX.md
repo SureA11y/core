@@ -35,7 +35,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 30 | 8 | 9 | 0 | 13 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 8 | 4 | 2 | 1 | 1 |
-| aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
+| aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 5 | 2 | 0 | 2 | 1 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 0 | 2 | 2 |
 | aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 20 | 10 | 7 | 2 | 1 |
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 7 | 2 | 0 | 2 |
@@ -107,7 +107,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | meta-viewport-large | manual | `tests/fixtures/meta-viewport-large-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | meta-viewport-zoom-enabled | automatic | `tests/fixtures/meta-viewport-zoom-enabled-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | meter-name-present | automatic | `tests/fixtures/meter-name-present-all-scenarios.html` | 7 | 3 | 3 | 0 | 1 |
-| mouse-only-event-handlers | manual | `tests/fixtures/mouse-only-event-handlers-all-scenarios.html` | 8 | 0 | 0 | 3 | 5 |
+| mouse-only-event-handlers | manual | `tests/fixtures/mouse-only-event-handlers-all-scenarios.html` | 9 | 0 | 0 | 4 | 5 |
 | nested-interactive-controls-absent | automatic | `tests/fixtures/nested-interactive-controls-absent-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
 | no-autoplay-audio | manual | `tests/fixtures/no-autoplay-audio-all-scenarios.html` | 11 | 1 | 0 | 6 | 4 |
 | object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
@@ -124,7 +124,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 26 | 5 | 10 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
-| scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 5 | 0 | 0 | 2 | 3 |
+| scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
 | skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 11 | 3 | 0 | 7 | 1 |

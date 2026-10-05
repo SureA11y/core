@@ -119,12 +119,16 @@ function runInPage(ctx) {
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
+  // A descendant the page does not show (display:none, a closed <details>,
+  // hidden="until-found") takes no focus.
   function hasFocusableDescendant(el) {
     try {
-      return !!(el.querySelector && el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR));
-    } catch {
-      return false;
-    }
+      if (!el.querySelectorAll) return false;
+      for (const d of el.querySelectorAll(FOCUSABLE_DESCENDANT_SELECTOR)) {
+        if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
+      }
+    } catch {}
+    return false;
   }
 
   const CANDIDATE_SELECTOR =
@@ -188,8 +192,8 @@ function runInPage(ctx) {
   }
 
   // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
-  // yet: the focusable-descendant check counts tabindex="-1", disabled and
-  // hidden elements, and does not confirm the region really overflows.
+  // yet: the focusable-descendant check counts tabindex="-1" and disabled
+  // elements, and does not confirm the region really overflows.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 
