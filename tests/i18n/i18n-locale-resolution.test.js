@@ -469,3 +469,17 @@ test('keys a profile leaves out of a locale do not make it partial', () => {
     reason: 'partial-dictionary'
   });
 });
+
+test('caller-supplied messages translate the result but are not echoed back on it', () => {
+  const messages = { de: { img_altPresent_title: 'Eigener Titel' } };
+  const result = runa11yCoreOnHtml('<!doctype html><html><body><img src="x.png"></body></html>', {
+    engineOptions: { locale: 'de', messages }
+  });
+
+  const rule = result.checksResults.find((r) => r.ruleId === 'img-alt-present');
+  assert.equal(rule.title, 'Eigener Titel');
+  for (const r of result.checksResults.concat(result.rulesResults)) {
+    assert.ok(!('messages' in r.engineOptions), r.ruleId);
+    assert.equal(r.engineOptions.locale, 'de', r.ruleId);
+  }
+});

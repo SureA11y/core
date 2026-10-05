@@ -315,3 +315,37 @@ test('engineOptions.messages still wins over a registered side file', async () =
 
   dom.window.close();
 });
+
+// A side file reaches the runner as engineOptions.messages, and every result
+// echoes engineOptions. The dictionary is dropped from that echo once the
+// results are translated: repeated on every result, it made a scan with a
+// loaded locale tens of megabytes for a page with a paragraph on it.
+test('a loaded side file translates the result without being copied into it', async () => {
+  const dom = await loadBundleViaScriptTag(LOCALE_PAGE, 'https://example.test/', ['de']);
+
+  const options = {
+    locale: 'de',
+    messages: { de: { ariaDeprecatedRole_guidance_generic: 'Eigene Übersetzung.' } }
+  };
+  const result = dom.window.a11ycore.runa11yCoreInPage(
+    'https://example.test/',
+    null,
+    options,
+    null
+  );
+
+  const echoes = result.checksResults.concat(result.rulesResults).map((r) => r.engineOptions);
+  assert.ok(echoes.length > 0);
+  for (const eo of echoes) {
+    assert.ok(!('messages' in eo), 'no dictionary in the echo');
+    assert.equal(eo.locale, 'de', 'the resolved settings are still echoed');
+  }
+  assert.ok('messages' in options, "the caller's own options are left as they were");
+  assert.match(hintFrom(dom, { locale: 'de' }), /^Entfernen Sie/, 'still translated');
+  assert.ok(
+    JSON.stringify(result).length < 2 * 1024 * 1024,
+    `a small page gives a small result (${JSON.stringify(result).length} bytes)`
+  );
+
+  dom.window.close();
+});
