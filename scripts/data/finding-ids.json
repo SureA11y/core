@@ -564,6 +564,9 @@
     "video-caption": [
       "CAPTIONS_TRACK_NOT_DETECTED",
       "SUBTITLES_TRACK_ONLY"
+    ],
+    "video-poster-text-alternative-present": [
+      "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ]
   }
 }

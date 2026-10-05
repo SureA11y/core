@@ -187,3 +187,27 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, '<video> poster must have a text alternative');
 });
+
+test(`${RULE_ID}: an unnamed video alone in a captioned <figure> is asked about`, () => {
+  const html = `<!doctype html><html><body>
+    <figure><video poster="p.png"></video><figcaption>Our 2025 product launch</figcaption></figure>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'VIDEO_POSTER_FIGCAPTION_REVIEW');
+  assert.strictEqual(occ.data.details.figcaption, 'Our 2025 product launch');
+  assert.strictEqual(occ.uncertainty.code, 'equivalence-unknown');
+});
+
+test(`${RULE_ID}: a captioned figure with more than the video, or an empty caption, still fails`, () => {
+  for (const figure of [
+    '<figure><video poster="p.png"></video><p>Watch it</p><figcaption>Launch</figcaption></figure>',
+    '<figure><video poster="p.png"></video><figcaption> </figcaption></figure>'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${figure}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});

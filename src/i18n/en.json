@@ -89,6 +89,8 @@
   "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
   "videoPoster_textAltPresent_summary_fail": "Missing text alternative for <video> poster.",
   "videoPoster_textAltPresent_hint_fail": "Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).",
+  "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
+  "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
   "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
   "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
   "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
