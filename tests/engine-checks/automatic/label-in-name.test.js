@@ -228,8 +228,26 @@ test(`${RULE_ID}: a possible abbreviation is cantTell rather than a failure`, ()
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].outcome, 'cantTell');
+  // One tier: the result's outcome is the occurrence's, and the
+  // occurrence carries no tier of its own (OUTPUT_SCHEMA.md).
+  assert.ok(!('outcome' in rule.occurrences[0]));
+  assert.ok(!('occurrenceOutcome' in rule.occurrences[0]));
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_ABBREVIATION');
+});
+
+test(`${RULE_ID}: a fail beside a cantTell marks each occurrence's tier in occurrenceOutcome`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="abbr" href="#" aria-label="University Avenue">University Ave.</a>
+  <a id="wrong" href="#" aria-label="Checkout">Basket</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const tiers = rule.occurrences.map((o) => [o.data.details.reasonCode, o.occurrenceOutcome]);
+  assert.ok(tiers.some(([code, tier]) => code === 'POSSIBLE_ABBREVIATION' && tier === 'cantTell'));
+  assert.ok(tiers.some(([code, tier]) => code !== 'POSSIBLE_ABBREVIATION' && tier === 'fail'));
+  assert.ok(rule.occurrences.every((o) => !('outcome' in o)));
 });
 
 test(`${RULE_ID}: a hyphenation difference is cantTell rather than a failure`, () => {
