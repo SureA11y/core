@@ -247,3 +247,40 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test('link-in-text-block: whether a parent has text is read once, not once per link', () => {
+  // A parent with thousands of sibling links and no text of its own: each
+  // link scanned every sibling, so 8,000 links took 34s under jsdom. The
+  // engine's own reads of the siblings' nodeType now grow with the links,
+  // not their square. jsdom reads them too, matching selectors for computed
+  // styles, so only reads made directly from outside node_modules count.
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
+  const N = 400;
+  const dom = createDom(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${'<a href="/">l</a>'.repeat(N)}</main></body></html>`
+  );
+  const main = dom.window.document.querySelector('main');
+  const proto = dom.window.Node.prototype;
+  const desc = Object.getOwnPropertyDescriptor(proto, 'nodeType');
+  let reads = 0;
+  Object.defineProperty(proto, 'nodeType', {
+    configurable: true,
+    get() {
+      if (this.parentNode === main) {
+        const caller = String(new Error().stack).split('\n')[2] || '';
+        if (!caller.includes('node_modules')) reads++;
+      }
+      return desc.get.call(this);
+    }
+  });
+  try {
+    const result = runa11yCoreOnDom(dom, {
+      runOnly: ['link-in-text-block'],
+      entryPointParity: false
+    });
+    assert.equal(result.checksResults[0].outcome, 'notApplicable');
+  } finally {
+    Object.defineProperty(proto, 'nodeType', desc);
+  }
+  assert.ok(reads < N * 20, `${reads} nodeType reads for ${N} links`);
+});
