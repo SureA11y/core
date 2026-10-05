@@ -820,24 +820,64 @@ function runCoreSettled(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch {
-          return null;
-        }
+        } catch {}
+        // A method's source, from a method shorthand or a class
+        // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
+        // expression on its own; inside an object literal it is.
+        try {
+          const holder = new Function('return ({' + value + '})')();
+          const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
+          const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
+          if (desc && typeof desc.value === 'function') return desc.value;
+        } catch {}
       }
       return null;
+    }
+
+    function warnSkipped(ruleId, reason) {
+      try {
+        console.warn(
+          '[surea11y] customRules: skipped ' +
+            (ruleId ? 'rule "' + ruleId + '"' : 'a rule') +
+            ' (' +
+            reason +
+            '); the rest of the scan runs as usual.'
+        );
+      } catch {}
     }
 
     const extraDefsById = new Map();
     const extraImpls = {};
     for (const c of rawCustomRules) {
-      if (!c || typeof c !== 'object') continue;
+      if (!c || typeof c !== 'object') {
+        warnSkipped('', 'not an object');
+        continue;
+      }
       const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
-      if (!ruleId) continue;
+      if (!ruleId) {
+        warnSkipped('', 'no id');
+        continue;
+      }
+      // An invalid custom rule is skipped, not a crash.
       const runFn = reviveRuleFn(c.runInPage);
-      if (typeof runFn !== 'function') continue; // invalid custom rule: skipped, not a crash
+      if (typeof runFn !== 'function') {
+        warnSkipped(
+          ruleId,
+          typeof c.runInPage === 'string'
+            ? 'runInPage source could not be turned back into a function'
+            : 'runInPage is not a function'
+        );
+        continue;
+      }
 
       const applicabilityFn = reviveRuleFn(c.applicability);
-      const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      let normalizedMeta;
+      try {
+        normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      } catch (e) {
+        warnSkipped(ruleId, 'invalid meta: ' + String((e && e.message) || e));
+        continue;
+      }
 
       // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
       // but a same-named custom rule is just as likely to be an accidental
