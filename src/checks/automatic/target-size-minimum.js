@@ -27,6 +27,11 @@
  *   confirm it (two inline links in one run of text, or a target inside an
  *   SVG, canvas or image map that may be essential), the result is cantTell
  *   rather than a guess.
+ *   Margin (`target-size-px`): of the targets that are at least 24 by 24,
+ *   the smallest, as the smaller of its width and height against 24;
+ *   `context.widthPx` and `context.heightPx` give both. A target under 24
+ *   that passes through the spacing exception is not a candidate.
+ *   `measuredCount` counts every target measured.
  * @reports
  *   - `metrics.widthPx`, `metrics.heightPx`: the target's size in CSS
  *     pixels, against `metrics.minSizePx` (24).
@@ -151,7 +156,8 @@ const meta = {
     facetsBySc: {
       '2.5.8': ['target-size-minimum-pointer']
     }
-  }
+  },
+  margin: { measure: 'target-size-px', unit: 'px', limit: 'min' }
 };
 
 function runInPage(ctx) {
@@ -939,7 +945,22 @@ function runInPage(ctx) {
     cantTellOccurrences,
     (rule && rule.defaultSeverity) || 'minor'
   );
-  return { ruleId: RULE_ID, ...resolved };
+  // The smallest target that is at least 24 by 24 on its own, reported as
+  // the result's margin whatever the outcome. A target under 24 that passes
+  // through the spacing exception is not a size candidate.
+  const marginCandidates = [];
+  for (const it of items) {
+    const smaller = Math.min(it.rect.width, it.rect.height);
+    if (smaller >= MIN) {
+      marginCandidates.push({
+        el: it.el,
+        value: smaller,
+        threshold: MIN,
+        context: { widthPx: round1(it.rect.width), heightPx: round1(it.rect.height) }
+      });
+    }
+  }
+  return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
 }
 
 module.exports = { id, meta, runInPage };

@@ -8605,7 +8605,11 @@ const CHECK_DEFS = [
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "target-size-px",
+      "unit": "px",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "td-has-header",
@@ -35053,7 +35057,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": {
+      "measure": "target-size-px",
+      "unit": "px",
+      "limit": "min"
+    }
   },
   {
     "ruleId": "td-has-header",
@@ -61800,7 +61808,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     cantTellOccurrences,
     (rule && rule.defaultSeverity) || 'minor'
   );
-  return { ruleId: RULE_ID, ...resolved };
+  // The smallest target that is at least 24 by 24 on its own, reported as
+  // the result's margin whatever the outcome. A target under 24 that passes
+  // through the spacing exception is not a size candidate.
+  const marginCandidates = [];
+  for (const it of items) {
+    const smaller = Math.min(it.rect.width, it.rect.height);
+    if (smaller >= MIN) {
+      marginCandidates.push({
+        el: it.el,
+        value: smaller,
+        threshold: MIN,
+        context: { widthPx: round1(it.rect.width), heightPx: round1(it.rect.height) }
+      });
+    }
+  }
+  return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;

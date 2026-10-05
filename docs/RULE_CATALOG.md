@@ -2231,7 +2231,7 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 
 **Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements with role="button"/"link" that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with a measurable box of non-zero size. Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated: it has no box of its own to measure (see the implementation notes).
 
-**Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry: spacing (a 24px-diameter circle centred on the target reaches no unrelated target), the inline exception for a link inside a run of text, or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but geometry cannot confirm it (two inline links in one run of text, or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess.
+**Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry: spacing (a 24px-diameter circle centred on the target reaches no unrelated target), the inline exception for a link inside a run of text, or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but geometry cannot confirm it (two inline links in one run of text, or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess. Margin (`target-size-px`): of the targets that are at least 24 by 24, the smallest, as the smaller of its width and height against 24; `context.widthPx` and `context.heightPx` give both. A target under 24 that passes through the spacing exception is not a candidate. `measuredCount` counts every target measured.
 
 **What a finding reports.**
 
@@ -2243,6 +2243,8 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 - `conflictHitCount`: the same count as `metrics.perimeterHits`, 0 when the distance decided.
 - `measured.width`, `measured.height`: the target's size, unrounded.
 - `viewport.width`, `viewport.height`: the viewport the page was laid out in, in CSS pixels. A responsive page can size or place a target differently at another width.
+
+**Margin.** `target-size-px`, in CSS pixels: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
 
 ### `td-has-header`
 
