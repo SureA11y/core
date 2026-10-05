@@ -131,7 +131,11 @@ function runInPage(ctx) {
     } catch {
       return true;
     }
-    return descendants.some((d) => canTakeFocus(d));
+    // A descendant the page does not show (a closed <details>,
+    // hidden="until-found") takes no focus.
+    return descendants.some(
+      (d) => !(helpers.isHiddenContent && helpers.isHiddenContent(d)) && canTakeFocus(d)
+    );
   }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');

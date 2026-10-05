@@ -20882,20 +20882,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // A closed <details> shows only its summary: its first <summary> child,
+  // which stays on the page as the toggle. Every other descendant is hidden,
+  // including another <summary> and anything in an open <details> nested in
+  // it. The walk is over the composed ancestors, so a shadow root's content
+  // inside a closed <details>, and light-DOM content slotted into one, count
+  // too. The <details> element itself is not hidden by its own state.
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const summary = node.closest && node.closest('summary');
-      if (summary && summary.contains(node)) return false;
-      // closest() matches the node itself, so a plain <details> element
-      // being asked about its own eligibility would otherwise match its
-      // own closest('details') and get judged against its own open state.
-      // A closed <details> only hides its extra content, not the <details>
-      // element (or its <summary>) that stays on the page as the toggle.
-      const details = node.closest && node.closest('details');
-      if (details && details !== node && !details.hasAttribute('open')) return true;
+      const chain = ancestorsIncludingSelf(node);
+      for (let i = 1; i < chain.length; i++) {
+        const a = chain[i];
+        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
+        if (a.hasAttribute('open')) continue;
+        const child = chain[i - 1];
+        const isToggle =
+          (child.localName || '').toLowerCase() === 'summary' &&
+          child.parentNode === a &&
+          firstSummaryChild(a) === child;
+        if (!isToggle) return true;
+      }
     } catch {}
     return false;
+  }
+
+  function firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function isPlatformFocusable(el) {
@@ -21336,43 +21352,46 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'contentVisibilityHidden'
   ]);
 
+  // Whether the default hidden-content policy leaves `el` out: the filter
+  // queryAllSmart applies to what it finds, for a rule that reaches elements
+  // another way (a container's descendants, the other side of a
+  // relationship). Always false under includeHiddenElements:true.
+  function isHiddenContent(el) {
+    if (includeHiddenElements) return false;
+    try {
+      const vis = isAccTreeEligible(el);
+      if (!vis || vis.eligible !== false) return false;
+      const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+      for (const r of reasons) {
+        if (HARD_HIDDEN_REASONS.has(r)) return true;
+      }
+
+      // `isAccTreeEligible` can short-circuit on an inert ancestor
+      // before it reaches an outer hard-hidden ancestor (e.g.
+      // display:none wrapper). In that case the node is still
+      // structurally hidden and should be excluded by the default
+      // hidden-content policy.
+      if (reasons.includes('inert')) {
+        const domVis = isDomVisibleEligible(el, null, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true,
+          ignoreOpacity: true
+        });
+        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+        for (const r of domReasons) {
+          if (HARD_HIDDEN_REASONS.has(r)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function queryAllSmart(sel) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) {
-      list = list.filter((el) => {
-        try {
-          const vis = isAccTreeEligible(el);
-          if (!vis || vis.eligible !== false) return true;
-          const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
-          for (const r of reasons) {
-            if (HARD_HIDDEN_REASONS.has(r)) return false;
-          }
-
-          // `isAccTreeEligible` can short-circuit on an inert ancestor
-          // before it reaches an outer hard-hidden ancestor (e.g.
-          // display:none wrapper). In that case the node is still
-          // structurally hidden and should be excluded by the default
-          // hidden-content policy.
-          if (reasons.includes('inert')) {
-            const domVis = isDomVisibleEligible(el, null, {
-              visibilityMode: 'styleOnly',
-              disableGeometry: true,
-              ignoreOpacity: true
-            });
-            const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
-            for (const r of domReasons) {
-              if (HARD_HIDDEN_REASONS.has(r)) return false;
-            }
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      });
-    }
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -25503,6 +25522,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    isHiddenContent,
     getDoctypeInfo,
     getOuterHtmlSnippet,
     buildShadowHostSelectors,
@@ -42525,8 +42545,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "aria-text": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Content the page does not show (a closed <details>, hidden="until-found")
+  // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
     for (const d of el.querySelectorAll('*')) {
+      if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;
@@ -51167,7 +51190,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // realm, see this rule's own header comment on why the outer
   // document's shared eligibility helpers can't be reused here).
   // Checks only genuine non-rendering (display:none,
-  // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
+  // visibility:hidden, the hidden attribute, the content of a closed
+  // <details> and of content-visibility:hidden, hidden="until-found"
+  // included) and inertness via the ancestor chain, NOT
   // aria-hidden: aria-hidden alone does not remove an element from a real
   // browser's native tab order (the same anti-pattern this engine's own
   // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
@@ -51175,16 +51200,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
+      if (el.closest && el.closest('[inert]')) return false;
+      if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ visibilityProperty: true });
+      }
       const view = doc.defaultView;
       if (!view || typeof view.getComputedStyle !== 'function') return true;
+      let child = null;
       let node = el;
       while (node && node.nodeType === 1) {
-        if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+        if (node.hasAttribute && node.hasAttribute('hidden')) {
+          // hidden="until-found" hides the element's content, not itself.
+          const v = String(node.getAttribute('hidden') || '')
+            .trim()
+            .toLowerCase();
+          if (v !== 'until-found' || child) return false;
+        }
+        // A closed <details> shows only its first <summary> child.
+        if (child && node.localName === 'details' && !node.hasAttribute('open')) {
+          let first = node.firstElementChild;
+          while (first && first.localName !== 'summary') first = first.nextElementSibling;
+          if (child !== first) return false;
+        }
         const cs = view.getComputedStyle(node);
         if (cs) {
           if (cs.display === 'none') return false;
-          if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+          if (child && cs.contentVisibility === 'hidden') return false;
+          if (!child && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) return false;
         }
+        child = node;
         node = node.parentElement;
       }
       return true;
@@ -57135,7 +57179,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       return true;
     }
-    return descendants.some((d) => canTakeFocus(d));
+    // A descendant the page does not show (a closed <details>,
+    // hidden="until-found") takes no focus.
+    return descendants.some(
+      (d) => !(helpers.isHiddenContent && helpers.isHiddenContent(d)) && canTakeFocus(d)
+    );
   }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
@@ -60088,12 +60136,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
+  // A descendant the page does not show (display:none, a closed <details>,
+  // hidden="until-found") takes no focus.
   function hasFocusableDescendant(el) {
     try {
-      return !!(el.querySelector && el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR));
-    } catch {
-      return false;
-    }
+      if (!el.querySelectorAll) return false;
+      for (const d of el.querySelectorAll(FOCUSABLE_DESCENDANT_SELECTOR)) {
+        if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
+      }
+    } catch {}
+    return false;
   }
 
   const CANDIDATE_SELECTOR =
@@ -60157,8 +60209,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
-  // yet: the focusable-descendant check counts tabindex="-1", disabled and
-  // hidden elements, and does not confirm the region really overflows.
+  // yet: the focusable-descendant check counts tabindex="-1" and disabled
+  // elements, and does not confirm the region really overflows.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
@@ -62721,22 +62773,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A closed <details> shows only its first <summary> child, which stays
+  // operable as the toggle, with whatever is inside it. Everything else in
+  // it is suppressed, an open <details> nested in it included. The walk
+  // crosses shadow boundaries and slots.
   function inClosedDetails(el) {
-    const det = closest(el, 'details');
-    if (!det) return false;
-
     try {
-      if (det.hasAttribute('open')) return false;
-
-      const tag = el && el.tagName ? String(el.tagName).toLowerCase() : '';
-      // summary remains operable even when <details> is closed
-      if (tag === 'summary') return false;
-
-      // everything else inside closed details is suppressed
-      return true;
-    } catch {
-      return false;
-    }
+      let child = el;
+      let cur = helpers.composedParent(el);
+      for (let guard = 0; cur && guard < 1000; guard++) {
+        if (
+          cur.nodeType === 1 &&
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open')
+        ) {
+          let first = cur.firstElementChild;
+          while (first && String(first.localName || '').toLowerCase() !== 'summary') {
+            first = first.nextElementSibling;
+          }
+          if (child !== first) return true;
+        }
+        child = cur;
+        cur = helpers.composedParent(cur);
+      }
+    } catch {}
+    return false;
   }
 
   function inInertSubtree(el) {
@@ -62800,6 +62861,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (hasHiddenAttr(el)) return false;
     if (inInertSubtree(el)) return false;
     if (inClosedDetails(el)) return false;
+    // Under a hidden ancestor (display:none, hidden="until-found",
+    // content-visibility:hidden): the element keeps a box in Chromium, but
+    // nothing of it is drawn for a pointer to hit.
+    try {
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false;
+    } catch {}
+    if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
 
     // Not operable => exclude
     try {
@@ -63743,6 +63811,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parent = n.parentElement;
       if (!parent || SKIP.has(String(parent.localName))) continue;
       if (isBehindModal(parent)) continue;
+      // Text the page does not render (display:none, a closed <details>,
+      // content-visibility:hidden) is never judged, so it does not take a
+      // place in the budget either.
+      try {
+        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility()) continue;
+      } catch {}
       nodes.push(n);
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
     }
@@ -75543,20 +75617,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // A closed <details> shows only its summary: its first <summary> child,
+  // which stays on the page as the toggle. Every other descendant is hidden,
+  // including another <summary> and anything in an open <details> nested in
+  // it. The walk is over the composed ancestors, so a shadow root's content
+  // inside a closed <details>, and light-DOM content slotted into one, count
+  // too. The <details> element itself is not hidden by its own state.
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const summary = node.closest && node.closest('summary');
-      if (summary && summary.contains(node)) return false;
-      // closest() matches the node itself, so a plain <details> element
-      // being asked about its own eligibility would otherwise match its
-      // own closest('details') and get judged against its own open state.
-      // A closed <details> only hides its extra content, not the <details>
-      // element (or its <summary>) that stays on the page as the toggle.
-      const details = node.closest && node.closest('details');
-      if (details && details !== node && !details.hasAttribute('open')) return true;
+      const chain = ancestorsIncludingSelf(node);
+      for (let i = 1; i < chain.length; i++) {
+        const a = chain[i];
+        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
+        if (a.hasAttribute('open')) continue;
+        const child = chain[i - 1];
+        const isToggle =
+          (child.localName || '').toLowerCase() === 'summary' &&
+          child.parentNode === a &&
+          firstSummaryChild(a) === child;
+        if (!isToggle) return true;
+      }
     } catch {}
     return false;
+  }
+
+  function firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function isPlatformFocusable(el) {
@@ -75997,43 +76087,46 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'contentVisibilityHidden'
   ]);
 
+  // Whether the default hidden-content policy leaves `el` out: the filter
+  // queryAllSmart applies to what it finds, for a rule that reaches elements
+  // another way (a container's descendants, the other side of a
+  // relationship). Always false under includeHiddenElements:true.
+  function isHiddenContent(el) {
+    if (includeHiddenElements) return false;
+    try {
+      const vis = isAccTreeEligible(el);
+      if (!vis || vis.eligible !== false) return false;
+      const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+      for (const r of reasons) {
+        if (HARD_HIDDEN_REASONS.has(r)) return true;
+      }
+
+      // `isAccTreeEligible` can short-circuit on an inert ancestor
+      // before it reaches an outer hard-hidden ancestor (e.g.
+      // display:none wrapper). In that case the node is still
+      // structurally hidden and should be excluded by the default
+      // hidden-content policy.
+      if (reasons.includes('inert')) {
+        const domVis = isDomVisibleEligible(el, null, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true,
+          ignoreOpacity: true
+        });
+        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+        for (const r of domReasons) {
+          if (HARD_HIDDEN_REASONS.has(r)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function queryAllSmart(sel) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) {
-      list = list.filter((el) => {
-        try {
-          const vis = isAccTreeEligible(el);
-          if (!vis || vis.eligible !== false) return true;
-          const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
-          for (const r of reasons) {
-            if (HARD_HIDDEN_REASONS.has(r)) return false;
-          }
-
-          // `isAccTreeEligible` can short-circuit on an inert ancestor
-          // before it reaches an outer hard-hidden ancestor (e.g.
-          // display:none wrapper). In that case the node is still
-          // structurally hidden and should be excluded by the default
-          // hidden-content policy.
-          if (reasons.includes('inert')) {
-            const domVis = isDomVisibleEligible(el, null, {
-              visibilityMode: 'styleOnly',
-              disableGeometry: true,
-              ignoreOpacity: true
-            });
-            const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
-            for (const r of domReasons) {
-              if (HARD_HIDDEN_REASONS.has(r)) return false;
-            }
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      });
-    }
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -80164,6 +80257,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    isHiddenContent,
     getDoctypeInfo,
     getOuterHtmlSnippet,
     buildShadowHostSelectors,
@@ -82530,6 +82624,15 @@ function findChildFrameElements(roots) {
   return out;
 }
 
+function isFrameShown(el) {
+  try {
+    if (typeof el.checkVisibility === 'function') {
+      return el.checkVisibility({ visibilityProperty: true });
+    }
+  } catch {}
+  return true;
+}
+
 function getFrameElementUrl(el) {
   try {
     if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
@@ -82557,7 +82660,9 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots);
+  const frameElements = findChildFrameElements(roots).filter(
+    (el) => eo.includeHiddenElements === true || isFrameShown(el)
+  );
 
   const framePromises = frameElements.map(function (el) {
     const url = getFrameElementUrl(el);

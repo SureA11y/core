@@ -353,9 +353,9 @@
       "testFile": "tests/engine-checks/manual/aria-text.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-text-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 5,
       "caseCounts": {
-        "PASS": 1,
+        "PASS": 2,
         "FAIL": 0,
         "CANTTELL": 2,
         "OTHER": 1
@@ -1718,11 +1718,11 @@
       "testFile": "tests/engine-checks/manual/mouse-only-event-handlers.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/mouse-only-event-handlers-all-scenarios.html",
-      "totalCases": 8,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
+        "CANTTELL": 4,
         "OTHER": 5
       }
     },
@@ -2034,11 +2034,11 @@
       "testFile": "tests/engine-checks/manual/scrollable-region-focusable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/scrollable-region-focusable-all-scenarios.html",
-      "totalCases": 5,
+      "totalCases": 6,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 3
       }
     },

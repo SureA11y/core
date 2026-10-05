@@ -51,6 +51,20 @@ function findChildFrameElements(roots) {
   return out;
 }
 
+// A frame the page does not show -- under display:none or the hidden
+// attribute, in a closed <details>, under content-visibility:hidden -- is
+// left out like any other hidden content, so its findings are not reported
+// as the page's. checkVisibility() answers it; a browser without it scans
+// every frame, as before.
+function isFrameShown(el) {
+  try {
+    if (typeof el.checkVisibility === 'function') {
+      return el.checkVisibility({ visibilityProperty: true });
+    }
+  } catch {}
+  return true;
+}
+
 function getFrameElementUrl(el) {
   try {
     if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
@@ -96,7 +110,9 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots);
+  const frameElements = findChildFrameElements(roots).filter(
+    (el) => eo.includeHiddenElements === true || isFrameShown(el)
+  );
 
   const framePromises = frameElements.map(function (el) {
     const url = getFrameElementUrl(el);
@@ -173,6 +189,7 @@ function a11yCoreEnableFrameResponder() {
 
 module.exports = {
   findChildFrameElements,
+  isFrameShown,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder

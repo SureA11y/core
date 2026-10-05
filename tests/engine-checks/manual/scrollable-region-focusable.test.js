@@ -61,9 +61,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/scrollable-region-focusable-a
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFlaggedIds = ['srf_case_01', 'srf_case_02'];
+  const expectedFlaggedIds = ['srf_case_01', 'srf_case_02', 'srf_case_06'];
   const expectedNoOccIds = ['srf_case_03', 'srf_case_04', 'srf_case_05'];
 
   for (const id of expectedFlaggedIds) {

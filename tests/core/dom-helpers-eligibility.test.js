@@ -99,6 +99,43 @@ test('isAccTreeEligible: content inside an OPEN <details> is eligible', () => {
   assert.equal(r.eligible, true);
 });
 
+test('isAccTreeEligible: an open <details> nested in a closed one is hidden with everything in it, its summary included', () => {
+  const { helpers, document } = helpersFor(
+    '<details><summary id="outer">Outer</summary>' +
+      '<details id="inner" open><summary id="innerSum">Inner</summary><p id="p">x</p></details>' +
+      '</details>'
+  );
+  for (const id of ['inner', 'innerSum', 'p']) {
+    assert.deepEqual(helpers.isAccTreeEligible(byId(document, id)).reasons, ['detailsClosed'], id);
+  }
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'outer')).eligible, true);
+});
+
+test('isAccTreeEligible: in a closed <details> only the first <summary> child is the toggle; content inside it stays', () => {
+  const { helpers, document } = helpersFor(
+    '<details><summary id="first"><a id="link" href="#x">Show</a></summary>' +
+      '<summary id="second">Another</summary><div><summary id="nested">Deep</summary></div></details>'
+  );
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'first')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'link')).eligible, true);
+  for (const id of ['second', 'nested']) {
+    assert.deepEqual(helpers.isAccTreeEligible(byId(document, id)).reasons, ['detailsClosed'], id);
+  }
+});
+
+test('isAccTreeEligible: a shadow root inside a closed <details>, and light content slotted into one, are hidden', () => {
+  const { helpers, document } = helpersFor(
+    '<details><summary>S</summary><div id="host"></div></details><div id="outerHost"><p id="slotted">x</p></div>'
+  );
+  const inner = document.createElement('p');
+  byId(document, 'host').attachShadow({ mode: 'open' }).appendChild(inner);
+  assert.deepEqual(helpers.isAccTreeEligible(inner).reasons, ['detailsClosed']);
+
+  byId(document, 'outerHost').attachShadow({ mode: 'open' }).innerHTML =
+    '<details><summary>S</summary><slot></slot></details>';
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'slotted')).reasons, ['detailsClosed']);
+});
+
 test('isAccTreeEligible: [inert] on an ancestor blocks descendants', () => {
   const { helpers, document } = helpersFor('<div id="wrap" inert><button id="b">x</button></div>');
   const r = helpers.isAccTreeEligible(byId(document, 'b'));
@@ -651,6 +688,19 @@ test('queryAllSmart: content inside a content-visibility:hidden ancestor is filt
   );
   const found = helpers.queryAllSmart('button').map((el) => el.id);
   assert.deepEqual(found, ['carrier']);
+});
+
+test('isHiddenContent: true for what queryAllSmart leaves out, false under includeHiddenElements', () => {
+  const html =
+    '<details><summary id="sum">S</summary><a id="in" href="#a">x</a></details>' +
+    '<div hidden="until-found"><a id="found" href="#b">y</a></div><a id="shown" href="#c">z</a>';
+  const { helpers, document } = helpersFor(html);
+  assert.deepEqual(
+    ['sum', 'in', 'found', 'shown'].map((id) => helpers.isHiddenContent(byId(document, id))),
+    [false, true, true, false]
+  );
+  const all = helpersFor(html, { includeHiddenElements: true });
+  assert.equal(all.helpers.isHiddenContent(byId(all.document, 'in')), false);
 });
 
 // ===== reportOccurrence =====

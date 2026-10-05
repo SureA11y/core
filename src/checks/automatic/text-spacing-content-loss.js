@@ -319,6 +319,12 @@ function runInPage(ctx) {
       const parent = n.parentElement;
       if (!parent || SKIP.has(String(parent.localName))) continue;
       if (isBehindModal(parent)) continue;
+      // Text the page does not render (display:none, a closed <details>,
+      // content-visibility:hidden) is never judged, so it does not take a
+      // place in the budget either.
+      try {
+        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility()) continue;
+      } catch {}
       nodes.push(n);
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
     }

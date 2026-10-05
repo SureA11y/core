@@ -76,6 +76,7 @@ const {
 } = require('../src/core/frame-messaging');
 const {
   findChildFrameElements,
+  isFrameShown,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
@@ -1833,6 +1834,8 @@ ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 
 ${findChildFrameElements.toString()}
+
+${isFrameShown.toString()}
 
 ${getFrameElementUrl.toString()}
 

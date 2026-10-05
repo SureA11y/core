@@ -388,6 +388,36 @@ test(
       await page.close();
     });
 
+    await t.test(
+      'a frame in a closed <details> is not scanned, unless includeHiddenElements asks for hidden content',
+      async () => {
+        const page = await browser.newPage();
+        await page.setContent(
+          '<!doctype html><html><body><details><summary>Map</summary>' +
+            '<iframe srcdoc="<html><body><img></body></html>"></iframe></details></body></html>'
+        );
+        await page.addScriptTag({ content: CROSS_FRAME_CHUNK });
+        const frame = page.frames()[1];
+        await frame.addScriptTag({ content: CROSS_FRAME_CHUNK });
+        await frame.evaluate(() => {
+          window.a11yCoreEnableFrameResponder();
+        });
+
+        const hidden = await page.evaluate(() =>
+          window.runa11yCoreAcrossFrames(null, null, {}, null)
+        );
+        assert.deepStrictEqual(hidden.frames, []);
+
+        const included = await page.evaluate(() =>
+          window.runa11yCoreAcrossFrames(null, null, { includeHiddenElements: true }, null)
+        );
+        assert.strictEqual(included.frames.length, 1);
+        assert.strictEqual(included.frames[0].error, undefined);
+
+        await page.close();
+      }
+    );
+
     await t.test('a caller-supplied dictionary survives the hop to a child frame', async () => {
       const result = await scanWithResponder({
         locale: 'xx',
