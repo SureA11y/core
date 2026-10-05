@@ -307,7 +307,7 @@ Section 6 leads checked against ACT de46e4:
 
 | Lead | Verdict |
 |---|---|
-| `link-name-present`, `button-name-present`: `role="none"`/`"presentation"` on a focusable link or button | **Bug, fixed in PR #80** (`70f9a51`). WAI-ARIA 1.2's conflict resolution keeps a focusable element's implicit role, so the name comes from its content. An empty one still fails. |
+| `link-name-present`, `button-name-present`: `role="none"`/`"presentation"` on a focusable link or button | **Bug, fixed in PR #79** (`9db2869`, moved there from #80 so the small fixes share one PR). WAI-ARIA 1.2's conflict resolution keeps a focusable element's implicit role, so the name comes from its content. An empty one still fails. |
 | `valid-lang`, `lang="en-"` passes | **Not a bug.** The rule judges only the primary subtag, as ACT de46e4 does: its "known primary language tag" accepts a tag that breaks RFC 5646 grammar (its example is `de-hello`). `"en-"` names English. |
 | `valid-lang`, `lang="qaa"` fails | **Kept as it is** (maintainer undecided, 2026-10-05): no change, since failing is the documented behaviour. Revisit if a user reports private-use tags being flagged. ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
 
