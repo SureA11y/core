@@ -183,6 +183,73 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  const margin = (result) => result.checksResults.find((r) => r.ruleId === RULE_ID).margin;
+
+  // The site team's case: a pass at one width and a fail at another said
+  // nothing about how close the pass was. The margin names the text that came
+  // closest to being cut off while still being kept in full.
+  await t.test('a pass names the text that came closest to being cut off', async () => {
+    const html = page(
+      '.clip{white-space:nowrap;overflow:hidden} #tight{height:26px} #roomy{height:200px}',
+      `<div class="clip" id="roomy">${TEXT}</div><div class="clip gap" id="tight">${TEXT}</div>`
+    );
+    const result = await scan(html);
+    assert.equal(outcome(result), 'pass');
+    const m = margin(result);
+    assert.equal(m.measure, 'overflow-px');
+    assert.equal(m.unit, 'px');
+    assert.equal(m.limit, 'max');
+    assert.equal(m.selector, '#tight');
+    assert.equal(m.context.axis, 'y');
+    assert.equal(m.context.text, TEXT);
+    assert.ok(m.headroom >= 0 && m.value <= m.threshold, JSON.stringify(m));
+    assert.equal(m.headroom, Math.round((m.threshold - m.value) * 10) / 10);
+    assert.ok(m.measuredCount >= 2, 'both boxes were compared');
+    for (const n of [m.value, m.threshold, m.headroom]) {
+      assert.equal(n, Math.round(n * 10) / 10, 'one decimal');
+    }
+    assert.deepEqual(margin(await scan(html)), m, 'the same page gives the same margin');
+  });
+
+  await t.test('a fail still names the closest text kept in full', async () => {
+    const html = page(
+      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
+      `<div class="fit" id="box">${TEXT}</div><div class="gap" id="roomy">${TEXT}</div>`
+    );
+    const wide = await scan(html, undefined, { viewport: { width: 1024, height: 600 } });
+    const narrow = await scan(html, undefined, { viewport: { width: 500, height: 600 } });
+    assert.equal(outcome(wide), 'pass');
+    assert.ok(margin(wide), 'the pass has a margin');
+    assert.equal(outcome(narrow), 'fail');
+    assert.deepEqual(findings(narrow), [['box', 'fail', 'TEXT_CLIPPED']]);
+    assert.equal(margin(narrow).selector, '#roomy', 'the cut-off box is a finding, not the margin');
+  });
+
+  await t.test('the margin is measured where text grows, not at its start edge', async () => {
+    // A block of auto height grows with the line height, so it can't cut the
+    // text off vertically: only its width counts.
+    const auto = margin(
+      await scan(page('#box{white-space:nowrap;overflow:hidden}', `<div id="box">${TEXT}</div>`))
+    );
+    assert.equal(auto.context.axis, 'x');
+    assert.ok(auto.value < 0, 'the room on the right, not the flush left edge');
+    // Right-to-left text grows toward the left.
+    const rtl = margin(
+      await scan(
+        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden;width:230px}</style></head><body><div id="w">ساعات العمل اليوم من التاسعة</div></body></html>`
+      )
+    );
+    assert.equal(rtl.selector, '#w');
+    assert.equal(rtl.context.axis, 'x');
+    assert.ok(rtl.value < 0 && rtl.headroom > rtl.threshold, JSON.stringify(rtl));
+  });
+
+  await t.test('text that no box clips gives no margin', async () => {
+    const result = await scan(page('', `<p>${TEXT}</p>`));
+    assert.equal(outcome(result), 'pass');
+    assert.equal(margin(result), undefined);
+  });
+
   // Both seen on a news site's home page, where they were reported as cut off.
   await t.test('text hidden before, or reachable by scrolling, is not cut off', async () => {
     for (const [css, body] of [

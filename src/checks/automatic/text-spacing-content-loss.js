@@ -33,6 +33,17 @@
  *     sheet to the page cannot override it, though a user style sheet can.
  *   Without a layout and with no such rule, the rule is notApplicable, with
  *   `data.reason: 'noLayout'`.
+ *   - Margin (`overflow-px`): of the text a clipping box keeps in full, the
+ *     line that came closest to being cut off. `value` is how far it reaches
+ *     past the box's edge, negative while it is still inside, against the
+ *     same threshold as a finding; `context.axis` and `context.text` say
+ *     which edge and which text. It is measured where text grows with more
+ *     spacing, the inline end (the right, or the left in right-to-left
+ *     text) and the bottom; a start edge counts only once a line is past it.
+ *     An axis on which the box grew with the spacing (a block of auto
+ *     height) follows its content and is left out, and vertical text gets
+ *     no margin. `measuredCount` counts the pairs of text and clipping box
+ *     compared.
  * @reports
  *   - `text`: the start of the text, up to 60 characters. Not on a style
  *     sheet rule's finding.
@@ -94,7 +105,8 @@ const meta = {
   coverage: { facetsBySc: { '1.4.12': ['text-spacing-content-loss'] } },
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
   // can't read from the source.
-  reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS']
+  reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS'],
+  margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
 };
 
 function runInPage(ctx) {
@@ -234,6 +246,10 @@ function runInPage(ctx) {
   const moving = [];
   const overlaps = [];
   let textCount = 0;
+  // Every text line and clipping box compared, and those whose text stayed in
+  // full: the margin's measuredCount and candidates (src/core/margin.js).
+  let measuredPairs = 0;
+  const marginCandidates = [];
 
   if (hasLayout() && document.body) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
@@ -423,6 +439,58 @@ function runInPage(ctx) {
       return { dx, dy };
     }
 
+    // The same distance, signed: negative while the line is inside the box,
+    // by how much. It is measured on the side text grows toward with more
+    // spacing, the inline end (the right, or the left in right-to-left text)
+    // and the bottom: text set flush against its start edge is not close to
+    // being cut off there. The start side counts only once a line is past it.
+    // Its closest approach to the threshold is the margin.
+    const growthOf = new Map();
+    function growth(el) {
+      if (!growthOf.has(el)) {
+        const st = styleOf(el);
+        const horizontal = !st || !/^vertical|^sideways/.test(st.writingMode || '');
+        growthOf.set(el, { horizontal, rtl: !!st && st.direction === 'rtl' });
+      }
+      return growthOf.get(el);
+    }
+    // A box that grew with the spacing on an axis follows its content there
+    // (a height: auto block), so it can't cut text off on that axis.
+    function closestApproach(lines, box, c, fontSize, textEl, boxBefore) {
+      const g = growth(textEl);
+      // Vertical text grows along the other axes; it gets no margin.
+      if (!g.horizontal) return null;
+      const grew = (sizeBefore, sizeAfter) => sizeAfter - sizeBefore > 0.5;
+      const fixedX = !boxBefore || !grew(boxBefore.right - boxBefore.left, box.right - box.left);
+      const fixedY = !boxBefore || !grew(boxBefore.bottom - boxBefore.top, box.bottom - box.top);
+      const towards = (end, start) => (start > 0 ? Math.max(end, start) : end);
+      let best = null;
+      for (const l of lines) {
+        const axes = [];
+        if (c.x && fixedX) {
+          const right = l.right - box.right;
+          const left = box.left - l.left;
+          axes.push({
+            axis: 'x',
+            value: g.rtl ? towards(left, right) : towards(right, left),
+            threshold: fontSize / 2
+          });
+        }
+        if (c.y && fixedY) {
+          axes.push({
+            axis: 'y',
+            value: towards(l.bottom - box.bottom, box.top - l.top),
+            threshold: (l.bottom - l.top) / 2
+          });
+        }
+        for (const a of axes) {
+          if (!(a.value <= a.threshold)) continue;
+          if (!best || a.threshold - a.value < best.threshold - best.value) best = a;
+        }
+      }
+      return best;
+    }
+
     const reportedClip = new Set();
     for (const n of nodes) {
       const linesAfter = (after && after.lines.get(n)) || [];
@@ -433,6 +501,7 @@ function runInPage(ctx) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(c.el);
         if (!b1) continue;
+        measuredPairs += 1;
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
         let worst = null;
@@ -473,6 +542,23 @@ function runInPage(ctx) {
             }
           });
           break;
+        }
+        // Text this box keeps in full: how close it came to being cut off.
+        const approach = closestApproach(
+          linesAfter,
+          b1,
+          c,
+          fontSize,
+          n.parentElement,
+          before.boxes.get(c.el)
+        );
+        if (approach) {
+          marginCandidates.push({
+            el: c.el,
+            value: approach.value,
+            threshold: approach.threshold,
+            context: { axis: approach.axis, text: textOf(n.parentElement) }
+          });
         }
       }
     }
@@ -634,14 +720,18 @@ function runInPage(ctx) {
     report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent');
   }
 
+  // The text that came closest to being cut off while staying readable,
+  // reported as the result's margin whatever the outcome.
+  const margin = { marginCandidates, measuredCount: measuredPairs };
   if (fails.length || questions.length) {
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+      ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious'),
+      ...margin
     };
   }
   if (textCount)
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...margin };
   return {
     ruleId: rule.ruleId,
     outcome: 'notApplicable',
