@@ -677,3 +677,45 @@ test('renderHtmlReport: cards cap a long selector and summary, the table keeps t
   assert.equal(data[0].selector, selector);
   assert.equal(data[0].summary, summary);
 });
+
+// "Closest to the limit": each measuring rule's margin, in whole pixels and
+// two-decimal ratios, with "less than" when there is under one unit of room.
+test('report: a margins table shows how close each measuring rule came', () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head>
+     <body style="background:#fff;color:#000"><p id="grey" style="color:#767676">Grey text</p></body></html>`
+  );
+  const contrast = result.checksResults.find((r) => r.ruleId === 'contrast-minimum');
+  assert.ok(contrast.margin, 'the scan has a contrast margin');
+  // A pixel margin added by hand: jsdom has no layout to measure one.
+  result.checksResults.push({
+    ...contrast,
+    ruleId: 'target-size-minimum',
+    margin: {
+      measure: 'target-size-px',
+      unit: 'px',
+      limit: 'min',
+      threshold: 24,
+      value: 24.4,
+      headroom: 0.4,
+      measuredCount: 3,
+      selector: '#snug'
+    }
+  });
+
+  const report = renderHtmlReport(result);
+  assert.match(report, /<h2>Closest to the limit<\/h2>/);
+  assert.match(report, /4\.54:1<\/td>\s*<td>at least 4\.5:1<\/td>\s*<td>0\.04<\/td>/);
+  assert.match(report, /24 px<\/td>\s*<td>at least 24 px<\/td>\s*<td>less than 1 px<\/td>/);
+  assert.match(report, /<code>#snug<\/code>/);
+  assert.ok(
+    report.indexOf('Closest to the limit') > report.indexOf('Worth reviewing') &&
+      report.indexOf('Closest to the limit') < report.indexOf('WCAG rollup'),
+    'after the cards, before the rollup'
+  );
+});
+
+test('report: no margins, no margins table', () => {
+  const report = renderHtmlReport(makeScanResult([makeCheckResult()]));
+  assert.ok(!report.includes('Closest to the limit'));
+});

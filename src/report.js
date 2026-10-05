@@ -444,6 +444,61 @@ function renderStandardRollup(standard, results, ui) {
       </table>`;
 }
 
+// How close each measuring rule's closest passing element came to its
+// threshold (the results' `margin`), for the "Closest to the limit" table.
+// The data keeps one decimal for pixels and the ratio unrounded; people get
+// whole pixels, "less than 1 px" under one, and ratios to two decimals.
+function renderMargins(result, ui) {
+  // Loaded with the translator: src/core/ is not published, core.js is.
+  const margins = require('./core.js').getMargins(result);
+  if (!margins.length) return '';
+  const fixed = (n, digits) => {
+    try {
+      return new Intl.NumberFormat(ui.uiLocale, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      }).format(n);
+    } catch {
+      return Number(n).toFixed(digits);
+    }
+  };
+  const amount = (m, n) => (m.unit === 'px' ? `${ui.num(Math.round(n))} px` : `${fixed(n, 2)}:1`);
+  const room = (m) => {
+    const smallest = m.unit === 'px' ? 1 : 0.01;
+    return m.headroom < smallest
+      ? ui.tr('report_margins_room_lessThan', {
+          amount: m.unit === 'px' ? `${ui.num(1)} px` : fixed(0.01, 2)
+        })
+      : m.unit === 'px'
+        ? amount(m, m.headroom)
+        : fixed(Math.floor(m.headroom * 100) / 100, 2);
+  };
+  const rows = margins
+    .map((m) => {
+      const threshold = m.unit === 'px' ? `${ui.num(m.threshold)} px` : `${ui.num(m.threshold)}:1`;
+      const limit = ui.tr(
+        m.limit === 'max' ? 'report_margins_limit_max' : 'report_margins_limit_min',
+        {
+          threshold
+        }
+      );
+      return `<tr>
+            <td><strong>${esc(m.ruleId)}</strong></td>
+            <td>${esc(amount(m, m.value))}</td>
+            <td>${esc(limit)}</td>
+            <td>${esc(room(m))}</td>
+            <td>${m.selector ? `<code>${esc(truncateForCard(m.selector))}</code>` : ''}</td>
+          </tr>`;
+    })
+    .join('\n');
+  return `<h2>${esc(ui.tr('report_heading_margins'))}</h2>
+  <p class="note">${esc(ui.tr('report_margins_intro'))}</p>
+  <table class="wcag-table">
+        <thead><tr><th>${esc(ui.tr('report_col_rule'))}</th><th>${esc(ui.tr('report_margins_col_closest'))}</th><th>${esc(ui.tr('report_margins_col_limit'))}</th><th>${esc(ui.tr('report_margins_col_room'))}</th><th>${esc(ui.tr('report_margins_col_element'))}</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+}
+
 // Collapse internal whitespace/newlines and cap length for card display --
 // the findings table below shows the untruncated selector and summary. The
 // hint is left whole: it is the fix advice, and the table does not repeat it.
@@ -710,6 +765,7 @@ function renderHtmlReport(result, options = {}) {
 
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>
   ${renderCards(checksResults, ui)}
+  ${renderMargins(result, ui)}
 
   <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
   ${renderWcagRollup(rulesResults, ui)}
