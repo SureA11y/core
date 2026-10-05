@@ -27,8 +27,77 @@ function getReasonCode(occurrence) {
   );
 }
 
+// The markup in a finding's identity, with each start tag's attributes in
+// name order and its class names sorted: frameworks reorder both freely, and
+// <img class="a b" src="x"> is the same element as <img src="x" class="b a">.
+// The snippet is serialized HTML (outerHTML), so every attribute reads
+// name="value" with any quote in the value escaped. A tag cut off by the
+// snippet's length limit is left as it is. A single forward scan, not a
+// regular expression: the snippet is page content, and a backtracking
+// pattern could be made to take polynomial time.
+const isSpace = (ch) => ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\f';
+const isNameEnd = (ch) => isSpace(ch) || ch === '=' || ch === '/' || ch === '>' || ch === '<';
+
+// Reads the start tag at html[start] (a '<'): { end, text } when there is
+// one, or { end } where reading stopped when there is none (the caller goes
+// on from there, so no character is read twice).
+function readStartTag(html, start) {
+  let i = start + 1;
+  if (!/[a-zA-Z]/.test(html[i] || '')) return { end: i };
+  while (i < html.length && !isNameEnd(html[i])) i++;
+  const tag = html.slice(start + 1, i);
+  const attrs = [];
+  for (;;) {
+    while (i < html.length && isSpace(html[i])) i++;
+    if (i >= html.length) return { end: i };
+    if (html[i] === '>') {
+      i += 1;
+      break;
+    }
+    if (html[i] === '/') {
+      if (html[i + 1] !== '>') return { end: i };
+      i += 2;
+      break;
+    }
+    const nameStart = i;
+    while (i < html.length && !isNameEnd(html[i])) i++;
+    if (i === nameStart) return { end: i };
+    const name = html.slice(nameStart, i);
+    let value;
+    if (html[i] === '=') {
+      if (html[i + 1] !== '"') return { end: i };
+      const close = html.indexOf('"', i + 2);
+      if (close === -1) return { end: html.length };
+      value = html.slice(i + 2, close);
+      i = close + 1;
+    }
+    if (name.toLowerCase() === 'class' && value !== undefined) {
+      value = value.split(/\s+/).filter(Boolean).sort().join(' ');
+    }
+    attrs.push({ name, text: value === undefined ? name : `${name}="${value}"` });
+  }
+  if (!attrs.length) return { end: i, text: html.slice(start, i) };
+  attrs.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return { end: i, text: `<${tag} ${attrs.map((a) => a.text).join(' ')}>` };
+}
+
+function normalizeIdentityHtml(html) {
+  const s = String(html);
+  let out = '';
+  let from = 0;
+  for (let i = s.indexOf('<'); i !== -1;) {
+    const tag = readStartTag(s, i);
+    if (tag.text !== undefined) {
+      out += s.slice(from, i) + tag.text;
+      from = tag.end;
+    }
+    i = s.indexOf('<', Math.max(tag.end, i + 1));
+  }
+  return out + s.slice(from);
+}
+
 function computeBaselineKey(ruleId, reasonCode, html) {
-  return `${ruleId}\u0000${reasonCode}\u0000${html}`;
+  return `${ruleId}\u0000${reasonCode}\u0000${normalizeIdentityHtml(html == null ? '' : html)}`;
 }
 
 function getOccurrenceOutcome(check, occurrence) {

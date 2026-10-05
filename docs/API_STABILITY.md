@@ -81,7 +81,7 @@ A consumer needs to know whether a finding it is looking at is the same one it s
 - **Baselines.** `--write-baseline`/`--baseline` suppress known findings so a build only breaks on new ones.
 - **SARIF.** `partialFingerprints['surea11y/violation/v1']`, the key itself, for SARIF consumers that read it, and `partialFingerprints.primaryLocationLineHash`, a hash of it, which is what GitHub Code Scanning matches alerts on.
 
-So the identity is `ruleId` + `reasonCode` + the occurrence `html`, and two of those three are promises:
+So the identity is `ruleId` + `reasonCode` + the occurrence `html`, the last with each tag's attributes put in name order and its class names sorted (frameworks reorder both), and two of those three are promises:
 
 - **A rule id, once published, does not change.** Renaming or removing one is a major change. The supported path is to keep the id, mark it `deprecated` with `deprecation.replacedBy` naming the successor, and remove it only after the notice period.
 - **A reason code, once a rule has shipped it, does not change.** This is a deliberate exception to the surrounding "`data.details` is unstable" rule: everything else under `data.details` is free-form, but `reasonCode` is load-bearing for identity, so it is pinned. Adding a new code to a rule is a minor change; changing or dropping an existing one is not, because every stored baseline entry and every open Code Scanning alert keyed on it stops matching.
