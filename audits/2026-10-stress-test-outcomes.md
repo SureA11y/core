@@ -2,7 +2,7 @@
 
 What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-stress-test.md#1-priorities). That document is left as it was written; this one records, for each priority, whether it reproduced, whether it is a bug, what changed and what is left.
 
-**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*, plus three commits from the margin performance review in §5. Merged into `main` through PR #77 on 2026-10-05.
+**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*, plus three commits from the margin performance review in §4. Merged into `main` through PR #77 on 2026-10-05.
 
 **How each item was judged.** Every item was reproduced on `main` before any change: the **[V]** items with the audit's own `verify*.js` probes, adjusted to local paths, and the others with a minimal repro. An item counts as a bug when the engine does something its docs or its own contract say it doesn't, or gives a wrong result. A missing capability nobody promised counts as a feature. The full suite (`node scripts/run-tests.js`), `lint`, `format:check` and `validate:rules` pass at the branch head.
 
@@ -200,6 +200,10 @@ Taken on 2026-10-05, after an explanation of each with examples, pros and cons.
 | P12 | Throw on an object-form `runOnly` list that names nothing, or only warn? | Throw | As implemented in `5c1f8de` |
 | P14 | Which part of version and help links? | `engine.version` only (in results, as the SARIF `driver.version` default and as the EARL assertor release) | Done on `feat/engine-version` (`11eebd4`), after #77 merged |
 | P1 | Keep `BACKGROUND_OVERLAP` as is, narrow it to images and solid colors, or leave it out of the PR? | Keep as is, after the performance figures below | As implemented in `6213f38` |
+| O-2 | Make finding identity ignore attribute and class order in 1.10.0? | Yes, in 1.10.0, beside P3's identity change | Done in #82 |
+| D | A plain-language question for every cantTell (engine improvement D) in 1.10.0? | No: 1.11.0 | Planned in 5.4 |
+| §6 | Include the audit's ARIA, names and forms leads in 1.10.0? | Yes, the clear and contained ones, after verifying all of them; anything needing a design decision or broad shadow-DOM rework moves to 1.11.0 | Planned in 5.4 |
+| `qaa` | Should `valid-lang` pass private-use language subtags? | Undecided: kept failing, as documented | Revisit if users report it |
 
 **P1 performance, the figures the decision was taken on.** Full-scan time in Chromium, before and after the P1 commit:
 
@@ -216,7 +220,7 @@ On the twelve real sites the difference was within run-to-run noise. Over 20,000
 
 ---
 
-## 5. Margin performance review
+## 4. Margin performance review
 
 Asked after the priorities: did the margin feature (`6fc8d33` and the five rules that report one, `8cac290`–`428941b`) slow any rule down, and what about the timing lead in §6 and R-5?
 
@@ -246,51 +250,11 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 ---
 
-## 5. Margin performance review
+## 5. What remains
 
-Asked after the priorities: did the margin feature (`6fc8d33` and the five rules that report one, `8cac290`–`428941b`) slow any rule down, and what about the timing lead in §6 and R-5?
+Everything in the audit not yet fixed, after #77–#79 and #81–#83 (all merged), grouped by how sure it is; 5.4 says when each is planned. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed since the audit.
 
-**Method.** Each margin rule was timed alone (`perfStats.ruleTimings`) at three points: before margins (`2750774`), `main` (`63af298`) and the branch. Each was run under jsdom and in Chromium, on pages built so that thousands of elements tie for the margin, the case that hurt R-4.
-
-**What margins cost, after the branch's fixes.** Chromium, 10,000 elements:
-
-| Rule | Before margins | `main` | Branch | Cause on `main` |
-|---|---|---|---|---|
-| `contrast-minimum` / `-enhanced` | 0.30 s | 0.64 s | 0.37 s | Tie-break, R-4 (fixed by P9); the rest is P1's overlap check and collecting candidates |
-| `target-size-minimum` | 65 ms | 430 ms | 70 ms | Tie-break, R-4 (fixed by P9) |
-| `text-spacing-content-loss` | 81 ms | 124 ms | 100 ms | Measuring each box's margin; linear |
-| `link-in-text-block` | 2.4 s | 2.4 s | 0.7 s | None: the same as before margins. See below |
-
-Under jsdom the five rules time the same at all three points. Every rule's remaining margin overhead grows linearly with the page.
-
-**The §6 lead, `link-in-text-block` 11.8 s under jsdom.** Real, but older than margins (identical at `2750774`), and in two parts:
-
-1. **`a62c81f`.** For each link the rule scanned every child of its parent for text beside it. With thousands of sibling links that is quadratic: 8,000 links took 34 s under jsdom, all to conclude the rule did not apply. The answer belongs to the parent and is now read once per parent: 8,000 links in 0.87 s. A test counts the rule's own reads of the siblings.
-2. **`632ead4`.** In Chromium, a rule reporting thousands of siblings paid for `buildSelector`'s `:nth-of-type` and for `structuralPath`, which both counted an element's earlier siblings per occurrence. A parent's children are now indexed once per run, and indexed again if the engine inserts an element first or last in it (`text-spacing-content-loss`'s style sheet in `<head>`, the color probe at the end of `<body>`). 10,000 color-only links: 2.4 s → 0.7 s. On six public sites every occurrence's selector and path is identical before and after, and each full scan is 7–15% faster. This affects every rule, not only margin ones.
-
-What is left is the native `el.matches(selector)` check of each selector, about 0.4 s of those 0.7 s. It stays O(siblings) per call in Blink, but it is the safety net against selector engines that count differently, so it was kept.
-
-**R-5, `97dc7ea`.** The contrast rules stopped walking the page at their 50th failure, so later text never became a margin candidate, and the margin and `measuredCount` depended on where the 50th failure fell. A failure past the cap is now only counted and the walk goes on; occurrences stay capped at 50. On a page where every paragraph fails, the three contrast rules take 3–5% longer, since `contrast-computable` already analyses every element. Margins are unreleased, so this has no changelog entry.
-
-**Not looked at.** `aria-valid-attr`'s 2.2 s in the same §6 probe. It has nothing to do with margins and is still an unverified lead.
-
----
-
-## 4. Not covered here
-
-- Section 6 of the audit (ARIA, names, forms and structure leads) is still unverified.
-- Items outside the priorities table are unchanged, except where a fix touched them:
-  - C-3 and O-7 partly, through the custom-rule warnings and the CSP note;
-  - S-4 partly, through the error code.
-- The probes under `2026-10-probes/` were used as they are, with local paths. They were not edited on this branch.
-
----
-
-## 6. What remains
-
-Everything in the audit not fixed by #77 or `feat/engine-version`, grouped by how sure it is. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed in #77.
-
-### 6.0 Progress since this list was written
+### 5.0 Progress since this list was written
 
 PR #79 (branch `fix/small-output-and-doc-fixes`), merged 2026-10-05:
 
@@ -320,7 +284,7 @@ PR #82 (branch `fix/link-cue-and-svg-fill`), merged 2026-10-05:
 | O-2 | Bug | Fixed (`96bfabe`), decided with the maintainer for 1.10.0: identity sorts attributes and class names, with a single-pass scanner (a first regex version was flagged by CodeQL as polynomial ReDoS). Baseline files keep matching; SARIF fingerprints of elements with 2+ attributes change once. |
 | C-3, C-4, C-5, C-6, C-10, C-11 | Bugs | Fixed (`82600b6`). Unusable returns, Promises and unknown outcomes are `cantTell` with an `error`; duplicate and composite ids are skipped with a warning; new result field `skippedCustomRules`. |
 
-PR #83 (branch `fix/small-contract-and-doc-gaps`, open):
+PR #83 (branch `fix/small-contract-and-doc-gaps`), merged 2026-10-05:
 
 | Item | Verdict | Change |
 |---|---|---|
@@ -340,7 +304,7 @@ Section 6 leads checked against ACT de46e4:
 | `valid-lang`, `lang="en-"` passes | **Not a bug.** The rule judges only the primary subtag, as ACT de46e4 does: its "known primary language tag" accepts a tag that breaks RFC 5646 grammar (its example is `de-hello`). `"en-"` names English. |
 | `valid-lang`, `lang="qaa"` fails | **Kept as it is** (maintainer undecided, 2026-10-05): no change, since failing is the documented behaviour. Revisit if a user reports private-use tags being flagged. ACT accepts a primary subtag that "exists in the language subtag registry with a Type field whose field-body value is `language`". `qaa..qtz` is one registry entry with `Type: language`, `Scope: private-use`, and ACT is silent on ranges and private use. A literal reading passes it. The rule's documented reading fails it: a private-use code identifies no language assistive technology can know, like `eng` and `i-lux` in ACT's failed examples. |
 
-### 6.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
+### 5.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
 
 The audit stopped before checking these. They are leads, not findings.
 
@@ -350,24 +314,24 @@ The audit stopped before checking these. They are leads, not findings.
   | Rule | Case | Got | Likely |
   |---|---|---|---|
   | `label-in-name` | `aria-labelledby` referencing the link itself | fail | false positive |
-  | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | fixed, see 6.0 |
+  | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | fixed, see 5.0 |
   | `form-control-programmatic-label-present` | two inputs sharing an `id`, one `<label for>` | pass | false negative |
   | `aria-valid-attr-value` | `aria-hidden="TRUE"` | fail | check case-insensitivity first |
   | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | false positive |
   | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | false negative |
   | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | false negative |
-  | `valid-lang` | `lang="qaa"` (private use) | fail | kept: see 6.0 |
-  | `valid-lang` | `lang="en-"` | pass | not a bug: see 6.0 |
+  | `valid-lang` | `lang="qaa"` (private use) | fail | kept: see 5.0 |
+  | `valid-lang` | `lang="en-"` | pass | not a bug: see 5.0 |
   | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | to decide |
   | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | possible noise |
 
 - **Timing.** `aria-valid-attr` took 2.2 s on a 5,000-sibling page under jsdom. Not re-measured. (The `link-in-text-block` lead from the same probe is fixed, §5.)
 - **Not started:** the `fuzz.js` invariants (no rule `error`, outcomes in the allowed set, `fail` ⇒ occurrences, resolvable selectors, no throws on malformed DOMs), and checking manual rules for `cantTell` noise on pages with no relevant content.
 
-### 6.2 Reproduced by the audit, not fixed
+### 5.2 Reproduced by the audit, not fixed
 
 **Outputs.**
-- [O-6] Left: fingerprints carry raw separators and up to 2 KB of HTML. Empty messages and unencoded URIs are fixed (6.0).
+- [O-6] Left: fingerprints carry raw separators and up to 2 KB of HTML. Empty messages and unencoded URIs are fixed (5.0).
 - [O-7] A string custom rule is skipped under a strict CSP. Now documented and warned about (#77); no fallback.
 - [O-8] The `/browser` subpath is empty for bundlers.
 - [O-9] `./i18n/*` can't be used from Node and isn't documented.
@@ -377,7 +341,7 @@ The audit stopped before checking these. They are leads, not findings.
 - [O-14] `src/explain/` isn't shipped and is incomplete.
 
 **Contrast, layout and visual rules.**
-- [R-8] Left: unselected options of a closed select. The rest is fixed (6.0).
+- [R-8] Left: unselected options of a closed select. The rest is fixed (5.0).
 - [R-10] `text-spacing-content-loss` skips partly clipped text, and its margin is measured against half the line height while findings start at 2 px.
 - [R-11] `target-size-minimum` uses the bounding box: clipped or covered targets pass, a rotated one is measured too large, `display: contents` links are not applicable, and a rounding slip appears in the message.
 - [R-12] `contrast.mode: 'auditorAssist'` ignores `color-scheme: dark`.
@@ -394,11 +358,11 @@ The audit stopped before checking these. They are leads, not findings.
 
 **Options.**
 - [S-6] Wrong option types fall back without a warning.
-- [S-7] [V] Doc part fixed in PR #81 (6.0). Left: `deprecated-elements-not-used` and `server-side-image-map-absent` `pass` on an empty scope. Earlier analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
+- [S-7] [V] Doc part fixed in PR #81 (5.0). Left: `deprecated-elements-not-used` and `server-side-image-map-absent` `pass` on an empty scope. Earlier analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
 
 **Suspected by the audit** (in each section's "Suspected" list): invalid `applicability` strings and `uncertainty.code` values passing silently, surrogate pairs split at 2,000 characters, Windows `file:///` SARIF paths, `getChecksCatalog({ profile: 'bogus' })`, an orientation lock on a rotated icon, float digits differing between jsdom and Chromium, and text-spacing overlap growth within one band.
 
-### 6.3 Limits of what was fixed
+### 5.3 Limits of what was fixed
 
 - **P1:**
   - Paint outside the nearest opaque ancestor, fixed and sticky paint, and stacking order are not considered.
@@ -406,13 +370,68 @@ The audit stopped before checking these. They are leads, not findings.
   - A large gradient glow hides genuine fails behind it.
 - **P4:** Flattening a cross-frame result inside JUnit, SARIF and the HTML report (they throw instead).
 - **P5:** `selector` and `structuralPath` themselves are not cross-root (by design; `shadowHostSelectors` is the addition).
-- **§5:** Selector verification (`el.matches`) stays O(siblings) per occurrence in Blink: about 0.4 s for 10,000 reported siblings.
+- **§4:** Selector verification (`el.matches`) stays O(siblings) per occurrence in Blink: about 0.4 s for 10,000 reported siblings.
 - **P14:** Help and Understanding URLs.
 
-### 6.4 Suggested order
+### 5.4 Plan: 1.10.0 and after
 
-1. Section 6 leads (6.1), since nobody knows yet whether they are bugs. Start with the harness and the `role="none"` and `valid-lang` leads, which are quick to decide.
-2. The ones that break CI or dashboards: O-6 (invalid SARIF), O-2 (fingerprints changing with attribute order), S-7 (a `pass` on an empty scope).
-3. Rule false results with wide reach: R-8 (invisible text reported), R-9 (modern CSS not scanned), R-6, R-7.
-4. Integrator features as a set: C-3, C-15, C-19, C-20, O-10, O-12.
+As agreed on 2026-10-05. Everything merged so far ships in 1.10.0: #77–#79 and #81–#83, on top of the margins and engine improvements A–C already on `main`.
 
+**Before releasing 1.10.0**
+
+1. **Performance check.** Run the new `SureA11y/core-perf` benchmark (private; see below) on 1.8.0, 1.9.0 and `main`, and read its report for regressions, superlinear growth and leaks before releasing. A real regression gets fixed before the release.
+2. **Section 6 leads (5.1), time-boxed.** Fix the audit's harness, then verify every remaining lead in jsdom and Chromium against the specs. Fix the clear, contained bugs in one PR. Move anything that needs a design decision, or broad changes to shadow-DOM name computation, to 1.11.0 below.
+3. **Release 1.10.0.** Diff `v1.9.0` against `main` first. Bump the version and run `npm run build`: `tests/engine-version.test.js` fails while the built engine still carries the old version. Then `npm run finding-ids:release -- 1.10.0`, the CHANGELOG release heading, the npm publish and the GitHub release. Then add a core-perf run for 1.10.0 to its history.
+
+**1.11.0 (core)**
+
+- **Engine improvement D:** a stable code and a plain-language question for every cantTell, in five languages. Decide first whether it extends `uncertainty` or is a new field, and draft the 52 manual rules' questions.
+- Section 6 leads deferred from 1.10.0, and the `aria-valid-attr` timing lead.
+- Rule edge cases:
+  - R-10: text-spacing on partly clipped text, and its margin threshold.
+  - R-11: target size from the bounding box, `display: contents`, rounding.
+  - R-12: `auditorAssist` and `color-scheme: dark`.
+  - R-13: the two viewport rules disagreeing; needs a check of what browsers do first.
+  - R-14: input values and placeholders not contrast-checked, `zoom`, alt-quality wording, the two uncapped alt rules.
+  - The rest of R-8: unselected options of a closed `<select>`.
+- Contracts:
+  - C-8 and C-9: a rule returning engine-owned fields; the result shape not enforced for custom rules.
+  - S-6: wrong option types falling back silently.
+  - Case-insensitive `runOnly` ids.
+- Integration features:
+  - C-15: catalog APIs that see custom rules.
+  - C-16 and C-17: a custom rule's `helpUrl` and tags in the outputs, and EARL's `isPartOf`.
+  - C-19: `RuleContext`/`RuleHelpers` types.
+  - O-13: cross-frame entries naming their iframe.
+  - O-6: hashed SARIF fingerprints, an identity change to batch with any other.
+  - O-8: the `/browser` subpath for bundlers.
+  - O-9: `i18n/*` from Node.
+  - O-10: types for the subpaths.
+  - O-12: a compact output mode.
+  - O-14: ship or drop `src/explain/`.
+  - C-20: profiles without forking core.
+  - P14's help and Understanding URLs.
+- Limits of what was fixed (5.3), if users meet them:
+  - P1's ignored paint;
+  - cross-frame flattening in the reporters;
+  - the cost of `el.matches`.
+
+**After 1.10.0 is on npm, outside core**
+
+- **Bindings:** shared types in `binding-base`, plus adopting the 1.10.0 changes:
+  - `waitForPageReady`;
+  - bare-array and axe-style `runOnly`;
+  - `engine.version`, `engine.environment` and `skippedCustomRules`;
+  - `shadowHostSelectors`;
+  - reporters that throw on anything but one scan result;
+  - `INVALID_RUN_ONLY`.
+- **CLI:** `--junit`.
+- **surea11y.dev:**
+  - pin core;
+  - point the rule and locale generators at the package;
+  - the EN 301 549, profiles and JUnit pages;
+  - the 1.10.0 outcome changes in its examples.
+- **Housekeeping:** delete `TEMP-near-miss-brief.md` and `TEMP-site-followups-brief.md`.
+- **Waiting on others:** the CVE for GHSA-ph4m-g9wf-96h6.
+
+**Performance tracking.** `SureA11y/core-perf` (private, created 2026-10-05) benchmarks core outside this repository. It runs released versions from npm, a packed `main` and axe-core 4.14.0, in three scenarios: jsdom on static HTML, the bundle in Chromium, and the Playwright bindings. It uses large pages: every core fixture combined ×1 and ×5, the 13 largest real-world pages frozen offline, and six hot paths at N and 4N. Its report flags slowdowns beyond noise, superlinear growth and heap growth per scan. A run is added at each release; Alfa and IBM Equal Access adapters can follow.
