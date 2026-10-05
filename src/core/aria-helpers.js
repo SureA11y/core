@@ -1025,17 +1025,22 @@ function createAriaHelpers(opts, shared) {
     // `aria-describedby={hasError ? errorId : ''}`).
     if (v.length === 0) return { valid: true, reason: '' };
 
+    // true, false, undefined and mixed are read in any case, like the token
+    // values below: Chromium exposes aria-checked="TRUE" as checked and
+    // hides an aria-hidden="True" subtree, and the engine's own readers of
+    // these states lowercase them too.
+    const lv = lower(v);
     switch (type) {
       case 'boolean': {
-        const ok = v === 'true' || v === 'false';
+        const ok = lv === 'true' || lv === 'false';
         return { valid: ok, reason: ok ? '' : 'expected-true-false' };
       }
       case 'boolean-undefined': {
-        const ok = v === 'true' || v === 'false' || v === 'undefined';
+        const ok = lv === 'true' || lv === 'false' || lv === 'undefined';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-undefined' };
       }
       case 'tristate': {
-        const ok = v === 'true' || v === 'false' || v === 'mixed';
+        const ok = lv === 'true' || lv === 'false' || lv === 'mixed';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-mixed' };
       }
       case 'integer': {
