@@ -33,6 +33,11 @@
  *   - `limit`: the length above which alt counts as too long (150), on
  *     `too-long` only.
  * @implementation-notes
+ * - A page reports at most 50 images with ordinary alt text and, on top,
+ *   at most 50 whose alt has a signal, each in document order, so ordinary
+ *   images early on a page can't hide a suspicious one later. The rule's
+ *   own `data.details` counts both (`applicableCount`, `suspiciousCount`)
+ *   and says whether any were left out (`truncated`).
  * - The signals are not reason codes. Before them, every finding of this
  *   rule had the same identity (`ruleId + reasonCode + html`) with no
  *   reason code; giving the suspicious ones a code would have changed the
@@ -93,8 +98,12 @@ function runInPage(ctx) {
   const safeRoot = root || document;
 
   // Cap occurrences to keep manual “quality” checks fast on large pages.
-  // Deterministic: we keep DOM order, just stop collecting after N.
+  // Deterministic: we keep DOM order, just stop collecting after N. Alt text
+  // that looks like something other than a description has an allowance of
+  // its own, so a page's first 50 ordinary images can't hide an IMG_1234.jpg
+  // further down.
   const MAX_OCCURRENCES = 50;
+  const MAX_SUSPICIOUS = 50;
 
   const queryAllSmart =
     helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
@@ -184,6 +193,8 @@ function runInPage(ctx) {
           applicableCount: 0,
           reportedCount: 0,
           maxOccurrences: MAX_OCCURRENCES,
+          suspiciousCount: 0,
+          maxSuspicious: MAX_SUSPICIOUS,
           truncated: false
         }
       }
@@ -193,6 +204,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0; // total applicable elements
   let collectedCount = 0; // how many occurrences we actually reported
+  let suspiciousCount = 0; // applicable elements whose alt has a signal
+  let ordinaryReported = 0;
+  let suspiciousReported = 0;
 
   for (const el of els) {
     if (!el || !el.getAttribute) continue;
@@ -222,10 +236,8 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    // IMPORTANT: stop doing expensive occurrence building after we hit the cap
-    if (collectedCount >= MAX_OCCURRENCES) continue;
-
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    // Reading the alt is cheap; it decides which allowance the image counts
+    // against before any expensive occurrence building.
     const signal = (() => {
       try {
         return getTextAlternativeSignal(el, el.getAttribute('alt'));
@@ -233,6 +245,12 @@ function runInPage(ctx) {
         return null;
       }
     })();
+    if (signal) suspiciousCount += 1;
+    if (signal ? suspiciousReported >= MAX_SUSPICIOUS : ordinaryReported >= MAX_OCCURRENCES) {
+      continue;
+    }
+
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
     const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
@@ -263,6 +281,8 @@ function runInPage(ctx) {
     }
 
     collectedCount += 1;
+    if (signal) suspiciousReported += 1;
+    else ordinaryReported += 1;
   }
 
   if (applicableCount === 0) {
@@ -276,6 +296,8 @@ function runInPage(ctx) {
           applicableCount: 0,
           reportedCount: 0,
           maxOccurrences: MAX_OCCURRENCES,
+          suspiciousCount: 0,
+          maxSuspicious: MAX_SUSPICIOUS,
           truncated: false
         }
       }
@@ -294,6 +316,8 @@ function runInPage(ctx) {
         applicableCount,
         reportedCount: collectedCount,
         maxOccurrences: MAX_OCCURRENCES,
+        suspiciousCount,
+        maxSuspicious: MAX_SUSPICIOUS,
         truncated
       }
     }

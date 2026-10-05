@@ -252,3 +252,27 @@ test(`${RULE_ID}: signal messages are translated in every shipped locale`, () =>
     }
   }
 });
+
+test(`${RULE_ID}: suspicious alt has its own allowance, so 50 ordinary images can't hide it`, () => {
+  const ordinary = Array.from(
+    { length: 60 },
+    (_, i) => `<img src="p${i}.png" alt="A photo caption number ${i}">`
+  ).join('');
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><body>${ordinary}<img id="late" src="x.png" alt="IMG_1234.jpg"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 51, maxOccurrences: 51 });
+  const late = rule.occurrences.find((o) => o.html.includes('id="late"'));
+  assert.ok(late, 'the file-name alt after 60 ordinary images is still reported');
+  assert.equal(late.data.details.altSignal, 'file-name');
+  assert.deepEqual(
+    {
+      applicableCount: rule.data.details.applicableCount,
+      reportedCount: rule.data.details.reportedCount,
+      suspiciousCount: rule.data.details.suspiciousCount,
+      truncated: rule.data.details.truncated
+    },
+    { applicableCount: 61, reportedCount: 51, suspiciousCount: 1, truncated: true }
+  );
+});
