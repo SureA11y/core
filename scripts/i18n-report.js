@@ -13,7 +13,7 @@ function listLocaleNames(i18nDir) {
 
 // How translated keys are counted: see src/i18n-coverage.js, which the
 // engine's getLocaleCoverage() shares.
-const { computeLocaleReport } = require('../src/i18n-coverage');
+const { computeLocaleReport, sameAsEnglishFor } = require('../src/i18n-coverage');
 
 // One row per locale a dictionary folder has, against that folder's en.json.
 function reportFor(i18nDir) {
@@ -22,7 +22,7 @@ function reportFor(i18nDir) {
 
   return locales.map((locale) => ({
     locale,
-    ...computeLocaleReport(dicts.en, dicts[locale] || {})
+    ...computeLocaleReport(dicts.en, dicts[locale] || {}, null, sameAsEnglishFor(locale))
   }));
 }
 

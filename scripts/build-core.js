@@ -1889,14 +1889,19 @@ ${crossFrameRunnerSource}
 // package ships. Keys a profile leaves out of a locale on purpose (shown in
 // English by choice) are not counted. See docs/I18N.md.
 function getLocaleCoverage() {
-  const { computeLocaleReport } = require('./i18n-coverage.js');
+  const { computeLocaleReport, sameAsEnglishFor } = require('./i18n-coverage.js');
   const source = I18N.en || {};
   const locales = Object.keys(I18N)
     .filter((locale) => locale !== 'en')
     .sort()
     .map((locale) => ({
       locale,
-      ...computeLocaleReport(source, I18N[locale] || {}, I18N_LEFT_OUT[locale])
+      ...computeLocaleReport(
+        source,
+        I18N[locale] || {},
+        I18N_LEFT_OUT[locale],
+        sameAsEnglishFor(locale)
+      )
     }));
   return { sourceLocale: 'en', totalKeys: Object.keys(source).length, locales };
 }

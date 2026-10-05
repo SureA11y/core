@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { i18nDirs } = require('./lib/dictionaries');
+const { sameAsEnglishFor } = require('../src/i18n-coverage');
 const {
   I18N_DIR,
   localePath,
@@ -15,7 +16,10 @@ const {
 
 // Existing values are carried over untouched; a key new to English is seeded
 // with the English text, which is what i18n-report counts as untranslated.
-function syncDict(enDict, localeDict) {
+// A value left as in English on purpose (src/i18n-same-as-english.json, with
+// the English it was checked against) is not untranslated.
+function syncDict(enDict, localeDict, sameAsEnglish) {
+  const same = sameAsEnglish || {};
   const dict = {};
   const added = [];
 
@@ -29,7 +33,9 @@ function syncDict(enDict, localeDict) {
   }
 
   const removed = Object.keys(localeDict).filter((key) => !(key in enDict));
-  const untranslated = Object.keys(dict).filter((key) => dict[key] === enDict[key]);
+  const untranslated = Object.keys(dict).filter(
+    (key) => dict[key] === enDict[key] && same[key] !== enDict[key]
+  );
 
   return { dict, added, removed, untranslated };
 }
@@ -44,7 +50,11 @@ function syncLocale(locale, { i18nDir = I18N_DIR, check = false } = {}) {
     );
   }
 
-  const result = syncDict(loadDict(localePath('en', i18nDir)), loadDict(filePath));
+  const result = syncDict(
+    loadDict(localePath('en', i18nDir)),
+    loadDict(filePath),
+    sameAsEnglishFor(locale)
+  );
   const source = serializeLocale(result.dict);
   const changed = source !== fs.readFileSync(filePath, 'utf8');
 
