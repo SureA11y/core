@@ -167,9 +167,10 @@ test(`${RULE_ID}: each suspicious alt reports its signal and its own message`, (
     assert.strictEqual(o.data.details.altSignal, signal, id);
     assert.ok(o.summary.includes(words), `${id}: ${o.summary}`);
     assert.ok(!('reasonCode' in o.data.details), `${id} carries no reasonCode`);
-    const suffix = o.i18n.summaryKey.replace('img_altQuality_summary_cantTell', '');
-    assert.ok(suffix.length > 0, `${id} uses a signal message`);
-    assert.strictEqual(o.i18n.hintKey, 'img_altQuality_hint_cantTell' + suffix, id);
+    const suffix = o.i18n.summaryKey.replace('textAlternative_summary_cantTell', '');
+    assert.ok(suffix.length > 0 && suffix !== o.i18n.summaryKey, `${id} uses a signal message`);
+    assert.strictEqual(o.i18n.hintKey, 'textAlternative_hint_cantTell' + suffix, id);
+    assert.strictEqual(o.i18n.params.element, 'img', id);
   }
 });
 
@@ -178,7 +179,7 @@ test(`${RULE_ID}: too-long says how long the alt is and where the limit is`, () 
   const length = Array.from(o.html.match(/alt="([^"]*)"/)[1]).length;
   assert.deepStrictEqual(o.data.details, { altSignal: 'too-long', length, limit: 150 });
   assert.strictEqual(o.i18n.params.length, length);
-  assert.strictEqual(o.summary, `The alt text of this <img> is ${length} characters long.`);
+  assert.strictEqual(o.summary, `The text alternative of this <img> is ${length} characters long.`);
 
   const at = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><body><img src="x.png" alt="${'a'.repeat(150)}"></body></html>`,

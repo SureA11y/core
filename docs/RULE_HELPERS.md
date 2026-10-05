@@ -233,6 +233,30 @@ content or ARIA/`title` for `<canvas>`. Use this for alt-text-shaped rules, not
 `getAccessibleNameInfo`, when the rule cares which mechanism was used, not just whether
 a name exists.
 
+### `getTextAlternativeSignal(el, text)` → `{ altSignal, length?, limit? } | null`
+
+Whether a text alternative looks like something other than a description, for the
+quality rules that review one (`img-alt-quality`, `area-alt-quality`,
+`input-image-alt-quality`). `text` is the alternative to judge, such as an `<img>`'s
+`alt` or a control's name; `el` supplies its language and, through `src`, its own file
+name. The first match, in this order: `file-name` (an image file name, a camera or
+screenshot name such as `IMG_1234`, or `text` equal to the element's own file name, with
+or without its extension when that looks like a file name), `url`, `placeholder` (a
+generic word such as "image", "logo" or "TBD", or text with no letters or digits),
+`redundant-prefix` ("image of…", "photo of…"; 「…の写真」 in Japanese) and `too-long`
+(over 150 characters, with `length` and `limit`). `null` for ordinary text, and for empty
+text. Word lists exist for en, de, es, fr and ja: English always, plus the element's own
+language (nearest `lang`, across shadow roots). A signal says what to look at; it never
+decides an outcome, and these rules stay `cantTell`.
+
+### `describeTextAlternativeSignal(signal, element)` → `{ summary, hint, i18n } | null`
+
+The message for a `getTextAlternativeSignal` result: English `summary` and `hint`, plus
+`i18n.summaryKey`/`hintKey` (`textAlternative_summary_cantTell<Signal>`) and
+`i18n.params` (`element`, and `length` for `too-long`) to translate them. `element` is
+how the summary names the element: `'img'`, `'area'`, `'input type="image"'`. Each hint
+says when the text is fine after all. `null` for no signal.
+
 ### `getContentNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 Recursive "name from content" (accname step 2F): walks children using each child's
 *own* accessible name (not just literal text), so `<a href="…"><img alt="Company

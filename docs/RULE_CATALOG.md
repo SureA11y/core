@@ -234,16 +234,17 @@ Checks that &lt;area&gt; elements have a non-empty accessible name via alt, aria
 
 manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
-Flags &lt;area&gt; elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.
+Flags &lt;area&gt; elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an "image of" opening or is very long.
 
 **Applies to.** Applies to &lt;area&gt; elements that get a non-empty text alternative from any source: aria-labelledby (resolving to text), aria-label, alt or title. The &lt;area&gt; must carry a non-empty href (otherwise it is not a hyperlink at all per the HTML spec) and belong to a &lt;map&gt; that an &lt;img usemap&gt; actually references; an &lt;area&gt; in an unused map is out of scope. The referencing &lt;img&gt; must actually be rendered (hidden/display:none/ visibility exclude it; aria-hidden does not, since &lt;area&gt; is not a DOM descendant of &lt;img&gt;), and the &lt;area&gt; itself must be eligible: hidden, display:none and inert on the &lt;area&gt; or its &lt;map&gt; do not exclude it, since neither generates a box and a real browser's image-map hit-testing ignores all three there (verified against Chromium and Firefox); only those mechanisms on a genuine ancestor of the whole &lt;img&gt;+&lt;map&gt; pairing do. role="presentation"/"none" takes an element out unless it is focusable.
 
-**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one: a title or aria-label that is not the name still reaches some users.
+**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one: a title or aria-label that is not the name still reaches some users. The name is also checked for what the img-alt-quality rule checks in an alt (helpers.getTextAlternativeSignal): a file name, a web address, a placeholder or generic word, an opening that says it is an image, or more than 150 characters. Such a name gets its own summary and hint; the finding stays `cantTell`.
 
 **What a finding reports.**
 
 - `name`: the text alternative the area ends up with, taken from the first source in `sources`.
 - `sources`: each source of text the area has, in the order they are used for the name: `aria-labelledby`, `aria-label`, `alt`, `title`.
+- `altSignal`, and `length` and `limit` for `too-long`: what made the name look like something other than a description, as for img-alt-quality. Absent when the name is ordinary.
 - `alt` (an area with an alt attribute): the alt text.
 
 ### `aria-allowed-attr`
@@ -1297,16 +1298,17 @@ Checks that &lt;input type="image"&gt; elements provide an alt attribute to supp
 
 manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
-Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.
+Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an "image of" opening or is very long.
 
 **Applies to.** Applies to &lt;input type="image"&gt; elements that get a non-empty text alternative from any source: aria-labelledby (resolving to text), aria-label, alt or title. An element whose alt is present but empty is left to input-image-alt-decorative, which asks about that case. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role.
 
-**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one.
+**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Each occurrence lists every source present (data.details.sources), so the reviewer checks each one. The name is also checked for what the img-alt-quality rule checks in an alt (helpers.getTextAlternativeSignal): a file name, a web address, a placeholder or generic word, an opening that says it is an image, or more than 150 characters. Such a name gets its own summary and hint; the finding stays `cantTell`.
 
 **What a finding reports.**
 
 - `name`: the control's text alternative as announced, from the first source that gives one.
 - `sources`: every source that gives a non-empty text alternative, in the order they are used for the name. One item is `aria-labelledby`, `aria-label`, `alt` or `title`.
+- `altSignal`, and `length` and `limit` for `too-long`: what made the name look like something other than a description, as for img-alt-quality. Absent when the name is ordinary.
 - `alt` (a control with a non-empty `alt`): the `alt` text.
 
 ### `label-in-name`

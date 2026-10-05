@@ -29,11 +29,19 @@
  *   accurate and appropriate. Each occurrence lists every source present
  *   (data.details.sources), so the reviewer checks each one: a title or
  *   aria-label that is not the name still reaches some users.
+ *   The name is also checked for what the img-alt-quality rule checks in
+ *   an alt (helpers.getTextAlternativeSignal): a file name, a web address,
+ *   a placeholder or generic word, an opening that says it is an image, or
+ *   more than 150 characters. Such a name gets its own summary and hint;
+ *   the finding stays `cantTell`.
  * @reports
  *   - `name`: the text alternative the area ends up with, taken from the
  *     first source in `sources`.
  *   - `sources`: each source of text the area has, in the order they are
  *     used for the name: `aria-labelledby`, `aria-label`, `alt`, `title`.
+ *   - `altSignal`, and `length` and `limit` for `too-long`: what made the
+ *     name look like something other than a description, as for
+ *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (an area with an alt attribute): the alt text.
  */
 
@@ -42,7 +50,7 @@ const id = 'area-alt-quality';
 const meta = {
   title: '<area> text alternative must be appropriate (manual review)',
   description:
-    'Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness.',
+    'Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an "image of" opening or is very long.',
   i18n: {
     titleKey: 'area_altQuality_title',
     descriptionKey: 'area_altQuality_description'
@@ -309,15 +317,37 @@ function runInPage(ctx) {
 
     const details = { name: alt.name, sources: alt.sources.slice() };
     if (alt.alt) details.alt = alt.alt;
+    // A name that looks like something other than a description gets the
+    // shared message for its signal (helpers.getTextAlternativeSignal).
+    const signal = (() => {
+      try {
+        return helpers && typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, alt.name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const message =
+      signal && typeof helpers.describeTextAlternativeSignal === 'function'
+        ? helpers.describeTextAlternativeSignal(signal, 'area')
+        : null;
+    if (message) Object.assign(details, signal);
 
     const baseOccurrence = {
-      summary: `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
-      hint: 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
-      i18n: {
-        summaryKey: 'area_altQuality_summary_cantTell',
-        hintKey: 'area_altQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
-      },
+      summary: message
+        ? message.summary
+        : `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
+      hint: message
+        ? message.hint
+        : 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
+      i18n: message
+        ? message.i18n
+        : {
+            summaryKey: 'area_altQuality_summary_cantTell',
+            hintKey: 'area_altQuality_hint_cantTell',
+            params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
+          },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details

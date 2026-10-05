@@ -3472,6 +3472,291 @@ function createDomHelpers(opts) {
     }
   }
 
+  // getTextAlternativeSignal: placeholder and generic words, matched against
+  // the whole text alternative.
+  const TA_PLACEHOLDER_WORDS = {
+    en: [
+      'image',
+      'img',
+      'picture',
+      'pic',
+      'photo',
+      'photograph',
+      'graphic',
+      'icon',
+      'logo',
+      'banner',
+      'alt',
+      'alt text',
+      'alternative text',
+      'image description',
+      'description',
+      'placeholder',
+      'image placeholder',
+      'tbd',
+      'todo',
+      'untitled',
+      'spacer',
+      'blank',
+      'null',
+      'undefined',
+      'test'
+    ],
+    de: [
+      'bild',
+      'foto',
+      'grafik',
+      'abbildung',
+      'symbol',
+      'logo',
+      'platzhalter',
+      'bildbeschreibung',
+      'alternativtext',
+      'ohne titel',
+      'unbenannt'
+    ],
+    es: [
+      'imagen',
+      'foto',
+      'fotografía',
+      'gráfico',
+      'icono',
+      'ícono',
+      'logo',
+      'logotipo',
+      'marcador de posición',
+      'descripción de la imagen',
+      'texto alternativo',
+      'sin título'
+    ],
+    fr: [
+      'image',
+      'photo',
+      'photographie',
+      'illustration',
+      'graphique',
+      'icône',
+      'logo',
+      'espace réservé',
+      "description de l'image",
+      'texte alternatif',
+      'sans titre'
+    ],
+    ja: [
+      '画像',
+      '写真',
+      'イメージ',
+      '図',
+      'アイコン',
+      'ロゴ',
+      '代替テキスト',
+      '画像の説明',
+      '無題',
+      'ダミー'
+    ]
+  };
+
+  // Openings that say the image is an image, followed by what it shows.
+  const TA_REDUNDANT_PREFIXES = {
+    en: [
+      'image of ',
+      'an image of ',
+      'picture of ',
+      'a picture of ',
+      'photo of ',
+      'a photo of ',
+      'photograph of ',
+      'a photograph of ',
+      'graphic of ',
+      'image: ',
+      'picture: ',
+      'photo: '
+    ],
+    de: ['bild von ', 'ein bild von ', 'foto von ', 'ein foto von ', 'bild: ', 'foto: '],
+    es: [
+      'imagen de ',
+      'una imagen de ',
+      'foto de ',
+      'una foto de ',
+      'fotografía de ',
+      'imagen: ',
+      'foto: '
+    ],
+    fr: [
+      'image de ',
+      "image d'",
+      'une image de ',
+      "une image d'",
+      'photo de ',
+      "photo d'",
+      'une photo de ',
+      "une photo d'",
+      'image : ',
+      'photo : ',
+      'image: ',
+      'photo: '
+    ],
+    ja: ['画像:', '写真:']
+  };
+  // Japanese says it at the end: 「富士山の写真」.
+  const TA_REDUNDANT_SUFFIXES_JA = ['の画像', 'の写真', 'のイメージ'];
+
+  const TA_MAX_LENGTH = 150;
+  const TA_IMAGE_FILE_RE =
+    /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
+  // Names cameras, phones and screenshot tools give files.
+  const TA_GENERATED_NAME_RE =
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+  const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
+
+  // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
+  // as in link-name-quality; trailing punctuation is not part of the word.
+  function normalizeTextAlternative(s) {
+    return String(s || '')
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function stripTrailingPunctuationTA(s) {
+    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared.
+  function textAlternativeLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function textAlternativeWordsFor(byLang, lang) {
+    const out = byLang.en.slice();
+    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    return out;
+  }
+
+  function textAlternativeFileName(el) {
+    if (!el || typeof el.getAttribute !== 'function') return '';
+    let src;
+    try {
+      src = String(el.getAttribute('src') || '');
+    } catch {
+      return '';
+    }
+    const path = src.split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {}
+    return normalizeTextAlternative(name);
+  }
+
+  // What makes a text alternative look like something other than a
+  // description: { altSignal } ('file-name', 'url', 'placeholder',
+  // 'redundant-prefix', or 'too-long' with length and limit), or null for
+  // ordinary text. `text` is the alternative to judge (an img's alt, an
+  // area's or input's name); `el` gives its language and, through src, its
+  // own file name. Word lists: English always, plus the element's language.
+  function getTextAlternativeSignal(el, rawAlt) {
+    if (rawAlt == null || !String(rawAlt).trim()) return null;
+    const alt = normalizeTextAlternative(rawAlt);
+    const word = stripTrailingPunctuationTA(alt);
+
+    if (TA_IMAGE_FILE_RE.test(alt) || TA_GENERATED_NAME_RE.test(word))
+      return { altSignal: 'file-name' };
+    const fileName = textAlternativeFileName(el);
+    const stem = fileName.replace(/\.[a-z0-9]+$/, '');
+    if (
+      fileName &&
+      (alt === fileName || (stem && word === stem && !/\s/.test(word) && /_|\d\d|-.*-/.test(word)))
+    ) {
+      return { altSignal: 'file-name' };
+    }
+
+    if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
+
+    const lang = textAlternativeLangOf(el);
+    if (
+      !/[\p{L}\p{N}]/u.test(alt) ||
+      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
+    ) {
+      return { altSignal: 'placeholder' };
+    }
+
+    const prefixed = textAlternativeWordsFor(TA_REDUNDANT_PREFIXES, lang).some(
+      (p) => alt.length > p.length && alt.startsWith(p)
+    );
+    const suffixed =
+      lang === 'ja' &&
+      TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
+    if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
+
+    const length = Array.from(String(rawAlt).trim()).length;
+    if (length > TA_MAX_LENGTH) {
+      return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
+    }
+    return null;
+  }
+
+  // The message for a getTextAlternativeSignal result, shared by the rules
+  // that report one: summary and hint in English, and the i18n keys and
+  // params that translate them. `element` is how the summary names the
+  // element: 'img', 'area', 'input type="image"'.
+  const TA_SIGNAL_MESSAGES = {
+    'file-name': [
+      'FileName',
+      'The text alternative of this <{{element}}> looks like a file name.',
+      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+    ],
+    url: [
+      'Url',
+      'The text alternative of this <{{element}}> is a web address.',
+      'An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
+    ],
+    placeholder: [
+      'Placeholder',
+      'The text alternative of this <{{element}}> is a placeholder or a generic word.',
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    'redundant-prefix': [
+      'RedundantPrefix',
+      'The text alternative of this <{{element}}> starts by saying it is an image.',
+      'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
+    ],
+    'too-long': [
+      'TooLong',
+      'The text alternative of this <{{element}}> is {{length}} characters long.',
+      'A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.'
+    ]
+  };
+
+  function describeTextAlternativeSignal(signal, element) {
+    const entry = signal && TA_SIGNAL_MESSAGES[signal.altSignal];
+    if (!entry) return null;
+    const params = { element: String(element || '') };
+    if (signal.length) params.length = signal.length;
+    const fill = (t) =>
+      t.replace(/\{\{(\w+)\}\}/g, (m, k) => (params[k] != null ? String(params[k]) : m));
+    return {
+      summary: fill(entry[1]),
+      hint: entry[2],
+      i18n: {
+        summaryKey: 'textAlternative_summary_cantTell' + entry[0],
+        hintKey: 'textAlternative_hint_cantTell' + entry[0],
+        params
+      }
+    };
+  }
+
   // C) Text alternative helper (mechanism-aware by element/type)
   function getTextAlternativeInfo(el, _ctx, opts) {
     const flags = [];
@@ -5140,6 +5425,8 @@ function createDomHelpers(opts) {
 
     // Text alternatives
     getTextAlternativeInfo,
+    getTextAlternativeSignal,
+    describeTextAlternativeSignal,
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
