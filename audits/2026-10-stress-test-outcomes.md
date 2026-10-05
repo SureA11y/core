@@ -2,7 +2,7 @@
 
 What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-stress-test.md#1-priorities). That document is left as it was written; this one records, for each priority, whether it reproduced, whether it is a bug, what changed and what is left.
 
-**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*, plus three commits from the margin performance review in §5. No pull request has been opened yet.
+**Branch:** `fix/stress-test-priorities`, from `main` at `63af298`. One commit per priority (P7 and P8 share one), each with its tests, docs and `CHANGELOG.md` entry under *Unreleased*, plus three commits from the margin performance review in §5. Merged into `main` through PR #77 on 2026-10-05.
 
 **How each item was judged.** Every item was reproduced on `main` before any change: the **[V]** items with the audit's own `verify*.js` probes, adjusted to local paths, and the others with a minimal repro. An item counts as a bug when the engine does something its docs or its own contract say it doesn't, or gives a wrong result. A missing capability nobody promised counts as a feature. The full suite (`node scripts/run-tests.js`), `lint`, `format:check` and `validate:rules` pass at the branch head.
 
@@ -25,7 +25,7 @@ What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-s
 | P11 | `policyContract: 'constructor'` crashes the scan | Yes | Fixed | `19a4698` |
 | P12 | A typo in object-form `runOnly` runs 0 rules | Yes (silent wrong result) | Fixed: throws `INVALID_RUN_ONLY` | `5c1f8de` |
 | P13 | Ancestor opacity counted twice | Yes | Fixed | `007c025` |
-| P14 | No `helpUrl` / SC URLs / engine version | No: feature | `engine.version` only, in a follow-up PR (see §3) | — |
+| P14 | No `helpUrl` / SC URLs / engine version | No: feature | `engine.version` only: branch `feat/engine-version` (`11eebd4`); help and Understanding URLs not done | — |
 
 ---
 
@@ -176,13 +176,17 @@ Both are fixed in the same commit.
 
 **Change.** `computeEffectiveForeground` now checks the group-opacity override before its own cache, as `computeEffectiveBackground` already did. The same page now measures 5.32:1. A link in that paragraph is measured as `#2b2b2b` on `#808080`, which matches the compositing.
 
-### P14. `helpUrl`, Understanding URLs, engine version — not done
+### P14. `helpUrl`, Understanding URLs, engine version — `engine.version` done (`11eebd4`)
 
-**Not a bug.** No doc promises any of these:
-- `OUTPUT_SCHEMA.md` documents `engine.tag` only.
-- SARIF's `driver.version` is `"0.0.0"` only when the caller passes no `toolVersion`.
+**Not a bug.** No doc promised any of these: `OUTPUT_SCHEMA.md` documented `engine.tag` only, and SARIF's `driver.version` was `"0.0.0"` only when the caller passed no `toolVersion`.
 
-It's a worthwhile feature. The cheapest useful part would be `engine.version` from `package.json`, also used as the SARIF default and the EARL assertor release, then generated Understanding URLs per SC mapping. Left for a decision on scope.
+**Done, as decided** (branch `feat/engine-version`, from `main` after #77):
+- `scripts/build-core.js` bakes the `package.json` version into the generated engine, next to `ENGINE_TAG`, and every result carries it as `engine.version`.
+- SARIF's `tool.driver.version` falls back to it.
+- EARL's assertor `release` falls back to it when every result comes from one release; results from two releases claim none.
+- A version bump now needs a rebuild: `tests/engine-version.test.js` enforces it, and `API_STABILITY.md`'s release note says so.
+
+**Not done:** a `helpUrl` per rule (needs stable docs pages) and W3C Understanding URLs per SC mapping.
 
 ---
 
@@ -194,7 +198,7 @@ Taken on 2026-10-05, after an explanation of each with examples, pros and cons.
 |---|---|---|---|
 | P4 | Should `null`, `undefined` and `{}` throw too? | Yes, they throw | Done in `bb72495`; the four tests that pinned the old behavior were rewritten |
 | P12 | Throw on an object-form `runOnly` list that names nothing, or only warn? | Throw | As implemented in `5c1f8de` |
-| P14 | Which part of version and help links? | `engine.version` only (in results, as the SARIF `driver.version` default and as the EARL assertor release) | Follow-up PR, not on this branch |
+| P14 | Which part of version and help links? | `engine.version` only (in results, as the SARIF `driver.version` default and as the EARL assertor release) | Done on `feat/engine-version` (`11eebd4`), after #77 merged |
 | P1 | Keep `BACKGROUND_OVERLAP` as is, narrow it to images and solid colors, or leave it out of the PR? | Keep as is, after the performance figures below | As implemented in `6213f38` |
 
 **P1 performance, the figures the decision was taken on.** Full-scan time in Chromium, before and after the P1 commit:
@@ -242,6 +246,36 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 ---
 
+## 5. Margin performance review
+
+Asked after the priorities: did the margin feature (`6fc8d33` and the five rules that report one, `8cac290`–`428941b`) slow any rule down, and what about the timing lead in §6 and R-5?
+
+**Method.** Each margin rule was timed alone (`perfStats.ruleTimings`) at three points: before margins (`2750774`), `main` (`63af298`) and the branch. Each was run under jsdom and in Chromium, on pages built so that thousands of elements tie for the margin, the case that hurt R-4.
+
+**What margins cost, after the branch's fixes.** Chromium, 10,000 elements:
+
+| Rule | Before margins | `main` | Branch | Cause on `main` |
+|---|---|---|---|---|
+| `contrast-minimum` / `-enhanced` | 0.30 s | 0.64 s | 0.37 s | Tie-break, R-4 (fixed by P9); the rest is P1's overlap check and collecting candidates |
+| `target-size-minimum` | 65 ms | 430 ms | 70 ms | Tie-break, R-4 (fixed by P9) |
+| `text-spacing-content-loss` | 81 ms | 124 ms | 100 ms | Measuring each box's margin; linear |
+| `link-in-text-block` | 2.4 s | 2.4 s | 0.7 s | None: the same as before margins. See below |
+
+Under jsdom the five rules time the same at all three points. Every rule's remaining margin overhead grows linearly with the page.
+
+**The §6 lead, `link-in-text-block` 11.8 s under jsdom.** Real, but older than margins (identical at `2750774`), and in two parts:
+
+1. **`a62c81f`.** For each link the rule scanned every child of its parent for text beside it. With thousands of sibling links that is quadratic: 8,000 links took 34 s under jsdom, all to conclude the rule did not apply. The answer belongs to the parent and is now read once per parent: 8,000 links in 0.87 s. A test counts the rule's own reads of the siblings.
+2. **`632ead4`.** In Chromium, a rule reporting thousands of siblings paid for `buildSelector`'s `:nth-of-type` and for `structuralPath`, which both counted an element's earlier siblings per occurrence. A parent's children are now indexed once per run, and indexed again if the engine inserts an element first or last in it (`text-spacing-content-loss`'s style sheet in `<head>`, the color probe at the end of `<body>`). 10,000 color-only links: 2.4 s → 0.7 s. On six public sites every occurrence's selector and path is identical before and after, and each full scan is 7–15% faster. This affects every rule, not only margin ones.
+
+What is left is the native `el.matches(selector)` check of each selector, about 0.4 s of those 0.7 s. It stays O(siblings) per call in Blink, but it is the safety net against selector engines that count differently, so it was kept.
+
+**R-5, `97dc7ea`.** The contrast rules stopped walking the page at their 50th failure, so later text never became a margin candidate, and the margin and `measuredCount` depended on where the 50th failure fell. A failure past the cap is now only counted and the walk goes on; occurrences stay capped at 50. On a page where every paragraph fails, the three contrast rules take 3–5% longer, since `contrast-computable` already analyses every element. Margins are unreleased, so this has no changelog entry.
+
+**Not looked at.** `aria-valid-attr`'s 2.2 s in the same §6 probe. It has nothing to do with margins and is still an unverified lead.
+
+---
+
 ## 4. Not covered here
 
 - Section 6 of the audit (ARIA, names, forms and structure leads) is still unverified.
@@ -249,3 +283,106 @@ What is left is the native `el.matches(selector)` check of each selector, about 
   - C-3 and O-7 partly, through the custom-rule warnings and the CSP note;
   - S-4 partly, through the error code.
 - The probes under `2026-10-probes/` were used as they are, with local paths. They were not edited on this branch.
+
+---
+
+## 6. What remains
+
+Everything in the audit not fixed by #77 or `feat/engine-version`, grouped by how sure it is. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed in #77.
+
+### 6.1 Never verified: section 6 of the audit (ARIA, names, forms, structure)
+
+The audit stopped before checking these. They are leads, not findings.
+
+- **Harness first.** The Chromium column of `rules-a/report.txt` shows dozens of unrelated "expected pass, got `notApplicable`", which `r2.txt` and `r3.txt` do not. Re-run `corpus.js` before reading anything from it.
+- **Leads where jsdom and Chromium agree.** Each is to be decided against accname 1.2, HTML-AAM, ARIA 1.2 and the ACT rules:
+
+  | Rule | Case | Got | Likely |
+  |---|---|---|---|
+  | `label-in-name` | `aria-labelledby` referencing the link itself | fail | false positive |
+  | `link-name-present`, `button-name-present` | `role="none"` / `"presentation"` on a focusable element | fail | false positive |
+  | `form-control-programmatic-label-present` | two inputs sharing an `id`, one `<label for>` | pass | false negative |
+  | `aria-valid-attr-value` | `aria-hidden="TRUE"` | fail | check case-insensitivity first |
+  | `listitem-parent-valid`, `list-children-valid` | `<li>` slotted into a shadow `<ul>` | fail | false positive |
+  | `nested-interactive-controls-absent` | nesting across a shadow boundary | pass | false negative |
+  | `aria-valid-attr-value` | IDREF from a shadow root to the light DOM | pass | false negative |
+  | `valid-lang` | `lang="qaa"` (private use) | fail | false positive |
+  | `valid-lang` | `lang="en-"` | pass | false negative |
+  | `video-poster-text-alternative-present` | `<video poster>` in a `<figure>` with a caption | fail | to decide |
+  | `img-alt-decorative` | icon `<img>` in an already named link | cantTell | possible noise |
+
+- **Timing.** `aria-valid-attr` took 2.2 s on a 5,000-sibling page under jsdom. Not re-measured. (The `link-in-text-block` lead from the same probe is fixed, §5.)
+- **Not started:** the `fuzz.js` invariants (no rule `error`, outcomes in the allowed set, `fail` ⇒ occurrences, resolvable selectors, no throws on malformed DOMs), and checking manual rules for `cantTell` noise on pages with no relevant content.
+
+### 6.2 Reproduced by the audit, not fixed
+
+**Outputs.**
+- [O-2] Attribute and class order change a finding's identity (baseline, SARIF).
+- [O-6] SARIF can be invalid: an occurrence with no summary gives an empty `message.text`; artifact URIs aren't percent-encoded; fingerprints carry raw separators and up to 2 KB of HTML.
+- [O-7] A string custom rule is skipped under a strict CSP. Now documented and warned about (#77); no fallback.
+- [O-8] The `/browser` subpath is empty for bundlers.
+- [O-9] `./i18n/*` can't be used from Node and isn't documented.
+- [O-10] The subpaths have no types.
+- [O-11] The HTML report's title uses `new Date()`, so it isn't deterministic.
+- [O-12] Payload size: 204 KB for an empty page; a compact output mode was suggested.
+- [O-13] Cross-frame entries don't identify their `<iframe>`.
+- [O-14] `src/explain/` isn't shipped and is incomplete.
+- [O-15] Small items: `/junit` is missing from the reporter list, `waitForPageReady` accepts bad timeouts silently, and EARL merges results without a URL into one subject.
+
+**Contrast, layout and visual rules.**
+- [R-6] `link-in-text-block` misses a cue on a child (`<strong>` in a link), and passes a transparent underline.
+- [R-7] SVG `<text>` is judged by `color`, not `fill`.
+- [R-8] `contrast-minimum` reports text nobody sees: options of a closed select, off-screen text, `font-size: 0`, `color: transparent`.
+- [R-9] `css-orientation-lock` and `css-focus-indicator-suppressed` don't walk `@layer`, `@supports`, nested `@media`, `@container` or CSS nesting.
+- [R-10] `text-spacing-content-loss` skips partly clipped text, and its margin is measured against half the line height while findings start at 2 px.
+- [R-11] `target-size-minimum` uses the bounding box: clipped or covered targets pass, a rotated one is measured too large, `display: contents` links are not applicable, and a rounding slip appears in the message.
+- [R-12] `contrast.mode: 'auditorAssist'` ignores `color-scheme: dark`.
+- [R-13] `meta-viewport-zoom-enabled` and `meta-viewport-large` disagree on odd values.
+- [R-14] Input values and placeholders are never contrast-checked, `zoom` isn't treated as large text, some alt-quality wording is off, and two alt rules have no occurrence cap.
+
+**Custom rules and profiles.**
+- [C-3] There's no `skippedCustomRules` field; warnings were added in #77.
+- [C-4, C-5, C-6] A rule returning nothing usable disappears; async rules and unknown outcomes become `cantTell` with an empty `error`.
+- [C-7, C-8, C-9] Severity, confidence and type aren't validated; a rule can overwrite engine-owned fields; the result-shape contract isn't enforced.
+- [C-10, C-11] Duplicate custom ids, and a custom id equal to a composite id, aren't detected.
+- [C-12] The docs' custom-rule example ignores exclusions and hidden content.
+- [C-13, C-14] Custom rules can't join WCAG composites by mapping; under a profile a custom rule without WCAG tags never runs, and an override that drops a built-in's tags removes it.
+- [C-15] The catalog APIs ignore `customRules`.
+- [C-16, C-17] A custom rule's `helpUrl` and custom tags are lost in outputs; EARL leaves out `isPartOf` without `conformanceLevel`.
+- [C-18] Shorthand `runOnly` doesn't trim ids.
+- [C-19] `index.d.ts` gives rule authors nothing, and `RULE_HELPERS.md` misses three helpers.
+- [C-20] A profile can only be added by forking core: `profile-kit` isn't exported.
+- [C-21, C-22] `profile:new` accepts the key `section508`, and `acme-std` trips the boundary test.
+
+**Options.**
+- [S-4] Remaining part: `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are case-sensitive.
+- [S-5] An invalid `excludeSelectors` is ignored silently.
+- [S-6] Wrong option types fall back without a warning.
+- [S-7] [V] `duplicate-id` and two other rules `pass` on an empty scope.
+- [S-8] The contrast rules attach a page-level occurrence to `pass`, against `OUTPUT_SCHEMA.md`.
+- [S-9] The docs disagree on what a rule that threw looks like.
+- [S-10] `POLICY.md`'s inline-contract example is wrong.
+- [S-11] `includeHiddenElements: true` changes nothing for common rules.
+- [S-12] `index.d.ts` gaps (`policyContract`, `policy`, `output`, error codes) and a stray `occurrence.outcome`.
+- [S-13] Smaller doc slips.
+
+**Suspected by the audit** (in each section's "Suspected" list): invalid `applicability` strings and `uncertainty.code` values passing silently, surrogate pairs split at 2,000 characters, Windows `file:///` SARIF paths, `getChecksCatalog({ profile: 'bogus' })`, an orientation lock on a rotated icon, float digits differing between jsdom and Chromium, and text-spacing overlap growth within one band.
+
+### 6.3 Limits of what was fixed
+
+- **P1:**
+  - Paint outside the nearest opaque ancestor, fixed and sticky paint, and stacking order are not considered.
+  - No ratio is computed against a solid painter that fully covers the text.
+  - A large gradient glow hides genuine fails behind it.
+- **P4:** Flattening a cross-frame result inside JUnit, SARIF and the HTML report (they throw instead).
+- **P5:** `selector` and `structuralPath` themselves are not cross-root (by design; `shadowHostSelectors` is the addition).
+- **§5:** Selector verification (`el.matches`) stays O(siblings) per occurrence in Blink: about 0.4 s for 10,000 reported siblings.
+- **P14:** Help and Understanding URLs.
+
+### 6.4 Suggested order
+
+1. Section 6 leads (6.1), since nobody knows yet whether they are bugs. Start with the harness and the `role="none"` and `valid-lang` leads, which are quick to decide.
+2. The ones that break CI or dashboards: O-6 (invalid SARIF), O-2 (fingerprints changing with attribute order), S-7 (a `pass` on an empty scope).
+3. Rule false results with wide reach: R-8 (invisible text reported), R-9 (modern CSS not scanned), R-6, R-7.
+4. Integrator features as a set: C-3, C-15, C-19, C-20, O-10, O-12.
+
