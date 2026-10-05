@@ -85816,16 +85816,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     inScope.push([el, parent]);
   }
 
+  // Transitions held off for the time of the check, so a state put on the
+  // page is read at once rather than at the start of its transition. The
+  // sheet is a cascade layer declared before any other, which wins over the
+  // page's own !important as a user style sheet would. The page's state is
+  // put back before the sheet goes, so nothing animates on the way back.
+  function freezeTransitions(doc) {
+    let sheet = null;
+    try {
+      sheet = doc.createElement('style');
+      sheet.textContent =
+        '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
+      const host = doc.head || doc.documentElement;
+      host.insertBefore(sheet, host.firstChild);
+    } catch {
+      sheet = null;
+    }
+    return () => {
+      try {
+        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      } catch {}
+    };
+  }
+
   // Each link's states, read in one pass while the selectors are rewritten.
   const judged = new Map();
   if (inScope.length && doc && hasLayout(doc)) {
     getStyleRules(doc);
     const restore = unreadableSheet ? null : emulateStates(doc);
     if (restore) {
+      const unfreeze = freezeTransitions(doc);
       try {
         for (const [el, verdict] of judgeAll(inScope, bgOpts)) judged.set(el, verdict);
       } finally {
         restore();
+        unfreeze();
       }
     }
   }
@@ -89750,6 +89775,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } catch {}
     }
   }
+  // Transitions held off for the time of the check, so an orientation put on
+  // the page is read at once rather than at the start of its transition. The
+  // sheet is a cascade layer declared before any other, which wins over the
+  // page's own !important as a user style sheet would. The page's state is
+  // put back before the sheet goes, so nothing animates on the way back.
+  function freezeTransitions(doc) {
+    let sheet = null;
+    try {
+      sheet = doc.createElement('style');
+      sheet.textContent =
+        '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
+      const host = doc.head || doc.documentElement;
+      host.insertBefore(sheet, host.firstChild);
+    } catch {
+      sheet = null;
+    }
+    return () => {
+      try {
+        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      } catch {}
+    };
+  }
+
   const saved = mediaLists.map((list) => ({ list, original: mediaTextOf(list) }));
 
   const main = (() => {
@@ -89772,6 +89820,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const items = contentItems();
     let portrait;
     let landscape;
+    const unfreeze = freezeTransitions(document);
     try {
       emulate('portrait');
       portrait = look(items);
@@ -89785,6 +89834,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           entry.list.mediaText = entry.original;
         } catch {}
       }
+      unfreeze();
     }
     decided = !!(portrait && landscape);
 

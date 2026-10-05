@@ -112,6 +112,16 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  await t.test('a transition on the hidden content does not hide the difference', async () => {
+    const page = (transition) =>
+      `<!doctype html><html lang="fr"><head><title>t</title><style>.x{${transition}} @media (orientation: portrait){.x{opacity:0}}</style></head><body><main><p>Toujours</p><p class="x">Seulement en paysage</p></main></body></html>`;
+    for (const transition of ['', 'transition:all 2s linear', 'transition:opacity 2s!important']) {
+      for (const result of await scan(page(transition))) {
+        assert.equal(findings(result).outcome, 'fail', transition || 'no transition');
+      }
+    }
+  });
+
   await t.test('the failure names the orientation and the content', async () => {
     const [result] = await scan(
       page(

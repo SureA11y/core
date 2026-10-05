@@ -35,6 +35,12 @@
  *   be read. A link whose states raise no question is left out there.
  *   A page with no link in scope is notApplicable.
  * @implementation-notes
+ * - Transitions are held off while the states are read: a style sheet in
+ *   a cascade layer declared before any other sets `transition: none
+ *   !important` on everything, so a state's colors are read at once, not at
+ *   the start of the page's own transition toward them. The selectors are
+ *   put back first, then the sheet is removed, so nothing animates on the
+ *   way back.
  * - States in a browser: every readable author rule that names a link state
  *   gets its selector rewritten for the time of the check, `:hover` to
  *   `:is(:hover, [data-surea11y-link-state~="hover"])` and so on, and
@@ -736,16 +742,41 @@ function runInPage(ctx) {
     inScope.push([el, parent]);
   }
 
+  // Transitions held off for the time of the check, so a state put on the
+  // page is read at once rather than at the start of its transition. The
+  // sheet is a cascade layer declared before any other, which wins over the
+  // page's own !important as a user style sheet would. The page's state is
+  // put back before the sheet goes, so nothing animates on the way back.
+  function freezeTransitions(doc) {
+    let sheet = null;
+    try {
+      sheet = doc.createElement('style');
+      sheet.textContent =
+        '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
+      const host = doc.head || doc.documentElement;
+      host.insertBefore(sheet, host.firstChild);
+    } catch {
+      sheet = null;
+    }
+    return () => {
+      try {
+        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      } catch {}
+    };
+  }
+
   // Each link's states, read in one pass while the selectors are rewritten.
   const judged = new Map();
   if (inScope.length && doc && hasLayout(doc)) {
     getStyleRules(doc);
     const restore = unreadableSheet ? null : emulateStates(doc);
     if (restore) {
+      const unfreeze = freezeTransitions(doc);
       try {
         for (const [el, verdict] of judgeAll(inScope, bgOpts)) judged.set(el, verdict);
       } finally {
         restore();
+        unfreeze();
       }
     }
   }

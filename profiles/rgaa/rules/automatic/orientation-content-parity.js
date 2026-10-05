@@ -31,6 +31,12 @@
  *     orientation condition hides with `display: none`, `visibility:
  *     hidden` or `visibility: collapse` is asked about (hiddenInOrientation).
  * @implementation-notes
+ * - Transitions are held off while each orientation is read: a style
+ *   sheet in a cascade layer declared before any other sets `transition:
+ *   none !important` on everything, so what an orientation shows is read at
+ *   once, not at the start of the page's own transition toward it. The
+ *   media conditions are put back first, then the sheet is removed, so
+ *   nothing animates on the way back.
  * - The orientations are emulated: each media list naming an orientation
  *   gets the condition swapped for one that is always true or always
  *   false, for the time of the check, then put back. Width and height
@@ -270,6 +276,29 @@ function runInPage(ctx) {
       } catch {}
     }
   }
+  // Transitions held off for the time of the check, so an orientation put on
+  // the page is read at once rather than at the start of its transition. The
+  // sheet is a cascade layer declared before any other, which wins over the
+  // page's own !important as a user style sheet would. The page's state is
+  // put back before the sheet goes, so nothing animates on the way back.
+  function freezeTransitions(doc) {
+    let sheet = null;
+    try {
+      sheet = doc.createElement('style');
+      sheet.textContent =
+        '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
+      const host = doc.head || doc.documentElement;
+      host.insertBefore(sheet, host.firstChild);
+    } catch {
+      sheet = null;
+    }
+    return () => {
+      try {
+        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      } catch {}
+    };
+  }
+
   const saved = mediaLists.map((list) => ({ list, original: mediaTextOf(list) }));
 
   const main = (() => {
@@ -292,6 +321,7 @@ function runInPage(ctx) {
     const items = contentItems();
     let portrait;
     let landscape;
+    const unfreeze = freezeTransitions(document);
     try {
       emulate('portrait');
       portrait = look(items);
@@ -305,6 +335,7 @@ function runInPage(ctx) {
           entry.list.mediaText = entry.original;
         } catch {}
       }
+      unfreeze();
     }
     decided = !!(portrait && landscape);
 

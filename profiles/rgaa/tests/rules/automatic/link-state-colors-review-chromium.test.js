@@ -141,6 +141,22 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   });
 
   // #595959 on black is 2.998:1: below 3, so it fails, and it must not read 3.00.
+  // A state's color is read at once, not at the start of the page's own
+  // transition toward it (the freeze sheet is gone afterwards: the style
+  // rules compare equal in scan()).
+  await t.test('a color transition on the link does not hide its hover color', async () => {
+    const page = (transition) =>
+      `<!doctype html><html lang="fr"><head><title>t</title><style>body{color:#000;background:#fff} a{color:#4a90e2;text-decoration:none;${transition}} a:hover{color:#333}</style></head><body><main><p>Lisez <a id="l" href="/x">la notice</a> avant.</p></main></body></html>`;
+    for (const transition of [
+      '',
+      'transition:color 2s linear',
+      'transition:all 2s linear!important'
+    ]) {
+      const { result } = await scan(page(transition));
+      assert.equal(rule(result).outcome, 'fail', transition || 'no transition');
+    }
+  });
+
   await t.test('a ratio just below 3 fails and reads 2.99', async () => {
     const { result } = await scan(page('a:hover{color:#595959}', LINK));
     const occ = rule(result).occurrences[0];
