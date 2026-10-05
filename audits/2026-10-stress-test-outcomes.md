@@ -12,26 +12,26 @@ What became of the fourteen priorities in [`2026-10-stress-test.md`](./2026-10-s
 
 | # | Finding | Bug? | Outcome | Commit |
 |---|---|---|---|---|
-| P1 | Text over non-ancestor paint failed with `high` confidence | Yes | Fixed: such text is `cantTell` with the new reason code `BACKGROUND_OVERLAP` | `6b4915a` |
-| P2 | `oklch()` / `lab()` / `color()` / `color-mix()` read as transparent | Yes | Fixed: converted to sRGB; an unreadable background is `BACKGROUND_UNPARSABLE` | `0de6a8e` |
+| P1 | Text over non-ancestor paint failed with `high` confidence | Yes | Fixed: such text is `cantTell` with the new reason code `BACKGROUND_OVERLAP` | `6213f38` |
+| P2 | `oklch()` / `lab()` / `color()` / `color-mix()` read as transparent | Yes | Fixed: converted to sRGB; an unreadable background is `BACKGROUND_UNPARSABLE` | `1f22c83` |
 | P3 | Page-level fingerprints change with any content | Yes | Fixed: `<html>`, `<head>`, `<body>` report their start tag | `82c4ccf` |
-| P4 | Reporters render a cross-frame result, an array or garbage as a clean pass | Yes | Fixed for wrong shapes; `null` and `{}` still render empty (see §3) | `e15a438` |
-| P5 | Shadow-DOM occurrences resolve to the wrong element | Yes | Fixed: new `shadowHostSelectors`, `structuralPath: null` in a shadow tree | `c2d9485` |
+| P4 | Reporters render a cross-frame result, an array or garbage as a clean pass | Yes | Fixed: anything but an object with a `checksResults` array throws, `null` and `{}` included | `bb72495` |
+| P5 | Shadow-DOM occurrences resolve to the wrong element | Yes | Fixed: new `shadowHostSelectors`, `structuralPath: null` in a shadow tree | `d1e78cf` |
 | P6 | Scoping to a shadow host skips its own shadow root | Yes | Fixed | `94cdeb1` |
 | P7 | Method-shorthand custom rules dropped once stringified | Yes | Fixed | `923154f` |
 | P8 | A bad `meta.deprecated` / `meta.i18n` aborts the scan | Yes | Fixed: the rule is skipped with a warning | `923154f` |
 | P9 | Margin tie-break is O(n²) | Yes (unreleased regression) | Fixed | `f0124fb` |
-| P10 | Results with function custom rules or rich probes can't be cloned | Yes | Fixed | `4173d80` |
+| P10 | Results with function custom rules or rich probes can't be cloned | Yes | Fixed | `5c76000` |
 | P11 | `policyContract: 'constructor'` crashes the scan | Yes | Fixed | `19a4698` |
 | P12 | A typo in object-form `runOnly` runs 0 rules | Yes (silent wrong result) | Fixed: throws `INVALID_RUN_ONLY` | `5c1f8de` |
-| P13 | Ancestor opacity counted twice | Yes | Fixed | `c4427c0` |
-| P14 | No `helpUrl` / SC URLs / engine version | No: feature | Not done (see §3) | — |
+| P13 | Ancestor opacity counted twice | Yes | Fixed | `007c025` |
+| P14 | No `helpUrl` / SC URLs / engine version | No: feature | `engine.version` only, in a follow-up PR (see §3) | — |
 
 ---
 
 ## 2. Per priority
 
-### P1. Text over paint that is not an ancestor's — fixed (`6b4915a`)
+### P1. Text over paint that is not an ancestor's — fixed (`6213f38`)
 
 **Reproduced** in Chromium: all four patterns in R-1 (absolutely positioned sibling, `<img>` hero, `::before` overlay, negative margin) failed at 1.36:1, `confidence: high`.
 
@@ -64,7 +64,7 @@ After these, the remaining hits were text on images (Apple and Shopify product t
 - `pointer-events` and stacking order are not looked at.
 - A ratio against a solid painter that fully covers the text could be computed instead of asking. Not attempted.
 
-### P2. Modern color syntax — fixed (`0de6a8e`)
+### P2. Modern color syntax — fixed (`1f22c83`)
 
 **Reproduced:** `background: oklch(0.2 0 0)` with `#ddd` text failed at 1.36:1.
 
@@ -93,7 +93,7 @@ After these, the remaining hits were text on images (Apple and Shopify product t
 
 **Left (O-2).** Attribute order still changes identity. Not touched.
 
-### P4. Reporters and non-results — fixed in part (`e15a438`)
+### P4. Reporters and non-results — fixed in part (`bb72495`)
 
 **Reproduced:** `renderJunitReport({ topFrame, frames })` gave `tests="0" failures="0"`.
 
@@ -101,13 +101,13 @@ After these, the remaining hits were text on images (Apple and Shopify product t
 - A new `src/scan-result.js`, shipped in `files`. `renderHtmlReport`, `renderSarifReport`, `renderJunitReport`, `buildBaselineEntries` and `matchBaseline` now throw a `TypeError` for a cross-frame result, an array, or a value that is not an object, and the message says what to pass instead.
 - `renderEarlReport` now also takes a cross-frame result, each answering frame becoming a subject. It already took arrays.
 
-**Deliberately not changed.** `null`, `undefined`, `{}` and partial results still render empty, because four existing tests pin that as intended behavior ("tolerates a missing or partial result"). Whether `null` should throw too is a decision for the maintainer (§3).
+**Missing results.** At first `null`, `undefined` and `{}` still rendered empty, because four tests pinned that. The maintainer decided they throw too (§3): a reporter now takes only an object with a `checksResults` array, and a result missing other fields (`url`, `engine`, `rulesResults`) still renders. The four tests now check both.
 
 **Not done.** Flattening a cross-frame result inside JUnit, SARIF or the HTML report. That is a feature.
 
 `getMargins` stays lenient: it's a reader, not a gate.
 
-### P5. Shadow-DOM occurrence locations — fixed (`c2d9485`)
+### P5. Shadow-DOM occurrence locations — fixed (`d1e78cf`)
 
 **Reproduced:** two components with the same shadow content gave identical occurrences. `structuralPath: [0]` read from the document named `<head>`, and when that path was missing, `buildStructuralPath` re-read the selector against the document and returned the light-DOM element's path.
 
@@ -148,7 +148,7 @@ Contrast time in Chromium on this machine:
 
 A unit test counts the siblings walked, as a stand-in for Blink's cost. Counting calls doesn't catch the regression, since both versions make n−1 calls.
 
-### P10. Non-cloneable results — fixed (`4173d80`)
+### P10. Non-cloneable results — fixed (`5c76000`)
 
 The `engineOptions` echo on every result now holds the capped `probes` the rules read, and `customRules` as `[{ id }]`. A circular or `BigInt` probe and function rules now survive `JSON.stringify` and `structuredClone`.
 
@@ -170,7 +170,7 @@ Both are fixed in the same commit.
 
 **Left from S-4.** `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are still case-sensitive.
 
-### P13. Double-counted opacity — fixed (`c4427c0`)
+### P13. Double-counted opacity — fixed (`007c025`)
 
 **Reproduced** in Chromium and in jsdom: 2.63:1, where the composited page gives 5.32:1.
 
@@ -188,13 +188,27 @@ It's a worthwhile feature. The cheapest useful part would be `engine.version` fr
 
 ## 3. Decisions for the maintainer
 
-1. **P4: should `null`, `undefined` and `{}` throw too?** They are as dangerous as the shapes that now throw: a failed scan handed to `renderJunitReport` still passes a gate. But four tests pin the empty rendering as intended, so the branch keeps it.
-2. **P12 throws on object-form typos.** This is consistent with the bare-array behavior already in *Unreleased*. A caller that passed a list from a newer engine version with ids this version lacks now gets an error, unless at least one id in the list is known.
-3. **P1's trade-offs.**
-   - A gradient glow behind a section now hides genuine fails, as ancestor gradients already did.
-   - Fixed, sticky and outside-the-opaque-ancestor paint is not considered.
-   - Either way, these cases now give `cantTell` rather than a confident `fail`.
-4. **P14 scope.** As above.
+Taken on 2026-10-05, after an explanation of each with examples, pros and cons.
+
+| # | Question | Decision | State |
+|---|---|---|---|
+| P4 | Should `null`, `undefined` and `{}` throw too? | Yes, they throw | Done in `bb72495`; the four tests that pinned the old behavior were rewritten |
+| P12 | Throw on an object-form `runOnly` list that names nothing, or only warn? | Throw | As implemented in `5c1f8de` |
+| P14 | Which part of version and help links? | `engine.version` only (in results, as the SARIF `driver.version` default and as the EARL assertor release) | Follow-up PR, not on this branch |
+| P1 | Keep `BACKGROUND_OVERLAP` as is, narrow it to images and solid colors, or leave it out of the PR? | Open: performance was asked about first | See below |
+
+**P1 performance, as answered.** Full-scan time in Chromium, before and after the P1 commit:
+
+| Page | Before | After |
+|---|---|---|
+| 1,000 cards with backgrounds, images, badges and gradient links | 255–280 ms | 274–281 ms (+3%) |
+| 5,000 such cards | 1.51–1.63 s | 1.63–1.73 s (+7%) |
+| 1,000 heroes, every text block over an image | 173–177 ms | 199 ms (+15%) |
+| 5,000 heroes | 1.22–1.26 s | 1.32–1.35 s (+8%) |
+| 1,000-row table with colored cells | 317–324 ms | 344–345 ms (+8%) |
+| 5,000-row table | 3.33–3.39 s | 3.36–3.38 s (about +1%) |
+
+On the twelve real sites the difference was within run-to-run noise. Over 20,000 painting elements the check switches itself off, and under jsdom it costs nothing.
 
 ---
 
