@@ -195,9 +195,9 @@ Taken on 2026-10-05, after an explanation of each with examples, pros and cons.
 | P4 | Should `null`, `undefined` and `{}` throw too? | Yes, they throw | Done in `bb72495`; the four tests that pinned the old behavior were rewritten |
 | P12 | Throw on an object-form `runOnly` list that names nothing, or only warn? | Throw | As implemented in `5c1f8de` |
 | P14 | Which part of version and help links? | `engine.version` only (in results, as the SARIF `driver.version` default and as the EARL assertor release) | Follow-up PR, not on this branch |
-| P1 | Keep `BACKGROUND_OVERLAP` as is, narrow it to images and solid colors, or leave it out of the PR? | Open: performance was asked about first | See below |
+| P1 | Keep `BACKGROUND_OVERLAP` as is, narrow it to images and solid colors, or leave it out of the PR? | Keep as is, after the performance figures below | As implemented in `6213f38` |
 
-**P1 performance, as answered.** Full-scan time in Chromium, before and after the P1 commit:
+**P1 performance, the figures the decision was taken on.** Full-scan time in Chromium, before and after the P1 commit:
 
 | Page | Before | After |
 |---|---|---|
