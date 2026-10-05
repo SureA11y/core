@@ -810,6 +810,8 @@ function runCoreSettled(
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];
+  // Custom rules that were not run, and why: { id, reason }.
+  const skippedCustomRules = [];
   const customRuleIds = new Set();
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
@@ -836,6 +838,7 @@ function runCoreSettled(
     }
 
     function warnSkipped(ruleId, reason) {
+      skippedCustomRules.push({ id: ruleId || null, reason });
       try {
         console.warn(
           '[surea11y] customRules: skipped ' +
@@ -857,6 +860,20 @@ function runCoreSettled(
       const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
       if (!ruleId) {
         warnSkipped('', 'no id');
+        continue;
+      }
+      // A second rule with the same id would silently replace the first; a
+      // composite's id would put one id in both checksResults and
+      // rulesResults.
+      if (extraDefsById.has(ruleId)) {
+        warnSkipped(ruleId, 'another custom rule already has this id');
+        continue;
+      }
+      if (
+        Array.isArray(COMPOSITE_RULES) &&
+        COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      ) {
+        warnSkipped(ruleId, "the id is a composite rule's");
         continue;
       }
       // An invalid custom rule is skipped, not a crash.
@@ -1188,6 +1205,14 @@ function runCoreSettled(
       let applicable = true;
       try {
         const res = applicabilityFn(ctx);
+        // Rules run synchronously: a Promise is truthy, and would have
+        // counted as applicable whatever it resolved to.
+        if (res && typeof res.then === 'function') {
+          if (typeof res.catch === 'function') res.catch(() => {});
+          throw new Error(
+            'applicability returned a Promise; rules run synchronously, so it must return a boolean'
+          );
+        }
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
@@ -1242,10 +1267,27 @@ function runCoreSettled(
       };
     }
 
-    if (!result || typeof result !== 'object') {
-      if (ruleTimings)
-        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
-      continue;
+    // A rule that returned nothing usable is reported, not dropped: a
+    // missing result would read as a rule that never existed.
+    const unusable =
+      result && typeof result.then === 'function'
+        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+        : !result || typeof result !== 'object'
+          ? 'runInPage returned ' +
+            (result === null ? 'null' : typeof result) +
+            ' instead of a result object'
+          : '';
+    if (unusable) {
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+      result = {
+        outcome: 'cantTell',
+        occurrences: [],
+        error: unusable,
+        engineOptions: {
+          ...(ctx.engineOptions || {}),
+          locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+        }
+      };
     }
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
@@ -1404,7 +1446,8 @@ function runCoreSettled(
     contextMatch,
     checksResults,
     rulesResults,
-    overriddenBuiltinIds
+    overriddenBuiltinIds,
+    skippedCustomRules
   };
 }
 

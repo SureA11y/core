@@ -67,6 +67,7 @@ test('result schema is stable', () => {
     'overriddenBuiltinIds',
     'perfStats',
     'rulesResults',
+    'skippedCustomRules',
     'timestamp',
     'title',
     'url'
