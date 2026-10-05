@@ -38,7 +38,13 @@ const CASES = [
   ['mediaTranscriptPresent_hint_cantTell_missing', /alternative for text on the page/],
   ['mediaTranscriptPresent_hint_cantTell_unverified', /alternative for text on the page/],
   // The keyboard review says what to check, not "see guidance".
-  ['manualReview_hint_cantTell', /reached and used with the keyboard/]
+  ['manualReview_hint_cantTell', /reached and used with the keyboard/],
+  // img-alt-quality's signals: each can be right when it is what the image shows.
+  ['img_altQuality_hint_cantTellFileName', /file name is itself what the image shows/],
+  ['img_altQuality_hint_cantTellUrl', /address is itself what the image shows/],
+  ['img_altQuality_hint_cantTellPlaceholder', /all the image conveys/],
+  ['img_altQuality_hint_cantTellRedundantPrefix', /unless the kind of image matters/],
+  ['img_altQuality_hint_cantTellTooLong', /image holds that much text itself/]
 ];
 
 for (const [key, mustMention] of CASES) {

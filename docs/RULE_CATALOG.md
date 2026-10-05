@@ -1255,11 +1255,17 @@ Checks that &lt;img&gt; elements provide an alt attribute to support a text alte
 
 manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
-Flags &lt;img&gt; elements with non-empty alt text for human review of appropriateness.
+Flags &lt;img&gt; elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an "image of" opening or is very long.
 
 **Applies to.** Applies to &lt;img&gt; elements whose alt attribute is present and non-empty. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role. An &lt;img&gt; with no alt at all is img-alt-present's failure, and one with alt="" is img-alt-decorative's review.
 
-**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
+**Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate. Alt text that looks like something other than a description gets its own summary and hint: a file name (or alt equal to the image's own file name), a web address, a placeholder or generic word such as "image" or "TBD", an opening that says it is an image ("image of", "photo of"), or alt longer than 150 characters. Every finding is still `cantTell`: each of these can be right in context.
+
+**What a finding reports.**
+
+- `altSignal`: what made the alt text look suspicious, on those findings only: `file-name`, `url`, `placeholder`, `redundant-prefix` or `too-long`. Absent on a finding with ordinary alt text. When several apply, the first in that order is reported.
+- `length`: the alt text's length in characters, on `too-long` only.
+- `limit`: the length above which alt counts as too long (150), on `too-long` only.
 
 ### `input-image-alt-decorative`
 
