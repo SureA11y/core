@@ -254,15 +254,13 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 Everything in the audit not yet fixed, after #77–#79 and #81–#83 (all merged), grouped by how sure it is; 5.4 says when each is planned. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed since the audit.
 
-### What is left, at a glance (updated 2026-10-06)
+### What is left, at a glance (updated 2026-10-06, after the 1.10.0 release)
 
 Everything else in this section is the detail behind this list.
 
-**Before releasing 1.10.0**
+**1.10.0: released 2026-10-06.** PR #84 (the performance fixes and section 6) and the release PR #85 merged; tag `v1.10.0` on `6b057bb`; published to npm by the release workflow with SLSA provenance; [GitHub release](https://github.com/SureA11y/core/releases/tag/v1.10.0) published from the draft.
 
-1. **Merge PR #84** (`perf/contrast-computable`). It holds the two safe speed fixes from the performance check (5.4, step 1) and the section 6 leads (5.0, last table): six fixes, one decision taken with the maintainer, three leads that are not bugs. Nothing else is left from section 6 for 1.10.0.
-2. **Close branch `fix/aria-name-form-leads`**: it never got a commit; the leads went into PR #84.
-3. **Release 1.10.0** (5.4, step 3): diff `v1.9.0` against `main`, bump and build, `npm run finding-ids:release -- 1.10.0`, changelog heading, npm publish, GitHub release, then a core-perf run of 1.10.0 from npm as the new baseline.
+**Next:** a core-perf run of 1.10.0 from npm, committed as the new baseline (planned for 2026-10-07).
 
 **1.11.0 (core):** engine improvement D (a question per cantTell), name computation across a shadow boundary (from section 6), the audit harness's 126 wrong expectations if it is to be reused, slow jsdom scans of CSS-heavy pages, about 40 KB left behind per repeated browser scan, the rule edge cases R-10 to R-14, the contracts and the integration features. The full list is in 5.4.
 
