@@ -4370,7 +4370,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "img-alt-quality",
     "title": "<img> alt text must be appropriate (manual review)",
-    "description": "Flags <img> elements with non-empty alt text for human review of appropriateness.",
+    "description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "img_altQuality_title",
       "descriptionKey": "img_altQuality_description"
@@ -10447,9 +10447,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Fehlende Textalternative für <embed>.",
     "embed_textAltPresent_hint_fail": "Fügen Sie <embed> einen zugänglichen Namen hinzu (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
     "img_altQuality_title": "<img>-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
+    "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit und weist darauf hin, wenn der Alternativtext wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "img_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <img> auf Genauigkeit und Angemessenheit.",
     "img_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext den Zweck/die Information des Bildes im Kontext vermittelt (nicht redundant, kein Dateiname).",
+    "img_altQuality_summary_cantTellFileName": "Der Alternativtext dieses <img> sieht wie ein Dateiname aus.",
+    "img_altQuality_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
+    "img_altQuality_summary_cantTellUrl": "Der Alternativtext dieses <img> ist eine Webadresse.",
+    "img_altQuality_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
+    "img_altQuality_summary_cantTellPlaceholder": "Der Alternativtext dieses <img> ist ein Platzhalter oder ein allgemeines Wort.",
+    "img_altQuality_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Schreiben Sie einen Text, der seinen Zweck im Kontext erfüllt, oder verwenden Sie alt=\"\", wenn das Bild dekorativ ist. Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "Der Alternativtext dieses <img> beginnt damit, dass es ein Bild ist.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
+    "img_altQuality_summary_cantTellTooLong": "Der Alternativtext dieses <img> ist {{length}} Zeichen lang.",
+    "img_altQuality_hint_cantTellTooLong": "Alternativtext wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie den Alternativtext kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Ein langer Alternativtext passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
     "img_altDecorative_title": "Ausgeschlossene <img>/<canvas>/<svg> müssen dekorativ sein (manuelle Überprüfung)",
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
@@ -10502,10 +10512,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist, in einer Reihenfolge, die der Seite folgt, und mit stets sichtbarem Fokus.",
     "manualReview_summary_cantTell": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
     "manualReview_title": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
-    "rules.img-alt-suspicious.meta.title": "Verdächtiger Alternativtext erfordert eine Überprüfung",
-    "rules.img-alt-suspicious.meta.description": "Identifiziert Bilder, deren Alternativtext gängigen verdächtigen Mustern entspricht (z. B. Dateinamen, URLs, Platzhaltern oder generischen Begriffen), und erfordert eine manuelle Überprüfung.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
     "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
     "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet. Englische Platzhalter werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn das Feld in dieser Sprache ist.",
     "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
@@ -11297,9 +11303,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Missing text alternative for <embed>.",
     "embed_textAltPresent_hint_fail": "Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).",
     "img_altQuality_title": "<img> alt text must be appropriate (manual review)",
-    "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness.",
+    "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "img_altQuality_summary_cantTell": "Review alt text on <img> for accuracy and appropriateness.",
     "img_altQuality_hint_cantTell": "Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).",
+    "img_altQuality_summary_cantTellFileName": "The alt text of this <img> looks like a file name.",
+    "img_altQuality_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
+    "img_altQuality_summary_cantTellUrl": "The alt text of this <img> is a web address.",
+    "img_altQuality_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
+    "img_altQuality_summary_cantTellPlaceholder": "The alt text of this <img> is a placeholder or a generic word.",
+    "img_altQuality_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt=\"\" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "The alt text of this <img> starts by saying it is an image.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
+    "img_altQuality_summary_cantTellTooLong": "The alt text of this <img> is {{length}} characters long.",
+    "img_altQuality_hint_cantTellTooLong": "Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.",
     "img_altDecorative_title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
@@ -11352,10 +11368,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.",
     "manualReview_summary_cantTell": "Manual review: keyboard navigation and focus order",
     "manualReview_title": "Manual review: keyboard navigation and focus order",
-    "rules.img-alt-suspicious.meta.title": "Suspicious alt text requires verification",
-    "rules.img-alt-suspicious.meta.description": "Identifies images whose alt text matches common suspicious patterns (such as filenames, URLs, placeholders, or generic terms) and requires manual verification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
     "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
@@ -12147,9 +12159,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Falta la alternativa textual para <embed>.",
     "embed_textAltPresent_hint_fail": "Agregar un nombre accesible a <embed> (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de último recurso).",
     "img_altQuality_title": "El texto alt de <img> debe ser apropiado (revisión manual)",
-    "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
+    "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad, e indica cuándo el texto alt parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "img_altQuality_summary_cantTell": "Revisar el texto alt de <img> en cuanto a exactitud e idoneidad.",
     "img_altQuality_hint_cantTell": "Asegurarse de que el texto alt transmita el propósito o la información de la imagen en su contexto (que no sea redundante ni parezca un nombre de archivo).",
+    "img_altQuality_summary_cantTellFileName": "El texto alt de este <img> parece un nombre de archivo.",
+    "img_altQuality_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que cumpla el propósito de la imagen en su contexto. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
+    "img_altQuality_summary_cantTellUrl": "El texto alt de este <img> es una dirección web.",
+    "img_altQuality_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que cumpla el propósito de la imagen en su contexto. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
+    "img_altQuality_summary_cantTellPlaceholder": "El texto alt de este <img> es un marcador de posición o una palabra genérica.",
+    "img_altQuality_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Escribir un texto que cumpla su propósito en el contexto, o usar alt=\"\" si la imagen es decorativa. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "El texto alt de este <img> empieza diciendo que es una imagen.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
+    "img_altQuality_summary_cantTellTooLong": "El texto alt de este <img> tiene {{length}} caracteres.",
+    "img_altQuality_hint_cantTellTooLong": "El texto alt se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener el texto alt breve y dar los detalles en texto en la página o en una descripción enlazada. Un texto alt largo está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
     "img_altDecorative_title": "Los <img>/<canvas>/<svg> excluidos deben ser decorativos (revisión manual)",
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
@@ -12202,10 +12224,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, en un orden que siga la página, con el foco siempre visible.",
     "manualReview_summary_cantTell": "Revisión manual: navegación por teclado y orden del foco",
     "manualReview_title": "Revisión manual: navegación por teclado y orden del foco",
-    "rules.img-alt-suspicious.meta.title": "El texto alt sospechoso requiere verificación",
-    "rules.img-alt-suspicious.meta.description": "Identifica imágenes cuyo texto alt coincide con patrones sospechosos comunes (como nombres de archivo, URL, marcadores de posición o términos genéricos) y requiere verificación manual.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
     "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
     "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga. Los marcadores de posición en inglés se reconocen siempre, y los alemanes, españoles, franceses o japoneses cuando el campo está en ese idioma.",
     "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
@@ -12997,9 +13015,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Alternative textuelle manquante pour <embed>.",
     "embed_textAltPresent_hint_fail": "Ajoutez un nom accessible à <embed> (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
     "img_altQuality_title": "<img> : texte alt à vérifier (revue manuelle)",
-    "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence, et indique quand le texte alt ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "img_altQuality_summary_cantTell": "Vérifiez le texte alt de <img> (exactitude et pertinence).",
     "img_altQuality_hint_cantTell": "Assurez-vous que le texte alt exprime le but/l’information de l’image dans son contexte (ni redondant, ni nom de fichier).",
+    "img_altQuality_summary_cantTellFileName": "Le texte alt de cet <img> ressemble à un nom de fichier.",
+    "img_altQuality_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui remplit la fonction de l’image dans son contexte. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
+    "img_altQuality_summary_cantTellUrl": "Le texte alt de cet <img> est une adresse web.",
+    "img_altQuality_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui remplit la fonction de l’image dans son contexte. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
+    "img_altQuality_summary_cantTellPlaceholder": "Le texte alt de cet <img> est un texte provisoire ou un mot générique.",
+    "img_altQuality_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Écrivez un texte qui remplit sa fonction dans son contexte, ou utilisez alt=\"\" si l’image est décorative. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "Le texte alt de cet <img> commence par dire qu’il s’agit d’une image.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
+    "img_altQuality_summary_cantTellTooLong": "Le texte alt de cet <img> compte {{length}} caractères.",
+    "img_altQuality_hint_cantTellTooLong": "Le texte alt est lu d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez un texte alt court et donnez les détails dans le texte de la page ou dans une description liée. Un texte alt long convient quand l’image contient elle-même autant de texte, comme une courte citation.",
     "img_altDecorative_title": "Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)",
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
@@ -13052,10 +13080,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, dans un ordre qui suit la page, avec un focus toujours visible.",
     "manualReview_summary_cantTell": "Vérification manuelle : navigation au clavier et ordre du focus",
     "manualReview_title": "Vérification manuelle requise.",
-    "rules.img-alt-suspicious.meta.title": "Texte alternatif suspect nécessitant une vérification",
-    "rules.img-alt-suspicious.meta.description": "Identifie les images dont le texte alternatif correspond à des motifs suspects courants (nom de fichier, URL, texte fictif ou terme générique) et nécessite une vérification manuelle.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
     "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
     "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue. Les textes de remplacement anglais sont toujours reconnus, et les textes allemands, espagnols, français ou japonais lorsque le champ est dans cette langue.",
     "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
@@ -13847,9 +13871,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "<embed> にテキストによる代替がありません。",
     "embed_textAltPresent_hint_fail": "<embed> にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。次善の策として title 属性も使えます)。",
     "img_altQuality_title": "<img> の代替テキストが適切であること (手動確認)",
-    "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。代替テキストがファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "img_altQuality_summary_cantTell": "<img> の代替テキストが正確かつ適切か、人による確認が必要です。",
     "img_altQuality_hint_cantTell": "代替テキストが、文脈の中で画像の目的や情報を伝えているか確認してください (冗長な表現やファイル名のような文字列になっていないか)。",
+    "img_altQuality_summary_cantTellFileName": "この <img> の代替テキストはファイル名のように見えます。",
+    "img_altQuality_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。文脈の中で画像の目的を果たすテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellUrl": "この <img> の代替テキストは Web アドレスです。",
+    "img_altQuality_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。文脈の中で画像の目的を果たすテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellPlaceholder": "この <img> の代替テキストは仮の文字列か、汎用的な語です。",
+    "img_altQuality_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。文脈の中で目的を果たすテキストを書くか、装飾的な画像であれば alt=\"\" にしてください。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellRedundantPrefix": "この <img> の代替テキストは、画像であることを述べています。",
+    "img_altQuality_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
+    "img_altQuality_summary_cantTellTooLong": "この <img> の代替テキストは {{length}} 文字あります。",
+    "img_altQuality_hint_cantTellTooLong": "代替テキストは一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、代替テキストは短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長い代替テキストで構いません。",
     "img_altDecorative_title": "支援技術から除外された <img>/<canvas>/<svg> が装飾であること (手動確認)",
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
@@ -13902,10 +13936,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作できること、その順序がページの流れに沿っていること、フォーカスが常に見えることを確認してください。",
     "manualReview_summary_cantTell": "手動確認: キーボード操作とフォーカス順序",
     "manualReview_title": "手動確認: キーボード操作とフォーカス順序",
-    "rules.img-alt-suspicious.meta.title": "不審な代替テキストは確認が必要",
-    "rules.img-alt-suspicious.meta.description": "代替テキストが、よくある不審なパターン (ファイル名、URL、仮の文字列、汎用的な語句など) に一致する画像を検出します。これらは手動での確認が必要です。",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "画像の代替テキストが不審です (「{{alt}}」は {{pattern}} のように見えます)。人による確認が必要です。",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "代替テキストを確認してください。ファイル名、URL、仮の文字列、汎用的な語句は避け、文脈の中で画像の目的や機能を説明するテキストにしてください。",
     "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
     "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「ラベル」「入力欄」、\"Label\" など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。英語の仮の文字列は常に対象とし、ドイツ語、スペイン語、フランス語、日本語のものは、フィールドがその言語で書かれている場合に対象とします。",
     "formControlLabelQuality_summary_cantTell_placeholder": "このフィールドの表示ラベル (「{{label}}」) は仮の文字列であり、フィールドの用途を説明していません。",
@@ -30238,7 +30268,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "img-alt-quality",
     "title": "<img> alt text must be appropriate (manual review)",
-    "description": "Flags <img> elements with non-empty alt text for human review of appropriateness.",
+    "description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "i18n": {
       "titleKey": "img_altQuality_title",
       "descriptionKey": "img_altQuality_description"
@@ -50138,6 +50168,261 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !focusable;
   }
 
+  // Placeholder and generic words, matched against the whole alt text.
+  const PLACEHOLDER_WORDS = {
+    en: [
+      'image',
+      'img',
+      'picture',
+      'pic',
+      'photo',
+      'photograph',
+      'graphic',
+      'icon',
+      'logo',
+      'banner',
+      'alt',
+      'alt text',
+      'alternative text',
+      'image description',
+      'description',
+      'placeholder',
+      'image placeholder',
+      'tbd',
+      'todo',
+      'untitled',
+      'spacer',
+      'blank',
+      'null',
+      'undefined',
+      'test'
+    ],
+    de: [
+      'bild',
+      'foto',
+      'grafik',
+      'abbildung',
+      'symbol',
+      'logo',
+      'platzhalter',
+      'bildbeschreibung',
+      'alternativtext',
+      'ohne titel',
+      'unbenannt'
+    ],
+    es: [
+      'imagen',
+      'foto',
+      'fotografía',
+      'gráfico',
+      'icono',
+      'ícono',
+      'logo',
+      'logotipo',
+      'marcador de posición',
+      'descripción de la imagen',
+      'texto alternativo',
+      'sin título'
+    ],
+    fr: [
+      'image',
+      'photo',
+      'photographie',
+      'illustration',
+      'graphique',
+      'icône',
+      'logo',
+      'espace réservé',
+      "description de l'image",
+      'texte alternatif',
+      'sans titre'
+    ],
+    ja: [
+      '画像',
+      '写真',
+      'イメージ',
+      '図',
+      'アイコン',
+      'ロゴ',
+      '代替テキスト',
+      '画像の説明',
+      '無題',
+      'ダミー'
+    ]
+  };
+
+  // Openings that say the image is an image, followed by what it shows.
+  const REDUNDANT_PREFIXES = {
+    en: [
+      'image of ',
+      'an image of ',
+      'picture of ',
+      'a picture of ',
+      'photo of ',
+      'a photo of ',
+      'photograph of ',
+      'a photograph of ',
+      'graphic of ',
+      'image: ',
+      'picture: ',
+      'photo: '
+    ],
+    de: ['bild von ', 'ein bild von ', 'foto von ', 'ein foto von ', 'bild: ', 'foto: '],
+    es: [
+      'imagen de ',
+      'una imagen de ',
+      'foto de ',
+      'una foto de ',
+      'fotografía de ',
+      'imagen: ',
+      'foto: '
+    ],
+    fr: [
+      'image de ',
+      "image d'",
+      'une image de ',
+      "une image d'",
+      'photo de ',
+      "photo d'",
+      'une photo de ',
+      "une photo d'",
+      'image : ',
+      'photo : ',
+      'image: ',
+      'photo: '
+    ],
+    ja: ['画像:', '写真:']
+  };
+  // Japanese says it at the end: 「富士山の写真」.
+  const REDUNDANT_SUFFIXES_JA = ['の画像', 'の写真', 'のイメージ'];
+
+  const MAX_ALT_LENGTH = 150;
+  const IMAGE_FILE_RE =
+    /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
+  // Names cameras, phones and screenshot tools give files.
+  const GENERATED_NAME_RE =
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+  const URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
+
+  // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
+  // as in link-name-quality; trailing punctuation is not part of the word.
+  function normalizeAlt(s) {
+    return String(s || '')
+      .normalize('NFKC')
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function stripTrailingPunctuation(s) {
+    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+  }
+
+  // Primary language subtag of the nearest lang attribute, crossing shadow
+  // roots; '' when none is declared.
+  function primaryLangOf(node) {
+    let n = node;
+    while (n) {
+      if (n.nodeType === 1 && n.getAttribute) {
+        const v = n.getAttribute('lang');
+        if (v != null) return v.trim().split('-')[0].toLowerCase();
+      }
+      n = n.parentNode || n.host || null;
+    }
+    return '';
+  }
+
+  function listsFor(byLang, lang) {
+    const out = byLang.en.slice();
+    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    return out;
+  }
+
+  function srcFileName(el) {
+    let src;
+    try {
+      src = String(el.getAttribute('src') || '');
+    } catch {
+      return '';
+    }
+    const path = src.split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {}
+    return normalizeAlt(name);
+  }
+
+  // What makes this alt look like something other than a description, or
+  // null for ordinary alt text.
+  function altSignalOf(el, rawAlt) {
+    const alt = normalizeAlt(rawAlt);
+    const word = stripTrailingPunctuation(alt);
+
+    if (IMAGE_FILE_RE.test(alt) || GENERATED_NAME_RE.test(word)) return { altSignal: 'file-name' };
+    const fileName = srcFileName(el);
+    const stem = fileName.replace(/\.[a-z0-9]+$/, '');
+    if (
+      fileName &&
+      (alt === fileName || (stem && word === stem && !/\s/.test(word) && /_|\d\d|-.*-/.test(word)))
+    ) {
+      return { altSignal: 'file-name' };
+    }
+
+    if (URL_RE.test(alt)) return { altSignal: 'url' };
+
+    const lang = primaryLangOf(el);
+    if (!/[\p{L}\p{N}]/u.test(alt) || listsFor(PLACEHOLDER_WORDS, lang).includes(word)) {
+      return { altSignal: 'placeholder' };
+    }
+
+    const prefixed = listsFor(REDUNDANT_PREFIXES, lang).some(
+      (p) => alt.length > p.length && alt.startsWith(p)
+    );
+    const suffixed =
+      lang === 'ja' &&
+      REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
+    if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
+
+    const length = Array.from(String(rawAlt).trim()).length;
+    if (length > MAX_ALT_LENGTH) {
+      return { altSignal: 'too-long', length, limit: MAX_ALT_LENGTH };
+    }
+    return null;
+  }
+
+  // Message keys per signal; ordinary alt keeps the rule's original ones.
+  const SIGNAL_KEYS = {
+    'file-name': 'FileName',
+    url: 'Url',
+    placeholder: 'Placeholder',
+    'redundant-prefix': 'RedundantPrefix',
+    'too-long': 'TooLong'
+  };
+  const SIGNAL_TEXT = {
+    'file-name': [
+      'The alt text of this <img> looks like a file name.',
+      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+    ],
+    url: [
+      'The alt text of this <img> is a web address.',
+      'An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
+    ],
+    placeholder: [
+      'The alt text of this <img> is a placeholder or a generic word.',
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt="" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    'redundant-prefix': [
+      'The alt text of this <img> starts by saying it is an image.',
+      'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
+    ],
+    'too-long': [
+      'The alt text of this <img> is {{length}} characters long.',
+      'Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.'
+    ]
+  };
+
   const selector = 'img[alt]:not([alt=""])';
   const els = (() => {
     try {
@@ -50200,17 +50485,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (collectedCount >= MAX_OCCURRENCES) continue;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const signal = (() => {
+      try {
+        return altSignalOf(el, el.getAttribute('alt'));
+      } catch {
+        return null;
+      }
+    })();
+    const keySuffix = signal ? SIGNAL_KEYS[signal.altSignal] : '';
+    const text = signal ? SIGNAL_TEXT[signal.altSignal] : null;
+    const params = { element: 'img' };
+    if (signal && signal.length) params.length = signal.length;
     const baseOccurrence = {
-      summary: 'Review alt text on <img> for accuracy and appropriateness.',
-      hint: 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
+      summary: text
+        ? text[0].replace('{{length}}', String(params.length || ''))
+        : 'Review alt text on <img> for accuracy and appropriateness.',
+      hint: text
+        ? text[1]
+        : 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
       i18n: {
-        summaryKey: 'img_altQuality_summary_cantTell',
-        hintKey: 'img_altQuality_hint_cantTell',
-        params: { element: 'img' }
+        summaryKey: 'img_altQuality_summary_cantTell' + keySuffix,
+        hintKey: 'img_altQuality_hint_cantTell' + keySuffix,
+        params
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
+        details: signal
       }
     };
 
@@ -62677,9 +62977,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Fehlende Textalternative für <embed>.",
     "embed_textAltPresent_hint_fail": "Fügen Sie <embed> einen zugänglichen Namen hinzu (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
     "img_altQuality_title": "<img>-Alternativtext muss angemessen sein (manuelle Überprüfung)",
-    "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit.",
+    "img_altQuality_description": "Markiert <img>-Elemente mit nicht leerem Alternativtext zur manuellen Überprüfung der Angemessenheit und weist darauf hin, wenn der Alternativtext wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
     "img_altQuality_summary_cantTell": "Überprüfen Sie den Alternativtext von <img> auf Genauigkeit und Angemessenheit.",
     "img_altQuality_hint_cantTell": "Stellen Sie sicher, dass der Alternativtext den Zweck/die Information des Bildes im Kontext vermittelt (nicht redundant, kein Dateiname).",
+    "img_altQuality_summary_cantTellFileName": "Der Alternativtext dieses <img> sieht wie ein Dateiname aus.",
+    "img_altQuality_hint_cantTellFileName": "Ein Dateiname sagt jemandem, der das Bild nicht sieht, nichts darüber (WCAG-Fehler F30). Ersetzen Sie ihn durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie ihn nur, wenn der Dateiname selbst das ist, was das Bild zeigt, etwa bei einem Screenshot einer Dateiliste.",
+    "img_altQuality_summary_cantTellUrl": "Der Alternativtext dieses <img> ist eine Webadresse.",
+    "img_altQuality_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der den Zweck des Bildes im Kontext erfüllt. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
+    "img_altQuality_summary_cantTellPlaceholder": "Der Alternativtext dieses <img> ist ein Platzhalter oder ein allgemeines Wort.",
+    "img_altQuality_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Schreiben Sie einen Text, der seinen Zweck im Kontext erfüllt, oder verwenden Sie alt=\"\", wenn das Bild dekorativ ist. Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "Der Alternativtext dieses <img> beginnt damit, dass es ein Bild ist.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
+    "img_altQuality_summary_cantTellTooLong": "Der Alternativtext dieses <img> ist {{length}} Zeichen lang.",
+    "img_altQuality_hint_cantTellTooLong": "Alternativtext wird am Stück vorgelesen und lässt sich nicht navigieren. Braucht das Bild eine lange Beschreibung, etwa ein Diagramm, halten Sie den Alternativtext kurz und geben Sie die Details als Text auf der Seite oder in einer verlinkten Beschreibung. Ein langer Alternativtext passt, wenn das Bild selbst so viel Text enthält, etwa ein kurzes Zitat.",
     "img_altDecorative_title": "Ausgeschlossene <img>/<canvas>/<svg> müssen dekorativ sein (manuelle Überprüfung)",
     "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
     "img_altDecorative_summary_cantTell": "Überprüfen Sie, ob dieses <{{element}}> dekorativ ist.",
@@ -62732,10 +63042,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist, in einer Reihenfolge, die der Seite folgt, und mit stets sichtbarem Fokus.",
     "manualReview_summary_cantTell": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
     "manualReview_title": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
-    "rules.img-alt-suspicious.meta.title": "Verdächtiger Alternativtext erfordert eine Überprüfung",
-    "rules.img-alt-suspicious.meta.description": "Identifiziert Bilder, deren Alternativtext gängigen verdächtigen Mustern entspricht (z. B. Dateinamen, URLs, Platzhaltern oder generischen Begriffen), und erfordert eine manuelle Überprüfung.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Der Alternativtext des Bildes wirkt verdächtig („{{alt}}“ ähnelt {{pattern}}) und erfordert eine Überprüfung.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Überprüfen Sie den Alternativtext. Vermeiden Sie Dateinamen, URLs, Platzhalter oder generische Begriffe, und stellen Sie sicher, dass die Textalternative den Zweck oder die Funktion des Bildes im Kontext beschreibt.",
     "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
     "formControlLabelQuality_description": "Meldet eine sichtbare Feldbeschriftung, die ein Platzhalter ist („Beschriftung“, „Feld“) oder die Beschriftung eines anderen Feldes wiederholt, ohne dass ein sichtbarer Kontext – Überschrift, Legende oder Zeile – beide unterscheidet. Englische Platzhalter werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn das Feld in dieser Sprache ist.",
     "formControlLabelQuality_summary_cantTell_placeholder": "Die sichtbare Beschriftung dieses Feldes („{{label}}“) ist ein Platzhalter und beschreibt nicht, wofür das Feld da ist.",
@@ -63527,9 +63833,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Missing text alternative for <embed>.",
     "embed_textAltPresent_hint_fail": "Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).",
     "img_altQuality_title": "<img> alt text must be appropriate (manual review)",
-    "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness.",
+    "img_altQuality_description": "Flags <img> elements with non-empty alt text for human review of appropriateness, and says when the alt looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
     "img_altQuality_summary_cantTell": "Review alt text on <img> for accuracy and appropriateness.",
     "img_altQuality_hint_cantTell": "Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).",
+    "img_altQuality_summary_cantTellFileName": "The alt text of this <img> looks like a file name.",
+    "img_altQuality_hint_cantTellFileName": "A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that serves the image’s purpose in context. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.",
+    "img_altQuality_summary_cantTellUrl": "The alt text of this <img> is a web address.",
+    "img_altQuality_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that serves the image’s purpose in context. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
+    "img_altQuality_summary_cantTellPlaceholder": "The alt text of this <img> is a placeholder or a generic word.",
+    "img_altQuality_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Write text that serves its purpose in context, or use alt=\"\" if the image is decorative. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "The alt text of this <img> starts by saying it is an image.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
+    "img_altQuality_summary_cantTellTooLong": "The alt text of this <img> is {{length}} characters long.",
+    "img_altQuality_hint_cantTellTooLong": "Alt text is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the alt short and give the details in text on the page or in a linked description. A long alt is fine when the image holds that much text itself, such as a short quotation.",
     "img_altDecorative_title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
     "img_altDecorative_summary_cantTell": "Review whether this <{{element}}> is decorative.",
@@ -63582,10 +63898,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.",
     "manualReview_summary_cantTell": "Manual review: keyboard navigation and focus order",
     "manualReview_title": "Manual review: keyboard navigation and focus order",
-    "rules.img-alt-suspicious.meta.title": "Suspicious alt text requires verification",
-    "rules.img-alt-suspicious.meta.description": "Identifies images whose alt text matches common suspicious patterns (such as filenames, URLs, placeholders, or generic terms) and requires manual verification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Image alt text appears suspicious (\"{{alt}}\" looks like {{pattern}}) and requires verification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Review the alt text. Avoid filenames, URLs, placeholders, or generic terms, and ensure the text alternative describes the image’s purpose or function in context.",
     "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
     "formControlLabelQuality_description": "Flags a visible form-field label that is a placeholder (\"Label\", \"Field\"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.",
     "formControlLabelQuality_summary_cantTell_placeholder": "This field's visible label (\"{{label}}\") is a placeholder rather than a description of what the field is for.",
@@ -64377,9 +64689,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Falta la alternativa textual para <embed>.",
     "embed_textAltPresent_hint_fail": "Agregar un nombre accesible a <embed> (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de último recurso).",
     "img_altQuality_title": "El texto alt de <img> debe ser apropiado (revisión manual)",
-    "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad.",
+    "img_altQuality_description": "Señala elementos <img> con texto alt no vacío para su revisión manual en cuanto a idoneidad, e indica cuándo el texto alt parece un nombre de archivo, una dirección web o un marcador de posición, empieza por «imagen de» o es muy largo.",
     "img_altQuality_summary_cantTell": "Revisar el texto alt de <img> en cuanto a exactitud e idoneidad.",
     "img_altQuality_hint_cantTell": "Asegurarse de que el texto alt transmita el propósito o la información de la imagen en su contexto (que no sea redundante ni parezca un nombre de archivo).",
+    "img_altQuality_summary_cantTellFileName": "El texto alt de este <img> parece un nombre de archivo.",
+    "img_altQuality_hint_cantTellFileName": "Un nombre de archivo no le dice nada sobre la imagen a quien no puede verla (fallo F30 de WCAG). Sustituirlo por un texto que cumpla el propósito de la imagen en su contexto. Mantenerlo solo si el nombre de archivo es lo que muestra la imagen, como en una captura de pantalla de una lista de archivos.",
+    "img_altQuality_summary_cantTellUrl": "El texto alt de este <img> es una dirección web.",
+    "img_altQuality_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que cumpla el propósito de la imagen en su contexto. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
+    "img_altQuality_summary_cantTellPlaceholder": "El texto alt de este <img> es un marcador de posición o una palabra genérica.",
+    "img_altQuality_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Escribir un texto que cumpla su propósito en el contexto, o usar alt=\"\" si la imagen es decorativa. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "El texto alt de este <img> empieza diciendo que es una imagen.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
+    "img_altQuality_summary_cantTellTooLong": "El texto alt de este <img> tiene {{length}} caracteres.",
+    "img_altQuality_hint_cantTellTooLong": "El texto alt se lee de una vez y no se puede recorrer por partes. Si la imagen necesita una descripción larga, como un gráfico o un diagrama, mantener el texto alt breve y dar los detalles en texto en la página o en una descripción enlazada. Un texto alt largo está bien cuando la propia imagen contiene tanto texto, como una cita breve.",
     "img_altDecorative_title": "Los <img>/<canvas>/<svg> excluidos deben ser decorativos (revisión manual)",
     "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
     "img_altDecorative_summary_cantTell": "Revisar si este <{{element}}> es decorativo.",
@@ -64432,10 +64754,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, en un orden que siga la página, con el foco siempre visible.",
     "manualReview_summary_cantTell": "Revisión manual: navegación por teclado y orden del foco",
     "manualReview_title": "Revisión manual: navegación por teclado y orden del foco",
-    "rules.img-alt-suspicious.meta.title": "El texto alt sospechoso requiere verificación",
-    "rules.img-alt-suspicious.meta.description": "Identifica imágenes cuyo texto alt coincide con patrones sospechosos comunes (como nombres de archivo, URL, marcadores de posición o términos genéricos) y requiere verificación manual.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "El texto alt de la imagen parece sospechoso (\"{{alt}}\" parece {{pattern}}) y requiere verificación.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Revisar el texto alt. Evitar nombres de archivo, URL, marcadores de posición o términos genéricos, y asegurarse de que la alternativa textual describa el propósito o la función de la imagen en su contexto.",
     "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deben ser descriptivas y distinguibles",
     "formControlLabelQuality_description": "Señala una etiqueta visible de campo que es un marcador de posición («Etiqueta», «Campo») o que repite la etiqueta de otro campo sin que ningún contexto visible —encabezado, leyenda o fila— los distinga. Los marcadores de posición en inglés se reconocen siempre, y los alemanes, españoles, franceses o japoneses cuando el campo está en ese idioma.",
     "formControlLabelQuality_summary_cantTell_placeholder": "La etiqueta visible de este campo («{{label}}») es un marcador de posición y no describe para qué sirve el campo.",
@@ -65227,9 +65545,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "Alternative textuelle manquante pour <embed>.",
     "embed_textAltPresent_hint_fail": "Ajoutez un nom accessible à <embed> (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
     "img_altQuality_title": "<img> : texte alt à vérifier (revue manuelle)",
-    "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence.",
+    "img_altQuality_description": "Signale les éléments <img> dont l’attribut alt n’est pas vide afin de vérifier manuellement sa pertinence, et indique quand le texte alt ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
     "img_altQuality_summary_cantTell": "Vérifiez le texte alt de <img> (exactitude et pertinence).",
     "img_altQuality_hint_cantTell": "Assurez-vous que le texte alt exprime le but/l’information de l’image dans son contexte (ni redondant, ni nom de fichier).",
+    "img_altQuality_summary_cantTellFileName": "Le texte alt de cet <img> ressemble à un nom de fichier.",
+    "img_altQuality_hint_cantTellFileName": "Un nom de fichier n’apprend rien sur l’image à quelqu’un qui ne la voit pas (échec WCAG F30). Remplacez-le par un texte qui remplit la fonction de l’image dans son contexte. Ne le gardez que si le nom de fichier est lui-même ce que montre l’image, comme une capture d’écran d’une liste de fichiers.",
+    "img_altQuality_summary_cantTellUrl": "Le texte alt de cet <img> est une adresse web.",
+    "img_altQuality_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui remplit la fonction de l’image dans son contexte. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
+    "img_altQuality_summary_cantTellPlaceholder": "Le texte alt de cet <img> est un texte provisoire ou un mot générique.",
+    "img_altQuality_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Écrivez un texte qui remplit sa fonction dans son contexte, ou utilisez alt=\"\" si l’image est décorative. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "img_altQuality_summary_cantTellRedundantPrefix": "Le texte alt de cet <img> commence par dire qu’il s’agit d’une image.",
+    "img_altQuality_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
+    "img_altQuality_summary_cantTellTooLong": "Le texte alt de cet <img> compte {{length}} caractères.",
+    "img_altQuality_hint_cantTellTooLong": "Le texte alt est lu d’un seul tenant et ne se parcourt pas. Si l’image demande une longue description, comme un graphique ou un schéma, gardez un texte alt court et donnez les détails dans le texte de la page ou dans une description liée. Un texte alt long convient quand l’image contient elle-même autant de texte, comme une courte citation.",
     "img_altDecorative_title": "Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)",
     "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
     "img_altDecorative_summary_cantTell": "Vérifiez si ce <{{element}}> est décoratif.",
@@ -65282,10 +65610,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, dans un ordre qui suit la page, avec un focus toujours visible.",
     "manualReview_summary_cantTell": "Vérification manuelle : navigation au clavier et ordre du focus",
     "manualReview_title": "Vérification manuelle requise.",
-    "rules.img-alt-suspicious.meta.title": "Texte alternatif suspect nécessitant une vérification",
-    "rules.img-alt-suspicious.meta.description": "Identifie les images dont le texte alternatif correspond à des motifs suspects courants (nom de fichier, URL, texte fictif ou terme générique) et nécessite une vérification manuelle.",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "Le texte alternatif de l’image semble suspect (« {{alt}} » ressemble à {{pattern}}) et nécessite une vérification.",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "Vérifiez le texte alternatif. Évitez les noms de fichiers, les URL, les textes fictifs ou les termes génériques, et assurez-vous que l’alternative textuelle décrit la fonction ou le contenu de l’image dans son contexte.",
     "formControlLabelQuality_title": "Les étiquettes des champs de formulaire doivent être descriptives et distinctes",
     "formControlLabelQuality_description": "Signale une étiquette visible de champ qui est un texte de remplacement (« Étiquette », « Champ ») ou qui reprend l’étiquette d’un autre champ sans qu’aucun contexte visible — titre, légende ou ligne — ne les distingue. Les textes de remplacement anglais sont toujours reconnus, et les textes allemands, espagnols, français ou japonais lorsque le champ est dans cette langue.",
     "formControlLabelQuality_summary_cantTell_placeholder": "L’étiquette visible de ce champ (« {{label}} ») est un texte de remplacement et ne décrit pas à quoi sert le champ.",
@@ -66077,9 +66401,19 @@ const I18N = {
     "embed_textAltPresent_summary_fail": "<embed> にテキストによる代替がありません。",
     "embed_textAltPresent_hint_fail": "<embed> にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。次善の策として title 属性も使えます)。",
     "img_altQuality_title": "<img> の代替テキストが適切であること (手動確認)",
-    "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。",
+    "img_altQuality_description": "空でない代替テキストを持つ <img> 要素を検出し、その内容が適切かを人が確認できるようにします。代替テキストがファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
     "img_altQuality_summary_cantTell": "<img> の代替テキストが正確かつ適切か、人による確認が必要です。",
     "img_altQuality_hint_cantTell": "代替テキストが、文脈の中で画像の目的や情報を伝えているか確認してください (冗長な表現やファイル名のような文字列になっていないか)。",
+    "img_altQuality_summary_cantTellFileName": "この <img> の代替テキストはファイル名のように見えます。",
+    "img_altQuality_hint_cantTellFileName": "ファイル名は、画像を見られない人にとって画像について何も伝えません (WCAG 失敗例 F30)。文脈の中で画像の目的を果たすテキストに置き換えてください。ファイル一覧のスクリーンショットのように、ファイル名そのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellUrl": "この <img> の代替テキストは Web アドレスです。",
+    "img_altQuality_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。文脈の中で画像の目的を果たすテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellPlaceholder": "この <img> の代替テキストは仮の文字列か、汎用的な語です。",
+    "img_altQuality_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。文脈の中で目的を果たすテキストを書くか、装飾的な画像であれば alt=\"\" にしてください。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "img_altQuality_summary_cantTellRedundantPrefix": "この <img> の代替テキストは、画像であることを述べています。",
+    "img_altQuality_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
+    "img_altQuality_summary_cantTellTooLong": "この <img> の代替テキストは {{length}} 文字あります。",
+    "img_altQuality_hint_cantTellTooLong": "代替テキストは一続きに読み上げられ、途中を行き来できません。グラフや図のように長い説明が必要な画像では、代替テキストは短くし、詳細はページ上のテキストかリンク先の説明で示してください。短い引用文のように、画像自体がそれだけの文字を含む場合は、長い代替テキストで構いません。",
     "img_altDecorative_title": "支援技術から除外された <img>/<canvas>/<svg> が装飾であること (手動確認)",
     "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
     "img_altDecorative_summary_cantTell": "この <{{element}}> が装飾かどうか、人による確認が必要です。",
@@ -66132,10 +66466,6 @@ const I18N = {
     "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作できること、その順序がページの流れに沿っていること、フォーカスが常に見えることを確認してください。",
     "manualReview_summary_cantTell": "手動確認: キーボード操作とフォーカス順序",
     "manualReview_title": "手動確認: キーボード操作とフォーカス順序",
-    "rules.img-alt-suspicious.meta.title": "不審な代替テキストは確認が必要",
-    "rules.img-alt-suspicious.meta.description": "代替テキストが、よくある不審なパターン (ファイル名、URL、仮の文字列、汎用的な語句など) に一致する画像を検出します。これらは手動での確認が必要です。",
-    "rules.img-alt-suspicious.occurrence.cantTell.summary": "画像の代替テキストが不審です (「{{alt}}」は {{pattern}} のように見えます)。人による確認が必要です。",
-    "rules.img-alt-suspicious.occurrence.cantTell.hint": "代替テキストを確認してください。ファイル名、URL、仮の文字列、汎用的な語句は避け、文脈の中で画像の目的や機能を説明するテキストにしてください。",
     "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
     "formControlLabelQuality_description": "表示されているフォームフィールドのラベルが仮の文字列 (「ラベル」「入力欄」、\"Label\" など) である場合や、区別のための表示上の手がかり (見出し、legend、行) がないまま別のフィールドと同じラベルになっている場合に検出します。英語の仮の文字列は常に対象とし、ドイツ語、スペイン語、フランス語、日本語のものは、フィールドがその言語で書かれている場合に対象とします。",
     "formControlLabelQuality_summary_cantTell_placeholder": "このフィールドの表示ラベル (「{{label}}」) は仮の文字列であり、フィールドの用途を説明していません。",

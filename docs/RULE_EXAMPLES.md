@@ -1058,7 +1058,13 @@ No `alt` attribute at all (an empty `alt=""` would instead pass as decorative).
 ```html
 <img src="chart.png" alt="image">
 ```
-Non-empty alt is present, but "image" restates the element type instead of describing what the chart shows — worth a reviewer's judgment.
+Non-empty alt is present, but "image" restates the element type instead of describing what the chart shows. The finding says the alt is a placeholder or a generic word (`data.details.altSignal: "placeholder"`), as it does for a file name, a web address, an "image of" opening or alt over 150 characters.
+
+**Flagged (cantTell)**
+```html
+<img src="team.jpg" alt="Our support team at the 2025 meetup">
+```
+Ordinary alt text gets the general review: only a person can tell whether it describes the image well in context.
 
 **Not applicable**
 ```html
