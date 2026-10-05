@@ -303,7 +303,7 @@ PR #79 (branch `fix/small-output-and-doc-fixes`), merged 2026-10-05:
 | O-15 (reporter list) | Doc bug | Fixed (`18d22ee`). The rest of O-15 is left. |
 | C-21 | **Not a bug** | No change. A scaffold's profile is `<key>-1.0`, and core uses `section508` as neither a tag nor a mappings name, so nothing collides. |
 
-PR #81 (branch `fix/scoped-duplicate-id-doc-and-hidden-contrast`, open):
+PR #81 (branch `fix/scoped-duplicate-id-doc-and-hidden-contrast`), merged 2026-10-05:
 
 | Item | Verdict | Change |
 |---|---|---|
