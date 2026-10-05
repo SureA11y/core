@@ -26,6 +26,7 @@
 
 const crypto = require('crypto');
 const path = require('path');
+const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
 const { assertScanResult } = require('./scan-result.js');
@@ -34,17 +35,26 @@ const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
 const SARIF_VERSION = '2.1.0';
 
+// The artifact URI must be a URI: a file inside the working directory as a
+// relative reference with each segment percent-encoded, which GitHub Code
+// Scanning resolves against the repository; any other file as an absolute
+// file: URL, rather than a relative path climbing out of the repository
+// ("../../x y/a.html"), which it can't resolve and a space makes invalid.
 function artifactUriFromResult(result) {
   const url = result && result.url;
   if (!url) return 'about:blank';
-  if (url.startsWith('file://')) {
-    const filePath = url.slice('file://'.length);
-    const rel = path.relative(process.cwd(), filePath).split(path.sep).join('/');
-    // A file outside the cwd (e.g. an absolute path elsewhere on disk)
-    // produces a "../"-leading relative path -- still valid as a URI, just
-    // not resolvable as a repo-relative one by a SARIF consumer like GitHub
-    // Code Scanning (see docs/SARIF.md's known limitations).
-    return rel || filePath;
+  if (url.startsWith('file:')) {
+    let filePath;
+    try {
+      filePath = fileURLToPath(url);
+    } catch {
+      return encodeURI(url);
+    }
+    const rel = path.relative(process.cwd(), filePath);
+    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
+      return rel.split(path.sep).map(encodeURIComponent).join('/');
+    }
+    return pathToFileURL(filePath).href;
   }
   return url;
 }
@@ -105,7 +115,13 @@ function buildRule(check) {
 function buildResult(check, occurrence, level, artifactUri) {
   const reasonCode = getReasonCode(occurrence);
   const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-  const message = occurrence.hint ? `${occurrence.summary} ${occurrence.hint}` : occurrence.summary;
+  // SARIF requires a message, and GitHub rejects a result whose text is
+  // empty: a finding with no summary (a custom rule's, say) is described by
+  // its rule's title, or else its id.
+  const summary = typeof occurrence.summary === 'string' ? occurrence.summary.trim() : '';
+  const hint = typeof occurrence.hint === 'string' ? occurrence.hint.trim() : '';
+  const lead = summary || (typeof check.title === 'string' && check.title.trim()) || check.ruleId;
+  const message = hint ? `${lead} ${hint}` : lead;
 
   return {
     ruleId: check.ruleId,
