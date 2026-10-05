@@ -254,6 +254,37 @@ What is left is the native `el.matches(selector)` check of each selector, about 
 
 Everything in the audit not yet fixed, after #77–#79 and #81–#83 (all merged), grouped by how sure it is; 5.4 says when each is planned. The audit's item ids link to their full description in [`2026-10-stress-test.md`](./2026-10-stress-test.md). An item marked **[V]** there was re-checked once by the audit; the rest were reproduced only by the probe that found them, and none of them was re-checked during this work. Before fixing any of them, reproduce it on current `main`: several areas changed since the audit.
 
+### What is left, at a glance (updated 2026-10-05, evening)
+
+Everything else in this section is the detail behind this list.
+
+**Before releasing 1.10.0, in this order**
+
+1. **Merge PR #84** (`perf/contrast-computable`): the two safe speed fixes from the performance check (5.4, step 1). Results don't change.
+2. **Section 6 leads (5.1)**, one PR from branch `fix/aria-name-form-leads` (at `main`, no commits yet). Verdicts so far, each reproduced in jsdom and Chromium:
+
+   | Lead | Verdict so far | For 1.10.0 |
+   |---|---|---|
+   | `label-in-name`, the link itself in its own `aria-labelledby` | **Bug.** The engine names it "Pricing"; accname 1.2 and Chrome give "Read more Pricing". | Fix first |
+   | `form-control-programmatic-label-present`, duplicate `id` | Likely bug: `<label for>` resolves to the first element only | Fix if confirmed |
+   | `listitem-parent-valid`, `list-children-valid`, slotted `<li>` | Likely bug: the rules don't follow the flat tree | Fix if confirmed |
+   | `nested-interactive-controls-absent` across a shadow boundary | Likely bug (false negative) | Fix if confirmed |
+   | `aria-valid-attr-value`, `TRUE` / `False` | Undecided: check WAI-ARIA 1.2 and Chrome's case handling | Decide |
+   | `label-in-name`, "Download (PDF, 2 MB)" | Undecided: check ACT 2ee8b8 on punctuation | Decide |
+   | IDREF from a shadow root to the light DOM | Likely defer: needs a broad rework of name computation in shadow DOM | 1.11.0 |
+   | `video-poster-text-alternative-present` with a `<figcaption>` | Needs the maintainer's decision | Ask |
+   | `img-alt-decorative` on an icon in a named link | Likely not a bug: ACT e88epe asks for review by design | Confirm |
+   | `aria-valid-attr` time on 5,000 siblings | Not started | Measure at N and 4N |
+
+   Also not started: re-running the audit's `corpus.js` harness.
+3. **Release 1.10.0** (5.4, step 3): diff `v1.9.0` against `main`, bump and build, `npm run finding-ids:release -- 1.10.0`, changelog heading, npm publish, GitHub release, then a core-perf run of 1.10.0 from npm as the new baseline.
+
+**1.11.0 (core):** engine improvement D (a question per cantTell), the section 6 leads deferred, slow jsdom scans of CSS-heavy pages, about 40 KB left behind per repeated browser scan, the rule edge cases R-10 to R-14, the contracts and the integration features. The full list is in 5.4.
+
+**After 1.10.0 is on npm, outside core:** the bindings adopting the 1.10.0 changes, the CLI's `--junit`, surea11y.dev, housekeeping, and the CVE for GHSA-ph4m-g9wf-96h6 (waiting on others). See the end of 5.4.
+
+**Done today, not in a PR table below:** the core-perf benchmark was built and run (5.4, step 1).
+
 ### 5.0 Progress since this list was written
 
 PR #79 (branch `fix/small-output-and-doc-fixes`), merged 2026-10-05:
@@ -444,4 +475,4 @@ As agreed on 2026-10-05. Everything merged so far ships in 1.10.0: #77–#79 and
 - **Housekeeping:** delete `TEMP-near-miss-brief.md` and `TEMP-site-followups-brief.md`.
 - **Waiting on others:** the CVE for GHSA-ph4m-g9wf-96h6.
 
-**Performance tracking.** `SureA11y/core-perf` (private, created 2026-10-05) benchmarks core outside this repository. It runs released versions from npm, a packed `main` and axe-core 4.14.0, in three scenarios: jsdom on static HTML, the bundle in Chromium, and the Playwright bindings. It uses large pages: every core fixture combined ×1 and ×5, the 13 largest real-world pages frozen offline, and six hot paths at N and 4N. Its report flags slowdowns beyond noise, superlinear growth and heap growth per scan. A run is added at each release; Alfa and IBM Equal Access adapters can follow.
+**Performance tracking.** `SureA11y/core-perf` (private, created 2026-10-05) benchmarks core outside this repository. It runs released versions from npm, a packed `main` and axe-core 4.14.0, in three scenarios: jsdom on static HTML, the bundle in Chromium, and the Playwright bindings. It uses large pages: every core fixture combined, five large real-world pages frozen offline, and six hot paths at N and 4N. Chromium carries the comparison; jsdom and the binding run two pages each, since the first full run showed the rest added nothing (its README says what runs where, and why). A run takes about 10 minutes. Its report flags slowdowns beyond noise, superlinear growth, heap growth per scan and every rule whose result changed. The 2026-10-05 run (1.8.0, 1.9.0, `main` at `5e83acc`, axe-core 4.14.0) is the first; a run is added at each release. Alfa and IBM Equal Access adapters can follow.
