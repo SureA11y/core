@@ -64,6 +64,7 @@
     "src/index.d.ts",
     "src/core.js",
     "src/baseline.js",
+    "src/scan-result.js",
     "src/report.js",
     "src/i18n-coverage.js",
     "src/i18n-same-as-english.json",

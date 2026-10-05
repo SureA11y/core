@@ -559,8 +559,11 @@ test('renderHtmlReport: an occurrence with no tier of its own inherits the rule 
 
 // --- header and meta bar ---------------------------------------------------
 
-test('renderHtmlReport: a result with no url, engine or checks still renders every section', () => {
-  for (const bare of [null, undefined, {}, { checksResults: 'x', rulesResults: 'x' }]) {
+test('renderHtmlReport: a missing result throws; one with no url, engine or rollups renders every section', () => {
+  for (const bad of [null, undefined, {}, { checksResults: 'x', rulesResults: 'x' }]) {
+    assert.throws(() => renderHtmlReport(bad), TypeError);
+  }
+  for (const bare of [{ checksResults: [] }, { checksResults: [], rulesResults: 'x' }]) {
     const report = renderHtmlReport(bare);
 
     assert.match(report, /^<!doctype html>/);
