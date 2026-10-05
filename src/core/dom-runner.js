@@ -1273,6 +1273,26 @@ function runCoreSettled(
     );
   }
 
+  // Every result echoes the options it ran with, and translation reads its
+  // dictionaries from that echo while each result is built. Once all of them
+  // are, the dictionaries (engineOptions.messages: a locale side file in the
+  // browser bundle, or a caller's own strings) are dropped from the echo: they
+  // are data the run read, not a setting, and repeating them on every result
+  // made a scan with a loaded locale tens of megabytes. engine.locale says
+  // which dictionary the run used.
+  for (const r of checksResults.concat(rulesResults)) {
+    if (
+      r &&
+      r.engineOptions &&
+      typeof r.engineOptions === 'object' &&
+      'messages' in r.engineOptions
+    ) {
+      const echoed = { ...r.engineOptions };
+      delete echoed.messages;
+      r.engineOptions = echoed;
+    }
+  }
+
   // Each rule result names the rollups that group it in this run. An empty
   // list means its findings appear in no rollup, so a consumer that reads only
   // rulesResults would miss them.
