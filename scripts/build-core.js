@@ -1499,6 +1499,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;

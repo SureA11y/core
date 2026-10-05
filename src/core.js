@@ -16010,6 +16010,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;
@@ -25726,17 +25731,32 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
   const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
-  const defaultSeverity =
-    typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim()
-      ? m.defaultSeverity.trim()
-      : 'moderate';
-
-  const defaultConfidence =
-    typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim()
-      ? m.defaultConfidence.trim()
-      : 'medium';
-
-  const type = m.type === 'manual' || m.type === 'automatic' ? m.type : 'automatic';
+  // The sets the result types promise (src/index.d.ts): a value outside
+  // them reached every result as is ('blocker'), and a type spelt 'Manual'
+  // made a manual rule automatic, losing the manual-fail coercion.
+  function oneOf(field, value, allowed, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const v = String(value).trim().toLowerCase();
+    if (!allowed.includes(v)) {
+      throw new Error(
+        `Rule ${ruleId}: meta.${field} must be one of ${allowed.join(', ')}, not ${JSON.stringify(value)}`
+      );
+    }
+    return v;
+  }
+  const defaultSeverity = oneOf(
+    'defaultSeverity',
+    m.defaultSeverity,
+    ['minor', 'moderate', 'serious', 'critical'],
+    'moderate'
+  );
+  const defaultConfidence = oneOf(
+    'defaultConfidence',
+    m.defaultConfidence,
+    ['high', 'medium', 'low'],
+    'medium'
+  );
+  const type = oneOf('type', m.type, ['automatic', 'manual'], 'automatic');
 
   const coverage =
     m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object'
@@ -70457,6 +70477,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;
@@ -80173,17 +80198,32 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
   const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
-  const defaultSeverity =
-    typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim()
-      ? m.defaultSeverity.trim()
-      : 'moderate';
-
-  const defaultConfidence =
-    typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim()
-      ? m.defaultConfidence.trim()
-      : 'medium';
-
-  const type = m.type === 'manual' || m.type === 'automatic' ? m.type : 'automatic';
+  // The sets the result types promise (src/index.d.ts): a value outside
+  // them reached every result as is ('blocker'), and a type spelt 'Manual'
+  // made a manual rule automatic, losing the manual-fail coercion.
+  function oneOf(field, value, allowed, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const v = String(value).trim().toLowerCase();
+    if (!allowed.includes(v)) {
+      throw new Error(
+        `Rule ${ruleId}: meta.${field} must be one of ${allowed.join(', ')}, not ${JSON.stringify(value)}`
+      );
+    }
+    return v;
+  }
+  const defaultSeverity = oneOf(
+    'defaultSeverity',
+    m.defaultSeverity,
+    ['minor', 'moderate', 'serious', 'critical'],
+    'moderate'
+  );
+  const defaultConfidence = oneOf(
+    'defaultConfidence',
+    m.defaultConfidence,
+    ['high', 'medium', 'low'],
+    'medium'
+  );
+  const type = oneOf('type', m.type, ['automatic', 'manual'], 'automatic');
 
   const coverage =
     m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object'
