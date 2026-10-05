@@ -152,7 +152,7 @@ test('waitForPageReady in Chromium', { skip }, async (t) => {
           window.a11ycore.runa11yCoreInPage(
             null,
             null,
-            { rules: { include: 'html-has-lang' } },
+            { rules: { include: 'html-lang-attr-present' } },
             null
           ).engine.environment.images;
         const first = scan();

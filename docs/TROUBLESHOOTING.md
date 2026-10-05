@@ -13,6 +13,8 @@ runOnly: { includeRuleIds: ['img-alt-present'], tags: ['wcag2a'], includeMode: '
 
 Before 1.10.0, a bare array was ignored and every rule ran.
 
+The object form, `{ includeRuleIds }`, `{ tags }` or `{ type: 'tag', values }`, and `engineOptions.rules.include` / `.tags.include` throw too, with `code: 'INVALID_RUN_ONLY'`, when no value in the list names a rule or a tag (`runOnly.tags: no tag named "wcag2.2aa".`). They used to run no rule at all, which reads as a clean pass. A single unknown value beside known ones, or in an exclude list, only logs a `console.warn`.
+
 ## "My scoped scan reports everything as `notApplicable`", or "`contextSelector` threw: … is not a valid CSS selector"
 
 Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one the browser can't parse throws (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)).

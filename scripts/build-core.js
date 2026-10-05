@@ -1146,11 +1146,9 @@ function applyOptInRules(selection, requested) {
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
 // rule or none.
-function expandRunOnlyShorthand(runOnly, engineOptions) {
-  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
-  const values = parseCommaList(runOnly, { lower: false });
-  if (!values.length) return null;
-
+// The rule ids (built-in, composite or engineOptions.customRules) and tags a
+// selection can name, as two tests.
+function knownSelectionNames(engineOptions) {
   const customRules =
     engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
   const ruleIds = new Set();
@@ -1164,22 +1162,60 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
     for (const t of ct) tags.add(String(t).toLowerCase());
   }
-  const isRuleId = (v) =>
-    !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
-  const isTag = (v) => tags.has(v.toLowerCase());
+  return {
+    isRuleId: (v) =>
+      !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+    isTag: (v) => tags.has(String(v).toLowerCase())
+  };
+}
 
+function invalidRunOnly(message) {
+  const err = new Error(message);
+  err.code = 'INVALID_RUN_ONLY';
+  return err;
+}
+
+function expandRunOnlyShorthand(runOnly, engineOptions) {
+  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
+  const values = parseCommaList(runOnly, { lower: false });
+  if (!values.length) return null;
+
+  const { isRuleId, isTag } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
   if (unknown.length) {
-    throw new Error(
+    throw invalidRunOnly(
       'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
   if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
-  throw new Error(
+  throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
+}
+
+// The object form of runOnly, and engineOptions.rules / .tags, name rules and
+// tags in lists. An include list that names only things that don't exist
+// selects nothing from it, so a typo could run no rule and pass a CI gate:
+// that throws, as the bare-array form does. A name that doesn't exist beside
+// ones that do is warned about, and an unknown name in an exclude list too.
+function checkSelectionNames(lists, engineOptions) {
+  let known = null;
+  for (const { field, values, kind, include } of lists) {
+    if (!Array.isArray(values) || !values.length) continue;
+    known = known || knownSelectionNames(engineOptions);
+    const test = kind === 'rule' ? known.isRuleId : known.isTag;
+    const unknown = values.filter((v) => !test(v));
+    if (!unknown.length) continue;
+    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    if (include && unknown.length === values.length) {
+      throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+    }
+    try {
+      console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
+    } catch {}
+  }
 }
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
@@ -1189,6 +1225,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   if (hasAnyRunOnlyKeys(runOnly)) {
     const selection = normalizeRunOnly(runOnly);
+    checkSelectionNames(
+      [
+        { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
+        { field: 'runOnly.tags', values: selection.tags, kind: 'tag', include: true },
+        { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
+        { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
+      ],
+      eo
+    );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
@@ -1218,6 +1263,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     includeTestIds,
     excludeTestIds
   };
+  checkSelectionNames(
+    [
+      { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
+      { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
+      { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
+    ],
+    eo
+  );
 
   return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
