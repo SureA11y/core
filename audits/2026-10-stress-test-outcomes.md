@@ -292,7 +292,7 @@ Everything in the audit not fixed by #77 or `feat/engine-version`, grouped by ho
 
 ### 6.0 Progress since this list was written
 
-PR #79 (branch `fix/small-output-and-doc-fixes`, open):
+PR #79 (branch `fix/small-output-and-doc-fixes`), merged 2026-10-05:
 
 | Item | Verdict | Change |
 |---|---|---|
@@ -377,7 +377,7 @@ The audit stopped before checking these. They are leads, not findings.
 - [S-4] Remaining part: `runOnly: 42`, `true`, `[]` and `''` still run every rule, and ids are case-sensitive.
 - [S-5] An invalid `excludeSelectors` is ignored silently.
 - [S-6] Wrong option types fall back without a warning.
-- [S-7] [V] `duplicate-id` and two other rules `pass` on an empty scope.
+- [S-7] [V] `duplicate-id` and two other rules `pass` on an empty scope. Analysis (2026-10-05): not a rule bug. A duplicate is a relation between two elements, so the rule compares every element in the scope against the whole document, and reports any in the scope whose id appears anywhere. A scoped `pass` therefore truthfully means no element in the scope shares its id; a pair entirely outside the scope is not reported, as with every rule. The bug is `ENGINE_OPTIONS.md` claiming that this `pass` "holds for the page". Proposed fix (not done yet): correct that sentence for `duplicate-id` and `duplicate-id-aria`. Unlike the landmark rules, these judge each element on its own, so `notApplicable` is not needed.
 - [S-8] The contrast rules attach a page-level occurrence to `pass`, against `OUTPUT_SCHEMA.md`.
 - [S-11] `includeHiddenElements: true` changes nothing for common rules.
 - [S-12] `index.d.ts` gaps (`policyContract`, `policy`, `output`, error codes) and a stray `occurrence.outcome`.
