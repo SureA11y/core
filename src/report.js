@@ -12,6 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
+const { assertScanResult } = require('./scan-result.js');
 
 // Uses the dataviz skill's validated status palette, mapped 1:1 onto this
 // engine's own 4 outcomes.
@@ -625,6 +626,7 @@ function flattenOccurrences(checksResults, ui) {
 }
 
 function renderHtmlReport(result, options = {}) {
+  assertScanResult(result, 'renderHtmlReport');
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
   // A rollup a registered standard defines for itself carries that standard's

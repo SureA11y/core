@@ -403,11 +403,13 @@ test('renderJunitReport: markup is escaped and characters XML forbids are droppe
   assert.match(failure.textContent, /html: <p class='x'><\/p>/);
 });
 
-test('renderJunitReport: tolerates a missing or partial result', () => {
-  for (const result of [null, undefined, {}, { checksResults: [null, {}] }]) {
-    const root = parse(renderJunitReport(result)).documentElement;
-    assert.strictEqual(attr(root, 'tests'), '0');
+test('renderJunitReport: a missing result throws; a partial one renders', () => {
+  // tests="0" failures="0" for a scan that never ran would pass a CI gate.
+  for (const result of [null, undefined, {}]) {
+    assert.throws(() => renderJunitReport(result), TypeError);
   }
+  const root = parse(renderJunitReport({ checksResults: [null, {}] })).documentElement;
+  assert.strictEqual(attr(root, 'tests'), '0');
 });
 
 test('renderJunitReport: a real scan renders deterministically and parses', () => {

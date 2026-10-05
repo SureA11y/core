@@ -2,6 +2,12 @@
 
 'use strict';
 
+const {
+  assertScanResult,
+  isCrossFrameResult,
+  flattenCrossFrameResult
+} = require('./scan-result.js');
+
 /**
  * Renders scan results as an EARL 1.0 report in JSON-LD (docs/EARL.md), the
  * format the W3C ACT Rules community group accepts as an implementation
@@ -103,9 +109,16 @@ function normalizeAssertor(options) {
  * @returns {object} the JSON-LD document
  */
 function renderEarlReport(results, options = {}) {
-  const list = (Array.isArray(results) ? results : [results]).filter(
-    (r) => r && typeof r === 'object'
-  );
+  // One result, an array of them, or a cross-frame result, whose every
+  // frame is a subject of its own.
+  const list = [];
+  for (const r of Array.isArray(results) ? results : [results]) {
+    if (isCrossFrameResult(r)) {
+      list.push(...flattenCrossFrameResult(r));
+    } else {
+      list.push(assertScanResult(r, 'renderEarlReport'));
+    }
+  }
 
   const assertor = normalizeAssertor(options);
   const mode = typeof options.mode === 'string' && options.mode ? options.mode : null;

@@ -482,13 +482,14 @@ test('renderSarifReport: checks and occurrences that are not usable are skipped,
   assert.strictEqual(run.results.length, 1);
 });
 
-test('renderSarifReport: a missing or malformed result still produces a valid empty log', () => {
+test('renderSarifReport: a missing or malformed result throws; an empty one is a valid empty log', () => {
   for (const bad of [null, undefined, {}, { checksResults: null }, { checksResults: 'x' }]) {
-    const sarif = parse(renderSarifReport(bad, {}));
-    assert.strictEqual(sarif.version, '2.1.0');
-    assert.deepStrictEqual(sarif.runs[0].results, []);
-    assert.deepStrictEqual(sarif.runs[0].tool.driver.rules, []);
+    assert.throws(() => renderSarifReport(bad, {}), TypeError);
   }
+  const sarif = parse(renderSarifReport({ checksResults: [] }, {}));
+  assert.strictEqual(sarif.version, '2.1.0');
+  assert.deepStrictEqual(sarif.runs[0].results, []);
+  assert.deepStrictEqual(sarif.runs[0].tool.driver.rules, []);
 });
 
 test('renderSarifReport: called with no options at all still names the tool', () => {

@@ -255,10 +255,11 @@ test('matchBaseline: malformed baseline input degrades to treating everything as
   }
 });
 
-test('buildBaselineEntries: a malformed result yields no entries instead of throwing', () => {
+test('buildBaselineEntries: a missing or malformed result throws, so it cannot pass as clean', () => {
   for (const bad of [null, undefined, {}, { checksResults: 'x' }]) {
-    assert.deepEqual(buildBaselineEntries(bad), []);
+    assert.throws(() => buildBaselineEntries(bad), TypeError);
   }
+  assert.deepEqual(buildBaselineEntries({ checksResults: [null, {}] }), []);
 });
 
 // --- identity and normalization edges -------------------------------------

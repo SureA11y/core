@@ -28,6 +28,7 @@ const crypto = require('crypto');
 const path = require('path');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
+const { assertScanResult } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -191,6 +192,7 @@ function automationDetails(category) {
 }
 
 function renderSarifReport(result, options = {}) {
+  assertScanResult(result, 'renderSarifReport');
   const { toolVersion, informationUri, baselineEntries, category } = options;
   const automation = automationDetails(category);
   const artifactUri = artifactUriFromResult(result);

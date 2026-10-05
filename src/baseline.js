@@ -2,6 +2,8 @@
 
 'use strict';
 
+const { assertScanResult } = require('./scan-result.js');
+
 // docs/BASELINE.md: identity for one violation occurrence is
 // `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
 // (both position-derived, so they shift when unrelated markup changes
@@ -51,6 +53,7 @@ function isFailOccurrence(check, occurrence) {
 // new array row in a PR diff, not a changed count. `selector` is kept only
 // for human readability in the committed file; matching never reads it.
 function buildBaselineEntries(result) {
+  assertScanResult(result, 'buildBaselineEntries');
   const entries = [];
 
   for (const check of (result && result.checksResults) || []) {
@@ -76,6 +79,7 @@ function buildBaselineEntries(result) {
 // counted correctly rather than all matching a single baseline entry.
 // Never mutates `result` or its occurrences.
 function matchBaseline(result, baselineEntries) {
+  assertScanResult(result, 'matchBaseline');
   const remaining = new Map();
   for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
     if (!entry) continue;
