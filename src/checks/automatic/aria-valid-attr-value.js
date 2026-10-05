@@ -17,7 +17,9 @@
  *   boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token
  *   from a fixed enumerated set, an integer (within the range WAI-ARIA sets
  *   for it), a real number, or an ID reference (list) that resolves to an
- *   existing element in the document.
+ *   existing element in the document. Boolean, tristate and token values
+ *   are read in any case, as Chromium reads them (aria-checked="TRUE" is
+ *   checked).
  *   Per ACT 6a7281's own applicability ("any state or property that is
  *   NOT empty"), an explicitly empty value, including a bare boolean-style
  *   attribute with no "=value" at all, e.g. `aria-checked` alone, is out
