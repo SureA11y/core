@@ -106,6 +106,7 @@ const meta = {
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
   // can't read from the source.
   reasonCodes: [
+    'BACKGROUND_OVERLAP',
     'COLOR_NOT_COMPUTABLE',
     'CONTRAST_HELPERS_UNAVAILABLE',
     'ENGINE_EXCEPTION',
@@ -564,7 +565,12 @@ function runInPage(ctx) {
 
     try {
       const blocker = c.getComputabilityBlocker(el);
-      if (blocker && blocker.ok === false) {
+      // Paint under the text that is not an ancestor's leaves the link's
+      // color and the surrounding text's as they are: only a translucent
+      // one depends on what is behind it, checked below.
+      const overlapOnly =
+        !!blocker && blocker.ok === false && blocker.reasonCode === 'BACKGROUND_OVERLAP';
+      if (blocker && blocker.ok === false && !overlapOnly) {
         // Not confidently computable: recorded below rather than skipped, so
         // it cannot be mistaken for a clean result.
         if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
@@ -576,7 +582,16 @@ function runInPage(ctx) {
         const fgLink = c.computeEffectiveForeground(el);
         const fgParent = c.computeEffectiveForeground(parent);
 
-        if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
+        if (
+          overlapOnly &&
+          fgLink &&
+          fgLink.rgba &&
+          fgParent &&
+          fgParent.rgba &&
+          (fgLink.rgba.a < 1 || fgParent.rgba.a < 1)
+        ) {
+          undecidedReason = 'BACKGROUND_OVERLAP';
+        } else if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
           const fgLinkOpaque =
             fgLink.rgba.a < 1
               ? c.compositeRgba(fgLink.rgba, bg.rgba)
