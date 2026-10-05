@@ -22,7 +22,9 @@ serialization constraint as everything else in `runInPage` (§1 of `RULE_AUTHORI
 ### `queryAll(selector)` → `Element[]`
 Plain `querySelectorAll(selector)` across the resolved context root(s), deduped, with
 self-match included (a root element matching `selector` itself is returned, which
-`querySelectorAll` alone never does). Light DOM only.
+`querySelectorAll` alone never does). Light DOM only, and it applies neither
+`excludeSelectors` (global or rule-scoped) nor the hidden-content filter: a rule that
+reports what it finds should query with `queryAllSmart`, which applies both.
 
 ### `queryAllDeep(selector)` → `Element[]`
 Same as `queryAll`, but also descends into open shadow roots (BFS over discovered
@@ -439,7 +441,11 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `isDeprecatedAttr`, `getDeprecatedRoleGuidance`, `isKnownRole`, `isValidConcreteRole`,
 `getRequiredAttrsForRole`, `getRequiredOwnedRoles`, `getRequiredContextRoles`,
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
-`hasLandmarkScopingAncestor` (also re-exported flat, see §5). Backs the whole
+`getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
+author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+`helpers.landmarkCandidateSelector` is the CSS selector for every element that can be a
+landmark, and `ctx.engineTag` the engine's tag (`"a11ycore"`), the one every rule carries in
+`meta.tags`. Backs the whole
 `aria-*` rule family — check here before hand-rolling role/attribute validity logic in
 a new ARIA rule.
 

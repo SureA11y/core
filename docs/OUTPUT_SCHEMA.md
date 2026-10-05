@@ -155,7 +155,7 @@ Notes:
 
 ## An occurrence (`occurrences[i]`)
 
-Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result has `occurrences: []`, since this engine does not enumerate the elements it passed, only the ones it flagged.
+Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result has `occurrences: []`, since this engine does not enumerate the elements it passed, only the ones it flagged. The contrast rules are the exception: their `pass` carries one occurrence describing the scan (how much text was eligible and computable), with an empty `selector`, so a pass over no text can be told apart from a pass over a page of it.
 
 `notApplicable` is the one exception. A rule that had nothing to judge may attach a single occurrence saying why, and the contrast rules do exactly that when no text had a computable background — the difference between "checked, nothing to flag" and "could not check" is one this engine reports rather than hides. Such an occurrence describes the scan, not an element, so its `selector` is empty. Do not read `occurrences.length` as a violation count without checking `outcome` first.
 
