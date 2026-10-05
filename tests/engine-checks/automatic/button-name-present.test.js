@@ -414,3 +414,19 @@ test(`${RULE_ID}: a tabbable button inside aria-hidden is out of scope, whatever
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+test('button-name-present: a button restored by the presentational conflict is named by its content', () => {
+  // A focusable button, or one with a global ARIA attribute, ignores
+  // role="none"/"presentation" and stays a button, which takes its name
+  // from its content. A disabled one with no such attribute is presentational.
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+    <button id="presentation" role="presentation">Save</button>
+    <button id="none" role="none">Send</button>
+    <button id="empty" role="none"></button>
+    <button id="disabled" role="none" disabled></button>
+  </main></body></html>`;
+  const rule = runa11yCoreOnHtml(html, { runOnly: ['button-name-present'] }).checksResults[0];
+  assert.equal(rule.outcome, 'fail');
+  assert.equal(rule.occurrences.length, 1);
+  assert.ok(hasOccurrenceForId(rule, 'empty'));
+});

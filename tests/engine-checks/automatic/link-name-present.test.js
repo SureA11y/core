@@ -405,3 +405,18 @@ test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 as well as 4.1.2`, () => {
   assert.equal(composite('2.4.4').outcome, 'fail');
   assert.equal(composite('4.1.2').outcome, 'fail');
 });
+
+test('link-name-present: a focusable link keeps its role and its content name under role="none"', () => {
+  // WAI-ARIA's presentational-roles conflict resolution: a focusable element
+  // ignores role="none"/"presentation" and keeps its implicit role, so these
+  // are links named by their text. Only the empty one has no name.
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+    <a id="none" href="/a" role="none">Home</a>
+    <a id="presentation" href="/b" role="presentation">About</a>
+    <a id="empty" href="/c" role="none"></a>
+  </main></body></html>`;
+  const rule = runa11yCoreOnHtml(html, { runOnly: ['link-name-present'] }).checksResults[0];
+  assert.equal(rule.outcome, 'fail');
+  assert.equal(rule.occurrences.length, 1);
+  assert.ok(hasOccurrenceForId(rule, 'empty'));
+});
