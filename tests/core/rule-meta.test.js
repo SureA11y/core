@@ -106,10 +106,30 @@ test('normalizeRuleMeta: defaultSeverity/defaultConfidence default to "moderate"
   assert.equal(b.defaultConfidence, 'high');
 });
 
-test('normalizeRuleMeta: type defaults to "automatic" and accepts only "automatic"/"manual"', () => {
+test('normalizeRuleMeta: type defaults to "automatic" and accepts only "automatic"/"manual", in any case', () => {
   assert.equal(normalizeRuleMeta('r', 'r', {}, 'a11ycore').type, 'automatic');
   assert.equal(normalizeRuleMeta('r', 'r', { type: 'manual' }, 'a11ycore').type, 'manual');
-  assert.equal(normalizeRuleMeta('r', 'r', { type: 'bogus' }, 'a11ycore').type, 'automatic');
+  assert.equal(normalizeRuleMeta('r', 'r', { type: 'Manual' }, 'a11ycore').type, 'manual');
+  // Another value used to become "automatic" silently.
+  assert.throws(
+    () => normalizeRuleMeta('r', 'r', { type: 'bogus' }, 'a11ycore'),
+    /meta.type must be/
+  );
+});
+
+test('normalizeRuleMeta: defaultSeverity and defaultConfidence must be in their sets', () => {
+  assert.equal(
+    normalizeRuleMeta('r', 'r', { defaultSeverity: 'Serious' }, 'a11ycore').defaultSeverity,
+    'serious'
+  );
+  assert.throws(
+    () => normalizeRuleMeta('r', 'r', { defaultSeverity: 'blocker' }, 'a11ycore'),
+    /defaultSeverity/
+  );
+  assert.throws(
+    () => normalizeRuleMeta('r', 'r', { defaultConfidence: 'certain' }, 'a11ycore'),
+    /defaultConfidence/
+  );
 });
 
 test('normalizeRuleMeta: coverage passes through string/object/null, coerces anything else to null', () => {

@@ -376,3 +376,35 @@ test('customRules: a duplicate id or a composite id is skipped and listed in ski
   );
   assert.deepStrictEqual(runa11yCoreOnHtml(HTML).skippedCustomRules, []);
 });
+
+test('customRules: severity, confidence and type outside their sets are refused or replaced', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'bad-severity', meta: { defaultSeverity: 'blocker' }, runInPage: ok },
+        { id: 'bad-confidence', meta: { defaultConfidence: 'certain' }, runInPage: ok },
+        {
+          id: 'manual-spelt',
+          meta: { type: 'Manual' },
+          runInPage: () => ({ outcome: 'fail', occurrences: [{}] })
+        },
+        {
+          id: 'returns-blocker',
+          meta: { defaultSeverity: 'serious' },
+          runInPage: () => ({ outcome: 'fail', severity: 'blocker', occurrences: [{}] })
+        }
+      ]
+    }
+  });
+  const skipped = result.skippedCustomRules.map((s) => s.id);
+  assert.deepStrictEqual(skipped, ['bad-severity', 'bad-confidence']);
+  // 'Manual' is read as manual, so its fail is coerced to cantTell.
+  const manual = result.checksResults.find((x) => x.ruleId === 'manual-spelt');
+  assert.strictEqual(manual.type, 'manual');
+  assert.strictEqual(manual.outcome, 'cantTell');
+  const blocker = result.checksResults.find((x) => x.ruleId === 'returns-blocker');
+  assert.strictEqual(blocker.severity, 'serious');
+  assert.match(blocker.error, /severity "blocker"/);
+});
