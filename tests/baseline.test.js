@@ -386,3 +386,20 @@ test('buildBaselineEntries/matchBaseline: a null occurrence inside a fail check 
   assert.equal(buildBaselineEntries(result).length, 1);
   assert.equal(matchBaseline(result, []).totalFail, 1);
 });
+
+test('a page-level finding keeps its identity when unrelated content changes', () => {
+  // <html> and <body> hold the whole page; their snippet is only the start
+  // tag, so an edit elsewhere doesn't turn the finding into a new one.
+  const page = (extra) =>
+    `<!doctype html><html class="x"><head><title>t</title></head><body><main><h1>Title</h1><p>a</p>${extra}</main></body></html>`;
+  const before = runa11yCoreOnHtml(page(''));
+  const after = runa11yCoreOnHtml(page('<p>A new paragraph</p>'));
+
+  const lang = after.checksResults.find((c) => c.ruleId === 'html-lang-attr-present');
+  assert.equal(lang.outcome, 'fail');
+  assert.equal(lang.occurrences[0].html, '<html class="x">');
+
+  const match = matchBaseline(after, buildBaselineEntries(before));
+  assert.equal(match.newCount, 0);
+  assert.equal(match.staleCount, 0);
+});

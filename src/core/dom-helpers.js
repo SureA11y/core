@@ -1952,7 +1952,25 @@ function createDomHelpers(opts) {
 
     let out;
     try {
-      const html = el.outerHTML || '';
+      // <html>, <head> and <body> hold the whole page, so their markup
+      // changes with any edit anywhere, and the snippet is part of a
+      // finding's identity (baselines, SARIF). What a page-level finding is
+      // about is the element itself: its start tag.
+      const name = String(el.localName || '').toLowerCase();
+      const isPage =
+        (name === 'html' || name === 'head' || name === 'body') &&
+        el.ownerDocument &&
+        el.parentNode &&
+        (el === el.ownerDocument.documentElement ||
+          el.parentNode === el.ownerDocument.documentElement);
+      let html;
+      if (isPage) {
+        const shallow = el.cloneNode(false).outerHTML || '';
+        const end = shallow.lastIndexOf('</');
+        html = end > 0 ? shallow.slice(0, end) : shallow;
+      } else {
+        html = el.outerHTML || '';
+      }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
     } catch {

@@ -32,7 +32,7 @@ Instead, a baseline entry's identity is:
 ruleId + reasonCode + html
 ```
 
-where `reasonCode` is the rule-specific code from `occurrence.data.details.reasonCode` (defaulting to `"DEFAULT"` when a rule doesn't set one), and `html` is the occurrence's outer-HTML snippet. This is content-based rather than position-based: it survives the flagged element moving around the page (a reorder, an unrelated sibling added/removed) as long as the flagged element's own markup doesn't change. `selector` is still recorded in the baseline file, but purely for human context when reading a diff — it is never used for matching.
+where `reasonCode` is the rule-specific code from `occurrence.data.details.reasonCode` (defaulting to `"DEFAULT"` when a rule doesn't set one), and `html` is the occurrence's outer-HTML snippet. This is content-based rather than position-based: it survives the flagged element moving around the page (a reorder, an unrelated sibling added/removed) as long as the flagged element's own markup doesn't change. For a finding about the page itself, reported on `<html>` or `<body>` (`html-lang-attr-present`, `bypass-blocks-present`, `landmark-one-main`), the snippet is the start tag alone, so editing the page's content doesn't make it new. `selector` is still recorded in the baseline file, but purely for human context when reading a diff — it is never used for matching.
 
 **Known limitation**: an element whose *own* markup includes dynamic content (a timestamp, a live counter, a randomly-generated id) will never match itself across two scans, since its `html` snippet differs every time. If your pages hit this case, the baseline mechanism won't help for those specific rules/elements — see "Alternative" below.
 
