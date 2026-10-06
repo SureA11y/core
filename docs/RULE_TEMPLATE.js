@@ -92,13 +92,14 @@ const meta = {
  * Do not reference outer-scope variables like `meta` or `id`.
  */
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
 
   // --- helpers with safe fallbacks (shadow-DOM aware when available) ---
   const queryAllSmart = helpers && helpers.queryAllSmart ? helpers.queryAllSmart : null;
   const queryAll = helpers && helpers.queryAll ? helpers.queryAll : (sel) => {
     try {
-      return Array.from((root || document).querySelectorAll(sel));
+      return Array.from(dom.querySelectorAll(root || document, sel));
     } catch {
       return [];
     }
@@ -107,14 +108,14 @@ function runInPage(ctx) {
   const getOuterHtmlSnippet = helpers && helpers.getOuterHtmlSnippet
     ? helpers.getOuterHtmlSnippet
     : (el) => {
-        try { return (el && el.outerHTML) ? String(el.outerHTML) : ''; } catch { return ''; }
+        try { return (el && dom.outerHTML(el)) ? String(dom.outerHTML(el)) : ''; } catch { return ''; }
       };
 
   const buildSelector = helpers && helpers.buildSelector
     ? helpers.buildSelector
     : (el) => {
         if (!el || typeof el !== 'object') return 'html';
-        const tag = el.tagName ? el.tagName.toLowerCase() : 'html';
+        const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : 'html';
         return tag;
       };
 
