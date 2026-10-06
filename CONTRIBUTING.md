@@ -7,6 +7,7 @@ This document describes the standard the project holds itself to — the same on
 - Internalize the engine's non-negotiables — every change is expected to preserve them: `fail` is reserved for deterministic, high-confidence, normative violations; output is deterministic (same input, same result, always); every rule is atomic (one normative decision per rule).
 - Read [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) in full before touching any rule — in particular §1.1's free-variable footgun. It's the single most common way to accidentally ship a silently-broken rule (the build succeeds; the rule just always returns `cantTell` with an unhelpful-looking `error`).
 - Check [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) before proposing something that might already be a deliberate, reasoned non-goal.
+- Before working on an issue, check that nobody is assigned to it, and say in the issue that you'd like to take it. An assigned issue is already being worked on, often on a branch named in the issue, and a pull request for it will be closed in favour of that work, however good it is.
 
 ## Adding or changing a rule
 
