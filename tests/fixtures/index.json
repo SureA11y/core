@@ -1253,10 +1253,10 @@
       "testFile": "tests/engine-checks/automatic/label-in-name.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/label-in-name-all-scenarios.html",
-      "totalCases": 23,
+      "totalCases": 26,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 7,
+        "PASS": 10,
+        "FAIL": 8,
         "CANTTELL": 0,
         "OTHER": 8
       }

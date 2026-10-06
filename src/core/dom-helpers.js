@@ -4099,6 +4099,42 @@ function createDomHelpers(opts) {
   // name from an attribute rather than visible text, e.g. a logo link
   // `<a href="..."><img alt="Company Name"></a>` or an icon-only button
   // `<button><span role="img" aria-label="Close"></span></button>`.
+  // How an element breaks the text around it, from its computed display:
+  // 'inline' (no break: <b>Down</b>load reads "Download"), 'inline-box'
+  // (inline-block, inline-flex and the like: a break in an accessible name,
+  // none in visible text) or 'block' (a new line in visible text, a space in
+  // a name). Absolute and fixed positioning, floats and being a flex or grid
+  // item make a box block-level (CSS Display "blockification"), which
+  // browsers report in the computed value and jsdom doesn't, so it is
+  // applied here. A <br> breaks the line; `display: contents` and `none`
+  // have no box of their own and break nothing.
+  const __INLINE_BOX_DISPLAYS = {
+    'inline-block': 1,
+    'inline-flex': 1,
+    'inline-grid': 1,
+    'inline-table': 1,
+    'inline-flow-root': 1
+  };
+  function getTextBoundaryKind(el) {
+    if (!isElement(el)) return 'inline';
+    if (lower(dom.tagName(el)) === 'br') return 'block';
+    const cs = computedStyle(el) || {};
+    const display = lower(cs.display || '');
+    if (!display || display === 'none' || display === 'contents') return 'inline';
+    const position = lower(cs.position || '');
+    const float = lower(cs.cssFloat || cs.float || '');
+    let blockified = position === 'absolute' || position === 'fixed' || (float && float !== 'none');
+    if (!blockified) {
+      const parent = dom.parentElement(el);
+      const parentDisplay = parent ? lower((computedStyle(parent) || {}).display || '') : '';
+      blockified = /(^|-)(flex|grid)$/.test(parentDisplay);
+    }
+    if (blockified) return 'block';
+    if (display === 'inline' || display.indexOf('ruby') === 0) return 'inline';
+    if (__INLINE_BOX_DISPLAYS[display]) return 'inline-box';
+    return 'block';
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -4162,8 +4198,10 @@ function createDomHelpers(opts) {
         return;
       }
 
+      // Text keeps its own whitespace: pieces of text in inline elements
+      // join as they are written, so <b>Down</b>load is "Download".
       if (dom.nodeType(node) === 3) {
-        const t = trim(dom.nodeValue(node));
+        const t = dom.nodeValue(node);
         if (t) parts.push(t);
         return;
       }
@@ -4240,7 +4278,7 @@ function createDomHelpers(opts) {
         // win over its real alt text).
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:image-aria') === -1)
             flags.push('descendant-name-used:image-aria');
           return;
@@ -4259,7 +4297,7 @@ function createDomHelpers(opts) {
               for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
-                  parts.push(labelInfo.value);
+                  parts.push(' ' + labelInfo.value + ' ');
                   if (flags.indexOf('descendant-name-used:image-label') === -1)
                     flags.push('descendant-name-used:image-label');
                   return;
@@ -4282,7 +4320,7 @@ function createDomHelpers(opts) {
           const usedFlag = alt.present
             ? 'descendant-alt-used'
             : 'descendant-name-used:image-title-fallback';
-          parts.push(alt.value);
+          parts.push(' ' + alt.value + ' ');
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
@@ -4296,12 +4334,12 @@ function createDomHelpers(opts) {
       if (svgTitle) {
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:svg-aria') === -1)
             flags.push('descendant-name-used:svg-aria');
           return;
         }
-        parts.push(svgTitle);
+        parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
         return;
@@ -4323,7 +4361,7 @@ function createDomHelpers(opts) {
       );
 
       if (ownName && ownName.present && ownName.value && !titleOnlyName) {
-        parts.push(ownName.value);
+        parts.push(' ' + ownName.value + ' ');
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
@@ -4335,9 +4373,9 @@ function createDomHelpers(opts) {
         // since a whitespace-only text node pushes a part but no name text.
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(' '))) {
+        if (!trim(parts.slice(before).join(''))) {
           parts.length = before;
-          parts.push(ownName.value);
+          parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
             flags.push('descendant-name-used:title-fallback');
         } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
@@ -4347,6 +4385,15 @@ function createDomHelpers(opts) {
       }
 
       walkChildren(node, parts);
+    }
+
+    // A child element that isn't inline is set apart by spaces, as browsers
+    // set it apart in the name (see getTextBoundaryKind).
+    function collectChild(kid, parts) {
+      const apart = isElement(kid) && getTextBoundaryKind(kid) !== 'inline';
+      if (apart) parts.push(' ');
+      collect(kid, parts);
+      if (apart) parts.push(' ');
     }
 
     // Extracted from collect() so the title-only branch above can walk a
@@ -4374,7 +4421,7 @@ function createDomHelpers(opts) {
             ? Array.from(dom.childNodes(node))
             : [];
         for (const kid of kids) {
-          collect(kid, parts);
+          collectChild(kid, parts);
           if (truncated) break;
         }
         return;
@@ -4382,7 +4429,7 @@ function createDomHelpers(opts) {
 
       const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     }
@@ -4392,14 +4439,14 @@ function createDomHelpers(opts) {
     try {
       const topKids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
       for (const kid of topKids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     } finally {
       __nameComputationDepth -= 1;
     }
 
-    const value = trim(parts.join(' ').replace(/\s+/g, ' '));
+    const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,
       value,
@@ -4523,6 +4570,45 @@ function createDomHelpers(opts) {
     if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(style.clip))
       return true;
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
+  }
+
+  // Whether an element's box is drawn so that nothing in it can be seen,
+  // though it is rendered and stays in the accessibility tree: fully
+  // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
+  // overflow hidden -- the "screen-reader-only" patterns. Applies to the
+  // whole subtree. jsdom neither computes clip nor keeps its value intact, so
+  // the declaration in the style attribute is read too.
+  function isVisuallyHidden(el) {
+    if (!isElement(el)) return false;
+    const cs = computedStyle(el) || {};
+    const opacity = Number.parseFloat(cs.opacity);
+    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    if (isClipHidden(cs)) return true;
+    const declared = String(getAttr(el, 'style') || '');
+    if (declared) {
+      const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
+      const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
+      if (
+        (clip || clipPath) &&
+        isClipHidden({
+          position: cs.position,
+          clip: clip ? clip[1].trim() : '',
+          clipPath: clipPath ? clipPath[1].trim() : ''
+        })
+      )
+        return true;
+    }
+    const overflow = lower(cs.overflow || '');
+    if (/hidden|clip/.test(overflow)) {
+      const w = /^-?[\d.]+px$/.test(String(cs.width || '').trim())
+        ? Number.parseFloat(cs.width)
+        : NaN;
+      const h = /^-?[\d.]+px$/.test(String(cs.height || '').trim())
+        ? Number.parseFloat(cs.height)
+        : NaN;
+      if (w <= 1 && h <= 1) return true;
+    }
+    return false;
   }
 
   function getVisibilityHintsInfo(el, _ctx, _opts) {
@@ -5681,6 +5767,8 @@ function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getTextBoundaryKind,
+    isVisuallyHidden,
 
     // Role / focusability
     getRoleInfo,

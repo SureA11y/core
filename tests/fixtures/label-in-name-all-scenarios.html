@@ -11,6 +11,7 @@
     .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
     .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
     .case-title { font-weight: 700; margin: 0 0 8px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   </style>
 </head>
 <body>
@@ -162,6 +163,21 @@
     <div class="case-title">23 — FAIL: aria-labelledby resolves to text, and that name does not contain the visible "Save"</div>
     <button id="lin_case_23" aria-labelledby="lin_case_23_name">Save</button>
     <span id="lin_case_23_name" hidden>Submit form</span>
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — PASS: the visible "Download" is split across an inline tag, which adds no space</div>
+    <a href="#" id="lin_case_24" aria-label="Download the report"><b>Down</b>load</a>
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — PASS: screen-reader-only text is not part of the visible label ("Close")</div>
+    <button id="lin_case_25" aria-label="Close dialog"><span class="sr-only">Dismiss</span>Close</button>
+  </div>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — FAIL: a block starts a new line, so the visible label reads "Down load", not "Download"</div>
+    <button id="lin_case_26" aria-label="Download the report"><div>Down</div>load</button>
   </div>
 
   <p class="note">End of fixture.</p>
