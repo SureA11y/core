@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: R-1.
+Sorted by severity, then by how many pages it touches. Next to fix: R-13.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [R-1](#r-1) | Paint that isn't an ancestor's: stacking, fixed and sticky paint ignored | Bug | Medium | Round 1 (limits of the fix) |
 | [R-13](#r-13) | The viewport `content` parser: spaces, odd values, several metas | Bug | Medium | Round 1, round 2 (VS-5) |
 | [R-14](#r-14) | Input values and placeholders are never contrast-checked | Gap | Medium | Round 1 |
 | [R-11](#r-11) | target-size-minimum measures the bounding box | Bug | Medium | Round 1 |
@@ -100,16 +99,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: R-1.
 ### High
 
 ### Medium
-
-<a id="r-1"></a>**R-1. Paint that isn't an ancestor's: what the 1.10.0 fix left** — Bug, Medium · [details](./2026-10-stress-test-outcomes.md) (P1)
-- *In plain words:* 1.10.0 stopped failing text over images and overlays, by asking instead. Some layouts still slip through, and in one case a real failure is now hidden.
-- Re-checked:
-  - A positioned black box over a white card's text: `fail` 1.36, confidence `high`; the real background is black.
-  - A `position:fixed` or `sticky` black block under `#ddd` text: `fail` 1.36.
-  - Black at z-index 1, white at 2, text at 3: `cantTell` naming the black box; the white layer is skipped as "same colour as the background", so a real 1.36 fail is lost.
-  - `#ddd` text over solid black covering it fully: `cantTell` where about 15:1 could be computed.
-  - A faint radial glow behind text hides real fails (`#7d8ba4`, about 3.4:1, becomes `cantTell`).
-- Where: the overlap index and `getComputabilityBlocker` (`contrast-helpers.js`).
 
 <a id="r-13"></a>**R-13. The viewport `content` parser** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-5) · also VS-5
 - *In plain words:* the two viewport rules read `<meta name="viewport">` differently from browsers and from each other.
@@ -363,6 +352,17 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Fixed, not yet in `main`
+
+Fixes on branch `fix/audit-2026-10-findings-3` (from `main` at `e9da4f6`), pushed, no pull request yet.
+
+<a id="r-1"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| R-1 | Paint that isn't an ancestor's: fixed and sticky paint ignored, stacked layers and solid covers not measured | Option B: work out the paint order. The text, its ancestors' backgrounds and the boxes overlapping it are ordered by the CSS painting order (stacking contexts, `z-index`, positioned boxes, floats, document order) and composited from the top; solid colors covering all of the text are measured against, anything else is `BACKGROUND_OVERLAP`. Found while fixing it and included: an ancestor's background counts only where its box is under the text and it is painted before it (text overflowing its box, text with a negative `z-index`), and a box is tested against every line of the text (it was tested only against the first line whose index cell held it). Fixed and sticky boxes count behind the text and stay left out over it. Left: a gradient under the text stays `cantTell`, as with Engine A and Engine B. | `aff80e6`, changelog `ea705c5` | [#101](https://github.com/SureA11y/core/issues/101) | 2026-10-07 |
+
+How R-1 was checked: 100 generated layouts (positioned boxes with every kind of `z-index`, floats, negative-margin overlaps, inline-blocks, nested stacking contexts) were scanned and compared with the rendered pixels (the color under each text line with the text made transparent, and whether the text shows at all). Confident background colors that disagree with the screen: 373 on `main`, 0 on the branch, with no result that was right or `cantTell` on `main` becoming wrong; 82 wrong results became right, 290 became `cantTell`, and 41 right ones became `cantTell` (mostly text partly outside a box, which the pixel check samples at mid-line only). A first attempt at the comparison used the browser's hit-test order (`elementsFromPoint`) and was dropped: it lists a later block's background over earlier text, which the pixels show is painted under it. On the texts whose result changed, Engine A (which models the painting order) agrees: it is unsure of 200 of the 224 texts that became `cantTell` with real paint over or partly under them; Engine B gives a confident pass or fail on almost all of them, so it isn't a reference here (it also fails the fixed, sticky and positioned-box examples). On the finding's examples the branch matches Engine A on all six. The full suite passes (the same one environmental failure); two cases of the 1.10.0 overlap test, light text on solid black, are now measured and pass, as rendered. Cost: fixtures 1.025×, a large page 1.04×, after caching each box's paint role and box per scan.
 
 ### Fixed after the second audit, second batch (in `main`)
 

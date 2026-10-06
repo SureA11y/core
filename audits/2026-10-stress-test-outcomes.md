@@ -64,6 +64,8 @@ After these, the remaining hits were text on images (Apple and Shopify product t
 - `pointer-events` and stacking order are not looked at.
 - A ratio against a solid painter that fully covers the text could be computed instead of asking. Not attempted.
 
+
+**Follow-up (2026-10-07, #101).** The limits recorded above are fixed on `fix/audit-2026-10-findings-3`: the paint order is worked out, solid paint under all of the text is measured against, fixed and sticky paint counts behind the text, and an ancestor's background counts only where it is under the text. Details and the check against rendered pixels are in the findings register (R-1).
 ### P2. Modern color syntax — fixed (`1f22c83`)
 
 **Reproduced:** `background: oklch(0.2 0 0)` with `#ddd` text failed at 1.36:1.
