@@ -18345,7 +18345,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return pinned;
   }
 
-  // The content of a closed <details> (everything but its <summary>), and
+  // The content of a closed <details> (everything but its first <summary>), and
   // whatever sits under content-visibility: hidden (hidden="until-found"
   // too), keeps its layout box in Chromium, so it has a rect, but none of it
   // is painted. checkVisibility() answers that; without it, the two are
@@ -18356,22 +18356,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return !node.checkVisibility();
       } catch {}
     }
+    // A shadow root on the way up is stepped over to its host.
     let child = node;
     let cur = composedParent(node);
-    for (let guard = 0; cur && cur.nodeType === 1 && guard < 1000; guard++) {
-      if (
-        String(cur.localName || '').toLowerCase() === 'details' &&
-        !cur.hasAttribute('open') &&
-        !(String(child.localName || '').toLowerCase() === 'summary' && child.parentNode === cur)
-      ) {
-        return true;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (cur.nodeType === 1) {
+        if (
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open') &&
+          child !== __firstSummaryChild(cur)
+        ) {
+          return true;
+        }
+        const cs = __contrastComputedStyle(cur);
+        if (cs && cs.contentVisibility === 'hidden') return true;
       }
-      const cs = __contrastComputedStyle(cur);
-      if (cs && cs.contentVisibility === 'hidden') return true;
       child = cur;
       cur = composedParent(cur);
     }
     return false;
+  }
+
+  // Only the first <summary> child of a <details> is its toggle.
+  function __firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function __buildOverlapIndex() {
@@ -73080,7 +73091,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return pinned;
   }
 
-  // The content of a closed <details> (everything but its <summary>), and
+  // The content of a closed <details> (everything but its first <summary>), and
   // whatever sits under content-visibility: hidden (hidden="until-found"
   // too), keeps its layout box in Chromium, so it has a rect, but none of it
   // is painted. checkVisibility() answers that; without it, the two are
@@ -73091,22 +73102,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return !node.checkVisibility();
       } catch {}
     }
+    // A shadow root on the way up is stepped over to its host.
     let child = node;
     let cur = composedParent(node);
-    for (let guard = 0; cur && cur.nodeType === 1 && guard < 1000; guard++) {
-      if (
-        String(cur.localName || '').toLowerCase() === 'details' &&
-        !cur.hasAttribute('open') &&
-        !(String(child.localName || '').toLowerCase() === 'summary' && child.parentNode === cur)
-      ) {
-        return true;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (cur.nodeType === 1) {
+        if (
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open') &&
+          child !== __firstSummaryChild(cur)
+        ) {
+          return true;
+        }
+        const cs = __contrastComputedStyle(cur);
+        if (cs && cs.contentVisibility === 'hidden') return true;
       }
-      const cs = __contrastComputedStyle(cur);
-      if (cs && cs.contentVisibility === 'hidden') return true;
       child = cur;
       cur = composedParent(cur);
     }
     return false;
+  }
+
+  // Only the first <summary> child of a <details> is its toggle.
+  function __firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function __buildOverlapIndex() {

@@ -69,20 +69,26 @@ const NO_OVERLAP = {
   // Collapsed content keeps a layout box in Chromium but is not painted.
   'the menu of a closed <details>': `<details style="position:relative"><summary>Menu</summary><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></details><p style="color:#ddd">${TEXT}</p>`,
   'a panel under content-visibility: hidden': `<div style="position:relative;content-visibility:hidden;height:0"><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></div><p style="color:#ddd">${TEXT}</p>`,
-  'a hidden="until-found" panel': `<div hidden="until-found" style="position:relative;height:0"><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></div><p style="color:#ddd">${TEXT}</p>`
+  'a hidden="until-found" panel': `<div hidden="until-found" style="position:relative;height:0"><div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div></div><p style="color:#ddd">${TEXT}</p>`,
+  'a shadow root in a closed <details>': `<details style="position:relative"><summary>Menu</summary><x-m></x-m></details><p style="color:#ddd">${TEXT}</p><script>document.querySelector('x-m').attachShadow({ mode: 'open' }).innerHTML = '<div style="position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></div>';</script>`,
+  'a second <summary> of a closed <details>': `<details style="position:relative"><summary>Menu</summary><summary style="display:block;position:absolute;top:0;left:0;width:300px;height:200px;background:#000"></summary></details><p style="color:#ddd">${TEXT}</p>`
 };
 
 test('contrast over paint that is not an ancestor background, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
 
-  async function scan(body) {
+  // withoutCheckVisibility: as in a browser that lacks
+  // Element.prototype.checkVisibility(), where collapsed content is looked
+  // for along the ancestors instead.
+  async function scan(body, { withoutCheckVisibility = false } = {}) {
     const p = await browser.newPage();
     try {
       await p.setContent(
         '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
           `<body><main>${body}</main></body></html>`
       );
+      if (withoutCheckVisibility) await p.evaluate(() => delete Element.prototype.checkVisibility);
       await p.addScriptTag({ content: BUNDLE });
       return await p.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
@@ -118,6 +124,11 @@ test('contrast over paint that is not an ancestor background, in Chromium', { sk
   for (const [name, body] of Object.entries(NO_OVERLAP)) {
     await t.test(`text beside ${name} is still judged`, async () => {
       const r = await scan(body);
+      assert.equal(r.minimum, 'fail', name);
+      assert.equal(r.computable, 'pass', name);
+    });
+    await t.test(`text beside ${name} is still judged without checkVisibility()`, async () => {
+      const r = await scan(body, { withoutCheckVisibility: true });
       assert.equal(r.minimum, 'fail', name);
       assert.equal(r.computable, 'pass', name);
     });
