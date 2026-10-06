@@ -288,6 +288,7 @@ All examples here were run in Chromium with `html, body { background: #fff; colo
 - Example: `<span style="display:inline-block; opacity:.6; background:#000; color:#fff">New feature tag</span>`. Engine `fail` at 3.22:1 (foreground `#c2c2c2`, background `#666`). Pixels: `#fff` on `#656565`, 5.83:1: should pass. With `opacity:.5` and 30px text: engine 2.17:1, pixels 4.0:1 (large text, passes 3:1).
 - **Spec.** WCAG 1.4.3 is about the contrast the user sees; Understanding 1.4.3 measures the rendered colours.
 - **Others.** A: pass. B: pass.
+- **Others, checked when fixing it** (ratios worked out from how browsers composite): `opacity:.3` and a 50% black background at `opacity:.6`, both 2.09:1: A gives 2.09:1, B fails both, as the fixed engine does. Own opacity without a background (3.95:1) and inside an `opacity:.8` ancestor (3.69:1): A matches; B passes the nested case.
 - **Cause.** `computeEffectiveBackground` (`contrast-helpers.js:~1595`) already scales the background by the element's own opacity; `computeEffectiveForeground` (`~1481`) also gives the text that alpha; the rule then composites that faded text over the faded background (`contrast-minimum.js:~425`). Group compositing (`resolveGroupOpacityColors`) runs only when the opacity is on an ancestor (`cur !== el`).
 - **Relation to the first round.** P13 / R-3 fixed opacity counted twice on an *ancestor*. This is the same family, on the element itself.
 - **Evaluation.** Clear bug; badges, tags and disabled-looking buttons use this.

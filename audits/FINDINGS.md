@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-1.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-2.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-1](#vs-1) | An element's own `opacity` is counted twice | Bug | **High** | Round 2 |
 | [VS-2](#vs-2) | SVG shapes behind SVG text are ignored | Bug | **High** | Round 2 |
 | [RP-1](#rp-1) | SARIF output fails the SARIF schema | Bug | **High** | Round 2 |
 | [R-8](#r-8) | Off-screen text is still contrast-checked by default; closed `<select>` options too | Debatable | Medium | Round 1 |
@@ -102,12 +101,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-1.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="vs-1"></a>**VS-1. An element's own `opacity` is counted twice** — Bug, High · [details](./2026-10-stress-test-2.md#vs-1)
-- *In plain words:* a semi-transparent badge is measured as if faded twice, so a readable one fails.
-- Example: `<span style="opacity:.6; background:#000; color:#fff">New</span>`: `fail` 3.22:1; the screen shows 5.83:1.
-- Basis: WCAG 1.4.3 measures the rendered colours.
-- Where: `computeEffectiveBackground` (`contrast-helpers.js:~1595`) and `computeEffectiveForeground` (`~1481`) both apply it; group compositing only runs for ancestors. Same family as R-3, fixed in 1.10.0.
 
 <a id="vs-2"></a>**VS-2. SVG shapes behind SVG text are ignored** — Bug, High · [details](./2026-10-stress-test-2.md#vs-2)
 - *In plain words:* light text on a dark SVG `<rect>` (badges, charts) is measured against the white page behind the SVG.
@@ -391,20 +384,31 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ## 3. Fixed — history
 
-### Fixed after the second audit (not yet merged into `main`)
+### Fixed, not yet in `main`
 
-Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), in pull request [#94](https://github.com/SureA11y/core/pull/94), which closes their issues when merged.
+Fixes on branch `fix/audit-2026-10-findings-2` (from `main` at `ceb26d1`), pushed, no pull request yet.
+
+<a id="vs-1"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-1 | An element's own `opacity` was counted twice when it had its own background | Option A: an element whose own opacity is below 1 and which paints a background is measured as one group, through the routine already used for an ancestor's opacity; when an image, gradient, blend mode or filter stops that, `contrast-computable` reports `cantTell` with the new reason code `ELEMENT_OPACITY`. A page with no opaque background is left to the existing root-canvas handling. Without a background of its own, an element's opacity keeps the opacity product, which was already right. Left as it was: in `auditorAssist` mode, which assumes a canvas color for such a page, the badge still gets the old estimate. | `e9850fd`, docs `4472e3a` | [#95](https://github.com/SureA11y/core/issues/95) | 2026-10-06 |
+
+How VS-1 was checked: the ratios were worked out by hand from how browsers composite a group, and the engine now matches them: `opacity:.6` white on black over white, 5.74:1 (was 3.22:1); `opacity:.3`, 2.09:1 (was 1.28:1); a 50% black background at `opacity:.6`, 2.09:1 (was 1.60:1). Cases already right are unchanged: own opacity without a background (3.95:1) and inside an opacity ancestor (3.69:1). Engine A gives the same ratios on all five; Engine B gets every pass and fail right. Two fixture cases were added (a badge, and one over a gradient for `ELEMENT_OPACITY`), and tests pin the ratios (9 failed before). The full suite passes (the same one environmental failure); no measurable cost (jsdom 0.96×).
+
+### Fixed after the second audit (in `main`)
+
+Merged into `main` with pull request [#94](https://github.com/SureA11y/core/pull/94), 2026-10-06, which closed their issues. Commits are as they are in `main`.
 
 <a id="rb-1"></a><a id="rb-2"></a><a id="nm-1"></a><a id="nm-8"></a><a id="nm-2"></a><a id="nm-3"></a><a id="nm-4"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
-| RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `04b9003`, docs `3cf988a` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
-| RB-2 | Named images and forms overrode `document` and form properties the engine reads | Same change as RB-1. | `04b9003` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
-| NM-1 | A role with a fallback (`role="foo button"`, `"none presentation"`) was read as no role, or as an invalid one | Fix fully, with NM-8: one resolver for an element's role (the first token naming a known role, in any case; none means no role, so the element keeps its implicit role), used by every rule for reading and selecting roles, and a lint rule against parsing `role` by hand. As a consequence `aria-allowed-attr` judges an element whose role names no known role by its implicit role. | `d1515a2`, docs `c817d40` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
-| NM-8 | Upper-case roles (`role="BUTTON"`) were skipped by most name rules | Same change as NM-1. | `d1515a2` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
-| NM-2 | `<label for>`, `aria-labelledby` and `headers` inside a shadow root weren't resolved; a reference from a shadow root to the page was | Fix in both directions, as the specs say and Chromium does: every ID reference resolves in the referring element's own tree (its shadow root, or the document), with a helper for rules (`getElementByIdInTree`) and the referring element passed to the IDREF helpers; a lint rule against looking an ID up in the document. Covers `for`, the ARIA ID references (names, descriptions, `aria-owns`), `headers`, `usemap` and the contrast exception for a disabled control's label. Fragment links keep resolving in the document, as HTML has them. Includes the first round's deferred "name computation across a shadow boundary". | `e693b75`, docs `82b357c` | [#92](https://github.com/SureA11y/core/issues/92) | 2026-10-06 |
-| NM-3 | label-in-name read `<b>Down</b>load` as "Down load" | Fix fully, with NM-4, in the shared name too: text joins as browsers lay it out. The name from content follows Chromium (no space between pieces in inline elements; a space around an element that isn't inline and around a piece that is a name of its own); label-in-name's visible label follows the visible inner text (a block-level box or `<br>` starts a new word, an inline-block doesn't). One shared `display` check (`getTextBoundaryKind`) decides both, blockifying positioned boxes, floats and flex or grid items as browsers do. | `9c31869`, docs `5584644` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
-| NM-4 | label-in-name counted visually hidden text as visible | Same change as NM-3: text in a box that is clipped away, at most 1×1 px with its overflow hidden, or fully transparent is not part of the visible label (`isVisuallyHidden`). | `9c31869` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
+| RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `97b969d`, docs `40dac3b` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
+| RB-2 | Named images and forms overrode `document` and form properties the engine reads | Same change as RB-1. | `97b969d` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
+| NM-1 | A role with a fallback (`role="foo button"`, `"none presentation"`) was read as no role, or as an invalid one | Fix fully, with NM-8: one resolver for an element's role (the first token naming a known role, in any case; none means no role, so the element keeps its implicit role), used by every rule for reading and selecting roles, and a lint rule against parsing `role` by hand. As a consequence `aria-allowed-attr` judges an element whose role names no known role by its implicit role. | `df297e7`, docs `821f38f` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
+| NM-8 | Upper-case roles (`role="BUTTON"`) were skipped by most name rules | Same change as NM-1. | `df297e7` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
+| NM-2 | `<label for>`, `aria-labelledby` and `headers` inside a shadow root weren't resolved; a reference from a shadow root to the page was | Fix in both directions, as the specs say and Chromium does: every ID reference resolves in the referring element's own tree (its shadow root, or the document), with a helper for rules (`getElementByIdInTree`) and the referring element passed to the IDREF helpers; a lint rule against looking an ID up in the document. Covers `for`, the ARIA ID references (names, descriptions, `aria-owns`), `headers`, `usemap` and the contrast exception for a disabled control's label. Fragment links keep resolving in the document, as HTML has them. Includes the first round's deferred "name computation across a shadow boundary". | `aae487c`, docs `90f76ae` | [#92](https://github.com/SureA11y/core/issues/92) | 2026-10-06 |
+| NM-3 | label-in-name read `<b>Down</b>load` as "Down load" | Fix fully, with NM-4, in the shared name too: text joins as browsers lay it out. The name from content follows Chromium (no space between pieces in inline elements; a space around an element that isn't inline and around a piece that is a name of its own); label-in-name's visible label follows the visible inner text (a block-level box or `<br>` starts a new word, an inline-block doesn't). One shared `display` check (`getTextBoundaryKind`) decides both, blockifying positioned boxes, floats and flex or grid items as browsers do. | `16d4b32`, docs `ceb26d1` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
+| NM-4 | label-in-name counted visually hidden text as visible | Same change as NM-3: text in a box that is clipped away, at most 1×1 px with its overflow hidden, or fully transparent is not part of the visible label (`isVisuallyHidden`). | `16d4b32` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
 
 How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
 
