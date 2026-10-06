@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: NM-1.
+Sorted by severity, then by how many pages it touches. Next to fix: NM-2.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-1](#nm-1) | A role with a fallback (`role="foo button"`) is read as no role | Bug | **High** | Round 2 |
 | [NM-2](#nm-2) | ID references inside a shadow root aren't resolved; one from a shadow root to the page is | Bug | **High** | Round 2 (and round 1 §6) |
 | [NM-3](#nm-3) | label-in-name reads `<b>Down</b>load` as "Down load" | Bug | **High** | Round 2 |
 | [NM-4](#nm-4) | label-in-name counts visually hidden text as visible | Bug | **High** | Round 2 |
@@ -44,7 +43,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-1.
 | [NM-5](#nm-5) | form-control-single-label counts labels HTML doesn't associate | Bug | Medium | Round 2 |
 | [NM-6](#nm-6) | label-in-name adds a `<select>`'s options to its label | Bug | Medium | Round 2 |
 | [NM-7](#nm-7) | An SVG `<title>` counts only as the first child | Bug | Medium | Round 2 |
-| [NM-8](#nm-8) | Upper-case roles skipped by most name rules | Inconsistency | Medium | Round 2 |
 | [ST-1](#st-1) | Definition lists don't read the flat tree | Inconsistency | Medium | Round 2 |
 | [ST-2](#st-2) | td-has-header misreads `rowspan="0"` | Bug | Medium | Round 2 |
 | [ST-3](#st-3) | iframe-focusable-content counts elements that can't take focus | Bug | Medium | Round 2 |
@@ -107,12 +105,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-1.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="nm-1"></a>**NM-1. A role with a fallback is read as no role** — Bug, High · [details](./2026-10-stress-test-2.md#nm-1)
-- *In plain words:* `role="switch checkbox"` means "switch, or checkbox where switch is unknown". The engine reads only the first word, so well-formed fallbacks are reported as errors, and the real role is never checked.
-- Examples: `<div role="searchfield searchbox" aria-label="Search">` fails aria-prohibited-attr; `<img role="none presentation">` fails img-alt-present; `<ul><li role="foo">` fails list-children-valid; `<div role="foo button" tabindex="0">` with no name is never checked.
-- Basis: WAI-ARIA: "User agents MUST use the first token … that matches the name of any non-abstract WAI-ARIA role." ACT 674b10 needs only "at least one token which is a valid value".
-- Where: `getExplicitRole` (`aria-helpers.js:931-938`) returns the first token; several rules compare the whole attribute string.
 
 <a id="nm-2"></a>**NM-2. ID references and shadow roots** — Bug, High · [details](./2026-10-stress-test-2.md#nm-2) · also first round §6 ("name computation across a shadow boundary", planned for 1.11.0)
 - *In plain words:* inside a web component, `<label for>`, `aria-labelledby` and `headers` that point to elements in the same component are not found, so correctly labelled controls fail. The opposite direction is also wrong: a reference from inside a component to the main page still gives a name, which browsers don't.
@@ -228,10 +220,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-1.
 - Example: `<svg role="img"><circle …/><title>Star</title></svg>`: `fail`.
 - Basis: SVG-AAM names an element from "at least one direct child title element", in any position.
 - Where: `nonEmptyFirstChildTitleText` (`svg-text-alternative-present.js:113-126`).
-
-<a id="nm-8"></a>**NM-8. Upper-case roles skipped by most name rules** — Inconsistency, Medium · [details](./2026-10-stress-test-2.md#nm-8)
-- *In plain words:* browsers treat `role="BUTTON"` as a button, but 18 rules look only for `role="button"`, so a nameless one is never checked.
-- Where: case-sensitive `[role="…"]` selectors (`button-name-present.js:113`, `link-name-present.js:89`, …). The engine already reads roles in any case elsewhere.
 
 <a id="st-1"></a>**ST-1. Definition lists don't read the flat tree** — Inconsistency, Medium · [details](./2026-10-stress-test-2.md#st-1)
 - Example: `<x-dl><dt>a</dt><dd>b</dd></x-dl>` rendering `<dl><slot>`: both dl rules fail. `ul`/`li` were fixed for the same pattern in 1.10.0.
@@ -433,8 +421,12 @@ Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaitin
 |---|---|---|---|---|---|
 | RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `04b9003`, docs `3cf988a` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
 | RB-2 | Named images and forms overrode `document` and form properties the engine reads | Same change as RB-1. | `04b9003` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
+| NM-1 | A role with a fallback (`role="foo button"`, `"none presentation"`) was read as no role, or as an invalid one | Fix fully, with NM-8: one resolver for an element's role (the first token naming a known role, in any case; none means no role, so the element keeps its implicit role), used by every rule for reading and selecting roles, and a lint rule against parsing `role` by hand. As a consequence `aria-allowed-attr` judges an element whose role names no known role by its implicit role. | `d1515a2`, docs `c817d40` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
+| NM-8 | Upper-case roles (`role="BUTTON"`) were skipped by most name rules | Same change as NM-1. | `d1515a2` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
 
 How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
+
+How NM-1 and NM-8 were checked: every fixture with a role attribute is scanned as written, with every `role="x"` as `role="zzunknown x"`, and with every role in upper case; no rule's result changes in either (`tests/role-tokens.test.js`; 59 rules changed before). Each changed rule's own tests pin a fallback list and an upper-case role. The full suite passes (the same one environmental failure); no measurable cost.
 
 ### Fixed by the first audit's follow-up (in 1.10.0)
 
