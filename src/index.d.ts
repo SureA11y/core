@@ -57,6 +57,7 @@ export interface EngineOptions {
     mode?: 'strictConformance' | 'auditorAssist';
     rootCanvasFallback?: string;
   };
+  /** Contrast rules only. Unset: 'styleAndGeometry' where the page has a layout (a browser), else 'styleOnly'. See docs/ENGINE_OPTIONS.md. */
   visibilityMode?: Open<'styleOnly' | 'styleAndGeometry'>;
   includeMode?: 'and' | 'or';
   /** A built-in contract's name, or an inline contract. See docs/POLICY.md. */

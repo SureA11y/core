@@ -654,6 +654,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
+    'own_opacity_own_background', // own opacity over its own background: 5.74:1 (#95)
+    'own_opacity_unresolvable', // not computable (contrast-computable reports it)
     'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
     'excluded_disabled_button_nested_fail',
     'excluded_disabled_fieldset_fail',
@@ -714,6 +716,8 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
+    'own_opacity_own_background', // own opacity over its own background: 5.74:1 (#95)
+    'own_opacity_unresolvable', // not computable (contrast-computable reports it)
     'excluded_disabled_button_fail',
     'excluded_disabled_submit_input_fail'
   ];
@@ -875,4 +879,29 @@ test(`${RULE_ID}: a <label for> naming a disabled control is exempt too => notAp
   <input id="n" type="text" disabled />
 </body></html>`;
   assertRule(run(html), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// An element's own opacity fades its own background and its text together,
+// as one group (CSS Color 4): the text is painted over the element's
+// background first, then both are faded over the page (#95).
+for (const [style, want, ratio] of [
+  ['color:#fff; background-color:#000; opacity:0.6', 'pass', null], // 5.74:1
+  ['color:#fff; background-color:#000; opacity:0.3', 'fail', '2.10'],
+  ['color:#fff; background-color:rgba(0,0,0,0.5); opacity:0.6', 'fail', '2.10']
+]) {
+  test(`${RULE_ID}: own opacity over its own background (${style}) is measured as one group (#95)`, () => {
+    const html = `<!doctype html><html style="background-color:#fff"><body style="background-color:#fff">
+      <p id="badge" style="${style}">New badge</p>
+    </body></html>`;
+    const rule = assertRule(run(html), RULE_ID, want);
+    if (ratio) assert.strictEqual(rule.occurrences[0].i18n.params.ratio, ratio);
+  });
+}
+
+test(`${RULE_ID}: own opacity over its own background, inside an opacity ancestor, composes both groups (#95)`, () => {
+  const html = `<!doctype html><html style="background-color:#fff"><body style="background-color:#fff">
+    <div style="opacity:0.8"><p style="color:#fff; background-color:#000; opacity:0.6">Nested badge</p></div>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.69');
 });

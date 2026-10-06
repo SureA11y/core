@@ -223,7 +223,19 @@ function createContrastHelpers(opts, shared) {
       }
     }
 
-    return 'styleOnly';
+    return '';
+  }
+
+  // Whether the document has a layout to measure: a browser lays out the root
+  // element; jsdom gives it no boxes.
+  function __hasLayout(d) {
+    try {
+      const root = d && dom.documentElement(d);
+      const rects = root ? dom.getClientRects(root) : null;
+      return !!(rects && rects.length);
+    } catch {
+      return false;
+    }
   }
 
   function __asEligibilityBool(v) {
@@ -311,7 +323,12 @@ function createContrastHelpers(opts, shared) {
 
       const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
-      const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
+      // Unset, the text a reader can see is decided from the layout where
+      // there is one (#99): text off the page or clipped away is drawn
+      // nowhere it can be seen. Without a layout (jsdom), from styles only.
+      const rawMode =
+        __resolveVisibilityMode(ctx, engineOptions, d, w) ||
+        (__hasLayout(d) ? 'styleAndGeometry' : 'styleOnly');
 
       const visibilityMode =
         __getVisibilityMode({ visibilityMode: rawMode }) === 'styleAndGeometry'
@@ -467,6 +484,26 @@ function createContrastHelpers(opts, shared) {
       // above or left of the page, where no scrolling reaches (the
       // left: -9999px technique), or clipped to nothing by an ancestor that
       // hides its overflow (height: 0; overflow: hidden).
+      // Measured once per scan: many text elements share the ancestors
+      // that clip them.
+      const clipBoxCache = new Map();
+      const clipBoxOf = (node) => {
+        let box = clipBoxCache.get(node);
+        if (box === undefined) {
+          const acs = __contrastComputedStyle(node);
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          box = {
+            clipsX,
+            clipsY,
+            rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
+            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+          };
+          clipBoxCache.set(node, box);
+        }
+        return box;
+      };
+
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
@@ -494,13 +531,10 @@ function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         let cur = composedParent(el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
-          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
-          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
           if (clipsX || clipsY) {
-            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -511,10 +545,23 @@ function createContrastHelpers(opts, shared) {
             }
             if (right - left < 1 || bottom - top < 1) return true;
           }
-          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          if (stops) break;
           cur = composedParent(cur);
         }
         return false;
+      };
+
+      // An <option> has no layout box of its own, yet it is drawn: the
+      // selected one in the closed control, the others in the list it opens.
+      // Its <select> is what has a place on the page to measure.
+      const selectOf = (el) => {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        if (tag !== 'option' && tag !== 'optgroup') return null;
+        try {
+          return dom.closest(el, 'select');
+        } catch {
+          return null;
+        }
       };
 
       const isVisibleEligible = (el) => {
@@ -523,8 +570,14 @@ function createContrastHelpers(opts, shared) {
 
         let ok;
         try {
-          const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
+          const select = visibilityMode === 'styleAndGeometry' ? selectOf(el) : null;
+          const r = helpers.isDomVisibleEligible(el, ctx, {
+            visibilityMode: select ? 'styleOnly' : visibilityMode
+          });
           ok = __asEligibilityBool(r);
+          if (ok && select)
+            ok = __asEligibilityBool(helpers.isDomVisibleEligible(select, ctx, { visibilityMode }));
+          if (ok && select && isUndrawn(select)) ok = false;
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
           if (ok && isUndrawn(el)) ok = false;
@@ -1433,6 +1486,11 @@ function createContrastHelpers(opts, shared) {
   // correctly group-composited colors without needing to know that case
   // was ever in play.
   const __groupOpacityOverrideCache = new WeakMap();
+  // Elements whose group opacity resolveGroupOpacityColors could not resolve
+  // only because nothing behind them, up to the root, is opaque: what is
+  // missing then is the page's canvas, which computeEffectiveBackground
+  // already reports (BACKGROUND_NOT_OPAQUE_AT_ROOT), not the opacity.
+  const __groupOpacityRootNotOpaque = new WeakSet();
 
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
@@ -1559,6 +1617,22 @@ function createContrastHelpers(opts, shared) {
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
+    // SVG text: the <rect>s painted behind it, above every ancestor's
+    // background, topmost first (see __svgBackdropOf).
+    const svgBackdrop = __svgBackdropOf(el);
+    if (svgBackdrop && !svgBackdrop.blocked) {
+      for (let i = svgBackdrop.layers.length - 1; i >= 0; i--) {
+        const layer = svgBackdrop.layers[i];
+        if (collectStack) {
+          stack.push({
+            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, layer.rgba);
+      }
+    }
     let cur = el;
     let guard = 0;
     // A background color this parser can't read, met while what is in front
@@ -1822,7 +1896,12 @@ function createContrastHelpers(opts, shared) {
         cur = composedParent(cur);
       }
 
-      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+      if (bgAcc.a < 1 || fgAcc.a < 1) {
+        try {
+          __groupOpacityRootNotOpaque.add(el);
+        } catch {}
+        return __cacheAndReturn(null);
+      }
 
       return __cacheAndReturn({
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
@@ -1977,6 +2056,42 @@ function createContrastHelpers(opts, shared) {
         return out;
       }
 
+      // el's own opacity, when el also paints a background of its own,
+      // makes el's background and its text one group faded together (CSS
+      // Color 4, opacity): the per-element opacity product would fade the
+      // text once and the background walk fade el's background again,
+      // measuring a badge darker against lighter than it looks (#95). It is
+      // resolved the way an ancestor's is, below, or reported when an effect
+      // (image, gradient, blend mode, filter) in the way stops it; a page
+      // with no opaque background is left to the root-canvas handling.
+      // Without a background of its own, el's opacity only fades the text,
+      // which the opacity product already gets right.
+      if (cur === el) {
+        const ownOpacity = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const ownBg = ownOpacity < 1 ? parseCssColorToRgba(cs && cs.backgroundColor) : null;
+        if (
+          ownBg &&
+          ownBg.a > 0 &&
+          !resolveGroupOpacityColors(el) &&
+          !__groupOpacityRootNotOpaque.has(el)
+        ) {
+          const out = {
+            ok: false,
+            reasonCode: 'ELEMENT_OPACITY',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerProperty: 'opacity',
+            blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
+
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
       // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
@@ -1987,9 +2102,8 @@ function createContrastHelpers(opts, shared) {
       // background of its own -- without risking the double-counted,
       // confidently-wrong ratio a naive combination of the existing
       // per-element foreground and ancestor-aware background would
-      // produce for the general case. (el's own opacity, if any, does not
-      // trigger this at all: it is already handled correctly by the
-      // existing per-element opacity product used for the foreground.)
+      // produce for the general case. (el's own opacity is handled just
+      // above.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
@@ -2081,6 +2195,15 @@ function createContrastHelpers(opts, shared) {
   const __OVERLAP_CELL = 256;
   const __OVERLAP_MAX_PAINTERS = 20000;
   const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  const __SVG_SHAPE_TAGS = new Set([
+    'rect',
+    'circle',
+    'ellipse',
+    'line',
+    'polyline',
+    'polygon',
+    'path'
+  ]);
   let __overlapIndex;
 
   // Called for every element on the page, and most paint nothing: a
@@ -2097,6 +2220,20 @@ function createContrastHelpers(opts, shared) {
 
   function __paintCandidate(node, cs) {
     const tag = String(dom.localName(node) || '').toLowerCase();
+    // SVG shapes paint with fill and stroke, not a CSS background (#96). A
+    // <line> has no inside to fill.
+    if (__SVG_SHAPE_TAGS.has(tag) && dom.namespaceURI(node) === __SVG_NS) {
+      const fill = trim(cs.fill);
+      if (tag !== 'line' && fill && fill !== 'none')
+        return { property: 'fill', value: truncateCssValue(fill, 80) };
+      const stroke = trim(cs.stroke);
+      if (stroke && stroke !== 'none')
+        return { property: 'stroke', value: truncateCssValue(stroke, 80) };
+      return null;
+    }
+    if ((tag === 'image' || tag === 'use') && dom.namespaceURI(node) === __SVG_NS) {
+      return { property: 'element', value: tag };
+    }
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -2442,6 +2579,12 @@ function createContrastHelpers(opts, shared) {
         return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
       };
 
+      // The <rect>s SVG text is measured against are its background, not
+      // paint in the way of measuring it (see __svgBackdropOf).
+      const backdrop = __svgBackdropOf(el);
+      const backdropEls =
+        backdrop && !backdrop.blocked ? new Set(backdrop.layers.map((l) => l.el)) : null;
+
       const seen = new Set();
       for (const tr of rects) {
         const x0 = Math.floor(tr.left / __OVERLAP_CELL);
@@ -2455,6 +2598,7 @@ function createContrastHelpers(opts, shared) {
               seen.add(i);
               const p = index.painters[i];
               if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
               // ancestors.
@@ -2503,6 +2647,136 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+  }
+
+  // -------- SVG shapes behind SVG text (#96) --------
+  //
+  // SVG paints in document order, so a shape earlier than a text element and
+  // under it is the text's background, which no CSS background shows. The
+  // simple case is measured: a <rect> with a solid fill, painted before the
+  // text, not rotated, covering all of the text clear of its rounded corners
+  // and stroke, with nothing between it and the text that groups it (opacity,
+  // a filter, a mask or a clip). Several such rects stack. Any other shape
+  // under or over the text is left to the paint-overlap check, which reports
+  // it. Needs a layout; without one nothing is found and nothing changes.
+  const __svgBackdropCache = new WeakMap();
+
+  function __svgBackdropOf(el) {
+    if (!__isSvgTextElement(el)) return null;
+    if (__svgBackdropCache.has(el)) return __svgBackdropCache.get(el);
+    let out;
+    try {
+      out = __computeSvgBackdrop(el);
+    } catch {
+      out = null;
+    }
+    __svgBackdropCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgBackdrop(el) {
+    const index = __getOverlapIndex();
+    if (!index) return null;
+    let svg = composedParent(el);
+    let guard = 0;
+    while (
+      svg &&
+      guard++ < 1000 &&
+      !(dom.namespaceURI(svg) === __SVG_NS && String(dom.localName(svg)) === 'svg')
+    ) {
+      svg = composedParent(svg);
+    }
+    if (!svg) return null;
+    const rects = __ownTextRects(el);
+    if (!rects.length) return null;
+    const layers = [];
+    const seen = new Set();
+    for (const tr of rects) {
+      const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+      const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+      const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+      const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const i of index.cells.get(cx + ',' + cy) || []) {
+            if (seen.has(i)) continue;
+            seen.add(i);
+            const p = index.painters[i];
+            if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
+            if (!__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            const rgba = __svgRectLayer(p.el, p.rect, el, rects);
+            if (!rgba) return { layers: [], blocked: true };
+            if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
+          }
+        }
+      }
+    }
+    // Bottom first, as painted.
+    layers.sort((a, b) => (dom.compareDocumentPosition(a.el, b.el) & 4 ? -1 : 1));
+    return { layers, blocked: false };
+  }
+
+  // The color a <rect> paints behind all of el's text, or null when it isn't
+  // that simple case.
+  function __svgRectLayer(shape, box, el, textRects) {
+    if (String(dom.localName(shape)) !== 'rect') return null;
+    // Painted before el: el follows it in document order.
+    if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
+    const cs = __contrastComputedStyle(shape);
+    const fill = parseCssColorToRgba(cs && cs.fill);
+    if (!fill) return null;
+    const grouped = (node, ncs) =>
+      __hasBlendModeEl(node, ncs) ||
+      __hasFilterEl(node, ncs) ||
+      (trim(ncs && ncs.clipPath) && trim(ncs.clipPath) !== 'none') ||
+      (trim(ncs && ncs.maskImage) && trim(ncs.maskImage) !== 'none');
+    if (grouped(shape, cs)) return null;
+    // Up to the first ancestor el shares, whose effects apply to both.
+    for (
+      let cur = composedParent(shape), guard = 0;
+      cur && guard < 1000 && !__isComposedInside(el, cur);
+      cur = composedParent(cur), guard++
+    ) {
+      const ccs = __contrastComputedStyle(cur);
+      if (grouped(cur, ccs)) return null;
+      if (clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1)
+        return null;
+    }
+    let ctm;
+    try {
+      ctm = dom.getScreenCTM(shape);
+    } catch {
+      ctm = null;
+    }
+    if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6 || !(ctm.a > 0) || !(ctm.d > 0))
+      return null;
+    // Rounded corners and the inner half of a stroke don't paint the fill.
+    const len = (v) => {
+      const n = parsePx(v);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    let rx = len(cs.rx);
+    let ry = len(cs.ry);
+    if (!rx) rx = ry;
+    if (!ry) ry = rx;
+    const stroke = trim(cs.stroke);
+    const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
+    const ix = Math.max(rx, halfStroke) * ctm.a;
+    const iy = Math.max(ry, halfStroke) * ctm.d;
+    const inside = (r) =>
+      r.left >= box.left + ix - 0.5 &&
+      r.right <= box.right - ix + 0.5 &&
+      r.top >= box.top + iy - 0.5 &&
+      r.bottom <= box.bottom - iy + 0.5;
+    if (!textRects.every(inside)) return null;
+    const fillOpacity = Number.parseFloat(cs.fillOpacity);
+    const opacity = Number.parseFloat(cs.opacity);
+    const a = clamp01(
+      fill.a *
+        (Number.isFinite(fillOpacity) ? clamp01(fillOpacity) : 1) *
+        (Number.isFinite(opacity) ? clamp01(opacity) : 1)
+    );
+    return { r: fill.r, g: fill.g, b: fill.b, a };
   }
 
   return {

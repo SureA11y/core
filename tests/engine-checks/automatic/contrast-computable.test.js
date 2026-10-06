@@ -573,7 +573,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedReasonCodeById = {
     blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -584,7 +584,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     // ancestor opacity resolves cleanly on its own (see the "pass" test
     // above), but stays a blocker when something further out -- here a
     // gradient behind the opacity ancestor -- is itself unresolvable.
-    blocker_ancestor_opacity_unresolvable: 'ANCESTOR_OPACITY'
+    blocker_ancestor_opacity_unresolvable: 'ANCESTOR_OPACITY',
+    // the same for the text element's own opacity over its own background (#95)
+    own_opacity_unresolvable: 'ELEMENT_OPACITY'
   };
 
   for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
@@ -599,11 +601,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
-  // The gradient/image blockers, and the new ancestor-opacity-plus-
-  // gradient case, are set on the ANCESTOR <section>, so each section's
-  // own case-title paragraph is also blocked (3 extra anonymous
-  // occurrences), for 6 + 3 = 9 total.
-  assert.strictEqual(rule.occurrences.length, 9);
+  // The gradient/image blockers, and the ancestor- and own-opacity-plus-
+  // gradient cases, are set on the ANCESTOR <section>, so each section's
+  // own case-title paragraph is also blocked (4 extra anonymous
+  // occurrences), for 7 + 4 = 11 total.
+  assert.strictEqual(rule.occurrences.length, 11);
 });
 
 // Optional: determinism smoke check (run twice, compare results)

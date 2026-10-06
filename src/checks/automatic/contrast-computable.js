@@ -25,7 +25,9 @@
  *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient, mix-blend-mode, a filter or
  *   backdrop-filter, a text-shadow (which may add contrast this engine has
- *   no glyph-rendering model to account for), ancestor opacity, a root
+ *   no glyph-rendering model to account for), opacity on an ancestor, or
+ *   on the text's own element over a background of its own, that can't be
+ *   resolved against what lies behind it, a root
  *   background that never becomes opaque, or a color that does not parse,
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and

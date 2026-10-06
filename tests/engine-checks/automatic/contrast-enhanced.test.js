@@ -473,7 +473,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
@@ -482,6 +482,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'bold_large_text_light_gray_on_white',
     'fg_alpha_black_50_on_white',
     'own_opacity_still_computable',
+    'own_opacity_own_background', // 5.74:1, below AAA (#95)
     'blocker_ancestor_opacity', // group opacity over a flat backdrop is computable
     'eligible_inert_fail',
     'eligible_aria_hidden_fail',
@@ -514,6 +515,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
+    'own_opacity_unresolvable', // not computable (contrast-computable reports it)
     'excluded_disabled_button_fail', // inactive UI component (WCAG 1.4.3/1.4.6 Incidental exception)
     'excluded_disabled_button_nested_fail',
     'excluded_disabled_fieldset_fail',
@@ -544,7 +546,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 15);
+  assert.strictEqual(rule.occurrences.length, 16);
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white',
@@ -553,6 +555,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'bold_large_text_light_gray_on_white',
     'fg_alpha_black_50_on_white',
     'own_opacity_still_computable',
+    'own_opacity_own_background', // 5.74:1, below AAA (#95)
     'blocker_ancestor_opacity', // group opacity over a flat backdrop is computable
     'eligible_inert_fail',
     'eligible_aria_hidden_fail',
@@ -574,6 +577,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'blocker_mix_blend_mode',
     'blocker_filter',
     'blocker_backdrop_filter',
+    'own_opacity_unresolvable', // not computable (contrast-computable reports it)
     'excluded_disabled_button_fail',
     'excluded_disabled_submit_input_fail'
   ];
@@ -650,3 +654,11 @@ test(`${RULE_ID}: determinism (same input => same output)`, () => {
     assert.deepStrictEqual(r2, r1);
 });
 */
+
+test(`${RULE_ID}: own opacity over its own background is measured as one group: 5.74:1 (#95)`, () => {
+  const html = `<!doctype html><html style="background-color:#fff"><body style="background-color:#fff">
+    <p style="color:#fff; background-color:#000; opacity:0.6">New badge</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '5.74');
+});
