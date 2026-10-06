@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-2.
+Sorted by severity, then by how many pages it touches. Next to fix: RP-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-2](#vs-2) | SVG shapes behind SVG text are ignored | Bug | **High** | Round 2 |
 | [RP-1](#rp-1) | SARIF output fails the SARIF schema | Bug | **High** | Round 2 |
 | [R-8](#r-8) | Off-screen text is still contrast-checked by default; closed `<select>` options too | Debatable | Medium | Round 1 |
 | [R-1](#r-1) | Paint that isn't an ancestor's: stacking, fixed and sticky paint ignored | Bug | Medium | Round 1 (limits of the fix) |
@@ -101,11 +100,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-2.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="vs-2"></a>**VS-2. SVG shapes behind SVG text are ignored** — Bug, High · [details](./2026-10-stress-test-2.md#vs-2)
-- *In plain words:* light text on a dark SVG `<rect>` (badges, charts) is measured against the white page behind the SVG.
-- Example: `<svg><rect fill="#000" …/><text fill="#ddd">Badge</text></svg>`: `fail` 1.36:1; the screen shows 15.46:1. The reverse (dark text on a dark rect) passes.
-- Where: `__paintCandidate` (`contrast-helpers.js:~2075`) doesn't count SVG `fill` as paint.
 
 <a id="rp-1"></a>**RP-1. SARIF output fails the SARIF schema** — Bug, High · [details](./2026-10-stress-test-2.md#rp-1)
 - *In plain words:* almost every SARIF file from a browser scan is invalid, so a tool that validates SARIF rejects it.
@@ -388,10 +382,13 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 Fixes on branch `fix/audit-2026-10-findings-2` (from `main` at `ceb26d1`), pushed, no pull request yet.
 
-<a id="vs-1"></a>
+<a id="vs-1"></a><a id="vs-2"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | VS-1 | An element's own `opacity` was counted twice when it had its own background | Option A: an element whose own opacity is below 1 and which paints a background is measured as one group, through the routine already used for an ancestor's opacity; when an image, gradient, blend mode or filter stops that, `contrast-computable` reports `cantTell` with the new reason code `ELEMENT_OPACITY`. A page with no opaque background is left to the existing root-canvas handling. Without a background of its own, an element's opacity keeps the opacity product, which was already right. Left as it was: in `auditorAssist` mode, which assumes a canvas color for such a page, the badge still gets the old estimate. | `e9850fd`, docs `4472e3a` | [#95](https://github.com/SureA11y/core/issues/95) | 2026-10-06 |
+| VS-2 | SVG shapes behind SVG text were ignored | Option B: SVG shapes count as paint for the overlap check, so any shape under or over SVG text gives `cantTell` (`BACKGROUND_OVERLAP`); the simple case is measured: a `<rect>` with a solid fill, painted before the text, unrotated, covering all of it clear of rounded corners and stroke, with no grouping effect in between, is the text's background, with its `fill-opacity` and `opacity`. Needs a layout: under jsdom results are unchanged. | `80ec026`, changelog `36674dc` | [#96](https://github.com/SureA11y/core/issues/96) | 2026-10-06 |
+
+How VS-2 was checked: a Chromium test covers each case (11 assertions, all failing before): the black badge passes (15.46:1), dark text on a `#333` rect fails at 1.66:1, white text on a black rect is measured (it was dropped as the same color as the page), a rect at `fill-opacity:.5` gives the composited 3.95:1, rounded corners clear of the text are measured, and a circle, a gradient fill, a rotated rect, a rect covering part of the text and a rect painted over it are `cantTell`. HTML text beside an inline SVG icon is unaffected. Checked on the SVG text itself, Engine A reports every one of these cases as needing review (background overlap), and Engine B doesn't evaluate SVG text; the second audit's "A: pass, B: pass" counted other text on the probe page (corrected in the report). The full suite passes (the same one environmental failure); an SVG-heavy page (1,000 icons and a 300-bar labelled chart) costs about the same (1.04×, within noise).
 
 How VS-1 was checked: the ratios were worked out by hand from how browsers composite a group, and the engine now matches them: `opacity:.6` white on black over white, 5.74:1 (was 3.22:1); `opacity:.3`, 2.09:1 (was 1.28:1); a 50% black background at `opacity:.6`, 2.09:1 (was 1.60:1). Cases already right are unchanged: own opacity without a background (3.95:1) and inside an opacity ancestor (3.69:1). Engine A gives the same ratios on all five; Engine B gets every pass and fail right. Two fixture cases were added (a badge, and one over a gradient for `ELEMENT_OPACITY`), and tests pin the ratios (9 failed before). The full suite passes (the same one environmental failure); no measurable cost (jsdom 0.96×).
 

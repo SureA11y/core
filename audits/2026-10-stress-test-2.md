@@ -298,7 +298,7 @@ All examples here were run in Chromium with `html, body { background: #fff; colo
 *In plain words:* in an SVG badge or a chart label, light text sits on a dark `<rect>`. The engine doesn't see the rectangle and measures the text against the white page behind the SVG.
 
 - Example: `<svg width="200" height="40"><rect width="200" height="40" fill="#000"/><text x="10" y="25" fill="#ddd">Badge label</text></svg>`. Engine `fail` 1.36:1 against `#fff`; pixels 15.46:1: should pass. The reverse (black text on a `#333` rect) **passes** and should fail.
-- **Others.** A: pass. B: pass.
+- **Others.** ~~A: pass. B: pass.~~ Corrected when fixing it: those results counted other text on the probe page. Run on the SVG text itself, A reports every SVG-shape case, including the plain dark rect, as needing review (background overlap), and B doesn't evaluate SVG text (inapplicable).
 - **Cause.** `__paintCandidate` (`contrast-helpers.js:~2075`) counts only CSS backgrounds and replaced elements as paint; SVG shapes that paint with `fill` are never painters, and the outer `<svg>` is an ancestor of the text, so it's skipped. So the `BACKGROUND_OVERLAP` check from P1 never fires either.
 - **Evaluation.** Clear bug, in both directions. SVG text on a shape is the normal case for charts and badges.
 
