@@ -17,6 +17,10 @@ serialization constraint as everything else in `runInPage` (§1 of `RULE_AUTHORI
 
 ---
 
+## 0) `dom`: reading the DOM safely
+
+`helpers.dom` reads DOM properties and calls DOM methods in a way a page's named form controls and images can't redirect (`src/core/safe-dom.js`): `dom.parentNode(el)`, `dom.getAttribute(el, 'role')`, `dom.get(document, 'title')`, `dom.call(walker, 'nextSibling')`. Every rule reads the DOM through it; see [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §1.2 for why and how.
+
 ## 1) Query & traversal
 
 ### `queryAll(selector)` → `Element[]`

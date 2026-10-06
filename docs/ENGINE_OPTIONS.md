@@ -329,10 +329,13 @@ runDomRulesInPage(url, null, {
     runInPage(ctx) {
       // queryAllSmart applies excludeSelectors, the scope's shadow roots and
       // the hidden-content filter; queryAll is the plain light-DOM query.
+      // ctx.helpers.dom reads the DOM so the page's markup can't redirect it
+      // (a form field named "outerHTML" would, read directly).
+      const dom = ctx.helpers.dom;
       const els = ctx.helpers.queryAllSmart('[onclick]');
       const occurrences = els.map((el) => ({
         selector: ctx.helpers.buildSelector(el),
-        html: el.outerHTML,
+        html: dom.outerHTML(el),
         summary: 'Inline onclick handler found.',
         hint: 'Move event handling into an external script.'
       }));

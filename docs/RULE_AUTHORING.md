@@ -34,6 +34,31 @@ This is a known, **recurring** footgun (“meta is not defined” incident).
 - `ctx.rule.defaultConfidence`
 - `ctx.rule.type`
 
+### 1.2 Read the DOM through `ctx.helpers.dom`
+
+A page's markup can change what a DOM property returns. HTML declares `HTMLFormElement` and `Document` with `[LegacyOverrideBuiltIns]`: a form's named controls override the form's own properties, and named images, forms, embeds, objects and iframes override `document`'s. On `<form><input name="parentNode">`, `form.parentNode` is that input, so a loop that climbs with `n = n.parentNode` never ends; on `<img name="querySelectorAll">`, `document.querySelectorAll` is that image. jsdom doesn't implement this, so a rule's tests can't show it.
+
+So rules read DOM properties and call DOM methods through `ctx.helpers.dom` (`src/core/safe-dom.js`), which looks each one up on the object's own prototype chain, where markup can't reach:
+
+```js
+function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  // el.parentNode            -> dom.parentNode(el)
+  // el.getAttribute('role')  -> dom.getAttribute(el, 'role')
+  // document.title           -> dom.get(document, 'title')
+  // typeof el.closest        -> typeof dom.get(el, 'closest')
+  // walker.nextSibling()     -> dom.call(walker, 'nextSibling')
+}
+```
+
+- `dom.<name>(node)` reads a property and `dom.<name>(node, ...args)` calls a method, for the names in `SAFE_DOM_GETTERS` and `SAFE_DOM_METHODS` (`src/core/safe-dom.js`): the ones that exist only on DOM interfaces.
+- `dom.get(node, name)` reads any property, a method included, without calling it; `dom.call(node, name, ...args)` calls any method. Use them for names that also exist on ordinary objects (`id`, `title`, `name`, `style`, `length`): no tool can tell `form.title` from `rule.title`, so for those it is up to the author.
+- Anything that isn't a DOM object (a plain object, a test's stand-in) is read the ordinary way, so the accessors are safe on any value. Like the reads they replace, they throw on `null` and `undefined`.
+- Writes stay as they are: the engine only writes to elements it created.
+- A scan checks once, at its start, whether any element is named after something the engine reads. On a page where none is, the accessors are plain reads; only a page that could override them pays for the protected lookup.
+
+`npm run lint` fails on a direct read of a DOM-only name in `src/core`, `src/checks` or a profile's rules, and `node scripts/codemods/use-safe-dom.js` rewrites one. The Chromium test `tests/engine-checks/named-property-override-chromium.test.js` scans pages where every name is overridden and checks the results don't change.
+
 ---
 
 ## 2) Rule module contract (exact)
