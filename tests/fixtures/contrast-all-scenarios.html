@@ -249,17 +249,44 @@
 
 <!-- ========================================================= -->
 <!-- 13c) NOT a blocker: the text element's OWN opacity < 1 -->
-<!-- The element's own fractional opacity is folded into the foreground
-     via the existing per-element opacity product; it does not block
-     computability. Contrast IS computed here (and, with these colors,
-     the resulting ratio is below the AA/AAA thresholds — this fixture
-     entry intentionally demonstrates "computable but low ratio", not
-     "not computable"). -->
+<!-- The element's own fractional opacity fades its background and its
+     text together, as one group; it does not block computability.
+     Contrast IS computed here (and, with these colors, the resulting
+     ratio is below the AA/AAA thresholds — this fixture entry
+     intentionally demonstrates "computable but low ratio", not "not
+     computable"). -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-own-opacity-still-computable" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
   <p class="case-title">15 — MIXED: not a blocker: the element&rsquo;s own opacity &lt; 1 stays computable, and the ~3.98:1 result fails AA and AAA</p>
   <p class="text normalText" id="own_opacity_still_computable" style="color:#000000; background-color:#ffffff; opacity:0.5;">
     Computable: only the text element's own opacity is fractional (no ancestor blocker).
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13d) The text element's OWN opacity < 1 with a dark background of its
+     own: the background and the text are faded together, as one group
+     (#95). White on black at 60% opacity over white renders as white on
+     #666666, 5.74:1: it passes AA and fails AAA. Fading the text and the
+     background separately measured 3.22:1. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-own-opacity-own-background" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">15b — MIXED: the element&rsquo;s own opacity fades its own background and its text together: 5.74:1 passes AA and fails AAA</p>
+  <p class="text normalText" id="own_opacity_own_background" style="color:#ffffff; background-color:#000000; opacity:0.6;">
+    New: white on black at 60% opacity.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 13e) Computability blocker: the element's OWN opacity < 1 with a
+     background of its own, and a gradient further out: the faded group
+     lets the gradient show through, which no compositing walk can
+     resolve, so this is cantTell (reasonCode ELEMENT_OPACITY). -->
+<!-- ========================================================= -->
+<section class="case" id="case-own-opacity-unresolvable" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL" style="background-image:linear-gradient(red, blue);">
+  <p class="case-title">15c — NEUTRAL: the element&rsquo;s own opacity over its own background, with a gradient further out, is not computable</p>
+  <p class="text normalText" id="own_opacity_unresolvable" style="color:#ffffff; background-color:#000000; opacity:0.6;">
+    NOT COMPUTABLE: own opacity:0.6 over its own background, and a gradient behind it.
   </p>
 </section>
 

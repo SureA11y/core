@@ -18164,6 +18164,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // correctly group-composited colors without needing to know that case
   // was ever in play.
   const __groupOpacityOverrideCache = new WeakMap();
+  // Elements whose group opacity resolveGroupOpacityColors could not resolve
+  // only because nothing behind them, up to the root, is opaque: what is
+  // missing then is the page's canvas, which computeEffectiveBackground
+  // already reports (BACKGROUND_NOT_OPAQUE_AT_ROOT), not the opacity.
+  const __groupOpacityRootNotOpaque = new WeakSet();
 
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
@@ -18553,7 +18558,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         cur = composedParent(cur);
       }
 
-      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+      if (bgAcc.a < 1 || fgAcc.a < 1) {
+        try {
+          __groupOpacityRootNotOpaque.add(el);
+        } catch {}
+        return __cacheAndReturn(null);
+      }
 
       return __cacheAndReturn({
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
@@ -18708,6 +18718,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
+      // el's own opacity, when el also paints a background of its own,
+      // makes el's background and its text one group faded together (CSS
+      // Color 4, opacity): the per-element opacity product would fade the
+      // text once and the background walk fade el's background again,
+      // measuring a badge darker against lighter than it looks (#95). It is
+      // resolved the way an ancestor's is, below, or reported when an effect
+      // (image, gradient, blend mode, filter) in the way stops it; a page
+      // with no opaque background is left to the root-canvas handling.
+      // Without a background of its own, el's opacity only fades the text,
+      // which the opacity product already gets right.
+      if (cur === el) {
+        const ownOpacity = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const ownBg = ownOpacity < 1 ? parseCssColorToRgba(cs && cs.backgroundColor) : null;
+        if (
+          ownBg &&
+          ownBg.a > 0 &&
+          !resolveGroupOpacityColors(el) &&
+          !__groupOpacityRootNotOpaque.has(el)
+        ) {
+          const out = {
+            ok: false,
+            reasonCode: 'ELEMENT_OPACITY',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerProperty: 'opacity',
+            blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
+
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
       // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
@@ -18718,9 +18764,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // background of its own -- without risking the double-counted,
       // confidently-wrong ratio a naive combination of the existing
       // per-element foreground and ancestor-aware background would
-      // produce for the general case. (el's own opacity, if any, does not
-      // trigger this at all: it is already handled correctly by the
-      // existing per-element opacity product used for the foreground.)
+      // produce for the general case. (el's own opacity is handled just
+      // above.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
@@ -74415,6 +74460,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // correctly group-composited colors without needing to know that case
   // was ever in play.
   const __groupOpacityOverrideCache = new WeakMap();
+  // Elements whose group opacity resolveGroupOpacityColors could not resolve
+  // only because nothing behind them, up to the root, is opaque: what is
+  // missing then is the page's canvas, which computeEffectiveBackground
+  // already reports (BACKGROUND_NOT_OPAQUE_AT_ROOT), not the opacity.
+  const __groupOpacityRootNotOpaque = new WeakSet();
 
   const __localEffectiveForegroundCache = new WeakMap();
   const __effectiveForegroundCache =
@@ -74804,7 +74854,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         cur = composedParent(cur);
       }
 
-      if (bgAcc.a < 1 || fgAcc.a < 1) return __cacheAndReturn(null);
+      if (bgAcc.a < 1 || fgAcc.a < 1) {
+        try {
+          __groupOpacityRootNotOpaque.add(el);
+        } catch {}
+        return __cacheAndReturn(null);
+      }
 
       return __cacheAndReturn({
         fg: { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b },
@@ -74959,6 +75014,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
+      // el's own opacity, when el also paints a background of its own,
+      // makes el's background and its text one group faded together (CSS
+      // Color 4, opacity): the per-element opacity product would fade the
+      // text once and the background walk fade el's background again,
+      // measuring a badge darker against lighter than it looks (#95). It is
+      // resolved the way an ancestor's is, below, or reported when an effect
+      // (image, gradient, blend mode, filter) in the way stops it; a page
+      // with no opaque background is left to the root-canvas handling.
+      // Without a background of its own, el's opacity only fades the text,
+      // which the opacity product already gets right.
+      if (cur === el) {
+        const ownOpacity = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const ownBg = ownOpacity < 1 ? parseCssColorToRgba(cs && cs.backgroundColor) : null;
+        if (
+          ownBg &&
+          ownBg.a > 0 &&
+          !resolveGroupOpacityColors(el) &&
+          !__groupOpacityRootNotOpaque.has(el)
+        ) {
+          const out = {
+            ok: false,
+            reasonCode: 'ELEMENT_OPACITY',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerProperty: 'opacity',
+            blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
+
       // An ANCESTOR (not el itself) with fractional opacity is treated
       // as a computability blocker rather than being folded into a
       // confident ratio, UNLESS resolveGroupOpacityColors can resolve it
@@ -74969,9 +75060,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // background of its own -- without risking the double-counted,
       // confidently-wrong ratio a naive combination of the existing
       // per-element foreground and ancestor-aware background would
-      // produce for the general case. (el's own opacity, if any, does not
-      // trigger this at all: it is already handled correctly by the
-      // existing per-element opacity product used for the foreground.)
+      // produce for the general case. (el's own opacity is handled just
+      // above.)
       if (cur !== el) {
         const ancestorOpacity = clamp01(
           Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
