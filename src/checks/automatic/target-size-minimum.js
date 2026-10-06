@@ -15,7 +15,7 @@
  *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
  *   a filter here: an aria-hidden control is still a target a pointer can hit.
  *   <area> is matched but never actually evaluated: it has no box of its own
- *   to measure (see the implementation notes).
+ *   to measure.
  * @expectation
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry: spacing (a

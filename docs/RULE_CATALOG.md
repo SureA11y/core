@@ -274,7 +274,7 @@ automatic · no formal WCAG SC mapping · confidence high · default severity mo
 
 Checks that an explicit role="" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role="tab" is not permitted on &lt;nav&gt;).
 
-**Applies to.** Applies to elements with an explicit, valid, non-abstract role, where the host element/attribute combination has an asserted permitted-roles constraint in the ARIA-in-HTML table (src/core/aria-helpers.js ALLOWED_ROLES_BY_ELEMENT).
+**Applies to.** Applies to elements with an explicit, valid, non-abstract role, where the host element/attribute combination has an asserted permitted-roles constraint in the ARIA in HTML specification's table of permitted roles.
 
 **Expectation.** The explicit role is one of the roles the ARIA-in-HTML specification permits for that host element. Reported at CANTTELL rather than FAIL: ARIA-in-HTML's permitted-roles table is an author conformance requirement with no ACT rule and no WCAG mapping in any source. The role the author asked for is still the role assistive technology exposes, so whether the combination harms anyone depends on the widget, not on the table.
 
@@ -406,7 +406,7 @@ automatic · WCAG 4.1.2 (A) · confidence high · default severity moderate
 
 Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).
 
-**Applies to.** Applies to (a) elements whose explicit, valid role is one of the ARIA 1.2 roles with a documented "Prohibited ARIA States and Properties" list for naming attributes (pure text-semantics / non-naming structural roles: caption, code, deletion, emphasis, generic, insertion, mark, none, paragraph, presentation, strong, subscript, suggestion, superscript, time), plus a native &lt;caption&gt; with no valid explicit role, whose implicit role is caption, and (b) elements with no role at all: a curated set of native HTML tags verified to carry no implicit role (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a hyphenated, author-defined tag per the Custom Elements spec; see isRolelessCustomElementTag below). In both cases, only elements that also carry aria-label or aria-labelledby.
+**Applies to.** Applies to (a) elements whose explicit, valid role is one of the ARIA 1.2 roles with a documented "Prohibited ARIA States and Properties" list for naming attributes (pure text-semantics / non-naming structural roles: caption, code, deletion, emphasis, generic, insertion, mark, none, paragraph, presentation, strong, subscript, suggestion, superscript, time), plus a native &lt;caption&gt; with no valid explicit role, whose implicit role is caption, and (b) elements with no role at all: native HTML tags verified to carry no implicit role (such as &lt;div&gt;, &lt;span&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;code&gt; and &lt;time&gt;), or any autonomous custom element (a hyphenated, author-defined tag per the Custom Elements spec). In both cases, only elements that also carry aria-label or aria-labelledby.
 
 **Expectation.** Prohibited attributes must not be present on (a); for (b), the naming attribute is at best unreliable (nothing accessible-name-aware to hang it off) and at worst silently ignored by assistive technology. A roleless element whose own content already gives it a name is reported as CANTTELL, since the attribute may be a deliberate override; one with no other source for a name FAILs.
 
@@ -423,9 +423,9 @@ automatic · WCAG 1.3.1 (A) · confidence medium · default severity moderate
 
 Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.
 
-**Applies to.** Applies to elements with an explicit, valid role that is one of the container roles with a documented "required owned elements" entry (the same REQUIRED_OWNED_ROLES table aria-required-children uses, see src/core/aria-helpers.js).
+**Applies to.** Applies to elements with an explicit, valid role that is one of the container roles with a documented "required owned elements" entry (the same table aria-required-children uses).
 
-**Expectation.** Every accessible-tree-owned descendant of the container (after pruning role="none"/"presentation" elements and any "group"/ "rowgroup" wrapper, both always transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is itself in the container's own required-owned-roles set) has a role from that same required-owned set. Nothing else is a structurally valid direct child of a composite/container role, where "allowed" is the container's required-owned roles plus the small ALLOWED_EXTRA_OWNED_ROLES set of roles it may own without being required to (a separator between menu items, a caption on a grid). A roleless wrapper is descended into to reach the items a component library buries inside it, but once one is found there the rest of that wrapper's subtree is the item's own content and is not judged against the container.
+**Expectation.** Every accessible-tree-owned descendant of the container (after pruning role="none"/"presentation" elements and any "group"/ "rowgroup" wrapper, both always transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is itself in the container's own required-owned-roles set) has a role from that same required-owned set. Nothing else is a structurally valid direct child of a composite/container role, where "allowed" is the container's required-owned roles plus a small set of roles it may own without being required to (a separator between menu items, a caption on a grid). A roleless wrapper is descended into to reach the items a component library buries inside it, but once one is found there the rest of that wrapper's subtree is the item's own content and is not judged against the container.
 
 **What a finding reports.**
 
@@ -1188,7 +1188,7 @@ automatic · WCAG 2.1.1 (A) · confidence high · default severity moderate
 
 Checks that same-origin &lt;iframe&gt;/&lt;frame&gt; elements with tabindex="-1" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.
 
-**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements with an explicit negative tabindex, whose embedded document is same-origin and reachable via contentDocument (cross-origin/unreachable frames assert nothing, see implementation notes).
+**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements with an explicit negative tabindex, whose embedded document is same-origin and reachable via contentDocument. A cross-origin or otherwise unreachable frame can't be looked into, so nothing is asserted about it.
 
 **Expectation.** The frame's embedded document contains no focusable element. Browsers do not propagate tabindex="-1" on the host &lt;iframe&gt; into its embedded document: Tab can still reach focusable content inside, even though the frame itself is skipped. An author who set tabindex="-1" intending to remove the frame from the tab order has not actually done so if the embedded document contains focusable content. Exception: an iframe with both a `width` and `height` HTML attribute of 2px or less (a common "tracking pixel" pattern) cannot render any perceptible content, so focusable content inside it never satisfies ACT akn7bn's "visible" requirement and doesn't count.
 
@@ -1405,7 +1405,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that at most one banner landmark (role="banner" or a non-nested &lt;header&gt;) exists on the page.
 
-**Applies to.** Applies whenever the page contains at least one banner landmark (explicit role="banner", or an implicit, non-nested &lt;header&gt;; see landmark-banner-is-top-level's implementation notes for the shared landmark-detection model).
+**Applies to.** Applies whenever the page contains at least one banner landmark (explicit role="banner", or an implicit, non-nested &lt;header&gt;, found the same way as in landmark-banner-is-top-level).
 
 **Expectation.** At most one banner landmark exists on the page. Per WAI-ARIA Authoring Practices, the banner landmark represents site-oriented content that identifies the page as a whole, so having more than one is ambiguous for assistive technology users navigating by landmark.
 
@@ -1937,7 +1937,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that content under &lt;body&gt; is contained within a landmark region.
 
-**Applies to.** Applies to a page whose &lt;body&gt; has content: an element that directly carries visible text (or other own content, see the implementation notes) outside any landmark, or a landmark with anything in it. Live regions, dialogs, buttons, &lt;svg&gt;, &lt;iframe&gt;/&lt;frame&gt; and resolvable skip links are not content that needs a landmark. Not while a modal dialog is open: the rest of the page is inert then, so the scan sees the dialog, not the page.
+**Applies to.** Applies to a page whose &lt;body&gt; has content: outside any landmark, an element with text of its own or an aria-label, an &lt;img&gt;, &lt;video&gt;, &lt;audio&gt;, &lt;canvas&gt;, &lt;object&gt; or &lt;embed&gt;, or an &lt;input&gt; other than type="hidden"; or a landmark with anything in it. Live regions, dialogs, buttons, &lt;svg&gt;, &lt;iframe&gt;/&lt;frame&gt; and resolvable skip links are not content that needs a landmark. Not while a modal dialog is open: the rest of the page is inert then, so the scan sees the dialog, not the page.
 
 **Expectation.** Every top-level piece of page content lives inside a landmark region (main, navigation, banner, contentinfo, complementary, region, form, search), so assistive technology users navigating by landmark do not miss content that was never placed inside one.
 
@@ -2235,7 +2235,7 @@ automatic · WCAG 2.5.8 (AA) · confidence medium · default severity serious
 
 Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).
 
-**Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements with role="button"/"link" that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with a measurable box of non-zero size. Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated: it has no box of its own to measure (see the implementation notes).
+**Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements with role="button"/"link" that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with a measurable box of non-zero size. Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated: it has no box of its own to measure.
 
 **Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry: spacing (a 24px-diameter circle centred on the target reaches no unrelated target), the inline exception for a link inside a run of text, or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but geometry cannot confirm it (two inline links in one run of text, or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess. Margin (`target-size-px`): of the targets that are at least 24 by 24, the smallest, as the smaller of its width and height against 24; `context.widthPx` and `context.heightPx` give both. A target under 24 that passes through the spacing exception is not a candidate. `measuredCount` counts every target measured.
 

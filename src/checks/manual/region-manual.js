@@ -8,11 +8,12 @@
  * @summary Page content should be contained within a landmark region
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to a page whose <body> has content: an element that directly
- *   carries visible text (or other own content, see the implementation
- *   notes) outside any landmark, or a landmark with anything in it. Live
- *   regions, dialogs, buttons, <svg>, <iframe>/<frame> and resolvable skip
- *   links are not content that needs a landmark.
+ *   Applies to a page whose <body> has content: outside any landmark, an
+ *   element with text of its own or an aria-label, an <img>, <video>,
+ *   <audio>, <canvas>, <object> or <embed>, or an <input> other than
+ *   type="hidden"; or a landmark with anything in it. Live regions,
+ *   dialogs, buttons, <svg>, <iframe>/<frame> and resolvable skip links are
+ *   not content that needs a landmark.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
  * @expectation
