@@ -188,3 +188,27 @@ test("searchbox-name-present: label association with empty content falls back to
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo searchbox" is a searchbox (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="foo searchbox" contenteditable="true"></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="SEARCHBOX" is a searchbox (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="SEARCHBOX" contenteditable="true" aria-label="Search"></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

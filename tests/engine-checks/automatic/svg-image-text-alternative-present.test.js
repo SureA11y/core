@@ -200,3 +200,16 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'SVG <image> must have a text alternative');
 });
+
+test(`${RULE_ID}: role="foo none" and role="NONE" are presentational (#91)`, () => {
+  // The first known role token wins, matched in any case: both images are
+  // excluded, and with nothing else applicable the rule does not apply.
+  const html = `<!doctype html><html><body>
+    <svg><image href="x.png" role="foo none" id="fallback"></image></svg>
+    <svg><image href="y.png" role="NONE" id="upper"></image></svg>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(!hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(!hasOccurrenceForId(rule, 'upper'));
+});

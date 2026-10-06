@@ -12,7 +12,8 @@
  *   `<table>` elements with no `<caption>` child, at least two rows, and
  *   a first row containing exactly one non-empty-text cell while at
  *   least one other row has more than one cell. Left out: a table whose
- *   role (first token) is anything but table, grid or treegrid, such as a
+ *   role (the first token of its role attribute that names a real role, in
+ *   any case) is anything but table, grid or treegrid, such as a
  *   layout table with role="presentation", which needs no caption; and a
  *   table already named by a non-empty aria-label, an aria-labelledby that
  *   resolves to text, or a non-empty title, which WCAG accepts as the
@@ -90,8 +91,10 @@ function runInPage(ctx) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none leaves the native table role.
   function hasOtherRole(table) {
-    const role = trim(dom.getAttribute(table, 'role')).toLowerCase().split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(table);
     return !!role && !TABLE_ROLES.includes(role);
   }
 

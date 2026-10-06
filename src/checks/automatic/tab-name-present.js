@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="tab" (the attribute must name that
- *   role alone, not a fallback list) that are included in the accessibility
- *   tree. An element with the matching implicit role but no role attribute
+ *   Applies to elements whose role attribute resolves to tab (the
+ *   attribute is a fallback list: its first known, non-abstract token, in
+ *   any case, is the role, so role="foo tab" counts and role="link tab"
+ *   does not) that are included in the accessibility tree. An element with the matching implicit role but no role attribute
  *   is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
@@ -126,10 +127,20 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tab"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is tab. role="foo tab" and role="TAB" count;
+  // role="link tab" is a link.
+  const selector = '[role~="tab" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'tab';
+    } catch {
+      return false;
+    }
+  });
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -150,9 +161,6 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
-
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tab') continue;
 
     applicableCount += 1;
 

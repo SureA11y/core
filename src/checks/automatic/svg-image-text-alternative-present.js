@@ -12,7 +12,8 @@
  *   Applies to SVG <image> elements that are exposed to assistive technologies.
  *   Elements otherwise hidden from the accessibility tree remain applicable
  *   if they are tabbable or referenced by IDREF relationships (per engine eligibility checks).
- *   SVG <image> elements with role="presentation" or role="none" are excluded only when they are not focusable.
+ *   SVG <image> elements whose role attribute resolves to presentation or none (the first known
+ *   role token, in any case) are excluded only when they are not focusable.
  * @expectation
  *   Each applicable SVG <image> element has a text alternative via:
  *   - a non-empty direct <title> child, OR
@@ -174,7 +175,17 @@ function runInPage(ctx) {
       if (elig && elig.eligible === false) continue;
     }
 
-    const role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+    // Resolved explicit role: the first known token of the role fallback
+    // list, so role="foo none" is presentational too.
+    const role = (() => {
+      try {
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
+      } catch {
+        return '';
+      }
+    })();
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {

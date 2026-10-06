@@ -159,6 +159,23 @@ test(`${RULE_ID}: hiding body, a wrapper of main, or most of the text of a page 
   }
 });
 
+test(`${RULE_ID}: a main landmark named by a fallback list or upper case (role="foo main", role="MAIN") counts as the page content`, () => {
+  for (const role of ['foo main', 'MAIN']) {
+    const html = styled(
+      '@media (orientation: portrait){ .w{display:none} }',
+      `<div class="w" role="${role}">Tarifs</div><div>Une longue description qui ne fait pas partie du contenu principal de la page.</div>`
+    );
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'ORIENTATION_MEDIA_HIDES_CONTENT'
+    );
+  }
+});
+
 test(`${RULE_ID}: an orientation block hiding a small part of the page still passes`, () => {
   const html = styled(
     '@media (orientation: portrait){ .aside{display:none} }',

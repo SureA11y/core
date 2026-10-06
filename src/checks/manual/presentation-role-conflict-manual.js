@@ -8,11 +8,12 @@
  * @summary role="presentation"/"none" must not be combined with a global ARIA naming attribute or focusability
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to elements with an explicit role="presentation" or
- *   role="none", OR an <img alt=""> carrying no explicit role of its own
- *   (empty alt gives an <img> an implicit presentation role per HTML-AAM,
- *   even with no explicit role attribute at all: `img[alt=''],
- *   [role="none"], [role="presentation"]`).
+ *   Applies to elements whose role attribute resolves to presentation or
+ *   none (the first token naming a known role, matched case-insensitively,
+ *   so role="foo none" and role="NONE" count), OR an <img alt=""> carrying
+ *   no explicit role of its own (empty alt gives an <img> an implicit
+ *   presentation role per HTML-AAM, even with no explicit role attribute at
+ *   all: `img[alt=''], [role~="none" i], [role~="presentation" i]`).
  * @expectation
  *   The element does not also carry a WAI-ARIA *global* state/property
  *   (aria-label, aria-hidden, aria-describedby, aria-live, aria-current,
@@ -128,26 +129,20 @@ function runInPage(ctx) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over. Returns '' when the
-  // element has no role attribute or none of its tokens name a role: the
-  // cases where an <img alt=""> keeps the presentation role empty alt gives
-  // it.
+  // role wins, case-insensitively, and unknown tokens are skipped over.
+  // Returns '' when the element has no role attribute or none of its tokens
+  // name a role: the cases where an <img alt=""> keeps the presentation role
+  // empty alt gives it.
   function getEffectiveRoleToken(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
   }
 
+  // Token match, case-insensitive; the resolved-role check in the loop drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="presentation" i], [role~="none" i], img[alt=""]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
-    : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -155,10 +150,9 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Only reachable via the img[alt=""] branch of the selector: an explicit
-    // role other than presentation/none overrides the presentation role that
-    // empty alt would confer, leaving no presentational intent to conflict
-    // with.
+    // An explicit role other than presentation/none (e.g. role="link none",
+    // or an <img alt=""> with role="img") overrides any presentation role,
+    // leaving no presentational intent to conflict with.
     const roleToken = getEffectiveRoleToken(el);
     if (roleToken && roleToken !== 'presentation' && roleToken !== 'none') continue;
 

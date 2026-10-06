@@ -9,8 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.4.9
  * @applicability
- *   Sets of two or more `a[href]` or `[role="link"]` elements that share a
- *   non-empty accessible name (trimmed, whitespace-collapsed,
+ *   Sets of two or more `a[href]` elements, or elements whose role
+ *   attribute resolves to link (its first real role token, in any case),
+ *   that share a non-empty accessible name (trimmed, whitespace-collapsed,
  *   case-folded), as in ACT b20e66. A link whose name no other link shares
  *   has nothing to be compared with.
  * @expectation
@@ -108,14 +109,25 @@ function runInPage(ctx) {
     }
   }
 
+  const NATIVE_LINK_TAGS = ['a'];
+  // A native link (<a> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role="link"]')
-    : helpers.queryAll('a[href], [role="link"]');
+    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =

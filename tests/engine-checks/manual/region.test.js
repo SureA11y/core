@@ -167,3 +167,12 @@ test(`${RULE_ID}: never passes when the walk stopped at its node budget, since t
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a live-region or button role is read from a fallback list, in any case (#91)`, () => {
+  // role="foo status" and role="BUTTON" are not content needing a landmark.
+  const html = `<!doctype html><html><body><main>Content</main>
+    <div role="foo status">Saved</div><div role="BUTTON" tabindex="0">Menu</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

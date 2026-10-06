@@ -87,3 +87,17 @@ test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its titl
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: role is a fallback list matched in any case (#91)`, () => {
+  // role="foo tooltip" and role="TOOLTIP" are tooltips; role="link tooltip" is a link.
+  const html = `<!doctype html><html><body>
+    <div id="fb" role="foo tooltip"></div>
+    <div id="up" role="TOOLTIP"></div>
+    <a id="lk" href="#x" role="link tooltip"></a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fb'));
+  assert.ok(hasOccurrenceForId(rule, 'up'));
+  assert.ok(!hasOccurrenceForId(rule, 'lk'));
+});

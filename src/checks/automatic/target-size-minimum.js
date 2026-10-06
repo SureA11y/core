@@ -10,7 +10,8 @@
  * @sc 2.5.8
  * @applicability
  *   Applies to <button>, <summary>, <a href>, <area href>, <input>,
- *   <select>, <textarea> and elements with role="button"/"link" that are
+ *   <select>, <textarea> and elements whose role resolves to button or link
+ *   (the first real role in the role attribute, in any case) that are
  *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
  *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
  *   a filter here: an aria-hidden control is still a target a pointer can hit.
@@ -197,6 +198,17 @@ function runInPage(ctx) {
     return 'html';
   }
 
+  // The element's explicit role: the first token of its role attribute that
+  // names a real role, in any case (role="foo link" and role="LINK" are both
+  // links), or '' when none does.
+  function getExplicitRole(el) {
+    try {
+      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+    } catch {
+      return '';
+    }
+  }
+
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
   // carrying visible text. This is the shape the SC 2.5.8 inline exception is
   // about, without the surrounding-container requirement.
@@ -205,12 +217,7 @@ function runInPage(ctx) {
       if (!el || dom.nodeType(el) !== 1) return false;
 
       const tag = (dom.tagName(el) || '').toLowerCase();
-      const role =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'role') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
+      const role = getExplicitRole(el);
       const isLinkLike =
         (tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
         role === 'link';
@@ -468,11 +475,25 @@ function runInPage(ctx) {
     }
   }
 
-  const CANDIDATE_SELECTOR =
-    'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
+  const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // role~= matches the token anywhere in the fallback list, so the resolved
+  // role is checked below (role="tab button" is a tab, not a target here).
+  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+
+  function isCandidate(el) {
+    try {
+      if (
+        typeof dom.get(el, 'matches') === 'function' &&
+        dom.matches(el, NATIVE_CANDIDATE_SELECTOR)
+      )
+        return true;
+    } catch {}
+    const role = getExplicitRole(el);
+    return role === 'button' || role === 'link';
+  }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR);
+  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {

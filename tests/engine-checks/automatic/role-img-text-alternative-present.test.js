@@ -464,3 +464,17 @@ test(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
   assert.equal(occ.i18n && occ.i18n.summaryKey, 'roleImg_textAlternativePresent_summary_fail');
   assert.equal(occ.i18n && occ.i18n.hintKey, 'roleImg_textAlternativePresent_hint_fail');
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`, () => {
+  // role="foo img" and role="IMG" are images; role="button img" is a button.
+  const html = `<!doctype html><html><body>
+    <div role="foo img" id="fallback"></div>
+    <div role="IMG" id="upper"></div>
+    <div role="button img" id="button" tabindex="0"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(hasOccurrenceForId(rule, 'upper'));
+  assert.ok(!hasOccurrenceForId(rule, 'button'));
+});

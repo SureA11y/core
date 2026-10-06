@@ -10,8 +10,10 @@
  * @sc 4.1.2
  * @applicability
  *   Applies to <button>, <input type="button">, <input type="submit">,
- *   <input type="reset"> and elements with role="button", where the element
- *   is included in the accessibility tree. role="presentation"/"none" takes
+ *   <input type="reset"> and elements whose role attribute resolves to
+ *   button (its first known, non-abstract token, in any case, so
+ *   role="foo button" counts and role="link button" does not), where the
+ *   element is included in the accessibility tree. role="presentation"/"none" takes
  *   an element out of scope unless a global ARIA attribute or focusability
  *   restores its role, per presentational roles conflict resolution.
  * @expectation
@@ -112,11 +114,33 @@ function runInPage(ctx) {
     }
   }
 
-  const selector =
-    'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The element's explicit role as user agents resolve it: the first known,
+  // non-abstract token of the role attribute, in any case ('' for none).
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The role attribute is a fallback list, so role="foo button" and
+  // role="BUTTON" are buttons; role="link button" is a link. Select by token,
+  // case-insensitively, then keep role-only candidates that resolve to button.
+  const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
+  const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      if (dom.matches(el, NATIVE_BUTTONS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return getExplicitRole(el) === 'button';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -133,8 +157,8 @@ function runInPage(ctx) {
     if (!eligible) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
-    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    const roleNorm = normalizeWs(role).toLowerCase();
+    const role = getExplicitRole(el);
+    const roleNorm = role;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;

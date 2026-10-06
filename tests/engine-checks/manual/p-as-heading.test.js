@@ -165,3 +165,33 @@ test(`${RULE_ID}: text that already has a role of its own, or a <div> that holds
     });
   }
 });
+
+test(`${RULE_ID}: roles are resolved from the fallback list, in any case`, () => {
+  const page = (body) =>
+    `<!doctype html><html><head><style>.h{font-weight:bold;font-size:22px}</style></head><body>${body}</body></html>`;
+  // A real role, first in the list or in upper case, gives the text a role.
+  for (const body of [
+    '<div class="h" role="foo heading" aria-level="2">Menu</div>',
+    '<div class="h" role="BUTTON" tabindex="0">Menu</div>',
+    '<span role="foo heading" aria-level="2"><p class="h">Menu</p></span>',
+    '<span role="ROWHEADER"><p class="h">Menu</p></span>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+  // A role attribute naming no real role, or a heading token after a real
+  // role, leaves the text without a role of its own.
+  for (const body of [
+    '<div class="h" role="foo" id="a">Menu</div>',
+    '<span role="note heading"><p class="h" id="a">Menu</p></span>'
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'a'), body);
+  }
+});

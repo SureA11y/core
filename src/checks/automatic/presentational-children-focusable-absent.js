@@ -151,20 +151,13 @@ function runInPage(ctx) {
   }
 
   // The role attribute holds a fallback list; the first token that names a
-  // real role wins. A role="tab" resolves here, a role="figure tab" does
-  // not (figure wins and has no presentational children), and a list of
-  // nothing but unknown tokens falls back to the native role.
+  // real role wins, in any case. A role="tab" or role="TAB" resolves here, a
+  // role="figure tab" does not (figure wins and has no presentational
+  // children), and a list of nothing but unknown tokens falls back to the
+  // native role.
   function getPresentationalChildrenRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (raw) {
-      const tokens = lower(raw).split(/\s+/);
-      for (const token of tokens) {
-        if (!token) continue;
-        if (roleSet.has(token)) return token;
-        const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-        if (known) return '';
-      }
-    }
+    const explicit = ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
+    if (explicit) return roleSet.has(explicit) ? explicit : '';
     const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
       ? NATIVE_ROLE_BY_TAG[tag]

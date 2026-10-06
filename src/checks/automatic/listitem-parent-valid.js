@@ -27,9 +27,12 @@
  * - Distinct, atomic decision from list-children-valid (the
  *   inverse relationship: does a given list container have valid
  *   children).
- * - Role check is scoped to the parent's first explicit role token only
- *   (matching this engine's existing role-reading convention elsewhere,
- *   e.g. aria-helpers.js getExplicitRole).
+ * - Roles are resolved as user agents do (aria-helpers.js
+ *   getExplicitRole): the role attribute is a fallback list, the first
+ *   token naming a known role wins, matched in any case, and a role
+ *   attribute with no known token is no role at all (the tag's native
+ *   role stays). So <div role="foo list"> and <div role="LIST"> are lists,
+ *   and <ul role="foo"> is still a list.
  * - An explicit role on the parent WINS over its tag name, in either
  *   direction: a <ul role="menu"> no longer exposes role "list" (its own
  *   native role is fully replaced by the explicit one, the same "any
@@ -44,8 +47,8 @@
  *   is exposed to AT with that role, never "listitem". The whole point
  *   of this check (list items need a valid list-container parent) doesn't
  *   apply when the element isn't claiming listitem semantics in the first
- *   place. Any `<li>` with an explicit `role` attribute is excluded from
- *   candidacy. `role="listitem"` itself is a no-op restatement (not an
+ *   place. Any `<li>` whose role attribute resolves to a role is excluded
+ *   from candidacy. `role="listitem"` itself is a no-op restatement (not an
  *   override), so it still falls through to the normal parent-validity
  *   check below.
  */
@@ -101,6 +104,19 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does (the element then
+  // keeps its native role).
+  function resolvedRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
@@ -121,20 +137,14 @@ function runInPage(ctx) {
     // at all; there's no listitem semantics being claimed to validate.
     // role="listitem" itself is a no-op restatement, not an override, so
     // it still falls through to the normal parent check below.
-    const ownRoleAttr = dom.get(el, 'getAttribute')
-      ? String(dom.getAttribute(el, 'role') || '').trim()
-      : '';
-    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const ownExplicitRole = resolvedRole(el);
     if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 
     const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
 
-    const roleAttr = dom.get(parent, 'getAttribute')
-      ? String(dom.getAttribute(parent, 'role') || '').trim()
-      : '';
-    const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const explicitRole = resolvedRole(parent);
 
     let valid;
     if (explicitRole) {

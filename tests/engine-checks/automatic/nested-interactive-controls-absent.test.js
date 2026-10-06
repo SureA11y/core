@@ -236,3 +236,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/nested-interactive-controls-a
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a widget role is read from a fallback list, in any case (#91)`, () => {
+  // role="foo button" and role="BUTTON" are buttons; role="none button" is
+  // none, so that element is no control and its nested link is not nested.
+  const html = `<!doctype html><html><body>
+    <div id="fb" role="foo button" tabindex="0"><a href="#a">A</a></div>
+    <div id="up" role="BUTTON" tabindex="0"><a href="#b">B</a></div>
+    <div id="no" role="none button"><a href="#c">C</a></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fb'));
+  assert.ok(hasOccurrenceForId(rule, 'up'));
+  assert.ok(!hasOccurrenceForId(rule, 'no'));
+});
+
+test(`${RULE_ID}: a composite's owned child is resolved from a fallback list, in any case (#91)`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="foo LISTBOX" aria-label="Pick" tabindex="0">
+      <div role="zz OPTION" tabindex="0">One</div>
+    </div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

@@ -14,11 +14,13 @@
  * @expectation
  *   Each applicable <canvas> provides a text alternative via fallback content
  *   or an accessible name, with two exceptions:
- *   - role="img" (first role token) makes the canvas's children
+ *   - role="img" (the first token of the role attribute that names a known
+ *     role, matched case-insensitively) makes the canvas's children
  *     presentational and its name comes from the author only, so fallback
  *     content does not count: aria-labelledby, aria-label or title must name
  *     it.
- *   - role="none"/"presentation" marks the canvas decorative, and it passes.
+ *   - role="none"/"presentation" (resolved the same way) marks the canvas
+ *     decorative, and it passes.
  *     The role is ignored (presentational role conflict) when the canvas is
  *     focusable or carries aria-label/aria-labelledby, and the canvas is then
  *     judged like any other.
@@ -110,9 +112,14 @@ function runInPage(ctx) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a known
+  // role wins, case-insensitively; '' when none does (no explicit role).
   function firstRoleToken(el) {
-    const raw = attrText(el, 'role').toLowerCase();
-    return raw ? raw.split(/\s+/)[0] : '';
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // ARIA's presentational role conflict: a focusable element, or one with a

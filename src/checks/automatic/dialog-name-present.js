@@ -142,18 +142,11 @@ function runInPage(ctx) {
   }
 
   // The role the browser uses: the first token of the role attribute that
-  // names a concrete ARIA role, else the element's implicit role (dialog for
-  // a native <dialog>; the others are not in scope here).
-  const aria = helpers && helpers.aria;
+  // names a concrete ARIA role (in any case), else the element's implicit
+  // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
-    for (const t of tokens) {
-      const concrete =
-        aria && typeof aria.isValidConcreteRole === 'function'
-          ? aria.isValidConcreteRole(t)
-          : t === 'dialog' || t === 'alertdialog';
-      if (concrete) return t;
-    }
+    const explicit = helpers.aria.getExplicitRole(el);
+    if (explicit) return explicit;
     return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
 

@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="menuitem", role="menuitemcheckbox" or
- *   role="menuitemradio" (the attribute must name one of those roles alone,
- *   not a fallback list) that are included in the accessibility tree.
+ *   Applies to elements whose role attribute resolves to menuitem,
+ *   menuitemcheckbox or menuitemradio (the first token naming a known role,
+ *   matched case-insensitively, so role="foo menuitem" and role="MENUITEM"
+ *   count) that are included in the accessibility tree.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or, all
@@ -126,7 +127,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="menuitem" i],[role~="menuitemcheckbox" i],[role~="menuitemradio" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -152,7 +155,9 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo menuitem" is a menuitem).
+    const role = helpers.aria.getExplicitRole(el);
     if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
 
     applicableCount += 1;

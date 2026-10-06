@@ -9,8 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to elements with role="img", role="graphics-symbol" or
- *   role="graphics-document" that are included in the accessibility tree
+ *   Applies to elements whose role attribute resolves to img,
+ *   graphics-symbol or graphics-document (the first known role token of the
+ *   fallback list, matched in any case) that are included in the
+ *   accessibility tree
  *   (ACT 23a2a8's "programmatically hidden" exemption:
  *   display:none/visibility:hidden/aria-hidden="true" on the element or an
  *   ancestor, with no carve-out for focusable or IDREF-referenced elements,
@@ -106,17 +108,36 @@ function runInPage(ctx) {
     }
   };
 
+  const IMAGE_ROLES = new Set(['img', 'graphics-symbol', 'graphics-document']);
+
+  // The resolved explicit role: the first known role token, lower-cased, or
+  // '' when the attribute names no known role.
+  const explicitRole = (el) => {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  };
+
   const imgElements = (() => {
     // <img> and <svg> are left out: each has its own rule
     // (img-alt-present, svg-text-alternative-present), and counting an
     // unnamed <svg role="img"> here too would report it twice.
+    // `~=` matches a token anywhere in the role fallback list, so a match is
+    // kept only when its resolved explicit role (the first known token) is
+    // one of the three: role="foo img" is an img, role="button img" is not.
     const sel =
-      '[role="img" i]:not(img):not(svg), [role="graphics-symbol" i]:not(svg), [role="graphics-document" i]:not(svg)';
+      '[role~="img" i]:not(img):not(svg), [role~="graphics-symbol" i]:not(svg), [role~="graphics-document" i]:not(svg)';
+    let found;
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      found = Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
-      return queryAll(sel);
+      found = Array.from(queryAll(sel) || []);
     }
+    return found.filter((el) => IMAGE_ROLES.has(explicitRole(el)));
   })();
 
   if (!imgElements.length) {
@@ -164,7 +185,7 @@ function runInPage(ctx) {
 
     const matchedRole = (() => {
       try {
-        return trim(dom.getAttribute(el, 'role')).split(/\s+/)[0].toLowerCase();
+        return explicitRole(el) || 'img';
       } catch {
         return 'img';
       }

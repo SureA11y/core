@@ -130,6 +130,19 @@ test(`${RULE_ID}: the first link, placed before main, is a skip link whatever it
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: a main role in a fallback list or upper case (role="foo main", role="MAIN") is the main landmark`, () => {
+  for (const role of ['foo main', 'MAIN']) {
+    const html = `<!doctype html><html><body><a id="a" href="#principal">Contenu</a><nav><a href="/x">X</a></nav><div role="${role}"><h1>T</h1></div></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+  }
+  const regionFirst = `<!doctype html><html><body><a href="#principal">Contenu</a><div role="region main" aria-label="x"><h1>T</h1></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(regionFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+});
+
 test(`${RULE_ID}: a same-page link that is not the first link, or with no main after it, is not a skip link`, () => {
   const notFirst = `<!doctype html><html><body><a href="/home">Home</a><a href="#menu">Menu</a><main><h1>T</h1></main></body></html>`;
   assertRule(runa11yCoreOnHtml(notFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');

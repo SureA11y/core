@@ -138,3 +138,27 @@ test('tab-name-present: aria-labelledby pointing at an <iframe> falls back to it
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo tab" is a tab, role="link tab" is not (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="tablist"><div role="foo tab"></div><a role="link tab" href="#"></a></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="TAB" is a tab (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="tablist"><div role="TAB"></div></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});

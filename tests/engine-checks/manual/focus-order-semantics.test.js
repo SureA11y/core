@@ -92,3 +92,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/focus-order-semantics-all-sce
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo heading" is a heading, role="foo" is no role (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="foo heading" tabindex="0">A</div><div role="foo" tabindex="0">B</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="HEADING" is a heading (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="HEADING" tabindex="0">A</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

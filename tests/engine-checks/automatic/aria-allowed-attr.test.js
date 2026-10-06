@@ -28,10 +28,13 @@ test(`${RULE_ID}: fail when the attribute is unsupported by a role the ARIA tabl
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: notApplicable when the role is not a valid concrete ARIA role`, () => {
+// A role attribute naming no known role is as if there were none (WAI-ARIA,
+// #91): the div is judged by its implicit role, generic, which supports no
+// aria-valuenow.
+test(`${RULE_ID}: a role naming no known role leaves the element its implicit role`, () => {
   const html = `<!doctype html><html><body><div id="a" role="not-a-role" aria-valuenow="1"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: ARIA 1.3 globals aria-query does not know are still allowed anywhere`, () => {
@@ -92,10 +95,10 @@ test(`${RULE_ID}: hidden filtering can be disabled with engineOptions.includeHid
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: notApplicable when role has an unknown/invalid role token`, () => {
+test(`${RULE_ID}: a misspelt role is no role, and a global attribute is allowed on what is left`, () => {
   const html = `<!doctype html><html><body><div id="a" role="buton" aria-label="Hello"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: reports one occurrence per disallowed attribute on the same element`, () => {

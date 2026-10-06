@@ -141,3 +141,18 @@ test('menuitem-name-present: aria-labelledby pointing at an <iframe> falls back 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo menuitemradio" and role="MenuItem" are in scope, role="link menuitemradio" is not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo menuitemradio"></div>
+    <div id="b" role="MenuItem"></div>
+    <div id="c" role="link menuitemradio" href="#"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+});

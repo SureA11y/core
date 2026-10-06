@@ -119,3 +119,15 @@ test(`${RULE_ID} (node runtime): a focusable role="presentation" svg is NOT excl
   assert.strictEqual(rule.outcome, 'cantTell');
   assert.strictEqual(rule.occurrences.length, 1);
 });
+
+test(`${RULE_ID} (node runtime): role presentation is read from a fallback list, in any case (#91)`, () => {
+  const html = `<!doctype html><html><body>
+    <svg role="foo presentation" aria-label="Decorative"></svg>
+    <svg role="NONE" aria-label="Decorative"></svg>
+  </body></html>`;
+  const result = runNode(html);
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+  assert.strictEqual(rule.occurrences.length, 0);
+});

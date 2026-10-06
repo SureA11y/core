@@ -13,7 +13,8 @@
  *   button-like types), `select`, `textarea`, or an element with one of
  *   the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox,
  *   menuitemcheckbox, menuitemradio, radio, searchbox, slider,
- *   spinbutton, switch, textbox) that carry a visible programmatic
+ *   spinbutton, switch, textbox; the first real role token of the role
+ *   attribute, in any case) that carry a visible programmatic
  *   label: a `<label>` association, or the elements `aria-labelledby`
  *   points at. A field named only by `aria-label`/`title` has no visible
  *   label to judge and is out of scope here (its labelling mechanism is
@@ -202,25 +203,72 @@ function runInPage(ctx) {
     ])
   };
 
+  // ARIA widget roles that make an element a field. The role attribute is a
+  // fallback list matched in any case: role~= finds the token anywhere in
+  // it, and hasResolvedRole below keeps only elements whose first real role
+  // token is one of these (role="foo textbox" yes, role="button textbox" no).
+  const FIELD_ROLES = [
+    'checkbox',
+    'combobox',
+    'listbox',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'radio',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'textbox'
+  ];
+  const NATIVE_FIELD_SELECTOR =
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea';
   const FIELD_SELECTOR = [
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
-    'select',
-    'textarea',
-    '[role="checkbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="radio"]',
-    '[role="searchbox"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="switch"]',
-    '[role="textbox"]'
+    NATIVE_FIELD_SELECTOR,
+    ...FIELD_ROLES.map((r) => `[role~="${r}" i]`)
   ].join(', ');
 
-  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
-  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  const ROW_TAGS = ['tr', 'li'];
+  const ROW_ROLES = ['row', 'listitem'];
+  const ROW_SELECTOR = 'tr, [role~="row" i], li, [role~="listitem" i]';
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
+
+  // Whether the element's role attribute resolves to one of `roles`.
+  function hasResolvedRole(el, roles) {
+    try {
+      return roles.includes(helpers.aria.getExplicitRole(el));
+    } catch {
+      return false;
+    }
+  }
+
+  function isTagOrRole(el, tags, roles) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return hasResolvedRole(el, roles);
+  }
+
+  function isField(el) {
+    try {
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, NATIVE_FIELD_SELECTOR))
+        return true;
+    } catch {
+      // fall through to the role check
+    }
+    return hasResolvedRole(el, FIELD_ROLES);
+  }
+
+  // Nearest table row or list item ancestor (or self): a native tr/li, or an
+  // element whose resolved role is row/listitem.
+  function closestRow(el) {
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.get(cur, 'closest') ? dom.closest(cur, ROW_SELECTOR) : null;
+      if (!hit) return null;
+      if (isTagOrRole(hit, ROW_TAGS, ROW_ROLES)) return hit;
+      cur = dom.parentElement(hit);
+    }
+    return null;
+  }
 
   function normalizeWs(s) {
     return String(s || '')
@@ -402,7 +450,9 @@ function runInPage(ctx) {
 
   const headings = (() => {
     try {
-      return Array.prototype.slice.call(dom.querySelectorAll(document, HEADING_SELECTOR));
+      return Array.prototype.slice
+        .call(dom.querySelectorAll(document, HEADING_SELECTOR))
+        .filter((h) => isTagOrRole(h, HEADING_TAGS, ['heading']));
     } catch {
       return [];
     }
@@ -468,7 +518,7 @@ function runInPage(ctx) {
   function rowContextText(el, labelText) {
     let row;
     try {
-      row = dom.get(el, 'closest') ? dom.closest(el, ROW_SELECTOR) : null;
+      row = closestRow(el);
     } catch {
       row = null;
     }
@@ -494,6 +544,7 @@ function runInPage(ctx) {
   const fields = [];
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
+    if (!isField(el)) continue;
     if (!isVisible(el)) continue;
 
     const label = getVisibleLabelText(el);

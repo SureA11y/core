@@ -12,8 +12,9 @@
  * @applicability
  *   Applies to <img> elements whose alt attribute is present and non-empty.
  *   The element must be included in the accessibility tree, and
- *   role="presentation"/"none" takes it out of scope unless it is focusable,
- *   which restores its role. An <img> with no alt at all is
+ *   a role attribute resolving to presentation/none (its first token naming
+ *   a known role, matched case-insensitively) takes it out of scope unless
+ *   it is focusable, which restores its role. An <img> with no alt at all is
  *   img-alt-present's failure, and one with alt="" is img-alt-decorative's
  *   review.
  * @expectation
@@ -133,9 +134,8 @@ function runInPage(ctx) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        // Fallback list: first token naming a known role, any case.
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }

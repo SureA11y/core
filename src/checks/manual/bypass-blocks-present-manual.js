@@ -18,7 +18,8 @@
  * @expectation
  *   At least one of the following recognized WCAG 2.4.1 techniques is
  *   present:
- *   (a) a main landmark (<main> or [role="main"]), technique ARIA11: a
+ *   (a) a main landmark (<main>, or an element whose role attribute
+ *       resolves to main: the first real role token, in any case), ARIA11: a
  *       screen reader user can jump straight to it, bypassing everything
  *       before it (nav, header, repeated blocks) in one step;
  *   (b) a working skip link, technique G1: an <a href="#id"> (or legacy
@@ -27,7 +28,7 @@
  *       and whose target resolves to a real element in the link's own tree
  *       (light DOM or the same shadow root). Not required to be positioned
  *       before a <nav> or be keyboard-focus-order-first;
- *   (c) at least one heading (<h1>-<h6> or [role="heading"]) that is both
+ *   (c) at least one heading (<h1>-<h6>, or a role resolving to heading) that is both
  *       included in the accessibility tree AND visible (not off-screen,
  *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:
  *       heading navigation is itself a standards-recognized bypass
@@ -161,9 +162,17 @@ function runInPage(ctx) {
   // non-rendered <main>/heading must not be credited here, since that would
   // wrongly treat a page with zero currently-exposed bypass mechanisms as
   // having one.
+  // A native element of one of `tags`, or an element whose role attribute
+  // resolves to `role`: the first token naming a real role wins, in any case,
+  // so role="foo main" and role="MAIN" count but role="region main" doesn't.
+  function isTagOrRole(el, tags, role) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return helpers.aria.getExplicitRole(el) === role;
+  }
+
   function hasMainLandmark() {
-    for (const el of queryAll('main, [role="main"]')) {
-      if (el && isExposedToAt(el)) return true;
+    for (const el of queryAll('main, [role~="main" i]')) {
+      if (el && isTagOrRole(el, ['main'], 'main') && isExposedToAt(el)) return true;
     }
     return false;
   }
@@ -270,9 +279,11 @@ function runInPage(ctx) {
     }
   }
 
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   function hasHeading() {
-    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
-      if (el && isExposedToAt(el) && !isCssHidden(el)) return true;
+    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
+      if (isExposedToAt(el) && !isCssHidden(el)) return true;
     }
     return false;
   }

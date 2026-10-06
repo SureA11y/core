@@ -111,6 +111,17 @@ test(`${RULE_ID} (node runtime): non-focusable role="none" object is excluded, s
   assert.strictEqual(rule.occurrences.length, 0);
 });
 
+test(`${RULE_ID} (node runtime): a fallback list or upper-case role (role="foo none", role="PRESENTATION") excludes the same way`, () => {
+  for (const role of ['foo none', 'PRESENTATION']) {
+    const html = `<!doctype html><html><body><object id="o3" data="x.svg" role="${role}" aria-label="Decorative"></object></body></html>`;
+    const result = runNode(html);
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'notApplicable', role);
+    assert.strictEqual(rule.occurrences.length, 0);
+  }
+});
+
 test(`${RULE_ID} (node runtime): a focusable role="presentation" object is NOT excluded (mirrors img-alt-present policy)`, () => {
   const html = `<!doctype html><html><body><object id="o3" data="x.svg" role="presentation" tabindex="0" aria-label="Focusable object"></object></body></html>`;
   const result = runNode(html);

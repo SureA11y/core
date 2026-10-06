@@ -500,3 +500,18 @@ test(`${RULE_ID}: a second input sharing the labelled id has no label`, () => {
   assert.equal(rule.occurrences.length, 1);
   assert.match(rule.occurrences[0].selector, /input:nth-of-type\(2\)/);
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively; no known token leaves the native role.
+test(`${RULE_ID}: role="foo button" / role="COMBOBOX" are owned elsewhere, role="foo" is not`, () => {
+  const owned = runa11yCoreOnHtml(
+    `<!doctype html><html><body><input type="text" role="foo button"><input type="text" role="COMBOBOX"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(owned, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const unknown = runa11yCoreOnHtml(
+    `<!doctype html><html><body><input type="text" role="foo"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(unknown, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});

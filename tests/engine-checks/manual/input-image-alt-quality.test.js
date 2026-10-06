@@ -128,6 +128,16 @@ test(`${RULE_ID}: role="none" excludes a disabled image button the same way`, ()
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a fallback list or upper-case role (role="foo none", role="PRESENTATION") excludes a disabled image button the same way`, () => {
+  for (const role of ['foo none', 'PRESENTATION']) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" role="${role}" disabled></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: an enabled role="presentation" image button is still reviewed`, () => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="s1" type="image" src="go.png" alt="Search" role="presentation"></body></html>`,

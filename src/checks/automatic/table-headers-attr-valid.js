@@ -71,18 +71,9 @@ function runInPage(ctx) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over.
+  // role wins (in any case), and unknown tokens are skipped over.
   function getExplicitRole(el) {
-    const raw = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers && el ? ariaHelpers.getExplicitRole(el) : '';
   }
 
   const nodes = helpers.queryAllSmart

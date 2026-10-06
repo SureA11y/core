@@ -193,13 +193,22 @@ function runInPage(ctx) {
 
   // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
   // libraries that leave aria-modal off (e.g. Angular Material defaults to
-  // aria-modal="false") still count as an open modal.
+  // aria-modal="false") still count as an open modal. The role attribute is
+  // a fallback list matched case-insensitively, so role="foo dialog" is a
+  // dialog while role="region dialog" is not (the first real role wins).
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
   function collectOpenModalCandidates() {
-    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const nodes = qAll(
+      'dialog[open],[aria-modal="true"],[role~="dialog" i],[role~="alertdialog" i]'
+    );
     const out = [];
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
       if (!n || !dom.get(n, 'getAttribute')) continue;
+      const byOther =
+        (lower(dom.tagName(n)) === 'dialog' && dom.hasAttribute(n, 'open')) ||
+        dom.getAttribute(n, 'aria-modal') === 'true';
+      if (!byOther && !MODAL_ROLES.has(helpers.aria.getExplicitRole(n))) continue;
       if (!isRenderedForModal(n)) continue;
       out.push(n);
     }

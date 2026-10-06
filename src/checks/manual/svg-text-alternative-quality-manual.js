@@ -120,11 +120,10 @@ function runInPage(ctx) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }

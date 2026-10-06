@@ -12,6 +12,67 @@ const { isUnsafeDomMember } = require('./scripts/codemods/safe-dom-rule');
 // new code from adding one.
 const safeDomPlugin = {
   rules: {
+    // The role attribute is a fallback list read in any case (#91): rules
+    // resolve it with helpers.aria.getExplicitRole and select with
+    // [role~="x" i], never by the raw value or an exact-match selector. A
+    // raw read that is right (the literal text for a message) says why in an
+    // eslint-disable comment.
+    'no-raw-role': {
+      meta: {
+        type: 'problem',
+        messages: {
+          read: 'Resolve the role with helpers.aria.getExplicitRole(el): the attribute is a fallback list, read in any case.',
+          select:
+            'Select by role with [role~="x" i] and keep the elements whose helpers.aria.getExplicitRole is x: [role="x"] misses a fallback list and another case.'
+        }
+      },
+      create(context) {
+        const isRoleLiteral = (n) => n && n.type === 'Literal' && n.value === 'role';
+        const checkText = (node, text) => {
+          if (/\[\s*role\s*=/i.test(text)) context.report({ node, messageId: 'select' });
+        };
+        return {
+          CallExpression(node) {
+            const c = node.callee;
+            const name =
+              c.type === 'MemberExpression' && !c.computed
+                ? c.property.name
+                : c.type === 'Identifier'
+                  ? c.name
+                  : '';
+            if (!/^(getAttribute|getAttr)$/.test(name)) return;
+            const args = node.arguments;
+            const viaDom =
+              c.type === 'MemberExpression' &&
+              c.object.type === 'Identifier' &&
+              c.object.name === 'dom';
+            if (
+              viaDom || c.type === 'Identifier' ? isRoleLiteral(args[1]) : isRoleLiteral(args[0])
+            ) {
+              context.report({ node, messageId: 'read' });
+            }
+          },
+          Literal(node) {
+            if (typeof node.value !== 'string') return;
+            // A rule's title or description is text for people, not a selector.
+            const p = node.parent;
+            if (
+              p &&
+              p.type === 'Property' &&
+              p.value === node &&
+              p.key &&
+              /^(title|description|summary|hint)$/.test(p.key.name || p.key.value)
+            ) {
+              return;
+            }
+            checkText(node, node.value);
+          },
+          TemplateElement(node) {
+            checkText(node, node.value.raw);
+          }
+        };
+      }
+    },
     'use-safe-dom': {
       meta: {
         type: 'problem',
@@ -66,6 +127,12 @@ module.exports = [
     ignores: ['src/core/safe-dom.js'],
     plugins: { 'safe-dom': safeDomPlugin },
     rules: { 'safe-dom/use-safe-dom': 'error' }
+  },
+  {
+    // Rules only: the shared helpers define the role resolution.
+    files: ['src/checks/**/*.js', 'profiles/*/rules/**/*.js'],
+    plugins: { 'safe-dom': safeDomPlugin },
+    rules: { 'safe-dom/no-raw-role': 'error' }
   },
   {
     ignores: [

@@ -775,7 +775,9 @@ function createDomHelpers(opts) {
   // such an element as a generic container.
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
-    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    // The resolved role (#91): an attribute naming no known role leaves the
+    // element its native landmark, if any.
+    const token = aria.getExplicitRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -4010,7 +4012,7 @@ function createDomHelpers(opts) {
   function getSvgTitleChildText(node) {
     try {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
-      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
       const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
@@ -4147,7 +4149,7 @@ function createDomHelpers(opts) {
         // same condition aria-required-parent.js's getRealContextRole
         // and aria-prohibited-children.js already use for the analogous
         // "roleless-but-included" boundary.
-        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        const presRole = aria.getExplicitRole(node);
         if (presRole === 'presentation' || presRole === 'none') {
           let restored = false;
           try {
@@ -4349,14 +4351,13 @@ function createDomHelpers(opts) {
     const flags = [];
     if (!isElement(el)) return { role: '', source: 'none', flags: ['notElement'] };
 
-    const explicit = trim(getAttr(el, 'role'));
+    // The first token naming a known role (#91); an attribute naming none
+    // leaves the element its implicit role, as if it had none.
+    const explicit = aria.getExplicitRole(el);
     if (explicit) {
-      const v = explicit;
-      const low = v.toLowerCase();
-      if (low === 'presentation' || low === 'none') flags.push('presentation');
-      // Minimal sanity: role token should not contain spaces beyond role list; keep deterministic
-      if (/\s/.test(v)) flags.push('multiple-roles');
-      return { role: v, source: 'explicit', flags };
+      if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
+      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      return { role: explicit, source: 'explicit', flags };
     }
 
     const allowImplicit = !(opts && opts.disallowImplicit === true);

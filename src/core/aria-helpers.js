@@ -125,16 +125,13 @@ function createAriaHelpers(opts, shared) {
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
     const tag = lower(dom.tagName(el) || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -932,14 +929,21 @@ function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {

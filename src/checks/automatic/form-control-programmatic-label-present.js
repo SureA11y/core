@@ -24,7 +24,8 @@
  *   Applies to <input>, <select> and <textarea> elements included in the
  *   accessibility tree, excluding the input types hidden, submit, reset,
  *   button and image, which take their name from a value or alt attribute
- *   rather than from a label. A control carrying
+ *   rather than from a label. A control whose role attribute resolves
+ *   (first token naming a known role, case-insensitively) to
  *   an explicit ARIA widget role is out of scope, button, checkbox,
  *   combobox, listbox, textbox, slider and the rest of ROLE_OWNED_ELSEWHERE
  *   each have a naming rule of their own, and role="presentation"/"none"
@@ -245,10 +246,12 @@ function runInPage(ctx) {
 
     if (!isEligibleAcc(el)) continue;
 
-    // role="presentation"/"none" exclusion only when NOT focusable
+    // role="presentation"/"none" exclusion only when NOT focusable. The
+    // role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively; none leaves the native role.
     let role;
     try {
-      role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
