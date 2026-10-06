@@ -180,7 +180,7 @@ function runInPage(ctx) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }

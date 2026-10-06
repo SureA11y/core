@@ -176,7 +176,7 @@ function runInPage(ctx) {
 
     if (!ariaLabel && ariaLabelledBy && getTextFromIdRefs) {
       try {
-        const t = getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {
         labelledByText = '';

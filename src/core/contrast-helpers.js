@@ -285,10 +285,16 @@ function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = dom.ownerDocument(labelAncestor);
+        // Only an element in the label's own tree (its shadow root, or the
+        // document) can reference it by id.
+        const root = dom.getRootNode(labelAncestor);
+        const tree =
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
-        if (doc && labelId) {
-          const referrers = dom.querySelectorAll(doc, '[aria-labelledby~="' + labelId + '"]');
+        if (tree && labelId) {
+          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }

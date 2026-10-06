@@ -93,7 +93,7 @@ function runInPage(ctx) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
@@ -188,6 +188,7 @@ function runInPage(ctx) {
     let target = null;
     if (fragment) {
       try {
+        // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
         target = dom.getElementById(document, fragment);
       } catch {
         target = null;

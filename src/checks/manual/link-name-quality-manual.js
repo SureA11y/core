@@ -313,7 +313,7 @@ function runInPage(ctx) {
       : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
-      const info = helpers.getTextFromIdRefs(describedBy, ctx);
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
       return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
     } catch {
       return '';

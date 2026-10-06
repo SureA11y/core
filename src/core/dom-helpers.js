@@ -212,6 +212,7 @@ function createDomHelpers(opts) {
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
+  var __idRefCacheByTree = null; // WeakMap<ShadowRoot|Document, Map<...>>, the same for a tree other than the document
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
@@ -665,7 +666,7 @@ function createDomHelpers(opts) {
     if (!ariaLabelledBy)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts);
+    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -866,6 +867,36 @@ function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The tree an ID reference on `el` resolves in: its shadow root, or its
+  // document. IDs are scoped to their tree (HTML's labeled control is "an
+  // element in the tree" with that ID; ARIA ID references and `headers` use
+  // the same lookup), so a reference never crosses a shadow boundary. Null
+  // for a node in no such tree (a detached subtree), where callers keep
+  // their document lookup.
+  function __idTreeOf(el) {
+    try {
+      const root = el && dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      return root && typeof dom.get(root, 'getElementById') === 'function' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The element an ID reference on `from` points to: the first element with
+  // that id in `from`'s own tree (see __idTreeOf). For an element in the
+  // scanned document this is the cached document lookup.
+  function getElementByIdInTree(from, id) {
+    const key = trim(id);
+    if (!key) return null;
+    const tree = __idTreeOf(from);
+    if (!tree || tree === document) return safeDocGetById(key) || safeRootQueryById(key);
+    try {
+      return dom.getElementById(tree, key) || null;
+    } catch {
+      return null;
+    }
+  }
+
   // A closed <details> shows only its summary: its first <summary> child,
   // which stays on the page as the toggle. Every other descendant is hidden,
   // including another <summary> and anything in an open <details> nested in
@@ -1051,8 +1082,11 @@ function createDomHelpers(opts) {
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
+    // Only an element in the same tree can reference it (see __idTreeOf).
+    const tree = __idTreeOf(node) || document;
+
     // Prefer reverse-index lookup (single build per run) over repeated querySelectorAll per node.
-    const idx = getIdRefReverseIndex(document);
+    const idx = getIdRefReverseIndex(tree);
     if (idx && typeof idx.get === 'function') {
       let refs;
       try {
@@ -1078,8 +1112,8 @@ function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(document, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(document, '[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -1535,6 +1569,16 @@ function createDomHelpers(opts) {
     __idLookupRootCache = null;
   }
 
+  // IDREF resolution in a shadow root (or another document): per tree
+  try {
+    __idRefCacheByTree =
+      __domSharedCache.idRefCacheByTree instanceof WeakMap
+        ? __domSharedCache.idRefCacheByTree
+        : (__domSharedCache.idRefCacheByTree = new WeakMap());
+  } catch {
+    __idRefCacheByTree = null;
+  }
+
   // IDREF resolution: cache resolveIdRefs results (root-scoped) within a run
   try {
     __idRefCacheByRoot =
@@ -1591,7 +1635,7 @@ function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -1746,19 +1790,21 @@ function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  // Real `<label for="...">` element references for one `for` value, built
-  // via a single `document.querySelectorAll('label[for]')` pass and cached
-  // per document for the whole run, for callers that need the actual label
-  // element (to compute its accessible name, or to check whether it
-  // contributes one), not just whether one exists.
-  function __getLabelElementsForId(id) {
+  // Real `<label for="...">` element references for one `for` value in the
+  // tree `root` (a document or a shadow root: a label labels a control in its
+  // own tree only), built via a single `root.querySelectorAll('label[for]')`
+  // pass and cached per tree for the whole run, for callers that need the
+  // actual label element (to compute its accessible name, or to check
+  // whether it contributes one), not just whether one exists.
+  function __getLabelElementsForId(id, root) {
     const key = trim(id);
-    if (!key || !document || !dom.get(document, 'querySelectorAll')) return [];
+    const tree = root || document;
+    if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of dom.querySelectorAll(document, 'label[for]')) {
+        for (const label of dom.querySelectorAll(tree, 'label[for]')) {
           const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
@@ -1771,10 +1817,10 @@ function createDomHelpers(opts) {
 
     if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
 
-    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    let byId = __labelElementsByForIdIndexByDoc.get(tree);
     if (!(byId instanceof Map)) {
       byId = buildIndex();
-      __labelElementsByForIdIndexByDoc.set(document, byId);
+      __labelElementsByForIdIndexByDoc.set(tree, byId);
     }
     return byId.get(key) || [];
   }
@@ -1828,11 +1874,11 @@ function createDomHelpers(opts) {
       // A `for` label labels the first element in its tree with that id
       // (HTML's labeled control), so a second element sharing the id has no
       // label from it; Chromium names only the first.
-      const forLabels = __getLabelElementsForId(id);
+      const root = __idTreeOf(el);
+      const forLabels = __getLabelElementsForId(id, root);
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = dom.get(l, 'getRootNode') ? dom.getRootNode(l) : null;
           if (root && typeof dom.get(root, 'getElementById') === 'function')
             target = dom.getElementById(root, id);
         } catch {}
@@ -2926,7 +2972,9 @@ function createDomHelpers(opts) {
   }
 
   // E) IDREF helpers
-  function resolveIdRefs(idrefString, _ctx, opts) {
+  // `from` is the element carrying the reference: the IDs resolve in its own
+  // tree (see __idTreeOf). Without it they resolve in the document.
+  function resolveIdRefs(idrefString, _ctx, opts, from) {
     const raw = trim(idrefString);
     if (!raw) return { refs: [], missing: [], flags: ['empty'] };
 
@@ -2934,16 +2982,21 @@ function createDomHelpers(opts) {
     const parts = raw.split(/\s+/).filter(Boolean);
     const normKey = parts.join(' ');
 
+    // A shadow root (or another document) is its own tree, with its own cache.
+    let tree = from ? __idTreeOf(from) : null;
+    if (tree === document) tree = null;
+
     // Root-scoped cache map
     let cacheMap = null;
-    if (__idRefCacheByRoot) {
-      const scopeObj = __getScopeObj();
+    const cacheByKey = tree ? __idRefCacheByTree : __idRefCacheByRoot;
+    if (cacheByKey) {
+      const scopeObj = tree || __getScopeObj();
       if (scopeObj) {
         try {
-          cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
+          cacheMap = cacheByKey.get(scopeObj) || null;
           if (!cacheMap) {
             cacheMap = new Map();
-            __idRefCacheByRoot.set(scopeObj, cacheMap);
+            cacheByKey.set(scopeObj, cacheMap);
           }
         } catch {
           cacheMap = null;
@@ -2984,8 +3037,17 @@ function createDomHelpers(opts) {
       const key = trim(id);
       if (!key) continue;
 
-      let el = safeDocGetById(key);
-      if (!el) el = safeRootQueryById(key);
+      let el;
+      if (tree) {
+        try {
+          el = dom.getElementById(tree, key);
+        } catch {
+          el = null;
+        }
+      } else {
+        el = safeDocGetById(key);
+        if (!el) el = safeRootQueryById(key);
+      }
 
       if (!el || !isElement(el)) {
         missing.push(key);
@@ -3141,8 +3203,8 @@ function createDomHelpers(opts) {
     }
   }
 
-  function getTextFromIdRefs(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefs(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -3175,8 +3237,8 @@ function createDomHelpers(opts) {
     return { eligible: true, reasons: [] };
   }
 
-  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
@@ -3518,7 +3580,7 @@ function createDomHelpers(opts) {
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
     if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts);
+      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -5580,6 +5642,7 @@ function createDomHelpers(opts) {
 
     // IDREF primitives
     resolveIdRefs,
+    getElementByIdInTree,
     getTextFromIdRefs,
     getTextFromIdRefsIdrefEligible,
 

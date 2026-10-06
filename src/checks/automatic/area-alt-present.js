@@ -120,25 +120,29 @@ function runInPage(ctx) {
     }
   }
 
-  // Cache mapName -> first referencing <img> in document order (deterministic)
-  const __usemapIndex = (() => {
-    const idx = new Map();
+  // Cache mapName -> first referencing <img> in tree order (deterministic),
+  // per tree: an <img usemap> uses a <map> in its own tree only, the
+  // document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
     try {
       const imgs =
-        document && dom.get(document, 'querySelectorAll')
-          ? dom.querySelectorAll(document, 'img[usemap]')
-          : [];
+        tree && dom.get(tree, 'querySelectorAll') ? dom.querySelectorAll(tree, 'img[usemap]') : [];
       for (const img of imgs) {
         if (!img || !dom.get(img, 'getAttribute')) continue;
         const u = normUsemap(dom.getAttribute(img, 'usemap'));
         if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img); // first in document order wins
+        if (!idx.has(u)) idx.set(u, img); // first in tree order wins
       }
     } catch {
       // ignore
     }
     return idx;
-  })();
+  }
 
   function getReferencingImgForArea(areaEl) {
     try {
@@ -149,7 +153,9 @@ function runInPage(ctx) {
       const mapName = getMapName(map);
       if (!mapName) return null;
 
-      return __usemapIndex.get(mapName) || null;
+      const root = dom.getRootNode(map);
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      return usemapIndexFor(tree).get(mapName) || null;
     } catch {}
     return null;
   }

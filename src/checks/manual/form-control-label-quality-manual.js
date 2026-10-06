@@ -347,13 +347,13 @@ function runInPage(ctx) {
     return true;
   }
 
-  function resolveIdRefs(el, attr) {
+  function getReferencedElements(el, attr) {
     const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, attr));
     if (!raw) return [];
     const out = [];
     for (const refId of raw.split(/\s+/).filter(Boolean)) {
       try {
-        const ref = dom.getElementById(document, refId);
+        const ref = helpers.getElementByIdInTree(el, refId);
         if (ref) out.push(ref);
       } catch {
         // ignore an unusable reference
@@ -363,18 +363,27 @@ function runInPage(ctx) {
   }
 
   // Index of `<label for="...">` elements by their `for` value, built once
-  // (not the native `el.labels`, deliberately -- see getNativeLabels).
-  const labelsByForId = new Map();
-  try {
-    for (const label of dom.querySelectorAll(document, 'label[for]')) {
-      const forVal = normalizeWs(dom.getAttribute(label, 'for'));
-      if (!forVal) continue;
-      const bucket = labelsByForId.get(forVal);
-      if (bucket) bucket.push(label);
-      else labelsByForId.set(forVal, [label]);
+  // per tree (not the native `el.labels`, deliberately -- see
+  // getNativeLabels). A label labels a control in its own tree only: the
+  // document, or the shadow root both are in.
+  const labelsByForIdByTree = new Map();
+  function labelsByForIdIn(tree) {
+    let labelsByForId = labelsByForIdByTree.get(tree);
+    if (labelsByForId) return labelsByForId;
+    labelsByForId = new Map();
+    labelsByForIdByTree.set(tree, labelsByForId);
+    try {
+      for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+        const forVal = normalizeWs(dom.getAttribute(label, 'for'));
+        if (!forVal) continue;
+        const bucket = labelsByForId.get(forVal);
+        if (bucket) bucket.push(label);
+        else labelsByForId.set(forVal, [label]);
+      }
+    } catch {
+      // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
     }
-  } catch {
-    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+    return labelsByForId;
   }
 
   // Per HTML's label-control algorithm, a wrapping <label> with no `for`
@@ -402,7 +411,14 @@ function runInPage(ctx) {
     const labels = [];
     const idVal = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
     if (idVal) {
-      const forLabels = labelsByForId.get(idVal);
+      let tree = document;
+      try {
+        const root = dom.getRootNode(el);
+        if (root && typeof dom.get(root, 'getElementById') === 'function') tree = root;
+      } catch {
+        // keep the document
+      }
+      const forLabels = labelsByForIdIn(tree).get(idVal);
       if (forLabels) {
         for (const label of forLabels) labels.push(label);
       }
@@ -435,7 +451,7 @@ function runInPage(ctx) {
   // present, otherwise the <label> elements associated with it. aria-label is
   // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
-    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const referenced = getReferencedElements(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
     const parts = [];
     let hiddenParts = 0;

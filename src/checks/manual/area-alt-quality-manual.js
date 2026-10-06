@@ -263,15 +263,24 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const __usemapIndex = new Map(); // mapName -> img (first in document order)
-  try {
-    const imgs = Array.from(dom.querySelectorAll(document, 'img[usemap]'));
-    for (const img of imgs) {
-      const u = normUsemap(dom.getAttribute(img, 'usemap'));
-      if (!u) continue;
-      if (!__usemapIndex.has(u)) __usemapIndex.set(u, img);
-    }
-  } catch {}
+  // mapName -> img (first in tree order), per tree: an <img usemap> uses a
+  // <map> in its own tree only, the document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
+    try {
+      const imgs = Array.from(dom.querySelectorAll(tree, 'img[usemap]'));
+      for (const img of imgs) {
+        const u = normUsemap(dom.getAttribute(img, 'usemap'));
+        if (!u) continue;
+        if (!idx.has(u)) idx.set(u, img);
+      }
+    } catch {}
+    return idx;
+  }
 
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -281,7 +290,9 @@ function runInPage(ctx) {
     try {
       const map = dom.get(el, 'closest') && dom.closest(el, 'map');
       const mapName = map ? getMapName(map) : '';
-      img = mapName ? __usemapIndex.get(mapName) || null : null;
+      const root = map ? dom.getRootNode(map) : null;
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      img = mapName ? usemapIndexFor(tree).get(mapName) || null : null;
     } catch {
       img = null;
     }

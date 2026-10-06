@@ -258,6 +258,9 @@ function runInPage(ctx) {
       const ownsAttr = dom.getAttribute(owner, 'aria-owns') || '';
       const tokens = ownsAttr.split(/\s+/).filter(Boolean);
       if (tokens.indexOf(idTok) === -1) continue;
+      // The reference resolves in the owner's own tree: the shadow root
+      // or document both must share.
+      if (helpers.getElementByIdInTree(owner, idTok) !== el) continue;
 
       const role = ariaHelpers.getContainmentRole(owner);
       if (role && acceptableRoles.has(role)) return true;

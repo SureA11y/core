@@ -73,6 +73,49 @@ const safeDomPlugin = {
         };
       }
     },
+    // An ID reference resolves in the referring element's own tree, its
+    // shadow root or its document (#92): rules look one up with
+    // helpers.getElementByIdInTree(el, id) and pass the referring element to
+    // the shared IDREF helpers. A fragment link is the exception, looked up
+    // in the document, and says so in an eslint-disable comment.
+    'tree-scoped-ids': {
+      meta: {
+        type: 'problem',
+        messages: {
+          lookup:
+            "Look the ID up in the referring element's own tree with helpers.getElementByIdInTree(el, id): a document lookup misses a shadow root's elements and finds the page's from inside one.",
+          from: 'Pass the element carrying the reference as the fourth argument, so the IDs resolve in its own tree.'
+        }
+      },
+      create(context) {
+        const IDREF_HELPERS = /^(resolveIdRefs|getTextFromIdRefs|getTextFromIdRefsIdrefEligible)$/;
+        return {
+          CallExpression(node) {
+            const c = node.callee;
+            const name =
+              c.type === 'MemberExpression' && !c.computed
+                ? c.property.name
+                : c.type === 'Identifier'
+                  ? c.name
+                  : '';
+            const args = node.arguments;
+            if (
+              name === 'getElementById' &&
+              c.type === 'MemberExpression' &&
+              c.object.type === 'Identifier' &&
+              c.object.name === 'dom' &&
+              args[0] &&
+              args[0].type === 'Identifier' &&
+              args[0].name === 'document'
+            ) {
+              context.report({ node, messageId: 'lookup' });
+            } else if (IDREF_HELPERS.test(name) && args.length < 4) {
+              context.report({ node, messageId: 'from' });
+            }
+          }
+        };
+      }
+    },
     'use-safe-dom': {
       meta: {
         type: 'problem',
@@ -129,10 +172,10 @@ module.exports = [
     rules: { 'safe-dom/use-safe-dom': 'error' }
   },
   {
-    // Rules only: the shared helpers define the role resolution.
+    // Rules only: the shared helpers define the role and ID resolution.
     files: ['src/checks/**/*.js', 'profiles/*/rules/**/*.js'],
     plugins: { 'safe-dom': safeDomPlugin },
-    rules: { 'safe-dom/no-raw-role': 'error' }
+    rules: { 'safe-dom/no-raw-role': 'error', 'safe-dom/tree-scoped-ids': 'error' }
   },
   {
     ignores: [

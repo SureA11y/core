@@ -178,6 +178,7 @@ function runInPage(ctx) {
     const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
     if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       return !!(dom.get(document, 'getElementById') && dom.getElementById(document, href.slice(1)));
     } catch {
       return false;

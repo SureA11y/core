@@ -66,7 +66,7 @@ const meta = {
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
@@ -109,7 +109,7 @@ function runInPage(ctx) {
     for (const headerId of ids) {
       let ref;
       try {
-        ref = dom.getElementById(document, headerId);
+        ref = helpers.getElementByIdInTree(el, headerId);
       } catch {
         ref = null;
       }

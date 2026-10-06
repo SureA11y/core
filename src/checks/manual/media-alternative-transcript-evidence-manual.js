@@ -270,7 +270,8 @@ function runInPage(ctx) {
           const target = targetId
             ? dom.get(safeRoot, 'getElementById')
               ? dom.getElementById(safeRoot, targetId)
-              : dom.getElementById(document, targetId)
+              : // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document
+                dom.getElementById(document, targetId)
             : null;
 
           if (isElement(target) && isEligible(target)) {
