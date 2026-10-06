@@ -114,6 +114,7 @@ Sorted by severity, then by how many pages it touches.
 - *In plain words:* one form field with that name freezes the scan for good in a real browser; nothing comes back, and CI waits until it times out.
 - Example: `<form><input name="parentNode"><label>Ok<input></label></form>`: no result after 20 s in Chromium; with `name="zparentNode"`, 54 ms.
 - Basis: HTML declares `HTMLFormElement` `[LegacyOverrideBuiltIns]`, so a named control replaces `form.parentNode`, and an unbounded parent walk loops forever. jsdom doesn't do this, so the test suite can't see it.
+- Others: Engines A and B both finish and pass the labelled field.
 - Where: parent walks in `form-control-label-quality-manual.js:242`, `heading-quality-manual.js:250`, `link-name-quality-manual.js:250`, `dom-helpers.js:3747,5136`, `target-size-minimum.js:359`, `text-spacing-content-loss.js:319,344,509`.
 
 <a id="nm-1"></a>**NM-1. A role with a fallback is read as no role** — Bug, High · [details](./2026-10-stress-test-2.md#nm-1)
@@ -255,6 +256,7 @@ Sorted by severity, then by how many pages it touches.
 <a id="rb-2"></a>**RB-2. Named images and forms override properties the engine reads** — Bug, Medium · [details](./2026-10-stress-test-2.md#rb-2)
 - *In plain words:* HTML lets `<img name="X">` replace `document.X` and `<input name="X">` replace `form.X`. Some names hide failures, invent them, or break rules.
 - Examples: `<img name="documentElement">` turns a page's failures into passes; `<form name="title">` breaks page-title-present; `<form><input name="getAttribute"><button></button></form>` loses the button's failure.
+- Others: Engine B gets every case right; Engine A has the same weakness, missing the button under `documentElement` and throwing on the whole scan under `querySelectorAll` and `getAttribute`.
 - Where: `document.documentElement` (`dom-helpers.js:82`), `document.querySelectorAll` (`:1745`), `document.getElementById` (`:813`), `e.title` (`page-title-present.js:83`), `el.getAttribute` calls. Fix with RB-1: take these from the prototypes once.
 
 <a id="rb-3"></a>**RB-3. image-redundant-alt is quadratic** — Bug (perf), Medium · [details](./2026-10-stress-test-2.md#rb-3)

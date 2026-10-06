@@ -108,8 +108,8 @@ Sorted by severity within each area. "A" and "B" are the two other engines on th
 | [RP-6](#rp-6) | EARL: the last result wins, so input order can erase a failure | Bug (doc contradiction) | Medium | — | — |
 | [RP-7](#rp-7) | Smaller reporter slips (dead schema URL, locale chip, `%`, catalog level) | Bug | Low | — | — |
 | **Robustness and scale** |
-| [RB-1](#rb-1) | A form field named `parentNode` / `parentElement` makes the scan hang | Bug | High | — | — |
-| [RB-2](#rb-2) | Named images and forms override `document` and form properties the engine reads | Bug | Medium | — | — |
+| [RB-1](#rb-1) | A form field named `parentNode` / `parentElement` makes the scan hang | Bug | High | right | right |
+| [RB-2](#rb-2) | Named images and forms override `document` and form properties the engine reads | Bug | Medium | same (worse) | right |
 | [RB-3](#rb-3) | image-redundant-alt is quadratic (7 s at 4,000 images) | Bug (perf) | Medium | — | — |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists *(not re-run)* | Bug (perf) | Low | — | — |
 | [RB-5](#rb-5) | A throwing `shadowRoot` getter breaks about 77 rules | Bug | Low | — | — |
@@ -657,6 +657,7 @@ Probed in jsdom and Chromium. The two worst problems only appear in a real brows
 - Example: `<form><input name="parentNode"><label>Ok<input></label></form>`. Re-run in Chromium: `runa11yCoreInPage` had not returned after 20 s; the same page with `name="zparentNode"` scans in 54 ms. `name="parentElement"` hangs too.
 - **Spec.** HTML declares `HTMLFormElement` with `[LegacyOverrideBuiltIns]`: a form's named controls *override* its built-in properties. So `form.parentNode` returns the `<input>`, whose `parentNode` is the form again, and a loop that climbs with `n = n.parentNode` never ends. jsdom doesn't implement this, which is why the test suite can't see it.
 - **Where.** Unbounded parent walks: `primaryLangOf` in `form-control-label-quality-manual.js:242-251`, `heading-quality-manual.js:250`, `link-name-quality-manual.js:250`; `textAlternativeLangOf` (`dom-helpers.js:3747`); `dom-helpers.js:5136-5137` (`for (let n = control; n; n = n.parentElement)`); `target-size-minimum.js:359`; `text-spacing-content-loss.js:319,344,509`.
+- **Others.** Engines A and B both finish on both examples (in 25–184 ms) and pass the labelled field.
 - **Evaluation.** The worst finding of this round: a single, plausible form field (a CMS can name a field anything) takes the whole scan down. Read parents through `Node.prototype`'s getters, as the engine already does elsewhere, and cap every walk.
 
 <a id="rb-2"></a>**RB-2. Named images and forms change results by overriding `document` and form properties** — Bug, **Medium**
@@ -677,6 +678,17 @@ Probed in jsdom and Chromium. The two worst problems only appear in a real brows
   | `<form><input name="assignedSlot"><img src="x"></form>` | The ancestor walk cycles; `img-alt-present` becomes a "depth limit" `cantTell`. |
 - **Spec.** HTML: `Document` is also `[LegacyOverrideBuiltIns]` and "supports named properties" (`img`, `form`, `embed`, `object` and `iframe` names, among others).
 - **Cause.** `document.documentElement` (`dom-helpers.js:82`), `document.querySelectorAll` (`:1745`), `document.getElementById` (`:813`), `e.title` (`page-title-present.js:83`) and many `el.getAttribute` calls, all read as plain properties.
+- **Others** (same pages, same Chromium):
+
+  | Markup | This engine | Engine A | Engine B |
+  |---|---|---|---|
+  | `<img name="documentElement">` + a nameless button | button missed | button missed (same problem) | button `fail` (right) |
+  | `<img name="querySelectorAll">` + a labelled input | label wrongly fails | **the whole scan throws** | pass (right) |
+  | `<img name="getElementById">` + `aria-describedby="nope"` | missing reference not reported | `cantTell` | pass |
+  | `<form name="title">` | page-title-present errors | `cantTell` | pass (right) |
+  | `<form><input name="getAttribute"><button></button></form>` | button's `fail` lost | **the whole scan throws** | button `fail` (right) |
+
+  Engine B handles every case; Engine A shares the weakness, and twice fails harder.
 - **Evaluation.** Bug. Names like `title`, `body` or `attributes` are realistic; `documentElement` less so. One fix covers it: take these functions from the prototypes once, at the start of the scan.
 
 <a id="rb-3"></a>**RB-3. image-redundant-alt is quadratic** — Bug (performance), **Medium**
