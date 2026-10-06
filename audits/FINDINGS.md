@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: R-13.
+Sorted by severity, then by how many pages it touches. Next to fix: R-14.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [R-13](#r-13) | The viewport `content` parser: spaces, odd values, several metas | Bug | Medium | Round 1, round 2 (VS-5) |
 | [R-14](#r-14) | Input values and placeholders are never contrast-checked | Gap | Medium | Round 1 |
 | [R-11](#r-11) | target-size-minimum measures the bounding box | Bug | Medium | Round 1 |
 | [VS-8](#vs-8) | target-size-minimum exempts any inline link in a `li`, `td` or `p` | Gap | Medium | Round 2 |
@@ -99,15 +98,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: R-13.
 ### High
 
 ### Medium
-
-<a id="r-13"></a>**R-13. The viewport `content` parser** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-5) · also VS-5
-- *In plain words:* the two viewport rules read `<meta name="viewport">` differently from browsers and from each other.
-- Re-checked:
-  - Spaces as separators: `width=device-width user-scalable=no` is `notApplicable` (should fail); `user-scalable=yes maximum-scale=5` fails (should pass).
-  - `maximum-scale=abc` and `user-scalable=0.5`: zoom-enabled fails, the 500% rule passes; `maximum-scale=-1`: the opposite.
-  - Two viewport metas: every one is judged, though browsers apply the last.
-- Basis: CSS Viewport's parsing algorithm ends a value at whitespace.
-- Where: `split(/[,;]/)` in `meta-viewport-zoom-enabled.js:72` and `meta-viewport-large-manual.js:66`; `zoom-enabled.js:92,110-133` against `large-manual.js:96-106`.
 
 <a id="r-14"></a>**R-14. Input values and placeholders are never contrast-checked** — Gap, Medium · [details](./2026-10-stress-test.md) (R-14)
 - *In plain words:* text typed in a field, and placeholder text, are not checked at all.
@@ -363,6 +353,13 @@ Fixes on branch `fix/audit-2026-10-findings-3` (from `main` at `e9da4f6`), pushe
 | R-1 | Paint that isn't an ancestor's: fixed and sticky paint ignored, stacked layers and solid covers not measured | Option B: work out the paint order. The text, its ancestors' backgrounds and the boxes overlapping it are ordered by the CSS painting order (stacking contexts, `z-index`, positioned boxes, floats, document order) and composited from the top; solid colors covering all of the text are measured against, anything else is `BACKGROUND_OVERLAP`. Found while fixing it and included: an ancestor's background counts only where its box is under the text and it is painted before it (text overflowing its box, text with a negative `z-index`), and a box is tested against every line of the text (it was tested only against the first line whose index cell held it). Fixed and sticky boxes count behind the text and stay left out over it. Left: a gradient under the text stays `cantTell`, as with Engine A and Engine B. | `aff80e6`, changelog `ea705c5` | [#101](https://github.com/SureA11y/core/issues/101) | 2026-10-07 |
 
 How R-1 was checked: 100 generated layouts (positioned boxes with every kind of `z-index`, floats, negative-margin overlaps, inline-blocks, nested stacking contexts) were scanned and compared with the rendered pixels (the color under each text line with the text made transparent, and whether the text shows at all). Confident background colors that disagree with the screen: 373 on `main`, 0 on the branch, with no result that was right or `cantTell` on `main` becoming wrong; 82 wrong results became right, 290 became `cantTell`, and 41 right ones became `cantTell` (mostly text partly outside a box, which the pixel check samples at mid-line only). A first attempt at the comparison used the browser's hit-test order (`elementsFromPoint`) and was dropped: it lists a later block's background over earlier text, which the pixels show is painted under it. On the texts whose result changed, Engine A (which models the painting order) agrees: it is unsure of 200 of the 224 texts that became `cantTell` with real paint over or partly under them; Engine B gives a confident pass or fail on almost all of them, so it isn't a reference here (it also fails the fixed, sticky and positioned-box examples). On the finding's examples the branch matches Engine A on all six. The full suite passes (the same one environmental failure); two cases of the 1.10.0 overlap test, light text on solid black, are now measured and pass, as rendered. Cost: fixtures 1.025×, a large page 1.04×, after caching each box's paint role and box per scan.
+
+<a id="r-13"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| R-13 (also VS-5) | The viewport `content` parser: spaces, odd values, several metas | Option A′: read the `content` attribute as browsers do, in both rules, and keep judging every viewport `<meta>`. Whitespace separates settings as `,` and `;` do; a setting with no value, or a value that isn't a number, counts as 0 (so it blocks zoom); `yes` is 1, `device-width` and `device-height` are 10; a number is read up to its first non-numeric character (`1.5x` is 1.5); a later setting replaces an earlier one with the same name; case is ignored; a negative `maximum-scale` is dropped. The parser is shared (`helpers.readViewportContent`), so the two rules no longer disagree. Left by choice: a page with two viewport metas, of which only the last applies in browsers, still fails when an earlier one blocks zoom. | `5f1186b`, changelog `13eb228` | [#102](https://github.com/SureA11y/core/issues/102) | 2026-10-07 |
+
+How R-13 was checked: each case was loaded in Chromium with a mobile viewport and zoomed in with a pinch gesture (CDP `Input.synthesizePinchGesture`) to find the largest zoom the browser allows; 17 cases, among them the finding's. After the fix both rules agree with the browser on every one but the two-meta case (`user-scalable=no` then `width=device-width`, which Chromium lets the user zoom), which fails on purpose. On the finding's eight cases Engine B gives the same result as the branch on all eight, so it agrees with the browser on seven and also fails the two-meta case; Engine A agrees with the browser on four: it misses `user-scalable=no` after a space, `maximum-scale=abc` and `maximum-scale=no`, which all block zoom, and passes the two-meta case. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, second batch (in `main`)
 
