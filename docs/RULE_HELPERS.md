@@ -346,8 +346,8 @@ content is — see the `root` note in the source), only `inert` targets are excl
 ## 5) Role & focusability
 
 ### `getRoleInfo(el, ctx, opts)` → `{ role, source, flags[] }`
-Explicit `role` attribute if present (flags `'presentation'` for
-`presentation`/`none`, `'multiple-roles'` if it contains whitespace), else a small,
+The explicit role, resolved as `aria.getExplicitRole` does (flags `'presentation'` for
+`presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else a small,
 deliberately minimal implicit-role mapping (`a[href]`→`link`, `button`→`button`,
 `input[type=checkbox]`→`checkbox`, etc.) unless `opts.disallowImplicit`.
 
@@ -457,6 +457,17 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
 `getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
 author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+
+`getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
+fallback list, and browsers use "the first token in the sequence of tokens in the role
+attribute value that matches the name of any non-abstract WAI-ARIA role" (WAI-ARIA),
+matched in any case. It returns that token lower-cased, or `''` when no token names a
+known role, which is the same as having no role. So `role="switch checkbox"` is a
+switch, `role="foo button"` and `role="BUTTON"` are buttons, and `role="foo"` leaves
+the element its implicit role. Select elements by role with `[role~="button" i]` and
+keep those whose `getExplicitRole` is `'button'` (`role="link button"` is a link);
+`[role="button"]` misses both a fallback list and another case. `npm run lint` flags a
+rule that reads `role` itself.
 `helpers.landmarkCandidateSelector` is the CSS selector for every element that can be a
 landmark, and `ctx.engineTag` the engine's tag (`"a11ycore"`), the one every rule carries in
 `meta.tags`. Backs the whole
