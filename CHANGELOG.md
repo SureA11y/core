@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+
+- In a browser, the contrast rules check only text a reader can see: `visibilityMode` now defaults to `'styleAndGeometry'` where the page has a layout, and stays `'styleOnly'` under jsdom, which has none. Text moved off the page (`position:absolute; left:-9999px`, a common screen-reader-only technique) or clipped away by an ancestor (`height:0; overflow:hidden`) was failed by `contrast-minimum` although it is drawn nowhere it can be seen; it is no longer checked. Text below the fold is still checked. `'styleAndGeometry'` also dropped all the text of a `<select>`, whose options have no layout box of their own, so a faint selected value went unchecked; a select's options are now judged by the select's place on the page, so the selected value and the options its list shows when opened are checked, as with `'styleOnly'`. Set `visibilityMode: 'styleOnly'` to keep the earlier behavior. ([#99](https://github.com/SureA11y/core/issues/99))
+
 ### Fixed
 
 - SARIF output is valid SARIF 2.1.0 again. The notes a rule leaves when it had nothing to judge were written as `runs[0].invocations[0].toolExecutionNotices`, a property the SARIF schema doesn't have (it is `toolExecutionNotifications`), and the `invocation` object allows no other, so a consumer that validates SARIF rejected the file. That was nearly every browser scan: there `contrast-computable` always leaves such a note. A consumer that read the notes under the old name now finds them under `toolExecutionNotifications`. A new test validates the SARIF of every fixture page, and of edge cases, against the official schema, kept in `tests/schemas/`. ([#97](https://github.com/SureA11y/core/issues/97))
