@@ -317,6 +317,98 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // -------- Text shown in a form field (#103) --------
+  //
+  // An <input>'s value, a <textarea>'s current value and a placeholder are
+  // drawn by the browser inside the field, not from text nodes, so the text
+  // walk never meets them. A field shows its value or, while that is empty,
+  // its placeholder, whose color, font, opacity and background come from
+  // the ::placeholder pseudo-element (CSS Pseudo-Elements 4).
+
+  // Input types that show their value as text. A missing or unknown type
+  // is text; `type` reflects it so.
+  const __TEXT_FIELD_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number',
+    'date',
+    'time',
+    'datetime-local',
+    'month',
+    'week'
+  ]);
+  // The types that show a placeholder (HTML, the placeholder attribute).
+  const __PLACEHOLDER_TYPES = new Set([
+    'text',
+    'search',
+    'email',
+    'url',
+    'tel',
+    'password',
+    'number'
+  ]);
+
+  // As the text walk's: text with a letter or digit (ACT afw4f7).
+  const __hasLetterOrDigit = (t) => t != null && /[\p{L}\p{N}]/u.test(String(t));
+
+  const __localFieldTextCache = new WeakMap();
+  const __fieldTextCache = __getSharedWeakMapCache('__fieldTextCache') || __localFieldTextCache;
+
+  // What text a field shows: { placeholder: false } for its value,
+  // { placeholder: true, style } for its placeholder with the
+  // ::placeholder computed style, or null for no text (an empty field, a
+  // field that isn't a text field, or a placeholder whose style can't be
+  // read: jsdom computes no pseudo-element styles).
+  function __fieldText(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__fieldTextCache.has(el)) return __fieldTextCache.get(el);
+    let out = null;
+    try {
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const isInputNs =
+        !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      if (isInputNs && (tag === 'textarea' || (tag === 'input' && __TEXT_FIELD_TYPES.has(type)))) {
+        const value = dom.get(el, 'value');
+        // A placeholder shows only while the value is empty.
+        if (value != null && String(value) !== '') {
+          if (__hasLetterOrDigit(value)) out = { placeholder: false };
+        } else if (tag === 'textarea' || __PLACEHOLDER_TYPES.has(type)) {
+          let ph = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'placeholder') : null;
+          // An input's placeholder is shown without its line breaks.
+          if (tag === 'input' && ph) ph = ph.replace(/[\r\n]/g, '');
+          const doc = dom.ownerDocument(el);
+          const view = doc && dom.defaultView(doc);
+          if (
+            __hasLetterOrDigit(ph) &&
+            __hasLayout(doc) &&
+            view &&
+            typeof view.getComputedStyle === 'function'
+          ) {
+            const style = view.getComputedStyle(el, '::placeholder');
+            if (style) out = { placeholder: true, style };
+          }
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __fieldTextCache.set(el, out);
+    return out;
+  }
+
+  // The computed style that sets the color and font of el's text: the
+  // ::placeholder style while a field shows its placeholder, el's own
+  // otherwise.
+  function textStyleOf(el) {
+    const field = __fieldText(el);
+    return field && field.placeholder ? field.style : __contrastComputedStyle(el);
+  }
+
   function getTextScan(ctx, helpers, engineOptions) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
@@ -678,6 +770,9 @@ function createContrastHelpers(opts, shared) {
               : null);
 
           if (!el) continue;
+          // A <textarea>'s text nodes are its default value; what it shows is
+          // its current value, read with the other fields below.
+          if (String(dom.localName(el) || '').toLowerCase() === 'textarea') continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -704,16 +799,15 @@ function createContrastHelpers(opts, shared) {
       // structurally invisible to the SHOW_TEXT walk above (void elements
       // can't have text-node children at all). Without this, these inputs
       // would be silently skipped by both contrast-minimum and
-      // contrast-enhanced. Same eligibility gates as the text-node path
-      // above, applied to the input element itself.
+      // contrast-enhanced. The text a field shows, its value or its
+      // placeholder, isn't a text node either (#103; see __fieldText). Same
+      // eligibility gates as the text-node path above, applied to the input
+      // element itself.
       const visitedValueInputs = new Set();
       for (const walkRoot of walkRoots) {
         let candidates;
         try {
-          candidates = dom.querySelectorAll(
-            walkRoot,
-            'input[type="submit" i], input[type="button" i], input[type="reset" i]'
-          );
+          candidates = dom.querySelectorAll(walkRoot, 'input, textarea');
         } catch {
           continue;
         }
@@ -721,8 +815,16 @@ function createContrastHelpers(opts, shared) {
           if (visitedValueInputs.has(el)) continue;
           visitedValueInputs.add(el);
 
-          const value = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : el.value;
-          if (!isNonEmptyText(value)) continue;
+          const type =
+            String(dom.localName(el) || '').toLowerCase() === 'input'
+              ? String(dom.get(el, 'type') || '').toLowerCase()
+              : '';
+          if (type === 'submit' || type === 'button' || type === 'reset') {
+            const value = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : el.value;
+            if (!isNonEmptyText(value)) continue;
+          } else if (!__fieldText(el)) {
+            continue;
+          }
 
           try {
             if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
@@ -1529,7 +1631,11 @@ function createContrastHelpers(opts, shared) {
       if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
     } catch {}
 
-    const cs = __contrastComputedStyle(el);
+    // A field's placeholder is painted in the ::placeholder color, faded by
+    // its own opacity as well as the field's.
+    const field = __fieldText(el);
+    const placeholder = field && field.placeholder ? field.style : null;
+    const cs = placeholder || __contrastComputedStyle(el);
     // SVG text is painted with `fill`, not `color` (which only feeds
     // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
     // of none (outline-only text) or a paint server (url(#gradient)) does
@@ -1548,7 +1654,11 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    const op = computeOpacityProduct(el);
+    let op = computeOpacityProduct(el);
+    if (placeholder) {
+      const own = Number.parseFloat(placeholder.opacity);
+      if (Number.isFinite(own)) op *= clamp01(own);
+    }
     const out = {
       rgba: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a * op) },
       alpha: clamp01(c.a * op),
@@ -1646,6 +1756,22 @@ function createContrastHelpers(opts, shared) {
           });
         }
         acc = compositeRgba(acc, layer.rgba);
+      }
+    }
+    // A placeholder's own background is painted under its text, above the
+    // field's.
+    const field = __fieldText(el);
+    if (field && field.placeholder) {
+      const own = parseCssColorToRgba(field.style.backgroundColor);
+      if (own && own.a > 0) {
+        if (collectStack) {
+          stack.push({
+            selector: __getSimpleSelectorCached(el, 'input') + '::placeholder',
+            bg: { r: own.r, g: own.g, b: own.b, a: clamp01(own.a) },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, { r: own.r, g: own.g, b: own.b, a: clamp01(own.a) });
       }
     }
     let cur = el;
@@ -1859,10 +1985,22 @@ function createContrastHelpers(opts, shared) {
       if (!el || dom.nodeType(el) !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
-      const elColor = parseCssColorToRgba(
-        elCs && (__isSvgTextElement(el) ? elCs.fill : elCs.color)
+      // A placeholder: its own color, opacity and background (__fieldText).
+      const field = __fieldText(el);
+      const placeholder = field && field.placeholder ? field.style : null;
+      const textCs = placeholder || elCs;
+      let elColor = parseCssColorToRgba(
+        textCs && (__isSvgTextElement(el) ? textCs.fill : textCs.color)
       );
       if (!elColor) return __cacheAndReturn(null);
+      let phBg = null;
+      if (placeholder) {
+        const phOpacity = Number.parseFloat(placeholder.opacity);
+        if (Number.isFinite(phOpacity)) {
+          elColor = { ...elColor, a: clamp01(elColor.a) * clamp01(phOpacity) };
+        }
+        phBg = parseCssColorToRgba(placeholder.backgroundColor);
+      }
 
       let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
       let fgAcc = { r: 0, g: 0, b: 0, a: 0 };
@@ -1893,6 +2031,11 @@ function createContrastHelpers(opts, shared) {
         }
 
         if (cur === el) {
+          if (phBg && phBg.a > 0) {
+            const layer = { r: phBg.r, g: phBg.g, b: phBg.b, a: clamp01(phBg.a) };
+            bgAcc = compositeRgba(layer, bgAcc);
+            fgAcc = compositeRgba(layer, fgAcc);
+          }
           // el's own text color is the innermost foreground layer,
           // painted over whatever el's own background (if any) already
           // contributed to fgAcc above.
@@ -1974,6 +2117,42 @@ function createContrastHelpers(opts, shared) {
     // el and its ancestors up to the first with an opaque background.
     const chain = [];
 
+    // A placeholder's own background image, or its own opacity over a
+    // background of its own (one group faded together), stops the
+    // measurement as the same on an element would.
+    const field = __fieldText(el);
+    const placeholder = field && field.placeholder ? field.style : null;
+    if (placeholder) {
+      const phOpacity = clamp01(
+        Number.parseFloat(placeholder.opacity != null ? placeholder.opacity : '1')
+      );
+      const phBg = parseCssColorToRgba(placeholder.backgroundColor);
+      let out = null;
+      if (hasBackgroundImageOrGradient(placeholder)) {
+        out = {
+          ok: false,
+          reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
+          blockerProperty: 'background-image',
+          blockerValue: truncateCssValue(placeholder.backgroundImage || '', 80),
+          backgroundFillType: classifyBackgroundImageValue(placeholder.backgroundImage || '')
+        };
+      } else if (phOpacity < 1 && phBg && phBg.a > 0) {
+        out = {
+          ok: false,
+          reasonCode: 'ELEMENT_OPACITY',
+          blockerProperty: 'opacity',
+          blockerValue: truncateCssValue(String(placeholder.opacity), 80)
+        };
+      }
+      if (out) {
+        out.blockerSelector = __getSimpleSelectorCached(el, 'input') + '::placeholder';
+        try {
+          __computabilityBlockerCache.set(el, out);
+        } catch {}
+        return out;
+      }
+    }
+
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
@@ -2034,15 +2213,23 @@ function createContrastHelpers(opts, shared) {
       // one either -- rather than assert a confident fail that a real
       // browser's rendering might contradict, this defers to manual
       // review, the same shape as every other computability blocker here.
-      const textShadowInfo = cur === el ? __textShadowInfoEl(cur, cs) : null;
+      // A placeholder's shadow is the ::placeholder one.
+      const textShadowInfo =
+        cur !== el
+          ? null
+          : placeholder
+            ? {
+                has: hasTextShadow(String(placeholder.textShadow || '')),
+                value: String(placeholder.textShadow || '')
+              }
+            : __textShadowInfoEl(cur, cs);
       if (textShadowInfo && textShadowInfo.has) {
         const out = {
           ok: false,
           reasonCode: 'TEXT_SHADOW',
-          blockerSelector: __getSimpleSelectorCached(
-            cur,
-            (dom.tagName(cur) || '').toLowerCase() || 'html'
-          ),
+          blockerSelector:
+            __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+            (placeholder ? '::placeholder' : ''),
           blockerProperty: 'text-shadow',
           blockerValue: truncateCssValue(textShadowInfo.value, 80)
         };
@@ -3251,6 +3438,7 @@ function createContrastHelpers(opts, shared) {
     computeEffectiveBackground,
     getComputabilityBlocker,
     getTextScan,
+    textStyleOf,
     isInactiveUiComponent
   };
 }

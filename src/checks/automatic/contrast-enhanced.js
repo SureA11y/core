@@ -153,7 +153,11 @@ function runInPage(ctx) {
       const cached = __elFontCache.get(el);
       if (cached) return cached;
 
-      const cs = safeComputedStyle(el);
+      // A field's placeholder has the ::placeholder font.
+      const cs =
+        helpers.contrast && typeof helpers.contrast.textStyleOf === 'function'
+          ? helpers.contrast.textStyleOf(el)
+          : safeComputedStyle(el);
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
