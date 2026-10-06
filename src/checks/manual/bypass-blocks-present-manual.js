@@ -121,9 +121,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -146,7 +147,7 @@ function runInPage(ctx) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
         ? helpers.queryAllSmart(selector)
-        : document.querySelectorAll(selector);
+        : dom.querySelectorAll(document, selector);
     } catch {
       return [];
     }
@@ -175,16 +176,19 @@ function runInPage(ctx) {
     if (!root) return null;
     let target;
     try {
-      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+      target =
+        typeof dom.get(root, 'getElementById') === 'function'
+          ? dom.getElementById(root, fragment)
+          : null;
     } catch {
       target = null;
     }
     if (target) return target;
     try {
       target =
-        typeof root.querySelectorAll === 'function'
-          ? Array.from(root.querySelectorAll('a[name]')).find(
-              (a) => a.getAttribute('name') === fragment
+        typeof dom.get(root, 'querySelectorAll') === 'function'
+          ? Array.from(dom.querySelectorAll(root, 'a[name]')).find(
+              (a) => dom.getAttribute(a, 'name') === fragment
             ) || null
           : null;
     } catch {
@@ -211,13 +215,13 @@ function runInPage(ctx) {
       links =
         helpers && typeof helpers.queryAllSmart === 'function'
           ? helpers.queryAllSmart('a[href]')
-          : document.querySelectorAll('a[href]');
+          : dom.querySelectorAll(document, 'a[href]');
     } catch {
       links = [];
     }
     for (const a of links) {
-      if (!a || !a.getAttribute) continue;
-      const href = String(a.getAttribute('href') || '').trim();
+      if (!a || !dom.get(a, 'getAttribute')) continue;
+      const href = String(dom.getAttribute(a, 'href') || '').trim();
       if (href.length < 2 || href.charAt(0) !== '#') continue;
       let fragment = href.slice(1);
       try {
@@ -230,8 +234,8 @@ function runInPage(ctx) {
 
       let root = document;
       try {
-        if (typeof a.getRootNode === 'function') {
-          const r = a.getRootNode();
+        if (typeof dom.get(a, 'getRootNode') === 'function') {
+          const r = dom.getRootNode(a);
           if (r) root = r;
         }
       } catch {

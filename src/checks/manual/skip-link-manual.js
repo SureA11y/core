@@ -75,6 +75,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -84,16 +85,16 @@ function runInPage(ctx) {
   }
 
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = dom.getElementById(document, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -101,16 +102,17 @@ function runInPage(ctx) {
       const joined = normalizeWs(parts.join(' '));
       if (joined) return joined;
     }
-    return normalizeWs(el.textContent);
+    return normalizeWs(dom.textContent(el));
   }
 
   function hasReliableGeometrySupport() {
-    const probe = document.documentElement || document.body || null;
-    if (!probe || !probe.getClientRects || !probe.getBoundingClientRect) return false;
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || !dom.get(probe, 'getClientRects') || !dom.get(probe, 'getBoundingClientRect'))
+      return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       const rectCount = rects ? rects.length : 0;
-      const r = probe.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(probe);
       const w = r && Number.isFinite(r.width) ? r.width : 0;
       const h = r && Number.isFinite(r.height) ? r.height : 0;
       return rectCount > 0 && (w > 0 || h > 0);
@@ -127,7 +129,7 @@ function runInPage(ctx) {
   }
 
   const geometrySupported = hasReliableGeometrySupport();
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -141,13 +143,13 @@ function runInPage(ctx) {
   // skip link sits whatever its wording.
   let positionalSkipLink = null;
   try {
-    const main = document.querySelector('main, [role="main"]');
+    const main = dom.querySelector(document, 'main, [role="main"]');
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&
       first &&
-      typeof first.compareDocumentPosition === 'function' &&
-      first.compareDocumentPosition(main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
+      typeof dom.get(first, 'compareDocumentPosition') === 'function' &&
+      dom.compareDocumentPosition(first, main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
     ) {
       positionalSkipLink = first;
     }
@@ -159,9 +161,9 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const href = String(el.getAttribute('href') || '').trim();
+    const href = String(dom.getAttribute(el, 'href') || '').trim();
     if (href.length < 2 || href.charAt(0) !== '#') continue;
 
     const name = getAccessibleNameText(el);
@@ -178,7 +180,7 @@ function runInPage(ctx) {
     let target = null;
     if (fragment) {
       try {
-        target = document.getElementById(fragment);
+        target = dom.getElementById(document, fragment);
       } catch {
         target = null;
       }
@@ -187,8 +189,8 @@ function runInPage(ctx) {
         // selector, which a backslash or quote in the name would break.
         try {
           target =
-            Array.from(document.querySelectorAll('a[name]')).find(
-              (a) => a.getAttribute('name') === fragment
+            Array.from(dom.querySelectorAll(document, 'a[name]')).find(
+              (a) => dom.getAttribute(a, 'name') === fragment
             ) || null;
         } catch {
           target = null;

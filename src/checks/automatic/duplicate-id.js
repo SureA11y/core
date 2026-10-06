@@ -87,12 +87,15 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Detection spans the whole document; see the header comment on scope.
   const all = new Set();
   try {
-    const nodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+    const nodes = dom.get(document, 'querySelectorAll')
+      ? dom.querySelectorAll(document, '[id]')
+      : [];
     for (const el of nodes) all.add(el);
   } catch {
     // no-throw: fall through to the helper-provided set below
@@ -118,7 +121,7 @@ function runInPage(ctx) {
   // Ids resolve within their own tree, so group by root before comparing.
   function rootOf(el) {
     try {
-      if (typeof el.getRootNode === 'function') return el.getRootNode();
+      if (typeof dom.get(el, 'getRootNode') === 'function') return dom.getRootNode(el);
     } catch {
       // fall through
     }
@@ -129,11 +132,11 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of all) {
-    if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
+    if (!el || dom.nodeType(el) !== 1 || !dom.get(el, 'getAttribute')) continue;
     // Compared as written: "a " and "a" are different ids in the DOM, and
     // getElementById does not trim. Whitespace inside an id is a separate
     // validity error, not a duplicate.
-    const value = String(el.getAttribute('id') || '');
+    const value = String(dom.getAttribute(el, 'id') || '');
     if (!value) continue;
 
     applicableCount += 1;

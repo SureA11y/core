@@ -67,6 +67,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -119,7 +120,7 @@ function runInPage(ctx) {
       };
     }
 
-    const title = trim(el.getAttribute && el.getAttribute('title'));
+    const title = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
     if (title) {
       flags.push('title-used');
       return { present: true, value: title, mechanism: 'title', flags };
@@ -136,13 +137,13 @@ function runInPage(ctx) {
     try {
       if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
       if (queryAll) return Array.from(queryAll('video') || []);
-      return safeRoot && safeRoot.querySelectorAll
-        ? Array.from(safeRoot.querySelectorAll('video'))
+      return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+        ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
         : [];
     } catch {
       try {
-        return safeRoot && safeRoot.querySelectorAll
-          ? Array.from(safeRoot.querySelectorAll('video'))
+        return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+          ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
           : [];
       } catch {
         return [];
@@ -161,24 +162,24 @@ function runInPage(ctx) {
   // <figcaption>'s text, or '' when the video shares the figure with other
   // content, or the caption is empty.
   function soleFigureCaption(el) {
-    const figure = el.parentElement;
-    if (!figure || String(figure.localName) !== 'figure') return '';
+    const figure = dom.parentElement(el);
+    if (!figure || String(dom.localName(figure)) !== 'figure') return '';
     let caption = null;
-    for (let c = figure.firstElementChild; c; c = c.nextElementSibling) {
+    for (let c = dom.firstElementChild(figure); c; c = dom.nextElementSibling(c)) {
       if (c === el) continue;
-      if (String(c.localName) === 'figcaption' && !caption) caption = c;
+      if (String(dom.localName(c)) === 'figcaption' && !caption) caption = c;
       else return '';
     }
-    for (let n = figure.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === 3 && trim(n.nodeValue)) return '';
+    for (let n = dom.firstChild(figure); n; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) === 3 && trim(dom.nodeValue(n))) return '';
     }
-    return caption ? trim(caption.textContent).replace(/\s+/g, ' ') : '';
+    return caption ? trim(dom.textContent(caption)).replace(/\s+/g, ' ') : '';
   }
 
   for (const el of videos) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const poster = trim(el.getAttribute('poster'));
+    const poster = trim(dom.getAttribute(el, 'poster'));
     if (!poster) continue; // not applicable: no poster image
 
     // Eligibility: only elements exposed to AT (with helper exceptions)
@@ -194,7 +195,7 @@ function runInPage(ctx) {
     }
 
     // Role presentation/none excluded ONLY if not focusable (mirrors img behavior)
-    const role = trim(el.getAttribute('role')).toLowerCase();
+    const role = trim(dom.getAttribute(el, 'role')).toLowerCase();
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -207,7 +208,7 @@ function runInPage(ctx) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }

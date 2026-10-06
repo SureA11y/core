@@ -44,6 +44,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -54,8 +55,8 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('tabindex') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'tabindex') || '').trim();
     if (!raw) continue;
     const n = Number(raw);
     if (!Number.isInteger(n)) continue;

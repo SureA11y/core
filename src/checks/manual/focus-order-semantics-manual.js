@@ -68,6 +68,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
@@ -112,13 +113,13 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const tabindexAttr = el.getAttribute('tabindex');
+    const tabindexAttr = dom.getAttribute(el, 'tabindex');
     const tabindex = Number.parseInt(tabindexAttr, 10);
     if (!Number.isFinite(tabindex) || tabindex < 0) continue;
 
-    const role = (el.getAttribute('role') || '').trim().toLowerCase();
+    const role = (dom.getAttribute(el, 'role') || '').trim().toLowerCase();
     if (!role) continue;
 
     applicableCount += 1;
@@ -126,7 +127,9 @@ function runInPage(ctx) {
     if (!NON_INTERACTIVE_ROLES.has(role)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

@@ -71,6 +71,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -96,10 +97,10 @@ function runInPage(ctx) {
     try {
       let cur = el;
       let guard = 0;
-      while (cur && cur.nodeType === 1 && guard++ < 100) {
-        const parent = cur.parentNode;
-        if (!parent || parent.nodeType !== 1) return false;
-        if (parent.shadowRoot && cur.assignedSlot == null) return true;
+      while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
+        const parent = dom.parentNode(cur);
+        if (!parent || dom.nodeType(parent) !== 1) return false;
+        if (dom.shadowRoot(parent) && dom.assignedSlot(cur) == null) return true;
         cur = parent;
       }
       return false;
@@ -123,21 +124,21 @@ function runInPage(ctx) {
   function resourceKey(el) {
     let raw;
     try {
-      raw = el.getAttribute('src');
+      raw = dom.getAttribute(el, 'src');
     } catch {
       return null;
     }
     if (raw == null || !String(raw).trim()) return null;
 
-    const doc = (ctx && ctx.document) || (el.ownerDocument ? el.ownerDocument : null);
-    const base = doc && doc.baseURI ? doc.baseURI : undefined;
+    const doc = (ctx && ctx.document) || (dom.ownerDocument(el) ? dom.ownerDocument(el) : null);
+    const base = doc && dom.baseURI(doc) ? dom.baseURI(doc) : undefined;
     try {
       const u = new URL(String(raw).trim(), base);
       let pathname = u.pathname;
       if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
         pathname = pathname.slice(0, -1);
       }
-      return u.protocol + '//' + u.host + pathname + u.search;
+      return u.protocol + '//' + dom.host(u) + pathname + u.search;
     } catch {
       return null;
     }
@@ -146,7 +147,7 @@ function runInPage(ctx) {
   const groups = new Map();
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
     if (!inAccessibilityTree(el)) continue;
 
     const name = normalizedName(el);
@@ -177,7 +178,7 @@ function runInPage(ctx) {
 
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
-      const tag = el.tagName.toLowerCase();
+      const tag = dom.tagName(el).toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:

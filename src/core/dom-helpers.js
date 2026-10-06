@@ -31,6 +31,7 @@
  * F) selector/snippet: buildSelector/buildSimpleSelector/getOuterHtmlSnippet (existing)
  */
 
+const { createSafeDom } = require('./safe-dom');
 const { createContrastHelpers } = require('./contrast-helpers');
 const { createAriaHelpers } = require('./aria-helpers');
 
@@ -67,6 +68,7 @@ function normalizeSelectorList(value) {
  * that matched no element, so a run can say so on its result.
  */
 function resolveContextRoots(document, contextSelector) {
+  const dom = createSafeDom();
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
         const list = contextSelector
@@ -79,7 +81,8 @@ function resolveContextRoots(document, contextSelector) {
       : null;
 
   if (!ctxSelector) {
-    const whole = document.documentElement || document.body || document.querySelector('html');
+    const whole =
+      dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
   }
 
@@ -90,7 +93,7 @@ function resolveContextRoots(document, contextSelector) {
   for (const sel of selectorList) {
     let matches;
     try {
-      matches = document.querySelectorAll(sel);
+      matches = dom.querySelectorAll(document, sel);
     } catch {
       const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
       err.code = 'INVALID_CONTEXT_SELECTOR';
@@ -110,6 +113,7 @@ function resolveContextRoots(document, contextSelector) {
 }
 
 function createDomHelpers(opts) {
+  const dom = createSafeDom();
   // <generated:language-subtags>
   const LANGUAGE_SUBTAGS =
     'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
@@ -135,7 +139,7 @@ function createDomHelpers(opts) {
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
-  const realmWindow = window || (document && document.defaultView) || null;
+  const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
   // existing call site, including every test, passes one) or an array of
   // elements (multi-region contextSelector support, dom-runner.js). Every
@@ -316,7 +320,7 @@ function createDomHelpers(opts) {
   const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   // --- eligibility utilities ---
-  const isElement = (n) => !!n && n.nodeType === 1;
+  const isElement = (n) => !!n && dom.nodeType(n) === 1;
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -342,7 +346,7 @@ function createDomHelpers(opts) {
     let cs;
     try {
       const w = realmWindow || window;
-      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && el.style) || {};
+      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && dom.get(el, 'style')) || {};
     } catch {
       cs = {};
     }
@@ -368,7 +372,7 @@ function createDomHelpers(opts) {
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
-    if (!document || !document.querySelectorAll) return [];
+    if (!document || !dom.get(document, 'querySelectorAll')) return [];
     if (!__openModalDialogsByDoc) {
       __perfInc('modalDialogs.nocache');
     }
@@ -396,7 +400,7 @@ function createDomHelpers(opts) {
     let list = [];
     for (const sel of ['dialog:modal', 'dialog[open][aria-modal="true"]']) {
       try {
-        for (const el of document.querySelectorAll(sel)) {
+        for (const el of dom.querySelectorAll(document, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -429,9 +433,9 @@ function createDomHelpers(opts) {
   // level at a time.
   const composedParent = (n) => {
     if (!n) return null;
-    if (n.assignedSlot) return n.assignedSlot;
-    if (n.parentNode) return n.parentNode;
-    return n.host || null;
+    if (dom.assignedSlot(n)) return dom.assignedSlot(n);
+    if (dom.parentNode(n)) return dom.parentNode(n);
+    return dom.host(n) || null;
   };
   const ancestorsIncludingSelf = (n) => {
     if (!n) return [];
@@ -498,7 +502,7 @@ function createDomHelpers(opts) {
   function getClosestMap(el) {
     try {
       if (!isElement(el)) return null;
-      return el.closest ? el.closest('map') : null;
+      return dom.get(el, 'closest') ? dom.closest(el, 'map') : null;
     } catch {
       return null;
     }
@@ -507,7 +511,7 @@ function createDomHelpers(opts) {
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
 
-    const tag = (node.tagName || '').toLowerCase();
+    const tag = (dom.tagName(node) || '').toLowerCase();
     const isArea = tag === 'area';
     const mapEl = isArea ? getClosestMap(node) : null;
 
@@ -523,7 +527,7 @@ function createDomHelpers(opts) {
       // of the <img>+<map> pairing does.
       if (isArea && (a === node || a === mapEl)) continue;
 
-      if (a.hasAttribute && a.hasAttribute('inert')) return true;
+      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -532,7 +536,7 @@ function createDomHelpers(opts) {
 
   const getAttr = (el, name) => {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -573,7 +577,7 @@ function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
     } else {
       const flags = [];
-      const disabled = !!(el.matches && el.matches(':disabled'));
+      const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
       if (disabled) {
         result = { focusable: false, tabbable: false, mechanism: 'disabled', flags: ['disabled'] };
       } else {
@@ -776,7 +780,7 @@ function createDomHelpers(opts) {
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
     } else {
-      const tag = lower(el.tagName);
+      const tag = lower(dom.tagName(el));
       if (tag === 'header' || tag === 'footer') {
         if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
           role = tag === 'header' ? 'banner' : 'contentinfo';
@@ -810,7 +814,7 @@ function createDomHelpers(opts) {
     __perfInc('idLookup.doc.miss');
     let el = null;
     try {
-      if (document && document.getElementById) el = document.getElementById(key);
+      if (document && dom.get(document, 'getElementById')) el = dom.getElementById(document, key);
     } catch {
       el = null;
     }
@@ -843,9 +847,9 @@ function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !r.querySelector) continue;
+      if (!r || !dom.get(r, 'querySelector')) continue;
       try {
-        el = r.querySelector('#' + key);
+        el = dom.querySelector(r, '#' + key);
       } catch {
         el = null;
       }
@@ -872,12 +876,12 @@ function createDomHelpers(opts) {
       const chain = ancestorsIncludingSelf(node);
       for (let i = 1; i < chain.length; i++) {
         const a = chain[i];
-        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
-        if (a.hasAttribute('open')) continue;
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
+        if (dom.hasAttribute(a, 'open')) continue;
         const child = chain[i - 1];
         const isToggle =
-          (child.localName || '').toLowerCase() === 'summary' &&
-          child.parentNode === a &&
+          (dom.localName(child) || '').toLowerCase() === 'summary' &&
+          dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
         if (!isToggle) return true;
       }
@@ -886,21 +890,22 @@ function createDomHelpers(opts) {
   }
 
   function firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if ((dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function isPlatformFocusable(el) {
     if (!isElement(el) || hasBlockingInert(el)) return false;
-    const tag = (el.tagName || '').toLowerCase();
-    const type = (el.getAttribute && (el.getAttribute('type') || '').toLowerCase()) || '';
-    const disabled = !!(el.matches && el.matches(':disabled'));
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const type =
+      (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || '').toLowerCase()) || '';
+    const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -908,15 +913,15 @@ function createDomHelpers(opts) {
       // *used* image map. Without href an <area> is not a hyperlink at all
       // per the HTML spec, so it falls through to the generic tabindex
       // check below, same as any other non-interactive element.
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) {
         const map = getClosestMap(el);
         if (map) {
           const rawName = (
-            map.getAttribute &&
-            (map.getAttribute('name') || map.getAttribute('id') || '')
+            dom.get(map, 'getAttribute') &&
+            (dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id') || '')
           ).trim();
-          if (rawName && document && document.querySelector) {
+          if (rawName && document && dom.get(document, 'querySelector')) {
             const esc = __cssEscapeSafe;
             const n = esc(rawName);
 
@@ -925,7 +930,7 @@ function createDomHelpers(opts) {
 
             for (const sel of sels) {
               try {
-                if (document.querySelector(sel)) return true;
+                if (dom.querySelector(document, sel)) return true;
               } catch {}
             }
           }
@@ -942,16 +947,20 @@ function createDomHelpers(opts) {
     // without controls is focusable in Firefox only, and <embed>/<object>
     // depend on the type of what they embed, so neither is counted.
     if (tag === 'iframe' || tag === 'frame') return true;
-    if ((tag === 'audio' || tag === 'video') && el.hasAttribute && el.hasAttribute('controls'))
+    if (
+      (tag === 'audio' || tag === 'video') &&
+      dom.get(el, 'hasAttribute') &&
+      dom.hasAttribute(el, 'controls')
+    )
       return true;
-    if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'contenteditable')) {
       // contenteditable="false" explicitly disables the editing host
       // and does not by itself add the element to the tab order.
       const ceVal = lower(getAttr(el, 'contenteditable'));
       if (ceVal !== 'false') return true;
     }
 
-    const tabindex = el.getAttribute && el.getAttribute('tabindex');
+    const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
     if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
       return true;
 
@@ -961,7 +970,7 @@ function createDomHelpers(opts) {
   function getIdRefReverseIndex(scopeObj) {
     // Reverse index: id token -> referencing elements (aria-labelledby / aria-describedby)
     // Built once per scope per run. Deterministic: querySelectorAll order is document order.
-    if (!scopeObj || !scopeObj.querySelectorAll) return null;
+    if (!scopeObj || !dom.get(scopeObj, 'querySelectorAll')) return null;
 
     if (!__idRefReverseIndexByScope) {
       __perfInc('idrefReverseIndex.nocache');
@@ -984,7 +993,7 @@ function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(scopeObj.querySelectorAll('[aria-labelledby],[aria-describedby]'));
+      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
     } catch {
       refs = [];
     }
@@ -1036,7 +1045,7 @@ function createDomHelpers(opts) {
 
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
-    const id = node.getAttribute && node.getAttribute('id');
+    const id = dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id');
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
@@ -1067,8 +1076,8 @@ function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(document.querySelectorAll('[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(document.querySelectorAll('[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(document, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(document, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -1104,7 +1113,7 @@ function createDomHelpers(opts) {
 
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
-    if (!eff.length || !el || !el.matches) return false;
+    if (!eff.length || !el || !dom.get(el, 'matches')) return false;
 
     const memo = __getExcludedCacheForOpts();
     if (memo) {
@@ -1119,7 +1128,7 @@ function createDomHelpers(opts) {
     let result = false;
     for (let i = 0; i < eff.length; i++) {
       try {
-        if (el.matches(eff[i])) {
+        if (dom.matches(el, eff[i])) {
           result = true;
           break;
         }
@@ -1131,7 +1140,7 @@ function createDomHelpers(opts) {
       }
     }
     if (!result) {
-      const parent = el.parentElement;
+      const parent = dom.parentElement(el);
       result = parent ? isExcluded(parent) : false;
     }
 
@@ -1163,16 +1172,16 @@ function createDomHelpers(opts) {
       // self-match every rule using this helper would be blind to an issue
       // asserted directly on <html> (e.g. `<html role="...">`, `[lang]`,
       // any `[aria-*]`).
-      if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
+      if (dom.nodeType(r) === 1 && typeof dom.get(r, 'matches') === 'function' && !seen.has(r)) {
         try {
-          if (r.matches(sel)) {
+          if (dom.matches(r, sel)) {
             seen.add(r);
             out.push(r);
           }
         } catch {}
       }
       try {
-        const list = r.querySelectorAll(sel);
+        const list = dom.querySelectorAll(r, sel);
         for (const el of list) {
           if (el && !seen.has(el)) {
             seen.add(el);
@@ -1197,10 +1206,10 @@ function createDomHelpers(opts) {
     const visitedRoots = new Set();
 
     const pushMatches = (scope) => {
-      if (!scope || !scope.querySelectorAll) return;
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return;
       let els;
       try {
-        els = scope.querySelectorAll(sel);
+        els = dom.querySelectorAll(scope, sel);
       } catch {
         els = [];
       }
@@ -1216,13 +1225,13 @@ function createDomHelpers(opts) {
       // (or the top-level <html> root) matching `sel` directly would
       // otherwise be invisible here too.
       if (
-        scope.nodeType === 1 &&
-        typeof scope.matches === 'function' &&
+        dom.nodeType(scope) === 1 &&
+        typeof dom.get(scope, 'matches') === 'function' &&
         !seen.has(scope) &&
         !isExcluded(scope)
       ) {
         try {
-          if (scope.matches(sel)) {
+          if (dom.matches(scope, sel)) {
             seen.add(scope);
             results.push(scope);
           }
@@ -1231,7 +1240,7 @@ function createDomHelpers(opts) {
     };
 
     const collectShadowRoots = (scope) => {
-      if (!scope || !scope.querySelectorAll) return [];
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
       // IMPORTANT: do not cache when the effective exclude list (global
@@ -1248,15 +1257,15 @@ function createDomHelpers(opts) {
 
           let hosts = [];
           try {
-            hosts = scope.querySelectorAll('*');
+            hosts = dom.querySelectorAll(scope, '*');
           } catch {
             hosts = [];
           }
 
           const roots = [];
           for (const el of hosts) {
-            if (!el || el.nodeType !== 1) continue;
-            const sr = el.shadowRoot;
+            if (!el || dom.nodeType(el) !== 1) continue;
+            const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
@@ -1277,15 +1286,15 @@ function createDomHelpers(opts) {
       // Uncached path (preserves excludeSelectors filtering semantics).
       let hosts;
       try {
-        hosts = scope.querySelectorAll('*');
+        hosts = dom.querySelectorAll(scope, '*');
       } catch {
         hosts = [];
       }
       const roots = [];
       for (const el of hosts) {
-        if (!el || el.nodeType !== 1) continue;
+        if (!el || dom.nodeType(el) !== 1) continue;
         if (isExcluded(el)) continue;
-        const sr = el.shadowRoot;
+        const sr = dom.shadowRoot(el);
         if (sr) roots.push(sr);
       }
       return roots;
@@ -1305,8 +1314,8 @@ function createDomHelpers(opts) {
 
       // querySelectorAll('*') never returns curRoot itself, so a scope
       // that is a shadow host would leave out its own shadow root.
-      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
-        q.push(curRoot.shadowRoot);
+      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !isExcluded(curRoot)) {
+        q.push(dom.shadowRoot(curRoot));
       }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
@@ -1399,7 +1408,7 @@ function createDomHelpers(opts) {
   //   'none'    no doctype
   // Public ids are compared case-insensitively, as HTML's parser does.
   function getDoctypeInfo() {
-    const doctype = document ? document.doctype : null;
+    const doctype = document ? dom.doctype(document) : null;
     if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
     const name = String(doctype.name || '');
     const publicId = String(doctype.publicId || '');
@@ -1422,7 +1431,7 @@ function createDomHelpers(opts) {
   try {
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -1742,13 +1751,13 @@ function createDomHelpers(opts) {
   // contributes one), not just whether one exists.
   function __getLabelElementsForId(id) {
     const key = trim(id);
-    if (!key || !document || !document.querySelectorAll) return [];
+    if (!key || !document || !dom.get(document, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          const forVal = trim(label.getAttribute('for'));
+        for (const label of dom.querySelectorAll(document, 'label[for]')) {
+          const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -1806,7 +1815,7 @@ function createDomHelpers(opts) {
     // either browser's accessibility tree.
     let isLabelable;
     try {
-      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
     } catch {
       isLabelable = false;
     }
@@ -1821,23 +1830,26 @@ function createDomHelpers(opts) {
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = l.getRootNode ? l.getRootNode() : null;
-          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+          const root = dom.get(l, 'getRootNode') ? dom.getRootNode(l) : null;
+          if (root && typeof dom.get(root, 'getElementById') === 'function')
+            target = dom.getElementById(root, id);
         } catch {}
         if (target === el) out.push(l);
       }
     }
     try {
-      const wrap = el.closest ? el.closest('label') : null;
+      const wrap = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
       if (
         wrap &&
         isElement(wrap) &&
-        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
         let firstControl = null;
         try {
-          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrap, 'querySelector')
+            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -1851,7 +1863,7 @@ function createDomHelpers(opts) {
     if (out.length > 1) {
       try {
         out.sort((a, b) => {
-          const bits = a.compareDocumentPosition(b);
+          const bits = dom.compareDocumentPosition(a, b);
           if (bits & 4) return -1;
           if (bits & 2) return 1;
           return 0;
@@ -1869,16 +1881,18 @@ function createDomHelpers(opts) {
   function getLabelControl(label) {
     if (!isElement(label)) return null;
     try {
-      if (label.hasAttribute('for')) {
+      if (dom.hasAttribute(label, 'for')) {
         const id = getAttr(label, 'for');
         if (!id) return null;
-        const root = label.getRootNode ? label.getRootNode() : null;
+        const root = dom.get(label, 'getRootNode') ? dom.getRootNode(label) : null;
         const scope =
-          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
-        const el = scope ? scope.getElementById(id) : null;
-        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(label);
+        const el = scope ? dom.getElementById(scope, id) : null;
+        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
       }
-      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
     } catch {
       return null;
     }
@@ -2006,22 +2020,22 @@ function createDomHelpers(opts) {
   // probe last in <body>: a parent whose first or last element child has
   // changed since is indexed again.
   function __siblingInfo(node) {
-    const parent = node && node.parentElement;
+    const parent = node && dom.parentElement(node);
     if (!parent) return null;
-    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
     const build = () => {
       const info = new Map();
       const tagCounts = new Map();
       let index = 0;
-      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+      for (let c = dom.firstElementChild(parent); c; c = dom.nextElementSibling(c)) {
         const tag = tagOf(c);
         const ofType = (tagCounts.get(tag) || 0) + 1;
         tagCounts.set(tag, ofType);
         info.set(c, { index: index++, ofType, tag });
       }
       return {
-        first: parent.firstElementChild,
-        last: parent.lastElementChild,
+        first: dom.firstElementChild(parent),
+        last: dom.lastElementChild(parent),
         info,
         tagCounts
       };
@@ -2032,8 +2046,8 @@ function createDomHelpers(opts) {
     } catch {}
     if (
       !entry ||
-      entry.first !== parent.firstElementChild ||
-      entry.last !== parent.lastElementChild ||
+      entry.first !== dom.firstElementChild(parent) ||
+      entry.last !== dom.lastElementChild(parent) ||
       !entry.info.has(node)
     ) {
       entry = build();
@@ -2063,20 +2077,20 @@ function createDomHelpers(opts) {
       // changes with any edit anywhere, and the snippet is part of a
       // finding's identity (baselines, SARIF). What a page-level finding is
       // about is the element itself: its start tag.
-      const name = String(el.localName || '').toLowerCase();
+      const name = String(dom.localName(el) || '').toLowerCase();
       const isPage =
         (name === 'html' || name === 'head' || name === 'body') &&
-        el.ownerDocument &&
-        el.parentNode &&
-        (el === el.ownerDocument.documentElement ||
-          el.parentNode === el.ownerDocument.documentElement);
+        dom.ownerDocument(el) &&
+        dom.parentNode(el) &&
+        (el === dom.documentElement(dom.ownerDocument(el)) ||
+          dom.parentNode(el) === dom.documentElement(dom.ownerDocument(el)));
       let html;
       if (isPage) {
-        const shallow = el.cloneNode(false).outerHTML || '';
+        const shallow = dom.outerHTML(dom.cloneNode(el, false)) || '';
         const end = shallow.lastIndexOf('</');
         html = end > 0 ? shallow.slice(0, end) : shallow;
       } else {
-        html = el.outerHTML || '';
+        html = dom.outerHTML(el) || '';
       }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
@@ -2128,7 +2142,7 @@ function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
-    const __tag0 = (node.tagName || '').toLowerCase();
+    const __tag0 = (dom.tagName(node) || '').toLowerCase();
     const __isAreaNode = __tag0 === 'area';
     const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
@@ -2145,8 +2159,8 @@ function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerAcc.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -2157,7 +2171,9 @@ function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -2194,7 +2210,9 @@ function createDomHelpers(opts) {
       // Without it, an `until-found` panel would be excluded even from
       // rules checking its own attributes.
       if (struct === 'hiddenAttr' && a === node) {
-        const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
+        const hiddenVal = String(
+          (dom.get(a, 'getAttribute') && dom.getAttribute(a, 'hidden')) || ''
+        )
           .trim()
           .toLowerCase();
         if (hiddenVal === 'until-found') struct = null;
@@ -2227,7 +2245,7 @@ function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (node.contains && node.contains(d))) {
+          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
             reachable = true;
             break;
           }
@@ -2247,7 +2265,7 @@ function createDomHelpers(opts) {
       // <area> is a non-rendered element; some DOMs report display:none for it.
       // Don’t treat the *area itself* as ineligible based on computed style.
       if (a === node) {
-        const tn = (a.tagName || '').toLowerCase();
+        const tn = (dom.tagName(a) || '').toLowerCase();
         if (tn === 'area') continue;
       }
 
@@ -2321,7 +2339,7 @@ function createDomHelpers(opts) {
     // walking ancestors (which would incorrectly treat visibility like
     // the non-inherited `display` property above).
     {
-      const tn = (node.tagName || '').toLowerCase();
+      const tn = (dom.tagName(node) || '').toLowerCase();
       if (tn !== 'area') {
         const cs = computedStyle(node);
         if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
@@ -2334,7 +2352,7 @@ function createDomHelpers(opts) {
     let ariaHidden = false;
     for (const a of chain) {
       if (!isElement(a)) continue;
-      const v = a.getAttribute && a.getAttribute('aria-hidden');
+      const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') {
         ariaHidden = true;
         break;
@@ -2366,10 +2384,12 @@ function createDomHelpers(opts) {
 
       // Exception: allow aria-hidden override for mechanisms where the engine must
       // still evaluate required labeling/alt checks. Keep this narrowly scoped.
-      const tag = (node.tagName || '').toLowerCase();
+      const tag = (dom.tagName(node) || '').toLowerCase();
       const type =
         tag === 'input'
-          ? (node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || ''
+          ? (dom.get(node, 'getAttribute') &&
+              (dom.getAttribute(node, 'type') || '').toLowerCase()) ||
+            ''
           : '';
 
       // Native form controls are tabbable by default (even without tabindex)
@@ -2497,8 +2517,8 @@ function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerDom.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -2509,7 +2529,9 @@ function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -2855,15 +2877,15 @@ function createDomHelpers(opts) {
 
     if (useGeometry) {
       try {
-        if (node.getClientRects) {
-          const rects = node.getClientRects();
+        if (dom.get(node, 'getClientRects')) {
+          const rects = dom.getClientRects(node);
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
-          const r = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+          const r = dom.get(node, 'getBoundingClientRect') ? dom.getBoundingClientRect(node) : null;
           const w = r && Number.isFinite(r.width) ? r.width : 0;
           const h = r && Number.isFinite(r.height) ? r.height : 0;
 
@@ -3003,7 +3025,7 @@ function createDomHelpers(opts) {
   // an IDREF *target*'s own text alternative (see computeIdRefTargetTextAlternative).
   function __getElementValueLikeName(el) {
     if (!isElement(el)) return '';
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     if (tag === 'img' || tag === 'area') {
       const alt = getAttr(el, 'alt');
@@ -3161,7 +3183,7 @@ function createDomHelpers(opts) {
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
-        const id = trim(el.getAttribute && el.getAttribute('id'));
+        const id = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
         excluded.push({ id: id || null, reasons: elig.reasons.slice(0) });
         continue;
       }
@@ -3208,7 +3230,7 @@ function createDomHelpers(opts) {
     let guardCount = 0;
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -3218,8 +3240,8 @@ function createDomHelpers(opts) {
       guardCount += 1;
       if (guardCount > 5000) return;
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      if (dom.nodeType(node) === 3) {
+        const t = trim(dom.nodeValue(node));
         if (t) parts.push(t);
         return;
       }
@@ -3251,12 +3273,12 @@ function createDomHelpers(opts) {
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) walk(kid);
     }
 
     try {
-      const kids = labelEl.childNodes ? Array.from(labelEl.childNodes) : [];
+      const kids = dom.childNodes(labelEl) ? Array.from(dom.childNodes(labelEl)) : [];
       for (const kid of kids) walk(kid);
     } catch {}
 
@@ -3390,7 +3412,7 @@ function createDomHelpers(opts) {
     // these tags (kept as a direct attribute read here, not a call into
     // getTextAlternativeInfo, since that function itself calls back into
     // this one when alt is absent).
-    const tagForAlt = lower(el.tagName);
+    const tagForAlt = lower(dom.tagName(el));
     const typeForAlt = tagForAlt === 'input' ? lower(getAttr(el, 'type')) : '';
     const isImageLikeForAlt =
       tagForAlt === 'img' ||
@@ -3567,21 +3589,21 @@ function createDomHelpers(opts) {
   // textContent alone misses that, since alt text isn't part of it.
   function __hasMeaningfulCanvasFallbackDescendant(container) {
     try {
-      if (!container || !container.querySelectorAll) return false;
+      if (!container || !dom.get(container, 'querySelectorAll')) return false;
 
-      const imgs = container.querySelectorAll('img[alt]');
+      const imgs = dom.querySelectorAll(container, 'img[alt]');
       for (const img of imgs) {
-        if (trim(img.getAttribute && img.getAttribute('alt'))) return true;
+        if (trim(dom.get(img, 'getAttribute') && dom.getAttribute(img, 'alt'))) return true;
       }
 
-      const areas = container.querySelectorAll('area[alt]');
+      const areas = dom.querySelectorAll(container, 'area[alt]');
       for (const area of areas) {
-        if (trim(area.getAttribute && area.getAttribute('alt'))) return true;
+        if (trim(dom.get(area, 'getAttribute') && dom.getAttribute(area, 'alt'))) return true;
       }
 
-      const named = container.querySelectorAll('[aria-label]');
+      const named = dom.querySelectorAll(container, '[aria-label]');
       for (const n of named) {
-        if (trim(n.getAttribute && n.getAttribute('aria-label'))) return true;
+        if (trim(dom.get(n, 'getAttribute') && dom.getAttribute(n, 'aria-label'))) return true;
       }
 
       return false;
@@ -3746,12 +3768,13 @@ function createDomHelpers(opts) {
   // roots; '' when none is declared.
   function textAlternativeLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -3763,10 +3786,10 @@ function createDomHelpers(opts) {
   }
 
   function textAlternativeFileName(el) {
-    if (!el || typeof el.getAttribute !== 'function') return '';
+    if (!el || typeof dom.get(el, 'getAttribute') !== 'function') return '';
     let src;
     try {
-      src = String(el.getAttribute('src') || '');
+      src = String(dom.getAttribute(el, 'src') || '');
     } catch {
       return '';
     }
@@ -3888,7 +3911,7 @@ function createDomHelpers(opts) {
       };
     }
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
 
     const isImageLike = tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
@@ -3924,7 +3947,7 @@ function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(el.textContent || '');
+      const fallbackText = trim(dom.textContent(el) || '');
       if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
         return {
           present: true,
@@ -3986,13 +4009,16 @@ function createDomHelpers(opts) {
   // (which a <title> does not override: it is not a global ARIA attribute).
   function getSvgTitleChildText(node) {
     try {
-      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
       const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
       if (role === 'none' || role === 'presentation') return '';
-      const kids = node.children ? Array.from(node.children) : [];
+      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
-          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        if (
+          lower(dom.localName(kid)) === 'title' &&
+          dom.namespaceURI(kid) === dom.namespaceURI(node)
+        ) {
+          return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
         }
       }
     } catch {}
@@ -4058,7 +4084,7 @@ function createDomHelpers(opts) {
     ];
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -4072,8 +4098,8 @@ function createDomHelpers(opts) {
         return;
       }
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      if (dom.nodeType(node) === 3) {
+        const t = trim(dom.nodeValue(node));
         if (t) parts.push(t);
         return;
       }
@@ -4099,7 +4125,7 @@ function createDomHelpers(opts) {
       // resolve to unnamed and collapse into one false "not unique" cluster
       // (landmark-unique, dialog/tab/menuitem-name-present, etc.).
       if (opts && opts.includeHidden) {
-        const tag = lower(node.tagName);
+        const tag = lower(dom.tagName(node));
         if (tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'template') return;
       } else {
         let eligible;
@@ -4162,7 +4188,7 @@ function createDomHelpers(opts) {
         // element-specific name mapping, so it's checked here,
         // ahead of alt/title, same relative order getAccessibleNameInfo
         // itself uses for every other labelable control.
-        if (lower(node.tagName) === 'input') {
+        if (lower(dom.tagName(node)) === 'input') {
           try {
             const imageLabels = getAssociatedLabelElements(node);
             if (imageLabels.length) {
@@ -4268,17 +4294,20 @@ function createDomHelpers(opts) {
       // IS distributed into it, that's what's exposed to the accessibility
       // tree, and it lives elsewhere in the light DOM, not as this node's
       // children, so prefer assignedNodes() and fall back to childNodes.
-      if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
+      if (
+        lower(dom.tagName(node)) === 'slot' &&
+        typeof dom.get(node, 'assignedNodes') === 'function'
+      ) {
         let assigned;
         try {
-          assigned = node.assignedNodes({ flatten: true }) || [];
+          assigned = dom.assignedNodes(node, { flatten: true }) || [];
         } catch {
           assigned = [];
         }
         const kids = assigned.length
           ? assigned
-          : node.childNodes
-            ? Array.from(node.childNodes)
+          : dom.childNodes(node)
+            ? Array.from(dom.childNodes(node))
             : [];
         for (const kid of kids) {
           collect(kid, parts);
@@ -4287,7 +4316,7 @@ function createDomHelpers(opts) {
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
         collect(kid, parts);
         if (truncated) break;
@@ -4297,7 +4326,7 @@ function createDomHelpers(opts) {
     const parts = [];
     __nameComputationDepth += 1;
     try {
-      const topKids = el.childNodes ? Array.from(el.childNodes) : [];
+      const topKids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
       for (const kid of topKids) {
         collect(kid, parts);
         if (truncated) break;
@@ -4333,7 +4362,7 @@ function createDomHelpers(opts) {
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
@@ -4596,8 +4625,8 @@ function createDomHelpers(opts) {
       nodes = [];
       const seen = new Set();
       for (const r of roots) {
-        if (!r || !r.querySelectorAll) continue;
-        for (const el of r.querySelectorAll(sel)) {
+        if (!r || !dom.get(r, 'querySelectorAll')) continue;
+        for (const el of dom.querySelectorAll(r, sel)) {
           if (el && !seen.has(el)) {
             seen.add(el);
             nodes.push(el);
@@ -4605,32 +4634,32 @@ function createDomHelpers(opts) {
         }
       }
       if (!nodes.length && !roots.length && document) {
-        nodes = Array.from(document.querySelectorAll(sel));
+        nodes = Array.from(dom.querySelectorAll(document, sel));
       }
     }
 
     const inc = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
     for (const el of nodes) {
-      if (!el || el.nodeType !== 1) continue;
+      if (!el || dom.nodeType(el) !== 1) continue;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
-      const elementId = el.getAttribute('id');
+      const elementId = dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute(a);
+        const v = dom.getAttribute(el, a);
         if (v && v.trim()) inc(testIdCount, a + '=' + v.trim());
       }
 
-      const name = el.getAttribute('name');
+      const name = dom.getAttribute(el, 'name');
       if (name && name.trim() && tag) inc(nameCount, tag + '|' + name.trim());
 
-      const aria = el.getAttribute('aria-label');
+      const aria = dom.getAttribute(el, 'aria-label');
       if (aria && aria.trim() && tag) inc(ariaLabelCount, tag + '|' + aria.trim());
 
-      const role = el.getAttribute('role');
+      const role = dom.getAttribute(el, 'role');
       if (role && role.trim() && aria && aria.trim()) {
         inc(roleAriaLabelCount, role.trim() + '|' + aria.trim());
       }
@@ -4641,9 +4670,9 @@ function createDomHelpers(opts) {
 
   function buildSimpleSelector(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return fallbackTag || 'html';
+      if (!el || dom.nodeType(el) !== 1) return fallbackTag || 'html';
 
-      const tag = (el.tagName || fallbackTag || 'html').toLowerCase();
+      const tag = (dom.tagName(el) || fallbackTag || 'html').toLowerCase();
 
       const cssEscapeIdent = __cssEscapeIdent;
 
@@ -4653,15 +4682,15 @@ function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
-      const elementId = el.getAttribute && el.getAttribute('id');
+      const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute && el.getAttribute(a);
+        const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
         if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
-      const name = el.getAttribute && el.getAttribute('name');
+      const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
       if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
@@ -4714,12 +4743,12 @@ function createDomHelpers(opts) {
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
     try {
-      if (!el || el.nodeType !== 1) return 'html';
+      if (!el || dom.nodeType(el) !== 1) return 'html';
 
       const cssEscape = __cssEscapeIdent;
 
       const idx = getUniqIndex();
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       // NOTE: every anchor builder below keys its uniqueness-index lookup on
       // the *trimmed* attribute value (matching how the index itself was
@@ -4741,7 +4770,7 @@ function createDomHelpers(opts) {
       // `querySelector` (this comparisons project's own tooling included)
       // silently gets the *wrong* element instead of an error.
       const uniqueIdSel = () => {
-        const elementId = el.getAttribute('id');
+        const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
@@ -4750,7 +4779,7 @@ function createDomHelpers(opts) {
 
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-          const v = el.getAttribute(a);
+          const v = dom.getAttribute(el, a);
           if (!v || !v.trim()) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
@@ -4761,7 +4790,7 @@ function createDomHelpers(opts) {
       };
 
       const uniqueNameSel = () => {
-        const v = el.getAttribute('name');
+        const v = dom.getAttribute(el, 'name');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
@@ -4770,7 +4799,7 @@ function createDomHelpers(opts) {
       };
 
       const uniqueAriaSel = () => {
-        const v = el.getAttribute('aria-label');
+        const v = dom.getAttribute(el, 'aria-label');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
@@ -4779,8 +4808,8 @@ function createDomHelpers(opts) {
       };
 
       const uniqueRoleAriaSel = () => {
-        const role = el.getAttribute('role');
-        const aria = el.getAttribute('aria-label');
+        const role = dom.getAttribute(el, 'role');
+        const aria = dom.getAttribute(el, 'aria-label');
         if (!role || !role.trim() || !aria || !aria.trim()) return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
@@ -4803,8 +4832,8 @@ function createDomHelpers(opts) {
       const parts = [];
 
       function nthOfType(node) {
-        const t = (node.tagName || '').toLowerCase() || '*';
-        const p = node.parentElement;
+        const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        const p = dom.parentElement(node);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
@@ -4845,19 +4874,19 @@ function createDomHelpers(opts) {
       // uniqueness re-check.
       const stopAtMatchedRoot = roots.length <= 1;
 
-      while (node && node.nodeType === 1 && safety++ < 20) {
+      while (node && dom.nodeType(node) === 1 && safety++ < 20) {
         let anchor = null;
 
         if (node !== el) {
-          const t = (node.tagName || '').toLowerCase();
+          const t = (dom.tagName(node) || '').toLowerCase();
           // Same trimmed-key-lookup / raw-value-embed split as the direct
           // anchor builders above -- see this function's header comment.
-          const id = node.getAttribute('id');
+          const id = dom.getAttribute(node, 'id');
           if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
             anchor = '#' + cssEscape(id);
           if (!anchor) {
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-              const v = node.getAttribute(a);
+              const v = dom.getAttribute(node, a);
               if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
                 anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                 break;
@@ -4865,7 +4894,7 @@ function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const name = node.getAttribute('name');
+            const name = dom.getAttribute(node, 'name');
             if (
               name &&
               name.trim() &&
@@ -4877,7 +4906,7 @@ function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const aria = node.getAttribute('aria-label');
+            const aria = dom.getAttribute(node, 'aria-label');
             if (
               aria &&
               aria.trim() &&
@@ -4899,8 +4928,8 @@ function createDomHelpers(opts) {
           parts.unshift(nthOfType(node));
         }
 
-        if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
-        node = node.parentElement;
+        if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) break;
+        node = dom.parentElement(node);
       }
 
       const candidate = parts.join(' > ') || tag || 'html';
@@ -4929,7 +4958,8 @@ function createDomHelpers(opts) {
       // flat, unidentified siblings (e.g. hundreds of unlabeled
       // <img>s), while contributing no realistic additional safety.
       try {
-        if (el && typeof el.matches === 'function' && el.matches(candidate)) return candidate;
+        if (el && typeof dom.get(el, 'matches') === 'function' && dom.matches(el, candidate))
+          return candidate;
       } catch {}
 
       return buildSimpleSelector(el, tag || 'html');
@@ -4974,9 +5004,9 @@ function createDomHelpers(opts) {
       // The only unbounded walk here. A consistent tree ends it at the
       // root; this bound covers a parent chain that cycles, and sits far
       // above any depth a real document reaches.
-      while (node && node.parentElement) {
+      while (node && dom.parentElement(node)) {
         if (guard++ >= 10000) return null;
-        const parent = node.parentElement;
+        const parent = dom.parentElement(node);
         // Counted by sibling links, not parent.children: in jsdom that
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
@@ -4985,7 +5015,12 @@ function createDomHelpers(opts) {
         let idx = info ? info.index : -1;
         if (idx < 0) {
           idx = 0;
-          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+          for (
+            let sib = dom.previousElementSibling(node);
+            sib;
+            sib = dom.previousElementSibling(sib)
+          )
+            idx++;
         }
         path.unshift(idx);
         node = parent;
@@ -4993,7 +5028,7 @@ function createDomHelpers(opts) {
       // The path is from documentElement down. An element in a shadow tree
       // is not under it: its path would count from the shadow root's first
       // element and name an element in the document instead.
-      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
+      if (node && dom.parentNode(node) && dom.nodeType(dom.parentNode(node)) === 11) return null;
     } catch {
       return null;
     }
@@ -5006,13 +5041,14 @@ function createDomHelpers(opts) {
   // element in the document, or when a host gets no selector.
   function buildShadowHostSelectors(el) {
     try {
-      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
+        return null;
       const hosts = [];
-      let root = el.getRootNode();
+      let root = dom.getRootNode(el);
       let guard = 0;
-      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
-        hosts.unshift(root.host);
-        root = root.host.getRootNode();
+      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+        hosts.unshift(dom.host(root));
+        root = dom.getRootNode(dom.host(root));
       }
       if (!hosts.length) return null;
       const out = [];
@@ -5047,7 +5083,7 @@ function createDomHelpers(opts) {
       selector &&
       typeof selector === 'string' &&
       document &&
-      typeof document.querySelector === 'function'
+      typeof dom.get(document, 'querySelector') === 'function'
     ) {
       // A rule that reports its element never lands here. Counted so the
       // cost of re-finding one shows up in perfStats, not just as a slow scan.
@@ -5055,7 +5091,7 @@ function createDomHelpers(opts) {
 
       let el;
       try {
-        el = document.querySelector(selector);
+        el = dom.querySelector(document, selector);
       } catch {
         el = null;
       }
@@ -5083,10 +5119,13 @@ function createDomHelpers(opts) {
     // for those.
     try {
       if (!isElement(el)) return false;
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'textarea') return true;
       if (tag !== 'input') return false;
-      const type = ((el.getAttribute && (el.getAttribute('type') || 'text')) || 'text')
+      const type = (
+        (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || 'text')) ||
+        'text'
+      )
         .toLowerCase()
         .trim();
       const t = type || 'text';
@@ -5133,9 +5172,15 @@ function createDomHelpers(opts) {
   // visually hidden (clipped) label is rendered, so it counts too.
   function isLabelHiddenApartFromControl(lab, control) {
     const controlChain = new Set();
-    for (let n = control; n; n = n.parentElement) controlChain.add(n);
-    for (let n = lab; n && !controlChain.has(n); n = n.parentElement) {
-      if (n.hasAttribute('hidden')) return true;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let n = control, i = 0; n && i < 100000; n = dom.parentElement(n), i++)
+      controlChain.add(n);
+    for (
+      let n = lab, i = 0;
+      n && i < 100000 && !controlChain.has(n);
+      n = dom.parentElement(n), i++
+    ) {
+      if (dom.hasAttribute(n, 'hidden')) return true;
       if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
       if (computedStyle(n).display === 'none') return true;
     }
@@ -5236,8 +5281,9 @@ function createDomHelpers(opts) {
   function getNativeHostNameInfo(el, _ctx, opts) {
     const none = { present: false, value: '', mechanism: 'none' };
     if (!isElement(el)) return none;
-    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
-    const tag = lower(el.localName || el.tagName);
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return none;
+    const tag = lower(dom.localName(el) || dom.tagName(el));
 
     try {
       const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
@@ -5250,9 +5296,9 @@ function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = el.children ? Array.from(el.children) : [];
+      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === childTag) return kid;
+        if (lower(dom.localName(kid)) === childTag) return kid;
       }
       return null;
     };
@@ -5406,7 +5452,7 @@ function createDomHelpers(opts) {
     // so we must be able to recover the stable realm window to share caches.
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -5466,7 +5512,7 @@ function createDomHelpers(opts) {
 
   function isWholeDocumentScope() {
     if (fragment) return false;
-    return roots.includes(document.documentElement);
+    return roots.includes(dom.documentElement(document));
   }
 
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
@@ -5492,6 +5538,10 @@ function createDomHelpers(opts) {
   }
 
   return {
+    // DOM reads a page's named form controls and images can't redirect
+    // (src/core/safe-dom.js): rules read the DOM through these.
+    dom,
+
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
 

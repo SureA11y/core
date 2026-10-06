@@ -69,6 +69,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -121,20 +122,20 @@ function runInPage(ctx) {
   function getNodeText(el) {
     try {
       if (!el) return '';
-      return el.textContent || '';
+      return dom.textContent(el) || '';
     } catch {
       return '';
     }
   }
 
   function isElement(el) {
-    return !!(el && el.nodeType === 1);
+    return !!(el && dom.nodeType(el) === 1);
   }
 
   const __eligCache = new WeakMap();
 
   function getEligibility(node) {
-    if (!node || node.nodeType !== 1)
+    if (!node || dom.nodeType(node) !== 1)
       return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
     const cached = __eligCache.get(node);
     if (cached) return cached;
@@ -176,10 +177,10 @@ function runInPage(ctx) {
 
   function nodeRef(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
-      const elementId = el.getAttribute && el.getAttribute('id');
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
       if (elementId) return { type: 'id', value: String(elementId) };
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
       return { type: 'tag', value: tag };
     } catch {
       return null;
@@ -215,16 +216,16 @@ function runInPage(ctx) {
     }
 
     // 2) In-container transcript heading + substantial visible text
-    const parent = mediaEl.parentElement;
+    const parent = dom.parentElement(mediaEl);
     if (isElement(parent) && isEligible(parent)) {
-      const headings = parent.querySelectorAll('h1,h2,h3,h4,h5,h6');
+      const headings = dom.querySelectorAll(parent, 'h1,h2,h3,h4,h5,h6');
       for (const h of headings) {
         if (!isEligible(h)) continue;
         const hText = getNodeText(h);
         if (!containsTranscriptToken(hText)) continue;
 
         // Look at a small set of following siblings for substantial text (and ensure visibility).
-        let sib = h.nextElementSibling;
+        let sib = dom.nextElementSibling(h);
         let steps = 0;
         while (isElement(sib) && steps < 4) {
           if (isEligible(sib)) {
@@ -239,7 +240,7 @@ function runInPage(ctx) {
               return evidence;
             }
           }
-          sib = sib.nextElementSibling;
+          sib = dom.nextElementSibling(sib);
           steps += 1;
         }
       }
@@ -249,7 +250,7 @@ function runInPage(ctx) {
     // - Same-document anchors can be verified (strong).
     // - Cross-document links are unverified (weak).
     if (isElement(parent) && isEligible(parent)) {
-      const links = parent.querySelectorAll('a[href]');
+      const links = dom.querySelectorAll(parent, 'a[href]');
       for (const a of links) {
         if (!isEligible(a)) continue;
 
@@ -259,7 +260,7 @@ function runInPage(ctx) {
         const linkName = nameInfo && nameInfo.value ? nameInfo.value : getNodeText(a);
         if (!containsTranscriptToken(linkName)) continue;
 
-        const href = a.getAttribute('href') || '';
+        const href = dom.getAttribute(a, 'href') || '';
         evidence.transcriptLinkHref = href;
         evidence.transcriptNodeSelector = nodeRef(a);
 
@@ -267,14 +268,14 @@ function runInPage(ctx) {
         if (href.startsWith('#')) {
           const targetId = href.slice(1);
           const target = targetId
-            ? safeRoot.getElementById
-              ? safeRoot.getElementById(targetId)
-              : document.getElementById(targetId)
+            ? dom.get(safeRoot, 'getElementById')
+              ? dom.getElementById(safeRoot, targetId)
+              : dom.getElementById(document, targetId)
             : null;
 
           if (isElement(target) && isEligible(target)) {
             // Find a transcript heading in the target, and ensure there is substantial text in the target subtree.
-            const targetHeadings = target.querySelectorAll('h1,h2,h3,h4,h5,h6');
+            const targetHeadings = dom.querySelectorAll(target, 'h1,h2,h3,h4,h5,h6');
             let hasTranscriptHeading = false;
             for (const th of targetHeadings) {
               if (!isEligible(th)) continue;
@@ -331,28 +332,28 @@ function runInPage(ctx) {
 
   function hiddenByBrowserStylesheet(el) {
     return (
-      String(el.tagName || '').toLowerCase() === 'audio' &&
-      !(el.hasAttribute && el.hasAttribute('controls'))
+      String(dom.tagName(el) || '').toLowerCase() === 'audio' &&
+      !(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'controls'))
     );
   }
 
   // The eligibility that decides whether the media element is in scope.
   function getMediaEligibility(el) {
     if (!hiddenByBrowserStylesheet(el)) return getEligibility(el);
-    if (el.hasAttribute('hidden')) {
+    if (dom.hasAttribute(el, 'hidden')) {
       return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
     }
     if (
-      String(el.getAttribute('aria-hidden') || '')
+      String(dom.getAttribute(el, 'aria-hidden') || '')
         .trim()
         .toLowerCase() === 'true'
     ) {
       return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
     }
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     if (!parent) {
-      const rootNode = el.getRootNode ? el.getRootNode() : null;
-      parent = rootNode && rootNode.host ? rootNode.host : null;
+      const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      parent = rootNode && dom.host(rootNode) ? dom.host(rootNode) : null;
     }
     return parent ? getEligibility(parent) : getEligibility(el);
   }
@@ -378,7 +379,7 @@ function runInPage(ctx) {
       __evidenceCache.set(el, evidence);
     }
 
-    const mediaTag = (el.tagName || '').toLowerCase();
+    const mediaTag = (dom.tagName(el) || '').toLowerCase();
 
     if (evidence.strength === 'none') {
       const baseOccurrence = {

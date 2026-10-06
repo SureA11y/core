@@ -74,6 +74,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
@@ -85,13 +86,15 @@ function runInPage(ctx) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -116,11 +119,12 @@ function runInPage(ctx) {
 
   function textPieces(el) {
     const pieces = [];
-    const doc = el.ownerDocument;
-    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    const doc = dom.ownerDocument(el);
+    const walker = dom.createTreeWalker(doc, el, 4);
     let node = walker.nextNode();
     while (node) {
-      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
+        pieces.push(dom.parentElement(node));
       node = walker.nextNode();
     }
     return pieces;
@@ -140,12 +144,12 @@ function runInPage(ctx) {
   }
 
   function isCandidate(el) {
-    const tag = (el.tagName || '').toLowerCase();
-    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    if (dom.get(el, 'closest') && dom.closest(el, OWN_ROLE_ANCESTORS)) return false;
     if (tag === 'p') return true;
     if (tag !== 'div') return false;
-    if (trim(el.getAttribute('role'))) return false;
-    return !el.querySelector(NOT_INLINE);
+    if (trim(dom.getAttribute(el, 'role'))) return false;
+    return !dom.querySelector(el, NOT_INLINE);
   }
 
   const nodes = helpers.queryAllSmart
@@ -156,10 +160,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    const text = trim(el.textContent || '');
+    const text = trim(dom.textContent(el) || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
@@ -167,9 +171,11 @@ function runInPage(ctx) {
     const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
-    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
+    const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = isParagraph
       ? {

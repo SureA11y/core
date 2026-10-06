@@ -86,6 +86,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -250,18 +251,18 @@ function runInPage(ctx) {
   }
 
   function matchesSafe(el, selector) {
-    if (!el || typeof el.matches !== 'function' || !selector) return false;
+    if (!el || typeof dom.get(el, 'matches') !== 'function' || !selector) return false;
     try {
-      return el.matches(selector);
+      return dom.matches(el, selector);
     } catch {
       return false; // selector this engine cannot parse, skip rather than guess
     }
   }
 
   function closestSafe(el, selector) {
-    if (!el || typeof el.closest !== 'function' || !selector) return false;
+    if (!el || typeof dom.get(el, 'closest') !== 'function' || !selector) return false;
     try {
-      return !!el.closest(selector);
+      return !!dom.closest(el, selector);
     } catch {
       return false;
     }
@@ -357,7 +358,7 @@ function runInPage(ctx) {
 
   let sheetCount = 0;
   try {
-    const sheets = document.styleSheets || [];
+    const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
       let rules = null;
       try {
@@ -417,7 +418,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of candidates) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isTabbable(el)) continue;
     if (!isRendered(el)) continue;
 

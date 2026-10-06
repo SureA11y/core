@@ -52,6 +52,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64,8 +65,8 @@ function runInPage(ctx) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -153,7 +154,7 @@ function runInPage(ctx) {
           : t === 'dialog' || t === 'alertdialog';
       if (concrete) return t;
     }
-    return String(el.tagName || '').toLowerCase() === 'dialog' ? 'dialog' : '';
+    return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
 
   for (const el of nodes) {

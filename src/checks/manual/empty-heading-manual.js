@@ -60,6 +60,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -69,7 +70,7 @@ function runInPage(ctx) {
   }
 
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
+    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
     if (!raw) return '';
     return raw.split(/\s+/)[0].toLowerCase();
   }
@@ -110,13 +111,13 @@ function runInPage(ctx) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
 
   function isHeading(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
 
     const explicit = getExplicitRoleToken(el);
@@ -129,16 +130,16 @@ function runInPage(ctx) {
   }
 
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = dom.getElementById(document, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -159,7 +160,7 @@ function runInPage(ctx) {
         if (info && info.present && info.value) return info.value;
       } catch {}
     }
-    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
   }
 
   const nodes = helpers.queryAllSmart

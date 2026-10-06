@@ -102,6 +102,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -241,12 +242,13 @@ function runInPage(ctx) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -298,12 +300,12 @@ function runInPage(ctx) {
   }
 
   function resolveIdRefs(el, attr) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute(attr));
+    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, attr));
     if (!raw) return [];
     const out = [];
     for (const refId of raw.split(/\s+/).filter(Boolean)) {
       try {
-        const ref = document.getElementById(refId);
+        const ref = dom.getElementById(document, refId);
         if (ref) out.push(ref);
       } catch {
         // ignore an unusable reference
@@ -316,8 +318,8 @@ function runInPage(ctx) {
   // (not the native `el.labels`, deliberately -- see getNativeLabels).
   const labelsByForId = new Map();
   try {
-    for (const label of document.querySelectorAll('label[for]')) {
-      const forVal = normalizeWs(label.getAttribute('for'));
+    for (const label of dom.querySelectorAll(document, 'label[for]')) {
+      const forVal = normalizeWs(dom.getAttribute(label, 'for'));
       if (!forVal) continue;
       const bucket = labelsByForId.get(forVal);
       if (bucket) bucket.push(label);
@@ -350,7 +352,7 @@ function runInPage(ctx) {
   // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
+    const idVal = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
     if (idVal) {
       const forLabels = labelsByForId.get(idVal);
       if (forLabels) {
@@ -358,12 +360,18 @@ function runInPage(ctx) {
       }
     }
     try {
-      const wrapping = el.closest ? el.closest('label') : null;
-      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      const wrapping = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
+      const hasForAttr = !!(
+        wrapping &&
+        dom.get(wrapping, 'hasAttribute') &&
+        dom.hasAttribute(wrapping, 'for')
+      );
       if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
         let firstControl = null;
         try {
-          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrapping, 'querySelector')
+            ? dom.querySelector(wrapping, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -384,7 +392,7 @@ function runInPage(ctx) {
     const parts = [];
     let hiddenParts = 0;
     for (const label of labels) {
-      const text = normalizeWs(label.textContent);
+      const text = normalizeWs(dom.textContent(label));
       if (!text) continue;
       if (isVisible(label)) parts.push(text);
       else hiddenParts += 1;
@@ -394,7 +402,7 @@ function runInPage(ctx) {
 
   const headings = (() => {
     try {
-      return Array.prototype.slice.call(document.querySelectorAll(HEADING_SELECTOR));
+      return Array.prototype.slice.call(dom.querySelectorAll(document, HEADING_SELECTOR));
     } catch {
       return [];
     }
@@ -403,7 +411,7 @@ function runInPage(ctx) {
   function precedes(a, b) {
     try {
       // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
-      return !!(b.compareDocumentPosition(a) & 2);
+      return !!(dom.compareDocumentPosition(b, a) & 2);
     } catch {
       return false;
     }
@@ -425,23 +433,26 @@ function runInPage(ctx) {
   function fieldsetLegendText(el) {
     let fieldset;
     try {
-      fieldset = el.closest ? el.closest('fieldset') : null;
+      fieldset = dom.get(el, 'closest') ? dom.closest(el, 'fieldset') : null;
     } catch {
       fieldset = null;
     }
-    while (fieldset) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; fieldset && steps < 100000; steps++) {
       let legend;
       try {
-        legend = fieldset.querySelector('legend');
+        legend = dom.querySelector(fieldset, 'legend');
       } catch {
         legend = null;
       }
       if (legend && isVisible(legend)) {
-        const text = normalizeWs(legend.textContent);
+        const text = normalizeWs(dom.textContent(legend));
         if (text) return text;
       }
       try {
-        fieldset = fieldset.parentElement ? fieldset.parentElement.closest('fieldset') : null;
+        fieldset = dom.parentElement(fieldset)
+          ? dom.closest(dom.parentElement(fieldset), 'fieldset')
+          : null;
       } catch {
         fieldset = null;
       }
@@ -457,14 +468,14 @@ function runInPage(ctx) {
   function rowContextText(el, labelText) {
     let row;
     try {
-      row = el.closest ? el.closest(ROW_SELECTOR) : null;
+      row = dom.get(el, 'closest') ? dom.closest(el, ROW_SELECTOR) : null;
     } catch {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
     let text = rowTextCache.get(row);
     if (text === undefined) {
-      text = normalizeWs(row.textContent);
+      text = normalizeWs(dom.textContent(row));
       rowTextCache.set(row, text);
     }
     if (!text) return '';
@@ -482,7 +493,7 @@ function runInPage(ctx) {
 
   const fields = [];
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isVisible(el)) continue;
 
     const label = getVisibleLabelText(el);
@@ -527,7 +538,8 @@ function runInPage(ctx) {
       let sameRoot;
       try {
         sameRoot =
-          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+          typeof dom.get(field.el, 'getRootNode') !== 'function' ||
+          dom.getRootNode(field.el) === document;
       } catch {
         sameRoot = true;
       }
@@ -541,7 +553,7 @@ function runInPage(ctx) {
 
     orderedFields.sort((a, b) => {
       try {
-        const bits = a.el.compareDocumentPosition(b.el);
+        const bits = dom.compareDocumentPosition(a.el, b.el);
         if (bits & 4) return -1; // b follows a
         if (bits & 2) return 1; // b precedes a
       } catch {
@@ -557,7 +569,7 @@ function runInPage(ctx) {
         const heading = headings[hIdx];
         hIdx += 1;
         if (!isVisible(heading)) continue;
-        const text = normalizeWs(heading.textContent);
+        const text = normalizeWs(dom.textContent(heading));
         if (text) current = text;
       }
       nearestVisibleHeadingByField.set(field.el, current);

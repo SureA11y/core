@@ -45,6 +45,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -61,12 +62,12 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const summary = normalizeWs(el.getAttribute('summary'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const summary = normalizeWs(dom.getAttribute(el, 'summary'));
     if (!summary) continue;
 
-    const captionEl = el.querySelector ? el.querySelector('caption') : null;
-    const captionText = captionEl ? normalizeWs(captionEl.textContent) : '';
+    const captionEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'caption') : null;
+    const captionText = captionEl ? normalizeWs(dom.textContent(captionEl)) : '';
     if (!captionText) continue;
 
     applicableCount += 1;

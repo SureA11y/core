@@ -76,6 +76,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normName(s) {
@@ -92,13 +93,13 @@ function runInPage(ctx) {
 
   function resolveOnclickLocation(el) {
     try {
-      const onclick = el.getAttribute('onclick') || '';
+      const onclick = dom.getAttribute(el, 'onclick') || '';
       if (!onclick) return '';
       const m = onclick.match(ONCLICK_LOCATION_RE);
       const raw = m ? m[1] || m[2] : '';
       if (!raw) return '';
       try {
-        return new URL(raw, el.ownerDocument.baseURI).href;
+        return new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
       } catch {
         return raw;
       }
@@ -114,7 +115,7 @@ function runInPage(ctx) {
   const groups = new Map(); // normName -> [{ el, href }]
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -135,7 +136,7 @@ function runInPage(ctx) {
       rawName =
         contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
           ? contentInfo.value
-          : el.textContent || '';
+          : dom.textContent(el) || '';
     }
     const name = normName(rawName);
     if (!name) continue;
@@ -150,10 +151,10 @@ function runInPage(ctx) {
     try {
       href = typeof el.href === 'string' ? el.href : '';
       if (!href) {
-        const raw = el.getAttribute('href') || el.getAttribute('xlink:href') || '';
+        const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
         if (raw) {
           try {
-            href = new URL(raw, el.ownerDocument.baseURI).href;
+            href = new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
           } catch {
             href = raw;
           }
@@ -179,7 +180,7 @@ function runInPage(ctx) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
+        : dom.outerHTML(el) || '';
 
       const baseOccurrence = {
         selector: stableSelector,

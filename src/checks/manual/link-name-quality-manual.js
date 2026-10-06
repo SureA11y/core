@@ -87,6 +87,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT_EN = new Set([
@@ -249,12 +250,13 @@ function runInPage(ctx) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -266,10 +268,10 @@ function runInPage(ctx) {
 
   function ownDirectText(el) {
     let out = '';
-    const kids = el.childNodes || [];
+    const kids = dom.childNodes(el) || [];
     for (let i = 0; i < kids.length; i++) {
       const n = kids[i];
-      if (n.nodeType === 3) out += n.nodeValue || '';
+      if (dom.nodeType(n) === 3) out += dom.nodeValue(n) || '';
     }
     return out.replace(/\s+/g, ' ').trim();
   }
@@ -284,17 +286,18 @@ function runInPage(ctx) {
   // nested list of links, e.g. "Ulysses" above per-format download
   // links).
   function nearestBlockContextText(el) {
-    let node = el.parentElement;
+    let node = dom.parentElement(el);
     let liHops = 0;
-    while (node) {
-      const tag = (node.tagName || '').toLowerCase();
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; node && steps < 100000; steps++) {
+      const tag = (dom.tagName(node) || '').toLowerCase();
       if (tag === 'li') {
         const text = ownDirectText(node);
         if (text) return text;
         liHops += 1;
         if (liHops >= 4) return '';
-        const list = node.parentElement;
-        node = list ? list.parentElement : null;
+        const list = dom.parentElement(node);
+        node = list ? dom.parentElement(list) : null;
         continue;
       }
       if (CONTEXT_BLOCK_TAGS.has(tag)) return ownDirectText(node);
@@ -304,7 +307,9 @@ function runInPage(ctx) {
   }
 
   function describedByContextText(el) {
-    const describedBy = el.getAttribute ? el.getAttribute('aria-describedby') : null;
+    const describedBy = dom.get(el, 'getAttribute')
+      ? dom.getAttribute(el, 'aria-describedby')
+      : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
       const info = helpers.getTextFromIdRefs(describedBy, ctx);
@@ -318,17 +323,17 @@ function runInPage(ctx) {
   // the same table -- naming the row's subject is exactly what turns a
   // bare format name ("HTML") into a link whose destination is clear.
   function firstRowHeaderText(el) {
-    const cell = el.closest ? el.closest('td, th') : null;
+    const cell = dom.get(el, 'closest') ? dom.closest(el, 'td, th') : null;
     if (!cell) return '';
-    const table = cell.closest ? cell.closest('table') : null;
+    const table = dom.get(cell, 'closest') ? dom.closest(cell, 'table') : null;
     if (!table || !table.rows || !table.rows.length) return '';
     const headerRow = table.rows[0];
-    const cellRow = cell.closest ? cell.closest('tr') : null;
+    const cellRow = dom.get(cell, 'closest') ? dom.closest(cell, 'tr') : null;
     if (!cellRow || headerRow === cellRow) return '';
-    const ths = headerRow.querySelectorAll ? headerRow.querySelectorAll('th') : [];
+    const ths = dom.get(headerRow, 'querySelectorAll') ? dom.querySelectorAll(headerRow, 'th') : [];
     if (!ths.length) return '';
     return Array.prototype.map
-      .call(ths, (th) => th.textContent || '')
+      .call(ths, (th) => dom.textContent(th) || '')
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -350,7 +355,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =

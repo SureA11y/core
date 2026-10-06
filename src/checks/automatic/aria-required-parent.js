@@ -89,6 +89,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -153,7 +154,7 @@ function runInPage(ctx) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
@@ -194,7 +195,7 @@ function runInPage(ctx) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // The escape hatch marks the container being assembled, not the item inside
@@ -203,8 +204,8 @@ function runInPage(ctx) {
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType === 1 && cur.getAttribute) {
-        const v = cur.getAttribute('aria-busy');
+      if (dom.nodeType(cur) === 1 && dom.get(cur, 'getAttribute')) {
+        const v = dom.getAttribute(cur, 'aria-busy');
         if (v != null && String(v).trim().toLowerCase() === 'true') return true;
       }
       cur = getComposedParent(cur);
@@ -224,7 +225,7 @@ function runInPage(ctx) {
     // mutated.
     let roles = acceptableRoles;
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = getComposedParent(cur);
         continue;
       }
@@ -245,7 +246,7 @@ function runInPage(ctx) {
   }
 
   function hasAcceptableOwnerContext(el, acceptableRoles) {
-    const elId = el.getAttribute('id');
+    const elId = dom.getAttribute(el, 'id');
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
@@ -253,8 +254,8 @@ function runInPage(ctx) {
       ? helpers.queryAllSmart('[aria-owns]')
       : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
-      if (!owner || !owner.getAttribute) continue;
-      const ownsAttr = owner.getAttribute('aria-owns') || '';
+      if (!owner || !dom.get(owner, 'getAttribute')) continue;
+      const ownsAttr = dom.getAttribute(owner, 'aria-owns') || '';
       const tokens = ownsAttr.split(/\s+/).filter(Boolean);
       if (tokens.indexOf(idTok) === -1) continue;
 
@@ -272,7 +273,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern

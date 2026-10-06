@@ -102,6 +102,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -116,11 +117,11 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.attributes || !el.getAttribute) continue;
+    if (!el || !dom.attributes(el) || !dom.get(el, 'getAttribute')) continue;
 
     let invalid = null;
     let review = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -128,7 +129,7 @@ function runInPage(ctx) {
 
       applicableCount += 1;
 
-      const rawValue = el.getAttribute(name);
+      const rawValue = dom.getAttribute(el, name);
       const result = ariaHelpers.validateAttrValue(name, rawValue, el);
       if (result.valid) continue;
 

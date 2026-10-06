@@ -71,9 +71,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -85,7 +86,7 @@ function runInPage(ctx) {
   }
 
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
+    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
     if (!raw) return '';
     return raw.split(/\s+/)[0].toLowerCase();
   }
@@ -94,10 +95,10 @@ function runInPage(ctx) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return false;
-      const raw = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
       return raw === '1';
     }
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     return tag === 'h1';
   }
 
@@ -122,7 +123,7 @@ function runInPage(ctx) {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
         ? helpers.queryAllSmart('h1, [role]')
-        : document.querySelectorAll('h1, [role]');
+        : dom.querySelectorAll(document, 'h1, [role]');
   } catch {
     nodes = [];
   }

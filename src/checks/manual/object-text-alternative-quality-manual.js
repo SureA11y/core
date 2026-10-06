@@ -65,6 +65,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -75,8 +76,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -95,7 +96,7 @@ function runInPage(ctx) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
+        return String(dom.getAttribute(el, 'role') || '')
           .trim()
           .toLowerCase();
       } catch {
@@ -116,7 +117,7 @@ function runInPage(ctx) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -141,7 +142,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -165,10 +166,10 @@ function runInPage(ctx) {
     let labelledByText = '';
 
     try {
-      fallbackText = trim(el.textContent || '');
-      ariaLabel = trim(el.getAttribute('aria-label'));
-      ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
-      title = trim(el.getAttribute('title'));
+      fallbackText = trim(dom.textContent(el) || '');
+      ariaLabel = trim(dom.getAttribute(el, 'aria-label'));
+      ariaLabelledBy = trim(dom.getAttribute(el, 'aria-labelledby'));
+      title = trim(dom.getAttribute(el, 'title'));
     } catch {}
 
     // Only resolve idrefs if needed/present

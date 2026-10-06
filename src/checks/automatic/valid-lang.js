@@ -75,6 +75,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
@@ -97,7 +98,7 @@ function runInPage(ctx) {
 
   function hasOwnNonEmptyLang(node) {
     try {
-      const v = node.getAttribute ? node.getAttribute('lang') : null;
+      const v = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'lang') : null;
       return v != null && v.trim() !== '';
     } catch {
       return false;
@@ -105,11 +106,11 @@ function runInPage(ctx) {
   }
 
   function isAltBearing(node) {
-    const tag = (node.tagName || '').toLowerCase();
+    const tag = (dom.tagName(node) || '').toLowerCase();
     if (tag === 'img' || tag === 'area') return true;
     if (tag !== 'input') return false;
     try {
-      return (node.getAttribute('type') || '').toLowerCase() === 'image';
+      return (dom.getAttribute(node, 'type') || '').toLowerCase() === 'image';
     } catch {
       return false;
     }
@@ -129,26 +130,26 @@ function runInPage(ctx) {
 
     function walk(node, isRoot) {
       if (found || visits++ > MAX_VISITS) return;
-      if (!node || node.nodeType !== 1) return;
+      if (!node || dom.nodeType(node) !== 1) return;
       if (!isRoot && hasOwnNonEmptyLang(node)) return; // re-scoped to itself
 
       if (isAltBearing(node)) {
-        const alt = node.getAttribute ? node.getAttribute('alt') : null;
+        const alt = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'alt') : null;
         if (alt != null && alt.trim() !== '' && isDomVisible(node)) found = true;
         return; // alt-bearing elements have no other text to walk into
       }
 
       if (!isDomVisible(node)) return;
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
         if (found) return;
-        if (kid.nodeType === 3) {
-          if (String(kid.nodeValue || '').trim()) {
+        if (dom.nodeType(kid) === 3) {
+          if (String(dom.nodeValue(kid) || '').trim()) {
             found = true;
             return;
           }
-        } else if (kid.nodeType === 1) {
+        } else if (dom.nodeType(kid) === 1) {
           walk(kid, false);
         }
       }
@@ -166,10 +167,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.tagName && el.tagName.toLowerCase() === 'html') continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.tagName(el) && dom.tagName(el).toLowerCase() === 'html') continue;
 
-    const rawAttr = el.getAttribute('lang');
+    const rawAttr = dom.getAttribute(el, 'lang');
     if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
 
     // The rule applies only where text actually inherits the language from
@@ -184,7 +185,7 @@ function runInPage(ctx) {
     const raw = String(rawAttr).trim();
     if (isValidTag(raw.split('-')[0])) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

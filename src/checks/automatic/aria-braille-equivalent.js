@@ -71,6 +71,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -89,7 +90,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -101,10 +102,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const brailleLabel = trim(el.getAttribute('aria-braillelabel'));
-    const brailleRoleDesc = trim(el.getAttribute('aria-brailleroledescription'));
+    const brailleLabel = trim(dom.getAttribute(el, 'aria-braillelabel'));
+    const brailleRoleDesc = trim(dom.getAttribute(el, 'aria-brailleroledescription'));
     if (!brailleLabel && !brailleRoleDesc) continue;
 
     applicableCount += 1;
@@ -131,7 +132,7 @@ function runInPage(ctx) {
     }
 
     if (brailleRoleDesc) {
-      const roleDesc = trim(el.getAttribute('aria-roledescription'));
+      const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
       if (!roleDesc)
         missing.push({
           attr: 'aria-brailleroledescription',
@@ -145,7 +146,7 @@ function runInPage(ctx) {
 
     if (!missing.length) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     for (const m of missing) {
       occurrences.push(

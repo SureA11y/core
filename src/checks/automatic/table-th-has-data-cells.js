@@ -72,6 +72,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
@@ -81,7 +82,7 @@ function runInPage(ctx) {
 
   function explicitRole(el) {
     try {
-      return String((el && el.getAttribute && el.getAttribute('role')) || '')
+      return String((el && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
         .trim()
         .toLowerCase()
         .split(/\s+/)[0];
@@ -131,7 +132,7 @@ function runInPage(ctx) {
   }
 
   for (const table of tables) {
-    if (!table || !table.querySelectorAll) continue;
+    if (!table || !dom.get(table, 'querySelectorAll')) continue;
 
     // A table stripped of its semantics has no header cells to describe
     // anything, so nothing in it is in scope.
@@ -139,7 +140,7 @@ function runInPage(ctx) {
 
     let ths;
     try {
-      ths = table.querySelectorAll('th');
+      ths = dom.querySelectorAll(table, 'th');
     } catch {
       ths = [];
     }
@@ -151,7 +152,7 @@ function runInPage(ctx) {
 
     let hasDataCell;
     try {
-      hasDataCell = table.querySelectorAll('td').length > 0;
+      hasDataCell = dom.querySelectorAll(table, 'td').length > 0;
     } catch {
       hasDataCell = false;
     }
@@ -187,13 +188,13 @@ function runInPage(ctx) {
     : helpers.queryAll('[role="grid"], [role="treegrid"]');
 
   for (const grid of grids) {
-    if (!grid || !grid.querySelectorAll) continue;
-    if (grid.tagName && grid.tagName.toLowerCase() === 'table') continue; // already handled above
+    if (!grid || !dom.get(grid, 'querySelectorAll')) continue;
+    if (dom.tagName(grid) && dom.tagName(grid).toLowerCase() === 'table') continue; // already handled above
     if (!isIncludedInTree(grid)) continue;
 
     let headerNodes;
     try {
-      headerNodes = grid.querySelectorAll('[role="columnheader"], [role="rowheader"]');
+      headerNodes = dom.querySelectorAll(grid, '[role="columnheader"], [role="rowheader"]');
     } catch {
       headerNodes = [];
     }
@@ -204,7 +205,7 @@ function runInPage(ctx) {
 
     let hasDataCell;
     try {
-      hasDataCell = grid.querySelectorAll('[role="gridcell"], [role="cell"]').length > 0;
+      hasDataCell = dom.querySelectorAll(grid, '[role="gridcell"], [role="cell"]').length > 0;
     } catch {
       hasDataCell = false;
     }

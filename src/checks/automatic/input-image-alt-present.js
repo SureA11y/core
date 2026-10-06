@@ -53,6 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -63,8 +64,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -106,7 +107,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of inputs) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isEligibleHelper) {
       const elig = (() => {
@@ -139,11 +140,11 @@ function runInPage(ctx) {
         }
       }
       if (!v) {
-        const alt = el.getAttribute('alt');
+        const alt = dom.getAttribute(el, 'alt');
         if (alt != null && String(alt).trim()) v = String(alt);
       }
       if (!v) {
-        const t = el.getAttribute('title');
+        const t = dom.getAttribute(el, 'title');
         if (t != null && String(t).trim()) v = String(t);
       }
       return v.trim().toLowerCase();
@@ -188,7 +189,7 @@ function runInPage(ctx) {
     // An image button is a control, so an empty name fails whether alt is
     // absent or present-but-empty. alt="" marks a decorative image, and an
     // image button is never decorative.
-    const emptyAlt = el.getAttribute('alt') !== null;
+    const emptyAlt = dom.getAttribute(el, 'alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 

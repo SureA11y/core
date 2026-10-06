@@ -72,6 +72,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -82,8 +83,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -116,10 +117,10 @@ function runInPage(ctx) {
   // is commonly ignored by AT even though it's still a valid DOM child.
   function nonEmptyFirstChildTitleText(svg) {
     try {
-      const first = svg.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(svg);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
       if (tn === 'title') {
-        const txt = trim(first.textContent);
+        const txt = trim(dom.textContent(first));
         if (txt) return txt;
       }
     } catch {}
@@ -132,16 +133,18 @@ function runInPage(ctx) {
   // appearing later than that is not reliably read by AT.
   function nonEmptyDescText(svg) {
     try {
-      const first = svg.firstElementChild;
-      const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(svg);
+      const firstTag = first
+        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        : '';
       if (firstTag === 'desc') {
-        const txt = trim(first.textContent);
+        const txt = trim(dom.textContent(first));
         if (txt) return txt;
-      } else if (firstTag === 'title' && first.nextElementSibling) {
-        const second = first.nextElementSibling;
-        const secondTag = (second.localName || second.tagName || '').toLowerCase();
+      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
+        const second = dom.nextElementSibling(first);
+        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
         if (secondTag === 'desc') {
-          const txt = trim(second.textContent);
+          const txt = trim(dom.textContent(second));
           if (txt) return txt;
         }
       }
@@ -162,7 +165,8 @@ function runInPage(ctx) {
     }
     // deterministic fallback: tabindex presence/valid number
     try {
-      const tabindex = svg && svg.getAttribute ? svg.getAttribute('tabindex') : null;
+      const tabindex =
+        svg && dom.get(svg, 'getAttribute') ? dom.getAttribute(svg, 'tabindex') : null;
       return (
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -189,7 +193,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of svgs) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Applicability step 1: only acc-tree eligible nodes (with helper exceptions)
     if (isAccTreeEligible) {
@@ -206,7 +210,7 @@ function runInPage(ctx) {
     // Applicability step 2: role (presentation/none) exclusion only when not focusable
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
+        return String(dom.getAttribute(el, 'role') || '')
           .trim()
           .toLowerCase();
       } catch {
@@ -224,7 +228,8 @@ function runInPage(ctx) {
     let hasAriaNamingAttr = false;
     try {
       hasAriaNamingAttr =
-        el.getAttribute('aria-label') != null || el.getAttribute('aria-labelledby') != null;
+        dom.getAttribute(el, 'aria-label') != null ||
+        dom.getAttribute(el, 'aria-labelledby') != null;
     } catch {}
 
     const titleText = nonEmptyFirstChildTitleText(el);
@@ -260,7 +265,7 @@ function runInPage(ctx) {
         const ariaLabel = trim(
           (() => {
             try {
-              return el.getAttribute('aria-label');
+              return dom.getAttribute(el, 'aria-label');
             } catch {
               return '';
             }
@@ -269,7 +274,7 @@ function runInPage(ctx) {
         const ariaLabelledby = trim(
           (() => {
             try {
-              return el.getAttribute('aria-labelledby');
+              return dom.getAttribute(el, 'aria-labelledby');
             } catch {
               return '';
             }

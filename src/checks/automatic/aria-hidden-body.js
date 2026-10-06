@@ -72,14 +72,15 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const raw = body.getAttribute ? body.getAttribute('aria-hidden') : null;
+  const raw = dom.get(body, 'getAttribute') ? dom.getAttribute(body, 'aria-hidden') : null;
   const isHidden = raw != null && String(raw).trim().toLowerCase() === 'true';
 
   if (!isHidden) {

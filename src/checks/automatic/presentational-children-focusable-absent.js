@@ -91,6 +91,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -154,7 +155,7 @@ function runInPage(ctx) {
   // not (figure wins and has no presentational children), and a list of
   // nothing but unknown tokens falls back to the native role.
   function getPresentationalChildrenRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     if (raw) {
       const tokens = lower(raw).split(/\s+/);
       for (const token of tokens) {
@@ -164,7 +165,7 @@ function runInPage(ctx) {
         if (known) return '';
       }
     }
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
       ? NATIVE_ROLE_BY_TAG[tag]
       : '';
@@ -188,7 +189,7 @@ function runInPage(ctx) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // isAccTreeEligible keeps an aria-hidden element that holds
@@ -200,7 +201,8 @@ function runInPage(ctx) {
     let cur = node;
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (lower(cur.getAttribute && cur.getAttribute('aria-hidden')) === 'true') return true;
+      if (lower(dom.get(cur, 'getAttribute') && dom.getAttribute(cur, 'aria-hidden')) === 'true')
+        return true;
       cur = composedParent(cur);
     }
     return false;
@@ -234,15 +236,16 @@ function runInPage(ctx) {
   // the nearest role that removes it from the accessibility tree.
   function collectTabStops(root) {
     const out = [];
-    if (!root || !root.lastElementChild) return out;
+    if (!root || !dom.lastElementChild(root)) return out;
     // Sibling links, not root.children, which in jsdom stays live once read
     // and is rebuilt on every later change under a large parent.
     const stack = [];
-    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
+    for (let c = dom.lastElementChild(root); c; c = dom.previousElementSibling(c)) stack.push(c);
     while (stack.length) {
       const node = stack.pop();
-      if (!node || node.nodeType !== 1) continue;
-      if (lower(node.getAttribute && node.getAttribute('aria-hidden')) === 'true') continue;
+      if (!node || dom.nodeType(node) !== 1) continue;
+      if (lower(dom.get(node, 'getAttribute') && dom.getAttribute(node, 'aria-hidden')) === 'true')
+        continue;
       if (!isRendered(node)) continue;
       if (isTabStop(node)) {
         out.push(node);
@@ -253,7 +256,7 @@ function runInPage(ctx) {
       // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
-      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
+      for (let c = node ? dom.lastElementChild(node) : null; c; c = dom.previousElementSibling(c))
         stack.push(c);
     }
     return out;
@@ -268,7 +271,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
 
     const role = getPresentationalChildrenRole(el);
     if (!role) continue;
@@ -281,7 +284,9 @@ function runInPage(ctx) {
     const tabStops = collectTabStops(el);
     if (!tabStops.length) continue;
 
-    const tabStopTags = tabStops.map((n) => (n && n.tagName ? lower(n.tagName) : 'unknown'));
+    const tabStopTags = tabStops.map((n) =>
+      n && dom.tagName(n) ? lower(dom.tagName(n)) : 'unknown'
+    );
     const dedupedTabStopTags = [...new Set(tabStopTags)];
 
     const eligInfo = getEligibilityInfo
@@ -308,7 +313,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT',
             role,
-            element: lower(el.tagName),
+            element: lower(dom.tagName(el)),
             focusableElements: tabStopTags
           }
         }

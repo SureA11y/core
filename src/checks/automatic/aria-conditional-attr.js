@@ -68,6 +68,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -84,17 +85,17 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const errorMessageRef = trim(el.getAttribute('aria-errormessage'));
+    const errorMessageRef = trim(dom.getAttribute(el, 'aria-errormessage'));
     if (!errorMessageRef) continue;
 
     applicableCount += 1;
 
-    const invalidValue = trim(el.getAttribute('aria-invalid')).toLowerCase();
+    const invalidValue = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

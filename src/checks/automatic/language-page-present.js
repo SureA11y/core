@@ -83,10 +83,11 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, rule, helpers } = ctx;
-  const html = document && document.documentElement;
+  const html = document && dom.documentElement(document);
 
-  const tag = html && html.tagName ? String(html.tagName).toLowerCase() : '';
+  const tag = html && dom.tagName(html) ? String(dom.tagName(html)).toLowerCase() : '';
   if (!html || tag !== 'html') {
     return {
       ruleId: rule.ruleId,
@@ -121,7 +122,7 @@ function runInPage(ctx) {
     return [{ selector: '', html: '', ...baseOccurrence }];
   }
 
-  const rawLang = html.getAttribute('lang'); // null if missing
+  const rawLang = dom.getAttribute(html, 'lang'); // null if missing
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {

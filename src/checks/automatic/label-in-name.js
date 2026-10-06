@@ -94,6 +94,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const occurrences = [];
@@ -168,10 +169,10 @@ function runInPage(ctx) {
   }
 
   function getElementDescriptor(el) {
-    const tag = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+    const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
     let role;
     try {
-      role = el && el.getAttribute ? el.getAttribute('role') || '' : '';
+      role = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') || '' : '';
     } catch {
       role = '';
     }
@@ -186,7 +187,7 @@ function runInPage(ctx) {
   }
 
   function isNonRenderedTag(el) {
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
     return (
       tn === 'script' ||
       tn === 'style' ||
@@ -248,13 +249,13 @@ function runInPage(ctx) {
     // TreeWalker is deterministic in document order.
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
     if (!walker) {
       try {
-        const t = container.textContent;
+        const t = dom.textContent(container);
         return t == null ? '' : String(t);
       } catch {
         return '';
@@ -265,12 +266,12 @@ function runInPage(ctx) {
     let n;
     while ((n = walker.nextNode())) {
       try {
-        const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
+        const raw = n && dom.nodeValue(n) != null ? String(dom.nodeValue(n)) : '';
         const t = raw.replace(/\s+/g, ' ').trim();
         if (!t) continue;
 
-        const p = n.parentElement || null;
-        if (!p || !p.tagName) continue;
+        const p = dom.parentElement(n) || null;
+        if (!p || !dom.tagName(p)) continue;
         if (isNonRenderedTag(p)) continue;
 
         // Require the parent element to be visually eligible AND not inside
@@ -314,7 +315,7 @@ function runInPage(ctx) {
     let text;
     let source = 'none';
 
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
 
     // 1) Label association (native form controls)
     const isFormControl = tn === 'input' || tn === 'select' || tn === 'textarea';
@@ -342,13 +343,14 @@ function runInPage(ctx) {
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
-      const idrefs = el && el.getAttribute ? el.getAttribute('aria-labelledby') : null;
+      const idrefs =
+        el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-labelledby') : null;
       if (idrefs && helpers.resolveIdRefs) {
         const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
         const parts = [];
         const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
-          if (!ref || !ref.tagName) continue;
+          if (!ref || !dom.tagName(ref)) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
           if (t) {
@@ -411,7 +413,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(node);
     } catch {
       // no computed style available

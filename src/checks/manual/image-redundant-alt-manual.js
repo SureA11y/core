@@ -53,6 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -66,11 +67,11 @@ function runInPage(ctx) {
       helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
     let text = '';
-    for (const child of parent.childNodes || []) {
+    for (const child of dom.childNodes(parent) || []) {
       if (child === imgEl) continue;
-      if (child.nodeType === 3) {
-        text += ' ' + (child.nodeValue || '');
-      } else if (child.nodeType === 1 && child !== imgEl) {
+      if (dom.nodeType(child) === 3) {
+        text += ' ' + (dom.nodeValue(child) || '');
+      } else if (dom.nodeType(child) === 1 && child !== imgEl) {
         // An aria-hidden sibling is never actually announced to assistive
         // technology, so its text can't cause the "same words twice"
         // double-announcement this rule exists to catch -- counting it
@@ -86,7 +87,7 @@ function runInPage(ctx) {
           })();
           if (elig && elig.eligible === false) continue;
         }
-        text += ' ' + (child.textContent || '');
+        text += ' ' + (dom.textContent(child) || '');
       }
     }
     return normalizeWs(text);
@@ -100,11 +101,11 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const alt = normalizeWs(el.getAttribute('alt'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const alt = normalizeWs(dom.getAttribute(el, 'alt'));
     if (!alt) continue;
 
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!parent) continue;
 
     const otherText = getOwnTextExcludingImg(parent, el);

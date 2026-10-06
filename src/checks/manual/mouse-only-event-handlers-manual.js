@@ -87,6 +87,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
@@ -127,7 +128,7 @@ function runInPage(ctx) {
     if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
     let descendants;
     try {
-      descendants = Array.from(el.querySelectorAll(FOCUSABLE_CANDIDATES));
+      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
     } catch {
       return true;
     }
@@ -147,9 +148,9 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (!presentMouseAttrs.length) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
@@ -159,7 +160,7 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
     const unreachable = presentKeyboardAttrs.length > 0;
 

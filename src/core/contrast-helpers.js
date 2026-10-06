@@ -2,7 +2,10 @@
 
 'use strict';
 
+const { createSafeDom } = require('./safe-dom');
+
 function createContrastHelpers(opts, shared) {
+  const dom = createSafeDom();
   const window = opts && opts.window ? opts.window : null;
 
   const trim = shared.trim;
@@ -97,7 +100,7 @@ function createContrastHelpers(opts, shared) {
 
   function __contrastComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return computedStyle(el);
+      if (!el || dom.nodeType(el) !== 1) return computedStyle(el);
       if (__computedStyleCache.has(el)) return __computedStyleCache.get(el);
       const cs = computedStyle(el);
       __computedStyleCache.set(el, cs);
@@ -106,7 +109,7 @@ function createContrastHelpers(opts, shared) {
       // Always no-throw: return empty object on any failure
       try {
         const cs = computedStyle(el);
-        if (el && el.nodeType === 1) __computedStyleCache.set(el, cs);
+        if (el && dom.nodeType(el) === 1) __computedStyleCache.set(el, cs);
         return cs;
       } catch {
         return {};
@@ -236,11 +239,12 @@ function createContrastHelpers(opts, shared) {
   // still recognized as inactive.
   function isDisabledWidget(node) {
     try {
-      if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
+      if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
+        return true;
     } catch {}
     try {
-      const ad = node.getAttribute
-        ? String(node.getAttribute('aria-disabled') || '')
+      const ad = dom.get(node, 'getAttribute')
+        ? String(dom.getAttribute(node, 'aria-disabled') || '')
             .trim()
             .toLowerCase()
         : '';
@@ -253,12 +257,12 @@ function createContrastHelpers(opts, shared) {
     let node = el;
     let depth = 0;
     let labelAncestor = null;
-    while (node && node.nodeType === 1 && depth++ < 100) {
+    while (node && dom.nodeType(node) === 1 && depth++ < 100) {
       if (isDisabledWidget(node)) return true;
-      if (!labelAncestor && String(node.tagName || '').toLowerCase() === 'label') {
+      if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
-      node = node.parentElement;
+      node = dom.parentElement(node);
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -281,10 +285,10 @@ function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = labelAncestor.ownerDocument;
-        const labelId = labelAncestor.id;
+        const doc = dom.ownerDocument(labelAncestor);
+        const labelId = dom.get(labelAncestor, 'id');
         if (doc && labelId) {
-          const referrers = doc.querySelectorAll('[aria-labelledby~="' + labelId + '"]');
+          const referrers = dom.querySelectorAll(doc, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -299,7 +303,7 @@ function createContrastHelpers(opts, shared) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
 
-      const w = (ctx && ctx.window) || (d && d.defaultView) || window || null;
+      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
       const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
 
@@ -308,7 +312,7 @@ function createContrastHelpers(opts, shared) {
           ? 'styleAndGeometry'
           : 'styleOnly';
 
-      if (!d || typeof d.createTreeWalker !== 'function') {
+      if (!d || typeof dom.get(d, 'createTreeWalker') !== 'function') {
         return { eligibleTextCount: 0, elements: [], visibilityMode };
       }
 
@@ -329,9 +333,11 @@ function createContrastHelpers(opts, shared) {
           ? Array.isArray(ctx.root)
             ? ctx.root
             : [ctx.root]
-          : [d.body || d.documentElement || d];
+          : [dom.body(d) || dom.documentElement(d) || d];
       const lightRoots = walkRootsRaw
-        .map((wr) => (wr && wr.nodeType === 9 ? wr.body || wr.documentElement || wr : wr))
+        .map((wr) =>
+          wr && dom.nodeType(wr) === 9 ? dom.body(wr) || dom.documentElement(wr) || wr : wr
+        )
         .filter(Boolean);
 
       // A TreeWalker stops at a shadow boundary and querySelectorAll does not
@@ -353,12 +359,13 @@ function createContrastHelpers(opts, shared) {
 
           let hosts;
           try {
-            hosts = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            hosts = dom.get(root, 'querySelectorAll') ? dom.querySelectorAll(root, '*') : [];
           } catch {
             continue;
           }
           for (const el of hosts) {
-            if (el && el.shadowRoot && !seen.has(el.shadowRoot)) queue.push(el.shadowRoot);
+            if (el && dom.shadowRoot(el) && !seen.has(dom.shadowRoot(el)))
+              queue.push(dom.shadowRoot(el));
           }
         }
 
@@ -404,13 +411,13 @@ function createContrastHelpers(opts, shared) {
         try {
           let cur = el;
           let guard = 0;
-          while (cur && cur.nodeType === 1 && guard++ < 100) {
+          while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
             const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
             if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
               hidden = true;
               break;
             }
-            cur = composedParent ? composedParent(cur) : cur.parentElement;
+            cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
           }
         } catch {
           hidden = false;
@@ -465,13 +472,13 @@ function createContrastHelpers(opts, shared) {
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
-          typeof el.getBoundingClientRect !== 'function'
+          typeof dom.get(el, 'getBoundingClientRect') !== 'function'
         ) {
           return false;
         }
-        const r = el.getBoundingClientRect();
+        const r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
-        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         const sx = (win && win.scrollX) || 0;
         const sy = (win && win.scrollY) || 0;
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
@@ -480,14 +487,14 @@ function createContrastHelpers(opts, shared) {
         let right = r.right;
         let bottom = r.bottom;
         let cur = composedParent(el);
-        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
           const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
           const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
           if (clipsX || clipsY) {
-            const a = cur.getBoundingClientRect();
+            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -589,7 +596,7 @@ function createContrastHelpers(opts, shared) {
         if (guard >= 500000) break;
         let walker;
         try {
-          walker = d.createTreeWalker(walkRoot, SHOW_TEXT, null);
+          walker = dom.createTreeWalker(d, walkRoot, SHOW_TEXT, null);
         } catch {
           continue;
         }
@@ -598,16 +605,18 @@ function createContrastHelpers(opts, shared) {
           if (visitedTextNodes.has(node)) continue;
           visitedTextNodes.add(node);
 
-          const text = node && node.nodeValue;
+          const text = node && dom.nodeValue(node);
           if (!isNonEmptyText(text)) continue;
 
-          const parentNode = node.parentNode;
+          const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
           // it renders with the host's inherited color and background.
           const el =
-            node.parentElement ||
-            (parentNode && parentNode.nodeType === 1 ? parentNode : null) ||
-            (parentNode && parentNode.nodeType === 11 && parentNode.host ? parentNode.host : null);
+            dom.parentElement(node) ||
+            (parentNode && dom.nodeType(parentNode) === 1 ? parentNode : null) ||
+            (parentNode && dom.nodeType(parentNode) === 11 && dom.host(parentNode)
+              ? dom.host(parentNode)
+              : null);
 
           if (!el) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
@@ -642,7 +651,8 @@ function createContrastHelpers(opts, shared) {
       for (const walkRoot of walkRoots) {
         let candidates;
         try {
-          candidates = walkRoot.querySelectorAll(
+          candidates = dom.querySelectorAll(
+            walkRoot,
             'input[type="submit" i], input[type="button" i], input[type="reset" i]'
           );
         } catch {
@@ -652,7 +662,7 @@ function createContrastHelpers(opts, shared) {
           if (visitedValueInputs.has(el)) continue;
           visitedValueInputs.add(el);
 
-          const value = el.getAttribute ? el.getAttribute('value') : el.value;
+          const value = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : el.value;
           if (!isNonEmptyText(value)) continue;
 
           try {
@@ -1142,10 +1152,10 @@ function createContrastHelpers(opts, shared) {
       if (
         w &&
         d &&
-        typeof d.createElement === 'function' &&
+        typeof dom.get(d, 'createElement') === 'function' &&
         typeof w.getComputedStyle === 'function'
       ) {
-        const probe = d.createElement('span');
+        const probe = dom.createElement(d, 'span');
         // Avoid layout/paint side effects
         probe.style.position = 'absolute';
         probe.style.left = '-9999px';
@@ -1155,8 +1165,9 @@ function createContrastHelpers(opts, shared) {
         // A value the platform rejects leaves the property unset, and the
         // probe would then report the color it inherits.
         if (!probe.style.color) return null;
-        const parent = d.body || d.documentElement;
-        if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+        const parent = dom.body(d) || dom.documentElement(d);
+        if (parent && typeof dom.get(parent, 'appendChild') === 'function')
+          dom.appendChild(parent, probe);
 
         let computed = '';
         try {
@@ -1166,7 +1177,7 @@ function createContrastHelpers(opts, shared) {
         }
 
         try {
-          if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+          if (probe && dom.parentNode(probe)) dom.removeChild(dom.parentNode(probe), probe);
         } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
@@ -1308,7 +1319,7 @@ function createContrastHelpers(opts, shared) {
 
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBackgroundImageOrGradient(cs);
       if (__hasBgImgCache.has(el)) return __hasBgImgCache.get(el);
       const v = hasBackgroundImageOrGradient(cs);
       __hasBgImgCache.set(el, v);
@@ -1320,7 +1331,7 @@ function createContrastHelpers(opts, shared) {
 
   function __hasBlendModeEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBlendMode(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -1332,7 +1343,7 @@ function createContrastHelpers(opts, shared) {
 
   function __hasFilterEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasFilter(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -1357,7 +1368,7 @@ function createContrastHelpers(opts, shared) {
   // unaffected either way.
   function __textShadowInfoEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         const raw = cs && cs.textShadow; // single read
         const value = raw == null ? '' : String(raw);
         return { has: hasTextShadow(value), value };
@@ -1388,7 +1399,7 @@ function createContrastHelpers(opts, shared) {
       let cur = el;
       let guard = 0;
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -1426,8 +1437,8 @@ function createContrastHelpers(opts, shared) {
   function __isSvgTextElement(el) {
     return (
       !!el &&
-      el.namespaceURI === __SVG_NS &&
-      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+      dom.namespaceURI(el) === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(dom.localName(el) || '').toLowerCase())
     );
   }
 
@@ -1550,7 +1561,7 @@ function createContrastHelpers(opts, shared) {
     let unparsable = null;
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -1561,7 +1572,10 @@ function createContrastHelpers(opts, shared) {
 
       if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
         unparsable = {
-          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          selector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
           value: truncateCssValue(trim(cs.backgroundColor), 80)
         };
         break;
@@ -1571,7 +1585,10 @@ function createContrastHelpers(opts, shared) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+            selector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
             bg: { r: layer.r, g: layer.g, b: layer.b, a: layer.a },
             opacity: op
           });
@@ -1665,7 +1682,7 @@ function createContrastHelpers(opts, shared) {
 
   function __getSimpleSelectorCached(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return '';
+      if (!el || dom.nodeType(el) !== 1) return '';
       if (__simpleSelectorCache.has(el)) return __simpleSelectorCache.get(el) || '';
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
@@ -1744,7 +1761,7 @@ function createContrastHelpers(opts, shared) {
     }
 
     try {
-      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+      if (!el || dom.nodeType(el) !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
       const elColor = parseCssColorToRgba(
@@ -1758,7 +1775,7 @@ function createContrastHelpers(opts, shared) {
       let guard = 0;
 
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -1858,7 +1875,7 @@ function createContrastHelpers(opts, shared) {
     const chain = [];
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -1870,7 +1887,7 @@ function createContrastHelpers(opts, shared) {
           reasonCode: 'MIX_BLEND_MODE',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'mix-blend-mode',
           blockerValue: truncateCssValue(cs && cs.mixBlendMode, 80)
@@ -1895,7 +1912,7 @@ function createContrastHelpers(opts, shared) {
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
             blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
@@ -1924,7 +1941,7 @@ function createContrastHelpers(opts, shared) {
           reasonCode: 'TEXT_SHADOW',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'text-shadow',
           blockerValue: truncateCssValue(textShadowInfo.value, 80)
@@ -1942,7 +1959,7 @@ function createContrastHelpers(opts, shared) {
           reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'background-image',
           blockerValue: truncateCssValue(bgImg, 80),
@@ -1990,7 +2007,7 @@ function createContrastHelpers(opts, shared) {
             reasonCode: 'ANCESTOR_OPACITY',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
@@ -2073,7 +2090,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   function __paintCandidate(node, cs) {
-    const tag = String(node.localName || '').toLowerCase();
+    const tag = String(dom.localName(node) || '').toLowerCase();
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -2100,7 +2117,7 @@ function createContrastHelpers(opts, shared) {
     let cur = node;
     let pinned = false;
     let guard = 0;
-    while (cur && cur.nodeType === 1 && guard++ < 200) {
+    while (cur && dom.nodeType(cur) === 1 && guard++ < 200) {
       if (__pinnedCache.has(cur)) {
         pinned = __pinnedCache.get(cur);
         break;
@@ -2123,19 +2140,19 @@ function createContrastHelpers(opts, shared) {
   // is painted. checkVisibility() answers that; without it, the two are
   // looked for along the composed ancestors.
   function __isUnpainted(node) {
-    if (typeof node.checkVisibility === 'function') {
+    if (typeof dom.get(node, 'checkVisibility') === 'function') {
       try {
-        return !node.checkVisibility();
+        return !dom.checkVisibility(node);
       } catch {}
     }
     // A shadow root on the way up is stepped over to its host.
     let child = node;
     let cur = composedParent(node);
     for (let guard = 0; cur && guard < 1000; guard++) {
-      if (cur.nodeType === 1) {
+      if (dom.nodeType(cur) === 1) {
         if (
-          String(cur.localName || '').toLowerCase() === 'details' &&
-          !cur.hasAttribute('open') &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open') &&
           child !== __firstSummaryChild(cur)
         ) {
           return true;
@@ -2151,17 +2168,18 @@ function createContrastHelpers(opts, shared) {
 
   // Only the first <summary> child of a <details> is its toggle.
   function __firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function __buildOverlapIndex() {
     const doc = window && window.document;
-    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    if (!doc || !dom.documentElement(doc) || typeof dom.get(doc, 'createRange') !== 'function')
+      return null;
     try {
-      const rootRects = doc.documentElement.getClientRects();
+      const rootRects = dom.getClientRects(dom.documentElement(doc));
       if (!rootRects || !rootRects.length) return null;
     } catch {
       return null;
@@ -2172,12 +2190,12 @@ function createContrastHelpers(opts, shared) {
     for (let ri = 0; ri < roots.length; ri++) {
       let all;
       try {
-        all = roots[ri].querySelectorAll('*');
+        all = dom.querySelectorAll(roots[ri], '*');
       } catch {
         continue;
       }
       for (const node of all) {
-        if (node.shadowRoot) roots.push(node.shadowRoot);
+        if (dom.shadowRoot(node)) roots.push(dom.shadowRoot(node));
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
         if (!paint || __isUnpainted(node)) continue;
@@ -2189,9 +2207,9 @@ function createContrastHelpers(opts, shared) {
           boxes =
             cs &&
             String(cs.display).startsWith('inline') &&
-            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
-              ? Array.from(node.getClientRects())
-              : [node.getBoundingClientRect()];
+            !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
+              ? Array.from(dom.getClientRects(node))
+              : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
         }
@@ -2236,19 +2254,19 @@ function createContrastHelpers(opts, shared) {
 
   // The line boxes of el's own text.
   function __ownTextRects(el) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     const out = [];
     let range;
     try {
-      range = doc.createRange();
+      range = dom.createRange(doc);
     } catch {
       return out;
     }
-    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
-      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+    for (let n = dom.firstChild(el); n && out.length < 50; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
       try {
         range.selectNodeContents(n);
-        for (const r of range.getClientRects()) {
+        for (const r of dom.getClientRects(range)) {
           if (r.width >= 1 && r.height >= 1) out.push(r);
         }
       } catch {}
@@ -2309,7 +2327,7 @@ function createContrastHelpers(opts, shared) {
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
-      const r = host.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(host);
       const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
       const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
       const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
@@ -2376,7 +2394,7 @@ function createContrastHelpers(opts, shared) {
   // opaque background of its own (all of them when none has one).
   function __findPaintUnderText(el, chain) {
     try {
-      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
       if (!index) return null;
       const opaque = chain[chain.length - 1];
@@ -2400,7 +2418,7 @@ function createContrastHelpers(opts, shared) {
       };
       let box = null;
       try {
-        box = el.getBoundingClientRect();
+        box = dom.getBoundingClientRect(el);
       } catch {}
       const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       if (box && !pseudoCandidates && !near(box)) return null;
@@ -2443,7 +2461,7 @@ function createContrastHelpers(opts, shared) {
               if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
                 continue;
               return {
-                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                selector: __getSimpleSelectorCached(p.el, String(dom.localName(p.el) || '')),
                 property: p.paint.property,
                 value: p.paint.value
               };
@@ -2462,14 +2480,15 @@ function createContrastHelpers(opts, shared) {
         let hostRect = pseudo.box;
         if (!hostRect) {
           try {
-            hostRect = host.getBoundingClientRect();
+            hostRect = dom.getBoundingClientRect(host);
           } catch {
             hostRect = null;
           }
         }
         if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
         return {
-          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          selector:
+            __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
           property: pseudo.property,
           value: pseudo.value
         };

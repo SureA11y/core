@@ -97,12 +97,13 @@ const meta = {
  * Only use `ctx.*`, locals, and DOM APIs.
  */
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
 
   const getOuterHtmlSnippet =
     helpers && helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet
-      : (el) => (el && el.outerHTML) || '';
+      : (el) => (el && dom.outerHTML(el)) || '';
 
   const contextSelector = ctx.contextSelector || null;
 
@@ -111,19 +112,23 @@ function runInPage(ctx) {
   if (!rootEl) {
     if (contextSelector) {
       try {
-        rootEl = document.querySelector(contextSelector);
+        rootEl = dom.querySelector(document, contextSelector);
       } catch {
         // invalid selector, fallback to full document
         rootEl = null;
       }
     }
     if (!rootEl) {
-      rootEl = document.documentElement || document.body || document.querySelector('html');
+      rootEl =
+        dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     }
   }
 
   const fallbackRoot =
-    rootEl || document.documentElement || document.body || document.querySelector('html');
+    rootEl ||
+    dom.documentElement(document) ||
+    dom.body(document) ||
+    dom.querySelector(document, 'html');
 
   const html = getOuterHtmlSnippet(fallbackRoot);
 

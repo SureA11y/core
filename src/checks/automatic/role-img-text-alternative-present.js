@@ -74,6 +74,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -84,8 +85,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -142,7 +143,7 @@ function runInPage(ctx) {
       : null;
 
   for (const el of imgElements) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Applicability: eligible in the acc tree (with helper exceptions).
     if (isAccTreeEligible) {
@@ -163,7 +164,7 @@ function runInPage(ctx) {
 
     const matchedRole = (() => {
       try {
-        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+        return trim(dom.getAttribute(el, 'role')).split(/\s+/)[0].toLowerCase();
       } catch {
         return 'img';
       }
@@ -174,7 +175,7 @@ function runInPage(ctx) {
 
     const ariaLabelRaw = (() => {
       try {
-        return el.getAttribute('aria-label');
+        return dom.getAttribute(el, 'aria-label');
       } catch {
         return null;
       }
@@ -183,7 +184,7 @@ function runInPage(ctx) {
 
     const ariaLabelledbyRaw = (() => {
       try {
-        return el.getAttribute('aria-labelledby');
+        return dom.getAttribute(el, 'aria-labelledby');
       } catch {
         return null;
       }
@@ -199,7 +200,7 @@ function runInPage(ctx) {
     // Last-resort naming mechanism per HTML-AAM: a non-empty title attribute.
     const titleRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }
@@ -213,12 +214,14 @@ function runInPage(ctx) {
     // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        const isSvgNamespace = dom.namespaceURI(el) === 'http://www.w3.org/2000/svg';
         if (!isSvgNamespace) return '';
-        const first = el.firstElementChild;
-        const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+        const first = dom.firstElementChild(el);
+        const firstTag = first
+          ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+          : '';
         if (firstTag !== 'title') return '';
-        return trim(first.textContent);
+        return trim(dom.textContent(first));
       } catch {
         return '';
       }

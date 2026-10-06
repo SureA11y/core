@@ -66,6 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const occurrences = [];
@@ -82,7 +83,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -110,7 +111,7 @@ function runInPage(ctx) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    const role = el.getAttribute ? el.getAttribute('role') : null;
+    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     let roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
@@ -184,7 +185,7 @@ function runInPage(ctx) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       occurrences.push(
         helpers.reportOccurrence(el, {

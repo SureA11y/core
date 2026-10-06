@@ -74,6 +74,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -85,7 +86,9 @@ function runInPage(ctx) {
       : (sel, rt) => {
           try {
             const scope = rt || safeRoot;
-            return scope && scope.querySelectorAll ? Array.from(scope.querySelectorAll(sel)) : [];
+            return scope && dom.get(scope, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(scope, sel))
+              : [];
           } catch {
             return [];
           }
@@ -109,8 +112,8 @@ function runInPage(ctx) {
 
   const getAttr = (el, name) => {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -171,12 +174,12 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Role normalization + allowlist check (defensive).
     const role = (() => {
       try {
-        return normalizeWs(el.getAttribute('role')).toLowerCase();
+        return normalizeWs(dom.getAttribute(el, 'role')).toLowerCase();
       } catch {
         return '';
       }
