@@ -128,7 +128,15 @@ const SAFE_DOM_METHODS = [
 // (also properties of ordinary objects). tests/core/safe-dom.test.js checks
 // that every name the source passes to dom.get or dom.call is listed here or
 // above, since the page check below relies on it.
-const SAFE_DOM_OTHER_NAMES = ['clientHeight', 'clientWidth', 'id', 'style', 'title'];
+const SAFE_DOM_OTHER_NAMES = [
+  'clientHeight',
+  'clientWidth',
+  'id',
+  'style',
+  'title',
+  'type',
+  'value'
+];
 
 function createSafeDom() {
   // One instance per realm of this script: the lookups depend only on the

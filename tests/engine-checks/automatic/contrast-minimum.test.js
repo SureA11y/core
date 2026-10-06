@@ -905,3 +905,72 @@ test(`${RULE_ID}: own opacity over its own background, inside an opacity ancesto
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '3.69');
 });
+
+// The text a form field shows is measured, though it isn't a text node: its
+// current value, typed or set (#103). Chromium cases, with placeholders,
+// are in contrast-form-fields-chromium.test.js.
+test(`${RULE_ID}: the value of a text field is measured (#103)`, () => {
+  const page = (
+    field
+  ) => `<!doctype html><html style="background-color:#fff"><body style="background-color:#fff">
+    ${field}
+  </body></html>`;
+  assertRule(
+    run(page('<input aria-label="f" value="Typed value" style="color:#ccc">')),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assertRule(
+    run(page('<input type="email" aria-label="f" value="a@b.co" style="color:#333">')),
+    RULE_ID,
+    'pass'
+  );
+
+  // Typed: the value property, with no value attribute.
+  const dom = createDom(page('<input id="f" aria-label="f" style="color:#ccc">'));
+  patchGeometry(dom);
+  patchComputedStyleDefaults(dom);
+  dom.window.document.getElementById('f').value = 'Typed value';
+  const typed = runa11yCoreOnDom(dom, { engineOptions: { rules: [RULE_ID] } });
+  assertRule(typed, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+
+  // A textarea is measured once, by its current value.
+  const area = createDom(
+    page('<textarea id="f" aria-label="f" style="color:#ccc">Start</textarea>')
+  );
+  patchGeometry(area);
+  patchComputedStyleDefaults(area);
+  assertRule(runa11yCoreOnDom(area, { engineOptions: { rules: [RULE_ID] } }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  area.window.document.getElementById('f').value = '';
+  assertRule(
+    runa11yCoreOnDom(area, { engineOptions: { rules: [RULE_ID] } }),
+    RULE_ID,
+    'notApplicable'
+  );
+
+  for (const field of [
+    '<input disabled aria-label="f" value="Typed value" style="color:#ccc">',
+    '<input type="checkbox" aria-label="f" value="Typed value" style="color:#ccc">',
+    '<input type="hidden" value="Typed value">',
+    '<input aria-label="f" value="---" style="color:#ccc">'
+  ]) {
+    assertRule(run(page(field)), RULE_ID, 'notApplicable');
+  }
+});
+
+test(`${RULE_ID}: without a layout a placeholder is not measured, as its style can't be read (#103)`, () => {
+  // jsdom computes no ::placeholder style.
+  const dom =
+    createDom(`<!doctype html><html style="background-color:#fff"><body style="background-color:#fff">
+    <input aria-label="f" placeholder="Search" style="color:#ccc">
+  </body></html>`);
+  assertRule(
+    runa11yCoreOnDom(dom, { engineOptions: { rules: [RULE_ID] } }),
+    RULE_ID,
+    'notApplicable'
+  );
+});

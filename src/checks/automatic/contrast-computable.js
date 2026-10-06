@@ -12,7 +12,12 @@
  * @applicability
  *   Applies to every visible text node in scope, plus the label of <input
  *   type="button">/[type="submit"]/[type="reset"], which is rendered from
- *   the value attribute and so is invisible to a text-node walk. Text counts
+ *   the value attribute and so is invisible to a text-node walk, and the
+ *   text a form field shows: the current value of a <textarea> or of an
+ *   <input> that shows text (text, search, email, url, tel, password,
+ *   number, the date and time types), or, while the value is empty, its
+ *   placeholder, in the ::placeholder color, font, opacity and background
+ *   (only where the browser computes that style; jsdom does not). Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
  *   not clipped out of sight by the sr-only technique (clip or clip-path),
  *   and belongs neither to a disabled control nor to the label of one,
