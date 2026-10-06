@@ -17016,10 +17016,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = dom.ownerDocument(labelAncestor);
+        // Only an element in the label's own tree (its shadow root, or the
+        // document) can reference it by id.
+        const root = dom.getRootNode(labelAncestor);
+        const tree =
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
-        if (doc && labelId) {
-          const referrers = dom.querySelectorAll(doc, '[aria-labelledby~="' + labelId + '"]');
+        if (tree && labelId) {
+          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -19309,10 +19315,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof dom.get(ariaDocument, 'getElementById') === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(ariaDocument, refId);
+          const ref = dom.getElementById(scope, refId);
           if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
@@ -20772,6 +20784,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
+  var __idRefCacheByTree = null; // WeakMap<ShadowRoot|Document, Map<...>>, the same for a tree other than the document
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
@@ -21225,7 +21238,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!ariaLabelledBy)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts);
+    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -21426,6 +21439,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The tree an ID reference on `el` resolves in: its shadow root, or its
+  // document. IDs are scoped to their tree (HTML's labeled control is "an
+  // element in the tree" with that ID; ARIA ID references and `headers` use
+  // the same lookup), so a reference never crosses a shadow boundary. Null
+  // for a node in no such tree (a detached subtree), where callers keep
+  // their document lookup.
+  function __idTreeOf(el) {
+    try {
+      const root = el && dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      return root && typeof dom.get(root, 'getElementById') === 'function' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The element an ID reference on `from` points to: the first element with
+  // that id in `from`'s own tree (see __idTreeOf). For an element in the
+  // scanned document this is the cached document lookup.
+  function getElementByIdInTree(from, id) {
+    const key = trim(id);
+    if (!key) return null;
+    const tree = __idTreeOf(from);
+    if (!tree || tree === document) return safeDocGetById(key) || safeRootQueryById(key);
+    try {
+      return dom.getElementById(tree, key) || null;
+    } catch {
+      return null;
+    }
+  }
+
   // A closed <details> shows only its summary: its first <summary> child,
   // which stays on the page as the toggle. Every other descendant is hidden,
   // including another <summary> and anything in an open <details> nested in
@@ -21611,8 +21654,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
+    // Only an element in the same tree can reference it (see __idTreeOf).
+    const tree = __idTreeOf(node) || document;
+
     // Prefer reverse-index lookup (single build per run) over repeated querySelectorAll per node.
-    const idx = getIdRefReverseIndex(document);
+    const idx = getIdRefReverseIndex(tree);
     if (idx && typeof idx.get === 'function') {
       let refs;
       try {
@@ -21638,8 +21684,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(document, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(document, '[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -22095,6 +22141,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __idLookupRootCache = null;
   }
 
+  // IDREF resolution in a shadow root (or another document): per tree
+  try {
+    __idRefCacheByTree =
+      __domSharedCache.idRefCacheByTree instanceof WeakMap
+        ? __domSharedCache.idRefCacheByTree
+        : (__domSharedCache.idRefCacheByTree = new WeakMap());
+  } catch {
+    __idRefCacheByTree = null;
+  }
+
   // IDREF resolution: cache resolveIdRefs results (root-scoped) within a run
   try {
     __idRefCacheByRoot =
@@ -22151,7 +22207,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -22306,19 +22362,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  // Real `<label for="...">` element references for one `for` value, built
-  // via a single `document.querySelectorAll('label[for]')` pass and cached
-  // per document for the whole run, for callers that need the actual label
-  // element (to compute its accessible name, or to check whether it
-  // contributes one), not just whether one exists.
-  function __getLabelElementsForId(id) {
+  // Real `<label for="...">` element references for one `for` value in the
+  // tree `root` (a document or a shadow root: a label labels a control in its
+  // own tree only), built via a single `root.querySelectorAll('label[for]')`
+  // pass and cached per tree for the whole run, for callers that need the
+  // actual label element (to compute its accessible name, or to check
+  // whether it contributes one), not just whether one exists.
+  function __getLabelElementsForId(id, root) {
     const key = trim(id);
-    if (!key || !document || !dom.get(document, 'querySelectorAll')) return [];
+    const tree = root || document;
+    if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of dom.querySelectorAll(document, 'label[for]')) {
+        for (const label of dom.querySelectorAll(tree, 'label[for]')) {
           const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
@@ -22331,10 +22389,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
 
-    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    let byId = __labelElementsByForIdIndexByDoc.get(tree);
     if (!(byId instanceof Map)) {
       byId = buildIndex();
-      __labelElementsByForIdIndexByDoc.set(document, byId);
+      __labelElementsByForIdIndexByDoc.set(tree, byId);
     }
     return byId.get(key) || [];
   }
@@ -22388,11 +22446,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // A `for` label labels the first element in its tree with that id
       // (HTML's labeled control), so a second element sharing the id has no
       // label from it; Chromium names only the first.
-      const forLabels = __getLabelElementsForId(id);
+      const root = __idTreeOf(el);
+      const forLabels = __getLabelElementsForId(id, root);
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = dom.get(l, 'getRootNode') ? dom.getRootNode(l) : null;
           if (root && typeof dom.get(root, 'getElementById') === 'function')
             target = dom.getElementById(root, id);
         } catch {}
@@ -23486,7 +23544,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // E) IDREF helpers
-  function resolveIdRefs(idrefString, _ctx, opts) {
+  // `from` is the element carrying the reference: the IDs resolve in its own
+  // tree (see __idTreeOf). Without it they resolve in the document.
+  function resolveIdRefs(idrefString, _ctx, opts, from) {
     const raw = trim(idrefString);
     if (!raw) return { refs: [], missing: [], flags: ['empty'] };
 
@@ -23494,16 +23554,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = raw.split(/\s+/).filter(Boolean);
     const normKey = parts.join(' ');
 
+    // A shadow root (or another document) is its own tree, with its own cache.
+    let tree = from ? __idTreeOf(from) : null;
+    if (tree === document) tree = null;
+
     // Root-scoped cache map
     let cacheMap = null;
-    if (__idRefCacheByRoot) {
-      const scopeObj = __getScopeObj();
+    const cacheByKey = tree ? __idRefCacheByTree : __idRefCacheByRoot;
+    if (cacheByKey) {
+      const scopeObj = tree || __getScopeObj();
       if (scopeObj) {
         try {
-          cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
+          cacheMap = cacheByKey.get(scopeObj) || null;
           if (!cacheMap) {
             cacheMap = new Map();
-            __idRefCacheByRoot.set(scopeObj, cacheMap);
+            cacheByKey.set(scopeObj, cacheMap);
           }
         } catch {
           cacheMap = null;
@@ -23544,8 +23609,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const key = trim(id);
       if (!key) continue;
 
-      let el = safeDocGetById(key);
-      if (!el) el = safeRootQueryById(key);
+      let el;
+      if (tree) {
+        try {
+          el = dom.getElementById(tree, key);
+        } catch {
+          el = null;
+        }
+      } else {
+        el = safeDocGetById(key);
+        if (!el) el = safeRootQueryById(key);
+      }
 
       if (!el || !isElement(el)) {
         missing.push(key);
@@ -23701,8 +23775,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
-  function getTextFromIdRefs(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefs(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -23735,8 +23809,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { eligible: true, reasons: [] };
   }
 
-  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
@@ -24078,7 +24152,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
     if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts);
+      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -26140,6 +26214,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // IDREF primitives
     resolveIdRefs,
+    getElementByIdInTree,
     getTextFromIdRefs,
     getTextFromIdRefsIdrefEligible,
 
@@ -38825,25 +38900,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // Cache mapName -> first referencing <img> in document order (deterministic)
-  const __usemapIndex = (() => {
-    const idx = new Map();
+  // Cache mapName -> first referencing <img> in tree order (deterministic),
+  // per tree: an <img usemap> uses a <map> in its own tree only, the
+  // document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
     try {
       const imgs =
-        document && dom.get(document, 'querySelectorAll')
-          ? dom.querySelectorAll(document, 'img[usemap]')
-          : [];
+        tree && dom.get(tree, 'querySelectorAll') ? dom.querySelectorAll(tree, 'img[usemap]') : [];
       for (const img of imgs) {
         if (!img || !dom.get(img, 'getAttribute')) continue;
         const u = normUsemap(dom.getAttribute(img, 'usemap'));
         if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img); // first in document order wins
+        if (!idx.has(u)) idx.set(u, img); // first in tree order wins
       }
     } catch {
       // ignore
     }
     return idx;
-  })();
+  }
 
   function getReferencingImgForArea(areaEl) {
     try {
@@ -38854,7 +38933,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const mapName = getMapName(map);
       if (!mapName) return null;
 
-      return __usemapIndex.get(mapName) || null;
+      const root = dom.getRootNode(map);
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      return usemapIndexFor(tree).get(mapName) || null;
     } catch {}
     return null;
   }
@@ -39204,15 +39285,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const __usemapIndex = new Map(); // mapName -> img (first in document order)
-  try {
-    const imgs = Array.from(dom.querySelectorAll(document, 'img[usemap]'));
-    for (const img of imgs) {
-      const u = normUsemap(dom.getAttribute(img, 'usemap'));
-      if (!u) continue;
-      if (!__usemapIndex.has(u)) __usemapIndex.set(u, img);
-    }
-  } catch {}
+  // mapName -> img (first in tree order), per tree: an <img usemap> uses a
+  // <map> in its own tree only, the document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
+    try {
+      const imgs = Array.from(dom.querySelectorAll(tree, 'img[usemap]'));
+      for (const img of imgs) {
+        const u = normUsemap(dom.getAttribute(img, 'usemap'));
+        if (!u) continue;
+        if (!idx.has(u)) idx.set(u, img);
+      }
+    } catch {}
+    return idx;
+  }
 
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -39222,7 +39312,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const map = dom.get(el, 'closest') && dom.closest(el, 'map');
       const mapName = map ? getMapName(map) : '';
-      img = mapName ? __usemapIndex.get(mapName) || null : null;
+      const root = map ? dom.getRootNode(map) : null;
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      img = mapName ? usemapIndexFor(tree).get(mapName) || null : null;
     } catch {
       img = null;
     }
@@ -42588,7 +42680,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!found) {
       const ownsAttr = dom.getAttribute(el, 'aria-owns');
       if (ownsAttr && helpers.resolveIdRefs) {
-        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 });
+        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 }, el);
         for (const ownedEl of resolved.refs || []) {
           const candRole = ariaHelpers.getContainmentRole(ownedEl);
           if (candRole && ownedSet.has(candRole)) {
@@ -42812,6 +42904,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const ownsAttr = dom.getAttribute(owner, 'aria-owns') || '';
       const tokens = ownsAttr.split(/\s+/).filter(Boolean);
       if (tokens.indexOf(idTok) === -1) continue;
+      // The reference resolves in the owner's own tree: the shadow root
+      // or document both must share.
+      if (helpers.getElementByIdInTree(owner, idTok) !== el) continue;
 
       const role = ariaHelpers.getContainmentRole(owner);
       if (role && acceptableRoles.has(role)) return true;
@@ -44128,7 +44223,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -45209,7 +45304,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -48542,7 +48637,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // all, the same pattern every other *-name-present rule guards against.
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -49251,7 +49346,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!ariaLabel && ariaLabelledBy && getTextFromIdRefs) {
       try {
-        const t = getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {
         labelledByText = '';
@@ -49310,7 +49405,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "empty-heading": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -49387,7 +49482,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
@@ -49488,7 +49583,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "empty-table-header": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -49536,7 +49631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
@@ -49987,13 +50082,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return true;
   }
 
-  function resolveIdRefs(el, attr) {
+  function getReferencedElements(el, attr) {
     const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, attr));
     if (!raw) return [];
     const out = [];
     for (const refId of raw.split(/\s+/).filter(Boolean)) {
       try {
-        const ref = dom.getElementById(document, refId);
+        const ref = helpers.getElementByIdInTree(el, refId);
         if (ref) out.push(ref);
       } catch {
         // ignore an unusable reference
@@ -50003,18 +50098,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Index of `<label for="...">` elements by their `for` value, built once
-  // (not the native `el.labels`, deliberately -- see getNativeLabels).
-  const labelsByForId = new Map();
-  try {
-    for (const label of dom.querySelectorAll(document, 'label[for]')) {
-      const forVal = normalizeWs(dom.getAttribute(label, 'for'));
-      if (!forVal) continue;
-      const bucket = labelsByForId.get(forVal);
-      if (bucket) bucket.push(label);
-      else labelsByForId.set(forVal, [label]);
+  // per tree (not the native `el.labels`, deliberately -- see
+  // getNativeLabels). A label labels a control in its own tree only: the
+  // document, or the shadow root both are in.
+  const labelsByForIdByTree = new Map();
+  function labelsByForIdIn(tree) {
+    let labelsByForId = labelsByForIdByTree.get(tree);
+    if (labelsByForId) return labelsByForId;
+    labelsByForId = new Map();
+    labelsByForIdByTree.set(tree, labelsByForId);
+    try {
+      for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+        const forVal = normalizeWs(dom.getAttribute(label, 'for'));
+        if (!forVal) continue;
+        const bucket = labelsByForId.get(forVal);
+        if (bucket) bucket.push(label);
+        else labelsByForId.set(forVal, [label]);
+      }
+    } catch {
+      // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
     }
-  } catch {
-    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+    return labelsByForId;
   }
 
   // Per HTML's label-control algorithm, a wrapping <label> with no `for`
@@ -50042,7 +50146,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const labels = [];
     const idVal = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
     if (idVal) {
-      const forLabels = labelsByForId.get(idVal);
+      let tree = document;
+      try {
+        const root = dom.getRootNode(el);
+        if (root && typeof dom.get(root, 'getElementById') === 'function') tree = root;
+      } catch {
+        // keep the document
+      }
+      const forLabels = labelsByForIdIn(tree).get(idVal);
       if (forLabels) {
         for (const label of forLabels) labels.push(label);
       }
@@ -50075,7 +50186,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // present, otherwise the <label> elements associated with it. aria-label is
   // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
-    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const referenced = getReferencedElements(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
     const parts = [];
     let hiddenParts = 0;
@@ -51221,7 +51332,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "heading-quality": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -51471,7 +51582,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
@@ -54218,7 +54329,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const idrefs =
         el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-labelledby') : null;
       if (idrefs && helpers.resolveIdRefs) {
-        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
         const parts = [];
         const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
@@ -56546,7 +56657,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
-      const info = helpers.getTextFromIdRefs(describedBy, ctx);
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
       return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
     } catch {
       return '';
@@ -56871,7 +56982,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -57361,7 +57472,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const target = targetId
             ? dom.get(safeRoot, 'getElementById')
               ? dom.getElementById(safeRoot, targetId)
-              : dom.getElementById(document, targetId)
+              : // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document
+                dom.getElementById(document, targetId)
             : null;
 
           if (isElement(target) && isEligible(target)) {
@@ -57593,7 +57705,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -58094,7 +58206,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -59078,7 +59190,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }
@@ -59177,7 +59289,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -60554,7 +60666,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -60756,6 +60868,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
     if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       return !!(dom.get(document, 'getElementById') && dom.getElementById(document, href.slice(1)));
     } catch {
       return false;
@@ -61457,7 +61570,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -61686,7 +61799,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
@@ -61781,6 +61894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let target = null;
     if (fragment) {
       try {
+        // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
         target = dom.getElementById(document, fragment);
       } catch {
         target = null;
@@ -61971,7 +62085,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -62207,7 +62321,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -62397,7 +62511,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -63149,7 +63263,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }
@@ -63255,7 +63369,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -63602,7 +63716,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
@@ -63645,7 +63759,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const headerId of ids) {
       let ref;
       try {
-        ref = dom.getElementById(document, headerId);
+        ref = helpers.getElementByIdInTree(el, headerId);
       } catch {
         ref = null;
       }
@@ -65684,7 +65798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -65872,7 +65986,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -66023,7 +66137,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -73073,10 +73187,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = dom.ownerDocument(labelAncestor);
+        // Only an element in the label's own tree (its shadow root, or the
+        // document) can reference it by id.
+        const root = dom.getRootNode(labelAncestor);
+        const tree =
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
-        if (doc && labelId) {
-          const referrers = dom.querySelectorAll(doc, '[aria-labelledby~="' + labelId + '"]');
+        if (tree && labelId) {
+          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -75366,10 +75486,16 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof dom.get(ariaDocument, 'getElementById') === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(ariaDocument, refId);
+          const ref = dom.getElementById(scope, refId);
           if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
@@ -76829,6 +76955,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
+  var __idRefCacheByTree = null; // WeakMap<ShadowRoot|Document, Map<...>>, the same for a tree other than the document
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
@@ -77282,7 +77409,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!ariaLabelledBy)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts);
+    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -77483,6 +77610,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The tree an ID reference on `el` resolves in: its shadow root, or its
+  // document. IDs are scoped to their tree (HTML's labeled control is "an
+  // element in the tree" with that ID; ARIA ID references and `headers` use
+  // the same lookup), so a reference never crosses a shadow boundary. Null
+  // for a node in no such tree (a detached subtree), where callers keep
+  // their document lookup.
+  function __idTreeOf(el) {
+    try {
+      const root = el && dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      return root && typeof dom.get(root, 'getElementById') === 'function' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The element an ID reference on `from` points to: the first element with
+  // that id in `from`'s own tree (see __idTreeOf). For an element in the
+  // scanned document this is the cached document lookup.
+  function getElementByIdInTree(from, id) {
+    const key = trim(id);
+    if (!key) return null;
+    const tree = __idTreeOf(from);
+    if (!tree || tree === document) return safeDocGetById(key) || safeRootQueryById(key);
+    try {
+      return dom.getElementById(tree, key) || null;
+    } catch {
+      return null;
+    }
+  }
+
   // A closed <details> shows only its summary: its first <summary> child,
   // which stays on the page as the toggle. Every other descendant is hidden,
   // including another <summary> and anything in an open <details> nested in
@@ -77668,8 +77825,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
+    // Only an element in the same tree can reference it (see __idTreeOf).
+    const tree = __idTreeOf(node) || document;
+
     // Prefer reverse-index lookup (single build per run) over repeated querySelectorAll per node.
-    const idx = getIdRefReverseIndex(document);
+    const idx = getIdRefReverseIndex(tree);
     if (idx && typeof idx.get === 'function') {
       let refs;
       try {
@@ -77695,8 +77855,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(document, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(document, '[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -78152,6 +78312,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __idLookupRootCache = null;
   }
 
+  // IDREF resolution in a shadow root (or another document): per tree
+  try {
+    __idRefCacheByTree =
+      __domSharedCache.idRefCacheByTree instanceof WeakMap
+        ? __domSharedCache.idRefCacheByTree
+        : (__domSharedCache.idRefCacheByTree = new WeakMap());
+  } catch {
+    __idRefCacheByTree = null;
+  }
+
   // IDREF resolution: cache resolveIdRefs results (root-scoped) within a run
   try {
     __idRefCacheByRoot =
@@ -78208,7 +78378,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -78363,19 +78533,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  // Real `<label for="...">` element references for one `for` value, built
-  // via a single `document.querySelectorAll('label[for]')` pass and cached
-  // per document for the whole run, for callers that need the actual label
-  // element (to compute its accessible name, or to check whether it
-  // contributes one), not just whether one exists.
-  function __getLabelElementsForId(id) {
+  // Real `<label for="...">` element references for one `for` value in the
+  // tree `root` (a document or a shadow root: a label labels a control in its
+  // own tree only), built via a single `root.querySelectorAll('label[for]')`
+  // pass and cached per tree for the whole run, for callers that need the
+  // actual label element (to compute its accessible name, or to check
+  // whether it contributes one), not just whether one exists.
+  function __getLabelElementsForId(id, root) {
     const key = trim(id);
-    if (!key || !document || !dom.get(document, 'querySelectorAll')) return [];
+    const tree = root || document;
+    if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of dom.querySelectorAll(document, 'label[for]')) {
+        for (const label of dom.querySelectorAll(tree, 'label[for]')) {
           const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
@@ -78388,10 +78560,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
 
-    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    let byId = __labelElementsByForIdIndexByDoc.get(tree);
     if (!(byId instanceof Map)) {
       byId = buildIndex();
-      __labelElementsByForIdIndexByDoc.set(document, byId);
+      __labelElementsByForIdIndexByDoc.set(tree, byId);
     }
     return byId.get(key) || [];
   }
@@ -78445,11 +78617,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // A `for` label labels the first element in its tree with that id
       // (HTML's labeled control), so a second element sharing the id has no
       // label from it; Chromium names only the first.
-      const forLabels = __getLabelElementsForId(id);
+      const root = __idTreeOf(el);
+      const forLabels = __getLabelElementsForId(id, root);
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = dom.get(l, 'getRootNode') ? dom.getRootNode(l) : null;
           if (root && typeof dom.get(root, 'getElementById') === 'function')
             target = dom.getElementById(root, id);
         } catch {}
@@ -79543,7 +79715,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // E) IDREF helpers
-  function resolveIdRefs(idrefString, _ctx, opts) {
+  // `from` is the element carrying the reference: the IDs resolve in its own
+  // tree (see __idTreeOf). Without it they resolve in the document.
+  function resolveIdRefs(idrefString, _ctx, opts, from) {
     const raw = trim(idrefString);
     if (!raw) return { refs: [], missing: [], flags: ['empty'] };
 
@@ -79551,16 +79725,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = raw.split(/\s+/).filter(Boolean);
     const normKey = parts.join(' ');
 
+    // A shadow root (or another document) is its own tree, with its own cache.
+    let tree = from ? __idTreeOf(from) : null;
+    if (tree === document) tree = null;
+
     // Root-scoped cache map
     let cacheMap = null;
-    if (__idRefCacheByRoot) {
-      const scopeObj = __getScopeObj();
+    const cacheByKey = tree ? __idRefCacheByTree : __idRefCacheByRoot;
+    if (cacheByKey) {
+      const scopeObj = tree || __getScopeObj();
       if (scopeObj) {
         try {
-          cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
+          cacheMap = cacheByKey.get(scopeObj) || null;
           if (!cacheMap) {
             cacheMap = new Map();
-            __idRefCacheByRoot.set(scopeObj, cacheMap);
+            cacheByKey.set(scopeObj, cacheMap);
           }
         } catch {
           cacheMap = null;
@@ -79601,8 +79780,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const key = trim(id);
       if (!key) continue;
 
-      let el = safeDocGetById(key);
-      if (!el) el = safeRootQueryById(key);
+      let el;
+      if (tree) {
+        try {
+          el = dom.getElementById(tree, key);
+        } catch {
+          el = null;
+        }
+      } else {
+        el = safeDocGetById(key);
+        if (!el) el = safeRootQueryById(key);
+      }
 
       if (!el || !isElement(el)) {
         missing.push(key);
@@ -79758,8 +79946,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
-  function getTextFromIdRefs(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefs(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -79792,8 +79980,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { eligible: true, reasons: [] };
   }
 
-  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
@@ -80135,7 +80323,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
     if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts);
+      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -82197,6 +82385,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // IDREF primitives
     resolveIdRefs,
+    getElementByIdInTree,
     getTextFromIdRefs,
     getTextFromIdRefsIdrefEligible,
 

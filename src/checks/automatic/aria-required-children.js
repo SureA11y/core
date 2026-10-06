@@ -272,7 +272,7 @@ function runInPage(ctx) {
     if (!found) {
       const ownsAttr = dom.getAttribute(el, 'aria-owns');
       if (ownsAttr && helpers.resolveIdRefs) {
-        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 });
+        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 }, el);
         for (const ownedEl of resolved.refs || []) {
           const candRole = ariaHelpers.getContainmentRole(ownedEl);
           if (candRole && ownedSet.has(candRole)) {

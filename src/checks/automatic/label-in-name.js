@@ -383,7 +383,7 @@ function runInPage(ctx) {
       const idrefs =
         el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-labelledby') : null;
       if (idrefs && helpers.resolveIdRefs) {
-        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
         const parts = [];
         const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {

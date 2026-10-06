@@ -88,7 +88,7 @@ const meta = {
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -338,7 +338,7 @@ function runInPage(ctx) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
             const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);

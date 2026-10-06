@@ -87,10 +87,16 @@ function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof dom.get(ariaDocument, 'getElementById') === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = dom.getElementById(ariaDocument, refId);
+          const ref = dom.getElementById(scope, refId);
           if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
