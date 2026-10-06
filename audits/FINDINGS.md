@@ -426,7 +426,7 @@ Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaitin
 
 How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
 
-How NM-1 and NM-8 were checked: every fixture with a role attribute is scanned as written, with every `role="x"` as `role="zzunknown x"`, and with every role in upper case; no rule's result changes in either (`tests/role-tokens.test.js`; 59 rules changed before). Each changed rule's own tests pin a fallback list and an upper-case role. The full suite passes (the same one environmental failure); no measurable cost.
+How NM-1 and NM-8 were checked: every fixture with a role attribute is scanned as written, with every `role="x"` as `role="zzunknown x"`, and with every role in upper case; no rule's result changes in either (`tests/role-tokens.test.js`; results in 51 rules changed before). Each changed rule's own tests pin a fallback list and an upper-case role. The full suite passes (the same one environmental failure); no measurable cost.
 
 ### Fixed by the first audit's follow-up (in 1.10.0)
 
