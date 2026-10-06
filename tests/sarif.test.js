@@ -624,7 +624,7 @@ test('a rule that could not check reaches SARIF as a notice, never as an alert',
   const ids = sarif.runs[0].results.map((r) => r.ruleId);
   assert.ok(!ids.includes('contrast-minimum'), 'not evaluated is not a violation');
 
-  const notices = sarif.runs[0].invocations[0].toolExecutionNotices;
+  const notices = sarif.runs[0].invocations[0].toolExecutionNotifications;
   const contrast = notices.find((n) => n.associatedRule.id === 'contrast-minimum');
   assert.ok(contrast, 'a SARIF-only consumer must still learn contrast went unchecked');
   assert.strictEqual(contrast.level, 'note');
