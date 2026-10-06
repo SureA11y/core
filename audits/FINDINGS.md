@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: R-14.
+Sorted by severity, then by how many pages it touches. Next to fix: R-11.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [R-14](#r-14) | Input values and placeholders are never contrast-checked | Gap | Medium | Round 1 |
 | [R-11](#r-11) | target-size-minimum measures the bounding box | Bug | Medium | Round 1 |
 | [VS-8](#vs-8) | target-size-minimum exempts any inline link in a `li`, `td` or `p` | Gap | Medium | Round 2 |
 | [VS-4](#vs-4) | link-in-text-block misses an `::after` underline and other cues | Bug | Medium | Round 2 |
@@ -98,11 +97,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: R-14.
 ### High
 
 ### Medium
-
-<a id="r-14"></a>**R-14. Input values and placeholders are never contrast-checked** — Gap, Medium · [details](./2026-10-stress-test.md) (R-14)
-- *In plain words:* text typed in a field, and placeholder text, are not checked at all.
-- Example: `<input value="Typed value" style="color:#ccc">`: `notApplicable`. A `<textarea>` is checked.
-- Where: only submit, button and reset inputs are collected (`contrast-helpers.js:645-646`).
 
 <a id="r-11"></a>**R-11. target-size-minimum measures the bounding box** — Bug, Medium · [details](./2026-10-stress-test.md) (R-11)
 - *In plain words:* the rule measures the box around a target, not the part a user can actually hit.
@@ -360,6 +354,13 @@ How R-1 was checked: 100 generated layouts (positioned boxes with every kind of 
 | R-13 (also VS-5) | The viewport `content` parser: spaces, odd values, several metas | Option A′: read the `content` attribute as browsers do, in both rules, and keep judging every viewport `<meta>`. Whitespace separates settings as `,` and `;` do; a setting with no value, or a value that isn't a number, counts as 0 (so it blocks zoom); `yes` is 1, `device-width` and `device-height` are 10; a number is read up to its first non-numeric character (`1.5x` is 1.5); a later setting replaces an earlier one with the same name; case is ignored; a negative `maximum-scale` is dropped. The parser is shared (`helpers.readViewportContent`), so the two rules no longer disagree. Left by choice: a page with two viewport metas, of which only the last applies in browsers, still fails when an earlier one blocks zoom. | `5f1186b`, changelog `13eb228` | [#102](https://github.com/SureA11y/core/issues/102) | 2026-10-07 |
 
 How R-13 was checked: each case was loaded in Chromium with a mobile viewport and zoomed in with a pinch gesture (CDP `Input.synthesizePinchGesture`) to find the largest zoom the browser allows; 17 cases, among them the finding's. After the fix both rules agree with the browser on every one but the two-meta case (`user-scalable=no` then `width=device-width`, which Chromium lets the user zoom), which fails on purpose. On the finding's eight cases Engine B gives the same result as the branch on all eight, so it agrees with the browser on seven and also fails the two-meta case; Engine A agrees with the browser on four: it misses `user-scalable=no` after a space, `maximum-scale=abc` and `maximum-scale=no`, which all block zoom, and passes the two-meta case. The full suite passes (the same one environmental failure).
+
+<a id="r-14"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| R-14 | Input values and placeholders are never contrast-checked | Option B: measure the text a field shows, values and placeholders. The value of an `<input>` that shows text (text, search, email, url, tel, password, number, the date and time types) and the current value of a `<textarea>` are measured in the field's color against its background; while the value is empty, the placeholder is measured in its `::placeholder` color and font, faded by its `opacity`, over its own background (a background image, a shadow, or `opacity` over its own background make it `cantTell`). Found while fixing it and included: a `<textarea>` was measured by its starting text, not by what it shows once edited. Left: the text a browser draws in an empty date field, file inputs and `<select>`; paint overlapping a field isn't looked for; placeholders aren't measured under jsdom, which computes no `::placeholder` style. | `2c763c4`, changelog `9c1aacd` | [#103](https://github.com/SureA11y/core/issues/103) | 2026-10-07 |
+
+How R-14 was checked: 20 cases in Chromium (values set and typed, each field type, textareas, placeholders in the default color, in a light color, hidden by a value, with `opacity`, a background, a large bold font, a shadow, a gradient, an empty date field, a disabled field, a checkbox), with the ratios checked against rendered pixels where `opacity` is involved. Engine A agrees on every value case and, like the branch, leaves out disabled fields and checkboxes; it never measures a placeholder (it passes a field with a 1.6:1 placeholder). Engine B leaves all of them out, as the ACT rule it follows applies to text nodes only. On the 137 fixtures in Chromium, 12 rule results changed, all fields with a placeholder in Chromium's default color (#757575 on white, 4.61:1): `contrast-minimum` went from `notApplicable` to `pass`, and `contrast-enhanced` now fails them, as 1.4.6 asks for 7:1. The full suite passes (the same one environmental failure). Cost: 1.015× on the fixtures.
 
 ### Fixed after the second audit, second batch (in `main`)
 
