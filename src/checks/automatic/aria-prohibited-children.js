@@ -11,8 +11,7 @@
  * @applicability
  *   Applies to elements with an explicit, valid role that is one of the
  *   container roles with a documented "required owned elements" entry
- *   (the same REQUIRED_OWNED_ROLES table aria-required-children
- *   uses, see src/core/aria-helpers.js).
+ *   (the same table aria-required-children uses).
  * @expectation
  *   Every accessible-tree-owned descendant of the container (after
  *   pruning role="none"/"presentation" elements and any "group"/
@@ -21,9 +20,8 @@
  *   itself in the container's own required-owned-roles set) has a role
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
- *   the container's required-owned roles plus the small
- *   ALLOWED_EXTRA_OWNED_ROLES set of roles it may own without being
- *   required to (a separator between menu items, a caption on a grid). A
+ *   the container's required-owned roles plus a small set of roles it
+ *   may own without being required to (a separator between menu items, a caption on a grid). A
  *   roleless wrapper
  *   is descended into to reach the items a component library buries
  *   inside it, but once one is found there the rest of that wrapper's

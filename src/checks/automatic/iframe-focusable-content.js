@@ -11,8 +11,8 @@
  * @applicability
  *   Applies to <iframe>/<frame> elements with an explicit negative
  *   tabindex, whose embedded document is same-origin and reachable via
- *   contentDocument (cross-origin/unreachable frames assert nothing, see
- *   implementation notes).
+ *   contentDocument. A cross-origin or otherwise unreachable frame can't
+ *   be looked into, so nothing is asserted about it.
  * @expectation
  *   The frame's embedded document contains no focusable element. Browsers
  *   do not propagate tabindex="-1" on the host <iframe> into its embedded

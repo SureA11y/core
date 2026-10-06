@@ -10,8 +10,8 @@
  * @applicability
  *   Applies to elements with an explicit, valid, non-abstract role, where
  *   the host element/attribute combination has an asserted permitted-roles
- *   constraint in the ARIA-in-HTML table (src/core/aria-helpers.js
- *   ALLOWED_ROLES_BY_ELEMENT).
+ *   constraint in the ARIA in HTML specification's table of permitted
+ *   roles.
  * @expectation
  *   The explicit role is one of the roles the ARIA-in-HTML specification
  *   permits for that host element.
