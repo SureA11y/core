@@ -362,6 +362,16 @@ engineOptions: { includeShadowDom: false }   // light DOM only
 So write the rule assuming open shadow roots are in scope; `queryAllSmart` honours the
 caller's choice for you. Closed roots are unreachable either way.
 
+An ID reference (`for`, `aria-labelledby`, `aria-owns`, `headers`, `usemap` and the
+rest) resolves in the referring element's own tree: the shadow root it is in, or the
+document. So a reference inside a shadow root finds its target there, and one from a
+shadow root to the page finds nothing, as in browsers. Look an ID up with
+`helpers.getElementByIdInTree(el, id)`, and pass the element carrying the reference to
+`resolveIdRefs`/`getTextFromIdRefs` (`RULE_HELPERS.md` §4); `npm run lint` flags
+`dom.getElementById(document, …)` in a rule, and an IDREF helper called without the
+element. A fragment link (`href="#main"`) is the exception: its target is looked up in
+the document, which the rule says in an `eslint-disable` comment.
+
 ### 6.2 Reporting note for Shadow DOM
 
 Selectors do not pierce shadow boundaries, so a `selector` may not uniquely locate a node
