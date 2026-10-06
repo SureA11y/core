@@ -16959,7 +16959,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     }
 
-    return 'styleOnly';
+    return '';
+  }
+
+  // Whether the document has a layout to measure: a browser lays out the root
+  // element; jsdom gives it no boxes.
+  function __hasLayout(d) {
+    try {
+      const root = d && dom.documentElement(d);
+      const rects = root ? dom.getClientRects(root) : null;
+      return !!(rects && rects.length);
+    } catch {
+      return false;
+    }
   }
 
   function __asEligibilityBool(v) {
@@ -17047,7 +17059,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
-      const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
+      // Unset, the text a reader can see is decided from the layout where
+      // there is one (#99): text off the page or clipped away is drawn
+      // nowhere it can be seen. Without a layout (jsdom), from styles only.
+      const rawMode =
+        __resolveVisibilityMode(ctx, engineOptions, d, w) ||
+        (__hasLayout(d) ? 'styleAndGeometry' : 'styleOnly');
 
       const visibilityMode =
         __getVisibilityMode({ visibilityMode: rawMode }) === 'styleAndGeometry'
@@ -17203,6 +17220,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // above or left of the page, where no scrolling reaches (the
       // left: -9999px technique), or clipped to nothing by an ancestor that
       // hides its overflow (height: 0; overflow: hidden).
+      // Measured once per scan: many text elements share the ancestors
+      // that clip them.
+      const clipBoxCache = new Map();
+      const clipBoxOf = (node) => {
+        let box = clipBoxCache.get(node);
+        if (box === undefined) {
+          const acs = __contrastComputedStyle(node);
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          box = {
+            clipsX,
+            clipsY,
+            rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
+            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+          };
+          clipBoxCache.set(node, box);
+        }
+        return box;
+      };
+
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
@@ -17230,13 +17267,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         let cur = composedParent(el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
-          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
-          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
           if (clipsX || clipsY) {
-            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -17247,10 +17281,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             }
             if (right - left < 1 || bottom - top < 1) return true;
           }
-          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          if (stops) break;
           cur = composedParent(cur);
         }
         return false;
+      };
+
+      // An <option> has no layout box of its own, yet it is drawn: the
+      // selected one in the closed control, the others in the list it opens.
+      // Its <select> is what has a place on the page to measure.
+      const selectOf = (el) => {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        if (tag !== 'option' && tag !== 'optgroup') return null;
+        try {
+          return dom.closest(el, 'select');
+        } catch {
+          return null;
+        }
       };
 
       const isVisibleEligible = (el) => {
@@ -17259,8 +17306,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         let ok;
         try {
-          const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
+          const select = visibilityMode === 'styleAndGeometry' ? selectOf(el) : null;
+          const r = helpers.isDomVisibleEligible(el, ctx, {
+            visibilityMode: select ? 'styleOnly' : visibilityMode
+          });
           ok = __asEligibilityBool(r);
+          if (ok && select)
+            ok = __asEligibilityBool(helpers.isDomVisibleEligible(select, ctx, { visibilityMode }));
+          if (ok && select && isUndrawn(select)) ok = false;
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
           if (ok && isUndrawn(el)) ok = false;
@@ -73436,7 +73489,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     }
 
-    return 'styleOnly';
+    return '';
+  }
+
+  // Whether the document has a layout to measure: a browser lays out the root
+  // element; jsdom gives it no boxes.
+  function __hasLayout(d) {
+    try {
+      const root = d && dom.documentElement(d);
+      const rects = root ? dom.getClientRects(root) : null;
+      return !!(rects && rects.length);
+    } catch {
+      return false;
+    }
   }
 
   function __asEligibilityBool(v) {
@@ -73524,7 +73589,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
-      const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
+      // Unset, the text a reader can see is decided from the layout where
+      // there is one (#99): text off the page or clipped away is drawn
+      // nowhere it can be seen. Without a layout (jsdom), from styles only.
+      const rawMode =
+        __resolveVisibilityMode(ctx, engineOptions, d, w) ||
+        (__hasLayout(d) ? 'styleAndGeometry' : 'styleOnly');
 
       const visibilityMode =
         __getVisibilityMode({ visibilityMode: rawMode }) === 'styleAndGeometry'
@@ -73680,6 +73750,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // above or left of the page, where no scrolling reaches (the
       // left: -9999px technique), or clipped to nothing by an ancestor that
       // hides its overflow (height: 0; overflow: hidden).
+      // Measured once per scan: many text elements share the ancestors
+      // that clip them.
+      const clipBoxCache = new Map();
+      const clipBoxOf = (node) => {
+        let box = clipBoxCache.get(node);
+        if (box === undefined) {
+          const acs = __contrastComputedStyle(node);
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          box = {
+            clipsX,
+            clipsY,
+            rect: clipsX || clipsY ? dom.getBoundingClientRect(node) : null,
+            stops: !!acs && (acs.position === 'fixed' || acs.position === 'absolute')
+          };
+          clipBoxCache.set(node, box);
+        }
+        return box;
+      };
+
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
@@ -73707,13 +73797,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let bottom = r.bottom;
         let cur = composedParent(el);
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
-          const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
-          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
-          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          const { clipsX, clipsY, rect: a, stops } = clipBoxOf(cur);
           if (clipsX || clipsY) {
-            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -73724,10 +73811,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             }
             if (right - left < 1 || bottom - top < 1) return true;
           }
-          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          if (stops) break;
           cur = composedParent(cur);
         }
         return false;
+      };
+
+      // An <option> has no layout box of its own, yet it is drawn: the
+      // selected one in the closed control, the others in the list it opens.
+      // Its <select> is what has a place on the page to measure.
+      const selectOf = (el) => {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        if (tag !== 'option' && tag !== 'optgroup') return null;
+        try {
+          return dom.closest(el, 'select');
+        } catch {
+          return null;
+        }
       };
 
       const isVisibleEligible = (el) => {
@@ -73736,8 +73836,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
         let ok;
         try {
-          const r = helpers.isDomVisibleEligible(el, ctx, { visibilityMode });
+          const select = visibilityMode === 'styleAndGeometry' ? selectOf(el) : null;
+          const r = helpers.isDomVisibleEligible(el, ctx, {
+            visibilityMode: select ? 'styleOnly' : visibilityMode
+          });
           ok = __asEligibilityBool(r);
+          if (ok && select)
+            ok = __asEligibilityBool(helpers.isDomVisibleEligible(select, ctx, { visibilityMode }));
+          if (ok && select && isUndrawn(select)) ok = false;
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
           if (ok && isUndrawn(el)) ok = false;
