@@ -591,12 +591,22 @@ function runInPage(ctx) {
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   if (occurrences.length) {
-    const anyFail = occurrences.some((o) => o.outcome !== 'cantTell');
+    const isReview = (o) => o.outcome === 'cantTell';
+    const anyFail = occurrences.some((o) => !isReview(o));
+    const anyReview = occurrences.some(isReview);
+    // Tiers go in occurrenceOutcome (OUTPUT_SCHEMA.md), on every occurrence
+    // when the result mixes them, and on none when it doesn't.
+    const tiered = occurrences.map((o) => {
+      const { outcome, ...rest } = o;
+      return anyFail && anyReview
+        ? { ...rest, occurrenceOutcome: outcome === 'cantTell' ? 'cantTell' : 'fail' }
+        : rest;
+    });
     return {
       ruleId: rule.ruleId,
       outcome: anyFail ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'minor',
-      occurrences
+      occurrences: tiered
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

@@ -4,6 +4,7 @@
 
 const ENGINE_TAG = "a11ycore";
 const SCHEMA_VERSION = "1.0.0";
+const ENGINE_VERSION = "1.10.0";
 
 // Rule catalog (data only)
 const CHECK_DEFS = [
@@ -10650,6 +10651,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
     "videoPoster_textAltPresent_summary_fail": "Fehlende Textalternative für das Vorschaubild (poster) von <video>.",
     "videoPoster_textAltPresent_hint_fail": "Stellen Sie für das Vorschaubild einen zugänglichen Namen bereit (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
     "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
@@ -11515,6 +11518,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
     "videoPoster_textAltPresent_summary_fail": "Missing text alternative for <video> poster.",
     "videoPoster_textAltPresent_hint_fail": "Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
     "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
@@ -12380,6 +12385,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de póster proporcionen una alternativa textual (nombre accesible).",
     "videoPoster_textAltPresent_summary_fail": "Falta la alternativa textual para el póster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Proporcionar un nombre accesible para la imagen del póster (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de reserva).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Compruebe que el pie describe lo que muestra la imagen de portada. Si no, dé al vídeo un nombre accesible (aria-label o aria-labelledby).",
     "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
     "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
@@ -13245,6 +13252,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent une alternative textuelle (nom accessible).",
     "videoPoster_textAltPresent_summary_fail": "Alternative textuelle manquante pour l’image poster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
     "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir une alternative textuelle",
     "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent une alternative textuelle via <title>/<desc> ou un nom accessible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
@@ -14110,6 +14119,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
     "videoPoster_textAltPresent_summary_fail": "<video> のポスター画像にテキストによる代替がありません。",
     "videoPoster_textAltPresent_hint_fail": "ポスター画像にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。代わりに title 属性も使えます)。",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
     "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
     "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
     "svgImage_textAltPresent_summary_fail": "SVG の <image> にテキストによる代替がありません。",
@@ -15192,7 +15203,25 @@ const POLICY_CONTRACTS = {
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
-    if (typeof contract === 'string') return POLICY_CONTRACTS[contract] || fallback;
+    if (typeof contract === 'string') {
+      // Own properties only: 'constructor' or 'toString' would otherwise
+      // resolve to a function from Object.prototype and crash the scan.
+      if (Object.prototype.hasOwnProperty.call(POLICY_CONTRACTS, contract)) {
+        return POLICY_CONTRACTS[contract];
+      }
+      try {
+        console.warn(
+          '[surea11y] Unknown policyContract "' +
+            contract +
+            '"; using "' +
+            fallback.id +
+            '". Use one of: ' +
+            Object.keys(POLICY_CONTRACTS).join(', ') +
+            ', or an inline contract object.'
+        );
+      } catch {}
+      return fallback;
+    }
 
     if (contract && typeof contract === 'object') {
       const allowedOutcomes = Array.isArray(contract.allowedOutcomes)
@@ -15642,11 +15671,9 @@ function applyOptInRules(selection, requested) {
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
 // rule or none.
-function expandRunOnlyShorthand(runOnly, engineOptions) {
-  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
-  const values = parseCommaList(runOnly, { lower: false });
-  if (!values.length) return null;
-
+// The rule ids (built-in, composite or engineOptions.customRules) and tags a
+// selection can name, as two tests.
+function knownSelectionNames(engineOptions) {
   const customRules =
     engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
   const ruleIds = new Set();
@@ -15655,36 +15682,109 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
+  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
   for (const r of customRules) {
-    if (r && r.id) ruleIds.add(String(r.id));
+    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).toLowerCase());
+    for (const t of ct) tags.add(String(t).trim().toLowerCase());
   }
-  const isRuleId = (v) =>
-    !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
-  const isTag = (v) => tags.has(v.toLowerCase());
+  return {
+    isRuleId: (v) =>
+      !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+    isTag: (v) => tags.has(String(v).toLowerCase())
+  };
+}
 
+function invalidRunOnly(message) {
+  const err = new Error(message);
+  err.code = 'INVALID_RUN_ONLY';
+  return err;
+}
+
+function expandRunOnlyShorthand(runOnly, engineOptions) {
+  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
+  const values = parseCommaList(runOnly, { lower: false });
+  if (!values.length) return null;
+
+  const { isRuleId, isTag } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
   if (unknown.length) {
-    throw new Error(
+    throw invalidRunOnly(
       'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
   if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
-  throw new Error(
+  throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
 }
 
+// The object form of runOnly, and engineOptions.rules / .tags, name rules and
+// tags in lists. An include list that names only things that don't exist
+// selects nothing from it, so a typo could run no rule and pass a CI gate:
+// that throws, as the bare-array form does. A name that doesn't exist beside
+// ones that do is warned about, and an unknown name in an exclude list too.
+function checkSelectionNames(lists, engineOptions) {
+  let known = null;
+  for (const { field, values, kind, include } of lists) {
+    if (!Array.isArray(values) || !values.length) continue;
+    known = known || knownSelectionNames(engineOptions);
+    const test = kind === 'rule' ? known.isRuleId : known.isTag;
+    const unknown = values.filter((v) => !test(v));
+    if (!unknown.length) continue;
+    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    if (include && unknown.length === values.length) {
+      throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+    }
+    try {
+      console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
+    } catch {}
+  }
+}
+
+// The keys the object form of runOnly reads.
+const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // A number or a boolean, and an object none of whose keys the engine
+  // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
+  // does: a typo that looks like a full scan.
+  if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
+    throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
+  }
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const keys = Object.keys(runOnly);
+    const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    if (unknownKeys.length && unknownKeys.length === keys.length) {
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+    }
+  }
+  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
+    const kind = String(runOnly.type).trim().toLowerCase();
+    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+  }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
     const selection = normalizeRunOnly(runOnly);
+    checkSelectionNames(
+      [
+        { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
+        { field: 'runOnly.tags', values: selection.tags, kind: 'tag', include: true },
+        { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
+        { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
+      ],
+      eo
+    );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
@@ -15714,6 +15814,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     includeTestIds,
     excludeTestIds
   };
+  checkSelectionNames(
+    [
+      { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
+      { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
+      { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
+    ],
+    eo
+  );
 
   return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
@@ -15884,7 +15993,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.description = def.description;
   out.i18n = def.i18n || null;
 
-  if (!pol.allowedOutcomes.includes(out.outcome)) out.outcome = 'cantTell';
+  if (!pol.allowedOutcomes.includes(out.outcome)) {
+    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+    // out instead of reading an unexplained cantTell.
+    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    out.outcome = 'cantTell';
+  }
 
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
@@ -15905,6 +16020,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;
@@ -15978,6 +16098,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
         } catch {
           o.html = '';
         }
+      }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
       }
     }
 
@@ -16546,6 +16674,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         );
       };
 
+      // Text the page draws nowhere a reader can see it. From CSS alone:
+      // a font size of 0, or a fully transparent color, unless the color is
+      // left transparent for a background to show through the glyphs
+      // (background-clip: text, gradient text), which the computability
+      // check then asks about. With layout (styleAndGeometry): text entirely
+      // above or left of the page, where no scrolling reaches (the
+      // left: -9999px technique), or clipped to nothing by an ancestor that
+      // hides its overflow (height: 0; overflow: hidden).
+      const isUndrawn = (el) => {
+        const cs = __contrastComputedStyle(el);
+        if (!cs) return false;
+        if (Number.parseFloat(cs.fontSize) === 0) return true;
+        const color = parseCssColorToRgba(cs.color);
+        if (color && color.a === 0) {
+          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
+          if (!/\btext\b/.test(clip)) return true;
+        }
+        if (
+          visibilityMode !== 'styleAndGeometry' ||
+          typeof el.getBoundingClientRect !== 'function'
+        ) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const sx = (win && win.scrollX) || 0;
+        const sy = (win && win.scrollY) || 0;
+        if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
+        let left = r.left;
+        let top = r.top;
+        let right = r.right;
+        let bottom = r.bottom;
+        let cur = composedParent(el);
+        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+          const acs = __contrastComputedStyle(cur);
+          // hidden and clip cut content off; auto and scroll let a reader
+          // scroll to it.
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          if (clipsX || clipsY) {
+            const a = cur.getBoundingClientRect();
+            if (clipsX) {
+              left = Math.max(left, a.left);
+              right = Math.min(right, a.right);
+            }
+            if (clipsY) {
+              top = Math.max(top, a.top);
+              bottom = Math.min(bottom, a.bottom);
+            }
+            if (right - left < 1 || bottom - top < 1) return true;
+          }
+          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          cur = composedParent(cur);
+        }
+        return false;
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -16556,6 +16742,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
+          if (ok && isUndrawn(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -16862,10 +17049,198 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s;
   }
 
+  // The CSS Color 4 functions a browser keeps as written in a computed
+  // style: oklab(), oklch(), lab(), lch() and color(<space> ...). color-mix()
+  // and relative colors resolve to one of them. Converted to sRGB with the
+  // matrices CSS Color 4 gives; a color outside sRGB is clipped to it. null
+  // for anything else, or a value that does not parse.
+  function __parseCssColor4(s) {
+    const m = /^(oklab|oklch|lab|lch|color)\((.*)\)$/.exec(s);
+    if (!m) return null;
+    const fn = m[1];
+    const slash = m[2].split('/');
+    if (slash.length > 2) return null;
+    const tokens = trim(slash[0]).split(/\s+/).filter(Boolean);
+    let space = fn;
+    if (fn === 'color') space = tokens.shift() || '';
+    if (tokens.length !== 3) return null;
+
+    // A channel: 'none' is 0, a percentage is a fraction of `full`.
+    const num = (t, full) => {
+      if (t === 'none') return 0;
+      if (t.endsWith('%')) {
+        const p = Number.parseFloat(t);
+        return Number.isFinite(p) ? (p / 100) * full : NaN;
+      }
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const hue = (t) => {
+      if (t === 'none') return 0;
+      const u = /^(-?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/.exec(t);
+      if (!u) return NaN;
+      const n = Number(u[1]);
+      const unit = u[2] || 'deg';
+      const deg =
+        unit === 'rad'
+          ? (n * 180) / Math.PI
+          : unit === 'grad'
+            ? n * 0.9
+            : unit === 'turn'
+              ? n * 360
+              : n;
+      return (deg * Math.PI) / 180;
+    };
+    let alpha = 1;
+    if (slash.length === 2) {
+      alpha = num(trim(slash[1]), 1);
+      if (!Number.isFinite(alpha)) return null;
+    }
+
+    const mul = (M, v) => [
+      M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+      M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+      M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+    ];
+    const D50_TO_D65 = [
+      [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+      [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+      [0.012314014864481998, -0.020507649298898964, 1.330365926242124]
+    ];
+    const XYZ65_TO_LSRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    const srgbDecode = (v) => {
+      const a = Math.abs(v);
+      return a <= 0.04045 ? v / 12.92 : Math.sign(v) * Math.pow((a + 0.055) / 1.055, 2.4);
+    };
+    const labToXyz65 = (L, a, b) => {
+      const k = 24389 / 27;
+      const e = 216 / 24389;
+      const f1 = (L + 16) / 116;
+      const f0 = a / 500 + f1;
+      const f2 = f1 - b / 200;
+      const xyz = [
+        Math.pow(f0, 3) > e ? Math.pow(f0, 3) : (116 * f0 - 16) / k,
+        L > k * e ? Math.pow(f1, 3) : L / k,
+        Math.pow(f2, 3) > e ? Math.pow(f2, 3) : (116 * f2 - 16) / k
+      ];
+      const white = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
+      return mul(D50_TO_D65, [xyz[0] * white[0], xyz[1] * white[1], xyz[2] * white[2]]);
+    };
+    const oklabToLinear = (L, a, b) => {
+      const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+      const mm = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+      const ss = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+      return [
+        4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * ss,
+        -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * ss,
+        -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * ss
+      ];
+    };
+
+    let linear = null;
+    let encoded = null;
+    if (space === 'oklab' || space === 'oklch') {
+      const L = num(tokens[0], 1);
+      let a;
+      let b;
+      if (space === 'oklab') {
+        a = num(tokens[1], 0.4);
+        b = num(tokens[2], 0.4);
+      } else {
+        const C = num(tokens[1], 0.4);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = oklabToLinear(L, a, b);
+    } else if (space === 'lab' || space === 'lch') {
+      const L = num(tokens[0], 100);
+      let a;
+      let b;
+      if (space === 'lab') {
+        a = num(tokens[1], 125);
+        b = num(tokens[2], 125);
+      } else {
+        const C = num(tokens[1], 150);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = mul(XYZ65_TO_LSRGB, labToXyz65(L, a, b));
+    } else if (fn === 'color') {
+      const v = tokens.map((t) => num(t, 1));
+      if (!v.every(Number.isFinite)) return null;
+      if (space === 'srgb') encoded = v;
+      else if (space === 'srgb-linear') linear = v;
+      else if (space === 'xyz' || space === 'xyz-d65') linear = mul(XYZ65_TO_LSRGB, v);
+      else if (space === 'xyz-d50') linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, v));
+      else if (space === 'display-p3') {
+        const P3_TO_XYZ65 = [
+          [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+          [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+          [0, 0.04511338185890264, 1.043944368900976]
+        ];
+        linear = mul(XYZ65_TO_LSRGB, mul(P3_TO_XYZ65, v.map(srgbDecode)));
+      } else if (space === 'a98-rgb') {
+        const A98_TO_XYZ65 = [
+          [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
+          [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
+          [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
+        ];
+        const dec = v.map((c) => Math.sign(c) * Math.pow(Math.abs(c), 563 / 256));
+        linear = mul(XYZ65_TO_LSRGB, mul(A98_TO_XYZ65, dec));
+      } else if (space === 'prophoto-rgb') {
+        const PROPHOTO_TO_XYZ50 = [
+          [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
+          [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
+          [0, 0, 0.8251046025104602]
+        ];
+        const dec = v.map((c) =>
+          Math.abs(c) <= 16 / 512 ? c / 16 : Math.sign(c) * Math.pow(Math.abs(c), 1.8)
+        );
+        linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, mul(PROPHOTO_TO_XYZ50, dec)));
+      } else if (space === 'rec2020') {
+        const REC2020_TO_XYZ65 = [
+          [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
+          [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
+          [0, 0.028072693049087428, 1.060985057710791]
+        ];
+        const al = 1.09929682680944;
+        const be = 0.018053968510807;
+        const dec = v.map((c) => {
+          const a = Math.abs(c);
+          return a < be * 4.5 ? c / 4.5 : Math.sign(c) * Math.pow((a + al - 1) / al, 1 / 0.45);
+        });
+        linear = mul(XYZ65_TO_LSRGB, mul(REC2020_TO_XYZ65, dec));
+      } else return null;
+    } else return null;
+
+    if (!encoded) {
+      encoded = linear.map((c) => {
+        const a = Math.abs(c);
+        return a <= 0.0031308 ? c * 12.92 : Math.sign(c) * (1.055 * Math.pow(a, 1 / 2.4) - 0.055);
+      });
+    }
+    if (!encoded.every(Number.isFinite)) return null;
+    const to255 = (c) => clamp255(Math.round(Math.min(1, Math.max(0, c)) * 255));
+    return { r: to255(encoded[0]), g: to255(encoded[1]), b: to255(encoded[2]), a: clamp01(alpha) };
+  }
+
   function __parseCssColorToRgbaUncached(input) {
     const s = trim(input).toLowerCase();
     if (!s) return null;
     if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+
+    // A CSS Color 4 function the converter can't read (an unknown color()
+    // space, say) is not parsed: the platform would only hand the same
+    // value back.
+    if (/^(oklab|oklch|lab|lch|color)\(/.test(s)) return __parseCssColor4(s);
 
     if (s[0] === '#') {
       const hex = s.slice(1);
@@ -17005,6 +17380,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         probe.style.top = '-9999px';
         probe.style.opacity = '0';
         probe.style.color = String(input);
+        // A value the platform rejects leaves the property unset, and the
+        // probe would then report the color it inherits.
+        if (!probe.style.color) return null;
         const parent = d.body || d.documentElement;
         if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
 
@@ -17271,11 +17649,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
-  function computeEffectiveForeground(el) {
-    try {
-      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch {}
+  const __SVG_NS = 'http://www.w3.org/2000/svg';
+  const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  function __isSvgTextElement(el) {
+    return (
+      !!el &&
+      el.namespaceURI === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+    );
+  }
 
+  function computeEffectiveForeground(el) {
+    // The override first, as computeEffectiveBackground does: a caller can
+    // ask for the foreground before the computability check resolves the
+    // group opacity (the contrast rules' same-color filter does), and the
+    // cached naive color would then count the ancestor's opacity twice,
+    // once on the text and once more in the composited background.
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
       if (override) {
@@ -17289,8 +17678,21 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
+    try {
+      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch {}
+
     const cs = __contrastComputedStyle(el);
-    const c = parseCssColorToRgba(cs && cs.color);
+    // SVG text is painted with `fill`, not `color` (which only feeds
+    // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
+    // of none (outline-only text) or a paint server (url(#gradient)) does
+    // not parse, and leaves the text not computable.
+    const svgText = __isSvgTextElement(el);
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    if (c && svgText) {
+      const fillOpacity = Number.parseFloat(cs.fillOpacity);
+      if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
+    }
     if (!c) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
@@ -17370,6 +17772,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let acc = { r: 0, g: 0, b: 0, a: 0 };
     let cur = el;
     let guard = 0;
+    // A background color this parser can't read, met while what is in front
+    // of it still lets it show through. Skipping it as if transparent would
+    // judge the text against whatever lies further out.
+    let unparsable = null;
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -17380,6 +17786,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
       const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+
+      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+        unparsable = {
+          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          value: truncateCssValue(trim(cs.backgroundColor), 80)
+        };
+        break;
+      }
 
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
@@ -17416,7 +17830,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out;
     const allowAssumptions = mode === 'auditorAssist';
 
-    if (acc.a < 1) {
+    if (unparsable) {
+      out = {
+        ok: false,
+        rgba: acc,
+        alpha: acc.a,
+        stack: stack || [],
+        reasonCode: 'BACKGROUND_UNPARSABLE',
+        blockerSelector: unparsable.selector,
+        blockerProperty: 'background-color',
+        blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1) {
       if (allowAssumptions) {
         // If the root is not opaque, apply an explicit canvas fallback.
         const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
@@ -17550,7 +17975,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
-      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      const elColor = parseCssColorToRgba(
+        elCs && (__isSvgTextElement(el) ? elCs.fill : elCs.color)
+      );
       if (!elColor) return __cacheAndReturn(null);
 
       let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
@@ -17574,6 +18001,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (!bg && bgAcc.a < 1 && trim(cs && cs.backgroundColor)) return __cacheAndReturn(null);
         if (bg) {
           const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
           bgAcc = compositeRgba(bgAcc, layer);
@@ -17654,6 +18082,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // el and its ancestors up to the first with an opaque background.
+    const chain = [];
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -17807,6 +18237,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
+        chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
       }
@@ -17814,17 +18245,467 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       cur = composedParent(cur);
     }
 
-    const out = {
-      ok: true,
-      reasonCode: null,
-      blockerSelector: '',
-      blockerProperty: '',
-      blockerValue: ''
-    };
+    const overlap = __findPaintUnderText(el, chain);
+    const out = overlap
+      ? {
+          ok: false,
+          reasonCode: 'BACKGROUND_OVERLAP',
+          blockerSelector: overlap.selector,
+          blockerProperty: overlap.property,
+          blockerValue: overlap.value
+        }
+      : {
+          ok: true,
+          reasonCode: null,
+          blockerSelector: '',
+          blockerProperty: '',
+          blockerValue: ''
+        };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
     } catch {}
     return out;
+  }
+
+  // -------- Paint behind the text that is not an ancestor's --------
+  //
+  // The background above is the stack of el's ancestors' backgrounds. What a
+  // page paints behind text can come from elsewhere: an <img> hero under a
+  // heading positioned over it, a dark sibling block the text is pulled
+  // over with a negative margin, an absolutely positioned overlay or a
+  // ::before. The ratio against the ancestors is then confidently wrong,
+  // so the text is not computable. Needs a layout (a real browser); without
+  // one nothing is found and nothing changes.
+  //
+  // Only paint inside the nearest ancestor whose own background is opaque
+  // counts: anything outside it sits behind that background (a hero image
+  // under a white card) or is a page-level overlay this check does not try
+  // to order. The text's own line boxes are measured, not its element's
+  // box, so a float the text wraps around does not count.
+
+  const __OVERLAP_CELL = 256;
+  const __OVERLAP_MAX_PAINTERS = 20000;
+  const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  let __overlapIndex;
+
+  // Called for every element on the page, and most paint nothing: a
+  // transparent background and no image are told from the computed values
+  // as the browser serializes them, before anything is parsed.
+  function __paintOf(node, cs) {
+    if (!cs) return null;
+    const paint = __paintCandidate(node, cs);
+    if (!paint) return null;
+    if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    return paint;
+  }
+
+  function __paintCandidate(node, cs) {
+    const tag = String(node.localName || '').toLowerCase();
+    if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
+      return { property: 'element', value: tag };
+    }
+    const rawBg = cs.backgroundColor;
+    if (rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent') {
+      const raw = trim(rawBg);
+      const bg = parseCssColorToRgba(raw);
+      if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    }
+    const img = cs.backgroundImage;
+    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(img, 80) };
+    }
+    return null;
+  }
+
+  // Fixed and sticky boxes, and what is inside them, sit over the page as
+  // it scrolls: a cookie banner, a sticky header. They cover text rather
+  // than paint behind it, and where they stand depends on the scroll
+  // position the scan was taken at.
+  const __pinnedCache = new WeakMap();
+  function __isPinned(node) {
+    const path = [];
+    let cur = node;
+    let pinned = false;
+    let guard = 0;
+    while (cur && cur.nodeType === 1 && guard++ < 200) {
+      if (__pinnedCache.has(cur)) {
+        pinned = __pinnedCache.get(cur);
+        break;
+      }
+      path.push(cur);
+      const cs = __contrastComputedStyle(cur);
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        pinned = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    for (const n of path) __pinnedCache.set(n, pinned);
+    return pinned;
+  }
+
+  // The content of a closed <details> (everything but its first <summary>), and
+  // whatever sits under content-visibility: hidden (hidden="until-found"
+  // too), keeps its layout box in Chromium, so it has a rect, but none of it
+  // is painted. checkVisibility() answers that; without it, the two are
+  // looked for along the composed ancestors.
+  function __isUnpainted(node) {
+    if (typeof node.checkVisibility === 'function') {
+      try {
+        return !node.checkVisibility();
+      } catch {}
+    }
+    // A shadow root on the way up is stepped over to its host.
+    let child = node;
+    let cur = composedParent(node);
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (cur.nodeType === 1) {
+        if (
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open') &&
+          child !== __firstSummaryChild(cur)
+        ) {
+          return true;
+        }
+        const cs = __contrastComputedStyle(cur);
+        if (cs && cs.contentVisibility === 'hidden') return true;
+      }
+      child = cur;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Only the first <summary> child of a <details> is its toggle.
+  function __firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
+  }
+
+  function __buildOverlapIndex() {
+    const doc = window && window.document;
+    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    try {
+      const rootRects = doc.documentElement.getClientRects();
+      if (!rootRects || !rootRects.length) return null;
+    } catch {
+      return null;
+    }
+    const painters = [];
+    const cells = new Map();
+    const roots = [doc];
+    for (let ri = 0; ri < roots.length; ri++) {
+      let all;
+      try {
+        all = roots[ri].querySelectorAll('*');
+      } catch {
+        continue;
+      }
+      for (const node of all) {
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        const cs = __contrastComputedStyle(node);
+        const paint = __paintOf(node, cs);
+        if (!paint || __isUnpainted(node)) continue;
+        // An inline box that wraps has one fragment per line, and its
+        // bounding box spans the lines between: what it paints is the
+        // fragments.
+        let boxes;
+        try {
+          boxes =
+            cs &&
+            String(cs.display).startsWith('inline') &&
+            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
+              ? Array.from(node.getClientRects())
+              : [node.getBoundingClientRect()];
+        } catch {
+          continue;
+        }
+        for (const r of boxes) {
+          if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
+          if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
+          const index = painters.length;
+          painters.push({ el: node, rect: r, paint });
+          const x0 = Math.floor(r.left / __OVERLAP_CELL);
+          const x1 = Math.floor(r.right / __OVERLAP_CELL);
+          const y0 = Math.floor(r.top / __OVERLAP_CELL);
+          const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+          for (let cx = x0; cx <= x1; cx++) {
+            for (let cy = y0; cy <= y1; cy++) {
+              const key = cx + ',' + cy;
+              const list = cells.get(key);
+              if (list) list.push(index);
+              else cells.set(key, [index]);
+            }
+          }
+        }
+      }
+    }
+    return { painters, cells };
+  }
+
+  function __getOverlapIndex() {
+    if (__overlapIndex === undefined) {
+      try {
+        const sc = shared && shared.__contrastSharedCache;
+        if (sc && sc.__overlapIndex !== undefined) __overlapIndex = sc.__overlapIndex;
+        else {
+          __overlapIndex = __buildOverlapIndex();
+          if (sc) sc.__overlapIndex = __overlapIndex;
+        }
+      } catch {
+        __overlapIndex = null;
+      }
+    }
+    return __overlapIndex;
+  }
+
+  // The line boxes of el's own text.
+  function __ownTextRects(el) {
+    const doc = el.ownerDocument;
+    const out = [];
+    let range;
+    try {
+      range = doc.createRange();
+    } catch {
+      return out;
+    }
+    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
+      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+      try {
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width >= 1 && r.height >= 1) out.push(r);
+        }
+      } catch {}
+    }
+    return out;
+  }
+
+  // Two boxes meet when they share at least 2px across. Against a line of
+  // text, paint has to cover about a glyph of it, half the line's height
+  // across and a third down: a glyph box runs past a tight line-height into
+  // the block above or below, and an icon can nudge into the text beside
+  // it, and neither puts the line on that paint.
+  const __intersects = (a, b) =>
+    Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
+    Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  const __coversLine = (paint, line) =>
+    Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
+      Math.max(2, Math.min(line.width, line.height / 2)) &&
+    Math.min(paint.bottom, line.bottom) - Math.max(paint.top, line.top) >=
+      Math.max(2, line.height / 3);
+
+  function __isComposedInside(node, container) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 1000) {
+      if (cur === container) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Where an absolutely positioned pseudo-element of a positioned host sits,
+  // from its resolved offsets and size, which a browser reports in pixels
+  // for an element positioned out of flow. Its containing block is the
+  // host's padding box. A scale or translation is applied about the
+  // transform origin; a pseudo-element scaled to nothing paints nothing
+  // (an underline waiting for hover), so it is `false`. null when the
+  // browser does not give pixels, or the transform rotates or skews, and
+  // then the host's box stands in.
+  function __pseudoBox(host, hostCs, pcs) {
+    try {
+      if (pcs.position !== 'absolute') return null;
+      const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const left = px(pcs.left);
+      const top = px(pcs.top);
+      const width = px(pcs.width);
+      const height = px(pcs.height);
+      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let m = [1, 0, 0, 1, 0, 0];
+      const t = trim(pcs.transform);
+      if (t && t !== 'none') {
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        if (!mm) return null;
+        m = mm[1].split(',').map((v) => Number.parseFloat(v));
+        if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
+        if (m[0] === 0 || m[3] === 0) return false;
+      }
+      const origin = String(pcs.transformOrigin || '').split(/\s+/);
+      const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
+      const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
+      const r = host.getBoundingClientRect();
+      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
+      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
+      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+      const box = {
+        left: Math.min(xs[0], xs[1]),
+        right: Math.max(xs[0], xs[1]),
+        top: Math.min(ys[0], ys[1]),
+        bottom: Math.max(ys[0], ys[1])
+      };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
+    } catch {
+      return null;
+    }
+  }
+
+  // A positioned element's ::before or ::after when it is positioned out of
+  // flow and paints a color or gradient, as { name, property, value }; null
+  // otherwise.
+  const __positionedPaintPseudoCache = new WeakMap();
+  function __hasPositionedPaintPseudo(host) {
+    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
+    let found = null;
+    // The overlay pattern positions the pseudo-element against its own
+    // element, which is then positioned itself; reading every element's
+    // pseudo-elements would cost a style lookup per text element.
+    const hostCs = __contrastComputedStyle(host);
+    const positioned = !!hostCs && !!hostCs.position && hostCs.position !== 'static';
+    if (positioned && window && typeof window.getComputedStyle === 'function') {
+      for (const name of ['::before', '::after']) {
+        let pcs;
+        try {
+          pcs = window.getComputedStyle(host, name);
+        } catch {
+          continue;
+        }
+        if (!pcs) continue;
+        const content = trim(pcs.content);
+        if (!content || content === 'none' || content === 'normal') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        if (pcs.display === 'none') continue;
+        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        const bg = parseCssColorToRgba(pcs.backgroundColor);
+        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
+        if (!(bg && bg.a > 0) && !gradient) continue;
+        const box = __pseudoBox(host, hostCs, pcs);
+        if (box === false) continue;
+        found = {
+          name,
+          property: gradient ? 'background-image' : 'background-color',
+          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
+          box
+        };
+        break;
+      }
+    }
+    __positionedPaintPseudoCache.set(host, found);
+    return found;
+  }
+
+  // `chain` is el and its ancestors up to and including the first with an
+  // opaque background of its own (all of them when none has one).
+  function __findPaintUnderText(el, chain) {
+    try {
+      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      const index = __getOverlapIndex();
+      if (!index) return null;
+      const opaque = chain[chain.length - 1];
+      const ancestors = new Set(chain);
+      // Painters near el's box at all, before measuring its text, which
+      // costs more: on most pages nothing but ancestors paints there.
+      const near = (r) => {
+        const x0 = Math.floor(r.left / __OVERLAP_CELL);
+        const x1 = Math.floor(r.right / __OVERLAP_CELL);
+        const y0 = Math.floor(r.top / __OVERLAP_CELL);
+        const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              const p = index.painters[i];
+              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
+            }
+          }
+        }
+        return false;
+      };
+      let box = null;
+      try {
+        box = el.getBoundingClientRect();
+      } catch {}
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
+      if (box && !pseudoCandidates && !near(box)) return null;
+      const rects = __ownTextRects(el);
+      if (!rects.length) return null;
+      // Solid paint the same color as the background the text is measured
+      // against changes nothing (a white fade-out over white text).
+      let measured = null;
+      try {
+        const bg = computeEffectiveBackground(el, {});
+        measured = bg && bg.ok && bg.rgba ? bg.rgba : null;
+      } catch {}
+      const sameAsMeasured = (value) => {
+        const c = measured && parseCssColorToRgba(value);
+        return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
+      };
+
+      const seen = new Set();
+      for (const tr of rects) {
+        const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+        const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+        const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+        const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              if (seen.has(i)) continue;
+              seen.add(i);
+              const p = index.painters[i];
+              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // Pinned paint is in the index but never counts; asked only
+              // of the few painters that reach text, since it walks the
+              // ancestors.
+              if (__isPinned(p.el)) continue;
+              // An ancestor beyond `opaque` is behind its background.
+              if (__isComposedInside(el, p.el)) continue;
+              // Inside el: paint of its own descendants, beside its text.
+              if (__isComposedInside(p.el, el)) continue;
+              if (!__isComposedInside(p.el, opaque)) continue;
+              if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
+                continue;
+              return {
+                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                property: p.paint.property,
+                value: p.paint.value
+              };
+            }
+          }
+        }
+      }
+
+      // A positioned ::before or ::after on el or an ancestor, painting a
+      // color or gradient: the overlay pattern. Its box can't be measured,
+      // so its element's box stands in for it.
+      for (const host of chain) {
+        const pseudo = __hasPositionedPaintPseudo(host);
+        if (!pseudo) continue;
+        if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
+        let hostRect = pseudo.box;
+        if (!hostRect) {
+          try {
+            hostRect = host.getBoundingClientRect();
+          } catch {
+            hostRect = null;
+          }
+        }
+        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          property: pseudo.property,
+          value: pseudo.value
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   return {
@@ -17875,10 +18756,19 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Existence check for a single ID token. Never throws, returns false
   // (not "unknown") when the document isn't available so callers degrade
   // to their pre-existing format-only behavior rather than guessing.
-  function idExists(id) {
-    if (!ariaDocument || typeof ariaDocument.getElementById !== 'function') return true;
+  // An ID reference resolves in the referring element's own tree: its shadow
+  // root, or the document. One that points across a shadow boundary
+  // resolves to nothing, as Chromium resolves it, and one inside a shadow
+  // root finds its target there, which document.getElementById can't see.
+  function idExists(id, el) {
+    let scope = ariaDocument;
     try {
-      return !!ariaDocument.getElementById(id);
+      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
+      if (root && typeof root.getElementById === 'function') scope = root;
+    } catch {}
+    if (!scope || typeof scope.getElementById !== 'function') return true;
+    try {
+      return !!scope.getElementById(id);
     } catch {
       return true;
     }
@@ -18846,17 +19736,22 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // `aria-describedby={hasError ? errorId : ''}`).
     if (v.length === 0) return { valid: true, reason: '' };
 
+    // true, false, undefined and mixed are read in any case, like the token
+    // values below: Chromium exposes aria-checked="TRUE" as checked and
+    // hides an aria-hidden="True" subtree, and the engine's own readers of
+    // these states lowercase them too.
+    const lv = lower(v);
     switch (type) {
       case 'boolean': {
-        const ok = v === 'true' || v === 'false';
+        const ok = lv === 'true' || lv === 'false';
         return { valid: ok, reason: ok ? '' : 'expected-true-false' };
       }
       case 'boolean-undefined': {
-        const ok = v === 'true' || v === 'false' || v === 'undefined';
+        const ok = lv === 'true' || lv === 'false' || lv === 'undefined';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-undefined' };
       }
       case 'tristate': {
-        const ok = v === 'true' || v === 'false' || v === 'mixed';
+        const ok = lv === 'true' || lv === 'false' || lv === 'mixed';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-mixed' };
       }
       case 'integer': {
@@ -18901,7 +19796,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // has no such carve-out in ACT's own text and keeps the existence
         // check.
         if (lower(name) === 'aria-errormessage') return { valid: true, reason: '' };
-        if (!idExists(v)) return { valid: false, reason: 'idref-not-found' };
+        if (!idExists(v, el)) return { valid: false, reason: 'idref-not-found' };
         return { valid: true, reason: '' };
       }
       case 'idref-list': {
@@ -18909,7 +19804,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p, el))) return { valid: true, reason: '' };
 
         // aria-controls is the one idref-list attribute whose target is
         // routinely absent by design: the menu, listbox or panel it names
@@ -19342,6 +20237,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __domSharedCache = {};
   var __selectorCache = null;
   var __outerHtmlCache = null;
+  var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
@@ -19997,20 +20893,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // A closed <details> shows only its summary: its first <summary> child,
+  // which stays on the page as the toggle. Every other descendant is hidden,
+  // including another <summary> and anything in an open <details> nested in
+  // it. The walk is over the composed ancestors, so a shadow root's content
+  // inside a closed <details>, and light-DOM content slotted into one, count
+  // too. The <details> element itself is not hidden by its own state.
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const summary = node.closest && node.closest('summary');
-      if (summary && summary.contains(node)) return false;
-      // closest() matches the node itself, so a plain <details> element
-      // being asked about its own eligibility would otherwise match its
-      // own closest('details') and get judged against its own open state.
-      // A closed <details> only hides its extra content, not the <details>
-      // element (or its <summary>) that stays on the page as the toggle.
-      const details = node.closest && node.closest('details');
-      if (details && details !== node && !details.hasAttribute('open')) return true;
+      const chain = ancestorsIncludingSelf(node);
+      for (let i = 1; i < chain.length; i++) {
+        const a = chain[i];
+        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
+        if (a.hasAttribute('open')) continue;
+        const child = chain[i - 1];
+        const isToggle =
+          (child.localName || '').toLowerCase() === 'summary' &&
+          child.parentNode === a &&
+          firstSummaryChild(a) === child;
+        if (!isToggle) return true;
+      }
     } catch {}
     return false;
+  }
+
+  function firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function isPlatformFocusable(el) {
@@ -20207,6 +21119,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // chain once per selector per rule; the memo makes the whole document cost
   // one walk. An element is excluded when it or an ancestor matches, so a
   // parent's answer settles its descendants.
+  function __warnBadExclude(selector) {
+    try {
+      const seen =
+        __domSharedCache.badExcludeSelectors instanceof Set
+          ? __domSharedCache.badExcludeSelectors
+          : (__domSharedCache.badExcludeSelectors = new Set());
+      if (seen.has(selector)) return;
+      seen.add(selector);
+      console.warn(
+        '[surea11y] excludeSelectors: "' +
+          selector +
+          '" is not a valid CSS selector and excludes nothing; the other selectors still apply.'
+      );
+    } catch {}
+  }
+
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
     if (!eff.length || !el || !el.matches) return false;
@@ -20230,7 +21158,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       } catch {
         // An unparseable selector matches nothing rather than excluding
-        // everything; the remaining selectors still apply.
+        // everything; the remaining selectors still apply. Said once per
+        // scan, so a typo does not go unnoticed.
+        __warnBadExclude(eff[i]);
       }
     }
     if (!result) {
@@ -20406,6 +21336,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       pushMatches(curRoot);
 
+      // querySelectorAll('*') never returns curRoot itself, so a scope
+      // that is a shadow host would leave out its own shadow root.
+      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
+        q.push(curRoot.shadowRoot);
+      }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
     }
@@ -20428,43 +21363,46 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'contentVisibilityHidden'
   ]);
 
+  // Whether the default hidden-content policy leaves `el` out: the filter
+  // queryAllSmart applies to what it finds, for a rule that reaches elements
+  // another way (a container's descendants, the other side of a
+  // relationship). Always false under includeHiddenElements:true.
+  function isHiddenContent(el) {
+    if (includeHiddenElements) return false;
+    try {
+      const vis = isAccTreeEligible(el);
+      if (!vis || vis.eligible !== false) return false;
+      const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+      for (const r of reasons) {
+        if (HARD_HIDDEN_REASONS.has(r)) return true;
+      }
+
+      // `isAccTreeEligible` can short-circuit on an inert ancestor
+      // before it reaches an outer hard-hidden ancestor (e.g.
+      // display:none wrapper). In that case the node is still
+      // structurally hidden and should be excluded by the default
+      // hidden-content policy.
+      if (reasons.includes('inert')) {
+        const domVis = isDomVisibleEligible(el, null, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true,
+          ignoreOpacity: true
+        });
+        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+        for (const r of domReasons) {
+          if (HARD_HIDDEN_REASONS.has(r)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function queryAllSmart(sel) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) {
-      list = list.filter((el) => {
-        try {
-          const vis = isAccTreeEligible(el);
-          if (!vis || vis.eligible !== false) return true;
-          const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
-          for (const r of reasons) {
-            if (HARD_HIDDEN_REASONS.has(r)) return false;
-          }
-
-          // `isAccTreeEligible` can short-circuit on an inert ancestor
-          // before it reaches an outer hard-hidden ancestor (e.g.
-          // display:none wrapper). In that case the node is still
-          // structurally hidden and should be excluded by the default
-          // hidden-content policy.
-          if (reasons.includes('inert')) {
-            const domVis = isDomVisibleEligible(el, null, {
-              visibilityMode: 'styleOnly',
-              disableGeometry: true,
-              ignoreOpacity: true
-            });
-            const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
-            for (const r of domReasons) {
-              if (HARD_HIDDEN_REASONS.has(r)) return false;
-            }
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      });
-    }
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -20589,6 +21527,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         : (__domSharedCache.outerHtmlCache = new WeakMap());
   } catch {
     __outerHtmlCache = null;
+  }
+
+  try {
+    __siblingIndexCache =
+      __domSharedCache.siblingIndexCache instanceof WeakMap
+        ? __domSharedCache.siblingIndexCache
+        : (__domSharedCache.siblingIndexCache = new WeakMap());
+  } catch {
+    __siblingIndexCache = null;
   }
 
   // ID lookups: cache getElementById / root.querySelector(#id) results within a run
@@ -20900,8 +21847,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
+      // A `for` label labels the first element in its tree with that id
+      // (HTML's labeled control), so a second element sharing the id has no
+      // label from it; Chromium names only the first.
       const forLabels = __getLabelElementsForId(id);
-      for (const l of forLabels) out.push(l);
+      for (const l of forLabels) {
+        let target = el;
+        try {
+          const root = l.getRootNode ? l.getRootNode() : null;
+          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+        } catch {}
+        if (target === el) out.push(l);
+      }
     }
     try {
       const wrap = el.closest ? el.closest('label') : null;
@@ -21072,6 +22029,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return (allowTitle ? 'at1' : 'at0') + '|mr' + String(maxRefs);
   }
 
+  // Where an element sits among its element siblings: `index` from 0,
+  // `ofType` from 1 among siblings with its tag, and `sameType`, how many
+  // siblings share the tag. A selector or a structural path needs this for
+  // every occurrence, and counting siblings each time made a rule that
+  // reports thousands of siblings quadratic. A parent's children are indexed
+  // once per run. The scan is synchronous, so only the engine changes the
+  // DOM meanwhile, and only by inserting a style sheet first in <head> or a
+  // probe last in <body>: a parent whose first or last element child has
+  // changed since is indexed again.
+  function __siblingInfo(node) {
+    const parent = node && node.parentElement;
+    if (!parent) return null;
+    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const build = () => {
+      const info = new Map();
+      const tagCounts = new Map();
+      let index = 0;
+      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+        const tag = tagOf(c);
+        const ofType = (tagCounts.get(tag) || 0) + 1;
+        tagCounts.set(tag, ofType);
+        info.set(c, { index: index++, ofType, tag });
+      }
+      return {
+        first: parent.firstElementChild,
+        last: parent.lastElementChild,
+        info,
+        tagCounts
+      };
+    };
+    let entry = null;
+    try {
+      entry = __siblingIndexCache ? __siblingIndexCache.get(parent) : null;
+    } catch {}
+    if (
+      !entry ||
+      entry.first !== parent.firstElementChild ||
+      entry.last !== parent.lastElementChild ||
+      !entry.info.has(node)
+    ) {
+      entry = build();
+      try {
+        if (__siblingIndexCache) __siblingIndexCache.set(parent, entry);
+      } catch {}
+    }
+    const own = entry.info.get(node);
+    if (!own) return null;
+    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
+  }
+
   function getOuterHtmlSnippet(el) {
     if (!el || typeof el !== 'object') return '';
     try {
@@ -21085,7 +22092,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     let out;
     try {
-      const html = el.outerHTML || '';
+      // <html>, <head> and <body> hold the whole page, so their markup
+      // changes with any edit anywhere, and the snippet is part of a
+      // finding's identity (baselines, SARIF). What a page-level finding is
+      // about is the element itself: its start tag.
+      const name = String(el.localName || '').toLowerCase();
+      const isPage =
+        (name === 'html' || name === 'head' || name === 'body') &&
+        el.ownerDocument &&
+        el.parentNode &&
+        (el === el.ownerDocument.documentElement ||
+          el.parentNode === el.ownerDocument.documentElement);
+      let html;
+      if (isPage) {
+        const shallow = el.cloneNode(false).outerHTML || '';
+        const end = shallow.lastIndexOf('</');
+        html = end > 0 ? shallow.slice(0, end) : shallow;
+      } else {
+        html = el.outerHTML || '';
+      }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
     } catch {
@@ -22087,24 +23112,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B), matching getAriaNameInfo's own precedence.
-      const labelledBy = trim(getAttr(el, 'aria-labelledby'));
-      if (labelledBy) {
-        const parts = labelledBy.split(/\s+/).filter(Boolean);
-        const texts = [];
-        for (const id of parts) {
-          let ref = safeDocGetById(id);
-          if (!ref) ref = safeRootQueryById(id);
-          if (ref && isElement(ref)) {
-            const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
-            if (t) texts.push(t);
-          }
-        }
-        const joined = trim(texts.join(' '));
-        if (joined) return joined;
-      }
-
+      // A referenced node's own aria-labelledby is not followed: accname 1.2
+      // step 2B applies only to a node not already part of an
+      // aria-labelledby traversal, and every node here is. So a target named
+      // by a further aria-labelledby gives its own text, and an element that
+      // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
+      // its content, as Chrome computes them.
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -23826,32 +24839,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const t = (node.tagName || '').toLowerCase() || '*';
         const p = node.parentElement;
         if (!p) return t;
-
-        let i = 1;
-        let sib = node.previousElementSibling;
-        while (sib) {
-          if ((sib.tagName || '').toLowerCase() === t) i++;
-          sib = sib.previousElementSibling;
-        }
-
-        // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous, so there's no need
-        // to also scan forward in that case. Only scan
-        // nextElementSibling when this node is the first of its tag
-        // among its siblings, to catch the case where the
-        // disambiguating sibling comes after it instead.
-        let hasSame = i > 1;
-        if (!hasSame) {
-          sib = node.nextElementSibling;
-          while (sib) {
-            if ((sib.tagName || '').toLowerCase() === t) {
-              hasSame = true;
-              break;
-            }
-            sib = sib.nextElementSibling;
-          }
-        }
-        return hasSame ? t + ':nth-of-type(' + i + ')' : t;
+        // A tag shared with another sibling needs :nth-of-type to be
+        // unambiguous; a tag of its own does not.
+        const info = __siblingInfo(node);
+        if (!info) return t;
+        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
       let node = el;
@@ -24022,15 +25014,50 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
         // scanned 20,000-node document take seconds.
-        let idx = 0;
-        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        const info = __siblingInfo(node);
+        let idx = info ? info.index : -1;
+        if (idx < 0) {
+          idx = 0;
+          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        }
         path.unshift(idx);
         node = parent;
       }
+      // The path is from documentElement down. An element in a shadow tree
+      // is not under it: its path would count from the shadow root's first
+      // element and name an element in the document instead.
+      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
     } catch {
       return null;
     }
     return path;
+  }
+
+  // For an element in a shadow tree, the selectors of the shadow hosts that
+  // lead to it, outermost first, each resolved in the tree that holds it;
+  // the element's own selector is resolved in its shadow root. null for an
+  // element in the document, or when a host gets no selector.
+  function buildShadowHostSelectors(el) {
+    try {
+      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      const hosts = [];
+      let root = el.getRootNode();
+      let guard = 0;
+      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
+        hosts.unshift(root.host);
+        root = root.host.getRootNode();
+      }
+      if (!hosts.length) return null;
+      const out = [];
+      for (const host of hosts) {
+        const sel = String(buildSelector(host) || '');
+        if (!sel) return null;
+        out.push(sel);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // Occurrence-level structural path: prefers the actual element reference
@@ -24045,6 +25072,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
       if (p) return p;
+      // In a shadow tree the selector holds only inside its shadow root;
+      // read against the document it would find another element.
+      if (buildShadowHostSelectors(node)) return null;
     }
     if (
       selector &&
@@ -24503,8 +25533,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    isHiddenContent,
     getDoctypeInfo,
     getOuterHtmlSnippet,
+    buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
     buildStructuralPath,
@@ -24644,8 +25676,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
-  let best = null;
-  let bestIndex = -1;
+  // Collect every candidate tied at the smallest headroom first, and settle
+  // the tie once at the end. Comparing each tie against the current best in
+  // the loop was quadratic: on a page where most text shares a colour every
+  // candidate ties, and in Blink each compareDocumentPosition walks the
+  // siblings between the two elements.
+  let ties = [];
+  let smallest = Infinity;
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     if (!c || typeof c !== 'object') continue;
@@ -24654,28 +25691,50 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
-
-    let closer = !best || headroom < best.headroom;
-    if (best && headroom === best.headroom && c.el && best.el && c.el !== best.el) {
-      let position;
-      try {
-        position =
-          typeof best.el.compareDocumentPosition === 'function'
-            ? best.el.compareDocumentPosition(c.el)
-            : 0;
-      } catch {
-        position = 0;
-      }
-      // DOCUMENT_POSITION_PRECEDING (2): c comes before the current best.
-      // Disconnected trees report no order; the earlier candidate stays.
-      closer = (position & 2) !== 0 && (position & 1) === 0;
+    if (headroom < smallest) {
+      smallest = headroom;
+      ties = [];
     }
-    if (closer) {
-      best = { el: c.el || null, value, threshold, headroom, context: c.context };
-      bestIndex = i;
+    if (headroom === smallest) {
+      ties.push({ el: c.el || null, value, threshold, headroom, context: c.context });
     }
   }
-  if (!best || bestIndex === -1) return null;
+  if (!ties.length) return null;
+
+  const position = (a, b) => {
+    try {
+      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+    } catch {
+      return 0;
+    }
+  };
+  // A tie with no element keeps its place; one after it never replaces it.
+  let best = ties[0];
+  const placed = best.el ? ties.filter((t) => t.el) : [];
+  // Rules collect candidates in page order, so the ties are usually in
+  // document order already. Checking each against the next is cheap, since
+  // neighbours sit close in the tree, and then the first tie is the answer.
+  // DOCUMENT_POSITION_FOLLOWING (4) without DISCONNECTED (1).
+  let inOrder = true;
+  for (let i = 1; i < placed.length && inOrder; i++) {
+    const prev = placed[i - 1].el;
+    const next = placed[i].el;
+    if (prev === next) continue;
+    const p = position(prev, next);
+    inOrder = (p & 4) !== 0 && (p & 1) === 0;
+  }
+  if (!inOrder) {
+    // Out of order (several scan roots, shadow trees, a custom rule):
+    // keep the earliest. DOCUMENT_POSITION_PRECEDING (2): t comes before the
+    // current best. Disconnected trees report no order; the earlier
+    // candidate stays.
+    for (let i = 1; i < placed.length; i++) {
+      const t = placed[i];
+      if (t.el === best.el) continue;
+      const p = position(best.el, t.el);
+      if ((p & 2) !== 0 && (p & 1) === 0) best = t;
+    }
+  }
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
@@ -24702,6 +25761,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {
@@ -24764,17 +25829,32 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
   const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
-  const defaultSeverity =
-    typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim()
-      ? m.defaultSeverity.trim()
-      : 'moderate';
-
-  const defaultConfidence =
-    typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim()
-      ? m.defaultConfidence.trim()
-      : 'medium';
-
-  const type = m.type === 'manual' || m.type === 'automatic' ? m.type : 'automatic';
+  // The sets the result types promise (src/index.d.ts): a value outside
+  // them reached every result as is ('blocker'), and a type spelt 'Manual'
+  // made a manual rule automatic, losing the manual-fail coercion.
+  function oneOf(field, value, allowed, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const v = String(value).trim().toLowerCase();
+    if (!allowed.includes(v)) {
+      throw new Error(
+        `Rule ${ruleId}: meta.${field} must be one of ${allowed.join(', ')}, not ${JSON.stringify(value)}`
+      );
+    }
+    return v;
+  }
+  const defaultSeverity = oneOf(
+    'defaultSeverity',
+    m.defaultSeverity,
+    ['minor', 'moderate', 'serious', 'critical'],
+    'moderate'
+  );
+  const defaultConfidence = oneOf(
+    'defaultConfidence',
+    m.defaultConfidence,
+    ['high', 'medium', 'low'],
+    'medium'
+  );
+  const type = oneOf('type', m.type, ['automatic', 'manual'], 'automatic');
 
   const coverage =
     m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object'
@@ -25603,6 +26683,8 @@ const runCoreSettled = (function runCoreSettled(
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];
+  // Custom rules that were not run, and why: { id, reason }.
+  const skippedCustomRules = [];
   const customRuleIds = new Set();
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
@@ -25614,24 +26696,79 @@ const runCoreSettled = (function runCoreSettled(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch {
-          return null;
-        }
+        } catch {}
+        // A method's source, from a method shorthand or a class
+        // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
+        // expression on its own; inside an object literal it is.
+        try {
+          const holder = new Function('return ({' + value + '})')();
+          const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
+          const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
+          if (desc && typeof desc.value === 'function') return desc.value;
+        } catch {}
       }
       return null;
+    }
+
+    function warnSkipped(ruleId, reason) {
+      skippedCustomRules.push({ id: ruleId || null, reason });
+      try {
+        console.warn(
+          '[surea11y] customRules: skipped ' +
+            (ruleId ? 'rule "' + ruleId + '"' : 'a rule') +
+            ' (' +
+            reason +
+            '); the rest of the scan runs as usual.'
+        );
+      } catch {}
     }
 
     const extraDefsById = new Map();
     const extraImpls = {};
     for (const c of rawCustomRules) {
-      if (!c || typeof c !== 'object') continue;
+      if (!c || typeof c !== 'object') {
+        warnSkipped('', 'not an object');
+        continue;
+      }
       const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
-      if (!ruleId) continue;
+      if (!ruleId) {
+        warnSkipped('', 'no id');
+        continue;
+      }
+      // A second rule with the same id would silently replace the first; a
+      // composite's id would put one id in both checksResults and
+      // rulesResults.
+      if (extraDefsById.has(ruleId)) {
+        warnSkipped(ruleId, 'another custom rule already has this id');
+        continue;
+      }
+      if (
+        Array.isArray(COMPOSITE_RULES) &&
+        COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      ) {
+        warnSkipped(ruleId, "the id is a composite rule's");
+        continue;
+      }
+      // An invalid custom rule is skipped, not a crash.
       const runFn = reviveRuleFn(c.runInPage);
-      if (typeof runFn !== 'function') continue; // invalid custom rule: skipped, not a crash
+      if (typeof runFn !== 'function') {
+        warnSkipped(
+          ruleId,
+          typeof c.runInPage === 'string'
+            ? 'runInPage source could not be turned back into a function'
+            : 'runInPage is not a function'
+        );
+        continue;
+      }
 
       const applicabilityFn = reviveRuleFn(c.applicability);
-      const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      let normalizedMeta;
+      try {
+        normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      } catch (e) {
+        warnSkipped(ruleId, 'invalid meta: ' + String((e && e.message) || e));
+        continue;
+      }
 
       // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
       // but a same-named custom rule is just as likely to be an accidental
@@ -25941,6 +27078,14 @@ const runCoreSettled = (function runCoreSettled(
       let applicable = true;
       try {
         const res = applicabilityFn(ctx);
+        // Rules run synchronously: a Promise is truthy, and would have
+        // counted as applicable whatever it resolved to.
+        if (res && typeof res.then === 'function') {
+          if (typeof res.catch === 'function') res.catch(() => {});
+          throw new Error(
+            'applicability returned a Promise; rules run synchronously, so it must return a boolean'
+          );
+        }
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
@@ -25995,10 +27140,27 @@ const runCoreSettled = (function runCoreSettled(
       };
     }
 
-    if (!result || typeof result !== 'object') {
-      if (ruleTimings)
-        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
-      continue;
+    // A rule that returned nothing usable is reported, not dropped: a
+    // missing result would read as a rule that never existed.
+    const unusable =
+      result && typeof result.then === 'function'
+        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+        : !result || typeof result !== 'object'
+          ? 'runInPage returned ' +
+            (result === null ? 'null' : typeof result) +
+            ' instead of a result object'
+          : '';
+    if (unusable) {
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+      result = {
+        outcome: 'cantTell',
+        occurrences: [],
+        error: unusable,
+        engineOptions: {
+          ...(ctx.engineOptions || {}),
+          locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+        }
+      };
     }
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
@@ -26075,17 +27237,24 @@ const runCoreSettled = (function runCoreSettled(
   // are data the run read, not a setting, and repeating them on every result
   // made a scan with a loaded locale tens of megabytes. engine.locale says
   // which dictionary the run used.
+  // Two more options are echoed as the rules saw them rather than as given,
+  // so a result stays plain data that JSON.stringify and structuredClone
+  // (postMessage to an extension or a worker) can carry: `probes` as the
+  // capped copy rules read (the raw object could be circular, or megabytes
+  // repeated on every result), and `customRules` as their ids (the rules'
+  // functions cannot be cloned, and their source repeated on every result).
+  const echoedCustomRules = rawCustomRules
+    .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
+    .map((c) => ({ id: c.id.trim() }));
   for (const r of checksResults.concat(rulesResults)) {
-    if (
-      r &&
-      r.engineOptions &&
-      typeof r.engineOptions === 'object' &&
-      'messages' in r.engineOptions
-    ) {
-      const echoed = { ...r.engineOptions };
-      delete echoed.messages;
-      r.engineOptions = echoed;
-    }
+    if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
+    const eo = r.engineOptions;
+    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    const echoed = { ...eo };
+    delete echoed.messages;
+    if ('probes' in echoed) echoed.probes = probes;
+    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    r.engineOptions = echoed;
   }
 
   // Each rule result names the rollups that group it in this run. An empty
@@ -26127,6 +27296,7 @@ const runCoreSettled = (function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
@@ -26149,7 +27319,8 @@ const runCoreSettled = (function runCoreSettled(
     contextMatch,
     checksResults,
     rulesResults,
-    overriddenBuiltinIds
+    overriddenBuiltinIds,
+    skippedCustomRules
   };
 });
 const runCore = (function runCore(
@@ -26513,6 +27684,7 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
+  const ENGINE_VERSION = "1.10.0";
 
   // Rule catalog (data only)
   const CHECK_DEFS = [
@@ -41384,8 +42556,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "aria-text": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // Content the page does not show (a closed <details>, hidden="until-found")
+  // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
     for (const d of el.querySelectorAll('*')) {
+      if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;
@@ -42502,6 +43677,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = (el.tagName || '').toLowerCase();
     const role = el.getAttribute ? el.getAttribute('role') : null;
     const roleNorm = normalizeWs(role).toLowerCase();
+    // The role the name is computed for: the explicit one, unless the
+    // presentational-role conflict below restores the implicit role.
+    let nameRole = roleNorm;
 
     // role="none"/"presentation" removes this element from the accessibility
     // tree as a button (WAI-ARIA Presentational Roles Conflict Resolution),
@@ -42555,6 +43733,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!hasConflict && !isFocusable) continue;
       }
+      // The conflict restores the native role, a button, which takes its
+      // name from its content: <button role="presentation">Save</button>
+      // is a button named "Save".
+      nameRole = '';
     }
 
     applicableCount += 1;
@@ -42609,7 +43791,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers && helpers.aria && typeof helpers.aria.isKnownRole === 'function'
         ? (() => {
             try {
-              return !!helpers.aria.isKnownRole(roleNorm);
+              return !!helpers.aria.isKnownRole(nameRole);
             } catch {
               return false;
             }
@@ -42617,7 +43799,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : false;
     const isContentNameCandidate =
       (tag === 'button' || role === 'button') &&
-      (!roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm));
+      (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -43528,7 +44710,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
       let hintKind = 'generic';
-      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') hintKind = 'background';
+      if (
+        rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
+        rc === 'BACKGROUND_OVERLAP' ||
+        rc === 'BACKGROUND_UNPARSABLE'
+      )
+        hintKind = 'background';
       else if (
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
@@ -43714,7 +44901,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
             background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
             backgroundAlpha:
-              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''
+              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
+            // A background color the engine can't read names the element
+            // and the value, as the other blockers do.
+            ...(bg && bg.blockerProperty
+              ? {
+                  blockerSelector: bg.blockerSelector || '',
+                  blockerProperty: bg.blockerProperty,
+                  blockerValue: bg.blockerValue || ''
+                }
+              : {})
           });
           continue;
         }
@@ -44195,6 +45391,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         if (!(ratio >= threshold)) {
           failCount += textCount;
+          // Past the occurrence cap a failure is only counted. The loop goes
+          // on, so text further down the page still counts toward the margin
+          // and measuredCount: stopping here made both depend on where the
+          // 50th failure fell.
+          if (occurrences.length >= MAX_OCCURRENCES) continue;
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -44270,8 +45471,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           };
 
           pushFailOccurrence(el, params, details);
-
-          if (occurrences.length >= MAX_OCCURRENCES) break;
         }
       }
     } catch {
@@ -44752,6 +45951,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         if (!(ratio >= threshold)) {
           failCount += textCount;
+          // Past the occurrence cap a failure is only counted. The loop goes
+          // on, so text further down the page still counts toward the margin
+          // and measuredCount: stopping here made both depend on where the
+          // 50th failure fell.
+          if (occurrences.length >= MAX_OCCURRENCES) continue;
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -44823,8 +46027,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           };
 
           pushFailOccurrence(el, params, details);
-
-          if (occurrences.length >= MAX_OCCURRENCES) break;
         }
       }
     } catch {
@@ -45099,15 +46301,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const suppressors = []; // { selector, base }
   const providers = []; // { base, subject }
 
-  function collectFromStyleRule(cssRule) {
-    const style = cssRule.style;
-    if (!style) return;
+  function collectFromStyleRule(style, selectorText) {
+    if (!style || !selectorText) return;
 
     const suppresses = suppressesOutline(style);
     const provides = providesReplacement(style);
     if (!suppresses && !provides) return;
 
-    for (const part of splitSelectorList(cssRule.selectorText)) {
+    for (const part of splitSelectorList(selectorText)) {
       if (!hasFocusPseudo(part)) {
         // A rule with no focus state still applies while the element has
         // focus, and an author declaration beats the user agent's focus
@@ -45144,22 +46345,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function walkRules(rules, depth) {
+  // A nested rule's selector, resolved against its parent's: `&` stands for
+  // the parent, and a selector without one is a descendant of it.
+  function resolveNested(selectorText, parentSelector) {
+    const sel = trim(selectorText);
+    if (!parentSelector) return sel;
+    const parent = ':is(' + parentSelector + ')';
+    return sel.includes('&') ? sel.split('&').join(parent) : parent + ' ' + sel;
+  }
+
+  function readRules(cssRule) {
+    try {
+      return cssRule.cssRules || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function walkRules(rules, depth, parentSelector) {
     if (!rules || depth > MAX_DEPTH) return;
     for (const cssRule of rules) {
       if (!cssRule) continue;
+      const nested = readRules(cssRule);
       if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
-        collectFromStyleRule(cssRule);
+        // CSS nesting: `a { &:focus { outline: none } }`.
+        const selectorText = resolveNested(cssRule.selectorText, parentSelector);
+        collectFromStyleRule(cssRule.style, selectorText);
+        if (nested && nested.length) walkRules(nested, depth + 1, selectorText);
+        continue;
+      }
+      // Declarations nested straight inside an at-rule within a style rule
+      // (`a:focus { @media (hover) { outline: none } }`) belong to that
+      // style rule's selector.
+      if (parentSelector && cssRule.style && !cssRule.selectorText && !nested) {
+        collectFromStyleRule(cssRule.style, parentSelector);
         continue;
       }
       // @media, @supports, @layer, ...: recurse into grouping rules.
-      let nested;
-      try {
-        nested = cssRule.cssRules || null;
-      } catch {
-        nested = null;
-      }
-      if (nested) walkRules(nested, depth + 1);
+      if (nested) walkRules(nested, depth + 1, parentSelector);
     }
   }
 
@@ -45175,7 +46398,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (!rules) continue;
       sheetCount += 1;
-      walkRules(rules, 0);
+      walkRules(rules, 0, '');
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -45899,6 +47122,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const CSS_MEDIA_RULE = 4;
   const CSS_STYLE_RULE = 1;
+  const CSS_IMPORT_RULE = 3;
 
   function trim(v) {
     return (v == null ? '' : String(v)).trim();
@@ -46047,16 +47271,74 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
   }
 
-  function scanRuleList(rules, mediaText, findings, hidings) {
-    if (!rules) return;
+  function judgeStyle(style, selectorText, mediaText, findings, hidings) {
+    if (!selectorText) return;
+    if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
+    if (hidesContent(style)) hidings.push({ mediaText, selectorText });
+  }
+
+  // A nested rule's selector, resolved against its parent's: `&` stands for
+  // the parent, and a selector without one is a descendant of it.
+  function resolveNested(selectorText, parentSelector) {
+    const sel = trim(selectorText);
+    if (!parentSelector) return sel;
+    const parent = ':is(' + parentSelector + ')';
+    return sel.includes('&') ? sel.split('&').join(parent) : parent + ' ' + sel;
+  }
+
+  // Every style rule a stylesheet applies, with the media conditions it
+  // applies under, wherever it sits: inside @media (nested or not),
+  // @supports, @layer, @container, an @import, or CSS nesting. A lock is
+  // only judged under a condition that names an orientation.
+  const MAX_DEPTH = 20;
+  // A rule list, or null when it is missing or not readable (cross-origin).
+  function readRules(get) {
+    try {
+      return get() || null;
+    } catch {
+      return null;
+    }
+  }
+  function walkRules(rules, mediaTexts, parentSelector, depth, findings, hidings) {
+    if (!rules || depth > MAX_DEPTH) return;
     for (const r of rules) {
-      if (!r || r.type !== CSS_STYLE_RULE) continue;
-      if (isLockingRotation(r.style)) {
-        findings.push({ mediaText, selectorText: trim(r.selectorText) });
+      if (!r) continue;
+      const nested = readRules(() => r.cssRules);
+      if (r.type === CSS_STYLE_RULE) {
+        const selectorText = parentSelector
+          ? resolveNested(r.selectorText, parentSelector)
+          : trim(r.selectorText);
+        const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
+        if (mediaText) judgeStyle(r.style, selectorText, mediaText, findings, hidings);
+        if (nested && nested.length) {
+          walkRules(nested, mediaTexts, selectorText, depth + 1, findings, hidings);
+        }
+        continue;
       }
-      if (r.selectorText && hidesContent(r.style)) {
-        hidings.push({ mediaText, selectorText: trim(r.selectorText) });
+      // Declarations nested straight inside an at-rule within a style rule
+      // (`.x { @media (orientation: portrait) { rotate: 90deg } }`) belong
+      // to that style rule's selector.
+      if (parentSelector && r.style && !r.selectorText && !nested) {
+        const mediaText = mediaTexts.filter(isOrientationMedia).join(' and ');
+        if (mediaText) judgeStyle(r.style, parentSelector, mediaText, findings, hidings);
+        continue;
       }
+      let texts = mediaTexts;
+      if (r.type === CSS_MEDIA_RULE && r.media) texts = mediaTexts.concat([r.media.mediaText]);
+      if (r.type === CSS_IMPORT_RULE) {
+        const imported = readRules(() => r.styleSheet && r.styleSheet.cssRules);
+        const importMedia = r.media && r.media.mediaText ? [r.media.mediaText] : [];
+        walkRules(
+          imported,
+          mediaTexts.concat(importMedia),
+          parentSelector,
+          depth + 1,
+          findings,
+          hidings
+        );
+        continue;
+      }
+      if (nested) walkRules(nested, texts, parentSelector, depth + 1, findings, hidings);
     }
   }
 
@@ -46102,12 +47384,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!rules) continue;
       sheetCount += 1;
 
-      for (const rule2 of rules) {
-        if (!rule2 || rule2.type !== CSS_MEDIA_RULE) continue;
-        const mediaText = rule2.media ? rule2.media.mediaText : '';
-        if (!isOrientationMedia(mediaText)) continue;
-        scanRuleList(rule2.cssRules, mediaText, findings, hidings);
-      }
+      // A <style media="..."> or <link media="..."> applies its whole sheet
+      // under that condition.
+      const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
+      walkRules(rules, sheetMedia, '', 0, findings, hidings);
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -49921,7 +51201,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // realm, see this rule's own header comment on why the outer
   // document's shared eligibility helpers can't be reused here).
   // Checks only genuine non-rendering (display:none,
-  // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
+  // visibility:hidden, the hidden attribute, the content of a closed
+  // <details> and of content-visibility:hidden, hidden="until-found"
+  // included) and inertness via the ancestor chain, NOT
   // aria-hidden: aria-hidden alone does not remove an element from a real
   // browser's native tab order (the same anti-pattern this engine's own
   // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
@@ -49929,16 +51211,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
+      if (el.closest && el.closest('[inert]')) return false;
+      if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ visibilityProperty: true });
+      }
       const view = doc.defaultView;
       if (!view || typeof view.getComputedStyle !== 'function') return true;
+      let child = null;
       let node = el;
       while (node && node.nodeType === 1) {
-        if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+        if (node.hasAttribute && node.hasAttribute('hidden')) {
+          // hidden="until-found" hides the element's content, not itself.
+          const v = String(node.getAttribute('hidden') || '')
+            .trim()
+            .toLowerCase();
+          if (v !== 'until-found' || child) return false;
+        }
+        // A closed <details> shows only its first <summary> child.
+        if (child && node.localName === 'details' && !node.hasAttribute('open')) {
+          let first = node.firstElementChild;
+          while (first && first.localName !== 'summary') first = first.nextElementSibling;
+          if (child !== first) return false;
+        }
         const cs = view.getComputedStyle(node);
         if (cs) {
           if (cs.display === 'none') return false;
-          if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+          if (child && cs.contentVisibility === 'hidden') return false;
+          if (!child && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) return false;
         }
+        child = node;
         node = node.parentElement;
       }
       return true;
@@ -52212,12 +53513,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   if (occurrences.length) {
-    const anyFail = occurrences.some((o) => o.outcome !== 'cantTell');
+    const isReview = (o) => o.outcome === 'cantTell';
+    const anyFail = occurrences.some((o) => !isReview(o));
+    const anyReview = occurrences.some(isReview);
+    // Tiers go in occurrenceOutcome (OUTPUT_SCHEMA.md), on every occurrence
+    // when the result mixes them, and on none when it doesn't.
+    const tiered = occurrences.map((o) => {
+      const { outcome, ...rest } = o;
+      return anyFail && anyReview
+        ? { ...rest, occurrenceOutcome: outcome === 'cantTell' ? 'cantTell' : 'fail' }
+        : rest;
+    });
     return {
       ruleId: rule.ruleId,
       outcome: anyFail ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'minor',
-      occurrences
+      occurrences: tiered
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -53291,12 +54602,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return /^0(\.0+)?[a-z%]*$/i.test(String(v || '').trim());
   }
 
+  // A color that draws nothing: a line in it is no cue.
+  function isTransparentColor(v) {
+    const raw = String(v || '').trim();
+    if (!raw) return false;
+    const parsed =
+      c && typeof c.parseCssColorToRgba === 'function' ? c.parseCssColorToRgba(raw) : null;
+    if (parsed) return parsed.a === 0;
+    return /^transparent$/i.test(raw);
+  }
+
   function hasBorder(cs) {
     for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
       const style = String(cs['border' + side + 'Style'] || '')
         .trim()
         .toLowerCase();
       if (!style || style === 'none' || style === 'hidden') continue;
+      if (isTransparentColor(cs['border' + side + 'Color'])) continue;
       if (!isZeroWidth(cs['border' + side + 'Width'])) return true;
     }
     return false;
@@ -53422,14 +54744,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return hasVisibleImageChild(el) || hasPseudoContent(el);
   }
 
+  // Whether the link's parent holds text of its own beside it. The link is
+  // an element, so that is a property of the parent alone, and it is read
+  // once per parent: scanning every sibling for every link made a parent
+  // with thousands of links take seconds, quadratic in the links.
+  const parentHasText = new Map();
   function hasSurroundingText(el, parent) {
-    if (!parent || !parent.childNodes) return false;
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const n = parent.childNodes[i];
-      if (n === el) continue;
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) return true;
+    if (!parent) return false;
+    if (parentHasText.has(parent)) return parentHasText.get(parent);
+    let found = false;
+    for (let n = parent.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) {
+        found = true;
+        break;
+      }
     }
-    return false;
+    parentHasText.set(parent, found);
+    return found;
   }
 
   const contrastOpts =
@@ -53463,6 +54794,78 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     undecided.push({ el, reasonCode });
   }
 
+  // An inline element that holds nothing but the link (<span><a>...</a></span>,
+  // as frameworks often wrap one) is part of the link as far as the text
+  // around it goes: the surrounding text is its parent's.
+  function wrapperHasCue(wrapper, cs) {
+    const outerCs = safeComputedStyle(wrapper.parentElement);
+    if (
+      c &&
+      outerCs &&
+      c.normalizeFontWeight(cs.fontWeight) !== c.normalizeFontWeight(outerCs.fontWeight)
+    ) {
+      return true;
+    }
+    if (outerCs && (cs.fontStyle || 'normal') !== (outerCs.fontStyle || 'normal')) return true;
+    if (hasBorder(cs)) return true;
+    const deco = decorationInfo(cs);
+    return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+  }
+
+  function textParentOf(el) {
+    let child = el;
+    let parent = el.parentElement;
+    for (let depth = 0; parent && depth < 5; depth++) {
+      if (hasSurroundingText(child, parent)) break;
+      if (parent.firstElementChild !== child || parent.lastElementChild !== child) break;
+      const wcs = safeComputedStyle(parent) || {};
+      const display = String(wcs.display || '');
+      if (!display.startsWith('inline') || display === 'inline-block') break;
+      // A wrapper that sets the link apart itself is not transparent: a
+      // footnote marker raised by <sup>, or a bold or underlined wrapper.
+      const valign = String(wcs.verticalAlign || 'baseline');
+      if (valign !== 'baseline' || wrapperHasCue(parent, wcs)) break;
+      child = parent;
+      parent = parent.parentElement;
+    }
+    return parent;
+  }
+
+  // Whether the cue that sets a link apart can sit on an element inside it:
+  // every piece of the link's text is inside an element, between the text
+  // and the link, that is bold, italic, underlined or bordered where the
+  // surrounding text is not (<a><strong>guide</strong></a>).
+  function cueOnContent(el, parentCs) {
+    const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
+    const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
+    const hasCue = (node) => {
+      const cs = safeComputedStyle(node);
+      if (!cs) return false;
+      if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
+      if ((cs.fontStyle || 'normal') !== parentStyle) return true;
+      if (hasBorder(cs)) return true;
+      const deco = decorationInfo(cs);
+      return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
+    };
+    let sawText = false;
+    const doc = el.ownerDocument;
+    const walker = doc && doc.createTreeWalker ? doc.createTreeWalker(el, 4) : null;
+    if (!walker) return false;
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!n.nodeValue || !n.nodeValue.trim()) continue;
+      sawText = true;
+      let cued = false;
+      for (let a = n.parentElement; a && a !== el; a = a.parentElement) {
+        if (hasCue(a)) {
+          cued = true;
+          break;
+        }
+      }
+      if (!cued) return false;
+    }
+    return sawText;
+  }
+
   for (const el of nodes) {
     if (!el || !el.getAttribute) continue;
 
@@ -53471,7 +54874,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const parent = el.parentElement;
+    const parent = textParentOf(el);
     if (!hasSurroundingText(el, parent)) continue;
 
     applicableCount += 1;
@@ -53497,7 +54900,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
-    if (hasNonColorMark(el, linkCs)) {
+    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parentCs)) {
       decidedCount += 1;
       continue;
     }
@@ -53515,7 +54918,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let underlined = null;
     const decoration = decorationInfo(linkCs);
     if (decoration.trustworthy) {
-      underlined = decoration.underlined;
+      // An underline drawn in a transparent color shows nothing.
+      underlined =
+        decoration.underlined && !isTransparentColor(linkCs && linkCs.textDecorationColor);
     } else {
       const fromCssom = resolveUnderlineFromCssom(el);
       if (fromCssom.resolved) underlined = fromCssom.underlined;
@@ -53535,7 +54940,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     try {
       const blocker = c.getComputabilityBlocker(el);
-      if (blocker && blocker.ok === false) {
+      // Paint under the text that is not an ancestor's leaves the link's
+      // color and the surrounding text's as they are: only a translucent
+      // one depends on what is behind it, checked below.
+      const overlapOnly =
+        !!blocker && blocker.ok === false && blocker.reasonCode === 'BACKGROUND_OVERLAP';
+      if (blocker && blocker.ok === false && !overlapOnly) {
         // Not confidently computable: recorded below rather than skipped, so
         // it cannot be mistaken for a clean result.
         if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
@@ -53547,7 +54957,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const fgLink = c.computeEffectiveForeground(el);
         const fgParent = c.computeEffectiveForeground(parent);
 
-        if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
+        if (
+          overlapOnly &&
+          fgLink &&
+          fgLink.rgba &&
+          fgParent &&
+          fgParent.rgba &&
+          (fgLink.rgba.a < 1 || fgParent.rgba.a < 1)
+        ) {
+          undecidedReason = 'BACKGROUND_OVERLAP';
+        } else if (bg && bg.ok && bg.rgba && fgLink && fgLink.rgba && fgParent && fgParent.rgba) {
           const fgLinkOpaque =
             fgLink.rgba.a < 1
               ? c.compositeRgba(fgLink.rgba, bg.rgba)
@@ -53775,10 +55194,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = String(role || '')
+    let roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
+    // WAI-ARIA's presentational-roles conflict resolution: a focusable
+    // element keeps its implicit role whatever role="none"/"presentation"
+    // says, so <a href="/" role="none">Home</a> is a link named "Home".
+    if (roleNorm === 'none' || roleNorm === 'presentation') {
+      try {
+        const fi = helpers.getFocusableInfo ? helpers.getFocusableInfo(el, ctx) : null;
+        if (fi && fi.focusable) roleNorm = '';
+      } catch {
+        // Not known to be focusable: the explicit role stands.
+      }
+    }
     // ARIA 1.2 "Name From: author, contents". Every other known role is
     // name-from-author-only. An unknown role falls back to the implicit role.
     // <generated:aria-name-from-content>
@@ -54267,9 +55697,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An element's child elements by sibling links, not el.children: in jsdom
   // that collection stays live once read, and each later change under a
   // large parent (a list of thousands of items) rebuilds it.
-  function childElementsOf(el) {
+  // Children in the flat tree, as the page renders them: a <slot> stands
+  // for the elements assigned to it (a shadow <ul><slot></slot></ul> lists
+  // the host's <li> children), or for its fallback content when none is.
+  function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
+      if (String(c.localName) !== 'slot' || depth > 20) {
+        out.push(c);
+        continue;
+      }
+      let assigned;
+      try {
+        assigned =
+          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+      } catch {
+        assigned = [];
+      }
+      if (assigned.length) out.push(...assigned);
+      else out.push(...childElementsOf(c, depth + 1));
+    }
     return out;
   }
 
@@ -54531,6 +55978,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "listitem-parent-valid": { run: (function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
+  // The element an <li> renders in: its parent in the flat tree, through an
+  // assigned slot and past any <slot> or shadow root on the way. undefined
+  // for a child of a shadow host that no slot takes: it isn't rendered.
+  function flatParent(el) {
+    const parent = el.parentElement;
+    if (parent && parent.shadowRoot && !el.assignedSlot) return undefined;
+    const up = (n) =>
+      typeof helpers.composedParent === 'function'
+        ? helpers.composedParent(n)
+        : n.assignedSlot || n.parentNode || n.host || null;
+    let p = up(el);
+    for (let guard = 0; p && guard < 100; guard++) {
+      if (p.nodeType === 1 && String(p.localName) !== 'slot') return p;
+      p = up(p);
+    }
+    return null;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
@@ -54538,7 +56003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = el.parentElement;
+    const parent = flatParent(el);
     if (!parent) continue;
 
     // An explicit role on the <li> ITSELF overrides its native "listitem"
@@ -55725,7 +57190,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       return true;
     }
-    return descendants.some((d) => canTakeFocus(d));
+    // A descendant the page does not show (a closed <details>,
+    // hidden="until-found") takes no focus.
+    return descendants.some(
+      (d) => !(helpers.isHiddenContent && helpers.isHiddenContent(d)) && canTakeFocus(d)
+    );
   }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
@@ -55948,14 +57417,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // inside another operable control is attributed to its nearest operable
   // ancestor rather than to every enclosing container. Eligibility is applied
   // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  //
+  // The walk follows the flat tree, as the page renders it: a shadow host's
+  // children are its shadow root's, and a <slot> stands for the elements
+  // assigned to it (its fallback content when none is). So a <button>
+  // around a <slot> nests the link a page slots into it.
+  // Sibling links, not node.children, which in jsdom stays live once read
+  // and is rebuilt on every later change under a large parent.
+  function flatChildren(node) {
+    if (!node) return [];
+    let assigned = null;
+    if (String(node.localName) === 'slot' && typeof node.assignedElements === 'function') {
+      try {
+        assigned = node.assignedElements({ flatten: true });
+      } catch {
+        assigned = null;
+      }
+    }
+    if (assigned && assigned.length) return assigned;
+    const from = node.shadowRoot || node;
+    const out = [];
+    for (let c = from.firstElementChild; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectNestedOperable(root) {
     const out = [];
-    if (!root || !root.lastElementChild) return out;
-    // Sibling links, not root.children, which in jsdom stays live once read
-    // and is rebuilt on every later change under a large parent.
-    const stack = [];
-    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
-    while (stack.length) {
+    const stack = flatChildren(root).reverse();
+    if (!stack.length) return out;
+    let guard = 0;
+    while (stack.length && guard++ < 200000) {
       const node = stack.pop();
       if (node && node.nodeType === 1) {
         // A composite-owned child (option in a listbox/combobox, tab in a
@@ -55972,8 +57463,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           continue; // do not descend into a counted control
         }
       }
-      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
-        stack.push(c);
+      const kids = flatChildren(node);
+      for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
     }
     return out;
   }
@@ -58656,12 +60147,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const FOCUSABLE_DESCENDANT_SELECTOR =
     'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
 
+  // A descendant the page does not show (display:none, a closed <details>,
+  // hidden="until-found") takes no focus.
   function hasFocusableDescendant(el) {
     try {
-      return !!(el.querySelector && el.querySelector(FOCUSABLE_DESCENDANT_SELECTOR));
-    } catch {
-      return false;
-    }
+      if (!el.querySelectorAll) return false;
+      for (const d of el.querySelectorAll(FOCUSABLE_DESCENDANT_SELECTOR)) {
+        if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
+      }
+    } catch {}
+    return false;
   }
 
   const CANDIDATE_SELECTOR =
@@ -58725,8 +60220,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
-  // yet: the focusable-descendant check counts tabindex="-1", disabled and
-  // hidden elements, and does not confirm the region really overflows.
+  // yet: the focusable-descendant check counts tabindex="-1" and disabled
+  // elements, and does not confirm the region really overflows.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
@@ -61289,22 +62784,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A closed <details> shows only its first <summary> child, which stays
+  // operable as the toggle, with whatever is inside it. Everything else in
+  // it is suppressed, an open <details> nested in it included. The walk
+  // crosses shadow boundaries and slots.
   function inClosedDetails(el) {
-    const det = closest(el, 'details');
-    if (!det) return false;
-
     try {
-      if (det.hasAttribute('open')) return false;
-
-      const tag = el && el.tagName ? String(el.tagName).toLowerCase() : '';
-      // summary remains operable even when <details> is closed
-      if (tag === 'summary') return false;
-
-      // everything else inside closed details is suppressed
-      return true;
-    } catch {
-      return false;
-    }
+      let child = el;
+      let cur = helpers.composedParent(el);
+      for (let guard = 0; cur && guard < 1000; guard++) {
+        if (
+          cur.nodeType === 1 &&
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open')
+        ) {
+          let first = cur.firstElementChild;
+          while (first && String(first.localName || '').toLowerCase() !== 'summary') {
+            first = first.nextElementSibling;
+          }
+          if (child !== first) return true;
+        }
+        child = cur;
+        cur = helpers.composedParent(cur);
+      }
+    } catch {}
+    return false;
   }
 
   function inInertSubtree(el) {
@@ -61368,6 +62872,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (hasHiddenAttr(el)) return false;
     if (inInertSubtree(el)) return false;
     if (inClosedDetails(el)) return false;
+    // Under a hidden ancestor (display:none, hidden="until-found",
+    // content-visibility:hidden): the element keeps a box in Chromium, but
+    // nothing of it is drawn for a pointer to hit.
+    try {
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false;
+    } catch {}
+    if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
 
     // Not operable => exclude
     try {
@@ -62311,6 +63822,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parent = n.parentElement;
       if (!parent || SKIP.has(String(parent.localName))) continue;
       if (isBehindModal(parent)) continue;
+      // Text the page does not render (display:none, a closed <details>,
+      // content-visibility:hidden) is never judged, so it does not take a
+      // place in the budget either.
+      try {
+        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility()) continue;
+      } catch {}
       nodes.push(n);
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
     }
@@ -62464,23 +63981,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // own `offset`, `easing` and `composite` are not properties.
     const MOVING_PROPS =
       /^(transform|translate|rotate|scale|left|right|top|bottom|inset|margin|offsetPath|offsetDistance|offsetAnchor|offsetPosition)/;
-    function isMovedForEver(from, stop) {
-      for (let el = from; el && el !== stop; el = el.parentElement) {
-        let animations;
+    // The elements such an animation targets, read once from the document's
+    // animations: asking each ancestor of each text for its own costs an
+    // animation lookup per element.
+    let movedForEver = null;
+    function movedForEverTargets() {
+      if (movedForEver) return movedForEver;
+      movedForEver = new Set();
+      let animations;
+      try {
+        animations = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+      } catch {
+        animations = [];
+      }
+      for (const a of animations) {
         try {
-          animations = typeof el.getAnimations === 'function' ? el.getAnimations() : [];
-        } catch {
-          animations = [];
-        }
-        for (const a of animations) {
-          try {
-            if (a.playState !== 'running' || !a.effect) continue;
-            if (a.effect.getComputedTiming().iterations !== Infinity) continue;
-            const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
-            const moves = frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)));
-            if (moves) return true;
-          } catch {}
-        }
+          if (a.playState !== 'running' || !a.effect || !a.effect.target) continue;
+          if (a.effect.getComputedTiming().iterations !== Infinity) continue;
+          const frames = a.effect.getKeyframes ? a.effect.getKeyframes() : [];
+          if (frames.some((f) => Object.keys(f).some((k) => MOVING_PROPS.test(k)))) {
+            movedForEver.add(a.effect.target);
+          }
+        } catch {}
+      }
+      return movedForEver;
+    }
+    function isMovedForEver(from, stop) {
+      const targets = movedForEverTargets();
+      if (!targets.size) return false;
+      for (let el = from; el && el !== stop; el = el.parentElement) {
+        if (targets.has(el)) return true;
       }
       return false;
     }
@@ -63621,7 +65151,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 
   const occurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The caption of the <figure> a video is the only content of: its
+  // <figcaption>'s text, or '' when the video shares the figure with other
+  // content, or the caption is empty.
+  function soleFigureCaption(el) {
+    const figure = el.parentElement;
+    if (!figure || String(figure.localName) !== 'figure') return '';
+    let caption = null;
+    for (let c = figure.firstElementChild; c; c = c.nextElementSibling) {
+      if (c === el) continue;
+      if (String(c.localName) === 'figcaption' && !caption) caption = c;
+      else return '';
+    }
+    for (let n = figure.firstChild; n; n = n.nextSibling) {
+      if (n.nodeType === 3 && trim(n.nodeValue)) return '';
+    }
+    return caption ? trim(caption.textContent).replace(/\s+/g, ' ') : '';
+  }
 
   for (const el of videos) {
     if (!el || !el.getAttribute) continue;
@@ -63676,6 +65225,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    const caption = soleFigureCaption(el);
+    if (caption) {
+      const text = caption.length > 100 ? caption.slice(0, 99) + '…' : caption;
+      const occ = {
+        summary:
+          'This <video> has no name, but its figure has a caption that may describe its poster.',
+        hint: 'Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).',
+        i18n: {
+          summaryKey: 'videoPoster_textAltPresent_summary_cantTell_figcaption',
+          hintKey: 'videoPoster_textAltPresent_hint_cantTell_figcaption',
+          params: { figcaption: text }
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed: 'Whether the figure caption describes what the poster image shows.',
+          evidence: { figcaption: text }
+        },
+        data: {
+          poster,
+          details: { reasonCode: 'VIDEO_POSTER_FIGCAPTION_REVIEW', figcaption: text }
+        }
+      };
+      cantTellOccurrences.push(
+        reportOccurrence ? reportOccurrence(el, occ) : { selector: '', html: '', ...occ }
+      );
+      continue;
+    }
+
     const baseOccurrence = {
       summary: 'Missing text alternative for <video> poster.',
       hint: 'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).',
@@ -63700,13 +65277,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0)
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  if (!occurrences.length)
+  if (!occurrences.length && !cantTellOccurrences.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  if (helpers && typeof helpers.resolveTieredOutcome === 'function') {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(
+        occurrences,
+        cantTellOccurrences,
+        rule.defaultSeverity || 'minor'
+      )
+    };
+  }
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
+    outcome: occurrences.length ? 'fail' : 'cantTell',
     severity: rule.defaultSeverity || 'minor',
-    occurrences
+    occurrences: occurrences.concat(cantTellOccurrences)
   };
 }), applicability: null }
   };
@@ -63810,6 +65397,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
     "videoPoster_textAltPresent_summary_fail": "Fehlende Textalternative für das Vorschaubild (poster) von <video>.",
     "videoPoster_textAltPresent_hint_fail": "Stellen Sie für das Vorschaubild einen zugänglichen Namen bereit (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
     "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
     "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",
@@ -64675,6 +66264,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
     "videoPoster_textAltPresent_summary_fail": "Missing text alternative for <video> poster.",
     "videoPoster_textAltPresent_hint_fail": "Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
     "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
     "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
     "svgImage_textAltPresent_summary_fail": "Missing text alternative on SVG <image>.",
@@ -65540,6 +67131,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de póster proporcionen una alternativa textual (nombre accesible).",
     "videoPoster_textAltPresent_summary_fail": "Falta la alternativa textual para el póster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Proporcionar un nombre accesible para la imagen del póster (se prefiere aria-label/aria-labelledby, o un atributo title como alternativa de reserva).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Compruebe que el pie describe lo que muestra la imagen de portada. Si no, dé al vídeo un nombre accesible (aria-label o aria-labelledby).",
     "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
     "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Falta la alternativa textual en el <image> de SVG.",
@@ -66405,6 +67998,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent une alternative textuelle (nom accessible).",
     "videoPoster_textAltPresent_summary_fail": "Alternative textuelle manquante pour l’image poster de <video>.",
     "videoPoster_textAltPresent_hint_fail": "Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
     "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir une alternative textuelle",
     "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent une alternative textuelle via <title>/<desc> ou un nom accessible ARIA.",
     "svgImage_textAltPresent_summary_fail": "Alternative textuelle manquante sur <image> (SVG).",
@@ -67270,6 +68865,8 @@ const I18N = {
     "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
     "videoPoster_textAltPresent_summary_fail": "<video> のポスター画像にテキストによる代替がありません。",
     "videoPoster_textAltPresent_hint_fail": "ポスター画像にアクセシブルな名前を指定してください (aria-label/aria-labelledby を推奨。代わりに title 属性も使えます)。",
+    "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
+    "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
     "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
     "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
     "svgImage_textAltPresent_summary_fail": "SVG の <image> にテキストによる代替がありません。",
@@ -68352,7 +69949,25 @@ const POLICY_CONTRACTS = {
 const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
-    if (typeof contract === 'string') return POLICY_CONTRACTS[contract] || fallback;
+    if (typeof contract === 'string') {
+      // Own properties only: 'constructor' or 'toString' would otherwise
+      // resolve to a function from Object.prototype and crash the scan.
+      if (Object.prototype.hasOwnProperty.call(POLICY_CONTRACTS, contract)) {
+        return POLICY_CONTRACTS[contract];
+      }
+      try {
+        console.warn(
+          '[surea11y] Unknown policyContract "' +
+            contract +
+            '"; using "' +
+            fallback.id +
+            '". Use one of: ' +
+            Object.keys(POLICY_CONTRACTS).join(', ') +
+            ', or an inline contract object.'
+        );
+      } catch {}
+      return fallback;
+    }
 
     if (contract && typeof contract === 'object') {
       const allowedOutcomes = Array.isArray(contract.allowedOutcomes)
@@ -68802,11 +70417,9 @@ function applyOptInRules(selection, requested) {
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
 // rule or none.
-function expandRunOnlyShorthand(runOnly, engineOptions) {
-  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
-  const values = parseCommaList(runOnly, { lower: false });
-  if (!values.length) return null;
-
+// The rule ids (built-in, composite or engineOptions.customRules) and tags a
+// selection can name, as two tests.
+function knownSelectionNames(engineOptions) {
   const customRules =
     engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
   const ruleIds = new Set();
@@ -68815,36 +70428,109 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
+  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
   for (const r of customRules) {
-    if (r && r.id) ruleIds.add(String(r.id));
+    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).toLowerCase());
+    for (const t of ct) tags.add(String(t).trim().toLowerCase());
   }
-  const isRuleId = (v) =>
-    !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
-  const isTag = (v) => tags.has(v.toLowerCase());
+  return {
+    isRuleId: (v) =>
+      !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+    isTag: (v) => tags.has(String(v).toLowerCase())
+  };
+}
 
+function invalidRunOnly(message) {
+  const err = new Error(message);
+  err.code = 'INVALID_RUN_ONLY';
+  return err;
+}
+
+function expandRunOnlyShorthand(runOnly, engineOptions) {
+  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
+  const values = parseCommaList(runOnly, { lower: false });
+  if (!values.length) return null;
+
+  const { isRuleId, isTag } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
   if (unknown.length) {
-    throw new Error(
+    throw invalidRunOnly(
       'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
   if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
-  throw new Error(
+  throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
 }
 
+// The object form of runOnly, and engineOptions.rules / .tags, name rules and
+// tags in lists. An include list that names only things that don't exist
+// selects nothing from it, so a typo could run no rule and pass a CI gate:
+// that throws, as the bare-array form does. A name that doesn't exist beside
+// ones that do is warned about, and an unknown name in an exclude list too.
+function checkSelectionNames(lists, engineOptions) {
+  let known = null;
+  for (const { field, values, kind, include } of lists) {
+    if (!Array.isArray(values) || !values.length) continue;
+    known = known || knownSelectionNames(engineOptions);
+    const test = kind === 'rule' ? known.isRuleId : known.isTag;
+    const unknown = values.filter((v) => !test(v));
+    if (!unknown.length) continue;
+    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    if (include && unknown.length === values.length) {
+      throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+    }
+    try {
+      console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
+    } catch {}
+  }
+}
+
+// The keys the object form of runOnly reads.
+const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // A number or a boolean, and an object none of whose keys the engine
+  // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
+  // does: a typo that looks like a full scan.
+  if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
+    throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
+  }
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const keys = Object.keys(runOnly);
+    const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    if (unknownKeys.length && unknownKeys.length === keys.length) {
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+    }
+  }
+  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
+    const kind = String(runOnly.type).trim().toLowerCase();
+    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+  }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
     const selection = normalizeRunOnly(runOnly);
+    checkSelectionNames(
+      [
+        { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
+        { field: 'runOnly.tags', values: selection.tags, kind: 'tag', include: true },
+        { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
+        { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
+      ],
+      eo
+    );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
@@ -68874,6 +70560,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     includeTestIds,
     excludeTestIds
   };
+  checkSelectionNames(
+    [
+      { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
+      { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
+      { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
+    ],
+    eo
+  );
 
   return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
@@ -69044,7 +70739,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.description = def.description;
   out.i18n = def.i18n || null;
 
-  if (!pol.allowedOutcomes.includes(out.outcome)) out.outcome = 'cantTell';
+  if (!pol.allowedOutcomes.includes(out.outcome)) {
+    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+    // out instead of reading an unexplained cantTell.
+    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    out.outcome = 'cantTell';
+  }
 
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
@@ -69065,6 +70766,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;
@@ -69138,6 +70844,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
         } catch {
           o.html = '';
         }
+      }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
       }
     }
 
@@ -69706,6 +71420,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         );
       };
 
+      // Text the page draws nowhere a reader can see it. From CSS alone:
+      // a font size of 0, or a fully transparent color, unless the color is
+      // left transparent for a background to show through the glyphs
+      // (background-clip: text, gradient text), which the computability
+      // check then asks about. With layout (styleAndGeometry): text entirely
+      // above or left of the page, where no scrolling reaches (the
+      // left: -9999px technique), or clipped to nothing by an ancestor that
+      // hides its overflow (height: 0; overflow: hidden).
+      const isUndrawn = (el) => {
+        const cs = __contrastComputedStyle(el);
+        if (!cs) return false;
+        if (Number.parseFloat(cs.fontSize) === 0) return true;
+        const color = parseCssColorToRgba(cs.color);
+        if (color && color.a === 0) {
+          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
+          if (!/\btext\b/.test(clip)) return true;
+        }
+        if (
+          visibilityMode !== 'styleAndGeometry' ||
+          typeof el.getBoundingClientRect !== 'function'
+        ) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const sx = (win && win.scrollX) || 0;
+        const sy = (win && win.scrollY) || 0;
+        if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
+        let left = r.left;
+        let top = r.top;
+        let right = r.right;
+        let bottom = r.bottom;
+        let cur = composedParent(el);
+        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+          const acs = __contrastComputedStyle(cur);
+          // hidden and clip cut content off; auto and scroll let a reader
+          // scroll to it.
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          if (clipsX || clipsY) {
+            const a = cur.getBoundingClientRect();
+            if (clipsX) {
+              left = Math.max(left, a.left);
+              right = Math.min(right, a.right);
+            }
+            if (clipsY) {
+              top = Math.max(top, a.top);
+              bottom = Math.min(bottom, a.bottom);
+            }
+            if (right - left < 1 || bottom - top < 1) return true;
+          }
+          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          cur = composedParent(cur);
+        }
+        return false;
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -69716,6 +71488,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
+          if (ok && isUndrawn(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -70022,10 +71795,198 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s;
   }
 
+  // The CSS Color 4 functions a browser keeps as written in a computed
+  // style: oklab(), oklch(), lab(), lch() and color(<space> ...). color-mix()
+  // and relative colors resolve to one of them. Converted to sRGB with the
+  // matrices CSS Color 4 gives; a color outside sRGB is clipped to it. null
+  // for anything else, or a value that does not parse.
+  function __parseCssColor4(s) {
+    const m = /^(oklab|oklch|lab|lch|color)\((.*)\)$/.exec(s);
+    if (!m) return null;
+    const fn = m[1];
+    const slash = m[2].split('/');
+    if (slash.length > 2) return null;
+    const tokens = trim(slash[0]).split(/\s+/).filter(Boolean);
+    let space = fn;
+    if (fn === 'color') space = tokens.shift() || '';
+    if (tokens.length !== 3) return null;
+
+    // A channel: 'none' is 0, a percentage is a fraction of `full`.
+    const num = (t, full) => {
+      if (t === 'none') return 0;
+      if (t.endsWith('%')) {
+        const p = Number.parseFloat(t);
+        return Number.isFinite(p) ? (p / 100) * full : NaN;
+      }
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const hue = (t) => {
+      if (t === 'none') return 0;
+      const u = /^(-?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/.exec(t);
+      if (!u) return NaN;
+      const n = Number(u[1]);
+      const unit = u[2] || 'deg';
+      const deg =
+        unit === 'rad'
+          ? (n * 180) / Math.PI
+          : unit === 'grad'
+            ? n * 0.9
+            : unit === 'turn'
+              ? n * 360
+              : n;
+      return (deg * Math.PI) / 180;
+    };
+    let alpha = 1;
+    if (slash.length === 2) {
+      alpha = num(trim(slash[1]), 1);
+      if (!Number.isFinite(alpha)) return null;
+    }
+
+    const mul = (M, v) => [
+      M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+      M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+      M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+    ];
+    const D50_TO_D65 = [
+      [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+      [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+      [0.012314014864481998, -0.020507649298898964, 1.330365926242124]
+    ];
+    const XYZ65_TO_LSRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    const srgbDecode = (v) => {
+      const a = Math.abs(v);
+      return a <= 0.04045 ? v / 12.92 : Math.sign(v) * Math.pow((a + 0.055) / 1.055, 2.4);
+    };
+    const labToXyz65 = (L, a, b) => {
+      const k = 24389 / 27;
+      const e = 216 / 24389;
+      const f1 = (L + 16) / 116;
+      const f0 = a / 500 + f1;
+      const f2 = f1 - b / 200;
+      const xyz = [
+        Math.pow(f0, 3) > e ? Math.pow(f0, 3) : (116 * f0 - 16) / k,
+        L > k * e ? Math.pow(f1, 3) : L / k,
+        Math.pow(f2, 3) > e ? Math.pow(f2, 3) : (116 * f2 - 16) / k
+      ];
+      const white = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
+      return mul(D50_TO_D65, [xyz[0] * white[0], xyz[1] * white[1], xyz[2] * white[2]]);
+    };
+    const oklabToLinear = (L, a, b) => {
+      const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+      const mm = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+      const ss = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+      return [
+        4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * ss,
+        -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * ss,
+        -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * ss
+      ];
+    };
+
+    let linear = null;
+    let encoded = null;
+    if (space === 'oklab' || space === 'oklch') {
+      const L = num(tokens[0], 1);
+      let a;
+      let b;
+      if (space === 'oklab') {
+        a = num(tokens[1], 0.4);
+        b = num(tokens[2], 0.4);
+      } else {
+        const C = num(tokens[1], 0.4);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = oklabToLinear(L, a, b);
+    } else if (space === 'lab' || space === 'lch') {
+      const L = num(tokens[0], 100);
+      let a;
+      let b;
+      if (space === 'lab') {
+        a = num(tokens[1], 125);
+        b = num(tokens[2], 125);
+      } else {
+        const C = num(tokens[1], 150);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = mul(XYZ65_TO_LSRGB, labToXyz65(L, a, b));
+    } else if (fn === 'color') {
+      const v = tokens.map((t) => num(t, 1));
+      if (!v.every(Number.isFinite)) return null;
+      if (space === 'srgb') encoded = v;
+      else if (space === 'srgb-linear') linear = v;
+      else if (space === 'xyz' || space === 'xyz-d65') linear = mul(XYZ65_TO_LSRGB, v);
+      else if (space === 'xyz-d50') linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, v));
+      else if (space === 'display-p3') {
+        const P3_TO_XYZ65 = [
+          [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+          [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+          [0, 0.04511338185890264, 1.043944368900976]
+        ];
+        linear = mul(XYZ65_TO_LSRGB, mul(P3_TO_XYZ65, v.map(srgbDecode)));
+      } else if (space === 'a98-rgb') {
+        const A98_TO_XYZ65 = [
+          [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
+          [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
+          [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
+        ];
+        const dec = v.map((c) => Math.sign(c) * Math.pow(Math.abs(c), 563 / 256));
+        linear = mul(XYZ65_TO_LSRGB, mul(A98_TO_XYZ65, dec));
+      } else if (space === 'prophoto-rgb') {
+        const PROPHOTO_TO_XYZ50 = [
+          [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
+          [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
+          [0, 0, 0.8251046025104602]
+        ];
+        const dec = v.map((c) =>
+          Math.abs(c) <= 16 / 512 ? c / 16 : Math.sign(c) * Math.pow(Math.abs(c), 1.8)
+        );
+        linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, mul(PROPHOTO_TO_XYZ50, dec)));
+      } else if (space === 'rec2020') {
+        const REC2020_TO_XYZ65 = [
+          [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
+          [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
+          [0, 0.028072693049087428, 1.060985057710791]
+        ];
+        const al = 1.09929682680944;
+        const be = 0.018053968510807;
+        const dec = v.map((c) => {
+          const a = Math.abs(c);
+          return a < be * 4.5 ? c / 4.5 : Math.sign(c) * Math.pow((a + al - 1) / al, 1 / 0.45);
+        });
+        linear = mul(XYZ65_TO_LSRGB, mul(REC2020_TO_XYZ65, dec));
+      } else return null;
+    } else return null;
+
+    if (!encoded) {
+      encoded = linear.map((c) => {
+        const a = Math.abs(c);
+        return a <= 0.0031308 ? c * 12.92 : Math.sign(c) * (1.055 * Math.pow(a, 1 / 2.4) - 0.055);
+      });
+    }
+    if (!encoded.every(Number.isFinite)) return null;
+    const to255 = (c) => clamp255(Math.round(Math.min(1, Math.max(0, c)) * 255));
+    return { r: to255(encoded[0]), g: to255(encoded[1]), b: to255(encoded[2]), a: clamp01(alpha) };
+  }
+
   function __parseCssColorToRgbaUncached(input) {
     const s = trim(input).toLowerCase();
     if (!s) return null;
     if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+
+    // A CSS Color 4 function the converter can't read (an unknown color()
+    // space, say) is not parsed: the platform would only hand the same
+    // value back.
+    if (/^(oklab|oklch|lab|lch|color)\(/.test(s)) return __parseCssColor4(s);
 
     if (s[0] === '#') {
       const hex = s.slice(1);
@@ -70165,6 +72126,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         probe.style.top = '-9999px';
         probe.style.opacity = '0';
         probe.style.color = String(input);
+        // A value the platform rejects leaves the property unset, and the
+        // probe would then report the color it inherits.
+        if (!probe.style.color) return null;
         const parent = d.body || d.documentElement;
         if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
 
@@ -70431,11 +72395,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
-  function computeEffectiveForeground(el) {
-    try {
-      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch {}
+  const __SVG_NS = 'http://www.w3.org/2000/svg';
+  const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  function __isSvgTextElement(el) {
+    return (
+      !!el &&
+      el.namespaceURI === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+    );
+  }
 
+  function computeEffectiveForeground(el) {
+    // The override first, as computeEffectiveBackground does: a caller can
+    // ask for the foreground before the computability check resolves the
+    // group opacity (the contrast rules' same-color filter does), and the
+    // cached naive color would then count the ancestor's opacity twice,
+    // once on the text and once more in the composited background.
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
       if (override) {
@@ -70449,8 +72424,21 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
+    try {
+      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch {}
+
     const cs = __contrastComputedStyle(el);
-    const c = parseCssColorToRgba(cs && cs.color);
+    // SVG text is painted with `fill`, not `color` (which only feeds
+    // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
+    // of none (outline-only text) or a paint server (url(#gradient)) does
+    // not parse, and leaves the text not computable.
+    const svgText = __isSvgTextElement(el);
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    if (c && svgText) {
+      const fillOpacity = Number.parseFloat(cs.fillOpacity);
+      if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
+    }
     if (!c) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
@@ -70530,6 +72518,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let acc = { r: 0, g: 0, b: 0, a: 0 };
     let cur = el;
     let guard = 0;
+    // A background color this parser can't read, met while what is in front
+    // of it still lets it show through. Skipping it as if transparent would
+    // judge the text against whatever lies further out.
+    let unparsable = null;
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -70540,6 +72532,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
       const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+
+      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+        unparsable = {
+          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          value: truncateCssValue(trim(cs.backgroundColor), 80)
+        };
+        break;
+      }
 
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
@@ -70576,7 +72576,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out;
     const allowAssumptions = mode === 'auditorAssist';
 
-    if (acc.a < 1) {
+    if (unparsable) {
+      out = {
+        ok: false,
+        rgba: acc,
+        alpha: acc.a,
+        stack: stack || [],
+        reasonCode: 'BACKGROUND_UNPARSABLE',
+        blockerSelector: unparsable.selector,
+        blockerProperty: 'background-color',
+        blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1) {
       if (allowAssumptions) {
         // If the root is not opaque, apply an explicit canvas fallback.
         const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
@@ -70710,7 +72721,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
-      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      const elColor = parseCssColorToRgba(
+        elCs && (__isSvgTextElement(el) ? elCs.fill : elCs.color)
+      );
       if (!elColor) return __cacheAndReturn(null);
 
       let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
@@ -70734,6 +72747,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (!bg && bgAcc.a < 1 && trim(cs && cs.backgroundColor)) return __cacheAndReturn(null);
         if (bg) {
           const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
           bgAcc = compositeRgba(bgAcc, layer);
@@ -70814,6 +72828,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // el and its ancestors up to the first with an opaque background.
+    const chain = [];
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -70967,6 +72983,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
+        chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
       }
@@ -70974,17 +72991,467 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       cur = composedParent(cur);
     }
 
-    const out = {
-      ok: true,
-      reasonCode: null,
-      blockerSelector: '',
-      blockerProperty: '',
-      blockerValue: ''
-    };
+    const overlap = __findPaintUnderText(el, chain);
+    const out = overlap
+      ? {
+          ok: false,
+          reasonCode: 'BACKGROUND_OVERLAP',
+          blockerSelector: overlap.selector,
+          blockerProperty: overlap.property,
+          blockerValue: overlap.value
+        }
+      : {
+          ok: true,
+          reasonCode: null,
+          blockerSelector: '',
+          blockerProperty: '',
+          blockerValue: ''
+        };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
     } catch {}
     return out;
+  }
+
+  // -------- Paint behind the text that is not an ancestor's --------
+  //
+  // The background above is the stack of el's ancestors' backgrounds. What a
+  // page paints behind text can come from elsewhere: an <img> hero under a
+  // heading positioned over it, a dark sibling block the text is pulled
+  // over with a negative margin, an absolutely positioned overlay or a
+  // ::before. The ratio against the ancestors is then confidently wrong,
+  // so the text is not computable. Needs a layout (a real browser); without
+  // one nothing is found and nothing changes.
+  //
+  // Only paint inside the nearest ancestor whose own background is opaque
+  // counts: anything outside it sits behind that background (a hero image
+  // under a white card) or is a page-level overlay this check does not try
+  // to order. The text's own line boxes are measured, not its element's
+  // box, so a float the text wraps around does not count.
+
+  const __OVERLAP_CELL = 256;
+  const __OVERLAP_MAX_PAINTERS = 20000;
+  const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  let __overlapIndex;
+
+  // Called for every element on the page, and most paint nothing: a
+  // transparent background and no image are told from the computed values
+  // as the browser serializes them, before anything is parsed.
+  function __paintOf(node, cs) {
+    if (!cs) return null;
+    const paint = __paintCandidate(node, cs);
+    if (!paint) return null;
+    if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    return paint;
+  }
+
+  function __paintCandidate(node, cs) {
+    const tag = String(node.localName || '').toLowerCase();
+    if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
+      return { property: 'element', value: tag };
+    }
+    const rawBg = cs.backgroundColor;
+    if (rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent') {
+      const raw = trim(rawBg);
+      const bg = parseCssColorToRgba(raw);
+      if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    }
+    const img = cs.backgroundImage;
+    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(img, 80) };
+    }
+    return null;
+  }
+
+  // Fixed and sticky boxes, and what is inside them, sit over the page as
+  // it scrolls: a cookie banner, a sticky header. They cover text rather
+  // than paint behind it, and where they stand depends on the scroll
+  // position the scan was taken at.
+  const __pinnedCache = new WeakMap();
+  function __isPinned(node) {
+    const path = [];
+    let cur = node;
+    let pinned = false;
+    let guard = 0;
+    while (cur && cur.nodeType === 1 && guard++ < 200) {
+      if (__pinnedCache.has(cur)) {
+        pinned = __pinnedCache.get(cur);
+        break;
+      }
+      path.push(cur);
+      const cs = __contrastComputedStyle(cur);
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        pinned = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    for (const n of path) __pinnedCache.set(n, pinned);
+    return pinned;
+  }
+
+  // The content of a closed <details> (everything but its first <summary>), and
+  // whatever sits under content-visibility: hidden (hidden="until-found"
+  // too), keeps its layout box in Chromium, so it has a rect, but none of it
+  // is painted. checkVisibility() answers that; without it, the two are
+  // looked for along the composed ancestors.
+  function __isUnpainted(node) {
+    if (typeof node.checkVisibility === 'function') {
+      try {
+        return !node.checkVisibility();
+      } catch {}
+    }
+    // A shadow root on the way up is stepped over to its host.
+    let child = node;
+    let cur = composedParent(node);
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (cur.nodeType === 1) {
+        if (
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open') &&
+          child !== __firstSummaryChild(cur)
+        ) {
+          return true;
+        }
+        const cs = __contrastComputedStyle(cur);
+        if (cs && cs.contentVisibility === 'hidden') return true;
+      }
+      child = cur;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Only the first <summary> child of a <details> is its toggle.
+  function __firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
+  }
+
+  function __buildOverlapIndex() {
+    const doc = window && window.document;
+    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    try {
+      const rootRects = doc.documentElement.getClientRects();
+      if (!rootRects || !rootRects.length) return null;
+    } catch {
+      return null;
+    }
+    const painters = [];
+    const cells = new Map();
+    const roots = [doc];
+    for (let ri = 0; ri < roots.length; ri++) {
+      let all;
+      try {
+        all = roots[ri].querySelectorAll('*');
+      } catch {
+        continue;
+      }
+      for (const node of all) {
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        const cs = __contrastComputedStyle(node);
+        const paint = __paintOf(node, cs);
+        if (!paint || __isUnpainted(node)) continue;
+        // An inline box that wraps has one fragment per line, and its
+        // bounding box spans the lines between: what it paints is the
+        // fragments.
+        let boxes;
+        try {
+          boxes =
+            cs &&
+            String(cs.display).startsWith('inline') &&
+            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
+              ? Array.from(node.getClientRects())
+              : [node.getBoundingClientRect()];
+        } catch {
+          continue;
+        }
+        for (const r of boxes) {
+          if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
+          if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
+          const index = painters.length;
+          painters.push({ el: node, rect: r, paint });
+          const x0 = Math.floor(r.left / __OVERLAP_CELL);
+          const x1 = Math.floor(r.right / __OVERLAP_CELL);
+          const y0 = Math.floor(r.top / __OVERLAP_CELL);
+          const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+          for (let cx = x0; cx <= x1; cx++) {
+            for (let cy = y0; cy <= y1; cy++) {
+              const key = cx + ',' + cy;
+              const list = cells.get(key);
+              if (list) list.push(index);
+              else cells.set(key, [index]);
+            }
+          }
+        }
+      }
+    }
+    return { painters, cells };
+  }
+
+  function __getOverlapIndex() {
+    if (__overlapIndex === undefined) {
+      try {
+        const sc = shared && shared.__contrastSharedCache;
+        if (sc && sc.__overlapIndex !== undefined) __overlapIndex = sc.__overlapIndex;
+        else {
+          __overlapIndex = __buildOverlapIndex();
+          if (sc) sc.__overlapIndex = __overlapIndex;
+        }
+      } catch {
+        __overlapIndex = null;
+      }
+    }
+    return __overlapIndex;
+  }
+
+  // The line boxes of el's own text.
+  function __ownTextRects(el) {
+    const doc = el.ownerDocument;
+    const out = [];
+    let range;
+    try {
+      range = doc.createRange();
+    } catch {
+      return out;
+    }
+    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
+      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+      try {
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width >= 1 && r.height >= 1) out.push(r);
+        }
+      } catch {}
+    }
+    return out;
+  }
+
+  // Two boxes meet when they share at least 2px across. Against a line of
+  // text, paint has to cover about a glyph of it, half the line's height
+  // across and a third down: a glyph box runs past a tight line-height into
+  // the block above or below, and an icon can nudge into the text beside
+  // it, and neither puts the line on that paint.
+  const __intersects = (a, b) =>
+    Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
+    Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  const __coversLine = (paint, line) =>
+    Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
+      Math.max(2, Math.min(line.width, line.height / 2)) &&
+    Math.min(paint.bottom, line.bottom) - Math.max(paint.top, line.top) >=
+      Math.max(2, line.height / 3);
+
+  function __isComposedInside(node, container) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 1000) {
+      if (cur === container) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Where an absolutely positioned pseudo-element of a positioned host sits,
+  // from its resolved offsets and size, which a browser reports in pixels
+  // for an element positioned out of flow. Its containing block is the
+  // host's padding box. A scale or translation is applied about the
+  // transform origin; a pseudo-element scaled to nothing paints nothing
+  // (an underline waiting for hover), so it is `false`. null when the
+  // browser does not give pixels, or the transform rotates or skews, and
+  // then the host's box stands in.
+  function __pseudoBox(host, hostCs, pcs) {
+    try {
+      if (pcs.position !== 'absolute') return null;
+      const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const left = px(pcs.left);
+      const top = px(pcs.top);
+      const width = px(pcs.width);
+      const height = px(pcs.height);
+      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let m = [1, 0, 0, 1, 0, 0];
+      const t = trim(pcs.transform);
+      if (t && t !== 'none') {
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        if (!mm) return null;
+        m = mm[1].split(',').map((v) => Number.parseFloat(v));
+        if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
+        if (m[0] === 0 || m[3] === 0) return false;
+      }
+      const origin = String(pcs.transformOrigin || '').split(/\s+/);
+      const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
+      const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
+      const r = host.getBoundingClientRect();
+      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
+      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
+      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+      const box = {
+        left: Math.min(xs[0], xs[1]),
+        right: Math.max(xs[0], xs[1]),
+        top: Math.min(ys[0], ys[1]),
+        bottom: Math.max(ys[0], ys[1])
+      };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
+    } catch {
+      return null;
+    }
+  }
+
+  // A positioned element's ::before or ::after when it is positioned out of
+  // flow and paints a color or gradient, as { name, property, value }; null
+  // otherwise.
+  const __positionedPaintPseudoCache = new WeakMap();
+  function __hasPositionedPaintPseudo(host) {
+    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
+    let found = null;
+    // The overlay pattern positions the pseudo-element against its own
+    // element, which is then positioned itself; reading every element's
+    // pseudo-elements would cost a style lookup per text element.
+    const hostCs = __contrastComputedStyle(host);
+    const positioned = !!hostCs && !!hostCs.position && hostCs.position !== 'static';
+    if (positioned && window && typeof window.getComputedStyle === 'function') {
+      for (const name of ['::before', '::after']) {
+        let pcs;
+        try {
+          pcs = window.getComputedStyle(host, name);
+        } catch {
+          continue;
+        }
+        if (!pcs) continue;
+        const content = trim(pcs.content);
+        if (!content || content === 'none' || content === 'normal') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        if (pcs.display === 'none') continue;
+        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        const bg = parseCssColorToRgba(pcs.backgroundColor);
+        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
+        if (!(bg && bg.a > 0) && !gradient) continue;
+        const box = __pseudoBox(host, hostCs, pcs);
+        if (box === false) continue;
+        found = {
+          name,
+          property: gradient ? 'background-image' : 'background-color',
+          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
+          box
+        };
+        break;
+      }
+    }
+    __positionedPaintPseudoCache.set(host, found);
+    return found;
+  }
+
+  // `chain` is el and its ancestors up to and including the first with an
+  // opaque background of its own (all of them when none has one).
+  function __findPaintUnderText(el, chain) {
+    try {
+      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      const index = __getOverlapIndex();
+      if (!index) return null;
+      const opaque = chain[chain.length - 1];
+      const ancestors = new Set(chain);
+      // Painters near el's box at all, before measuring its text, which
+      // costs more: on most pages nothing but ancestors paints there.
+      const near = (r) => {
+        const x0 = Math.floor(r.left / __OVERLAP_CELL);
+        const x1 = Math.floor(r.right / __OVERLAP_CELL);
+        const y0 = Math.floor(r.top / __OVERLAP_CELL);
+        const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              const p = index.painters[i];
+              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
+            }
+          }
+        }
+        return false;
+      };
+      let box = null;
+      try {
+        box = el.getBoundingClientRect();
+      } catch {}
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
+      if (box && !pseudoCandidates && !near(box)) return null;
+      const rects = __ownTextRects(el);
+      if (!rects.length) return null;
+      // Solid paint the same color as the background the text is measured
+      // against changes nothing (a white fade-out over white text).
+      let measured = null;
+      try {
+        const bg = computeEffectiveBackground(el, {});
+        measured = bg && bg.ok && bg.rgba ? bg.rgba : null;
+      } catch {}
+      const sameAsMeasured = (value) => {
+        const c = measured && parseCssColorToRgba(value);
+        return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
+      };
+
+      const seen = new Set();
+      for (const tr of rects) {
+        const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+        const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+        const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+        const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              if (seen.has(i)) continue;
+              seen.add(i);
+              const p = index.painters[i];
+              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // Pinned paint is in the index but never counts; asked only
+              // of the few painters that reach text, since it walks the
+              // ancestors.
+              if (__isPinned(p.el)) continue;
+              // An ancestor beyond `opaque` is behind its background.
+              if (__isComposedInside(el, p.el)) continue;
+              // Inside el: paint of its own descendants, beside its text.
+              if (__isComposedInside(p.el, el)) continue;
+              if (!__isComposedInside(p.el, opaque)) continue;
+              if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
+                continue;
+              return {
+                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                property: p.paint.property,
+                value: p.paint.value
+              };
+            }
+          }
+        }
+      }
+
+      // A positioned ::before or ::after on el or an ancestor, painting a
+      // color or gradient: the overlay pattern. Its box can't be measured,
+      // so its element's box stands in for it.
+      for (const host of chain) {
+        const pseudo = __hasPositionedPaintPseudo(host);
+        if (!pseudo) continue;
+        if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
+        let hostRect = pseudo.box;
+        if (!hostRect) {
+          try {
+            hostRect = host.getBoundingClientRect();
+          } catch {
+            hostRect = null;
+          }
+        }
+        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          property: pseudo.property,
+          value: pseudo.value
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   return {
@@ -71035,10 +73502,19 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Existence check for a single ID token. Never throws, returns false
   // (not "unknown") when the document isn't available so callers degrade
   // to their pre-existing format-only behavior rather than guessing.
-  function idExists(id) {
-    if (!ariaDocument || typeof ariaDocument.getElementById !== 'function') return true;
+  // An ID reference resolves in the referring element's own tree: its shadow
+  // root, or the document. One that points across a shadow boundary
+  // resolves to nothing, as Chromium resolves it, and one inside a shadow
+  // root finds its target there, which document.getElementById can't see.
+  function idExists(id, el) {
+    let scope = ariaDocument;
     try {
-      return !!ariaDocument.getElementById(id);
+      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
+      if (root && typeof root.getElementById === 'function') scope = root;
+    } catch {}
+    if (!scope || typeof scope.getElementById !== 'function') return true;
+    try {
+      return !!scope.getElementById(id);
     } catch {
       return true;
     }
@@ -72006,17 +74482,22 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // `aria-describedby={hasError ? errorId : ''}`).
     if (v.length === 0) return { valid: true, reason: '' };
 
+    // true, false, undefined and mixed are read in any case, like the token
+    // values below: Chromium exposes aria-checked="TRUE" as checked and
+    // hides an aria-hidden="True" subtree, and the engine's own readers of
+    // these states lowercase them too.
+    const lv = lower(v);
     switch (type) {
       case 'boolean': {
-        const ok = v === 'true' || v === 'false';
+        const ok = lv === 'true' || lv === 'false';
         return { valid: ok, reason: ok ? '' : 'expected-true-false' };
       }
       case 'boolean-undefined': {
-        const ok = v === 'true' || v === 'false' || v === 'undefined';
+        const ok = lv === 'true' || lv === 'false' || lv === 'undefined';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-undefined' };
       }
       case 'tristate': {
-        const ok = v === 'true' || v === 'false' || v === 'mixed';
+        const ok = lv === 'true' || lv === 'false' || lv === 'mixed';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-mixed' };
       }
       case 'integer': {
@@ -72061,7 +74542,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // has no such carve-out in ACT's own text and keeps the existence
         // check.
         if (lower(name) === 'aria-errormessage') return { valid: true, reason: '' };
-        if (!idExists(v)) return { valid: false, reason: 'idref-not-found' };
+        if (!idExists(v, el)) return { valid: false, reason: 'idref-not-found' };
         return { valid: true, reason: '' };
       }
       case 'idref-list': {
@@ -72069,7 +74550,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p, el))) return { valid: true, reason: '' };
 
         // aria-controls is the one idref-list attribute whose target is
         // routinely absent by design: the menu, listbox or panel it names
@@ -72502,6 +74983,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __domSharedCache = {};
   var __selectorCache = null;
   var __outerHtmlCache = null;
+  var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
@@ -73157,20 +75639,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // A closed <details> shows only its summary: its first <summary> child,
+  // which stays on the page as the toggle. Every other descendant is hidden,
+  // including another <summary> and anything in an open <details> nested in
+  // it. The walk is over the composed ancestors, so a shadow root's content
+  // inside a closed <details>, and light-DOM content slotted into one, count
+  // too. The <details> element itself is not hidden by its own state.
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const summary = node.closest && node.closest('summary');
-      if (summary && summary.contains(node)) return false;
-      // closest() matches the node itself, so a plain <details> element
-      // being asked about its own eligibility would otherwise match its
-      // own closest('details') and get judged against its own open state.
-      // A closed <details> only hides its extra content, not the <details>
-      // element (or its <summary>) that stays on the page as the toggle.
-      const details = node.closest && node.closest('details');
-      if (details && details !== node && !details.hasAttribute('open')) return true;
+      const chain = ancestorsIncludingSelf(node);
+      for (let i = 1; i < chain.length; i++) {
+        const a = chain[i];
+        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
+        if (a.hasAttribute('open')) continue;
+        const child = chain[i - 1];
+        const isToggle =
+          (child.localName || '').toLowerCase() === 'summary' &&
+          child.parentNode === a &&
+          firstSummaryChild(a) === child;
+        if (!isToggle) return true;
+      }
     } catch {}
     return false;
+  }
+
+  function firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function isPlatformFocusable(el) {
@@ -73367,6 +75865,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // chain once per selector per rule; the memo makes the whole document cost
   // one walk. An element is excluded when it or an ancestor matches, so a
   // parent's answer settles its descendants.
+  function __warnBadExclude(selector) {
+    try {
+      const seen =
+        __domSharedCache.badExcludeSelectors instanceof Set
+          ? __domSharedCache.badExcludeSelectors
+          : (__domSharedCache.badExcludeSelectors = new Set());
+      if (seen.has(selector)) return;
+      seen.add(selector);
+      console.warn(
+        '[surea11y] excludeSelectors: "' +
+          selector +
+          '" is not a valid CSS selector and excludes nothing; the other selectors still apply.'
+      );
+    } catch {}
+  }
+
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
     if (!eff.length || !el || !el.matches) return false;
@@ -73390,7 +75904,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       } catch {
         // An unparseable selector matches nothing rather than excluding
-        // everything; the remaining selectors still apply.
+        // everything; the remaining selectors still apply. Said once per
+        // scan, so a typo does not go unnoticed.
+        __warnBadExclude(eff[i]);
       }
     }
     if (!result) {
@@ -73566,6 +76082,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       pushMatches(curRoot);
 
+      // querySelectorAll('*') never returns curRoot itself, so a scope
+      // that is a shadow host would leave out its own shadow root.
+      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
+        q.push(curRoot.shadowRoot);
+      }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
     }
@@ -73588,43 +76109,46 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'contentVisibilityHidden'
   ]);
 
+  // Whether the default hidden-content policy leaves `el` out: the filter
+  // queryAllSmart applies to what it finds, for a rule that reaches elements
+  // another way (a container's descendants, the other side of a
+  // relationship). Always false under includeHiddenElements:true.
+  function isHiddenContent(el) {
+    if (includeHiddenElements) return false;
+    try {
+      const vis = isAccTreeEligible(el);
+      if (!vis || vis.eligible !== false) return false;
+      const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+      for (const r of reasons) {
+        if (HARD_HIDDEN_REASONS.has(r)) return true;
+      }
+
+      // `isAccTreeEligible` can short-circuit on an inert ancestor
+      // before it reaches an outer hard-hidden ancestor (e.g.
+      // display:none wrapper). In that case the node is still
+      // structurally hidden and should be excluded by the default
+      // hidden-content policy.
+      if (reasons.includes('inert')) {
+        const domVis = isDomVisibleEligible(el, null, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true,
+          ignoreOpacity: true
+        });
+        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+        for (const r of domReasons) {
+          if (HARD_HIDDEN_REASONS.has(r)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function queryAllSmart(sel) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) {
-      list = list.filter((el) => {
-        try {
-          const vis = isAccTreeEligible(el);
-          if (!vis || vis.eligible !== false) return true;
-          const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
-          for (const r of reasons) {
-            if (HARD_HIDDEN_REASONS.has(r)) return false;
-          }
-
-          // `isAccTreeEligible` can short-circuit on an inert ancestor
-          // before it reaches an outer hard-hidden ancestor (e.g.
-          // display:none wrapper). In that case the node is still
-          // structurally hidden and should be excluded by the default
-          // hidden-content policy.
-          if (reasons.includes('inert')) {
-            const domVis = isDomVisibleEligible(el, null, {
-              visibilityMode: 'styleOnly',
-              disableGeometry: true,
-              ignoreOpacity: true
-            });
-            const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
-            for (const r of domReasons) {
-              if (HARD_HIDDEN_REASONS.has(r)) return false;
-            }
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      });
-    }
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -73749,6 +76273,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         : (__domSharedCache.outerHtmlCache = new WeakMap());
   } catch {
     __outerHtmlCache = null;
+  }
+
+  try {
+    __siblingIndexCache =
+      __domSharedCache.siblingIndexCache instanceof WeakMap
+        ? __domSharedCache.siblingIndexCache
+        : (__domSharedCache.siblingIndexCache = new WeakMap());
+  } catch {
+    __siblingIndexCache = null;
   }
 
   // ID lookups: cache getElementById / root.querySelector(#id) results within a run
@@ -74060,8 +76593,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
+      // A `for` label labels the first element in its tree with that id
+      // (HTML's labeled control), so a second element sharing the id has no
+      // label from it; Chromium names only the first.
       const forLabels = __getLabelElementsForId(id);
-      for (const l of forLabels) out.push(l);
+      for (const l of forLabels) {
+        let target = el;
+        try {
+          const root = l.getRootNode ? l.getRootNode() : null;
+          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+        } catch {}
+        if (target === el) out.push(l);
+      }
     }
     try {
       const wrap = el.closest ? el.closest('label') : null;
@@ -74232,6 +76775,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return (allowTitle ? 'at1' : 'at0') + '|mr' + String(maxRefs);
   }
 
+  // Where an element sits among its element siblings: `index` from 0,
+  // `ofType` from 1 among siblings with its tag, and `sameType`, how many
+  // siblings share the tag. A selector or a structural path needs this for
+  // every occurrence, and counting siblings each time made a rule that
+  // reports thousands of siblings quadratic. A parent's children are indexed
+  // once per run. The scan is synchronous, so only the engine changes the
+  // DOM meanwhile, and only by inserting a style sheet first in <head> or a
+  // probe last in <body>: a parent whose first or last element child has
+  // changed since is indexed again.
+  function __siblingInfo(node) {
+    const parent = node && node.parentElement;
+    if (!parent) return null;
+    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const build = () => {
+      const info = new Map();
+      const tagCounts = new Map();
+      let index = 0;
+      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+        const tag = tagOf(c);
+        const ofType = (tagCounts.get(tag) || 0) + 1;
+        tagCounts.set(tag, ofType);
+        info.set(c, { index: index++, ofType, tag });
+      }
+      return {
+        first: parent.firstElementChild,
+        last: parent.lastElementChild,
+        info,
+        tagCounts
+      };
+    };
+    let entry = null;
+    try {
+      entry = __siblingIndexCache ? __siblingIndexCache.get(parent) : null;
+    } catch {}
+    if (
+      !entry ||
+      entry.first !== parent.firstElementChild ||
+      entry.last !== parent.lastElementChild ||
+      !entry.info.has(node)
+    ) {
+      entry = build();
+      try {
+        if (__siblingIndexCache) __siblingIndexCache.set(parent, entry);
+      } catch {}
+    }
+    const own = entry.info.get(node);
+    if (!own) return null;
+    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
+  }
+
   function getOuterHtmlSnippet(el) {
     if (!el || typeof el !== 'object') return '';
     try {
@@ -74245,7 +76838,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     let out;
     try {
-      const html = el.outerHTML || '';
+      // <html>, <head> and <body> hold the whole page, so their markup
+      // changes with any edit anywhere, and the snippet is part of a
+      // finding's identity (baselines, SARIF). What a page-level finding is
+      // about is the element itself: its start tag.
+      const name = String(el.localName || '').toLowerCase();
+      const isPage =
+        (name === 'html' || name === 'head' || name === 'body') &&
+        el.ownerDocument &&
+        el.parentNode &&
+        (el === el.ownerDocument.documentElement ||
+          el.parentNode === el.ownerDocument.documentElement);
+      let html;
+      if (isPage) {
+        const shallow = el.cloneNode(false).outerHTML || '';
+        const end = shallow.lastIndexOf('</');
+        html = end > 0 ? shallow.slice(0, end) : shallow;
+      } else {
+        html = el.outerHTML || '';
+      }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
     } catch {
@@ -75247,24 +77858,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B), matching getAriaNameInfo's own precedence.
-      const labelledBy = trim(getAttr(el, 'aria-labelledby'));
-      if (labelledBy) {
-        const parts = labelledBy.split(/\s+/).filter(Boolean);
-        const texts = [];
-        for (const id of parts) {
-          let ref = safeDocGetById(id);
-          if (!ref) ref = safeRootQueryById(id);
-          if (ref && isElement(ref)) {
-            const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
-            if (t) texts.push(t);
-          }
-        }
-        const joined = trim(texts.join(' '));
-        if (joined) return joined;
-      }
-
+      // A referenced node's own aria-labelledby is not followed: accname 1.2
+      // step 2B applies only to a node not already part of an
+      // aria-labelledby traversal, and every node here is. So a target named
+      // by a further aria-labelledby gives its own text, and an element that
+      // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
+      // its content, as Chrome computes them.
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -76986,32 +79585,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const t = (node.tagName || '').toLowerCase() || '*';
         const p = node.parentElement;
         if (!p) return t;
-
-        let i = 1;
-        let sib = node.previousElementSibling;
-        while (sib) {
-          if ((sib.tagName || '').toLowerCase() === t) i++;
-          sib = sib.previousElementSibling;
-        }
-
-        // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous, so there's no need
-        // to also scan forward in that case. Only scan
-        // nextElementSibling when this node is the first of its tag
-        // among its siblings, to catch the case where the
-        // disambiguating sibling comes after it instead.
-        let hasSame = i > 1;
-        if (!hasSame) {
-          sib = node.nextElementSibling;
-          while (sib) {
-            if ((sib.tagName || '').toLowerCase() === t) {
-              hasSame = true;
-              break;
-            }
-            sib = sib.nextElementSibling;
-          }
-        }
-        return hasSame ? t + ':nth-of-type(' + i + ')' : t;
+        // A tag shared with another sibling needs :nth-of-type to be
+        // unambiguous; a tag of its own does not.
+        const info = __siblingInfo(node);
+        if (!info) return t;
+        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
       let node = el;
@@ -77182,15 +79760,50 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
         // scanned 20,000-node document take seconds.
-        let idx = 0;
-        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        const info = __siblingInfo(node);
+        let idx = info ? info.index : -1;
+        if (idx < 0) {
+          idx = 0;
+          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        }
         path.unshift(idx);
         node = parent;
       }
+      // The path is from documentElement down. An element in a shadow tree
+      // is not under it: its path would count from the shadow root's first
+      // element and name an element in the document instead.
+      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
     } catch {
       return null;
     }
     return path;
+  }
+
+  // For an element in a shadow tree, the selectors of the shadow hosts that
+  // lead to it, outermost first, each resolved in the tree that holds it;
+  // the element's own selector is resolved in its shadow root. null for an
+  // element in the document, or when a host gets no selector.
+  function buildShadowHostSelectors(el) {
+    try {
+      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      const hosts = [];
+      let root = el.getRootNode();
+      let guard = 0;
+      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
+        hosts.unshift(root.host);
+        root = root.host.getRootNode();
+      }
+      if (!hosts.length) return null;
+      const out = [];
+      for (const host of hosts) {
+        const sel = String(buildSelector(host) || '');
+        if (!sel) return null;
+        out.push(sel);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // Occurrence-level structural path: prefers the actual element reference
@@ -77205,6 +79818,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
       if (p) return p;
+      // In a shadow tree the selector holds only inside its shadow root;
+      // read against the document it would find another element.
+      if (buildShadowHostSelectors(node)) return null;
     }
     if (
       selector &&
@@ -77663,8 +80279,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    isHiddenContent,
     getDoctypeInfo,
     getOuterHtmlSnippet,
+    buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
     buildStructuralPath,
@@ -77804,8 +80422,13 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
-  let best = null;
-  let bestIndex = -1;
+  // Collect every candidate tied at the smallest headroom first, and settle
+  // the tie once at the end. Comparing each tie against the current best in
+  // the loop was quadratic: on a page where most text shares a colour every
+  // candidate ties, and in Blink each compareDocumentPosition walks the
+  // siblings between the two elements.
+  let ties = [];
+  let smallest = Infinity;
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     if (!c || typeof c !== 'object') continue;
@@ -77814,28 +80437,50 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
-
-    let closer = !best || headroom < best.headroom;
-    if (best && headroom === best.headroom && c.el && best.el && c.el !== best.el) {
-      let position;
-      try {
-        position =
-          typeof best.el.compareDocumentPosition === 'function'
-            ? best.el.compareDocumentPosition(c.el)
-            : 0;
-      } catch {
-        position = 0;
-      }
-      // DOCUMENT_POSITION_PRECEDING (2): c comes before the current best.
-      // Disconnected trees report no order; the earlier candidate stays.
-      closer = (position & 2) !== 0 && (position & 1) === 0;
+    if (headroom < smallest) {
+      smallest = headroom;
+      ties = [];
     }
-    if (closer) {
-      best = { el: c.el || null, value, threshold, headroom, context: c.context };
-      bestIndex = i;
+    if (headroom === smallest) {
+      ties.push({ el: c.el || null, value, threshold, headroom, context: c.context });
     }
   }
-  if (!best || bestIndex === -1) return null;
+  if (!ties.length) return null;
+
+  const position = (a, b) => {
+    try {
+      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+    } catch {
+      return 0;
+    }
+  };
+  // A tie with no element keeps its place; one after it never replaces it.
+  let best = ties[0];
+  const placed = best.el ? ties.filter((t) => t.el) : [];
+  // Rules collect candidates in page order, so the ties are usually in
+  // document order already. Checking each against the next is cheap, since
+  // neighbours sit close in the tree, and then the first tie is the answer.
+  // DOCUMENT_POSITION_FOLLOWING (4) without DISCONNECTED (1).
+  let inOrder = true;
+  for (let i = 1; i < placed.length && inOrder; i++) {
+    const prev = placed[i - 1].el;
+    const next = placed[i].el;
+    if (prev === next) continue;
+    const p = position(prev, next);
+    inOrder = (p & 4) !== 0 && (p & 1) === 0;
+  }
+  if (!inOrder) {
+    // Out of order (several scan roots, shadow trees, a custom rule):
+    // keep the earliest. DOCUMENT_POSITION_PRECEDING (2): t comes before the
+    // current best. Disconnected trees report no order; the earlier
+    // candidate stays.
+    for (let i = 1; i < placed.length; i++) {
+      const t = placed[i];
+      if (t.el === best.el) continue;
+      const p = position(best.el, t.el);
+      if ((p & 2) !== 0 && (p & 1) === 0) best = t;
+    }
+  }
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
@@ -77862,6 +80507,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {
@@ -77924,17 +80575,32 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
   const wcagSc = deriveWcagScFromNormativeMappings(normativeMappings);
   const informativeReferences = normalizeObjectArray(m.informativeReferences);
 
-  const defaultSeverity =
-    typeof m.defaultSeverity === 'string' && m.defaultSeverity.trim()
-      ? m.defaultSeverity.trim()
-      : 'moderate';
-
-  const defaultConfidence =
-    typeof m.defaultConfidence === 'string' && m.defaultConfidence.trim()
-      ? m.defaultConfidence.trim()
-      : 'medium';
-
-  const type = m.type === 'manual' || m.type === 'automatic' ? m.type : 'automatic';
+  // The sets the result types promise (src/index.d.ts): a value outside
+  // them reached every result as is ('blocker'), and a type spelt 'Manual'
+  // made a manual rule automatic, losing the manual-fail coercion.
+  function oneOf(field, value, allowed, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const v = String(value).trim().toLowerCase();
+    if (!allowed.includes(v)) {
+      throw new Error(
+        `Rule ${ruleId}: meta.${field} must be one of ${allowed.join(', ')}, not ${JSON.stringify(value)}`
+      );
+    }
+    return v;
+  }
+  const defaultSeverity = oneOf(
+    'defaultSeverity',
+    m.defaultSeverity,
+    ['minor', 'moderate', 'serious', 'critical'],
+    'moderate'
+  );
+  const defaultConfidence = oneOf(
+    'defaultConfidence',
+    m.defaultConfidence,
+    ['high', 'medium', 'low'],
+    'medium'
+  );
+  const type = oneOf('type', m.type, ['automatic', 'manual'], 'automatic');
 
   const coverage =
     m.coverage === null || typeof m.coverage === 'string' || typeof m.coverage === 'object'
@@ -78763,6 +81429,8 @@ const runCoreSettled = (function runCoreSettled(
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];
+  // Custom rules that were not run, and why: { id, reason }.
+  const skippedCustomRules = [];
   const customRuleIds = new Set();
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
@@ -78774,24 +81442,79 @@ const runCoreSettled = (function runCoreSettled(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch {
-          return null;
-        }
+        } catch {}
+        // A method's source, from a method shorthand or a class
+        // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
+        // expression on its own; inside an object literal it is.
+        try {
+          const holder = new Function('return ({' + value + '})')();
+          const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
+          const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
+          if (desc && typeof desc.value === 'function') return desc.value;
+        } catch {}
       }
       return null;
+    }
+
+    function warnSkipped(ruleId, reason) {
+      skippedCustomRules.push({ id: ruleId || null, reason });
+      try {
+        console.warn(
+          '[surea11y] customRules: skipped ' +
+            (ruleId ? 'rule "' + ruleId + '"' : 'a rule') +
+            ' (' +
+            reason +
+            '); the rest of the scan runs as usual.'
+        );
+      } catch {}
     }
 
     const extraDefsById = new Map();
     const extraImpls = {};
     for (const c of rawCustomRules) {
-      if (!c || typeof c !== 'object') continue;
+      if (!c || typeof c !== 'object') {
+        warnSkipped('', 'not an object');
+        continue;
+      }
       const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
-      if (!ruleId) continue;
+      if (!ruleId) {
+        warnSkipped('', 'no id');
+        continue;
+      }
+      // A second rule with the same id would silently replace the first; a
+      // composite's id would put one id in both checksResults and
+      // rulesResults.
+      if (extraDefsById.has(ruleId)) {
+        warnSkipped(ruleId, 'another custom rule already has this id');
+        continue;
+      }
+      if (
+        Array.isArray(COMPOSITE_RULES) &&
+        COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      ) {
+        warnSkipped(ruleId, "the id is a composite rule's");
+        continue;
+      }
+      // An invalid custom rule is skipped, not a crash.
       const runFn = reviveRuleFn(c.runInPage);
-      if (typeof runFn !== 'function') continue; // invalid custom rule: skipped, not a crash
+      if (typeof runFn !== 'function') {
+        warnSkipped(
+          ruleId,
+          typeof c.runInPage === 'string'
+            ? 'runInPage source could not be turned back into a function'
+            : 'runInPage is not a function'
+        );
+        continue;
+      }
 
       const applicabilityFn = reviveRuleFn(c.applicability);
-      const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      let normalizedMeta;
+      try {
+        normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      } catch (e) {
+        warnSkipped(ruleId, 'invalid meta: ' + String((e && e.message) || e));
+        continue;
+      }
 
       // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
       // but a same-named custom rule is just as likely to be an accidental
@@ -79101,6 +81824,14 @@ const runCoreSettled = (function runCoreSettled(
       let applicable = true;
       try {
         const res = applicabilityFn(ctx);
+        // Rules run synchronously: a Promise is truthy, and would have
+        // counted as applicable whatever it resolved to.
+        if (res && typeof res.then === 'function') {
+          if (typeof res.catch === 'function') res.catch(() => {});
+          throw new Error(
+            'applicability returned a Promise; rules run synchronously, so it must return a boolean'
+          );
+        }
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
@@ -79155,10 +81886,27 @@ const runCoreSettled = (function runCoreSettled(
       };
     }
 
-    if (!result || typeof result !== 'object') {
-      if (ruleTimings)
-        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
-      continue;
+    // A rule that returned nothing usable is reported, not dropped: a
+    // missing result would read as a rule that never existed.
+    const unusable =
+      result && typeof result.then === 'function'
+        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+        : !result || typeof result !== 'object'
+          ? 'runInPage returned ' +
+            (result === null ? 'null' : typeof result) +
+            ' instead of a result object'
+          : '';
+    if (unusable) {
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+      result = {
+        outcome: 'cantTell',
+        occurrences: [],
+        error: unusable,
+        engineOptions: {
+          ...(ctx.engineOptions || {}),
+          locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+        }
+      };
     }
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
@@ -79235,17 +81983,24 @@ const runCoreSettled = (function runCoreSettled(
   // are data the run read, not a setting, and repeating them on every result
   // made a scan with a loaded locale tens of megabytes. engine.locale says
   // which dictionary the run used.
+  // Two more options are echoed as the rules saw them rather than as given,
+  // so a result stays plain data that JSON.stringify and structuredClone
+  // (postMessage to an extension or a worker) can carry: `probes` as the
+  // capped copy rules read (the raw object could be circular, or megabytes
+  // repeated on every result), and `customRules` as their ids (the rules'
+  // functions cannot be cloned, and their source repeated on every result).
+  const echoedCustomRules = rawCustomRules
+    .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
+    .map((c) => ({ id: c.id.trim() }));
   for (const r of checksResults.concat(rulesResults)) {
-    if (
-      r &&
-      r.engineOptions &&
-      typeof r.engineOptions === 'object' &&
-      'messages' in r.engineOptions
-    ) {
-      const echoed = { ...r.engineOptions };
-      delete echoed.messages;
-      r.engineOptions = echoed;
-    }
+    if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
+    const eo = r.engineOptions;
+    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    const echoed = { ...eo };
+    delete echoed.messages;
+    if ('probes' in echoed) echoed.probes = probes;
+    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    r.engineOptions = echoed;
   }
 
   // Each rule result names the rollups that group it in this run. An empty
@@ -79287,6 +82042,7 @@ const runCoreSettled = (function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
@@ -79309,7 +82065,8 @@ const runCoreSettled = (function runCoreSettled(
     contextMatch,
     checksResults,
     rulesResults,
-    overriddenBuiltinIds
+    overriddenBuiltinIds,
+    skippedCustomRules
   };
 });
 const runCore = (function runCore(
@@ -79889,6 +82646,15 @@ function findChildFrameElements(roots) {
   return out;
 }
 
+function isFrameShown(el) {
+  try {
+    if (typeof el.checkVisibility === 'function') {
+      return el.checkVisibility({ visibilityProperty: true });
+    }
+  } catch {}
+  return true;
+}
+
 function getFrameElementUrl(el) {
   try {
     if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
@@ -79916,7 +82682,9 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots);
+  const frameElements = findChildFrameElements(roots).filter(
+    (el) => eo.includeHiddenElements === true || isFrameShown(el)
+  );
 
   const framePromises = frameElements.map(function (el) {
     const url = getFrameElementUrl(el);
@@ -79985,7 +82753,17 @@ async function waitForPageReady(options) {
   const opts = options && typeof options === 'object' ? options : {};
   const doc = opts.document || (typeof document !== 'undefined' ? document : null);
   const win = doc && doc.defaultView ? doc.defaultView : null;
-  const timeoutMs = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0 ? opts.timeoutMs : 5000;
+  const validTimeout = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0;
+  if (opts.timeoutMs !== undefined && !validTimeout) {
+    try {
+      console.warn(
+        '[surea11y] waitForPageReady: timeoutMs must be a finite number of milliseconds, 0 or more; got ' +
+          String(opts.timeoutMs) +
+          ', so the default 5000 applies.'
+      );
+    } catch {}
+  }
+  const timeoutMs = validTimeout ? opts.timeoutMs : 5000;
   const quietMs = Number.isFinite(opts.quietMs) && opts.quietMs > 0 ? opts.quietMs : 0;
   const started = Date.now();
   const left = () => Math.max(0, timeoutMs - (Date.now() - started));

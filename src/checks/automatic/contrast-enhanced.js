@@ -451,6 +451,11 @@ function runInPage(ctx) {
 
         if (!(ratio >= threshold)) {
           failCount += textCount;
+          // Past the occurrence cap a failure is only counted. The loop goes
+          // on, so text further down the page still counts toward the margin
+          // and measuredCount: stopping here made both depend on where the
+          // 50th failure fell.
+          if (occurrences.length >= MAX_OCCURRENCES) continue;
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -526,8 +531,6 @@ function runInPage(ctx) {
           };
 
           pushFailOccurrence(el, params, details);
-
-          if (occurrences.length >= MAX_OCCURRENCES) break;
         }
       }
     } catch {

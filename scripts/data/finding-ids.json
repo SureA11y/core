@@ -233,6 +233,8 @@
       "BACKGROUND_IMAGE_OR_GRADIENT",
       "BACKGROUND_NOT_COMPUTABLE",
       "BACKGROUND_NOT_OPAQUE_AT_ROOT",
+      "BACKGROUND_OVERLAP",
+      "BACKGROUND_UNPARSABLE",
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
       "MIX_BLEND_MODE",
@@ -392,6 +394,7 @@
     ],
     "link-in-text-block": [
       "BACKGROUND_IMAGE_OR_GRADIENT",
+      "BACKGROUND_OVERLAP",
       "COLOR_NOT_COMPUTABLE",
       "COLOR_ONLY_DIFFERENTIATION",
       "CONTRAST_HELPERS_UNAVAILABLE",
@@ -561,6 +564,9 @@
     "video-caption": [
       "CAPTIONS_TRACK_NOT_DETECTED",
       "SUBTITLES_TRACK_ONLY"
+    ],
+    "video-poster-text-alternative-present": [
+      "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ]
   }
 }

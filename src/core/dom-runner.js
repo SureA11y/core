@@ -17,14 +17,15 @@
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
- *   profileStandardOf (ctx.standard: the standard a profile targets).
+ *   profileStandardOf (ctx.standard: the standard a profile targets),
+ *   ENGINE_VERSION (the package version, baked in at build time).
  */
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf */
+   profileStandardOf, ENGINE_VERSION */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -809,6 +810,8 @@ function runCoreSettled(
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
   let overriddenBuiltinIds = [];
+  // Custom rules that were not run, and why: { id, reason }.
+  const skippedCustomRules = [];
   const customRuleIds = new Set();
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
@@ -820,24 +823,79 @@ function runCoreSettled(
         try {
           const fn = new Function('return (' + value + ')')();
           if (typeof fn === 'function') return fn;
-        } catch {
-          return null;
-        }
+        } catch {}
+        // A method's source, from a method shorthand or a class
+        // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
+        // expression on its own; inside an object literal it is.
+        try {
+          const holder = new Function('return ({' + value + '})')();
+          const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
+          const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
+          if (desc && typeof desc.value === 'function') return desc.value;
+        } catch {}
       }
       return null;
+    }
+
+    function warnSkipped(ruleId, reason) {
+      skippedCustomRules.push({ id: ruleId || null, reason });
+      try {
+        console.warn(
+          '[surea11y] customRules: skipped ' +
+            (ruleId ? 'rule "' + ruleId + '"' : 'a rule') +
+            ' (' +
+            reason +
+            '); the rest of the scan runs as usual.'
+        );
+      } catch {}
     }
 
     const extraDefsById = new Map();
     const extraImpls = {};
     for (const c of rawCustomRules) {
-      if (!c || typeof c !== 'object') continue;
+      if (!c || typeof c !== 'object') {
+        warnSkipped('', 'not an object');
+        continue;
+      }
       const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
-      if (!ruleId) continue;
+      if (!ruleId) {
+        warnSkipped('', 'no id');
+        continue;
+      }
+      // A second rule with the same id would silently replace the first; a
+      // composite's id would put one id in both checksResults and
+      // rulesResults.
+      if (extraDefsById.has(ruleId)) {
+        warnSkipped(ruleId, 'another custom rule already has this id');
+        continue;
+      }
+      if (
+        Array.isArray(COMPOSITE_RULES) &&
+        COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      ) {
+        warnSkipped(ruleId, "the id is a composite rule's");
+        continue;
+      }
+      // An invalid custom rule is skipped, not a crash.
       const runFn = reviveRuleFn(c.runInPage);
-      if (typeof runFn !== 'function') continue; // invalid custom rule: skipped, not a crash
+      if (typeof runFn !== 'function') {
+        warnSkipped(
+          ruleId,
+          typeof c.runInPage === 'string'
+            ? 'runInPage source could not be turned back into a function'
+            : 'runInPage is not a function'
+        );
+        continue;
+      }
 
       const applicabilityFn = reviveRuleFn(c.applicability);
-      const normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      let normalizedMeta;
+      try {
+        normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      } catch (e) {
+        warnSkipped(ruleId, 'invalid meta: ' + String((e && e.message) || e));
+        continue;
+      }
 
       // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
       // but a same-named custom rule is just as likely to be an accidental
@@ -1147,6 +1205,14 @@ function runCoreSettled(
       let applicable = true;
       try {
         const res = applicabilityFn(ctx);
+        // Rules run synchronously: a Promise is truthy, and would have
+        // counted as applicable whatever it resolved to.
+        if (res && typeof res.then === 'function') {
+          if (typeof res.catch === 'function') res.catch(() => {});
+          throw new Error(
+            'applicability returned a Promise; rules run synchronously, so it must return a boolean'
+          );
+        }
         if (typeof res === 'boolean') applicable = res;
         else if (res && typeof res === 'object' && typeof res.applicable === 'boolean')
           applicable = res.applicable;
@@ -1201,10 +1267,27 @@ function runCoreSettled(
       };
     }
 
-    if (!result || typeof result !== 'object') {
-      if (ruleTimings)
-        ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
-      continue;
+    // A rule that returned nothing usable is reported, not dropped: a
+    // missing result would read as a rule that never existed.
+    const unusable =
+      result && typeof result.then === 'function'
+        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+        : !result || typeof result !== 'object'
+          ? 'runInPage returned ' +
+            (result === null ? 'null' : typeof result) +
+            ' instead of a result object'
+          : '';
+    if (unusable) {
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+      result = {
+        outcome: 'cantTell',
+        occurrences: [],
+        error: unusable,
+        engineOptions: {
+          ...(ctx.engineOptions || {}),
+          locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
+        }
+      };
     }
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
@@ -1281,17 +1364,24 @@ function runCoreSettled(
   // are data the run read, not a setting, and repeating them on every result
   // made a scan with a loaded locale tens of megabytes. engine.locale says
   // which dictionary the run used.
+  // Two more options are echoed as the rules saw them rather than as given,
+  // so a result stays plain data that JSON.stringify and structuredClone
+  // (postMessage to an extension or a worker) can carry: `probes` as the
+  // capped copy rules read (the raw object could be circular, or megabytes
+  // repeated on every result), and `customRules` as their ids (the rules'
+  // functions cannot be cloned, and their source repeated on every result).
+  const echoedCustomRules = rawCustomRules
+    .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
+    .map((c) => ({ id: c.id.trim() }));
   for (const r of checksResults.concat(rulesResults)) {
-    if (
-      r &&
-      r.engineOptions &&
-      typeof r.engineOptions === 'object' &&
-      'messages' in r.engineOptions
-    ) {
-      const echoed = { ...r.engineOptions };
-      delete echoed.messages;
-      r.engineOptions = echoed;
-    }
+    if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
+    const eo = r.engineOptions;
+    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    const echoed = { ...eo };
+    delete echoed.messages;
+    if ('probes' in echoed) echoed.probes = probes;
+    if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    r.engineOptions = echoed;
   }
 
   // Each rule result names the rollups that group it in this run. An empty
@@ -1333,6 +1423,7 @@ function runCoreSettled(
   return {
     engine: {
       tag: ENGINE_TAG,
+      version: ENGINE_VERSION,
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
@@ -1355,7 +1446,8 @@ function runCoreSettled(
     contextMatch,
     checksResults,
     rulesResults,
-    overriddenBuiltinIds
+    overriddenBuiltinIds,
+    skippedCustomRules
   };
 }
 

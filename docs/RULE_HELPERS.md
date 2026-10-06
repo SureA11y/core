@@ -22,7 +22,9 @@ serialization constraint as everything else in `runInPage` (§1 of `RULE_AUTHORI
 ### `queryAll(selector)` → `Element[]`
 Plain `querySelectorAll(selector)` across the resolved context root(s), deduped, with
 self-match included (a root element matching `selector` itself is returned, which
-`querySelectorAll` alone never does). Light DOM only.
+`querySelectorAll` alone never does). Light DOM only, and it applies neither
+`excludeSelectors` (global or rule-scoped) nor the hidden-content filter: a rule that
+reports what it finds should query with `queryAllSmart`, which applies both.
 
 ### `queryAllDeep(selector)` → `Element[]`
 Same as `queryAll`, but also descends into open shadow roots (BFS over discovered
@@ -117,6 +119,16 @@ Whether a node is eligible for the accessibility tree, per an ordered set of che
 (display/visibility, `hidden`, `inert`, closed `<details>`, template content, etc.).
 Deliberately keeps a focusable-but-`aria-hidden` element *eligible* — see the header
 comment on `isIncludedInAccessibilityTree` below for why.
+
+### `isHiddenContent(el)` → `boolean`
+Whether the default hidden-content policy leaves `el` out: the same filter
+`queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
+closed `<details>` other than its first `<summary>`, content under
+`content-visibility:hidden` or `hidden="until-found"`, the page behind an open modal
+dialog). For a rule that reaches elements another way, such as a container's
+descendants or the other side of a relationship, so that content the page does not
+show is not counted: a link in a collapsed panel takes no focus. Always `false` under
+`includeHiddenElements:true`.
 
 ### `isIncludedInAccessibilityTree(el)` → `boolean`
 The narrower question most accessible-name rules actually want: `isAccTreeEligible`,
@@ -439,7 +451,11 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `isDeprecatedAttr`, `getDeprecatedRoleGuidance`, `isKnownRole`, `isValidConcreteRole`,
 `getRequiredAttrsForRole`, `getRequiredOwnedRoles`, `getRequiredContextRoles`,
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
-`hasLandmarkScopingAncestor` (also re-exported flat, see §5). Backs the whole
+`getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
+author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+`helpers.landmarkCandidateSelector` is the CSS selector for every element that can be a
+landmark, and `ctx.engineTag` the engine's tag (`"a11ycore"`), the one every rule carries in
+`meta.tags`. Backs the whole
 `aria-*` rule family — check here before hand-rolling role/attribute validity logic in
 a new ARIA rule.
 

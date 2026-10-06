@@ -76,6 +76,7 @@ const {
 } = require('../src/core/frame-messaging');
 const {
   findChildFrameElements,
+  isFrameShown,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
@@ -87,6 +88,10 @@ const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
 const SCHEMA_VERSION = '1.0.0';
+// The package version, baked in at build time so a result says which release
+// produced it (engine.version). A version bump needs a rebuild; a test checks
+// the two agree.
+const ENGINE_VERSION = require('../package.json').version;
 
 // Emitted into the generated core from the registry (src/coverage/standards.js):
 // the standards engineOptions.mappings can switch on, and the conformance
@@ -1146,11 +1151,9 @@ function applyOptInRules(selection, requested) {
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
 // rule or none.
-function expandRunOnlyShorthand(runOnly, engineOptions) {
-  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
-  const values = parseCommaList(runOnly, { lower: false });
-  if (!values.length) return null;
-
+// The rule ids (built-in, composite or engineOptions.customRules) and tags a
+// selection can name, as two tests.
+function knownSelectionNames(engineOptions) {
   const customRules =
     engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
   const ruleIds = new Set();
@@ -1159,36 +1162,109 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
+  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
   for (const r of customRules) {
-    if (r && r.id) ruleIds.add(String(r.id));
+    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
     const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).toLowerCase());
+    for (const t of ct) tags.add(String(t).trim().toLowerCase());
   }
-  const isRuleId = (v) =>
-    !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
-  const isTag = (v) => tags.has(v.toLowerCase());
+  return {
+    isRuleId: (v) =>
+      !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+    isTag: (v) => tags.has(String(v).toLowerCase())
+  };
+}
 
+function invalidRunOnly(message) {
+  const err = new Error(message);
+  err.code = 'INVALID_RUN_ONLY';
+  return err;
+}
+
+function expandRunOnlyShorthand(runOnly, engineOptions) {
+  if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
+  const values = parseCommaList(runOnly, { lower: false });
+  if (!values.length) return null;
+
+  const { isRuleId, isTag } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
   if (unknown.length) {
-    throw new Error(
+    throw invalidRunOnly(
       'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
   if (asRules.length === 0) return { tags: values.map((v) => v.toLowerCase()) };
-  throw new Error(
+  throw invalidRunOnly(
     'runOnly: an array lists either rule ids or tags, not both; use { includeRuleIds, tags } to combine them.'
   );
 }
 
+// The object form of runOnly, and engineOptions.rules / .tags, name rules and
+// tags in lists. An include list that names only things that don't exist
+// selects nothing from it, so a typo could run no rule and pass a CI gate:
+// that throws, as the bare-array form does. A name that doesn't exist beside
+// ones that do is warned about, and an unknown name in an exclude list too.
+function checkSelectionNames(lists, engineOptions) {
+  let known = null;
+  for (const { field, values, kind, include } of lists) {
+    if (!Array.isArray(values) || !values.length) continue;
+    known = known || knownSelectionNames(engineOptions);
+    const test = kind === 'rule' ? known.isRuleId : known.isTag;
+    const unknown = values.filter((v) => !test(v));
+    if (!unknown.length) continue;
+    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    if (include && unknown.length === values.length) {
+      throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+    }
+    try {
+      console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
+    } catch {}
+  }
+}
+
+// The keys the object form of runOnly reads.
+const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
+  // A number or a boolean, and an object none of whose keys the engine
+  // reads ({ includeRuleId: [...] }), used to run every rule, as no runOnly
+  // does: a typo that looks like a full scan.
+  if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
+    throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
+  }
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const keys = Object.keys(runOnly);
+    const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    if (unknownKeys.length && unknownKeys.length === keys.length) {
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+    }
+  }
+  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
+    const kind = String(runOnly.type).trim().toLowerCase();
+    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
+  }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
     const selection = normalizeRunOnly(runOnly);
+    checkSelectionNames(
+      [
+        { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
+        { field: 'runOnly.tags', values: selection.tags, kind: 'tag', include: true },
+        { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
+        { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
+      ],
+      eo
+    );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
@@ -1218,6 +1294,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     includeTestIds,
     excludeTestIds
   };
+  checkSelectionNames(
+    [
+      { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
+      { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
+      { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
+    ],
+    eo
+  );
 
   return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
 }
@@ -1388,7 +1473,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.description = def.description;
   out.i18n = def.i18n || null;
 
-  if (!pol.allowedOutcomes.includes(out.outcome)) out.outcome = 'cantTell';
+  if (!pol.allowedOutcomes.includes(out.outcome)) {
+    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+    // out instead of reading an unexplained cantTell.
+    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    out.outcome = 'cantTell';
+  }
 
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
@@ -1409,6 +1500,11 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
+  // A severity outside the documented set falls back to the rule's own.
+  if (out.severity && !['minor', 'moderate', 'serious', 'critical'].includes(out.severity)) {
+    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned severity ' + JSON.stringify(out.severity) + ', which is not one of minor, moderate, serious, critical; reported with its default severity.';
+    out.severity = def.defaultSeverity;
+  }
   out.severity = out.severity || def.defaultSeverity;
 
   let conf = raw && raw.confidence;
@@ -1482,6 +1578,14 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
         } catch {
           o.html = '';
         }
+      }
+      // An element in a shadow tree: its selector holds inside its shadow
+      // root, and these lead there from the document.
+      if (includeSelector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(node);
+          if (hostSelectors) o.shadowHostSelectors = hostSelectors;
+        } catch {}
       }
     }
 
@@ -1657,6 +1761,7 @@ ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
+  const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
   // Rule catalog (data only)
   const CHECK_DEFS = ${jsStringify(defs)};
@@ -1730,6 +1835,8 @@ ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 
 ${findChildFrameElements.toString()}
 
+${isFrameShown.toString()}
+
 ${getFrameElementUrl.toString()}
 
 ${runa11yCoreAcrossFrames.toString()}
@@ -1758,6 +1865,7 @@ ${getMargins.toString()}
 
 const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
 const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
+const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
 // Rule catalog (data only)
 const CHECK_DEFS = ${jsStringify(defs)};

@@ -89,6 +89,8 @@
   "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
   "videoPoster_textAltPresent_summary_fail": "Fehlende Textalternative für das Vorschaubild (poster) von <video>.",
   "videoPoster_textAltPresent_hint_fail": "Stellen Sie für das Vorschaubild einen zugänglichen Namen bereit (vorzugsweise aria-label/aria-labelledby, oder ein title-Attribut als Notlösung).",
+  "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
+  "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
   "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
   "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
   "svgImage_textAltPresent_summary_fail": "Fehlende Textalternative auf SVG <image>.",

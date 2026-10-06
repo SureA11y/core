@@ -31,25 +31,26 @@ test('regression: bypass-blocks-present does not report stale occurrences[].html
   );
   const { document } = dom.window;
 
-  // Run 1: body has a <main>, so the rule finds a mechanism (pass).
-  document.body.innerHTML = '<main><img src="dummy.png" alt="Decorative square" /></main>';
+  // Run 1: nothing gives a bypass mechanism, so the rule reports <body>, and
+  // its snippet is cached for that element. <body>'s snippet is its start tag
+  // (the whole page would change with every edit), so it is the attributes
+  // that change between the runs.
+  document.body.className = 'run-1';
+  document.body.innerHTML = '<img src="dummy.png" />';
   const result1 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
-  assertRule(result1, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule1 = assertRule(result1, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule1.occurrences[0].html, '<body class="run-1">');
 
   // Run 2: mutate the SAME document.body in place (same object reference,
-  // different content) so no main/anchor/heading remains.
-  document.body.innerHTML = '<img src="dummy.png" />';
+  // different markup).
+  document.body.className = 'run-2';
   const result2 = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
   const rule2 = assertRule(result2, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 
-  // The reported html snippet must reflect THIS run's body, not run 1's
-  // leftover <main> markup.
-  assert.ok(
-    rule2.occurrences[0].html.includes('<img src="dummy.png">'),
-    `expected occurrences[0].html to reflect run 2's body, got: ${rule2.occurrences[0].html}`
-  );
-  assert.ok(
-    !rule2.occurrences[0].html.includes('<main>'),
+  // The reported html snippet must reflect THIS run's body, not run 1's.
+  assert.strictEqual(
+    rule2.occurrences[0].html,
+    '<body class="run-2">',
     `occurrences[0].html leaked stale run-1 markup: ${rule2.occurrences[0].html}`
   );
 });

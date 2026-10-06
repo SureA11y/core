@@ -38,13 +38,15 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   contextMatch: { elementCount: number, unmatchedSelectors: string[] } | null,
   checksResults: CheckResult[],
   rulesResults: CompositeResult[],
-  overriddenBuiltinIds: string[]
+  overriddenBuiltinIds: string[],
+  skippedCustomRules: Array<{ id: string | null, reason: string }>
 }
 ```
 
 | Field | Meaning |
 |---|---|
 | `engine.tag` | The engine's own identity tag, currently `"a11ycore"`. Every rule (built-in or custom) carries it in `meta.tags` — rule `ruleId`s themselves are bare (no prefix). |
+| `engine.version` | The `@surea11y/core` release that produced the result, such as `"1.10.0"`: what to quote in a bug report, and how to tell results from two releases apart. A result can change between releases without its shape changing, so this is not `schemaVersion`. The SARIF and EARL reporters use it as the tool version when you give none. |
 | `engine.schemaVersion` | The result-schema version (`"1.0.0"`). Bump-worthy if this document's shape ever changes incompatibly — pin to it if you're parsing output programmatically. See [`API_STABILITY.md`](./API_STABILITY.md) for the full stable/unstable field list and version-bump policy. |
 | `engine.locale` | Which dictionary the run actually used. `requested` is your `engineOptions.locale` after trimming (`"en"` if you passed nothing or a non-string); `resolved` is the locale whose dictionary was used; `reason` explains the pairing. Because locale fallback is graceful and per-string, asking for a language the build does not carry produces English text rather than an error — this field is how you find that out without reading the strings. Reported once per result: a run uses one dictionary throughout. |
 | `engine.locale.reason` | `"ok"` — you got the dictionary you asked for, and it carries every key (a profile's messages in a language that profile does not offer show in English, by its choice, and do not count; see [`I18N.md`](./I18N.md)). `"primary-subtag"` — your code had a subtag with no dictionary of its own, so its base language was used: `"de-DE"` resolves to `"de"`. `"dictionary-not-loaded"` — the project ships that language, but this build does not carry it and none was supplied (the standalone browser bundle, without its locale side file). `"unknown-locale"` — the project has no such translation at all. `"partial-dictionary"` — the dictionary was used but is missing keys English has, so those strings fell back to English. Treat the set as open; later releases can add to it. |
@@ -63,6 +65,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `checksResults` | One entry per **atomic rule** that ran (every rule not filtered out by `runOnly` — see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). **Every loaded rule produces an entry, even ones that outcome `notApplicable`** — this is not a "violations only" list. |
 | `rulesResults` | One entry per **composite (rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Normally one per WCAG Success Criterion; a run under the profile of a standard with rollups of its own also gets those (`meta.standard` set). Empty array if no composite matched the current `runOnly`/tag filter. |
 | `overriddenBuiltinIds` | Rule ids where an `engineOptions.customRules` entry shared its `id` with a built-in rule, so the custom implementation replaced the built-in one for this scan (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Always an array; empty when no collision occurred. Also logged via `console.warn` at scan time, since a same-named custom rule is as likely to be an accidental collision as a deliberate override. |
+| `skippedCustomRules` | The `engineOptions.customRules` entries that were not run, each `{ id, reason }` (`id` is `null` when the entry had none): no id, a `runInPage` that is not a function or can't be rebuilt from its source, a `meta` that fails validation, an id another custom rule already has, or a composite rule's id. Always an array; empty when every custom rule ran. Each is also logged with `console.warn`. A rule listed here is in no result, so a scan that leaves one out can be told apart from one where it passed. |
 
 ## Cross-frame result (`runa11yCoreAcrossFrames`)
 
@@ -81,6 +84,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 - `topFrame` is exactly the [top-level result](#top-level-result) shape, for the frame the function was called in.
 - `frames` has one entry per direct child `<iframe>`/`<frame>` in the scanned scope. A reachable child (one that called `a11yCoreEnableFrameResponder()`) contributes its own complete `{ url, topFrame, frames }` — including *its own* nested `frames`, recursively, since a further-nested grandchild is only reachable through its immediate parent. An unreachable child (the common case for most third-party embeds — no cooperating responder, or it timed out) contributes `{ url, error }` instead, and does not abort the rest of the scan.
 - This is a **tree, not a flat list** — a deliberate difference from the `@surea11y/playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
+- **The reporters take one top-level result, not this tree.** `renderHtmlReport`, `renderSarifReport`, `renderJunitReport`, `buildBaselineEntries` and `matchBaseline` throw a `TypeError` when handed anything but an object with a `checksResults` array (a cross-frame result, an array, `null` or `undefined` from a scan that broke), rather than render it as a scan that found nothing. Pass `topFrame`, and each frame's `topFrame`, in calls of their own. `renderEarlReport` takes the tree as it is: every frame that answered becomes a subject of its own, keyed by its URL.
 
 ## A check result (`checksResults[i]`)
 
@@ -124,6 +128,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     headroom: number,      // >= 0
     measuredCount: number,
     selector?: string,
+    shadowHostSelectors?: string[],  // as on an occurrence
     structuralPath?: number[],
     context?: object       // rule-specific; not a stable contract
   },
@@ -146,11 +151,11 @@ Notes:
 - **`data`**: present only on a rule that reports something about the whole page, whatever its outcome. No core rule does today; a profile's rule may, such as one returning the page's own entry for a probe that compares pages (see `probes` in [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Like `data.details` on an occurrence, it is not a stable contract.
 - **`margin`**: present only on a rule that declares one in the catalog (`getChecksCatalog()[i].margin`, `{ measure, unit, limit }`), when at least one element met the rule's threshold. It names the element that came closest to the threshold while meeting it, so a pass at 4.52:1 against 4.5:1, or 0.4 px from cutting off text, can be told apart from a comfortable one. It sits beside the outcome and is not a finding: it never adds, removes or changes an occurrence, and baselines, SARIF, JUnit and EARL ignore it. It is reported on `fail` and `cantTell` results too when some elements passed. `limit` is `min` when the value must reach the threshold (contrast, size) and `max` when it must stay under it (overflow); `headroom` is how far inside, in `unit`, so `value - threshold` for `min` and `threshold - value` for `max`, never negative. `threshold` is the one that element was judged against, which can differ between elements (3:1 for large text). Pixels are given to one decimal: CSS pixels and thresholds such as half a 15px font are fractional, and a display rounds them for people. A ratio is not rounded, as WCAG does not round contrast. A tie goes to the element first in document order, so a page gives the same margin every time. `measure` and `unit` are open sets that may grow in a minor release; `context` is rule-specific and, like `data.details`, not a stable contract. `getMargins(result)` returns every margin in a result as `[{ ruleId, ...margin }]`, sorted by `ruleId`.
 - **`error`**: only present if the rule implementation threw an uncaught exception, or if the manual-fail coercion above fired. A thrown rule always surfaces as `outcome: "cantTell"` with `occurrences: []` and `error` set to the exception message — the engine never lets one broken rule crash the whole scan.
-- **`engineOptions`** on each result is the *resolved* options object (after locale/contrast defaults were applied), not literally what you passed in — useful for confirming what a given rule actually saw, especially the resolved `locale` and `contrast.mode`/`contrast.rootCanvasFallback`. It leaves out `messages`, the dictionaries the run translated with (a locale side file in the browser bundle, or your own strings): they are data, not a setting, and a copy on every result made a scan tens of megabytes. `engine.locale` says which dictionary was used.
+- **`engineOptions`** on each result is the *resolved* options object (after locale/contrast defaults were applied), not literally what you passed in — useful for confirming what a given rule actually saw, especially the resolved `locale` and `contrast.mode`/`contrast.rootCanvasFallback`. It leaves out `messages`, the dictionaries the run translated with (a locale side file in the browser bundle, or your own strings): they are data, not a setting, and a copy on every result made a scan tens of megabytes. `engine.locale` says which dictionary was used. Two more options are echoed as the rules saw them, so the result stays plain data that `JSON.stringify` and `structuredClone` (`postMessage`) can carry: `probes` as the capped copy rules read, and `customRules` as `[{ id }]`, one entry per custom rule with an id, without its functions.
 
 ## An occurrence (`occurrences[i]`)
 
-Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result has `occurrences: []`, since this engine does not enumerate the elements it passed, only the ones it flagged.
+Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result has `occurrences: []`, since this engine does not enumerate the elements it passed, only the ones it flagged. The contrast rules are the exception: their `pass` carries one occurrence describing the scan (how much text was eligible and computable), with an empty `selector`, so a pass over no text can be told apart from a pass over a page of it.
 
 `notApplicable` is the one exception. A rule that had nothing to judge may attach a single occurrence saying why, and the contrast rules do exactly that when no text had a computable background — the difference between "checked, nothing to flag" and "could not check" is one this engine reports rather than hides. Such an occurrence describes the scan, not an element, so its `selector` is empty. Do not read `occurrences.length` as a violation count without checking `outcome` first.
 
@@ -159,6 +164,7 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
   selector: string,
   html: string,
   structuralPath: number[] | null,
+  shadowHostSelectors?: string[],
   summary: string,
   hint: string,
   i18n: { summaryKey: string, hintKey: string, params: object } | null,
@@ -178,9 +184,10 @@ Normally present only when `outcome` is `fail` or `cantTell`: a `pass` result ha
 
 | Field | Meaning |
 |---|---|
-| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. The exception is a rule whose finding *is* an absent element: `page-title-present` reports `head > title` with an `html` of `<title>(missing)</title>`, neither of which is on the page. Both are constants, so the fingerprint they feed stays stable, but do not treat `selector` as resolvable or `html` as real markup without checking the rule reported something that exists. |
-| `html` | An outer-HTML snippet of the flagged element — use this as your primary "which element" signal when `includeShadowDom: true` (selectors don't pierce shadow boundaries). |
-| `structuralPath` | The flagged element's sibling-index path from `documentElement` down to it (e.g. `[1, 0, 2]`) — `[]` if the element *is* `documentElement`, `null` if it couldn't be determined. A more robust element-identity mechanism than `selector` alone: it survives DOM changes a selector string wouldn't (an id/class rename, for instance), at the cost of not being usable as an actual CSS selector. Computed from the element reference when the rule kept one, otherwise by re-resolving `selector` against the document (same caveat as `selector` itself: a non-unique selector could resolve to a different element than intended). |
+| `selector` | A best-effort CSS selector built to resolve back to the flagged element (see `helpers.buildSelector` in `RULE_AUTHORING.md`). Not guaranteed unique in adversarial DOM shapes, but the engine actively verifies it resolves to the reported element before using it. The exception is a rule whose finding *is* an absent element: `page-title-present` reports `head > title` with an `html` of `<title>(missing)</title>`, neither of which is on the page. Both are constants, so the fingerprint they feed stays stable, but do not treat `selector` as resolvable or `html` as real markup without checking the rule reported something that exists. For an element in a shadow tree, `selector` resolves inside its shadow root, and `shadowHostSelectors` says how to get there. |
+| `shadowHostSelectors` | Present only for an element inside a shadow tree: the selectors of the shadow hosts that lead to it, outermost first, each resolved in the tree that holds it, so `document.querySelector(s[0]).shadowRoot.querySelector(s[1])…shadowRoot.querySelector(selector)` finds the element. Two components with the same content give the same `selector` and differ here. Like `selector`, it is not part of a finding's identity. |
+| `html` | An outer-HTML snippet of the flagged element, cut at 2,000 characters — useful to show the element, and for an element in a shadow tree read beside `shadowHostSelectors`. For `<html>`, `<head>` and `<body>`, which hold the whole page, it is the start tag alone (`<html class="x">`), so a page-level finding keeps its identity when other content changes. |
+| `structuralPath` | The flagged element's sibling-index path from `documentElement` down to it (e.g. `[1, 0, 2]`) — `[]` if the element *is* `documentElement`, `null` if it couldn't be determined, which includes every element inside a shadow tree (use `shadowHostSelectors` and `selector` there). A more robust element-identity mechanism than `selector` alone: it survives DOM changes a selector string wouldn't (an id/class rename, for instance), at the cost of not being usable as an actual CSS selector. Computed from the element reference when the rule kept one, otherwise by re-resolving `selector` against the document (same caveat as `selector` itself: a non-unique selector could resolve to a different element than intended). |
 | `summary` | Human-readable, already localized ("This button has no accessible name."). |
 | `hint` | Human-readable remediation guidance, already localized. |
 | `i18n` | The raw translation keys behind `summary`/`hint`, if you want to re-render them in a different locale yourself without re-running the scan. `null` if the occurrence didn't use key-based i18n. |
@@ -317,7 +324,8 @@ const result = runDomRulesInPage(
     }
   ],
   "rulesResults": [],
-  "overriddenBuiltinIds": []
+  "overriddenBuiltinIds": [],
+  "skippedCustomRules": []
 }
 ```
 

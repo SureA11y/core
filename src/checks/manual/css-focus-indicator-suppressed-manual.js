@@ -270,15 +270,14 @@ function runInPage(ctx) {
   const suppressors = []; // { selector, base }
   const providers = []; // { base, subject }
 
-  function collectFromStyleRule(cssRule) {
-    const style = cssRule.style;
-    if (!style) return;
+  function collectFromStyleRule(style, selectorText) {
+    if (!style || !selectorText) return;
 
     const suppresses = suppressesOutline(style);
     const provides = providesReplacement(style);
     if (!suppresses && !provides) return;
 
-    for (const part of splitSelectorList(cssRule.selectorText)) {
+    for (const part of splitSelectorList(selectorText)) {
       if (!hasFocusPseudo(part)) {
         // A rule with no focus state still applies while the element has
         // focus, and an author declaration beats the user agent's focus
@@ -315,22 +314,44 @@ function runInPage(ctx) {
     }
   }
 
-  function walkRules(rules, depth) {
+  // A nested rule's selector, resolved against its parent's: `&` stands for
+  // the parent, and a selector without one is a descendant of it.
+  function resolveNested(selectorText, parentSelector) {
+    const sel = trim(selectorText);
+    if (!parentSelector) return sel;
+    const parent = ':is(' + parentSelector + ')';
+    return sel.includes('&') ? sel.split('&').join(parent) : parent + ' ' + sel;
+  }
+
+  function readRules(cssRule) {
+    try {
+      return cssRule.cssRules || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function walkRules(rules, depth, parentSelector) {
     if (!rules || depth > MAX_DEPTH) return;
     for (const cssRule of rules) {
       if (!cssRule) continue;
+      const nested = readRules(cssRule);
       if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
-        collectFromStyleRule(cssRule);
+        // CSS nesting: `a { &:focus { outline: none } }`.
+        const selectorText = resolveNested(cssRule.selectorText, parentSelector);
+        collectFromStyleRule(cssRule.style, selectorText);
+        if (nested && nested.length) walkRules(nested, depth + 1, selectorText);
+        continue;
+      }
+      // Declarations nested straight inside an at-rule within a style rule
+      // (`a:focus { @media (hover) { outline: none } }`) belong to that
+      // style rule's selector.
+      if (parentSelector && cssRule.style && !cssRule.selectorText && !nested) {
+        collectFromStyleRule(cssRule.style, parentSelector);
         continue;
       }
       // @media, @supports, @layer, ...: recurse into grouping rules.
-      let nested;
-      try {
-        nested = cssRule.cssRules || null;
-      } catch {
-        nested = null;
-      }
-      if (nested) walkRules(nested, depth + 1);
+      if (nested) walkRules(nested, depth + 1, parentSelector);
     }
   }
 
@@ -346,7 +367,7 @@ function runInPage(ctx) {
       }
       if (!rules) continue;
       sheetCount += 1;
-      walkRules(rules, 0);
+      walkRules(rules, 0, '');
     }
   } catch {
     // no-throw: treat as no accessible stylesheets

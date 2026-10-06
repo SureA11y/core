@@ -219,14 +219,36 @@ function runInPage(ctx) {
   // inside another operable control is attributed to its nearest operable
   // ancestor rather than to every enclosing container. Eligibility is applied
   // per node during the walk, so hidden or aria-hidden subtrees drop out.
+  //
+  // The walk follows the flat tree, as the page renders it: a shadow host's
+  // children are its shadow root's, and a <slot> stands for the elements
+  // assigned to it (its fallback content when none is). So a <button>
+  // around a <slot> nests the link a page slots into it.
+  // Sibling links, not node.children, which in jsdom stays live once read
+  // and is rebuilt on every later change under a large parent.
+  function flatChildren(node) {
+    if (!node) return [];
+    let assigned = null;
+    if (String(node.localName) === 'slot' && typeof node.assignedElements === 'function') {
+      try {
+        assigned = node.assignedElements({ flatten: true });
+      } catch {
+        assigned = null;
+      }
+    }
+    if (assigned && assigned.length) return assigned;
+    const from = node.shadowRoot || node;
+    const out = [];
+    for (let c = from.firstElementChild; c; c = c.nextElementSibling) out.push(c);
+    return out;
+  }
+
   function collectNestedOperable(root) {
     const out = [];
-    if (!root || !root.lastElementChild) return out;
-    // Sibling links, not root.children, which in jsdom stays live once read
-    // and is rebuilt on every later change under a large parent.
-    const stack = [];
-    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
-    while (stack.length) {
+    const stack = flatChildren(root).reverse();
+    if (!stack.length) return out;
+    let guard = 0;
+    while (stack.length && guard++ < 200000) {
       const node = stack.pop();
       if (node && node.nodeType === 1) {
         // A composite-owned child (option in a listbox/combobox, tab in a
@@ -243,8 +265,8 @@ function runInPage(ctx) {
           continue; // do not descend into a counted control
         }
       }
-      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
-        stack.push(c);
+      const kids = flatChildren(node);
+      for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
     }
     return out;
   }

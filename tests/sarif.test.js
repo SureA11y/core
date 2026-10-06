@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const { renderSarifReport } = require('../src/sarif.js');
 const { computeBaselineKey, buildBaselineEntries } = require('../src/baseline.js');
@@ -482,13 +483,14 @@ test('renderSarifReport: checks and occurrences that are not usable are skipped,
   assert.strictEqual(run.results.length, 1);
 });
 
-test('renderSarifReport: a missing or malformed result still produces a valid empty log', () => {
+test('renderSarifReport: a missing or malformed result throws; an empty one is a valid empty log', () => {
   for (const bad of [null, undefined, {}, { checksResults: null }, { checksResults: 'x' }]) {
-    const sarif = parse(renderSarifReport(bad, {}));
-    assert.strictEqual(sarif.version, '2.1.0');
-    assert.deepStrictEqual(sarif.runs[0].results, []);
-    assert.deepStrictEqual(sarif.runs[0].tool.driver.rules, []);
+    assert.throws(() => renderSarifReport(bad, {}), TypeError);
   }
+  const sarif = parse(renderSarifReport({ checksResults: [] }, {}));
+  assert.strictEqual(sarif.version, '2.1.0');
+  assert.deepStrictEqual(sarif.runs[0].results, []);
+  assert.deepStrictEqual(sarif.runs[0].tool.driver.rules, []);
 });
 
 test('renderSarifReport: called with no options at all still names the tool', () => {
@@ -511,17 +513,50 @@ test('renderSarifReport: toolVersion and informationUri are carried through when
   assert.strictEqual(driver.informationUri, 'https://example.test/tool');
 });
 
-test('renderSarifReport: a file:// url pointing at the cwd itself keeps the absolute path', () => {
+test('renderSarifReport: a file:// url pointing at the cwd itself is an absolute file URL', () => {
   const result = makeScanResult([makeCheckResult({})]);
-  result.url = `file://${process.cwd()}`;
+  result.url = pathToFileURL(process.cwd()).href;
 
   const sarif = parse(renderSarifReport(result, {}));
 
-  // path.relative(cwd, cwd) is '' -- not a usable URI, so the absolute path
-  // stands in rather than an empty artifact location.
+  // path.relative(cwd, cwd) is '' -- not a usable URI, so the absolute file
+  // URL stands in rather than an empty artifact location.
   assert.strictEqual(
     sarif.runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri,
-    process.cwd()
+    pathToFileURL(process.cwd()).href
+  );
+});
+
+test('renderSarifReport: artifact locations are URIs, inside the repository or absolute', () => {
+  const uri = (url) => {
+    const result = makeScanResult([makeCheckResult({})]);
+    result.url = url;
+    return parse(renderSarifReport(result, {})).runs[0].results[0].locations[0].physicalLocation
+      .artifactLocation.uri;
+  };
+  // Inside the working directory: relative, each segment percent-encoded.
+  const inside = path.join(process.cwd(), 'build out', 'a b#1.html');
+  assert.strictEqual(uri(pathToFileURL(inside).href), 'build%20out/a%20b%231.html');
+  // Outside it: an absolute file URL, not a path climbing out with "../".
+  const outside = path.join(path.dirname(process.cwd()), 'x y', 'a.html');
+  assert.strictEqual(uri(pathToFileURL(outside).href), pathToFileURL(outside).href);
+  assert.ok(!uri(pathToFileURL(outside).href).includes('..'));
+});
+
+test('renderSarifReport: a finding without a summary still has message text', () => {
+  const check = makeCheckResult({
+    title: 'Custom check',
+    occurrences: [makeOccurrence({ summary: '', hint: '' })]
+  });
+  const noTitle = makeCheckResult({
+    ruleId: 'acme-rule',
+    title: '',
+    occurrences: [makeOccurrence({ summary: undefined, hint: 'Fix it.' })]
+  });
+  const results = parse(renderSarifReport(makeScanResult([check, noTitle]), {})).runs[0].results;
+  assert.deepStrictEqual(
+    results.map((r) => r.message.text),
+    ['Custom check', 'acme-rule Fix it.']
   );
 });
 

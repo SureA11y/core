@@ -103,7 +103,13 @@ const meta = {
   },
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
   // can't read from the source.
-  reasonCodes: ['BACKGROUND_NOT_OPAQUE_AT_ROOT', 'FOREGROUND_UNPARSABLE', 'TEXT_SHADOW']
+  reasonCodes: [
+    'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+    'BACKGROUND_OVERLAP',
+    'BACKGROUND_UNPARSABLE',
+    'FOREGROUND_UNPARSABLE',
+    'TEXT_SHADOW'
+  ]
 };
 
 function runInPage(ctx) {
@@ -194,7 +200,12 @@ function runInPage(ctx) {
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
       let hintKind = 'generic';
-      if (rc === 'BACKGROUND_IMAGE_OR_GRADIENT') hintKind = 'background';
+      if (
+        rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
+        rc === 'BACKGROUND_OVERLAP' ||
+        rc === 'BACKGROUND_UNPARSABLE'
+      )
+        hintKind = 'background';
       else if (
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
@@ -380,7 +391,16 @@ function runInPage(ctx) {
           pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
             background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
             backgroundAlpha:
-              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''
+              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
+            // A background color the engine can't read names the element
+            // and the value, as the other blockers do.
+            ...(bg && bg.blockerProperty
+              ? {
+                  blockerSelector: bg.blockerSelector || '',
+                  blockerProperty: bg.blockerProperty,
+                  blockerValue: bg.blockerValue || ''
+                }
+              : {})
           });
           continue;
         }

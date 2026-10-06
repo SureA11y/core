@@ -47,13 +47,14 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | SARIF field | Source |
 |---|---|
 | `results[].ruleId` | `checksResults[i].ruleId` |
-| `results[].message.text` | `occurrence.summary` + `occurrence.hint` |
+| `results[].message.text` | `occurrence.summary` + `occurrence.hint`. An occurrence with no summary (a custom rule's, say) uses the rule's title, or its id, since GitHub rejects a result with empty text. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | The scanned target — see "Locations" below. |
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when present. |
 | `results[].partialFingerprints["surea11y/violation/v1"]` | The same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one, for consumers that read it. |
 | `results[].partialFingerprints.primaryLocationLineHash` | A hash of that key, `<16 hex digits>:<n>`, where `n` counts a finding repeated on the page (the same broken component twice). GitHub Code Scanning matches alerts between uploads on this field alone. Its upload action computes one from the result's line when the field is missing, and a DOM finding has no line, so it stored an empty hash: alerts were matched by position, and fixing one finding could close another's alert. |
 | `results[].properties.severity` / `.confidence` | `checksResults[i].severity` / `.confidence` — informational, not part of SARIF's own schema. |
 | `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings`. Understanding-document entries get no tag. Each EN 301 549 clause the result carries (only when the scan asked for them, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)) gets an `en301549-<clause>` tag, e.g. `en301549-9.1.1.1`: clause numbers are the same in every version that has them, so the tag carries no version. |
+| `tool.driver.version` | The `toolVersion` option, if given (a tool wrapping the engine passes its own); otherwise `engine.version`, the engine release that produced the result. `"0.0.0"` only for a result without one, from a release before 1.10.0. |
 | `runs[0].automationDetails.id` | The `category` option, with a trailing `/` added if it has none (GitHub reads everything up to the last slash as the category). Absent when no category is given. See [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
 | `runs[0].properties` | `wcagVersion`, `profile`, `optInRules` and `environment` from the result's `engine`: the conformance target the run used, so a dashboard can tell a WCAG 2.1 run from a 2.2 one, the opt-in rule tags it added beyond that target when it added any, and the conditions the page was rendered under (`layout`, `viewport`, `devicePixelRatio`, `colorScheme`, `fonts`; see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)). Omitted for results from engines that predate those fields. |
 
@@ -61,7 +62,7 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 
 DOM-based scanning has no line/column to report, so `physicalLocation.artifactLocation.uri` is the scanned target itself, not a source-file position:
 
-- **Local file scans**: a path relative to the current working directory (forward-slashed). If this matches a real file in your repository, GitHub Code Scanning can render the finding as an inline annotation.
+- **Local file scans**: a file inside the current working directory is a path relative to it, forward-slashed, with each segment percent-encoded (`build%20out/index.html`). If this matches a real file in your repository, GitHub Code Scanning can render the finding as an inline annotation. A file outside the working directory is an absolute `file:` URL, not a relative path climbing out of the repository with `../`, which a consumer could not resolve.
 - **URL scans**: the scanned URL itself. GitHub Code Scanning will still list the finding, but can't attach an inline annotation to a URL that isn't a file in the repository — this is inherent to how SARIF/Code Scanning associate findings with source, not a surea11y limitation. If you need inline annotations, scan the rendered HTML file (e.g. a build output artifact) rather than a live URL.
 
 `occurrence.selector` is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.

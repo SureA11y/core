@@ -139,7 +139,7 @@ A scan reads the page as it is at that moment. On a page that has just opened, w
 
 | Option | Default | What it does |
 |---|---|---|
-| `timeoutMs` | `5000` | The most it waits in total, across every step. `0` checks once without waiting. |
+| `timeoutMs` | `5000` | The most it waits in total, across every step. `0` checks once without waiting. A value that isn't a finite number of 0 or more (negative, `NaN`, `Infinity`) uses the default, with a `console.warn`. |
 | `quietMs` | off | Also waits until the DOM has not changed for this many milliseconds, for a page whose script is still building it after `load`. Off by default: a page that keeps updating itself (a live feed, a clock) never goes quiet, and would always use the whole timeout. |
 | `document` | the page's `document` | The document to wait for, such as a frame's. |
 

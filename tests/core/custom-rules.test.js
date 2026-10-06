@@ -117,7 +117,8 @@ test('customRules: a throwing runInPage is contained as cantTell, not a crash, s
   assert.match(r.error || '', /boom/);
 });
 
-test('customRules: an invalid entry (unresolvable runInPage) is silently skipped, and the rest of the scan still runs', () => {
+test('customRules: an invalid entry (unresolvable runInPage) is skipped with a warning, and the rest of the scan still runs', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
   const result = runa11yCoreOnHtml(HTML, {
     engineOptions: {
       customRules: [
@@ -134,6 +135,85 @@ test('customRules: an invalid entry (unresolvable runInPage) is silently skipped
   assert.ok(!result.checksResults.some((x) => x.ruleId === 'bad-rule'));
   // built-in rules still ran normally
   assert.ok(result.checksResults.length > 100);
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /skipped rule "bad-rule".*could not be turned back/.test(w)));
+  assert.ok(warnings.some((w) => /skipped a rule \(no id\)/.test(w)));
+});
+
+test('customRules: a method written in shorthand survives toString(), as the docs example does', () => {
+  const methods = {
+    runInPage(ctx) {
+      const el = ctx.document.getElementById('target');
+      return { outcome: 'fail', occurrences: [{ __node: el }] };
+    },
+    async asyncRun() {
+      return { outcome: 'pass', occurrences: [] };
+    },
+    applicability(ctx) {
+      return !!ctx.document.getElementById('target');
+    }
+  };
+  class Rule {
+    runInPage() {
+      return { outcome: 'pass', occurrences: [] };
+    }
+  }
+  const sources = {
+    shorthand: methods.runInPage.toString(),
+    asyncShorthand: methods.asyncRun.toString(),
+    classMethod: Rule.prototype.runInPage.toString()
+  };
+  assert.ok(sources.shorthand.startsWith('runInPage('), 'the shape this test is about');
+
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        {
+          id: 'shorthand',
+          meta: { title: 'Shorthand' },
+          runInPage: sources.shorthand,
+          applicability: methods.applicability.toString()
+        },
+        { id: 'class-method', meta: { title: 'Class' }, runInPage: sources.classMethod }
+      ],
+      runOnly: ['shorthand', 'class-method']
+    }
+  });
+  const byId = (id) => result.checksResults.find((x) => x.ruleId === id);
+  assert.strictEqual(byId('shorthand').outcome, 'fail');
+  assert.strictEqual(byId('shorthand').occurrences.length, 1);
+  assert.strictEqual(byId('class-method').outcome, 'pass');
+
+  // An async method revives as a function; what it returns is another matter.
+  const asyncResult = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [{ id: 'async-shorthand', meta: {}, runInPage: sources.asyncShorthand }]
+    }
+  });
+  assert.ok(asyncResult.checksResults.some((x) => x.ruleId === 'async-shorthand'));
+});
+
+test('customRules: a meta that fails validation skips that rule, not the scan', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'bad-deprecated', meta: { deprecated: true }, runInPage: ok },
+        { id: 'bad-i18n', meta: { i18n: {} }, runInPage: ok },
+        { id: 'good', meta: { title: 'Good' }, runInPage: ok }
+      ]
+    }
+  });
+
+  const ids = result.checksResults.map((x) => x.ruleId);
+  assert.ok(!ids.includes('bad-deprecated'));
+  assert.ok(!ids.includes('bad-i18n'));
+  assert.ok(ids.includes('good'));
+  assert.ok(result.checksResults.length > 100, 'built-in rules still ran');
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /skipped rule "bad-deprecated" \(invalid meta: /.test(w)));
+  assert.ok(warnings.some((w) => /skipped rule "bad-i18n" \(invalid meta: /.test(w)));
 });
 
 test('customRules: a custom rule id colliding with a built-in one overrides it for that scan (reference-engine configure()-like semantics)', () => {
@@ -241,4 +321,90 @@ test('customRules: meta gets the same defaulting as a build-time rule module (se
   assert.strictEqual(r.confidence, 'medium');
   assert.strictEqual(r.type, 'automatic');
   assert.ok(r.title);
+});
+
+test('customRules: an unusable return, a Promise or an unknown outcome is reported as cantTell with why', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'returns-nothing', meta: {}, runInPage: () => undefined },
+        { id: 'returns-string', meta: {}, runInPage: () => 'done' },
+        { id: 'async-run', meta: {}, runInPage: async () => ok() },
+        { id: 'async-applicability', meta: {}, applicability: async () => false, runInPage: ok },
+        {
+          id: 'unknown-outcome',
+          meta: {},
+          runInPage: () => ({ outcome: 'failed', occurrences: [] })
+        }
+      ]
+    }
+  });
+  const errorOf = (id) => {
+    const r = result.checksResults.find((x) => x.ruleId === id);
+    assert.ok(r, id + ' is in the results');
+    assert.strictEqual(r.outcome, 'cantTell', id);
+    return r.error;
+  };
+  assert.match(errorOf('returns-nothing'), /returned undefined instead of a result object/);
+  assert.match(errorOf('returns-string'), /returned string/);
+  assert.match(errorOf('async-run'), /returned a Promise/);
+  assert.match(errorOf('async-applicability'), /applicability returned a Promise/);
+  assert.match(errorOf('unknown-outcome'), /outcome "failed"/);
+});
+
+test('customRules: a duplicate id or a composite id is skipped and listed in skippedCustomRules', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'acme', meta: { title: 'First' }, runInPage: ok },
+        { id: 'acme', meta: { title: 'Second' }, runInPage: ok },
+        { id: 'wcag-1.1.1-non-text-content', meta: {}, runInPage: ok },
+        { runInPage: ok }
+      ]
+    }
+  });
+  assert.strictEqual(result.checksResults.filter((x) => x.ruleId === 'acme').length, 1);
+  assert.strictEqual(result.checksResults.find((x) => x.ruleId === 'acme').title, 'First');
+  assert.ok(!result.checksResults.some((x) => x.ruleId === 'wcag-1.1.1-non-text-content'));
+  assert.deepStrictEqual(
+    result.skippedCustomRules.map((s) => s.id),
+    ['acme', 'wcag-1.1.1-non-text-content', null]
+  );
+  assert.deepStrictEqual(runa11yCoreOnHtml(HTML).skippedCustomRules, []);
+});
+
+test('customRules: severity, confidence and type outside their sets are refused or replaced', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const ok = () => ({ outcome: 'pass', occurrences: [] });
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: {
+      customRules: [
+        { id: 'bad-severity', meta: { defaultSeverity: 'blocker' }, runInPage: ok },
+        { id: 'bad-confidence', meta: { defaultConfidence: 'certain' }, runInPage: ok },
+        {
+          id: 'manual-spelt',
+          meta: { type: 'Manual' },
+          runInPage: () => ({ outcome: 'fail', occurrences: [{}] })
+        },
+        {
+          id: 'returns-blocker',
+          meta: { defaultSeverity: 'serious' },
+          runInPage: () => ({ outcome: 'fail', severity: 'blocker', occurrences: [{}] })
+        }
+      ]
+    }
+  });
+  const skipped = result.skippedCustomRules.map((s) => s.id);
+  assert.deepStrictEqual(skipped, ['bad-severity', 'bad-confidence']);
+  // 'Manual' is read as manual, so its fail is coerced to cantTell.
+  const manual = result.checksResults.find((x) => x.ruleId === 'manual-spelt');
+  assert.strictEqual(manual.type, 'manual');
+  assert.strictEqual(manual.outcome, 'cantTell');
+  const blocker = result.checksResults.find((x) => x.ruleId === 'returns-blocker');
+  assert.strictEqual(blocker.severity, 'serious');
+  assert.match(blocker.error, /severity "blocker"/);
 });

@@ -667,6 +667,24 @@ function getRuleResultFromEngineOutput(engineOutput, ruleId) {
   return null;
 }
 
+// The catalog generators (scripts/generate-rule-catalog.js,
+// scripts/lib/rule-review-data.js) end a tag's text at the first line that
+// starts with `@`, so prose that wraps an `@word` onto the start of a line is
+// silently cut off there. A tag sits one space after the `*`; anything else
+// starting a line with `@` is a continuation line read as a tag.
+function assertHeaderTagsWellFormed(source) {
+  const header = /\/\*\*[\s\S]*?\*\//.exec(source);
+  if (!header) return;
+  for (const line of header[0].split('\n')) {
+    const m = /^[ \t]*\*([ \t]*)@(\S*)/.exec(line);
+    if (!m) continue;
+    assert.ok(
+      m[1] === ' ' && /^[\w-]+$/.test(m[2]),
+      `rule header line starts with "@" but is not a tag (rewrap it): ${line.trim()}`
+    );
+  }
+}
+
 function main() {
   const rulePathArg = process.argv[2];
   if (!rulePathArg) {
@@ -680,6 +698,7 @@ function main() {
   // Load module
   let mod = require(ruleAbsPath);
   assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
+  assertHeaderTagsWellFormed(fs.readFileSync(ruleAbsPath, 'utf8'));
 
   // A variant (scripts/lib/rule-variants.js) has no code of its own: it is
   // checked as its base rule's code run under its own id, meta and messages.

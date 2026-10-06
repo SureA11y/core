@@ -204,6 +204,7 @@ function createDomHelpers(opts) {
   var __domSharedCache = {};
   var __selectorCache = null;
   var __outerHtmlCache = null;
+  var __siblingIndexCache = null; // WeakMap<Element, {first, last, info, tagCounts}>
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
@@ -859,20 +860,36 @@ function createDomHelpers(opts) {
     return el || null;
   };
 
+  // A closed <details> shows only its summary: its first <summary> child,
+  // which stays on the page as the toggle. Every other descendant is hidden,
+  // including another <summary> and anything in an open <details> nested in
+  // it. The walk is over the composed ancestors, so a shadow root's content
+  // inside a closed <details>, and light-DOM content slotted into one, count
+  // too. The <details> element itself is not hidden by its own state.
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const summary = node.closest && node.closest('summary');
-      if (summary && summary.contains(node)) return false;
-      // closest() matches the node itself, so a plain <details> element
-      // being asked about its own eligibility would otherwise match its
-      // own closest('details') and get judged against its own open state.
-      // A closed <details> only hides its extra content, not the <details>
-      // element (or its <summary>) that stays on the page as the toggle.
-      const details = node.closest && node.closest('details');
-      if (details && details !== node && !details.hasAttribute('open')) return true;
+      const chain = ancestorsIncludingSelf(node);
+      for (let i = 1; i < chain.length; i++) {
+        const a = chain[i];
+        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
+        if (a.hasAttribute('open')) continue;
+        const child = chain[i - 1];
+        const isToggle =
+          (child.localName || '').toLowerCase() === 'summary' &&
+          child.parentNode === a &&
+          firstSummaryChild(a) === child;
+        if (!isToggle) return true;
+      }
     } catch {}
     return false;
+  }
+
+  function firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
   }
 
   function isPlatformFocusable(el) {
@@ -1069,6 +1086,22 @@ function createDomHelpers(opts) {
   // chain once per selector per rule; the memo makes the whole document cost
   // one walk. An element is excluded when it or an ancestor matches, so a
   // parent's answer settles its descendants.
+  function __warnBadExclude(selector) {
+    try {
+      const seen =
+        __domSharedCache.badExcludeSelectors instanceof Set
+          ? __domSharedCache.badExcludeSelectors
+          : (__domSharedCache.badExcludeSelectors = new Set());
+      if (seen.has(selector)) return;
+      seen.add(selector);
+      console.warn(
+        '[surea11y] excludeSelectors: "' +
+          selector +
+          '" is not a valid CSS selector and excludes nothing; the other selectors still apply.'
+      );
+    } catch {}
+  }
+
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
     if (!eff.length || !el || !el.matches) return false;
@@ -1092,7 +1125,9 @@ function createDomHelpers(opts) {
         }
       } catch {
         // An unparseable selector matches nothing rather than excluding
-        // everything; the remaining selectors still apply.
+        // everything; the remaining selectors still apply. Said once per
+        // scan, so a typo does not go unnoticed.
+        __warnBadExclude(eff[i]);
       }
     }
     if (!result) {
@@ -1268,6 +1303,11 @@ function createDomHelpers(opts) {
 
       pushMatches(curRoot);
 
+      // querySelectorAll('*') never returns curRoot itself, so a scope
+      // that is a shadow host would leave out its own shadow root.
+      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
+        q.push(curRoot.shadowRoot);
+      }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
     }
@@ -1290,43 +1330,46 @@ function createDomHelpers(opts) {
     'contentVisibilityHidden'
   ]);
 
+  // Whether the default hidden-content policy leaves `el` out: the filter
+  // queryAllSmart applies to what it finds, for a rule that reaches elements
+  // another way (a container's descendants, the other side of a
+  // relationship). Always false under includeHiddenElements:true.
+  function isHiddenContent(el) {
+    if (includeHiddenElements) return false;
+    try {
+      const vis = isAccTreeEligible(el);
+      if (!vis || vis.eligible !== false) return false;
+      const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
+      for (const r of reasons) {
+        if (HARD_HIDDEN_REASONS.has(r)) return true;
+      }
+
+      // `isAccTreeEligible` can short-circuit on an inert ancestor
+      // before it reaches an outer hard-hidden ancestor (e.g.
+      // display:none wrapper). In that case the node is still
+      // structurally hidden and should be excluded by the default
+      // hidden-content policy.
+      if (reasons.includes('inert')) {
+        const domVis = isDomVisibleEligible(el, null, {
+          visibilityMode: 'styleOnly',
+          disableGeometry: true,
+          ignoreOpacity: true
+        });
+        const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
+        for (const r of domReasons) {
+          if (HARD_HIDDEN_REASONS.has(r)) return true;
+        }
+      }
+    } catch {}
+    return false;
+  }
+
   function queryAllSmart(sel) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) {
-      list = list.filter((el) => {
-        try {
-          const vis = isAccTreeEligible(el);
-          if (!vis || vis.eligible !== false) return true;
-          const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
-          for (const r of reasons) {
-            if (HARD_HIDDEN_REASONS.has(r)) return false;
-          }
-
-          // `isAccTreeEligible` can short-circuit on an inert ancestor
-          // before it reaches an outer hard-hidden ancestor (e.g.
-          // display:none wrapper). In that case the node is still
-          // structurally hidden and should be excluded by the default
-          // hidden-content policy.
-          if (reasons.includes('inert')) {
-            const domVis = isDomVisibleEligible(el, null, {
-              visibilityMode: 'styleOnly',
-              disableGeometry: true,
-              ignoreOpacity: true
-            });
-            const domReasons = Array.isArray(domVis && domVis.reasons) ? domVis.reasons : [];
-            for (const r of domReasons) {
-              if (HARD_HIDDEN_REASONS.has(r)) return false;
-            }
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      });
-    }
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -1451,6 +1494,15 @@ function createDomHelpers(opts) {
         : (__domSharedCache.outerHtmlCache = new WeakMap());
   } catch {
     __outerHtmlCache = null;
+  }
+
+  try {
+    __siblingIndexCache =
+      __domSharedCache.siblingIndexCache instanceof WeakMap
+        ? __domSharedCache.siblingIndexCache
+        : (__domSharedCache.siblingIndexCache = new WeakMap());
+  } catch {
+    __siblingIndexCache = null;
   }
 
   // ID lookups: cache getElementById / root.querySelector(#id) results within a run
@@ -1762,8 +1814,18 @@ function createDomHelpers(opts) {
 
     const id = trim(getAttr(el, 'id'));
     if (id) {
+      // A `for` label labels the first element in its tree with that id
+      // (HTML's labeled control), so a second element sharing the id has no
+      // label from it; Chromium names only the first.
       const forLabels = __getLabelElementsForId(id);
-      for (const l of forLabels) out.push(l);
+      for (const l of forLabels) {
+        let target = el;
+        try {
+          const root = l.getRootNode ? l.getRootNode() : null;
+          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+        } catch {}
+        if (target === el) out.push(l);
+      }
     }
     try {
       const wrap = el.closest ? el.closest('label') : null;
@@ -1934,6 +1996,56 @@ function createDomHelpers(opts) {
     return (allowTitle ? 'at1' : 'at0') + '|mr' + String(maxRefs);
   }
 
+  // Where an element sits among its element siblings: `index` from 0,
+  // `ofType` from 1 among siblings with its tag, and `sameType`, how many
+  // siblings share the tag. A selector or a structural path needs this for
+  // every occurrence, and counting siblings each time made a rule that
+  // reports thousands of siblings quadratic. A parent's children are indexed
+  // once per run. The scan is synchronous, so only the engine changes the
+  // DOM meanwhile, and only by inserting a style sheet first in <head> or a
+  // probe last in <body>: a parent whose first or last element child has
+  // changed since is indexed again.
+  function __siblingInfo(node) {
+    const parent = node && node.parentElement;
+    if (!parent) return null;
+    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const build = () => {
+      const info = new Map();
+      const tagCounts = new Map();
+      let index = 0;
+      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+        const tag = tagOf(c);
+        const ofType = (tagCounts.get(tag) || 0) + 1;
+        tagCounts.set(tag, ofType);
+        info.set(c, { index: index++, ofType, tag });
+      }
+      return {
+        first: parent.firstElementChild,
+        last: parent.lastElementChild,
+        info,
+        tagCounts
+      };
+    };
+    let entry = null;
+    try {
+      entry = __siblingIndexCache ? __siblingIndexCache.get(parent) : null;
+    } catch {}
+    if (
+      !entry ||
+      entry.first !== parent.firstElementChild ||
+      entry.last !== parent.lastElementChild ||
+      !entry.info.has(node)
+    ) {
+      entry = build();
+      try {
+        if (__siblingIndexCache) __siblingIndexCache.set(parent, entry);
+      } catch {}
+    }
+    const own = entry.info.get(node);
+    if (!own) return null;
+    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
+  }
+
   function getOuterHtmlSnippet(el) {
     if (!el || typeof el !== 'object') return '';
     try {
@@ -1947,7 +2059,25 @@ function createDomHelpers(opts) {
 
     let out;
     try {
-      const html = el.outerHTML || '';
+      // <html>, <head> and <body> hold the whole page, so their markup
+      // changes with any edit anywhere, and the snippet is part of a
+      // finding's identity (baselines, SARIF). What a page-level finding is
+      // about is the element itself: its start tag.
+      const name = String(el.localName || '').toLowerCase();
+      const isPage =
+        (name === 'html' || name === 'head' || name === 'body') &&
+        el.ownerDocument &&
+        el.parentNode &&
+        (el === el.ownerDocument.documentElement ||
+          el.parentNode === el.ownerDocument.documentElement);
+      let html;
+      if (isPage) {
+        const shallow = el.cloneNode(false).outerHTML || '';
+        const end = shallow.lastIndexOf('</');
+        html = end > 0 ? shallow.slice(0, end) : shallow;
+      } else {
+        html = el.outerHTML || '';
+      }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
     } catch {
@@ -2949,24 +3079,12 @@ function createDomHelpers(opts) {
 
     __nameComputationDepth += 1;
     try {
-      // aria-labelledby outranks aria-label per the accname spec (2A before
-      // 2B), matching getAriaNameInfo's own precedence.
-      const labelledBy = trim(getAttr(el, 'aria-labelledby'));
-      if (labelledBy) {
-        const parts = labelledBy.split(/\s+/).filter(Boolean);
-        const texts = [];
-        for (const id of parts) {
-          let ref = safeDocGetById(id);
-          if (!ref) ref = safeRootQueryById(id);
-          if (ref && isElement(ref)) {
-            const t = computeIdRefTargetTextAlternative(ref, visited, _ctx, effOpts);
-            if (t) texts.push(t);
-          }
-        }
-        const joined = trim(texts.join(' '));
-        if (joined) return joined;
-      }
-
+      // A referenced node's own aria-labelledby is not followed: accname 1.2
+      // step 2B applies only to a node not already part of an
+      // aria-labelledby traversal, and every node here is. So a target named
+      // by a further aria-labelledby gives its own text, and an element that
+      // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
+      // its content, as Chrome computes them.
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -4688,32 +4806,11 @@ function createDomHelpers(opts) {
         const t = (node.tagName || '').toLowerCase() || '*';
         const p = node.parentElement;
         if (!p) return t;
-
-        let i = 1;
-        let sib = node.previousElementSibling;
-        while (sib) {
-          if ((sib.tagName || '').toLowerCase() === t) i++;
-          sib = sib.previousElementSibling;
-        }
-
-        // A same-tag sibling before this node (i > 1) already means
-        // an unqualified tag selector would be ambiguous, so there's no need
-        // to also scan forward in that case. Only scan
-        // nextElementSibling when this node is the first of its tag
-        // among its siblings, to catch the case where the
-        // disambiguating sibling comes after it instead.
-        let hasSame = i > 1;
-        if (!hasSame) {
-          sib = node.nextElementSibling;
-          while (sib) {
-            if ((sib.tagName || '').toLowerCase() === t) {
-              hasSame = true;
-              break;
-            }
-            sib = sib.nextElementSibling;
-          }
-        }
-        return hasSame ? t + ':nth-of-type(' + i + ')' : t;
+        // A tag shared with another sibling needs :nth-of-type to be
+        // unambiguous; a tag of its own does not.
+        const info = __siblingInfo(node);
+        if (!info) return t;
+        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
       let node = el;
@@ -4884,15 +4981,50 @@ function createDomHelpers(opts) {
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
         // scanned 20,000-node document take seconds.
-        let idx = 0;
-        for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        const info = __siblingInfo(node);
+        let idx = info ? info.index : -1;
+        if (idx < 0) {
+          idx = 0;
+          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+        }
         path.unshift(idx);
         node = parent;
       }
+      // The path is from documentElement down. An element in a shadow tree
+      // is not under it: its path would count from the shadow root's first
+      // element and name an element in the document instead.
+      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
     } catch {
       return null;
     }
     return path;
+  }
+
+  // For an element in a shadow tree, the selectors of the shadow hosts that
+  // lead to it, outermost first, each resolved in the tree that holds it;
+  // the element's own selector is resolved in its shadow root. null for an
+  // element in the document, or when a host gets no selector.
+  function buildShadowHostSelectors(el) {
+    try {
+      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      const hosts = [];
+      let root = el.getRootNode();
+      let guard = 0;
+      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
+        hosts.unshift(root.host);
+        root = root.host.getRootNode();
+      }
+      if (!hosts.length) return null;
+      const out = [];
+      for (const host of hosts) {
+        const sel = String(buildSelector(host) || '');
+        if (!sel) return null;
+        out.push(sel);
+      }
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // Occurrence-level structural path: prefers the actual element reference
@@ -4907,6 +5039,9 @@ function createDomHelpers(opts) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
       if (p) return p;
+      // In a shadow tree the selector holds only inside its shadow root;
+      // read against the document it would find another element.
+      if (buildShadowHostSelectors(node)) return null;
     }
     if (
       selector &&
@@ -5365,8 +5500,10 @@ function createDomHelpers(opts) {
     queryAllDeep,
     queryAllSmart,
     queryAllSource,
+    isHiddenContent,
     getDoctypeInfo,
     getOuterHtmlSnippet,
+    buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
     buildStructuralPath,

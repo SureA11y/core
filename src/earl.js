@@ -2,6 +2,12 @@
 
 'use strict';
 
+const {
+  assertScanResult,
+  isCrossFrameResult,
+  flattenCrossFrameResult
+} = require('./scan-result.js');
+
 /**
  * Renders scan results as an EARL 1.0 report in JSON-LD (docs/EARL.md), the
  * format the W3C ACT Rules community group accepts as an implementation
@@ -85,12 +91,19 @@ function assertionFor(check, assertor, mode) {
   return assertion;
 }
 
-function normalizeAssertor(options) {
+// The release defaults to the engine version the results carry, when they
+// all carry the same one: results from two releases have no one assertor
+// release, and then none is claimed.
+function normalizeAssertor(options, results) {
   if (options.assertor === null) return null;
 
   const supplied = options.assertor || {};
   const assertor = { '@type': 'Assertor', name: supplied.name || 'surea11y' };
-  const revision = supplied.version || supplied.revision;
+  const versions = new Set(
+    results.map((r) => (r.engine && typeof r.engine.version === 'string' ? r.engine.version : ''))
+  );
+  const engineVersion = versions.size === 1 ? [...versions][0] : '';
+  const revision = supplied.version || supplied.revision || engineVersion;
   if (revision) assertor.release = { '@type': 'Version', revision: String(revision) };
   return assertor;
 }
@@ -98,25 +111,42 @@ function normalizeAssertor(options) {
 /**
  * @param {object|object[]} results one scan result, or several to report together
  * @param {object} [options]
- * @param {object|null} [options.assertor] `{ name, version }`; null omits it
+ * @param {object|null} [options.assertor] `{ name, version }`; null omits it. The
+ *   version defaults to the engine version the results carry.
  * @param {string} [options.mode] an EARL test mode, e.g. `'earl:automatic'`
  * @returns {object} the JSON-LD document
  */
 function renderEarlReport(results, options = {}) {
-  const list = (Array.isArray(results) ? results : [results]).filter(
-    (r) => r && typeof r === 'object'
-  );
+  // One result, an array of them, or a cross-frame result, whose every
+  // frame is a subject of its own.
+  const list = [];
+  for (const r of Array.isArray(results) ? results : [results]) {
+    if (isCrossFrameResult(r)) {
+      list.push(...flattenCrossFrameResult(r));
+    } else {
+      list.push(assertScanResult(r, 'renderEarlReport'));
+    }
+  }
 
-  const assertor = normalizeAssertor(options);
+  const assertor = normalizeAssertor(options, list);
   const mode = typeof options.mode === 'string' && options.mode ? options.mode : null;
 
   // Several results for one URL merge into a single subject: a caller scanning
   // the same page under different engineOptions still describes one resource,
   // and the context has no way to express two subjects with the same source.
   const bySource = new Map();
+  // Results without a URL are separate pages as far as anyone can tell:
+  // one is about:blank, as before; several are told apart by their place in
+  // the list rather than merged into one subject.
+  const hasUrl = (r) => typeof r.url === 'string' && !!r.url;
+  const unnamed = list.filter((r) => !hasUrl(r)).length;
 
-  for (const result of list) {
-    const source = typeof result.url === 'string' && result.url ? result.url : 'about:blank';
+  for (const [index, result] of list.entries()) {
+    const source = hasUrl(result)
+      ? result.url
+      : unnamed > 1
+        ? `about:blank#result-${index + 1}`
+        : 'about:blank';
     const checks = Array.isArray(result.checksResults) ? result.checksResults : [];
 
     if (!bySource.has(source)) bySource.set(source, new Map());

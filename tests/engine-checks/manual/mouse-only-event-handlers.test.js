@@ -111,9 +111,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/mouse-only-event-handlers-all
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
 
-  const expectedFlaggedIds = ['moeh_case_01', 'moeh_case_02', 'moeh_case_07'];
+  const expectedFlaggedIds = ['moeh_case_01', 'moeh_case_02', 'moeh_case_07', 'moeh_case_09'];
   const expectedNoOccIds = [
     'moeh_case_03',
     'moeh_case_04',

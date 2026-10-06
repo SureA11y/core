@@ -54,10 +54,19 @@ function createAriaHelpers(opts, shared) {
   // Existence check for a single ID token. Never throws, returns false
   // (not "unknown") when the document isn't available so callers degrade
   // to their pre-existing format-only behavior rather than guessing.
-  function idExists(id) {
-    if (!ariaDocument || typeof ariaDocument.getElementById !== 'function') return true;
+  // An ID reference resolves in the referring element's own tree: its shadow
+  // root, or the document. One that points across a shadow boundary
+  // resolves to nothing, as Chromium resolves it, and one inside a shadow
+  // root finds its target there, which document.getElementById can't see.
+  function idExists(id, el) {
+    let scope = ariaDocument;
     try {
-      return !!ariaDocument.getElementById(id);
+      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
+      if (root && typeof root.getElementById === 'function') scope = root;
+    } catch {}
+    if (!scope || typeof scope.getElementById !== 'function') return true;
+    try {
+      return !!scope.getElementById(id);
     } catch {
       return true;
     }
@@ -1025,17 +1034,22 @@ function createAriaHelpers(opts, shared) {
     // `aria-describedby={hasError ? errorId : ''}`).
     if (v.length === 0) return { valid: true, reason: '' };
 
+    // true, false, undefined and mixed are read in any case, like the token
+    // values below: Chromium exposes aria-checked="TRUE" as checked and
+    // hides an aria-hidden="True" subtree, and the engine's own readers of
+    // these states lowercase them too.
+    const lv = lower(v);
     switch (type) {
       case 'boolean': {
-        const ok = v === 'true' || v === 'false';
+        const ok = lv === 'true' || lv === 'false';
         return { valid: ok, reason: ok ? '' : 'expected-true-false' };
       }
       case 'boolean-undefined': {
-        const ok = v === 'true' || v === 'false' || v === 'undefined';
+        const ok = lv === 'true' || lv === 'false' || lv === 'undefined';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-undefined' };
       }
       case 'tristate': {
-        const ok = v === 'true' || v === 'false' || v === 'mixed';
+        const ok = lv === 'true' || lv === 'false' || lv === 'mixed';
         return { valid: ok, reason: ok ? '' : 'expected-true-false-mixed' };
       }
       case 'integer': {
@@ -1080,7 +1094,7 @@ function createAriaHelpers(opts, shared) {
         // has no such carve-out in ACT's own text and keeps the existence
         // check.
         if (lower(name) === 'aria-errormessage') return { valid: true, reason: '' };
-        if (!idExists(v)) return { valid: false, reason: 'idref-not-found' };
+        if (!idExists(v, el)) return { valid: false, reason: 'idref-not-found' };
         return { valid: true, reason: '' };
       }
       case 'idref-list': {
@@ -1088,7 +1102,7 @@ function createAriaHelpers(opts, shared) {
         // Only flag when NONE of the referenced ids resolve. A
         // partially-dangling list (some ids exist, some don't) is left
         // unflagged.
-        if (parts.some((p) => idExists(p))) return { valid: true, reason: '' };
+        if (parts.some((p) => idExists(p, el))) return { valid: true, reason: '' };
 
         // aria-controls is the one idref-list attribute whose target is
         // routinely absent by design: the menu, listbox or panel it names

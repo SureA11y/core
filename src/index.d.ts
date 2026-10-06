@@ -57,8 +57,13 @@ export interface EngineOptions {
     mode?: 'strictConformance' | 'auditorAssist';
     rootCanvasFallback?: string;
   };
-  visibilityMode?: string;
+  visibilityMode?: Open<'styleOnly' | 'styleAndGeometry'>;
   includeMode?: 'and' | 'or';
+  /** A built-in contract's name, or an inline contract. See docs/POLICY.md. */
+  policyContract?: Open<'a11y' | 'generic'> | PolicyContract;
+  /** Overrides on top of the contract. See docs/POLICY.md. */
+  policy?: Partial<Omit<PolicyContract, 'id'>>;
+  output?: { includeSelector?: boolean; includeHtml?: boolean };
   /** `include`/`exclude` select rules; any other key is that rule's `ctx.config`. */
   rules?: { include?: StringList; exclude?: StringList; [ruleId: string]: unknown };
   tags?: { include?: StringList; exclude?: StringList };
@@ -72,6 +77,20 @@ export interface EngineOptions {
   frameWaitTime?: number;
   [option: string]: unknown;
 }
+
+/** Which outcomes and confidence values a scan may report. See docs/POLICY.md. */
+export interface PolicyContract {
+  id?: string;
+  allowedOutcomes?: Outcome[];
+  allowedConfidence?: Confidence[];
+  coerceManualFailToCantTell?: boolean;
+}
+
+/**
+ * The `code` on an error the engine throws: an unparseable contextSelector,
+ * or a runOnly that names nothing.
+ */
+export type EngineErrorCode = 'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY';
 
 /** A rule registered for one scan. See docs/ENGINE_OPTIONS.md, `customRules`. */
 export interface CustomRule {
@@ -121,6 +140,8 @@ export interface RenderingEnvironment {
 
 export interface EngineInfo {
   tag: string;
+  /** The @surea11y/core release that produced the result, e.g. "1.10.0". */
+  version: string;
   schemaVersion: string;
   locale: LocaleResolution;
   wcagVersion: '2.0' | '2.1' | '2.2';
@@ -196,6 +217,12 @@ export interface Occurrence {
   selector: string;
   html: string;
   structuralPath: number[] | null;
+  /**
+   * For an element in a shadow tree: the selectors of the shadow hosts that
+   * lead to it, outermost first, each resolved in the tree that holds it.
+   * `selector` then resolves inside the last host's shadow root.
+   */
+  shadowHostSelectors?: string[];
   summary: string;
   hint: string;
   i18n: { summaryKey: string; hintKey: string; params: Record<string, unknown> } | null;
@@ -241,6 +268,8 @@ export interface Margin extends MarginDeclaration {
   measuredCount: number;
   /** Absent with `output.includeSelector: false`. */
   selector?: string;
+  /** As on an occurrence: present for an element in a shadow tree. */
+  shadowHostSelectors?: string[];
   structuralPath?: number[];
   /** Rule-specific detail; not a stable contract. */
   context?: Record<string, unknown>;
@@ -350,6 +379,8 @@ export interface ScanResult {
   checksResults: CheckResult[];
   rulesResults: CompositeResult[];
   overriddenBuiltinIds: string[];
+  /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
+  skippedCustomRules: { id: string | null; reason: string }[];
 }
 
 /** A child frame that answered, with its own frames, recursively. */

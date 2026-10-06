@@ -485,3 +485,18 @@ test('pass: a label hidden only by the aria-hidden ancestor that hides the contr
   const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
   assert.notEqual(rule.outcome, 'fail');
 });
+
+test(`${RULE_ID}: a second input sharing the labelled id has no label`, () => {
+  // A `for` label labels the first element with that id (HTML's labeled
+  // control); Chromium gives the second input no name.
+  const html = `<!doctype html><html><body>
+    <label for="e">Email</label>
+    <input id="e" type="text">
+    <input id="e" type="text">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
+  assert.equal(rule.outcome, 'fail');
+  assert.equal(rule.occurrences.length, 1);
+  assert.match(rule.occurrences[0].selector, /input:nth-of-type\(2\)/);
+});

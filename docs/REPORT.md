@@ -34,7 +34,7 @@ const html = renderHtmlReport(result, { title: 'My scan report' });
 require('fs').writeFileSync('report.html', html);
 ```
 
-`renderHtmlReport(result, options)` is a pure function — it returns a string, it never touches the filesystem itself (the CLI's `--html` flag does the writing). `options.title` is optional (defaults to `"surea11y scan report"`).
+`renderHtmlReport(result, options)` returns a string and never touches the filesystem itself (the CLI's `--html` flag does the writing). The page is dated by the result's `timestamp` (set it with `engineOptions.timestamp`), shown in UTC, so the same result always renders the same page; a result without one is dated by the time of rendering. `options.title` is optional (defaults to `"surea11y scan report"`).
 
 ## Scope
 

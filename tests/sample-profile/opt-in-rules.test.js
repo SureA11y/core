@@ -92,7 +92,7 @@ test('a WCAG rollup id does not unlock opt-in rules', () => {
       .filter((c) => (c.tags || []).includes('sample'))
       .map((c) => c.ruleId)
   );
-  for (const id of core.getRulesCatalog().map((c) => c.ruleId)) {
+  for (const id of core.getRulesCatalog().map((c) => c.id)) {
     const selected = core.getChecksForRunOnly({ includeRuleIds: [id] }).map((c) => c.ruleId);
     assert.deepEqual(
       selected.filter((r) => optIn.has(r)),

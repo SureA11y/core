@@ -54,7 +54,7 @@ The graph groups by subject rather than being a flat list of assertions:
 }
 ```
 
-- **`source`** is the scanned URL, or `about:blank` when a result carries none.
+- **`source`** is the scanned URL, or `about:blank` when a result carries none. When several results carry none, each is a subject of its own, `about:blank#result-<n>` by its position in the list (from 1), rather than all merging into one.
 - **`test.title`** is the engine's own rule id. In ACT terms a rule is the *procedure* the implementation ran, which is exactly what a rule id names.
 - **`test.isPartOf`** lists the Success Criteria that rule maps to, as `WCAG2:<criterion-id>`. Omitted entirely for a rule claiming no criterion — `aria-allowed-role` is the engine's one automatic rule in that position, and asserting an empty list would read as "maps to nothing we could find" rather than "deliberately maps to none".
 - **`assertedBy`** and **`mode`** appear only when you supply them.
@@ -82,6 +82,8 @@ Criterion ids are derived from the criterion's own title (`Non-text Content` →
 renderEarlReport([homeResult, checkoutResult, searchResult], { assertor });
 ```
 
+A cross-frame result from `runa11yCoreAcrossFrames` is taken as it is, alone or in the array: each frame that answered is one more result, and becomes a subject under its own URL. Anything else that is not a scan result, such as `null` or a string, throws a `TypeError`.
+
 Results sharing a URL merge into one subject — a caller scanning the same page under different `engineOptions` is still describing one resource, and the context has no way to express two subjects with the same source. Where two results assert on the same rule for the same URL, the last one wins. That includes the same page scanned at two viewport widths: EARL has no term for the conditions a page was rendered under, so a report built from several widths keeps only the last width's assertion for each rule. Render one report per width if the widths matter.
 
 Output is deterministic: subjects sort by source, assertions by rule id, and the same inputs produce byte-identical output in any order. That is what makes a diff between two engine versions meaningful.
@@ -90,7 +92,7 @@ Output is deterministic: subjects sort by source, assertions by rule id, and the
 
 | Option | Meaning |
 |---|---|
-| `assertor` | `{ name, version }`. Defaults the name to `surea11y`; pass `null` to omit `assertedBy` entirely. |
+| `assertor` | `{ name, version }`. Defaults the name to `surea11y`, and the version, given as the assertor's `release`, to the `engine.version` the results carry when they all carry the same one; results from different releases get no release unless you give one. Pass `null` to omit `assertedBy` entirely. |
 | `mode` | An EARL test mode such as `'earl:automatic'`. Omitted when not supplied. |
 
 ## See also

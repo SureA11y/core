@@ -39,8 +39,13 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
-  let best = null;
-  let bestIndex = -1;
+  // Collect every candidate tied at the smallest headroom first, and settle
+  // the tie once at the end. Comparing each tie against the current best in
+  // the loop was quadratic: on a page where most text shares a colour every
+  // candidate ties, and in Blink each compareDocumentPosition walks the
+  // siblings between the two elements.
+  let ties = [];
+  let smallest = Infinity;
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     if (!c || typeof c !== 'object') continue;
@@ -49,28 +54,50 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
-
-    let closer = !best || headroom < best.headroom;
-    if (best && headroom === best.headroom && c.el && best.el && c.el !== best.el) {
-      let position;
-      try {
-        position =
-          typeof best.el.compareDocumentPosition === 'function'
-            ? best.el.compareDocumentPosition(c.el)
-            : 0;
-      } catch {
-        position = 0;
-      }
-      // DOCUMENT_POSITION_PRECEDING (2): c comes before the current best.
-      // Disconnected trees report no order; the earlier candidate stays.
-      closer = (position & 2) !== 0 && (position & 1) === 0;
+    if (headroom < smallest) {
+      smallest = headroom;
+      ties = [];
     }
-    if (closer) {
-      best = { el: c.el || null, value, threshold, headroom, context: c.context };
-      bestIndex = i;
+    if (headroom === smallest) {
+      ties.push({ el: c.el || null, value, threshold, headroom, context: c.context });
     }
   }
-  if (!best || bestIndex === -1) return null;
+  if (!ties.length) return null;
+
+  const position = (a, b) => {
+    try {
+      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+    } catch {
+      return 0;
+    }
+  };
+  // A tie with no element keeps its place; one after it never replaces it.
+  let best = ties[0];
+  const placed = best.el ? ties.filter((t) => t.el) : [];
+  // Rules collect candidates in page order, so the ties are usually in
+  // document order already. Checking each against the next is cheap, since
+  // neighbours sit close in the tree, and then the first tie is the answer.
+  // DOCUMENT_POSITION_FOLLOWING (4) without DISCONNECTED (1).
+  let inOrder = true;
+  for (let i = 1; i < placed.length && inOrder; i++) {
+    const prev = placed[i - 1].el;
+    const next = placed[i].el;
+    if (prev === next) continue;
+    const p = position(prev, next);
+    inOrder = (p & 4) !== 0 && (p & 1) === 0;
+  }
+  if (!inOrder) {
+    // Out of order (several scan roots, shadow trees, a custom rule):
+    // keep the earliest. DOCUMENT_POSITION_PRECEDING (2): t comes before the
+    // current best. Disconnected trees report no order; the earlier
+    // candidate stays.
+    for (let i = 1; i < placed.length; i++) {
+      const t = placed[i];
+      if (t.el === best.el) continue;
+      const p = position(best.el, t.el);
+      if ((p & 2) !== 0 && (p & 1) === 0) best = t;
+    }
+  }
 
   const round = declaration.unit === 'px' ? (n) => Math.round(n * 10) / 10 : (n) => n;
   const counted = Number(measuredCount);
@@ -97,6 +124,12 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
         selector = '';
       }
       if (selector) margin.selector = selector;
+      if (selector && typeof helpers.buildShadowHostSelectors === 'function') {
+        try {
+          const hostSelectors = helpers.buildShadowHostSelectors(best.el);
+          if (hostSelectors) margin.shadowHostSelectors = hostSelectors;
+        } catch {}
+      }
     }
     if (typeof helpers.buildStructuralPath === 'function') {
       try {

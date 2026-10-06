@@ -255,10 +255,11 @@ test('matchBaseline: malformed baseline input degrades to treating everything as
   }
 });
 
-test('buildBaselineEntries: a malformed result yields no entries instead of throwing', () => {
+test('buildBaselineEntries: a missing or malformed result throws, so it cannot pass as clean', () => {
   for (const bad of [null, undefined, {}, { checksResults: 'x' }]) {
-    assert.deepEqual(buildBaselineEntries(bad), []);
+    assert.throws(() => buildBaselineEntries(bad), TypeError);
   }
+  assert.deepEqual(buildBaselineEntries({ checksResults: [null, {}] }), []);
 });
 
 // --- identity and normalization edges -------------------------------------
@@ -385,4 +386,53 @@ test('buildBaselineEntries/matchBaseline: a null occurrence inside a fail check 
 
   assert.equal(buildBaselineEntries(result).length, 1);
   assert.equal(matchBaseline(result, []).totalFail, 1);
+});
+
+test('a page-level finding keeps its identity when unrelated content changes', () => {
+  // <html> and <body> hold the whole page; their snippet is only the start
+  // tag, so an edit elsewhere doesn't turn the finding into a new one.
+  const page = (extra) =>
+    `<!doctype html><html class="x"><head><title>t</title></head><body><main><h1>Title</h1><p>a</p>${extra}</main></body></html>`;
+  const before = runa11yCoreOnHtml(page(''));
+  const after = runa11yCoreOnHtml(page('<p>A new paragraph</p>'));
+
+  const lang = after.checksResults.find((c) => c.ruleId === 'html-lang-attr-present');
+  assert.equal(lang.outcome, 'fail');
+  assert.equal(lang.occurrences[0].html, '<html class="x">');
+
+  const match = matchBaseline(after, buildBaselineEntries(before));
+  assert.equal(match.newCount, 0);
+  assert.equal(match.staleCount, 0);
+});
+
+test('a finding keeps its identity when attributes or class names are reordered', () => {
+  // Frameworks reorder both freely between builds; the same element must
+  // not read as a new finding plus a stale one.
+  const key = (html) => computeBaselineKey('img-alt-present', 'DEFAULT', html);
+  assert.equal(
+    key('<img class="hero big" src="x.png" data-id="7">'),
+    key('<img data-id="7" src="x.png" class="big  hero">')
+  );
+  assert.notEqual(key('<img src="x.png">'), key('<img src="y.png">'), 'values still count');
+
+  // A baseline written before the attributes moved still matches.
+  const scan = (img) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${img}</main></body></html>`
+    );
+  const before = scan('<img class="a b" src="x.png" width="10">');
+  const after = scan('<img width="10" src="x.png" class="b a">');
+  const match = matchBaseline(after, buildBaselineEntries(before));
+  assert.equal(match.newCount, 0);
+  assert.equal(match.staleCount, 0);
+});
+
+test('computeBaselineKey reads a snippet in one pass, whatever it holds', () => {
+  // The snippet is page content; markup built to make a backtracking pattern
+  // slow must not stall a baseline match.
+  const started = Date.now();
+  for (const html of ['<A' + ' <A '.repeat(100000), '<a x="'.repeat(50000), '<a '.repeat(100000)]) {
+    computeBaselineKey('r', 'DEFAULT', html);
+  }
+  assert.ok(Date.now() - started < 2000, `${Date.now() - started} ms`);
 });

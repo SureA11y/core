@@ -301,3 +301,21 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
   for (const id of expectedFailIds) assert.strictEqual(tierById[id], 'fail');
   for (const id of expectedCantTellIds) assert.strictEqual(tierById[id], 'cantTell');
 });
+
+test(`${RULE_ID}: true, false and mixed are valid in any case, as Chromium reads them`, () => {
+  const html = `<!doctype html><html><body>
+    <div role="checkbox" tabindex="0" aria-checked="TRUE">a</div>
+    <div role="checkbox" tabindex="0" aria-checked="Mixed">b</div>
+    <button aria-pressed="False">c</button>
+    <button aria-expanded="FALSE">d</button>
+    <div aria-hidden="True"><span>e</span></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass');
+});
+
+test(`${RULE_ID}: a misspelt boolean still fails in any case`, () => {
+  const html = `<!doctype html><html><body><button aria-pressed="TRUEE">c</button></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail');
+});

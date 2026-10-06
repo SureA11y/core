@@ -446,6 +446,64 @@ function createContrastHelpers(opts, shared) {
         );
       };
 
+      // Text the page draws nowhere a reader can see it. From CSS alone:
+      // a font size of 0, or a fully transparent color, unless the color is
+      // left transparent for a background to show through the glyphs
+      // (background-clip: text, gradient text), which the computability
+      // check then asks about. With layout (styleAndGeometry): text entirely
+      // above or left of the page, where no scrolling reaches (the
+      // left: -9999px technique), or clipped to nothing by an ancestor that
+      // hides its overflow (height: 0; overflow: hidden).
+      const isUndrawn = (el) => {
+        const cs = __contrastComputedStyle(el);
+        if (!cs) return false;
+        if (Number.parseFloat(cs.fontSize) === 0) return true;
+        const color = parseCssColorToRgba(cs.color);
+        if (color && color.a === 0) {
+          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
+          if (!/\btext\b/.test(clip)) return true;
+        }
+        if (
+          visibilityMode !== 'styleAndGeometry' ||
+          typeof el.getBoundingClientRect !== 'function'
+        ) {
+          return false;
+        }
+        const r = el.getBoundingClientRect();
+        if (!r || !(r.width > 0) || !(r.height > 0)) return false;
+        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const sx = (win && win.scrollX) || 0;
+        const sy = (win && win.scrollY) || 0;
+        if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
+        let left = r.left;
+        let top = r.top;
+        let right = r.right;
+        let bottom = r.bottom;
+        let cur = composedParent(el);
+        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+          const acs = __contrastComputedStyle(cur);
+          // hidden and clip cut content off; auto and scroll let a reader
+          // scroll to it.
+          const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
+          const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
+          if (clipsX || clipsY) {
+            const a = cur.getBoundingClientRect();
+            if (clipsX) {
+              left = Math.max(left, a.left);
+              right = Math.min(right, a.right);
+            }
+            if (clipsY) {
+              top = Math.max(top, a.top);
+              bottom = Math.min(bottom, a.bottom);
+            }
+            if (right - left < 1 || bottom - top < 1) return true;
+          }
+          if (acs && (acs.position === 'fixed' || acs.position === 'absolute')) break;
+          cur = composedParent(cur);
+        }
+        return false;
+      };
+
       const isVisibleEligible = (el) => {
         if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
         if (eligCache.has(el)) return eligCache.get(el);
@@ -456,6 +514,7 @@ function createContrastHelpers(opts, shared) {
           ok = __asEligibilityBool(r);
           if (ok && isClipHidden(el)) ok = false;
           if (ok && isBehindModal(el)) ok = false;
+          if (ok && isUndrawn(el)) ok = false;
         } catch {
           ok = false;
         }
@@ -762,10 +821,198 @@ function createContrastHelpers(opts, shared) {
     return s;
   }
 
+  // The CSS Color 4 functions a browser keeps as written in a computed
+  // style: oklab(), oklch(), lab(), lch() and color(<space> ...). color-mix()
+  // and relative colors resolve to one of them. Converted to sRGB with the
+  // matrices CSS Color 4 gives; a color outside sRGB is clipped to it. null
+  // for anything else, or a value that does not parse.
+  function __parseCssColor4(s) {
+    const m = /^(oklab|oklch|lab|lch|color)\((.*)\)$/.exec(s);
+    if (!m) return null;
+    const fn = m[1];
+    const slash = m[2].split('/');
+    if (slash.length > 2) return null;
+    const tokens = trim(slash[0]).split(/\s+/).filter(Boolean);
+    let space = fn;
+    if (fn === 'color') space = tokens.shift() || '';
+    if (tokens.length !== 3) return null;
+
+    // A channel: 'none' is 0, a percentage is a fraction of `full`.
+    const num = (t, full) => {
+      if (t === 'none') return 0;
+      if (t.endsWith('%')) {
+        const p = Number.parseFloat(t);
+        return Number.isFinite(p) ? (p / 100) * full : NaN;
+      }
+      const n = Number(t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const hue = (t) => {
+      if (t === 'none') return 0;
+      const u = /^(-?[\d.]+(?:e[+-]?\d+)?)(deg|rad|grad|turn)?$/.exec(t);
+      if (!u) return NaN;
+      const n = Number(u[1]);
+      const unit = u[2] || 'deg';
+      const deg =
+        unit === 'rad'
+          ? (n * 180) / Math.PI
+          : unit === 'grad'
+            ? n * 0.9
+            : unit === 'turn'
+              ? n * 360
+              : n;
+      return (deg * Math.PI) / 180;
+    };
+    let alpha = 1;
+    if (slash.length === 2) {
+      alpha = num(trim(slash[1]), 1);
+      if (!Number.isFinite(alpha)) return null;
+    }
+
+    const mul = (M, v) => [
+      M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2],
+      M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2],
+      M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]
+    ];
+    const D50_TO_D65 = [
+      [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+      [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+      [0.012314014864481998, -0.020507649298898964, 1.330365926242124]
+    ];
+    const XYZ65_TO_LSRGB = [
+      [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+      [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+      [0.05563007969699366, -0.20397695888897652, 1.0569715142428786]
+    ];
+    const srgbDecode = (v) => {
+      const a = Math.abs(v);
+      return a <= 0.04045 ? v / 12.92 : Math.sign(v) * Math.pow((a + 0.055) / 1.055, 2.4);
+    };
+    const labToXyz65 = (L, a, b) => {
+      const k = 24389 / 27;
+      const e = 216 / 24389;
+      const f1 = (L + 16) / 116;
+      const f0 = a / 500 + f1;
+      const f2 = f1 - b / 200;
+      const xyz = [
+        Math.pow(f0, 3) > e ? Math.pow(f0, 3) : (116 * f0 - 16) / k,
+        L > k * e ? Math.pow(f1, 3) : L / k,
+        Math.pow(f2, 3) > e ? Math.pow(f2, 3) : (116 * f2 - 16) / k
+      ];
+      const white = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585];
+      return mul(D50_TO_D65, [xyz[0] * white[0], xyz[1] * white[1], xyz[2] * white[2]]);
+    };
+    const oklabToLinear = (L, a, b) => {
+      const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+      const mm = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+      const ss = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+      return [
+        4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * ss,
+        -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * ss,
+        -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * ss
+      ];
+    };
+
+    let linear = null;
+    let encoded = null;
+    if (space === 'oklab' || space === 'oklch') {
+      const L = num(tokens[0], 1);
+      let a;
+      let b;
+      if (space === 'oklab') {
+        a = num(tokens[1], 0.4);
+        b = num(tokens[2], 0.4);
+      } else {
+        const C = num(tokens[1], 0.4);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = oklabToLinear(L, a, b);
+    } else if (space === 'lab' || space === 'lch') {
+      const L = num(tokens[0], 100);
+      let a;
+      let b;
+      if (space === 'lab') {
+        a = num(tokens[1], 125);
+        b = num(tokens[2], 125);
+      } else {
+        const C = num(tokens[1], 150);
+        const h = hue(tokens[2]);
+        a = C * Math.cos(h);
+        b = C * Math.sin(h);
+      }
+      if (![L, a, b].every(Number.isFinite)) return null;
+      linear = mul(XYZ65_TO_LSRGB, labToXyz65(L, a, b));
+    } else if (fn === 'color') {
+      const v = tokens.map((t) => num(t, 1));
+      if (!v.every(Number.isFinite)) return null;
+      if (space === 'srgb') encoded = v;
+      else if (space === 'srgb-linear') linear = v;
+      else if (space === 'xyz' || space === 'xyz-d65') linear = mul(XYZ65_TO_LSRGB, v);
+      else if (space === 'xyz-d50') linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, v));
+      else if (space === 'display-p3') {
+        const P3_TO_XYZ65 = [
+          [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+          [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+          [0, 0.04511338185890264, 1.043944368900976]
+        ];
+        linear = mul(XYZ65_TO_LSRGB, mul(P3_TO_XYZ65, v.map(srgbDecode)));
+      } else if (space === 'a98-rgb') {
+        const A98_TO_XYZ65 = [
+          [0.5766690429101305, 0.1855582379065463, 0.1882286462349947],
+          [0.29734497525053605, 0.6273635662554661, 0.07529145849399788],
+          [0.02703136138641234, 0.07068885253582723, 0.9913375368376388]
+        ];
+        const dec = v.map((c) => Math.sign(c) * Math.pow(Math.abs(c), 563 / 256));
+        linear = mul(XYZ65_TO_LSRGB, mul(A98_TO_XYZ65, dec));
+      } else if (space === 'prophoto-rgb') {
+        const PROPHOTO_TO_XYZ50 = [
+          [0.7977666449006423, 0.13518129740053308, 0.0313477341283922],
+          [0.2880748288194013, 0.711835234241873, 0.00008993693872564],
+          [0, 0, 0.8251046025104602]
+        ];
+        const dec = v.map((c) =>
+          Math.abs(c) <= 16 / 512 ? c / 16 : Math.sign(c) * Math.pow(Math.abs(c), 1.8)
+        );
+        linear = mul(XYZ65_TO_LSRGB, mul(D50_TO_D65, mul(PROPHOTO_TO_XYZ50, dec)));
+      } else if (space === 'rec2020') {
+        const REC2020_TO_XYZ65 = [
+          [0.6369580483012914, 0.14461690358620832, 0.1688809751641721],
+          [0.2627002120112671, 0.6779980715188708, 0.05930171646986196],
+          [0, 0.028072693049087428, 1.060985057710791]
+        ];
+        const al = 1.09929682680944;
+        const be = 0.018053968510807;
+        const dec = v.map((c) => {
+          const a = Math.abs(c);
+          return a < be * 4.5 ? c / 4.5 : Math.sign(c) * Math.pow((a + al - 1) / al, 1 / 0.45);
+        });
+        linear = mul(XYZ65_TO_LSRGB, mul(REC2020_TO_XYZ65, dec));
+      } else return null;
+    } else return null;
+
+    if (!encoded) {
+      encoded = linear.map((c) => {
+        const a = Math.abs(c);
+        return a <= 0.0031308 ? c * 12.92 : Math.sign(c) * (1.055 * Math.pow(a, 1 / 2.4) - 0.055);
+      });
+    }
+    if (!encoded.every(Number.isFinite)) return null;
+    const to255 = (c) => clamp255(Math.round(Math.min(1, Math.max(0, c)) * 255));
+    return { r: to255(encoded[0]), g: to255(encoded[1]), b: to255(encoded[2]), a: clamp01(alpha) };
+  }
+
   function __parseCssColorToRgbaUncached(input) {
     const s = trim(input).toLowerCase();
     if (!s) return null;
     if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+
+    // A CSS Color 4 function the converter can't read (an unknown color()
+    // space, say) is not parsed: the platform would only hand the same
+    // value back.
+    if (/^(oklab|oklch|lab|lch|color)\(/.test(s)) return __parseCssColor4(s);
 
     if (s[0] === '#') {
       const hex = s.slice(1);
@@ -905,6 +1152,9 @@ function createContrastHelpers(opts, shared) {
         probe.style.top = '-9999px';
         probe.style.opacity = '0';
         probe.style.color = String(input);
+        // A value the platform rejects leaves the property unset, and the
+        // probe would then report the color it inherits.
+        if (!probe.style.color) return null;
         const parent = d.body || d.documentElement;
         if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
 
@@ -1171,11 +1421,22 @@ function createContrastHelpers(opts, shared) {
   const __effectiveForegroundCache =
     __getSharedWeakMapCache('__effectiveForegroundCache') || __localEffectiveForegroundCache;
 
-  function computeEffectiveForeground(el) {
-    try {
-      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
-    } catch {}
+  const __SVG_NS = 'http://www.w3.org/2000/svg';
+  const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  function __isSvgTextElement(el) {
+    return (
+      !!el &&
+      el.namespaceURI === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+    );
+  }
 
+  function computeEffectiveForeground(el) {
+    // The override first, as computeEffectiveBackground does: a caller can
+    // ask for the foreground before the computability check resolves the
+    // group opacity (the contrast rules' same-color filter does), and the
+    // cached naive color would then count the ancestor's opacity twice,
+    // once on the text and once more in the composited background.
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
       if (override) {
@@ -1189,8 +1450,21 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
+    try {
+      if (el && __effectiveForegroundCache.has(el)) return __effectiveForegroundCache.get(el);
+    } catch {}
+
     const cs = __contrastComputedStyle(el);
-    const c = parseCssColorToRgba(cs && cs.color);
+    // SVG text is painted with `fill`, not `color` (which only feeds
+    // currentColor): <text fill="#000" style="color:#eee"> is black. A fill
+    // of none (outline-only text) or a paint server (url(#gradient)) does
+    // not parse, and leaves the text not computable.
+    const svgText = __isSvgTextElement(el);
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    if (c && svgText) {
+      const fillOpacity = Number.parseFloat(cs.fillOpacity);
+      if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
+    }
     if (!c) {
       const out = { rgba: null, alpha: 0, opacityProduct: computeOpacityProduct(el) };
       try {
@@ -1270,6 +1544,10 @@ function createContrastHelpers(opts, shared) {
     let acc = { r: 0, g: 0, b: 0, a: 0 };
     let cur = el;
     let guard = 0;
+    // A background color this parser can't read, met while what is in front
+    // of it still lets it show through. Skipping it as if transparent would
+    // judge the text against whatever lies further out.
+    let unparsable = null;
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -1280,6 +1558,14 @@ function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
       const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+
+      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+        unparsable = {
+          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          value: truncateCssValue(trim(cs.backgroundColor), 80)
+        };
+        break;
+      }
 
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
@@ -1316,7 +1602,18 @@ function createContrastHelpers(opts, shared) {
     let out;
     const allowAssumptions = mode === 'auditorAssist';
 
-    if (acc.a < 1) {
+    if (unparsable) {
+      out = {
+        ok: false,
+        rgba: acc,
+        alpha: acc.a,
+        stack: stack || [],
+        reasonCode: 'BACKGROUND_UNPARSABLE',
+        blockerSelector: unparsable.selector,
+        blockerProperty: 'background-color',
+        blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1) {
       if (allowAssumptions) {
         // If the root is not opaque, apply an explicit canvas fallback.
         const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
@@ -1450,7 +1747,9 @@ function createContrastHelpers(opts, shared) {
       if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
-      const elColor = parseCssColorToRgba(elCs && elCs.color);
+      const elColor = parseCssColorToRgba(
+        elCs && (__isSvgTextElement(el) ? elCs.fill : elCs.color)
+      );
       if (!elColor) return __cacheAndReturn(null);
 
       let bgAcc = { r: 0, g: 0, b: 0, a: 0 };
@@ -1474,6 +1773,7 @@ function createContrastHelpers(opts, shared) {
         }
 
         const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+        if (!bg && bgAcc.a < 1 && trim(cs && cs.backgroundColor)) return __cacheAndReturn(null);
         if (bg) {
           const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
           bgAcc = compositeRgba(bgAcc, layer);
@@ -1554,6 +1854,8 @@ function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // el and its ancestors up to the first with an opaque background.
+    const chain = [];
 
     while (cur && guard++ < 200) {
       if (cur.nodeType !== 1) {
@@ -1707,6 +2009,7 @@ function createContrastHelpers(opts, shared) {
       // suppress BACKGROUND_IMAGE_OR_GRADIENT for any ancestor beyond
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
+        chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
       }
@@ -1714,17 +2017,467 @@ function createContrastHelpers(opts, shared) {
       cur = composedParent(cur);
     }
 
-    const out = {
-      ok: true,
-      reasonCode: null,
-      blockerSelector: '',
-      blockerProperty: '',
-      blockerValue: ''
-    };
+    const overlap = __findPaintUnderText(el, chain);
+    const out = overlap
+      ? {
+          ok: false,
+          reasonCode: 'BACKGROUND_OVERLAP',
+          blockerSelector: overlap.selector,
+          blockerProperty: overlap.property,
+          blockerValue: overlap.value
+        }
+      : {
+          ok: true,
+          reasonCode: null,
+          blockerSelector: '',
+          blockerProperty: '',
+          blockerValue: ''
+        };
     try {
       if (el) __computabilityBlockerCache.set(el, out);
     } catch {}
     return out;
+  }
+
+  // -------- Paint behind the text that is not an ancestor's --------
+  //
+  // The background above is the stack of el's ancestors' backgrounds. What a
+  // page paints behind text can come from elsewhere: an <img> hero under a
+  // heading positioned over it, a dark sibling block the text is pulled
+  // over with a negative margin, an absolutely positioned overlay or a
+  // ::before. The ratio against the ancestors is then confidently wrong,
+  // so the text is not computable. Needs a layout (a real browser); without
+  // one nothing is found and nothing changes.
+  //
+  // Only paint inside the nearest ancestor whose own background is opaque
+  // counts: anything outside it sits behind that background (a hero image
+  // under a white card) or is a page-level overlay this check does not try
+  // to order. The text's own line boxes are measured, not its element's
+  // box, so a float the text wraps around does not count.
+
+  const __OVERLAP_CELL = 256;
+  const __OVERLAP_MAX_PAINTERS = 20000;
+  const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  let __overlapIndex;
+
+  // Called for every element on the page, and most paint nothing: a
+  // transparent background and no image are told from the computed values
+  // as the browser serializes them, before anything is parsed.
+  function __paintOf(node, cs) {
+    if (!cs) return null;
+    const paint = __paintCandidate(node, cs);
+    if (!paint) return null;
+    if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    return paint;
+  }
+
+  function __paintCandidate(node, cs) {
+    const tag = String(node.localName || '').toLowerCase();
+    if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
+      return { property: 'element', value: tag };
+    }
+    const rawBg = cs.backgroundColor;
+    if (rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent') {
+      const raw = trim(rawBg);
+      const bg = parseCssColorToRgba(raw);
+      if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
+    }
+    const img = cs.backgroundImage;
+    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+      return { property: 'background-image', value: truncateCssValue(img, 80) };
+    }
+    return null;
+  }
+
+  // Fixed and sticky boxes, and what is inside them, sit over the page as
+  // it scrolls: a cookie banner, a sticky header. They cover text rather
+  // than paint behind it, and where they stand depends on the scroll
+  // position the scan was taken at.
+  const __pinnedCache = new WeakMap();
+  function __isPinned(node) {
+    const path = [];
+    let cur = node;
+    let pinned = false;
+    let guard = 0;
+    while (cur && cur.nodeType === 1 && guard++ < 200) {
+      if (__pinnedCache.has(cur)) {
+        pinned = __pinnedCache.get(cur);
+        break;
+      }
+      path.push(cur);
+      const cs = __contrastComputedStyle(cur);
+      if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+        pinned = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    for (const n of path) __pinnedCache.set(n, pinned);
+    return pinned;
+  }
+
+  // The content of a closed <details> (everything but its first <summary>), and
+  // whatever sits under content-visibility: hidden (hidden="until-found"
+  // too), keeps its layout box in Chromium, so it has a rect, but none of it
+  // is painted. checkVisibility() answers that; without it, the two are
+  // looked for along the composed ancestors.
+  function __isUnpainted(node) {
+    if (typeof node.checkVisibility === 'function') {
+      try {
+        return !node.checkVisibility();
+      } catch {}
+    }
+    // A shadow root on the way up is stepped over to its host.
+    let child = node;
+    let cur = composedParent(node);
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (cur.nodeType === 1) {
+        if (
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open') &&
+          child !== __firstSummaryChild(cur)
+        ) {
+          return true;
+        }
+        const cs = __contrastComputedStyle(cur);
+        if (cs && cs.contentVisibility === 'hidden') return true;
+      }
+      child = cur;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Only the first <summary> child of a <details> is its toggle.
+  function __firstSummaryChild(details) {
+    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
+      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    }
+    return null;
+  }
+
+  function __buildOverlapIndex() {
+    const doc = window && window.document;
+    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    try {
+      const rootRects = doc.documentElement.getClientRects();
+      if (!rootRects || !rootRects.length) return null;
+    } catch {
+      return null;
+    }
+    const painters = [];
+    const cells = new Map();
+    const roots = [doc];
+    for (let ri = 0; ri < roots.length; ri++) {
+      let all;
+      try {
+        all = roots[ri].querySelectorAll('*');
+      } catch {
+        continue;
+      }
+      for (const node of all) {
+        if (node.shadowRoot) roots.push(node.shadowRoot);
+        const cs = __contrastComputedStyle(node);
+        const paint = __paintOf(node, cs);
+        if (!paint || __isUnpainted(node)) continue;
+        // An inline box that wraps has one fragment per line, and its
+        // bounding box spans the lines between: what it paints is the
+        // fragments.
+        let boxes;
+        try {
+          boxes =
+            cs &&
+            String(cs.display).startsWith('inline') &&
+            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
+              ? Array.from(node.getClientRects())
+              : [node.getBoundingClientRect()];
+        } catch {
+          continue;
+        }
+        for (const r of boxes) {
+          if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
+          if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
+          const index = painters.length;
+          painters.push({ el: node, rect: r, paint });
+          const x0 = Math.floor(r.left / __OVERLAP_CELL);
+          const x1 = Math.floor(r.right / __OVERLAP_CELL);
+          const y0 = Math.floor(r.top / __OVERLAP_CELL);
+          const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+          for (let cx = x0; cx <= x1; cx++) {
+            for (let cy = y0; cy <= y1; cy++) {
+              const key = cx + ',' + cy;
+              const list = cells.get(key);
+              if (list) list.push(index);
+              else cells.set(key, [index]);
+            }
+          }
+        }
+      }
+    }
+    return { painters, cells };
+  }
+
+  function __getOverlapIndex() {
+    if (__overlapIndex === undefined) {
+      try {
+        const sc = shared && shared.__contrastSharedCache;
+        if (sc && sc.__overlapIndex !== undefined) __overlapIndex = sc.__overlapIndex;
+        else {
+          __overlapIndex = __buildOverlapIndex();
+          if (sc) sc.__overlapIndex = __overlapIndex;
+        }
+      } catch {
+        __overlapIndex = null;
+      }
+    }
+    return __overlapIndex;
+  }
+
+  // The line boxes of el's own text.
+  function __ownTextRects(el) {
+    const doc = el.ownerDocument;
+    const out = [];
+    let range;
+    try {
+      range = doc.createRange();
+    } catch {
+      return out;
+    }
+    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
+      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+      try {
+        range.selectNodeContents(n);
+        for (const r of range.getClientRects()) {
+          if (r.width >= 1 && r.height >= 1) out.push(r);
+        }
+      } catch {}
+    }
+    return out;
+  }
+
+  // Two boxes meet when they share at least 2px across. Against a line of
+  // text, paint has to cover about a glyph of it, half the line's height
+  // across and a third down: a glyph box runs past a tight line-height into
+  // the block above or below, and an icon can nudge into the text beside
+  // it, and neither puts the line on that paint.
+  const __intersects = (a, b) =>
+    Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
+    Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  const __coversLine = (paint, line) =>
+    Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
+      Math.max(2, Math.min(line.width, line.height / 2)) &&
+    Math.min(paint.bottom, line.bottom) - Math.max(paint.top, line.top) >=
+      Math.max(2, line.height / 3);
+
+  function __isComposedInside(node, container) {
+    let cur = node;
+    let guard = 0;
+    while (cur && guard++ < 1000) {
+      if (cur === container) return true;
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // Where an absolutely positioned pseudo-element of a positioned host sits,
+  // from its resolved offsets and size, which a browser reports in pixels
+  // for an element positioned out of flow. Its containing block is the
+  // host's padding box. A scale or translation is applied about the
+  // transform origin; a pseudo-element scaled to nothing paints nothing
+  // (an underline waiting for hover), so it is `false`. null when the
+  // browser does not give pixels, or the transform rotates or skews, and
+  // then the host's box stands in.
+  function __pseudoBox(host, hostCs, pcs) {
+    try {
+      if (pcs.position !== 'absolute') return null;
+      const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const left = px(pcs.left);
+      const top = px(pcs.top);
+      const width = px(pcs.width);
+      const height = px(pcs.height);
+      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let m = [1, 0, 0, 1, 0, 0];
+      const t = trim(pcs.transform);
+      if (t && t !== 'none') {
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        if (!mm) return null;
+        m = mm[1].split(',').map((v) => Number.parseFloat(v));
+        if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
+        if (m[0] === 0 || m[3] === 0) return false;
+      }
+      const origin = String(pcs.transformOrigin || '').split(/\s+/);
+      const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
+      const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
+      const r = host.getBoundingClientRect();
+      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
+      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
+      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+      const box = {
+        left: Math.min(xs[0], xs[1]),
+        right: Math.max(xs[0], xs[1]),
+        top: Math.min(ys[0], ys[1]),
+        bottom: Math.max(ys[0], ys[1])
+      };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
+    } catch {
+      return null;
+    }
+  }
+
+  // A positioned element's ::before or ::after when it is positioned out of
+  // flow and paints a color or gradient, as { name, property, value }; null
+  // otherwise.
+  const __positionedPaintPseudoCache = new WeakMap();
+  function __hasPositionedPaintPseudo(host) {
+    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
+    let found = null;
+    // The overlay pattern positions the pseudo-element against its own
+    // element, which is then positioned itself; reading every element's
+    // pseudo-elements would cost a style lookup per text element.
+    const hostCs = __contrastComputedStyle(host);
+    const positioned = !!hostCs && !!hostCs.position && hostCs.position !== 'static';
+    if (positioned && window && typeof window.getComputedStyle === 'function') {
+      for (const name of ['::before', '::after']) {
+        let pcs;
+        try {
+          pcs = window.getComputedStyle(host, name);
+        } catch {
+          continue;
+        }
+        if (!pcs) continue;
+        const content = trim(pcs.content);
+        if (!content || content === 'none' || content === 'normal') continue;
+        if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
+        if (pcs.display === 'none') continue;
+        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        const bg = parseCssColorToRgba(pcs.backgroundColor);
+        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
+        if (!(bg && bg.a > 0) && !gradient) continue;
+        const box = __pseudoBox(host, hostCs, pcs);
+        if (box === false) continue;
+        found = {
+          name,
+          property: gradient ? 'background-image' : 'background-color',
+          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
+          box
+        };
+        break;
+      }
+    }
+    __positionedPaintPseudoCache.set(host, found);
+    return found;
+  }
+
+  // `chain` is el and its ancestors up to and including the first with an
+  // opaque background of its own (all of them when none has one).
+  function __findPaintUnderText(el, chain) {
+    try {
+      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      const index = __getOverlapIndex();
+      if (!index) return null;
+      const opaque = chain[chain.length - 1];
+      const ancestors = new Set(chain);
+      // Painters near el's box at all, before measuring its text, which
+      // costs more: on most pages nothing but ancestors paints there.
+      const near = (r) => {
+        const x0 = Math.floor(r.left / __OVERLAP_CELL);
+        const x1 = Math.floor(r.right / __OVERLAP_CELL);
+        const y0 = Math.floor(r.top / __OVERLAP_CELL);
+        const y1 = Math.floor(r.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              const p = index.painters[i];
+              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
+            }
+          }
+        }
+        return false;
+      };
+      let box = null;
+      try {
+        box = el.getBoundingClientRect();
+      } catch {}
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
+      if (box && !pseudoCandidates && !near(box)) return null;
+      const rects = __ownTextRects(el);
+      if (!rects.length) return null;
+      // Solid paint the same color as the background the text is measured
+      // against changes nothing (a white fade-out over white text).
+      let measured = null;
+      try {
+        const bg = computeEffectiveBackground(el, {});
+        measured = bg && bg.ok && bg.rgba ? bg.rgba : null;
+      } catch {}
+      const sameAsMeasured = (value) => {
+        const c = measured && parseCssColorToRgba(value);
+        return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
+      };
+
+      const seen = new Set();
+      for (const tr of rects) {
+        const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+        const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+        const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+        const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+        for (let cx = x0; cx <= x1; cx++) {
+          for (let cy = y0; cy <= y1; cy++) {
+            for (const i of index.cells.get(cx + ',' + cy) || []) {
+              if (seen.has(i)) continue;
+              seen.add(i);
+              const p = index.painters[i];
+              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              // Pinned paint is in the index but never counts; asked only
+              // of the few painters that reach text, since it walks the
+              // ancestors.
+              if (__isPinned(p.el)) continue;
+              // An ancestor beyond `opaque` is behind its background.
+              if (__isComposedInside(el, p.el)) continue;
+              // Inside el: paint of its own descendants, beside its text.
+              if (__isComposedInside(p.el, el)) continue;
+              if (!__isComposedInside(p.el, opaque)) continue;
+              if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
+                continue;
+              return {
+                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                property: p.paint.property,
+                value: p.paint.value
+              };
+            }
+          }
+        }
+      }
+
+      // A positioned ::before or ::after on el or an ancestor, painting a
+      // color or gradient: the overlay pattern. Its box can't be measured,
+      // so its element's box stands in for it.
+      for (const host of chain) {
+        const pseudo = __hasPositionedPaintPseudo(host);
+        if (!pseudo) continue;
+        if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
+        let hostRect = pseudo.box;
+        if (!hostRect) {
+          try {
+            hostRect = host.getBoundingClientRect();
+          } catch {
+            hostRect = null;
+          }
+        }
+        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        return {
+          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          property: pseudo.property,
+          value: pseudo.value
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   return {

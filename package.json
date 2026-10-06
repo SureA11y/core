@@ -1,6 +1,6 @@
 {
   "name": "@surea11y/core",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
   "keywords": [
     "accessibility",
@@ -64,6 +64,7 @@
     "src/index.d.ts",
     "src/core.js",
     "src/baseline.js",
+    "src/scan-result.js",
     "src/report.js",
     "src/i18n-coverage.js",
     "src/i18n-same-as-english.json",

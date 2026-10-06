@@ -17,10 +17,10 @@
  *   suggestion, superscript, time), plus a native <caption> with no valid
  *   explicit role, whose implicit role is caption, and (b) elements with no
  *   role at all:
- *   a curated set of native HTML tags verified to carry no implicit role
- *   (see ROLELESS_NATIVE_TAGS below), or any autonomous custom element (a
- *   hyphenated, author-defined tag per the Custom Elements spec; see
- *   isRolelessCustomElementTag below). In both cases, only elements that
+ *   native HTML tags verified to carry no implicit role (such as <div>,
+ *   <span>, <p>, <strong>, <em>, <code> and <time>), or any autonomous
+ *   custom element (a hyphenated, author-defined tag per the Custom
+ *   Elements spec). In both cases, only elements that
  *   also carry aria-label or aria-labelledby.
  * @expectation
  *   Prohibited attributes must not be present on (a); for (b), the naming

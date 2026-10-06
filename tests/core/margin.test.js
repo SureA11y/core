@@ -13,7 +13,7 @@ const assert = require('node:assert/strict');
 
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 const core = require('../../src/index.js');
-const { MARGIN_UNITS, MARGIN_LIMITS } = require('../../src/core/margin.js');
+const { MARGIN_UNITS, MARGIN_LIMITS, resolveMargin } = require('../../src/core/margin.js');
 const { normalizeRuleMeta } = require('../../src/core/rule-meta.js');
 
 const PAGE = `<!doctype html><html lang="en"><head><title>t</title></head><body>
@@ -196,5 +196,56 @@ test('getMargins: every margin in a result, by ruleId, on both entries', () => {
       })
       .map((m) => m.ruleId),
     ['a', 'z']
+  );
+});
+
+// Elements that know their page position and add up the distance between
+// each pair compared: a browser walks the siblings in between, so that is the
+// cost of the comparison. This pins the cost of settling a tie without timing
+// a scan.
+function positionedElements(count) {
+  const calls = { n: 0 };
+  const els = Array.from({ length: count }, (_, index) => ({
+    index,
+    compareDocumentPosition(other) {
+      calls.n += Math.abs(other.index - this.index);
+      if (other === this) return 0;
+      return other.index < this.index ? 2 : 4;
+    }
+  }));
+  return { els, calls };
+}
+
+const MIN_RATIO = { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' };
+
+test('margin: settling many ties in document order compares neighbours only', () => {
+  const { els, calls } = positionedElements(20000);
+  const margin = resolveMargin(
+    MIN_RATIO,
+    els.map((el) => ({ el, value: 21, threshold: 4.5, context: { index: el.index } })),
+    els.length
+  );
+  assert.equal(margin.context.index, 0);
+  assert.ok(calls.n < els.length, `${calls.n} siblings walked for ${els.length} ties`);
+});
+
+test('margin: ties pushed out of document order still go to the earliest', () => {
+  const { els } = positionedElements(5);
+  const order = [3, 1, 4, 0, 2];
+  const margin = resolveMargin(
+    MIN_RATIO,
+    order.map((i) => ({ el: els[i], value: 21, threshold: 4.5, context: { index: i } })),
+    order.length
+  );
+  assert.equal(margin.context.index, 0);
+});
+
+test('margin: a tie with no element keeps its place, one after it never replaces it', () => {
+  const { els } = positionedElements(2);
+  const tie = (el, index) => ({ el, value: 21, threshold: 4.5, context: { index } });
+  assert.equal(resolveMargin(MIN_RATIO, [tie(null, 'none'), tie(els[0], 0)]).context.index, 'none');
+  assert.equal(
+    resolveMargin(MIN_RATIO, [tie(els[1], 1), tie(null, 'none'), tie(els[0], 0)]).context.index,
+    0
   );
 });

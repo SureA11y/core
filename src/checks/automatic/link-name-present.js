@@ -111,10 +111,21 @@ function runInPage(ctx) {
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = String(role || '')
+    let roleNorm = String(role || '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
+    // WAI-ARIA's presentational-roles conflict resolution: a focusable
+    // element keeps its implicit role whatever role="none"/"presentation"
+    // says, so <a href="/" role="none">Home</a> is a link named "Home".
+    if (roleNorm === 'none' || roleNorm === 'presentation') {
+      try {
+        const fi = helpers.getFocusableInfo ? helpers.getFocusableInfo(el, ctx) : null;
+        if (fi && fi.focusable) roleNorm = '';
+      } catch {
+        // Not known to be focusable: the explicit role stands.
+      }
+    }
     // ARIA 1.2 "Name From: author, contents". Every other known role is
     // name-from-author-only. An unknown role falls back to the implicit role.
     // <generated:aria-name-from-content>

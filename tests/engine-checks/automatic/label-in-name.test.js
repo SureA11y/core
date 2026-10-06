@@ -228,8 +228,26 @@ test(`${RULE_ID}: a possible abbreviation is cantTell rather than a failure`, ()
   `;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].outcome, 'cantTell');
+  // One tier: the result's outcome is the occurrence's, and the
+  // occurrence carries no tier of its own (OUTPUT_SCHEMA.md).
+  assert.ok(!('outcome' in rule.occurrences[0]));
+  assert.ok(!('occurrenceOutcome' in rule.occurrences[0]));
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_ABBREVIATION');
+});
+
+test(`${RULE_ID}: a fail beside a cantTell marks each occurrence's tier in occurrenceOutcome`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="abbr" href="#" aria-label="University Avenue">University Ave.</a>
+  <a id="wrong" href="#" aria-label="Checkout">Basket</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const tiers = rule.occurrences.map((o) => [o.data.details.reasonCode, o.occurrenceOutcome]);
+  assert.ok(tiers.some(([code, tier]) => code === 'POSSIBLE_ABBREVIATION' && tier === 'cantTell'));
+  assert.ok(tiers.some(([code, tier]) => code !== 'POSSIBLE_ABBREVIATION' && tier === 'fail'));
+  assert.ok(rule.occurrences.every((o) => !('outcome' in o)));
 });
 
 test(`${RULE_ID}: a hyphenation difference is cantTell rather than a failure`, () => {
@@ -392,4 +410,13 @@ test(`${RULE_ID}: a <select> whose visible <label> is missing from its aria-labe
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: a link listed in its own aria-labelledby keeps its text in the name`, () => {
+  // accname 1.2 step 2B: the link's own aria-labelledby is not followed again
+  // when the traversal reaches it, so it contributes its content, as in
+  // Chrome: "Read more Pricing".
+  const html = `<a id="r1" href="/p" aria-labelledby="r1 t1">Read more</a> <span id="t1">Pricing</span>`;
+  const res = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(res, RULE_ID, 'pass');
 });

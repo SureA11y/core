@@ -559,8 +559,11 @@ test('renderHtmlReport: an occurrence with no tier of its own inherits the rule 
 
 // --- header and meta bar ---------------------------------------------------
 
-test('renderHtmlReport: a result with no url, engine or checks still renders every section', () => {
-  for (const bare of [null, undefined, {}, { checksResults: 'x', rulesResults: 'x' }]) {
+test('renderHtmlReport: a missing result throws; one with no url, engine or rollups renders every section', () => {
+  for (const bad of [null, undefined, {}, { checksResults: 'x', rulesResults: 'x' }]) {
+    assert.throws(() => renderHtmlReport(bad), TypeError);
+  }
+  for (const bare of [{ checksResults: [] }, { checksResults: [], rulesResults: 'x' }]) {
     const report = renderHtmlReport(bare);
 
     assert.match(report, /^<!doctype html>/);
@@ -718,4 +721,16 @@ test('report: a margins table shows how close each measuring rule came', () => {
 test('report: no margins, no margins table', () => {
   const report = renderHtmlReport(makeScanResult([makeCheckResult()]));
   assert.ok(!report.includes('Closest to the limit'));
+});
+
+test('renderHtmlReport: a result with a timestamp renders the same page every time, dated by it', () => {
+  const result = { ...makeScanResult([]), timestamp: '2026-10-05T12:34:56.000Z' };
+  const first = renderHtmlReport(result);
+  assert.equal(renderHtmlReport(result), first);
+  assert.match(first, /<title>[^<]*2026[^<]*12:34:56[^<]*UTC[^<]*<\/title>/);
+  // Without one, the time of rendering stands in, as before.
+  assert.match(
+    renderHtmlReport(makeScanResult([])),
+    new RegExp(String(new Date().getUTCFullYear()))
+  );
 });

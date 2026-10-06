@@ -5,13 +5,16 @@ const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
 const { createContrastHelpers } = require('../src/core/contrast-helpers.js');
+const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
 
 // DOM-facing functions (computeEffectiveForeground/Background,
 // getComputabilityBlocker, getTextScan, isInactiveUiComponent) need a real
 // document -- pure-function tests live in tests/contrast-helpers.test.js,
 // caching-behavior tests in tests/cache-tests/contrast-helpers-cache.test.js.
 // This file exercises the real branches neither of those cover.
-function makeHelpers(html) {
+// `backgroundOf` maps an element id to a computed background-color jsdom
+// would not keep, such as a color() in a space no parser knows.
+function makeHelpers(html, { backgroundOf = {} } = {}) {
   const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, {
     pretendToBeVisual: true
   });
@@ -23,7 +26,17 @@ function makeHelpers(html) {
     trim: (v) => (v == null ? '' : String(v)).trim(),
     computedStyle: (el) => {
       try {
-        return window.getComputedStyle(el);
+        const cs = window.getComputedStyle(el);
+        const bg = el && el.id && backgroundOf[el.id];
+        if (!bg) return cs;
+        return new Proxy(cs, {
+          get: (target, prop) =>
+            prop === 'backgroundColor'
+              ? bg
+              : typeof target[prop] === 'function'
+                ? target[prop].bind(target)
+                : target[prop]
+        });
       } catch {
         return {};
       }
@@ -708,4 +721,109 @@ test('getTextScan: an exception thrown while resolving ctx.root degrades to an e
   };
   const scan = helpers.getTextScan({ document, window, root: poisonedRoot }, {}, {});
   assert.deepStrictEqual(scan, { eligibleTextCount: 0, elements: [], visibilityMode: 'styleOnly' });
+});
+
+test('contrast-minimum: an ancestor opacity is counted once, however the colors were first asked for', () => {
+  // The rule's same-color filter asks for the text color before the
+  // computability check resolves the group opacity. The naive color it
+  // cached (black at half opacity) used to win over the composited one, so
+  // the text was faded twice: 2.63:1 against #808080, where the page paints
+  // black on #808080, 5.32:1.
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en" style="background:#000"><head><title>t</title></head><body><main>' +
+      '<div style="opacity:.5"><p style="background:#fff;color:#000">Hello world text</p></div>' +
+      '</main></body></html>',
+    { runOnly: ['contrast-minimum'] }
+  );
+  const check = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  assert.equal(check.outcome, 'pass');
+  assert.ok(Math.abs(check.margin.value - 5.317) < 0.01, String(check.margin.value));
+});
+
+// -------- CSS Color 4 colors --------
+
+test('parseCssColorToRgba: CSS Color 4 functions convert to sRGB as Chromium renders them', () => {
+  const { helpers } = makeHelpers('');
+  // Chromium's canvas fillStyle -> getImageData for each, within one step
+  // of 255 for rounding. Out-of-gamut colors are clipped, as Chromium does.
+  const reference = {
+    'oklch(0.2 0 0)': [22, 22, 22],
+    'oklch(0.7 0.1 200)': [64, 177, 183],
+    'oklab(0.5 0.1 -0.1)': [129, 69, 154],
+    'lab(50 40 59.5)': [191, 87, 0],
+    'lch(50 70 50)': [197, 82, 24],
+    'color(display-p3 1 0 0)': [255, 0, 0],
+    'color(srgb 0.5 0 0.5)': [128, 0, 128],
+    'color(srgb-linear 0.2 0.2 0.2)': [124, 124, 124],
+    'color(xyz-d65 0.2 0.2 0.2)': [135, 121, 118],
+    'color(xyz-d50 0.3 0.4 0.2)': [122, 184, 127],
+    'color(rec2020 0.5 0.5 0.5)': [139, 139, 139],
+    'color(a98-rgb 0.2 0.6 0.4)': [0, 154, 99],
+    'color(prophoto-rgb 0.4 0.3 0.6)': [119, 87, 178],
+    'oklch(0.6 0.1 0.5turn)': [35, 147, 130],
+    'lab(50 none 20)': [128, 118, 85],
+    'oklch(62.8% 0.2577 29.23)': [255, 0, 0]
+  };
+  for (const [value, rgb] of Object.entries(reference)) {
+    const c = helpers.parseCssColorToRgba(value);
+    assert.ok(c, value);
+    for (const [i, channel] of ['r', 'g', 'b'].entries()) {
+      assert.ok(
+        Math.abs(c[channel] - rgb[i]) <= 1,
+        `${value}: ${channel} ${c[channel]} vs ${rgb[i]}`
+      );
+    }
+    assert.strictEqual(c.a, 1, value);
+  }
+  assert.strictEqual(helpers.parseCssColorToRgba('oklch(0.7 0.1 200 / 0.5)').a, 0.5);
+  assert.strictEqual(helpers.parseCssColorToRgba('oklch(0.7 0.1)'), null);
+  assert.strictEqual(helpers.parseCssColorToRgba('color(--brand 1 0 0)'), null);
+});
+
+test('contrast-minimum: an oklch() background is measured, not skipped as transparent', () => {
+  const page = (bg) =>
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    `<div style="background-color:${bg}"><p style="color:#ddd">Hello world text</p></div>` +
+    '</main></body></html>';
+  const outcome = (bg) =>
+    runa11yCoreOnHtml(page(bg), { runOnly: ['contrast-minimum'] }).checksResults[0];
+  // #ddd on oklch(0.2 0 0), #161616: about 13:1. Skipped, the text was
+  // judged against the white page: 1.36:1.
+  assert.strictEqual(outcome('oklch(0.2 0 0)').outcome, 'pass');
+  assert.strictEqual(outcome('oklch(0.95 0 0)').outcome, 'fail');
+});
+
+test('computeEffectiveBackground: a background color it cannot read is a blocker, not transparent', () => {
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="background-color:rgb(255,255,255)"><div id="m"><span id="b">t</span></div></div>',
+    { backgroundOf: { m: 'color(--brand 0.1 0.1 0.1)' } }
+  );
+  const out = helpers.computeEffectiveBackground(document.getElementById('b'), {});
+  assert.strictEqual(out.ok, false);
+  assert.strictEqual(out.reasonCode, 'BACKGROUND_UNPARSABLE');
+  assert.strictEqual(out.blockerProperty, 'background-color');
+  assert.strictEqual(out.blockerValue, 'color(--brand 0.1 0.1 0.1)');
+
+  // Behind an opaque layer it can't show through, so it doesn't matter.
+  const covered = makeHelpers(
+    '<div id="m"><span id="b" style="background-color:#000">t</span></div>',
+    { backgroundOf: { m: 'color(--brand 0.1 0.1 0.1)' } }
+  );
+  const ok = covered.helpers.computeEffectiveBackground(covered.document.getElementById('b'), {});
+  assert.strictEqual(ok.ok, true);
+});
+
+test('contrast-minimum: text drawn nowhere is not judged (font-size 0, transparent color)', () => {
+  const page = (p) =>
+    `<!doctype html><html lang="en" style="background:#fff"><head><title>t</title></head><body><main>${p}</main></body></html>`;
+  const outcome = (p) =>
+    runa11yCoreOnHtml(page(p), { runOnly: ['contrast-minimum'] }).checksResults[0].outcome;
+  // Each used to fail: #ccc at 1.6:1, and transparent text at 1:1.
+  assert.equal(outcome('<p style="font-size:0;color:#ccc">Zero size</p><p>Body</p>'), 'pass');
+  assert.equal(outcome('<p style="color:transparent">Transparent</p><p>Body</p>'), 'pass');
+  assert.equal(
+    outcome('<p style="color:#ccc">Light but drawn</p>'),
+    'fail',
+    'drawn text still counts'
+  );
 });

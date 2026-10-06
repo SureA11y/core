@@ -12,6 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
+const { assertScanResult } = require('./scan-result.js');
 
 // Uses the dataviz skill's validated status palette, mapped 1:1 onto this
 // engine's own 4 outcomes.
@@ -625,6 +626,7 @@ function flattenOccurrences(checksResults, ui) {
 }
 
 function renderHtmlReport(result, options = {}) {
+  assertScanResult(result, 'renderHtmlReport');
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
   // A rollup a registered standard defines for itself carries that standard's
@@ -640,17 +642,19 @@ function renderHtmlReport(result, options = {}) {
   const engine = result && result.engine;
   const ui = createUi(engine);
   const OUTCOME_INFO = ui.outcomeInfo;
+  // The scan's own timestamp when it has one (engineOptions.timestamp), so
+  // the same result always renders the same page; the time of rendering
+  // only for a result without one. In UTC either way, so the page does not
+  // depend on the machine's time zone.
+  const stamped =
+    result && typeof result.timestamp === 'string' ? new Date(result.timestamp) : null;
+  const when = stamped && !Number.isNaN(stamped.getTime()) ? stamped : new Date();
+  const dateFormat = { dateStyle: 'medium', timeStyle: 'long', timeZone: 'UTC' };
   let generatedAtLabel;
   try {
-    generatedAtLabel = new Date().toLocaleString(ui.uiLocale, {
-      dateStyle: 'medium',
-      timeStyle: 'medium'
-    });
+    generatedAtLabel = when.toLocaleString(ui.uiLocale, dateFormat);
   } catch {
-    generatedAtLabel = new Date().toLocaleString('en-US', {
-      dateStyle: 'medium',
-      timeStyle: 'medium'
-    });
+    generatedAtLabel = when.toLocaleString('en-US', dateFormat);
   }
   const title = (options && options.title) || ui.tr('report_title_default');
 

@@ -11,8 +11,8 @@
  * @applicability
  *   Applies to <iframe>/<frame> elements with an explicit negative
  *   tabindex, whose embedded document is same-origin and reachable via
- *   contentDocument (cross-origin/unreachable frames assert nothing, see
- *   implementation notes).
+ *   contentDocument. A cross-origin or otherwise unreachable frame can't
+ *   be looked into, so nothing is asserted about it.
  * @expectation
  *   The frame's embedded document contains no focusable element. Browsers
  *   do not propagate tabindex="-1" on the host <iframe> into its embedded
@@ -82,7 +82,9 @@ function runInPage(ctx) {
   // realm, see this rule's own header comment on why the outer
   // document's shared eligibility helpers can't be reused here).
   // Checks only genuine non-rendering (display:none,
-  // visibility:hidden, the hidden attribute) via the ancestor chain, NOT
+  // visibility:hidden, the hidden attribute, the content of a closed
+  // <details> and of content-visibility:hidden, hidden="until-found"
+  // included) and inertness via the ancestor chain, NOT
   // aria-hidden: aria-hidden alone does not remove an element from a real
   // browser's native tab order (the same anti-pattern this engine's own
   // aria-hidden-focus rule exists to catch), so an aria-hidden-but-
@@ -90,16 +92,35 @@ function runInPage(ctx) {
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
+      if (el.closest && el.closest('[inert]')) return false;
+      if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ visibilityProperty: true });
+      }
       const view = doc.defaultView;
       if (!view || typeof view.getComputedStyle !== 'function') return true;
+      let child = null;
       let node = el;
       while (node && node.nodeType === 1) {
-        if (node.hasAttribute && node.hasAttribute('hidden')) return false;
+        if (node.hasAttribute && node.hasAttribute('hidden')) {
+          // hidden="until-found" hides the element's content, not itself.
+          const v = String(node.getAttribute('hidden') || '')
+            .trim()
+            .toLowerCase();
+          if (v !== 'until-found' || child) return false;
+        }
+        // A closed <details> shows only its first <summary> child.
+        if (child && node.localName === 'details' && !node.hasAttribute('open')) {
+          let first = node.firstElementChild;
+          while (first && first.localName !== 'summary') first = first.nextElementSibling;
+          if (child !== first) return false;
+        }
         const cs = view.getComputedStyle(node);
         if (cs) {
           if (cs.display === 'none') return false;
-          if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return false;
+          if (child && cs.contentVisibility === 'hidden') return false;
+          if (!child && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) return false;
         }
+        child = node;
         node = node.parentElement;
       }
       return true;

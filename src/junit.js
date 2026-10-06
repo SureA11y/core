@@ -31,6 +31,7 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { assertScanResult } = require('./scan-result.js');
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -220,6 +221,7 @@ function environmentProperties(env) {
 }
 
 function renderJunitReport(result, options = {}) {
+  assertScanResult(result, 'renderJunitReport');
   const opts = {
     cantTellAs: options.cantTellAs === 'failure' ? 'failure' : 'skipped',
     includeNotApplicable: options.includeNotApplicable === true

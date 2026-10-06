@@ -15,7 +15,7 @@
  *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
  *   a filter here: an aria-hidden control is still a target a pointer can hit.
  *   <area> is matched but never actually evaluated: it has no box of its own
- *   to measure (see the implementation notes).
+ *   to measure.
  * @expectation
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry: spacing (a
@@ -291,22 +291,31 @@ function runInPage(ctx) {
     }
   }
 
+  // A closed <details> shows only its first <summary> child, which stays
+  // operable as the toggle, with whatever is inside it. Everything else in
+  // it is suppressed, an open <details> nested in it included. The walk
+  // crosses shadow boundaries and slots.
   function inClosedDetails(el) {
-    const det = closest(el, 'details');
-    if (!det) return false;
-
     try {
-      if (det.hasAttribute('open')) return false;
-
-      const tag = el && el.tagName ? String(el.tagName).toLowerCase() : '';
-      // summary remains operable even when <details> is closed
-      if (tag === 'summary') return false;
-
-      // everything else inside closed details is suppressed
-      return true;
-    } catch {
-      return false;
-    }
+      let child = el;
+      let cur = helpers.composedParent(el);
+      for (let guard = 0; cur && guard < 1000; guard++) {
+        if (
+          cur.nodeType === 1 &&
+          String(cur.localName || '').toLowerCase() === 'details' &&
+          !cur.hasAttribute('open')
+        ) {
+          let first = cur.firstElementChild;
+          while (first && String(first.localName || '').toLowerCase() !== 'summary') {
+            first = first.nextElementSibling;
+          }
+          if (child !== first) return true;
+        }
+        child = cur;
+        cur = helpers.composedParent(cur);
+      }
+    } catch {}
+    return false;
   }
 
   function inInertSubtree(el) {
@@ -370,6 +379,13 @@ function runInPage(ctx) {
     if (hasHiddenAttr(el)) return false;
     if (inInertSubtree(el)) return false;
     if (inClosedDetails(el)) return false;
+    // Under a hidden ancestor (display:none, hidden="until-found",
+    // content-visibility:hidden): the element keeps a box in Chromium, but
+    // nothing of it is drawn for a pointer to hit.
+    try {
+      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false;
+    } catch {}
+    if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
 
     // Not operable => exclude
     try {

@@ -167,3 +167,16 @@ test('its source runs on its own in a page, as a binding sends it', async () => 
   assert.equal(r.pending.domChanging, false);
   dom.window.close();
 });
+
+test('waitForPageReady: a timeoutMs that is not a finite number of 0 or more warns and uses the default', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const dom = new JSDOM('<!doctype html><html><body><p>x</p></body></html>');
+  for (const timeoutMs of [-1, Number.NaN, Infinity]) {
+    const r = await waitForPageReady({ document: dom.window.document, timeoutMs });
+    assert.equal(r.ready, true);
+  }
+  assert.equal(warn.mock.callCount(), 3);
+  assert.match(warn.mock.calls[0].arguments[0], /timeoutMs must be a finite number/);
+  await waitForPageReady({ document: dom.window.document, timeoutMs: 0 });
+  assert.equal(warn.mock.callCount(), 3, '0 is valid');
+});

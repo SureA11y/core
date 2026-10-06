@@ -9,9 +9,8 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies whenever the page contains at least one banner landmark
- *   (explicit role="banner", or an implicit, non-nested <header>; see
- *   landmark-banner-is-top-level's implementation notes for the
- *   shared landmark-detection model).
+ *   (explicit role="banner", or an implicit, non-nested <header>, found
+ *   the same way as in landmark-banner-is-top-level).
  * @expectation
  *   At most one banner landmark exists on the page. Per WAI-ARIA
  *   Authoring Practices, the banner landmark represents site-oriented

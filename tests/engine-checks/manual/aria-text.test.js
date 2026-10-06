@@ -50,7 +50,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-text-all-scenarios.html)
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFlaggedIds = ['at_case_02', 'at_case_03'];
-  const expectedNoOccIds = ['at_case_01', 'at_case_04'];
+  const expectedNoOccIds = ['at_case_01', 'at_case_04', 'at_case_05'];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

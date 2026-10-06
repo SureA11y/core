@@ -139,6 +139,39 @@ test('runOnly: a bare array mixing rule ids and tags, or naming neither, throws'
   assert.throws(() => ranRuleIds(['img-alt-presnt']), /no rule or tag named "img-alt-presnt"/);
 });
 
+test('runOnly: an object-form include list that names nothing throws, so a typo cannot run no rule', (t) => {
+  t.mock.method(console, 'warn', () => {});
+  const invalid = (fn, re) =>
+    assert.throws(fn, (e) => e.code === 'INVALID_RUN_ONLY' && re.test(e.message));
+  invalid(() => ranRuleIds({ tags: ['nonsense'] }), /runOnly\.tags: no tag named "nonsense"/);
+  invalid(() => ranRuleIds({ includeRuleIds: ['nope'] }), /runOnly\.includeRuleIds: no rule/);
+  invalid(() => ranRuleIds({ type: 'tag', values: ['nonsense'] }), /runOnly\.tags/);
+  invalid(
+    () => runa11yCoreOnHtml(FILTER_PAGE, { engineOptions: { rules: { include: 'typo' } } }),
+    /engineOptions\.rules\.include: no rule named "typo"/
+  );
+  invalid(
+    () => runa11yCoreOnHtml(FILTER_PAGE, { engineOptions: { tags: { include: ['wcag2.2aa'] } } }),
+    /engineOptions\.tags\.include: no tag named "wcag2\.2aa"/
+  );
+  // The bare-array form carries the same code.
+  invalid(() => ranRuleIds(['img-alt-presnt']), /no rule or tag named/);
+});
+
+test('runOnly: an unknown name beside known ones, or in an exclude list, is warned about and ignored', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  assert.deepStrictEqual(ranRuleIds({ includeRuleIds: ['nope', 'img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(
+    ranRuleIds({ tags: ['wcag2a'], excludeTags: ['zzz'] }).sort(),
+    ranRuleIds({ tags: ['wcag2a'] }).sort()
+  );
+  const warnings = warn.mock.calls.map((c) => c.arguments.join(' '));
+  assert.ok(warnings.some((w) => /runOnly\.includeRuleIds: no rule named "nope"; ignored/.test(w)));
+  assert.ok(warnings.some((w) => /runOnly\.excludeTags: no tag named "zzz"; ignored/.test(w)));
+});
+
 test('runOnly: an empty array still means every rule', () => {
   assert.strictEqual(ranRuleIds([]).length, ALL_RULE_COUNT);
 });
@@ -162,4 +195,51 @@ test('runOnly: a custom rule id in a bare array selects that rule', () => {
     );
   assert.deepStrictEqual(run(['acme-has-main']), ['acme-has-main']);
   assert.deepStrictEqual(run(['acme']), ['acme-has-main']);
+});
+
+test('runOnly: a custom rule id or tag with spaces around it is found trimmed, as it runs', () => {
+  const customRules = [
+    {
+      id: ' acme-padded ',
+      meta: { title: 'Padded', tags: [' Acme '] },
+      runInPage: () => ({ outcome: 'pass', occurrences: [] })
+    }
+  ];
+  const ran = (runOnly) =>
+    runa11yCoreOnHtml(FILTER_PAGE, { runOnly, engineOptions: { customRules } }).checksResults.map(
+      (r) => r.ruleId
+    );
+  assert.deepStrictEqual(ran(['acme-padded']), ['acme-padded']);
+  assert.deepStrictEqual(ran({ includeRuleIds: ['acme-padded'] }), ['acme-padded']);
+  assert.deepStrictEqual(ran(['acme']), ['acme-padded']);
+});
+
+test('runOnly: a number, a boolean or an object with no key the engine reads throws', () => {
+  const invalid = (runOnly, re) =>
+    assert.throws(
+      () => ranRuleIds(runOnly),
+      (e) => e.code === 'INVALID_RUN_ONLY' && re.test(e.message)
+    );
+  invalid(42, /must be an array, a string or an object/);
+  invalid(true, /must be an array, a string or an object/);
+  invalid({ includeRuleId: ['img-alt-present'] }, /no key named "includeRuleId"/);
+  invalid({ type: 'wcag', values: ['x'] }, /runOnly.type must be "rule" or "tag"/);
+  assert.strictEqual(
+    ranRuleIds({}).length,
+    ALL_RULE_COUNT,
+    'an empty object still means every rule'
+  );
+});
+
+test("runOnly: axe-core's { type: 'rule' | 'rules' | 'tag' | 'tags', values } is read", () => {
+  assert.deepStrictEqual(ranRuleIds({ type: 'rule', values: ['img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(ranRuleIds({ type: 'rules', values: ['img-alt-present'] }), [
+    'img-alt-present'
+  ]);
+  assert.deepStrictEqual(
+    ranRuleIds({ type: 'tags', values: ['wcag2a'] }).sort(),
+    ranRuleIds({ tags: ['wcag2a'] }).sort()
+  );
 });
