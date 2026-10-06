@@ -87,6 +87,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Every match in scope, hidden or not (see @implementation-notes).
@@ -106,13 +107,13 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.hasAttribute) continue;
-    if (el.hasAttribute('muted')) continue;
+    if (!el || !dom.get(el, 'hasAttribute')) continue;
+    if (dom.hasAttribute(el, 'muted')) continue;
 
     applicableCount += 1;
 
-    const mediaTag = (el.tagName || '').toLowerCase();
-    if (el.hasAttribute('controls')) {
+    const mediaTag = (dom.tagName(el) || '').toLowerCase();
+    if (dom.hasAttribute(el, 'controls')) {
       const shown = helpers.isDomVisibleEligible(el, ctx, {
         visibilityMode: 'styleOnly',
         ignoreOpacity: true
@@ -137,7 +138,9 @@ function runInPage(ctx) {
     }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -168,7 +171,7 @@ function runInPage(ctx) {
   const PLUGIN_TYPES = /^(application\/x-shockwave-flash|application\/futuresplash)$/i;
 
   function attr(el, name) {
-    return String(el.getAttribute(name) || '').trim();
+    return String(dom.getAttribute(el, name) || '').trim();
   }
 
   function mayPlaySound(el, urlAttr) {
@@ -179,15 +182,16 @@ function runInPage(ctx) {
 
   function startsDisabled(el) {
     const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
-    if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
+    if (isOff(dom.getAttribute(el, 'autostart')) || isOff(dom.getAttribute(el, 'autoplay')))
+      return true;
     const kids = [];
-    for (let c = el.firstElementChild; c; c = c.nextElementSibling) kids.push(c);
+    for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) kids.push(c);
     return kids.some((c) => {
-      if ((c.tagName || '').toLowerCase() !== 'param') return false;
+      if ((dom.tagName(c) || '').toLowerCase() !== 'param') return false;
       const name = attr(c, 'name').toLowerCase();
       return (
         (name === 'autostart' || name === 'autoplay' || name === 'play') &&
-        isOff(c.getAttribute('value'))
+        isOff(dom.getAttribute(c, 'value'))
       );
     });
   }
@@ -196,9 +200,9 @@ function runInPage(ctx) {
   const askedObjects = [];
 
   for (const el of queryAllUnfiltered('embed, object, bgsound')) {
-    if (!el || !el.getAttribute) continue;
-    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
-    const tag = (el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (askedObjects.some((o) => o !== el && dom.contains(o, el))) continue;
+    const tag = (dom.tagName(el) || '').toLowerCase();
     if (tag === 'embed' && !mayPlaySound(el, 'src')) continue;
     if (tag === 'object' && !mayPlaySound(el, 'data')) continue;
     if (tag !== 'bgsound' && startsDisabled(el)) continue;
@@ -208,7 +212,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
-      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       summary: 'This element may play sound as soon as the page loads.',
       hint: 'Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.',
       i18n: {

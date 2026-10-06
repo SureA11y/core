@@ -88,6 +88,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // ACT e086e5 applies only to controls included in the accessibility tree, so
@@ -212,10 +213,10 @@ function runInPage(ctx) {
           : [];
 
     for (const el of candidates || []) {
-      if (!el || !el.getAttribute) continue;
-      const tag = (el.tagName || '').toLowerCase();
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'input') {
-        const t = trim(el.getAttribute('type')).toLowerCase();
+        const t = trim(dom.getAttribute(el, 'type')).toLowerCase();
         // exclude hidden|submit|reset|button|image
         if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image')
           continue;
@@ -240,14 +241,14 @@ function runInPage(ctx) {
 
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (!isEligibleAcc(el)) continue;
 
     // role="presentation"/"none" exclusion only when NOT focusable
     let role;
     try {
-      role = trim(el.getAttribute('role')).toLowerCase();
+      role = trim(dom.getAttribute(el, 'role')).toLowerCase();
     } catch {
       role = '';
     }
@@ -304,7 +305,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
         hintKey: 'formControl_programmaticLabelPresent_hint_fail',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: vf

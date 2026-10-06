@@ -77,6 +77,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -108,7 +109,7 @@ function runInPage(ctx) {
   // does (the element keeps its native list role).
   const aria = helpers && helpers.aria;
   function resolvedExplicitRole(el) {
-    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
+    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
       .toLowerCase()
       .split(/\s+/)
       .filter(Boolean);
@@ -124,15 +125,17 @@ function runInPage(ctx) {
   // the host's <li> children), or for its fallback content when none is.
   function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
-      if (String(c.localName) !== 'slot' || depth > 20) {
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c)) !== 'slot' || depth > 20) {
         out.push(c);
         continue;
       }
       let assigned;
       try {
         assigned =
-          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+          typeof dom.get(c, 'assignedElements') === 'function'
+            ? dom.assignedElements(c, { flatten: true })
+            : [];
       } catch {
         assigned = [];
       }
@@ -143,7 +146,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.firstElementChild) continue;
+    if (!el || !dom.firstElementChild(el)) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
@@ -151,11 +154,13 @@ function runInPage(ctx) {
 
     const invalidTags = [];
     for (const child of childElementsOf(el)) {
-      if (!child || !child.tagName) continue;
+      if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
-      const tag = child.tagName.toLowerCase();
+      const tag = dom.tagName(child).toLowerCase();
 
-      const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
+      const roleAttr = dom.get(child, 'getAttribute')
+        ? String(dom.getAttribute(child, 'role') || '').trim()
+        : '';
       const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
 
       // An explicit role always wins over the tag, see header comment.
@@ -168,7 +173,7 @@ function runInPage(ctx) {
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

@@ -62,6 +62,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -90,29 +91,29 @@ function runInPage(ctx) {
   // AT announces nothing for it.
   function getVisibleText(el) {
     function walk(node) {
-      if (node.nodeType === 3) return node.nodeValue || '';
-      if (node.nodeType !== 1) return '';
+      if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
+      if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
       let text = '';
-      for (const child of node.childNodes || []) text += walk(child);
+      for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
     }
     let text = '';
-    for (const child of el.childNodes || []) text += walk(child);
+    for (const child of dom.childNodes(el) || []) text += walk(child);
     return normalizeWs(text);
   }
 
   function getAriaOnlyName(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = dom.getElementById(document, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}

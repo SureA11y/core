@@ -63,6 +63,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const occurrences = [];
@@ -85,15 +86,17 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
   function getInputButtonValueName(el) {
     try {
-      const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
+      const type = normalizeWs(
+        dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'type') : ''
+      ).toLowerCase();
       if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const vAttr = el.getAttribute ? el.getAttribute('value') : '';
+      const vAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : '';
       const explicit = normalizeWs(
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
@@ -129,8 +132,8 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
-    const role = el.getAttribute ? el.getAttribute('role') : null;
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     const roleNorm = normalizeWs(role).toLowerCase();
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
@@ -146,7 +149,8 @@ function runInPage(ctx) {
     // through themselves (e.g. aria-prohibited-children's "transparent
     // wrapper" traversal).
     if (roleNorm === 'none' || roleNorm === 'presentation') {
-      const ariaHiddenTrue = el.getAttribute && el.getAttribute('aria-hidden') === 'true';
+      const ariaHiddenTrue =
+        dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-hidden') === 'true';
       if (!ariaHiddenTrue) {
         const GLOBAL_ARIA_ATTRS = [
           'aria-atomic',
@@ -175,7 +179,7 @@ function runInPage(ctx) {
           'aria-roledescription'
         ];
         const hasConflict = GLOBAL_ARIA_ATTRS.some((a) =>
-          el.hasAttribute ? el.hasAttribute(a) : false
+          dom.get(el, 'hasAttribute') ? dom.hasAttribute(el, a) : false
         );
         let isFocusable = false;
         if (!hasConflict && helpers.getFocusableInfo) {

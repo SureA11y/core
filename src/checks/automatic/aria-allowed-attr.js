@@ -88,6 +88,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -834,7 +835,7 @@ function runInPage(ctx) {
   // applicable count.
   function rolelessOccurrences(el, tag) {
     let seen = 0;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -862,7 +863,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.attributes) continue;
+    if (!el || !dom.attributes(el)) continue;
 
     // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
     // an element with no role attribute is judged against its implicit role.
@@ -871,10 +872,10 @@ function runInPage(ctx) {
     const explicitRole = ariaHelpers.getExplicitRole(el);
     let role = explicitRole;
     if (!role) {
-      const tag = String(el.tagName || '').toLowerCase();
+      const tag = String(dom.tagName(el) || '').toLowerCase();
       const key =
         tag === 'input'
-          ? 'input[type=' + String(el.getAttribute('type') || 'text').toLowerCase() + ']'
+          ? 'input[type=' + String(dom.getAttribute(el, 'type') || 'text').toLowerCase() + ']'
           : tag;
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
@@ -905,7 +906,7 @@ function runInPage(ctx) {
     const roleSupportedSet = new Set(roleSupported);
 
     let disallowed = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;

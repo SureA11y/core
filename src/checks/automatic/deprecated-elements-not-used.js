@@ -59,6 +59,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -68,9 +69,9 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

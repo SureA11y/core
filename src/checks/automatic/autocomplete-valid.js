@@ -69,6 +69,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -179,26 +180,26 @@ function runInPage(ctx) {
   ]);
 
   function isExempt(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (tag === 'input') {
-      const type = String(el.getAttribute('type') || 'text').toLowerCase();
+      const type = String(dom.getAttribute(el, 'type') || 'text').toLowerCase();
       if (FIXED_VALUE_TYPES.has(type)) return true;
     }
-    if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'disabled')) return true;
     // A control inside a disabled fieldset (outside its first legend) is
     // disabled too.
     try {
-      if (el.matches && el.matches(':disabled')) return true;
+      if (dom.get(el, 'matches') && dom.matches(el, ':disabled')) return true;
     } catch {
       /* selector unsupported */
     }
-    if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    if (String(dom.getAttribute(el, 'aria-disabled') || '').toLowerCase() === 'true') return true;
     return false;
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('autocomplete') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'autocomplete') || '').trim();
     if (!raw) continue;
 
     const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
@@ -209,7 +210,7 @@ function runInPage(ctx) {
 
     if (isValidAutocomplete(raw)) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

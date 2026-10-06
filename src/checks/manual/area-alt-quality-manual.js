@@ -79,6 +79,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -89,8 +90,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -154,8 +155,10 @@ function runInPage(ctx) {
   }
   function getMapName(mapEl) {
     try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
+      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
+      const n = String(
+        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
+      ).trim();
       return n ? n.toLowerCase() : '';
     } catch {
       return '';
@@ -168,7 +171,7 @@ function runInPage(ctx) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
+        return String(dom.getAttribute(el, 'role') || '')
           .trim()
           .toLowerCase();
       } catch {
@@ -189,7 +192,7 @@ function runInPage(ctx) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -208,7 +211,7 @@ function runInPage(ctx) {
   function collectTextAlternativeSources(el) {
     const attr = (name) => {
       try {
-        const v = el.getAttribute(name);
+        const v = dom.getAttribute(el, name);
         return v == null ? '' : String(v).trim();
       } catch {
         return '';
@@ -262,21 +265,21 @@ function runInPage(ctx) {
 
   const __usemapIndex = new Map(); // mapName -> img (first in document order)
   try {
-    const imgs = Array.from(document.querySelectorAll('img[usemap]'));
+    const imgs = Array.from(dom.querySelectorAll(document, 'img[usemap]'));
     for (const img of imgs) {
-      const u = normUsemap(img.getAttribute('usemap'));
+      const u = normUsemap(dom.getAttribute(img, 'usemap'));
       if (!u) continue;
       if (!__usemapIndex.has(u)) __usemapIndex.set(u, img);
     }
   } catch {}
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
     let img;
     try {
-      const map = el.closest && el.closest('map');
+      const map = dom.get(el, 'closest') && dom.closest(el, 'map');
       const mapName = map ? getMapName(map) : '';
       img = mapName ? __usemapIndex.get(mapName) || null : null;
     } catch {
@@ -286,7 +289,7 @@ function runInPage(ctx) {
 
     // Without href an <area> is not a hyperlink at all per the HTML spec,
     // so there is nothing here for this rule to review.
-    const hrefRaw = el.getAttribute('href');
+    const hrefRaw = dom.getAttribute(el, 'href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
     // The referencing <img> must actually be rendered. <area> is not a DOM
@@ -346,7 +349,7 @@ function runInPage(ctx) {
         : {
             summaryKey: 'area_altQuality_summary_cantTell',
             hintKey: 'area_altQuality_hint_cantTell',
-            params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
+            params: { element: (dom.tagName(el) || '').toLowerCase(), sources: sourcesText }
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

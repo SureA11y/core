@@ -108,6 +108,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -129,7 +130,7 @@ function runInPage(ctx) {
   }
 
   function isMarkedBusy(el) {
-    const v = el.getAttribute('aria-busy');
+    const v = dom.getAttribute(el, 'aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
@@ -168,23 +169,24 @@ function runInPage(ctx) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
   function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !node.firstElementChild) return;
+    if (!node || !dom.firstElementChild(node)) return;
     for (const child of childElementsOf(node)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
       if (
-        (child.tagName || '').toLowerCase() === 'slot' &&
-        typeof child.assignedElements === 'function'
+        (dom.tagName(child) || '').toLowerCase() === 'slot' &&
+        typeof dom.get(child, 'assignedElements') === 'function'
       ) {
         let assigned;
         try {
-          assigned = child.assignedElements({ flatten: true }) || [];
+          assigned = dom.assignedElements(child, { flatten: true }) || [];
         } catch {
           assigned = [];
         }
@@ -206,7 +208,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -227,7 +229,7 @@ function runInPage(ctx) {
     // DOM involved at all) with zero added cost.
     let descendants;
     try {
-      descendants = el.querySelectorAll(CANDIDATE_SELECTOR);
+      descendants = dom.querySelectorAll(el, CANDIDATE_SELECTOR);
     } catch {
       descendants = [];
     }
@@ -245,7 +247,7 @@ function runInPage(ctx) {
     if (!found) {
       let hasSlot;
       try {
-        hasSlot = !!el.querySelector('slot');
+        hasSlot = !!dom.querySelector(el, 'slot');
       } catch {
         hasSlot = false;
       }
@@ -257,7 +259,7 @@ function runInPage(ctx) {
           // fall through with whatever was collected before the error
         }
         for (const cand of composed) {
-          if (!cand || !cand.getAttribute) continue;
+          if (!cand || !dom.get(cand, 'getAttribute')) continue;
           const candRole = ariaHelpers.getContainmentRole(cand);
           if (candRole && ownedSet.has(candRole)) {
             found = true;
@@ -268,7 +270,7 @@ function runInPage(ctx) {
     }
 
     if (!found) {
-      const ownsAttr = el.getAttribute('aria-owns');
+      const ownsAttr = dom.getAttribute(el, 'aria-owns');
       if (ownsAttr && helpers.resolveIdRefs) {
         const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 });
         for (const ownedEl of resolved.refs || []) {
@@ -300,7 +302,7 @@ function runInPage(ctx) {
             role,
             requiredOwnedRoles: requiredOwned,
             childElementCount:
-              typeof el.childElementCount === 'number' ? el.childElementCount : null
+              typeof dom.childElementCount(el) === 'number' ? dom.childElementCount(el) : null
           }
         },
         data: {

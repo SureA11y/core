@@ -76,6 +76,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
@@ -92,26 +93,27 @@ function runInPage(ctx) {
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
-      if (el.closest && el.closest('[inert]')) return false;
-      if (typeof el.checkVisibility === 'function') {
-        return el.checkVisibility({ visibilityProperty: true });
+      if (dom.get(el, 'closest') && dom.closest(el, '[inert]')) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function') {
+        return dom.checkVisibility(el, { visibilityProperty: true });
       }
-      const view = doc.defaultView;
+      const view = dom.defaultView(doc);
       if (!view || typeof view.getComputedStyle !== 'function') return true;
       let child = null;
       let node = el;
-      while (node && node.nodeType === 1) {
-        if (node.hasAttribute && node.hasAttribute('hidden')) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let steps = 0; node && dom.nodeType(node) === 1 && steps < 100000; steps++) {
+        if (dom.get(node, 'hasAttribute') && dom.hasAttribute(node, 'hidden')) {
           // hidden="until-found" hides the element's content, not itself.
-          const v = String(node.getAttribute('hidden') || '')
+          const v = String(dom.getAttribute(node, 'hidden') || '')
             .trim()
             .toLowerCase();
           if (v !== 'until-found' || child) return false;
         }
         // A closed <details> shows only its first <summary> child.
-        if (child && node.localName === 'details' && !node.hasAttribute('open')) {
-          let first = node.firstElementChild;
-          while (first && first.localName !== 'summary') first = first.nextElementSibling;
+        if (child && dom.localName(node) === 'details' && !dom.hasAttribute(node, 'open')) {
+          let first = dom.firstElementChild(node);
+          while (first && dom.localName(first) !== 'summary') first = dom.nextElementSibling(first);
           if (child !== first) return false;
         }
         const cs = view.getComputedStyle(node);
@@ -121,7 +123,7 @@ function runInPage(ctx) {
           if (!child && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) return false;
         }
         child = node;
-        node = node.parentElement;
+        node = dom.parentElement(node);
       }
       return true;
     } catch {
@@ -130,22 +132,22 @@ function runInPage(ctx) {
   }
 
   function getDeepActiveElement(docRef) {
-    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let cur = docRef && dom.activeElement(docRef) ? dom.activeElement(docRef) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -231,10 +233,11 @@ function runInPage(ctx) {
   }
 
   function getFocusableCandidates(doc) {
-    if (!doc || !doc.querySelectorAll) return [];
+    if (!doc || !dom.get(doc, 'querySelectorAll')) return [];
     let els;
     try {
-      els = doc.querySelectorAll(
+      els = dom.querySelectorAll(
+        doc,
         'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
           'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
       );
@@ -243,8 +246,8 @@ function runInPage(ctx) {
     }
     const candidates = [];
     for (const el of els) {
-      if (!el || !el.getAttribute) continue;
-      const raw = el.getAttribute('tabindex');
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const raw = dom.getAttribute(el, 'tabindex');
       if (raw != null) {
         const n = Number(String(raw).trim());
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
@@ -257,7 +260,7 @@ function runInPage(ctx) {
 
   function probeImmediateFocusRedirect(frameEl, embeddedDoc, candidate) {
     if (!frameEl || !embeddedDoc || !candidate) return null;
-    const embeddedWindow = embeddedDoc.defaultView;
+    const embeddedWindow = dom.defaultView(embeddedDoc);
     if (!embeddedWindow) return null;
 
     let focusedByEvent = false;
@@ -265,7 +268,7 @@ function runInPage(ctx) {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     const innerFocusTrace = [];
@@ -277,8 +280,8 @@ function runInPage(ctx) {
       if (ev && ev.target) outerFocusTrace.push(ev.target);
     };
     try {
-      embeddedDoc.addEventListener('focusin', onInnerFocusIn, true);
-      document.addEventListener('focusin', onOuterFocusIn, true);
+      dom.addEventListener(embeddedDoc, 'focusin', onInnerFocusIn, true);
+      dom.addEventListener(document, 'focusin', onOuterFocusIn, true);
     } catch {}
 
     const beforeInner = getDeepActiveElement(embeddedDoc);
@@ -288,11 +291,11 @@ function runInPage(ctx) {
       focused = focusElementSafe(candidate);
     });
     try {
-      embeddedDoc.removeEventListener('focusin', onInnerFocusIn, true);
-      document.removeEventListener('focusin', onOuterFocusIn, true);
+      dom.removeEventListener(embeddedDoc, 'focusin', onInnerFocusIn, true);
+      dom.removeEventListener(document, 'focusin', onOuterFocusIn, true);
     } catch {}
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     if (!focused) return null;
@@ -323,7 +326,7 @@ function runInPage(ctx) {
   }
 
   function getNegativeTabIndex(el) {
-    const raw = el.getAttribute('tabindex');
+    const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
     const n = Number(String(raw).trim());
     return !Number.isNaN(n) && n < 0;
@@ -337,9 +340,9 @@ function runInPage(ctx) {
   // already-loaded contentDocument is always preferred untouched.
   function parseSrcdocFallback(el) {
     try {
-      const raw = el.getAttribute('srcdoc');
+      const raw = dom.getAttribute(el, 'srcdoc');
       if (raw == null) return null;
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       const DOMParserCtor = view && view.DOMParser;
       if (!DOMParserCtor) return null;
       return new DOMParserCtor().parseFromString(raw, 'text/html');
@@ -356,8 +359,8 @@ function runInPage(ctx) {
   // layout jsdom doesn't have (see docs/LIMITATIONS.md).
   function isIframeVisiblyTiny(el) {
     try {
-      const wAttr = el.getAttribute('width');
-      const hAttr = el.getAttribute('height');
+      const wAttr = dom.getAttribute(el, 'width');
+      const hAttr = dom.getAttribute(el, 'height');
       if (wAttr == null || hAttr == null) return false;
       const w = Number(String(wAttr).trim());
       const h = Number(String(hAttr).trim());
@@ -376,21 +379,22 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!getNegativeTabIndex(el)) continue;
 
     let contentDoc;
     try {
-      contentDoc = el.contentDocument || null;
+      contentDoc = dom.contentDocument(el) || null;
     } catch {
       contentDoc = null;
     }
-    const looksEmpty = !contentDoc || !contentDoc.body || !contentDoc.body.hasChildNodes();
-    if (looksEmpty && el.getAttribute('srcdoc') != null) {
+    const looksEmpty =
+      !contentDoc || !dom.body(contentDoc) || !dom.hasChildNodes(dom.body(contentDoc));
+    if (looksEmpty && dom.getAttribute(el, 'srcdoc') != null) {
       const parsed = parseSrcdocFallback(el);
       if (parsed) contentDoc = parsed;
     }
-    if (!contentDoc || !contentDoc.querySelectorAll) continue; // cross-origin/unreachable: no constraint asserted
+    if (!contentDoc || !dom.get(contentDoc, 'querySelectorAll')) continue; // cross-origin/unreachable: no constraint asserted
 
     applicableCount += 1;
 
@@ -398,7 +402,7 @@ function runInPage(ctx) {
     if (!candidates.length) continue;
     if (isIframeVisiblyTiny(el)) continue; // ACT akn7bn: no visible content at all
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
     const shouldProbe = candidates.length === 1;
     const runtimeProbe = shouldProbe
       ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])

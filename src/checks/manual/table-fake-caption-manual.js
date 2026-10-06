@@ -65,6 +65,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -90,14 +91,14 @@ function runInPage(ctx) {
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
   function hasOtherRole(table) {
-    const role = trim(table.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    const role = trim(dom.getAttribute(table, 'role')).toLowerCase().split(/\s+/)[0];
     return !!role && !TABLE_ROLES.includes(role);
   }
 
   // A name from aria-labelledby, aria-label or title already gives the table
   // a title that assistive technology announces.
   function isNamed(table) {
-    if (trim(table.getAttribute('title'))) return true;
+    if (trim(dom.getAttribute(table, 'title'))) return true;
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(table, ctx);
@@ -106,7 +107,7 @@ function runInPage(ctx) {
         return false;
       }
     }
-    return !!trim(table.getAttribute('aria-label'));
+    return !!trim(dom.getAttribute(table, 'aria-label'));
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
@@ -117,7 +118,7 @@ function runInPage(ctx) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(table.querySelector && table.querySelector('caption'));
+    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
@@ -135,7 +136,7 @@ function runInPage(ctx) {
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
-    const candidateText = trim(candidateCell.textContent || '');
+    const candidateText = trim(dom.textContent(candidateCell) || '');
     if (!candidateText) continue;
 
     const hasMultiCellRow = rows
@@ -146,7 +147,7 @@ function runInPage(ctx) {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(table)
-      : table.outerHTML || '';
+      : dom.outerHTML(table) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

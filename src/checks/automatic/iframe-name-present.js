@@ -70,6 +70,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -84,7 +85,7 @@ function runInPage(ctx) {
   // removes them from the tab order.
   function isFrameFocusable(el) {
     try {
-      const tabindexRaw = el.getAttribute ? el.getAttribute('tabindex') : null;
+      const tabindexRaw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexRaw == null) return true;
       const n = Number(String(tabindexRaw).trim());
       if (Number.isFinite(n) && n < 0) return false;
@@ -95,7 +96,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
 
     if (!isFrameFocusable(el)) continue;
 
@@ -121,7 +122,7 @@ function runInPage(ctx) {
           }
         })()
       : null;
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

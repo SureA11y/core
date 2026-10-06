@@ -89,6 +89,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
@@ -132,7 +133,7 @@ function runInPage(ctx) {
   // cases where an <img alt=""> keeps the presentation role empty alt gives
   // it.
   function getEffectiveRoleToken(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     if (!raw) return '';
     const tokens = String(raw).trim().toLowerCase().split(/\s+/);
     for (const token of tokens) {
@@ -152,7 +153,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Only reachable via the img[alt=""] branch of the selector: an explicit
     // role other than presentation/none overrides the presentation role that
@@ -169,7 +170,7 @@ function runInPage(ctx) {
     // aria-hidden="" (empty string) is still a specified attribute. A
     // truthy-value check would miss this.
     let present = CONFLICTING_ATTRS.filter((attr) =>
-      el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
+      dom.get(el, 'hasAttribute') ? dom.hasAttribute(el, attr) : dom.getAttribute(el, attr) != null
     );
 
     // aria-hidden="true" (the exact, valid truthy value, not the
@@ -188,7 +189,7 @@ function runInPage(ctx) {
     // still tab onto an aria-hidden="true" focusable element (the
     // aria-hidden-focus anti-pattern), a real, independent hazard
     // aria-hidden does nothing to prevent.
-    if (el.getAttribute('aria-hidden') === 'true') {
+    if (dom.getAttribute(el, 'aria-hidden') === 'true') {
       present = [];
     }
 

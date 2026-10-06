@@ -73,13 +73,14 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // WCAG 2.2.1 Exception 3: time limits longer than 20 hours are exempt.
   const EXEMPT_DELAY_SECONDS = 20 * 60 * 60;
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   const occurrences = [];
@@ -114,9 +115,9 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
     const delay = parseRefreshDelay(raw);

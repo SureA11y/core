@@ -106,6 +106,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const CSS_MEDIA_RULE = 4;
@@ -334,21 +335,24 @@ function runInPage(ctx) {
   // content: the root, the body, the main landmark or an ancestor of it, or,
   // with no main landmark, most of the body's text.
   function textLength(el) {
-    return String((el && el.textContent) || '').replace(/\s+/g, '').length;
+    return String((el && dom.textContent(el)) || '').replace(/\s+/g, '').length;
   }
   let mainEl = null;
   try {
-    mainEl = document.querySelector('main, [role="main"]');
+    mainEl = dom.querySelector(document, 'main, [role="main"]');
   } catch {
     mainEl = null;
   }
-  const bodyTextLength = document.body ? textLength(document.body) : 0;
+  const bodyTextLength = dom.body(document) ? textLength(dom.body(document)) : 0;
 
   function holdsPageContent(el) {
-    if (!el || el.nodeType !== 1) return false;
-    const tag = String(el.localName || '').toLowerCase();
+    if (!el || dom.nodeType(el) !== 1) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (tag === 'html' || tag === 'body') return true;
-    if (mainEl) return el === mainEl || (typeof el.contains === 'function' && el.contains(mainEl));
+    if (mainEl)
+      return (
+        el === mainEl || (typeof dom.get(el, 'contains') === 'function' && dom.contains(el, mainEl))
+      );
     return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
   }
 
@@ -358,7 +362,7 @@ function runInPage(ctx) {
   let unreadableSheetCount = 0;
 
   try {
-    const sheets = document.styleSheets || [];
+    const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
       let rules = null;
       try {
@@ -381,7 +385,7 @@ function runInPage(ctx) {
     // no-throw: treat as no accessible stylesheets
   }
 
-  const scanTarget = document.documentElement || document.body || null;
+  const scanTarget = dom.documentElement(document) || dom.body(document) || null;
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
@@ -413,7 +417,7 @@ function runInPage(ctx) {
   for (const h of hidings) {
     let matched;
     try {
-      matched = Array.from(document.querySelectorAll(h.selectorText));
+      matched = Array.from(dom.querySelectorAll(document, h.selectorText));
     } catch {
       matched = [];
     }

@@ -46,6 +46,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[accesskey]')
@@ -54,8 +55,8 @@ function runInPage(ctx) {
   const groups = new Map(); // normalized key -> elements[]
   let keyedCount = 0;
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('accesskey') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'accesskey') || '').trim();
     if (!raw) continue;
     keyedCount += 1;
     const key = raw.toLowerCase();

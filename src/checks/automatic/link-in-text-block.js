@@ -116,17 +116,20 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -227,15 +230,16 @@ function runInPage(ctx) {
   // default decoration.
   function uaUnderlines(el) {
     return (
-      String(el.localName || '').toLowerCase() === 'a' &&
-      typeof el.hasAttribute === 'function' &&
-      el.hasAttribute('href')
+      String(dom.localName(el) || '').toLowerCase() === 'a' &&
+      typeof dom.get(el, 'hasAttribute') === 'function' &&
+      dom.hasAttribute(el, 'href')
     );
   }
 
   function resolveUnderlineFromCssom(el) {
-    const doc = el && el.ownerDocument ? el.ownerDocument : null;
-    if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function')
+      return { underlined: false, resolved: false };
 
     let best = null; // { rank, order, underlined }
     let order = 0;
@@ -256,7 +260,7 @@ function runInPage(ctx) {
         }
         let matched;
         try {
-          matched = el.matches(part);
+          matched = dom.matches(el, part);
         } catch {
           unparsableSelector = true;
           continue;
@@ -287,7 +291,7 @@ function runInPage(ctx) {
     }
 
     try {
-      for (const sheet of doc.styleSheets || []) {
+      for (const sheet of dom.styleSheets(doc) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -302,7 +306,7 @@ function runInPage(ctx) {
     }
 
     // The inline style attribute outranks every stylesheet declaration.
-    const inline = underlineFromDeclaration(el.style);
+    const inline = underlineFromDeclaration(dom.get(el, 'style'));
     if (inline) return { underlined: inline.underlined, resolved: true };
 
     if (best) return { underlined: best.underlined, resolved: true };
@@ -375,7 +379,7 @@ function runInPage(ctx) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(el.querySelectorAll('img, svg, picture, canvas, [role="img"]'));
+      imgs = Array.from(dom.querySelectorAll(el, 'img, svg, picture, canvas, [role="img"]'));
     } catch {
       return false;
     }
@@ -431,7 +435,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of (doc && doc.styleSheets) || []) {
+      for (const sheet of (doc && dom.styleSheets(doc)) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -447,9 +451,9 @@ function runInPage(ctx) {
   }
 
   function hasPseudoContent(el) {
-    return getPseudoContentRules(el.ownerDocument).some((base) => {
+    return getPseudoContentRules(dom.ownerDocument(el)).some((base) => {
       try {
-        return el.matches(base);
+        return dom.matches(el, base);
       } catch {
         return false;
       }
@@ -472,8 +476,8 @@ function runInPage(ctx) {
     if (!parent) return false;
     if (parentHasText.has(parent)) return parentHasText.get(parent);
     let found = false;
-    for (let n = parent.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) {
+    for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0) {
         found = true;
         break;
       }
@@ -517,7 +521,7 @@ function runInPage(ctx) {
   // as frameworks often wrap one) is part of the link as far as the text
   // around it goes: the surrounding text is its parent's.
   function wrapperHasCue(wrapper, cs) {
-    const outerCs = safeComputedStyle(wrapper.parentElement);
+    const outerCs = safeComputedStyle(dom.parentElement(wrapper));
     if (
       c &&
       outerCs &&
@@ -533,10 +537,10 @@ function runInPage(ctx) {
 
   function textParentOf(el) {
     let child = el;
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     for (let depth = 0; parent && depth < 5; depth++) {
       if (hasSurroundingText(child, parent)) break;
-      if (parent.firstElementChild !== child || parent.lastElementChild !== child) break;
+      if (dom.firstElementChild(parent) !== child || dom.lastElementChild(parent) !== child) break;
       const wcs = safeComputedStyle(parent) || {};
       const display = String(wcs.display || '');
       if (!display.startsWith('inline') || display === 'inline-block') break;
@@ -545,7 +549,7 @@ function runInPage(ctx) {
       const valign = String(wcs.verticalAlign || 'baseline');
       if (valign !== 'baseline' || wrapperHasCue(parent, wcs)) break;
       child = parent;
-      parent = parent.parentElement;
+      parent = dom.parentElement(parent);
     }
     return parent;
   }
@@ -567,14 +571,20 @@ function runInPage(ctx) {
       return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
     };
     let sawText = false;
-    const doc = el.ownerDocument;
-    const walker = doc && doc.createTreeWalker ? doc.createTreeWalker(el, 4) : null;
+    const doc = dom.ownerDocument(el);
+    const walker =
+      doc && dom.get(doc, 'createTreeWalker') ? dom.createTreeWalker(doc, el, 4) : null;
     if (!walker) return false;
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      if (!n.nodeValue || !n.nodeValue.trim()) continue;
+      if (!dom.nodeValue(n) || !dom.nodeValue(n).trim()) continue;
       sawText = true;
       let cued = false;
-      for (let a = n.parentElement; a && a !== el; a = a.parentElement) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (
+        let a = dom.parentElement(n), i = 0;
+        a && a !== el && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
         if (hasCue(a)) {
           cued = true;
           break;
@@ -586,7 +596,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -754,7 +764,7 @@ function runInPage(ctx) {
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
     occurrences.push(

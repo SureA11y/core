@@ -75,6 +75,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -89,8 +90,8 @@ function runInPage(ctx) {
   // Non-whitespace text directly inside `parent` (the <dl> or a wrapping
   // <div>).
   function hasDirectText(parent) {
-    for (const node of parent.childNodes || []) {
-      if (node && node.nodeType === 3 && /\S/.test(node.nodeValue || '')) return true;
+    for (const node of dom.childNodes(parent) || []) {
+      if (node && dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')) return true;
     }
     return false;
   }
@@ -100,14 +101,15 @@ function runInPage(ctx) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     const dlHasText = hasDirectText(el);
-    if (!el.firstElementChild && !dlHasText) continue;
+    if (!dom.firstElementChild(el) && !dlHasText) continue;
 
     applicableCount += 1;
 
@@ -115,11 +117,11 @@ function runInPage(ctx) {
     const flattened = [];
     let hasText = dlHasText;
     for (const child of childElementsOf(el)) {
-      if (!child || !child.tagName) continue;
-      if (child.tagName.toLowerCase() === 'div') {
+      if (!child || !dom.tagName(child)) continue;
+      if (dom.tagName(child).toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
         for (const grandchild of childElementsOf(child)) {
-          if (grandchild && grandchild.tagName) flattened.push(grandchild);
+          if (grandchild && dom.tagName(grandchild)) flattened.push(grandchild);
         }
       } else {
         flattened.push(child);
@@ -132,7 +134,7 @@ function runInPage(ctx) {
     // The dt/dd sequence in document order, for the group-order check.
     const sequence = [];
     for (const node of flattened) {
-      const tag = node.tagName.toLowerCase();
+      const tag = dom.tagName(node).toLowerCase();
       if (tag === 'dt') {
         hasDt = true;
         sequence.push(tag);

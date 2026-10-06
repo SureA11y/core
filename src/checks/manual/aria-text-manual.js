@@ -50,12 +50,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Content the page does not show (a closed <details>, hidden="until-found")
   // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
-    for (const d of el.querySelectorAll('*')) {
+    for (const d of dom.querySelectorAll(el, '*')) {
       if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
@@ -70,7 +71,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelector) continue;
+    if (!el || !dom.get(el, 'querySelector')) continue;
 
     applicableCount += 1;
 
@@ -83,7 +84,9 @@ function runInPage(ctx) {
     if (!focusableDescendant) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

@@ -80,21 +80,22 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The element an <li> renders in: its parent in the flat tree, through an
   // assigned slot and past any <slot> or shadow root on the way. undefined
   // for a child of a shadow host that no slot takes: it isn't rendered.
   function flatParent(el) {
-    const parent = el.parentElement;
-    if (parent && parent.shadowRoot && !el.assignedSlot) return undefined;
+    const parent = dom.parentElement(el);
+    if (parent && dom.shadowRoot(parent) && !dom.assignedSlot(el)) return undefined;
     const up = (n) =>
       typeof helpers.composedParent === 'function'
         ? helpers.composedParent(n)
-        : n.assignedSlot || n.parentNode || n.host || null;
+        : dom.assignedSlot(n) || dom.parentNode(n) || dom.host(n) || null;
     let p = up(el);
     for (let guard = 0; p && guard < 100; guard++) {
-      if (p.nodeType === 1 && String(p.localName) !== 'slot') return p;
+      if (dom.nodeType(p) === 1 && String(dom.localName(p)) !== 'slot') return p;
       p = up(p);
     }
     return null;
@@ -120,15 +121,19 @@ function runInPage(ctx) {
     // at all; there's no listitem semantics being claimed to validate.
     // role="listitem" itself is a no-op restatement, not an override, so
     // it still falls through to the normal parent check below.
-    const ownRoleAttr = el.getAttribute ? String(el.getAttribute('role') || '').trim() : '';
+    const ownRoleAttr = dom.get(el, 'getAttribute')
+      ? String(dom.getAttribute(el, 'role') || '').trim()
+      : '';
     const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
     if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 
-    const parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
+    const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
 
-    const roleAttr = parent.getAttribute ? String(parent.getAttribute('role') || '').trim() : '';
+    const roleAttr = dom.get(parent, 'getAttribute')
+      ? String(dom.getAttribute(parent, 'role') || '').trim()
+      : '';
     const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
 
     let valid;

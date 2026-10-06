@@ -90,6 +90,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -137,9 +138,9 @@ function runInPage(ctx) {
   function matchesInteractive(node) {
     return !!(
       node &&
-      node.nodeType === 1 &&
-      typeof node.matches === 'function' &&
-      node.matches(INTERACTIVE_SELECTOR)
+      dom.nodeType(node) === 1 &&
+      typeof dom.get(node, 'matches') === 'function' &&
+      dom.matches(node, INTERACTIVE_SELECTOR)
     );
   }
 
@@ -162,8 +163,9 @@ function runInPage(ctx) {
   };
 
   function getExplicitRole(node) {
-    if (!node || node.nodeType !== 1 || typeof node.getAttribute !== 'function') return '';
-    const raw = node.getAttribute('role');
+    if (!node || dom.nodeType(node) !== 1 || typeof dom.get(node, 'getAttribute') !== 'function')
+      return '';
+    const raw = dom.getAttribute(node, 'role');
     if (!raw) return '';
     // role accepts a space-separated fallback list; the first token wins.
     const first = raw.trim().split(/\s+/)[0];
@@ -172,9 +174,9 @@ function runInPage(ctx) {
 
   function parentElementOf(node) {
     if (!node) return null;
-    if (node.parentElement) return node.parentElement;
-    const p = node.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    if (dom.parentElement(node)) return dom.parentElement(node);
+    const p = dom.parentNode(node);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   // True when `node` is an owned child of a composite widget: its role is a
@@ -187,7 +189,7 @@ function runInPage(ctx) {
     const containers = COMPOSITE_CHILD_CONTAINERS[role];
     if (!containers) return false;
     let p = parentElementOf(node);
-    while (p && p.nodeType === 1) {
+    while (p && dom.nodeType(p) === 1) {
       if (containers.indexOf(getExplicitRole(p)) !== -1) return true;
       p = parentElementOf(p);
     }
@@ -229,17 +231,20 @@ function runInPage(ctx) {
   function flatChildren(node) {
     if (!node) return [];
     let assigned = null;
-    if (String(node.localName) === 'slot' && typeof node.assignedElements === 'function') {
+    if (
+      String(dom.localName(node)) === 'slot' &&
+      typeof dom.get(node, 'assignedElements') === 'function'
+    ) {
       try {
-        assigned = node.assignedElements({ flatten: true });
+        assigned = dom.assignedElements(node, { flatten: true });
       } catch {
         assigned = null;
       }
     }
     if (assigned && assigned.length) return assigned;
-    const from = node.shadowRoot || node;
+    const from = dom.shadowRoot(node) || node;
     const out = [];
-    for (let c = from.firstElementChild; c; c = c.nextElementSibling) out.push(c);
+    for (let c = dom.firstElementChild(from); c; c = dom.nextElementSibling(c)) out.push(c);
     return out;
   }
 
@@ -250,7 +255,7 @@ function runInPage(ctx) {
     let guard = 0;
     while (stack.length && guard++ < 200000) {
       const node = stack.pop();
-      if (node && node.nodeType === 1) {
+      if (node && dom.nodeType(node) === 1) {
         // A composite-owned child (option in a listbox/combobox, tab in a
         // tablist, ...) is not a nested interactive control: its container
         // owns it and drives its focus (roving tabindex or
@@ -279,7 +284,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
@@ -287,10 +292,12 @@ function runInPage(ctx) {
     const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
-    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const nestedTags = nested.map((n) =>
+      n && dom.tagName(n) ? dom.tagName(n).toLowerCase() : 'unknown'
+    );
     const dedupedNestedTags = [...new Set(nestedTags)];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

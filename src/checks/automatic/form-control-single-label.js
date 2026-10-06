@@ -74,6 +74,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const isAccTreeEligible =
@@ -95,10 +96,12 @@ function runInPage(ctx) {
   // attribute-selector construction / CSS.escape, which is not guaranteed
   // to exist as a global in every runtime this engine executes in).
   const labelsByFor = new Map();
-  const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
+  const allLabels = dom.get(document, 'getElementsByTagName')
+    ? dom.getElementsByTagName(document, 'label')
+    : [];
   for (const lab of allLabels) {
-    if (!lab || !lab.getAttribute) continue;
-    const forValue = String(lab.getAttribute('for') || '').trim();
+    if (!lab || !dom.get(lab, 'getAttribute')) continue;
+    const forValue = String(dom.getAttribute(lab, 'for') || '').trim();
     if (!forValue) continue;
     if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
     labelsByFor.get(forValue).push(lab);
@@ -109,16 +112,16 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     applicableCount += 1;
 
     const labels = new Set();
 
-    const wrappingLabel = el.closest ? el.closest('label') : null;
+    const wrappingLabel = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
     if (wrappingLabel) labels.add(wrappingLabel);
 
-    const controlId = String(el.getAttribute('id') || '').trim();
+    const controlId = String(dom.getAttribute(el, 'id') || '').trim();
     if (controlId && labelsByFor.has(controlId)) {
       for (const lab of labelsByFor.get(controlId)) labels.add(lab);
     }
@@ -146,7 +149,7 @@ function runInPage(ctx) {
       ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
       : [...eligibleLabels];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
       failOccurrences.push(

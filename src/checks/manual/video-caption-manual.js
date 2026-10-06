@@ -60,6 +60,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
@@ -68,19 +69,19 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || !dom.get(el, 'querySelectorAll')) continue;
 
     applicableCount += 1;
 
     let hasCaptionsTrack = false;
     let hasSubtitlesTrack = false;
-    const tracks = el.querySelectorAll('track');
+    const tracks = dom.querySelectorAll(el, 'track');
     for (const t of tracks) {
       // A missing kind means subtitles (HTML's missing-value default).
-      const kind = t.hasAttribute('kind')
-        ? (t.getAttribute('kind') || '').trim().toLowerCase()
+      const kind = dom.hasAttribute(t, 'kind')
+        ? (dom.getAttribute(t, 'kind') || '').trim().toLowerCase()
         : 'subtitles';
-      const src = (t.getAttribute('src') || '').trim();
+      const src = (dom.getAttribute(t, 'src') || '').trim();
       if (!src) continue;
       if (kind === 'captions') {
         hasCaptionsTrack = true;
@@ -92,7 +93,9 @@ function runInPage(ctx) {
     if (hasCaptionsTrack) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = hasSubtitlesTrack
       ? {

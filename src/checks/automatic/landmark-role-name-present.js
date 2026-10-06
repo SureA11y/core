@@ -58,6 +58,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const NAME_REQUIRED_LANDMARK_ROLES = new Set(['region', 'form']);
@@ -66,7 +67,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of helpers.queryAllSmart('[role]')) {
-    const role = String(el.getAttribute('role') || '')
+    const role = String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];

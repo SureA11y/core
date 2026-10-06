@@ -74,6 +74,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
@@ -125,11 +126,13 @@ function runInPage(ctx) {
   function hasVisibleTextChild(el) {
     let kids;
     try {
-      kids = el.childNodes ? Array.from(el.childNodes) : [];
+      kids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
     } catch {
       return false;
     }
-    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+    return kids.some(
+      (n) => n && dom.nodeType(n) === 3 && String(dom.nodeValue(n) || '').trim() !== ''
+    );
   }
 
   function isRendered(el) {
@@ -158,7 +161,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {
       // no computed style available
@@ -175,7 +178,7 @@ function runInPage(ctx) {
     const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
     if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
 
-    if (!/(^|;)\s*width\s*:/i.test(String(el.getAttribute('style') || ''))) return false;
+    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return false;
 
     const chain =
       helpers && typeof helpers.ancestorsIncludingSelf === 'function'
@@ -183,7 +186,9 @@ function runInPage(ctx) {
         : null;
     const ancestors = chain || [];
     if (!chain) {
-      for (let a = el.parentElement; a; a = a.parentElement) ancestors.push(a);
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let a = dom.parentElement(el), i = 0; a && i < 100000; a = dom.parentElement(a), i++)
+        ancestors.push(a);
     }
 
     for (const ancestor of ancestors) {
@@ -202,7 +207,7 @@ function runInPage(ctx) {
   const WIDE_CHAR =
     /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
   function blockText(el) {
-    return String(el.textContent || '')
+    return String(dom.textContent(el) || '')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -289,8 +294,8 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('style') || '');
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'style') || '');
     if (!raw.trim()) continue;
 
     const lower = raw.toLowerCase();
@@ -338,7 +343,7 @@ function runInPage(ctx) {
       continue;
     }
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -370,7 +375,7 @@ function runInPage(ctx) {
           summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
           hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
           params: {
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props.join(', ')
           }
         },
@@ -378,7 +383,7 @@ function runInPage(ctx) {
           code: 'not-computable',
           needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
           evidence: {
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props,
             reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
           }
@@ -386,7 +391,7 @@ function runInPage(ctx) {
         data: {
           details: {
             reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props
           }
         }
@@ -402,7 +407,7 @@ function runInPage(ctx) {
             summaryKey: 'avoidInlineSpacing_summary_cantTell_shortText',
             hintKey: 'avoidInlineSpacing_hint_cantTell_shortText',
             params: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props.join(', ')
             }
           },
@@ -410,7 +415,7 @@ function runInPage(ctx) {
             code: 'not-computable',
             needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
             evidence: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props,
               reasonCode: 'INLINE_SPACING_SHORT_TEXT'
             }
@@ -418,7 +423,7 @@ function runInPage(ctx) {
           data: {
             details: {
               reasonCode: 'INLINE_SPACING_SHORT_TEXT',
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props
             }
           }
@@ -435,7 +440,7 @@ function runInPage(ctx) {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
             hintKey: 'avoidInlineSpacing_hint_cantTell',
             params: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props.join(', ')
             }
           },
@@ -443,7 +448,7 @@ function runInPage(ctx) {
             code: 'not-computable',
             needed: 'A resolved value for the spacing declarations marked !important.',
             evidence: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props,
               reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE'
             }
@@ -451,7 +456,7 @@ function runInPage(ctx) {
           data: {
             details: {
               reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props
             }
           }

@@ -116,6 +116,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -163,13 +164,13 @@ function runInPage(ctx) {
     : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const explicitRole = ariaHelpers.getExplicitRole(el);
     let role = explicitRole;
     if (
       (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
-      String(el.localName || '').toLowerCase() === 'caption'
+      String(dom.localName(el) || '').toLowerCase() === 'caption'
     ) {
       role = 'caption';
     }
@@ -179,7 +180,7 @@ function runInPage(ctx) {
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
 
@@ -282,7 +283,7 @@ function runInPage(ctx) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
@@ -294,7 +295,7 @@ function runInPage(ctx) {
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = getComposedParent(cur);
         continue;
       }
@@ -349,9 +350,9 @@ function runInPage(ctx) {
     : helpers.queryAll(namingSelector);
 
   for (const el of namingNodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
     if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
@@ -359,7 +360,7 @@ function runInPage(ctx) {
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
     if (!present.length) continue;

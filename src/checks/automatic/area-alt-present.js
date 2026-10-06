@@ -63,6 +63,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -73,8 +74,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -109,8 +110,10 @@ function runInPage(ctx) {
 
   function getMapName(mapEl) {
     try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
+      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
+      const n = String(
+        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
+      ).trim();
       return n ? n.toLowerCase() : '';
     } catch {
       return '';
@@ -122,10 +125,12 @@ function runInPage(ctx) {
     const idx = new Map();
     try {
       const imgs =
-        document && document.querySelectorAll ? document.querySelectorAll('img[usemap]') : [];
+        document && dom.get(document, 'querySelectorAll')
+          ? dom.querySelectorAll(document, 'img[usemap]')
+          : [];
       for (const img of imgs) {
-        if (!img || !img.getAttribute) continue;
-        const u = normUsemap(img.getAttribute('usemap'));
+        if (!img || !dom.get(img, 'getAttribute')) continue;
+        const u = normUsemap(dom.getAttribute(img, 'usemap'));
         if (!u) continue;
         if (!idx.has(u)) idx.set(u, img); // first in document order wins
       }
@@ -137,8 +142,8 @@ function runInPage(ctx) {
 
   function getReferencingImgForArea(areaEl) {
     try {
-      if (!areaEl || !areaEl.closest) return null;
-      const map = areaEl.closest('map');
+      if (!areaEl || !dom.get(areaEl, 'closest')) return null;
+      const map = dom.closest(areaEl, 'map');
       if (!map) return null;
 
       const mapName = getMapName(map);
@@ -165,7 +170,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of areas) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // 0) Must belong to a *used* image map: an <img usemap> must reference its <map>.
     // If not used, <area> is not applicable (matches your observed focus behavior).
@@ -175,7 +180,7 @@ function runInPage(ctx) {
     // 0b) Without href an <area> is not a hyperlink at all per the HTML
     // spec -- just a shape with no associated action -- so it has nothing
     // for this rule to name.
-    const hrefRaw = el.getAttribute('href');
+    const hrefRaw = dom.getAttribute(el, 'href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
     // 1) The referencing <img> must actually be rendered: a used map's
@@ -217,7 +222,7 @@ function runInPage(ctx) {
 
     let altRaw;
     try {
-      altRaw = el.getAttribute('alt');
+      altRaw = dom.getAttribute(el, 'alt');
     } catch {
       altRaw = null;
     }
@@ -246,7 +251,7 @@ function runInPage(ctx) {
     // img-alt-present handles for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }

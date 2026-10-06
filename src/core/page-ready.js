@@ -36,9 +36,45 @@
  *   pending: { load: boolean, fonts: boolean, images: number, domChanging?: boolean } }>}
  */
 async function waitForPageReady(options) {
+  // Reads DOM properties through the prototypes, so a page's named form
+  // controls and images can't redirect them (#90): the same lookup as
+  // src/core/safe-dom.js, repeated because this function travels alone.
+  const dom = (() => {
+    const lookup = (obj, name) => {
+      for (let p = Object.getPrototypeOf(obj); p; p = Object.getPrototypeOf(p)) {
+        const d = Object.getOwnPropertyDescriptor(p, name);
+        if (d && (typeof d.get === 'function' || typeof d.value === 'function')) return d;
+      }
+      return null;
+    };
+    const get = (obj, name) => {
+      const d = lookup(obj, name);
+      return d ? (d.get ? Reflect.apply(d.get, obj, []) : d.value) : obj[name];
+    };
+    const read = (name) => (obj) => {
+      const d = lookup(obj, name);
+      return d && d.get ? Reflect.apply(d.get, obj, []) : obj[name];
+    };
+    const call =
+      (name) =>
+      (obj, ...args) => {
+        const d = lookup(obj, name);
+        return Reflect.apply(d && typeof d.value === 'function' ? d.value : obj[name], obj, args);
+      };
+    return {
+      get,
+      defaultView: read('defaultView'),
+      fonts: read('fonts'),
+      readyState: read('readyState'),
+      querySelectorAll: call('querySelectorAll'),
+      getAttribute: call('getAttribute'),
+      addEventListener: call('addEventListener'),
+      removeEventListener: call('removeEventListener')
+    };
+  })();
   const opts = options && typeof options === 'object' ? options : {};
   const doc = opts.document || (typeof document !== 'undefined' ? document : null);
-  const win = doc && doc.defaultView ? doc.defaultView : null;
+  const win = doc && dom.defaultView(doc) ? dom.defaultView(doc) : null;
   const validTimeout = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0;
   if (opts.timeoutMs !== undefined && !validTimeout) {
     try {
@@ -67,17 +103,18 @@ async function waitForPageReady(options) {
   }
 
   function pendingImages() {
-    if (!doc || typeof doc.querySelectorAll !== 'function') return [];
-    return Array.from(doc.querySelectorAll('img')).filter(
-      (img) => !img.complete && String(img.getAttribute('loading') || '').toLowerCase() !== 'lazy'
+    if (!doc || typeof dom.get(doc, 'querySelectorAll') !== 'function') return [];
+    return Array.from(dom.querySelectorAll(doc, 'img')).filter(
+      (img) =>
+        !img.complete && String(dom.getAttribute(img, 'loading') || '').toLowerCase() !== 'lazy'
     );
   }
 
   function fontsLoading() {
     let loading = false;
     try {
-      if (doc.fonts && typeof doc.fonts.forEach === 'function') {
-        doc.fonts.forEach((face) => {
+      if (dom.fonts(doc) && typeof dom.fonts(doc).forEach === 'function') {
+        dom.fonts(doc).forEach((face) => {
           if (face && face.status === 'loading') loading = true;
         });
       }
@@ -87,18 +124,18 @@ async function waitForPageReady(options) {
 
   let domQuiet;
   if (doc) {
-    if (doc.readyState !== 'complete' && win) {
+    if (dom.readyState(doc) !== 'complete' && win) {
       let onLoad = null;
       await within(
         new Promise((resolve) => {
           onLoad = resolve;
-          win.addEventListener('load', resolve, { once: true });
+          dom.addEventListener(win, 'load', resolve, { once: true });
         })
       );
-      if (onLoad) win.removeEventListener('load', onLoad);
+      if (onLoad) dom.removeEventListener(win, 'load', onLoad);
     }
 
-    if (doc.fonts && doc.fonts.ready && left() > 0) await within(doc.fonts.ready);
+    if (dom.fonts(doc) && dom.fonts(doc).ready && left() > 0) await within(dom.fonts(doc).ready);
 
     const images = pendingImages();
     if (images.length && left() > 0) {
@@ -109,11 +146,11 @@ async function waitForPageReady(options) {
             (img) =>
               new Promise((resolve) => {
                 if (img.complete) return resolve();
-                img.addEventListener('load', resolve, { once: true });
-                img.addEventListener('error', resolve, { once: true });
+                dom.addEventListener(img, 'load', resolve, { once: true });
+                dom.addEventListener(img, 'error', resolve, { once: true });
                 cleanups.push(() => {
-                  img.removeEventListener('load', resolve);
-                  img.removeEventListener('error', resolve);
+                  dom.removeEventListener(img, 'load', resolve);
+                  dom.removeEventListener(img, 'error', resolve);
                 });
               })
           )
@@ -158,7 +195,7 @@ async function waitForPageReady(options) {
   }
 
   const pending = {
-    load: !!doc && doc.readyState !== 'complete',
+    load: !!doc && dom.readyState(doc) !== 'complete',
     fonts: !!doc && fontsLoading(),
     images: pendingImages().length
   };

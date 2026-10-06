@@ -81,6 +81,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const probes =
     ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
@@ -101,8 +102,8 @@ function runInPage(ctx) {
   // <svg><title> is not the page title.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
@@ -110,10 +111,10 @@ function runInPage(ctx) {
   // Kept as the stable selector for the usual place; a <title> elsewhere gets
   // the selector the engine builds for the node.
   const titleSelector =
-    titleEl && titleEl.parentElement && titleEl.parentElement.localName === 'head'
+    titleEl && dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
       ? 'head > title'
       : undefined;
-  const rawTitle = document.title || '';
+  const rawTitle = dom.get(document, 'title') || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
   // =========================
@@ -250,8 +251,8 @@ function runInPage(ctx) {
           occurrences.push({
             ...occBase,
             html:
-              titleEl && titleEl.outerHTML
-                ? String(titleEl.outerHTML).slice(0, 2000)
+              titleEl && dom.outerHTML(titleEl)
+                ? String(dom.outerHTML(titleEl)).slice(0, 2000)
                 : '<title>(unknown)</title>'
           });
         }
@@ -303,10 +304,10 @@ function runInPage(ctx) {
     ja: ['ホーム', 'トップページ', 'トップ', 'ようこそ']
   };
 
-  const htmlEl = document.documentElement;
+  const htmlEl = dom.documentElement(document);
   const pageLang =
-    htmlEl && htmlEl.getAttribute && htmlEl.getAttribute('lang')
-      ? htmlEl.getAttribute('lang').trim().split('-')[0].toLowerCase()
+    htmlEl && dom.get(htmlEl, 'getAttribute') && dom.getAttribute(htmlEl, 'lang')
+      ? dom.getAttribute(htmlEl, 'lang').trim().split('-')[0].toLowerCase()
       : '';
   const titleNorm = titleLc.normalize('NFKC').replace(/[\u2018\u2019]/g, "'");
 
@@ -380,8 +381,8 @@ function runInPage(ctx) {
       occurrences.push({
         ...occBase,
         html:
-          titleEl && titleEl.outerHTML
-            ? String(titleEl.outerHTML).slice(0, 2000)
+          titleEl && dom.outerHTML(titleEl)
+            ? String(dom.outerHTML(titleEl)).slice(0, 2000)
             : '<title>(unknown)</title>'
       });
     }

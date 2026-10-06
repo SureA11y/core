@@ -3,6 +3,39 @@
 const js = require('@eslint/js');
 const globals = require('globals');
 const prettierConfig = require('eslint-config-prettier');
+const { isUnsafeDomMember } = require('./scripts/codemods/safe-dom-rule');
+
+// A page's named form controls and images override the form's and the
+// document's own properties ([LegacyOverrideBuiltIns]), so the engine reads
+// DOM properties through the safe accessors of src/core/safe-dom.js (#90).
+// scripts/codemods/use-safe-dom.js rewrites a direct read; this rule keeps
+// new code from adding one.
+const safeDomPlugin = {
+  rules: {
+    'use-safe-dom': {
+      meta: {
+        type: 'problem',
+        messages: {
+          direct:
+            'Read "{{name}}" through the safe DOM accessors (dom.{{name}}(…), dom.get or dom.call): a named form control or image can override it. Run scripts/codemods/use-safe-dom.js.'
+        }
+      },
+      create(context) {
+        return {
+          MemberExpression(node) {
+            // Writes are left alone, as the rewrite leaves them: the engine
+            // only writes to elements it created itself.
+            const parent = node.parent;
+            if (parent && parent.type === 'AssignmentExpression' && parent.left === node) return;
+            if (isUnsafeDomMember(node)) {
+              context.report({ node, messageId: 'direct', data: { name: node.property.name } });
+            }
+          }
+        };
+      }
+    }
+  }
+};
 
 module.exports = [
   js.configs.recommended,
@@ -26,6 +59,13 @@ module.exports = [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-useless-assignment': 'error'
     }
+  },
+  {
+    // Everything that runs in the page: the engine and the rules.
+    files: ['src/core/**/*.js', 'src/checks/**/*.js', 'profiles/*/rules/**/*.js'],
+    ignores: ['src/core/safe-dom.js'],
+    plugins: { 'safe-dom': safeDomPlugin },
+    rules: { 'safe-dom/use-safe-dom': 'error' }
   },
   {
     ignores: [

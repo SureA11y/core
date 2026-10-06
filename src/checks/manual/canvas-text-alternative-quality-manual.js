@@ -64,6 +64,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -74,8 +75,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -111,7 +112,7 @@ function runInPage(ctx) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
+        return String(dom.getAttribute(el, 'role') || '')
           .trim()
           .toLowerCase();
       } catch {
@@ -134,7 +135,7 @@ function runInPage(ctx) {
     } else {
       let tabindex;
       try {
-        tabindex = el.getAttribute('tabindex');
+        tabindex = dom.getAttribute(el, 'tabindex');
       } catch {
         tabindex = null;
       }
@@ -160,7 +161,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = accEligibleCached(el);
@@ -197,7 +198,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'canvas_textAltQuality_summary_cantTell',
         hintKey: 'canvas_textAltQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

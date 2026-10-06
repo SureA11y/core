@@ -57,6 +57,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -71,7 +72,7 @@ function runInPage(ctx) {
     // ismap does something only on an image inside a hyperlink.
     let link;
     try {
-      link = el.closest ? el.closest('a[href]') : null;
+      link = dom.get(el, 'closest') ? dom.closest(el, 'a[href]') : null;
     } catch {
       link = null;
     }
@@ -92,7 +93,7 @@ function runInPage(ctx) {
           code: 'equivalence-unknown',
           needed:
             'Whether the destinations of this image map are also offered as keyboard-operable links.',
-          evidence: { href: link.getAttribute('href') }
+          evidence: { href: dom.getAttribute(link, 'href') }
         },
         data: {
           details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }

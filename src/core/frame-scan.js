@@ -27,17 +27,22 @@
  * (same as dom-runner.js) -- test via the generated core.js bundle instead.
  */
 
+// The only module required here: a self-contained one, inlined into the
+// page bundle next to these functions.
+const { createSafeDom } = require('./safe-dom');
+
 /* global runa11yCoreInPage, resolveContextRoots, pingFrame,
    sendFrameRunCommand, enableFrameRpcResponder */
 
 function findChildFrameElements(roots) {
+  const dom = createSafeDom();
   const seen = new Set();
   const out = [];
   for (const root of roots) {
-    if (!root || typeof root.querySelectorAll !== 'function') continue;
+    if (!root || typeof dom.get(root, 'querySelectorAll') !== 'function') continue;
     let matches;
     try {
-      matches = root.querySelectorAll('iframe, frame');
+      matches = dom.querySelectorAll(root, 'iframe, frame');
     } catch {
       matches = [];
     }
@@ -57,24 +62,30 @@ function findChildFrameElements(roots) {
 // as the page's. checkVisibility() answers it; a browser without it scans
 // every frame, as before.
 function isFrameShown(el) {
+  const dom = createSafeDom();
   try {
-    if (typeof el.checkVisibility === 'function') {
-      return el.checkVisibility({ visibilityProperty: true });
+    if (typeof dom.get(el, 'checkVisibility') === 'function') {
+      return dom.checkVisibility(el, { visibilityProperty: true });
     }
   } catch {}
   return true;
 }
 
 function getFrameElementUrl(el) {
+  const dom = createSafeDom();
   try {
-    if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
-      return el.contentWindow.location.href;
+    if (
+      dom.contentWindow(el) &&
+      dom.contentWindow(el).location &&
+      dom.contentWindow(el).location.href
+    ) {
+      return dom.contentWindow(el).location.href;
     }
   } catch {
     // Cross-origin: reading contentWindow.location.href itself throws. Fall
     // back to the authored src attribute (always readable, any origin).
   }
-  return el.getAttribute ? el.getAttribute('src') || null : null;
+  return dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'src') || null : null;
 }
 
 /**
@@ -96,6 +107,7 @@ function getFrameElementUrl(el) {
  * @returns {Promise<{ topFrame: object, frames: Array<{url:string|null, topFrame?:object, frames?:Array, error?:string}> }>}
  */
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
+  const dom = createSafeDom();
   // An invalid contextSelector (or runOnly) throws in the local scan; reject
   // with it, as any other failure of this promise-returning call would.
   let topFrame;
@@ -118,7 +130,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
     const url = getFrameElementUrl(el);
     let targetWindow = null;
     try {
-      targetWindow = el.contentWindow || null;
+      targetWindow = dom.contentWindow(el) || null;
     } catch {
       targetWindow = null;
     }
