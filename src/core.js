@@ -25433,6 +25433,59 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return 'block';
   }
 
+  // A <meta name="viewport"> content attribute, read as browsers read it
+  // (CSS Viewport, parsing the content attribute; Chromium's parser): a name
+  // and its value each end at whitespace, ',', ';' or '='; whitespace and
+  // separators between pairs are skipped, so 'width=device-width
+  // user-scalable=no' is two settings; a name with no value takes the empty
+  // value; a later setting replaces an earlier one; case doesn't matter.
+  // Returns the settings and what they do to zoom: userScalable is false when
+  // zoom is blocked (no, an unparsable value, a number between -1 and 1);
+  // maximumScale is the cap as a number, with yes as 1, no and unparsable
+  // values as 0, device-width and device-height as 10, and null for a
+  // negative value, which browsers ignore. Each is undefined when absent.
+  function readViewportContent(raw) {
+    const s = String(raw == null ? '' : raw).toLowerCase();
+    const n = s.length;
+    const isSep = (c) =>
+      c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '=' || c === ',' || c === ';';
+    const values = {};
+    let i = 0;
+    while (i < n) {
+      while (i < n && isSep(s[i])) i++;
+      if (i >= n) break;
+      const k0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      const key = s.slice(k0, i);
+      // On to its '=', but not past a ','.
+      while (i < n && s[i] !== '=' && s[i] !== ',') i++;
+      while (i < n && isSep(s[i]) && s[i] !== ',') i++;
+      const v0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      values[key] = s.slice(v0, i);
+    }
+    const number = (v) => {
+      if (v === 'yes') return 1;
+      if (v === 'no') return 0;
+      if (v === 'device-width' || v === 'device-height') return 10;
+      const f = Number.parseFloat(v);
+      return Number.isFinite(f) ? f : 0;
+    };
+    let userScalable;
+    if (Object.prototype.hasOwnProperty.call(values, 'user-scalable')) {
+      const v = values['user-scalable'];
+      if (v === 'yes' || v === 'device-width' || v === 'device-height') userScalable = true;
+      else if (v === 'no') userScalable = false;
+      else userScalable = Math.abs(number(v)) >= 1;
+    }
+    let maximumScale;
+    if (Object.prototype.hasOwnProperty.call(values, 'maximum-scale')) {
+      const m = number(values['maximum-scale']);
+      maximumScale = m < 0 ? null : m;
+    }
+    return { values, userScalable, maximumScale };
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -27066,6 +27119,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
     getTextBoundaryKind,
+    readViewportContent,
     isVisuallyHidden,
 
     // Role / focusability
@@ -58801,21 +58855,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  function parseContent(raw) {
-    const out = {};
-    for (const pair of String(raw || '').split(/[,;]/)) {
-      const eq = pair.indexOf('=');
-      if (eq === -1) continue;
-      const key = pair.slice(0, eq).trim().toLowerCase();
-      const value = pair
-        .slice(eq + 1)
-        .trim()
-        .toLowerCase();
-      if (key) out[key] = value;
-    }
-    return out;
-  }
-
   const nodes = dom.get(document, 'querySelectorAll')
     ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
@@ -58830,20 +58869,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const parsed = parseContent(raw);
+    const viewport = helpers.readViewportContent(raw);
+    const { values } = viewport;
     const reasons = [];
-
-    const userScalable = parsed['user-scalable'];
-    if (userScalable === 'no' || userScalable === '0') {
-      reasons.push('user-scalable=' + userScalable);
-    }
-
-    const maxScaleRaw = parsed['maximum-scale'];
-    if (maxScaleRaw !== undefined) {
-      const maxScale = parseFloat(maxScaleRaw);
-      if (!Number.isNaN(maxScale) && maxScale < 5) {
-        reasons.push('maximum-scale=' + maxScaleRaw);
-      }
+    if (viewport.userScalable === false) reasons.push('user-scalable=' + values['user-scalable']);
+    if (typeof viewport.maximumScale === 'number' && viewport.maximumScale < 5) {
+      reasons.push('maximum-scale=' + values['maximum-scale']);
     }
 
     if (!reasons.length) continue;
@@ -58883,21 +58914,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  function parseContent(raw) {
-    const out = {};
-    for (const pair of String(raw || '').split(/[,;]/)) {
-      const eq = pair.indexOf('=');
-      if (eq === -1) continue;
-      const key = pair.slice(0, eq).trim().toLowerCase();
-      const value = pair
-        .slice(eq + 1)
-        .trim()
-        .toLowerCase();
-      if (key) out[key] = value;
-    }
-    return out;
-  }
-
   const nodes = dom.get(document, 'querySelectorAll')
     ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
@@ -58910,42 +58926,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
-    const parsed = parseContent(raw);
+    const viewport = helpers.readViewportContent(raw);
+    const { values } = viewport;
 
     // ACT b4f0c3 applies only when content carries maximum-scale or
     // user-scalable; content that sets neither cannot restrict zoom.
-    if (parsed['user-scalable'] === undefined && parsed['maximum-scale'] === undefined) continue;
+    if (viewport.userScalable === undefined && viewport.maximumScale === undefined) continue;
 
     applicableCount += 1;
     const reasons = [];
-
-    // CSS Device Adaptation translates an unparseable value to 0, so
-    // user-scalable=invalid and maximum-scale=yes disable zoom just as
-    // user-scalable=no does. A negative maximum-scale is out of range and
-    // dropped instead, which is why it does not restrict anything.
-    const userScalable = parsed['user-scalable'];
-    if (
-      userScalable !== undefined &&
-      userScalable !== 'yes' &&
-      userScalable !== 'device-width' &&
-      userScalable !== 'device-height'
-    ) {
-      const scale = parseFloat(userScalable);
-      if (Number.isNaN(scale) || (scale > -1 && scale < 1)) {
-        reasons.push('user-scalable=' + userScalable);
-      }
-    }
-
-    const maxScaleRaw = parsed['maximum-scale'];
-    if (
-      maxScaleRaw !== undefined &&
-      maxScaleRaw !== 'device-width' &&
-      maxScaleRaw !== 'device-height'
-    ) {
-      const maxScale = parseFloat(maxScaleRaw);
-      if (Number.isNaN(maxScale) || (maxScale >= 0 && maxScale < 2)) {
-        reasons.push('maximum-scale=' + maxScaleRaw);
-      }
+    if (viewport.userScalable === false) reasons.push('user-scalable=' + values['user-scalable']);
+    if (typeof viewport.maximumScale === 'number' && viewport.maximumScale < 2) {
+      reasons.push('maximum-scale=' + values['maximum-scale']);
     }
 
     if (!reasons.length) continue;
@@ -82410,6 +82402,59 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return 'block';
   }
 
+  // A <meta name="viewport"> content attribute, read as browsers read it
+  // (CSS Viewport, parsing the content attribute; Chromium's parser): a name
+  // and its value each end at whitespace, ',', ';' or '='; whitespace and
+  // separators between pairs are skipped, so 'width=device-width
+  // user-scalable=no' is two settings; a name with no value takes the empty
+  // value; a later setting replaces an earlier one; case doesn't matter.
+  // Returns the settings and what they do to zoom: userScalable is false when
+  // zoom is blocked (no, an unparsable value, a number between -1 and 1);
+  // maximumScale is the cap as a number, with yes as 1, no and unparsable
+  // values as 0, device-width and device-height as 10, and null for a
+  // negative value, which browsers ignore. Each is undefined when absent.
+  function readViewportContent(raw) {
+    const s = String(raw == null ? '' : raw).toLowerCase();
+    const n = s.length;
+    const isSep = (c) =>
+      c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '=' || c === ',' || c === ';';
+    const values = {};
+    let i = 0;
+    while (i < n) {
+      while (i < n && isSep(s[i])) i++;
+      if (i >= n) break;
+      const k0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      const key = s.slice(k0, i);
+      // On to its '=', but not past a ','.
+      while (i < n && s[i] !== '=' && s[i] !== ',') i++;
+      while (i < n && isSep(s[i]) && s[i] !== ',') i++;
+      const v0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      values[key] = s.slice(v0, i);
+    }
+    const number = (v) => {
+      if (v === 'yes') return 1;
+      if (v === 'no') return 0;
+      if (v === 'device-width' || v === 'device-height') return 10;
+      const f = Number.parseFloat(v);
+      return Number.isFinite(f) ? f : 0;
+    };
+    let userScalable;
+    if (Object.prototype.hasOwnProperty.call(values, 'user-scalable')) {
+      const v = values['user-scalable'];
+      if (v === 'yes' || v === 'device-width' || v === 'device-height') userScalable = true;
+      else if (v === 'no') userScalable = false;
+      else userScalable = Math.abs(number(v)) >= 1;
+    }
+    let maximumScale;
+    if (Object.prototype.hasOwnProperty.call(values, 'maximum-scale')) {
+      const m = number(values['maximum-scale']);
+      maximumScale = m < 0 ? null : m;
+    }
+    return { values, userScalable, maximumScale };
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -84043,6 +84088,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
     getTextBoundaryKind,
+    readViewportContent,
     isVisuallyHidden,
 
     // Role / focusability

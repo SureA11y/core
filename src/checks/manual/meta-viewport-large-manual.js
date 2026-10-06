@@ -11,8 +11,9 @@
  *   Applies to <meta name="viewport"> elements that carry a non-empty
  *   content attribute.
  * @expectation
- *   The content attribute does not set user-scalable to "no"/"0", and
- *   does not set maximum-scale below 5 (500%). This is the AAA-level,
+ *   The content attribute does not block zoom with user-scalable, and does
+ *   not set maximum-scale below 5 (500%), read as browsers read it, the same
+ *   way meta-viewport-zoom-enabled reads it. This is the AAA-level,
  *   stricter counterpart of meta-viewport-zoom-enabled (which
  *   enforces the AA 200% minimum as a hard, WCAG-normative fail); this
  *   rule is advisory best-practice guidance toward the higher AAA bar.
@@ -62,21 +63,6 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  function parseContent(raw) {
-    const out = {};
-    for (const pair of String(raw || '').split(/[,;]/)) {
-      const eq = pair.indexOf('=');
-      if (eq === -1) continue;
-      const key = pair.slice(0, eq).trim().toLowerCase();
-      const value = pair
-        .slice(eq + 1)
-        .trim()
-        .toLowerCase();
-      if (key) out[key] = value;
-    }
-    return out;
-  }
-
   const nodes = dom.get(document, 'querySelectorAll')
     ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
@@ -91,20 +77,12 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const parsed = parseContent(raw);
+    const viewport = helpers.readViewportContent(raw);
+    const { values } = viewport;
     const reasons = [];
-
-    const userScalable = parsed['user-scalable'];
-    if (userScalable === 'no' || userScalable === '0') {
-      reasons.push('user-scalable=' + userScalable);
-    }
-
-    const maxScaleRaw = parsed['maximum-scale'];
-    if (maxScaleRaw !== undefined) {
-      const maxScale = parseFloat(maxScaleRaw);
-      if (!Number.isNaN(maxScale) && maxScale < 5) {
-        reasons.push('maximum-scale=' + maxScaleRaw);
-      }
+    if (viewport.userScalable === false) reasons.push('user-scalable=' + values['user-scalable']);
+    if (typeof viewport.maximumScale === 'number' && viewport.maximumScale < 5) {
+      reasons.push('maximum-scale=' + values['maximum-scale']);
     }
 
     if (!reasons.length) continue;

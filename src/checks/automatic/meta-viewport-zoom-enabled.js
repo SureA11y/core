@@ -21,10 +21,14 @@
  *   - `reasons`: the settings that restrict zoom, one per item, written as
  *     in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
  * @implementation-notes
- * - An unparseable value counts as a restriction, because CSS Device
- *   Adaptation translates it to 0: maximum-scale=yes disables zoom exactly
- *   as maximum-scale=0 does. A negative maximum-scale is out of range and
- *   dropped by the browser, so it restricts nothing and passes.
+ * - The content attribute is read as browsers read it (CSS Viewport):
+ *   whitespace separates settings as ',' and ';' do, so
+ *   'width=device-width user-scalable=no' sets user-scalable. A setting
+ *   with no value, or a value that isn't a number, counts as a
+ *   restriction, as browsers translate it to 0; yes counts as 1, so
+ *   maximum-scale=yes caps zoom at 100%. A negative maximum-scale is
+ *   dropped by the browser, so it restricts nothing and passes. Shared with
+ *   meta-viewport-large (helpers.readViewportContent).
  */
 
 const id = 'meta-viewport-zoom-enabled';
@@ -68,21 +72,6 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  function parseContent(raw) {
-    const out = {};
-    for (const pair of String(raw || '').split(/[,;]/)) {
-      const eq = pair.indexOf('=');
-      if (eq === -1) continue;
-      const key = pair.slice(0, eq).trim().toLowerCase();
-      const value = pair
-        .slice(eq + 1)
-        .trim()
-        .toLowerCase();
-      if (key) out[key] = value;
-    }
-    return out;
-  }
-
   const nodes = dom.get(document, 'querySelectorAll')
     ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
@@ -95,42 +84,18 @@ function runInPage(ctx) {
     const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
-    const parsed = parseContent(raw);
+    const viewport = helpers.readViewportContent(raw);
+    const { values } = viewport;
 
     // ACT b4f0c3 applies only when content carries maximum-scale or
     // user-scalable; content that sets neither cannot restrict zoom.
-    if (parsed['user-scalable'] === undefined && parsed['maximum-scale'] === undefined) continue;
+    if (viewport.userScalable === undefined && viewport.maximumScale === undefined) continue;
 
     applicableCount += 1;
     const reasons = [];
-
-    // CSS Device Adaptation translates an unparseable value to 0, so
-    // user-scalable=invalid and maximum-scale=yes disable zoom just as
-    // user-scalable=no does. A negative maximum-scale is out of range and
-    // dropped instead, which is why it does not restrict anything.
-    const userScalable = parsed['user-scalable'];
-    if (
-      userScalable !== undefined &&
-      userScalable !== 'yes' &&
-      userScalable !== 'device-width' &&
-      userScalable !== 'device-height'
-    ) {
-      const scale = parseFloat(userScalable);
-      if (Number.isNaN(scale) || (scale > -1 && scale < 1)) {
-        reasons.push('user-scalable=' + userScalable);
-      }
-    }
-
-    const maxScaleRaw = parsed['maximum-scale'];
-    if (
-      maxScaleRaw !== undefined &&
-      maxScaleRaw !== 'device-width' &&
-      maxScaleRaw !== 'device-height'
-    ) {
-      const maxScale = parseFloat(maxScaleRaw);
-      if (Number.isNaN(maxScale) || (maxScale >= 0 && maxScale < 2)) {
-        reasons.push('maximum-scale=' + maxScaleRaw);
-      }
+    if (viewport.userScalable === false) reasons.push('user-scalable=' + values['user-scalable']);
+    if (typeof viewport.maximumScale === 'number' && viewport.maximumScale < 2) {
+      reasons.push('maximum-scale=' + values['maximum-scale']);
     }
 
     if (!reasons.length) continue;

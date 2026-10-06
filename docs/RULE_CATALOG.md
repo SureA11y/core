@@ -1676,7 +1676,7 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 
 **Applies to.** Applies to &lt;meta name="viewport"&gt; elements that carry a non-empty content attribute.
 
-**Expectation.** The content attribute does not set user-scalable to "no"/"0", and does not set maximum-scale below 5 (500%). This is the AAA-level, stricter counterpart of meta-viewport-zoom-enabled (which enforces the AA 200% minimum as a hard, WCAG-normative fail); this rule is advisory best-practice guidance toward the higher AAA bar.
+**Expectation.** The content attribute does not block zoom with user-scalable, and does not set maximum-scale below 5 (500%), read as browsers read it, the same way meta-viewport-zoom-enabled reads it. This is the AAA-level, stricter counterpart of meta-viewport-zoom-enabled (which enforces the AA 200% minimum as a hard, WCAG-normative fail); this rule is advisory best-practice guidance toward the higher AAA bar.
 
 **What a finding reports.**
 

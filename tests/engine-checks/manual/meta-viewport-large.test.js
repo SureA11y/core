@@ -73,3 +73,27 @@ test(`meta-viewport-large: notApplicable when engineOptions.fragment is true, ev
     maxOccurrences: 0
   });
 });
+
+// Read the same way as meta-viewport-zoom-enabled reads it (#102): settings
+// separated by spaces, and values browsers translate to no zoom.
+test(`${RULE_ID}: reads the content attribute as browsers do`, () => {
+  const cases = [
+    ['width=device-width user-scalable=no', 'cantTell'],
+    ['user-scalable=yes maximum-scale=5', 'pass'],
+    ['maximum-scale=abc', 'cantTell'],
+    ['maximum-scale=no', 'cantTell'],
+    ['user-scalable=0.5', 'cantTell'],
+    ['maximum-scale=-1', 'pass'],
+    ['maximum-scale=device-width', 'pass']
+  ];
+  for (const [content, expected] of cases) {
+    const html = `<!doctype html><html><head><meta name="viewport" content="${content}"></head><body><p>x</p></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(
+      result,
+      RULE_ID,
+      expected,
+      expected === 'pass' ? { maxOccurrences: 0 } : { minOccurrences: 1 }
+    );
+  }
+});

@@ -4135,6 +4135,59 @@ function createDomHelpers(opts) {
     return 'block';
   }
 
+  // A <meta name="viewport"> content attribute, read as browsers read it
+  // (CSS Viewport, parsing the content attribute; Chromium's parser): a name
+  // and its value each end at whitespace, ',', ';' or '='; whitespace and
+  // separators between pairs are skipped, so 'width=device-width
+  // user-scalable=no' is two settings; a name with no value takes the empty
+  // value; a later setting replaces an earlier one; case doesn't matter.
+  // Returns the settings and what they do to zoom: userScalable is false when
+  // zoom is blocked (no, an unparsable value, a number between -1 and 1);
+  // maximumScale is the cap as a number, with yes as 1, no and unparsable
+  // values as 0, device-width and device-height as 10, and null for a
+  // negative value, which browsers ignore. Each is undefined when absent.
+  function readViewportContent(raw) {
+    const s = String(raw == null ? '' : raw).toLowerCase();
+    const n = s.length;
+    const isSep = (c) =>
+      c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '=' || c === ',' || c === ';';
+    const values = {};
+    let i = 0;
+    while (i < n) {
+      while (i < n && isSep(s[i])) i++;
+      if (i >= n) break;
+      const k0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      const key = s.slice(k0, i);
+      // On to its '=', but not past a ','.
+      while (i < n && s[i] !== '=' && s[i] !== ',') i++;
+      while (i < n && isSep(s[i]) && s[i] !== ',') i++;
+      const v0 = i;
+      while (i < n && !isSep(s[i])) i++;
+      values[key] = s.slice(v0, i);
+    }
+    const number = (v) => {
+      if (v === 'yes') return 1;
+      if (v === 'no') return 0;
+      if (v === 'device-width' || v === 'device-height') return 10;
+      const f = Number.parseFloat(v);
+      return Number.isFinite(f) ? f : 0;
+    };
+    let userScalable;
+    if (Object.prototype.hasOwnProperty.call(values, 'user-scalable')) {
+      const v = values['user-scalable'];
+      if (v === 'yes' || v === 'device-width' || v === 'device-height') userScalable = true;
+      else if (v === 'no') userScalable = false;
+      else userScalable = Math.abs(number(v)) >= 1;
+    }
+    let maximumScale;
+    if (Object.prototype.hasOwnProperty.call(values, 'maximum-scale')) {
+      const m = number(values['maximum-scale']);
+      maximumScale = m < 0 ? null : m;
+    }
+    return { values, userScalable, maximumScale };
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -5768,6 +5821,7 @@ function createDomHelpers(opts) {
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
     getTextBoundaryKind,
+    readViewportContent,
     isVisuallyHidden,
 
     // Role / focusability
