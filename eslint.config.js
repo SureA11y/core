@@ -32,6 +32,8 @@ module.exports = [
       'node_modules/**',
       'coverage/**',
       'cross-engine-report/**',
+      // Audit probe scripts: throwaway code kept as evidence, never shipped or run in CI.
+      'audits/**',
       // Dot-directories hold local editor and tooling config, not project
       // source. Linting them fails on whatever conventions their own tools
       // use, and none of it ships.
