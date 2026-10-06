@@ -261,9 +261,10 @@ function runInPage(ctx) {
       continue;
     }
 
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return trim(dom.getAttribute(el, 'role')).toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }

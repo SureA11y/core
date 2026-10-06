@@ -172,3 +172,22 @@ test("listbox-name-present: label association with empty content falls back to t
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test('listbox-name-present: role is a fallback list matched in any case (#91)', () => {
+  // role="foo listbox" and role="LISTBOX" are listboxs; role="link listbox" is a link.
+  const html = `<!doctype html><html><body>
+    <div id="fb" role="foo listbox"></div>
+    <div id="up" role="LISTBOX"></div>
+    <a id="lk" href="#x" role="link listbox">Link</a>
+  </body></html>`;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fb'));
+  assert.ok(hasOccurrenceForId(rule, 'up'));
+  assert.ok(!hasOccurrenceForId(rule, 'lk'));
+});

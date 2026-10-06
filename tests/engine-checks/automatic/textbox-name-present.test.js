@@ -197,3 +197,18 @@ test("textbox-name-present: label association with empty content falls back to t
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo textbox" and role="TEXTBOX" are in scope, role="link textbox" is not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo textbox"></div>
+    <div id="b" role="TEXTBOX"></div>
+    <div id="c" role="link textbox" href="#"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+});

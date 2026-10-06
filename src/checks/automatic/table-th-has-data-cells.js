@@ -13,9 +13,12 @@
  *   in the accessibility tree, and that contain at least one <th> which is
  *   visible, included in the accessibility tree, and not overridden by an
  *   explicit role other than rowheader/columnheader. Also applies to the
- *   ARIA-only equivalent: an element with role="grid"/"treegrid" (no
- *   native <table> involved) that contains at least one in-scope
- *   columnheader/rowheader-role element.
+ *   ARIA-only equivalent: an element whose role resolves to grid/treegrid
+ *   (no native <table> involved) that contains at least one in-scope
+ *   columnheader/rowheader-role element. Roles are resolved as user agents
+ *   do: the first token of the role attribute naming a known role, matched
+ *   in any case; a role attribute with no known token leaves the implicit
+ *   role in place.
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
  * @implementation-notes
@@ -80,15 +83,36 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does (the element
+  // then keeps its implicit role).
   function explicitRole(el) {
     try {
-      return String((el && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)[0];
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
     } catch {
       return '';
     }
+  }
+
+  // Elements under `scope` matching `selector` (token, case-insensitive role
+  // selectors) whose resolved explicit role is in `roles`: `[role~="x" i]`
+  // alone also matches role="link x", which is a link.
+  function queryByRole(scope, selector, roles) {
+    let found;
+    try {
+      found = scope
+        ? Array.from(dom.querySelectorAll(scope, selector))
+        : Array.from(
+            (helpers.queryAllSmart
+              ? helpers.queryAllSmart(selector)
+              : helpers.queryAll(selector)) || []
+          );
+    } catch {
+      found = [];
+    }
+    return found.filter((el) => roles.includes(explicitRole(el)));
   }
 
   function isIncludedInTree(el) {
@@ -183,32 +207,24 @@ function runInPage(ctx) {
   // just keyed off ARIA roles instead of native tags -- a genuine
   // columnheader/rowheader with zero gridcell/cell-role elements anywhere
   // in the container is exactly as unambiguous as a <th>-only <table>.
-  const grids = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="grid"], [role="treegrid"]')
-    : helpers.queryAll('[role="grid"], [role="treegrid"]');
+  const grids = queryByRole(null, '[role~="grid" i], [role~="treegrid" i]', ['grid', 'treegrid']);
 
   for (const grid of grids) {
     if (!grid || !dom.get(grid, 'querySelectorAll')) continue;
     if (dom.tagName(grid) && dom.tagName(grid).toLowerCase() === 'table') continue; // already handled above
     if (!isIncludedInTree(grid)) continue;
 
-    let headerNodes;
-    try {
-      headerNodes = dom.querySelectorAll(grid, '[role="columnheader"], [role="rowheader"]');
-    } catch {
-      headerNodes = [];
-    }
-    const headers = Array.from(headerNodes).filter(isHeaderCellInScope);
+    const headerNodes = queryByRole(grid, '[role~="columnheader" i], [role~="rowheader" i]', [
+      'columnheader',
+      'rowheader'
+    ]);
+    const headers = headerNodes.filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;
 
-    let hasDataCell;
-    try {
-      hasDataCell = dom.querySelectorAll(grid, '[role="gridcell"], [role="cell"]').length > 0;
-    } catch {
-      hasDataCell = false;
-    }
+    const hasDataCell =
+      queryByRole(grid, '[role~="gridcell" i], [role~="cell" i]', ['gridcell', 'cell']).length > 0;
     if (hasDataCell) continue;
 
     for (const th of headers) {

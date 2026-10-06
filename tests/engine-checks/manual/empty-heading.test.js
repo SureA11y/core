@@ -131,3 +131,18 @@ test(`empty-heading: respects contextSelector scoping (regression -- used to byp
   });
   assertRule(result, 'empty-heading', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively; no known token leaves the native role.
+test(`${RULE_ID}: role="foo heading", role="HEADING" and <h2 role="foo"> are headings, <h2 role="link heading"> is not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo heading" aria-level="2"></div>
+    <div id="b" role="HEADING" aria-level="2"></div>
+    <h2 id="c" role="foo"></h2>
+    <h2 id="d" role="link heading"></h2>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const id of ['a', 'b', 'c']) assert.ok(hasOccurrenceForId(rule, id), id);
+  assert.ok(!hasOccurrenceForId(rule, 'd'));
+});

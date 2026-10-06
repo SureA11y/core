@@ -9,8 +9,11 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Elements with an explicit `tabindex` of `0` or greater (in the tab
- *   order) AND an explicit `role` attribute that is one of a curated set
- *   of clearly non-interactive, structural/document roles.
+ *   order) AND an explicit `role` attribute that resolves to one of a
+ *   curated set of clearly non-interactive, structural/document roles. The
+ *   attribute is a fallback list: its first known, non-abstract token, in
+ *   any case, is the role (role="foo HEADING" is a heading, role="foo" is
+ *   no role).
  * @expectation
  *   An element placed in the tab order on purpose should communicate
  *   why it's focusable: a role like `heading`, `list`, `note`, or
@@ -119,7 +122,15 @@ function runInPage(ctx) {
     const tabindex = Number.parseInt(tabindexAttr, 10);
     if (!Number.isFinite(tabindex) || tabindex < 0) continue;
 
-    const role = (dom.getAttribute(el, 'role') || '').trim().toLowerCase();
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case. role="foo heading" is a heading; role="foo" gives
+    // no role at all, so the element is not in scope.
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
     if (!role) continue;
 
     applicableCount += 1;

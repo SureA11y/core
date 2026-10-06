@@ -128,3 +128,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-th-has-data-cells-all-s
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: ARIA roles are a fallback list read in any case (#91)`, () => {
+  // role="foo grid" is a grid with a header and no data cell; role="GRID"
+  // with a role="foo gridcell" cell has one; role="foo" on a <table> is no
+  // role, so the table keeps its semantics.
+  const html = `<!doctype html><html><body>
+    <div role="foo grid"><div role="row"><div role="COLUMNHEADER" id="g1">H</div></div></div>
+    <div role="GRID"><div role="row"><div role="columnheader" id="g2">H</div><div role="foo gridcell">d</div></div></div>
+    <table role="foo"><tr><th id="t1">H</th></tr></table>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'g1'));
+  assert.ok(hasOccurrenceForId(rule, 't1'));
+  assert.ok(!hasOccurrenceForId(rule, 'g2'));
+});

@@ -8,7 +8,9 @@
  * @summary role="text" elements should have no focusable descendants
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Elements with an explicit `role="text"`.
+ *   Elements whose role attribute resolves to text: its first token naming
+ *   a known role, matched in any case, is `text`, so `role="foo text"` and
+ *   `role="TEXT"` count while `role="link text"` (a link) does not.
  * @expectation
  *   `role="text"` tells assistive technology to treat an element's whole
  *   subtree as a single unit of plain text (e.g. text visually split
@@ -63,9 +65,13 @@ function runInPage(ctx) {
     return null;
   }
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="text"]')
-    : helpers.queryAll('[role="text"]');
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is text (role="link text" is a link).
+  const nodes = (
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart('[role~="text" i]')
+      : helpers.queryAll('[role~="text" i]')
+  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
 
   const occurrences = [];
   let applicableCount = 0;

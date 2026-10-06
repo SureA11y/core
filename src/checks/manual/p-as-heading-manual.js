@@ -39,7 +39,9 @@
  *   one normal-weight word does not.
  * - A `<div>` is only considered when it has no block, list, table, form
  *   control or image inside it, so only the innermost block is asked
- *   about. A `<div>` with a role, and text inside a heading, button,
+ *   about. A `<div>` with a role (a role attribute whose tokens name a
+ *   real role; the first such token wins, in any case), and text inside a
+ *   heading, button,
  *   label, legend, caption, table header or `<summary>`, are left out:
  *   that text already has a role of its own.
  */
@@ -108,9 +110,26 @@ function runInPage(ctx) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // Elements whose text already has a role of its own.
-  const OWN_ROLE_ANCESTORS =
-    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
+  // Elements whose text already has a role of its own: these native tags,
+  // or an element whose role attribute resolves to one of OWN_ROLES (the
+  // first token naming a real role, in any case: role="foo heading" counts,
+  // role="note heading" doesn't).
+  const OWN_ROLE_TAGS = 'h1, h2, h3, h4, h5, h6, button, label, legend, caption, th, summary';
+  const OWN_ROLES = ['heading', 'button', 'columnheader', 'rowheader'];
+  const OWN_ROLE_SELECTOR = OWN_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+
+  function hasOwnRoleAncestor(el) {
+    if (!dom.get(el, 'closest')) return false;
+    if (dom.closest(el, OWN_ROLE_TAGS)) return true;
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.closest(cur, OWN_ROLE_SELECTOR);
+      if (!hit) return false;
+      if (OWN_ROLES.includes(helpers.aria.getExplicitRole(hit))) return true;
+      cur = dom.parentElement(hit);
+    }
+    return false;
+  }
 
   // Anything but text and inline markup makes a <div> a container, not a
   // passage of text.
@@ -145,10 +164,11 @@ function runInPage(ctx) {
 
   function isCandidate(el) {
     const tag = (dom.tagName(el) || '').toLowerCase();
-    if (dom.get(el, 'closest') && dom.closest(el, OWN_ROLE_ANCESTORS)) return false;
+    if (hasOwnRoleAncestor(el)) return false;
     if (tag === 'p') return true;
     if (tag !== 'div') return false;
-    if (trim(dom.getAttribute(el, 'role'))) return false;
+    // A role attribute naming no real role leaves the <div> a plain <div>.
+    if (helpers.aria.getExplicitRole(el)) return false;
     return !dom.querySelector(el, NOT_INLINE);
   }
 

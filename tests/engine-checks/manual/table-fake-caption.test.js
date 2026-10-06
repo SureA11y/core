@@ -102,6 +102,19 @@ test(`${RULE_ID}: a table whose role is not table, grid or treegrid is left out`
   assertRule(runa11yCoreOnHtml(grid, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
 });
 
+test(`${RULE_ID}: the table's role is the first real token of its role attribute, in any case`, () => {
+  // role="foo none" and role="NONE" are layout tables; role="foo" names no
+  // role, so the table keeps its native role and is asked about.
+  for (const role of ['foo none', 'NONE']) {
+    const html = `<!doctype html><html><body><table role="${role}"><tr><td>Bienvenue</td></tr><tr><td>Menu</td><td>Contenu</td></tr></table></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+  const unknown = `<!doctype html><html><body><table role="foo"><tr><td>Ventes</td></tr><tr><td>a</td><td>b</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(unknown, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+});
+
 test(`${RULE_ID}: a table already named by aria-label, aria-labelledby or title is left out`, () => {
   for (const attrs of ['aria-label="Ventes 2025"', 'title="Ventes 2025"', 'aria-labelledby="h"']) {
     const html = `<!doctype html><html><body><h2 id="h">Ventes 2025</h2><table ${attrs}><tr><td>Ventes 2025</td></tr><tr><td>a</td><td>b</td></tr></table></body></html>`;

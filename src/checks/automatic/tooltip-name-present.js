@@ -9,8 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="tooltip" (the attribute must name
- *   that role alone, not a fallback list) that are included in the
+ *   Applies to elements whose role attribute resolves to tooltip: its first
+ *   token naming a known role, matched in any case, is tooltip, so
+ *   role="foo tooltip" and role="TOOLTIP" count while role="link tooltip"
+ *   (a link) does not. The element must be included in the
  *   accessibility tree. An element with the matching implicit role but no
  *   role attribute is out of scope.
  * @expectation
@@ -126,7 +128,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tooltip"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is tooltip (role="link tooltip" is a link).
+  const selector = '[role~="tooltip" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -151,8 +155,7 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tooltip') continue;
+    if (helpers.aria.getExplicitRole(el) !== 'tooltip') continue;
 
     applicableCount += 1;
 

@@ -208,11 +208,13 @@ function runInPage(ctx) {
     }
 
     // Applicability step 2: role (presentation/none) exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }

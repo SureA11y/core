@@ -12,9 +12,10 @@
  *   `<table>` elements with at least 4 rows and at least 4 columns
  *   (a "large" table, where implicit row/column header association is
  *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (first
- *   token) is anything but table, grid or treegrid, such as a layout table
- *   with role="presentation", is left out: it has no data cells.
+ *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (the
+ *   role attribute's first known, non-abstract token, in any case) is
+ *   anything but table, grid or treegrid, such as a layout table with
+ *   role="presentation", is left out: it has no data cells.
  * @expectation
  *   Every non-empty `<td>` has an associated header, via one of:
  *     - a non-empty `headers` attribute (trusted here; whether it
@@ -98,8 +99,14 @@ function runInPage(ctx) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case ('' when none is), as user agents read the fallback list.
   function firstRole(el) {
-    return trim(dom.getAttribute(el, 'role')).toLowerCase().split(/\s+/)[0];
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // Content that can carry a name or a value even without text.

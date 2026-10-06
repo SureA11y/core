@@ -45,6 +45,24 @@ test(`${RULE_ID}: cantTell for role="link" elements whose destination comes from
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
 });
 
+test(`${RULE_ID}: a link role in a fallback list or upper case (role="foo link", role="LINK") is a link, a link token after a real role is not`, () => {
+  const html = `<!doctype html><html><body>
+    <span role="foo link" tabindex="0" onclick="location='/about/contact.html'">Contact us</span>
+    <span role="LINK" tabindex="0" onclick="location='/admissions/contact.html'">Contact us</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+
+  const buttonFirst = `<!doctype html><html><body>
+    <span role="button link" tabindex="0" onclick="location='/about/contact.html'">Contact us</span>
+    <a href="/contact">Contact us</a>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(buttonFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: pass for role="link" elements whose onclick location assignment resolves to the same destination`, () => {
   const html = `<!doctype html><html><body>
     <span role="link" tabindex="0" onclick="location='/contact.html'">Contact us</span>

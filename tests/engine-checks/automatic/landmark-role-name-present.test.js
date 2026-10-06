@@ -92,3 +92,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-role-name-present-al
     assert.ok(!hasOccurrenceForId(rule, `lrn_case_${n}`), `case ${n} not reported`);
   }
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo region" needs a name, role="search region" is a search landmark (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="foo region">A</div><div role="search region">B</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="REGION" needs a name (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="REGION">A</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

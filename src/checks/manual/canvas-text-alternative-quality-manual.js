@@ -110,11 +110,11 @@ function runInPage(ctx) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }

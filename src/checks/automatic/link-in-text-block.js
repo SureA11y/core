@@ -9,7 +9,8 @@
  * @standard WCAG 2.2
  * @sc 1.4.1
  * @applicability
- *   Applies to links (`<a href>` and elements with `role="link"`) whose
+ *   Applies to links (`<a href>` and elements whose role attribute resolves
+ *   to link: its first known role token, in any case, is `link`) whose
  *   immediate parent element also has at least one direct-child text node
  *   with non-whitespace content (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
@@ -118,6 +119,18 @@ const meta = {
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
+
+  // The element's resolved explicit role: the first known role token of
+  // its role attribute, lower-cased, or '' when none names a role.
+  function explicitRole(el) {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function safeComputedStyle(el) {
     try {
@@ -379,7 +392,13 @@ function runInPage(ctx) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(dom.querySelectorAll(el, 'img, svg, picture, canvas, [role="img"]'));
+      imgs = Array.from(
+        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i]')
+      ).filter((img) => {
+        const name = String(dom.localName(img) || '').toLowerCase();
+        if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
+        return explicitRole(img) === 'img';
+      });
     } catch {
       return false;
     }
@@ -498,10 +517,16 @@ function runInPage(ctx) {
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
-  const selector = 'a[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // `[role~="link" i]` also matches a fallback list whose first known role
+  // is something else (role="button link" is a button), so a role-only
+  // candidate is kept only when its resolved explicit role is link.
+  const selector = 'a[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    if (uaUnderlines(el)) return true;
+    return explicitRole(el) === 'link';
+  });
 
   const occurrences = [];
   const undecided = [];

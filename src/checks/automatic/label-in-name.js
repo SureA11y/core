@@ -14,9 +14,10 @@
  *   deterministically, from an associated <label>, from the control's own
  *   rendered text, or from the elements aria-labelledby points at. The
  *   candidates are <button>, <a href>, <summary>, non-hidden form controls,
- *   and the button, link, checkbox, radio, switch, searchbox, tab, menuitem,
- *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
- *   minus anything hidden or disabled. aria-hidden is not
+ *   and elements whose role attribute resolves (its first known,
+ *   non-abstract token, in any case) to the button, link, checkbox, radio,
+ *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
+ *   option, treeitem or gridcell role, minus anything hidden or disabled. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -102,12 +103,51 @@ function runInPage(ctx) {
 
   // Applicability: focus/activation controls with explicit ARIA naming.
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
-  const selector =
-    ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  // The role attribute is a fallback list matched in any case, so roles are
+  // selected by token ([role~="x" i]) and then kept only when the role the
+  // attribute resolves to (its first known, non-abstract token) is one of
+  // these: role="link button" is a link, role="foo BUTTON" a button.
+  const NATIVE_CONTROLS = 'button, a[href], summary, input:not([type="hidden"]), textarea, select';
+  const CONTROL_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'searchbox',
+    'tab',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'treeitem',
+    'gridcell'
+  ];
+  const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isCandidate(el) {
+    try {
+      if (dom.matches(el, NATIVE_CONTROLS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return CONTROL_ROLES.includes(getExplicitRole(el));
+  }
+
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(isCandidate);
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -170,13 +210,10 @@ function runInPage(ctx) {
 
   function getElementDescriptor(el) {
     const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
-    let role;
-    try {
-      role = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') || '' : '';
-    } catch {
-      role = '';
-    }
-    const r = String(role || '').trim();
+    // The resolved role, not the raw attribute: <div role="foo button"> is
+    // described as div[role="button"], the role assistive technology sees.
+    const r = el ? getExplicitRole(el) : '';
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }
 

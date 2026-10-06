@@ -190,3 +190,17 @@ test("combobox-name-present: label association with empty content falls back to 
   const result = runa11yCoreOnHtml(html);
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`, () => {
+  // role="foo combobox" and role="COMBOBOX" are comboboxs; role="link combobox" is a link.
+  const html = `<!doctype html><html><body>
+    <div role="foo combobox" tabindex="0" id="fallback"></div>
+    <div role="COMBOBOX" tabindex="0" id="upper"></div>
+    <a href="#" role="link combobox" id="link"></a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(hasOccurrenceForId(rule, 'upper'));
+  assert.ok(!hasOccurrenceForId(rule, 'link'));
+});

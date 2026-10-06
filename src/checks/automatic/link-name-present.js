@@ -9,8 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.4.4, 4.1.2
  * @applicability
- *   Applies to <a href>, <area href> and elements with role="link" that are
- *   included in the accessibility tree. An <a> without an href is not a link
+ *   Applies to <a href>, <area href> and elements whose role attribute
+ *   resolves to link (its first token naming a known role, matched in any
+ *   case) that are included in the accessibility tree. An <a> without an href is not a link
  *   and is not matched.
  * @expectation
  *   The element has a non-empty accessible name. A programmatic name is
@@ -19,8 +20,9 @@
  *   counting each descendant's own name (an <img alt>, aria-label or title),
  *   the shape behind the common <a><img alt="..."></a> logo link. The
  *   content fallback is suppressed when an explicit, known role that is not
- *   name-from-content is present; an unrecognized role token falls back to
- *   the implicit role.
+ *   name-from-content is present (the first known token of the role
+ *   fallback list); a role attribute with no known token falls back to the
+ *   implicit role.
  * @reports
  *   - `refs.accessibleName`: what the programmatic name lookup found:
  *     `present`, `value`, `mechanism` (the attribute or element the name
@@ -87,10 +89,28 @@ function runInPage(ctx) {
     return t.replace(/\s+/g, ' ').trim();
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // `[role~="link" i]` also matches role="button link" (a button), so a
+  // role-only candidate is kept only when its resolved role is link.
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
+    return explicitRole(el) === 'link';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -111,11 +131,7 @@ function runInPage(ctx) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    let roleNorm = String(role || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    let roleNorm = explicitRole(el);
     // WAI-ARIA's presentational-roles conflict resolution: a focusable
     // element keeps its implicit role whatever role="none"/"presentation"
     // says, so <a href="/" role="none">Home</a> is a link named "Home".

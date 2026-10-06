@@ -111,6 +111,17 @@ test(`${RULE_ID} (node runtime): non-focusable (disabled) role="none" input is e
   assert.strictEqual(rule.occurrences.length, 0);
 });
 
+test(`${RULE_ID} (node runtime): a fallback list or upper-case role (role="foo none", role="PRESENTATION") excludes the same way`, () => {
+  for (const role of ['foo none', 'PRESENTATION']) {
+    const html = `<!doctype html><html><body><input id="i3" type="image" alt="" src="x.png" role="${role}" disabled></body></html>`;
+    const result = runNode(html);
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.ok(rule);
+    assert.strictEqual(rule.outcome, 'notApplicable', role);
+    assert.strictEqual(rule.occurrences.length, 0);
+  }
+});
+
 test(`${RULE_ID} (node runtime): a role="presentation" input WITHOUT disabled is NOT excluded, since it's natively focusable by default`, () => {
   const html = `<!doctype html><html><body><input id="i4" type="image" alt="" aria-label="Search" src="x.png" role="presentation"></body></html>`;
   const result = runNode(html);

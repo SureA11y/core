@@ -430,3 +430,27 @@ test('button-name-present: a button restored by the presentational conflict is n
   assert.equal(rule.occurrences.length, 1);
   assert.ok(hasOccurrenceForId(rule, 'empty'));
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo button" is a button, role="link button" is not (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="foo button" tabindex="0"></div><a role="link button" href="#"></a></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="BUTTON" is a name-from-content button (#91)`, () => {
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="BUTTON" tabindex="0">Save</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

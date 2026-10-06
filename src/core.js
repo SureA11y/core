@@ -19347,16 +19347,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
     const tag = lower(dom.tagName(el) || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -20154,14 +20151,21 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {
@@ -21331,7 +21335,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // such an element as a generic container.
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
-    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    // The resolved role (#91): an attribute naming no known role leaves the
+    // element its native landmark, if any.
+    const token = aria.getExplicitRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -24566,7 +24572,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getSvgTitleChildText(node) {
     try {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
-      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
       const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
@@ -24703,7 +24709,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // same condition aria-required-parent.js's getRealContextRole
         // and aria-prohibited-children.js already use for the analogous
         // "roleless-but-included" boundary.
-        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        const presRole = aria.getExplicitRole(node);
         if (presRole === 'presentation' || presRole === 'none') {
           let restored = false;
           try {
@@ -24905,14 +24911,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const flags = [];
     if (!isElement(el)) return { role: '', source: 'none', flags: ['notElement'] };
 
-    const explicit = trim(getAttr(el, 'role'));
+    // The first token naming a known role (#91); an attribute naming none
+    // leaves the element its implicit role, as if it had none.
+    const explicit = aria.getExplicitRole(el);
     if (explicit) {
-      const v = explicit;
-      const low = v.toLowerCase();
-      if (low === 'presentation' || low === 'none') flags.push('presentation');
-      // Minimal sanity: role token should not contain spaces beyond role list; keep deterministic
-      if (/\s/.test(v)) flags.push('multiple-roles');
-      return { role: v, source: 'explicit', flags };
+      if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
+      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      return { role: explicit, source: 'explicit', flags };
     }
 
     const allowImplicit = !(opts && opts.disallowImplicit === true);
@@ -39105,11 +39110,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -40832,13 +40837,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
   // libraries that leave aria-modal off (e.g. Angular Material defaults to
-  // aria-modal="false") still count as an open modal.
+  // aria-modal="false") still count as an open modal. The role attribute is
+  // a fallback list matched case-insensitively, so role="foo dialog" is a
+  // dialog while role="region dialog" is not (the first real role wins).
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
   function collectOpenModalCandidates() {
-    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const nodes = qAll(
+      'dialog[open],[aria-modal="true"],[role~="dialog" i],[role~="alertdialog" i]'
+    );
     const out = [];
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
       if (!n || !dom.get(n, 'getAttribute')) continue;
+      const byOther =
+        (lower(dom.tagName(n)) === 'dialog' && dom.hasAttribute(n, 'open')) ||
+        dom.getAttribute(n, 'aria-modal') === 'true';
+      if (!byOther && !MODAL_ROLES.has(helpers.aria.getExplicitRole(n))) continue;
       if (!isRenderedForModal(n)) continue;
       out.push(n);
     }
@@ -42947,7 +42961,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // </generated:aria-name-required-roles>
 
   // Derived from the set above so the two cannot drift apart.
-  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // keeps only elements whose resolved explicit role (the first known token)
+  // is in the set, so role="link tree" (a link) is left out.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role~="${r}" i]`).join(',');
 
   const nodes = (() => {
     try {
@@ -42969,10 +42986,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Role normalization + allowlist check (defensive).
+    // Resolved explicit role (first known token of the fallback list,
+    // lower-cased) + allowlist check.
     const role = (() => {
       try {
-        return normalizeWs(dom.getAttribute(el, 'role')).toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -43205,9 +43225,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="text"]')
-    : helpers.queryAll('[role="text"]');
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is text (role="link text" is a link).
+  const nodes = (
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart('[role~="text" i]')
+      : helpers.queryAll('[role~="text" i]')
+  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -44136,7 +44160,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native checkbox/radio without an explicit role belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
+  // Token match, case-insensitive; the resolved-role filter below drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="checkbox" i], [role~="radio" i], [role~="switch" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -44198,7 +44224,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Determine control type
     const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins (role="foo switch" is a switch, role="link switch" a link).
+    const role = helpers.aria.getExplicitRole(el);
+    if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') continue;
 
     let controlType;
     if (tag === 'input' && type === 'checkbox') controlType = 'checkbox';
@@ -44307,11 +44336,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const selector =
-    'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The element's explicit role as user agents resolve it: the first known,
+  // non-abstract token of the role attribute, in any case ('' for none).
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The role attribute is a fallback list, so role="foo button" and
+  // role="BUTTON" are buttons; role="link button" is a link. Select by token,
+  // case-insensitively, then keep role-only candidates that resolve to button.
+  const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
+  const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      if (dom.matches(el, NATIVE_BUTTONS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return getExplicitRole(el) === 'button';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -44328,8 +44379,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!eligible) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
-    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    const roleNorm = normalizeWs(role).toLowerCase();
+    const role = getExplicitRole(el);
+    const roleNorm = role;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;
@@ -44550,9 +44601,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // non-rendered <main>/heading must not be credited here, since that would
   // wrongly treat a page with zero currently-exposed bypass mechanisms as
   // having one.
+  // A native element of one of `tags`, or an element whose role attribute
+  // resolves to `role`: the first token naming a real role wins, in any case,
+  // so role="foo main" and role="MAIN" count but role="region main" doesn't.
+  function isTagOrRole(el, tags, role) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return helpers.aria.getExplicitRole(el) === role;
+  }
+
   function hasMainLandmark() {
-    for (const el of queryAll('main, [role="main"]')) {
-      if (el && isExposedToAt(el)) return true;
+    for (const el of queryAll('main, [role~="main" i]')) {
+      if (el && isTagOrRole(el, ['main'], 'main') && isExposedToAt(el)) return true;
     }
     return false;
   }
@@ -44659,9 +44718,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   function hasHeading() {
-    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
-      if (el && isExposedToAt(el) && !isCssHidden(el)) return true;
+    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
+      if (isExposedToAt(el) && !isCssHidden(el)) return true;
     }
     return false;
   }
@@ -44756,9 +44817,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a known
+  // role wins, case-insensitively; '' when none does (no explicit role).
   function firstRoleToken(el) {
-    const raw = attrText(el, 'role').toLowerCase();
-    return raw ? raw.split(/\s+/)[0] : '';
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // ARIA's presentational role conflict: a focusable element, or one with a
@@ -44961,11 +45027,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -45173,10 +45239,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="combobox"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is combobox, so role="link combobox" (a link) is left out.
+  const selector = '[role~="combobox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -45235,8 +45314,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'combobox') continue;
+    if (explicitRole(el) !== 'combobox') continue;
 
     applicableCount += 1;
 
@@ -48023,9 +48101,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function textLength(el) {
     return String((el && dom.textContent(el)) || '').replace(/\s+/g, '').length;
   }
+  // The main landmark: the first <main>, or element whose role attribute
+  // resolves to main. The role attribute is a fallback list matched in any
+  // case (the first real role wins: role="foo main" counts, role="region
+  // main" doesn't).
   let mainEl = null;
   try {
-    mainEl = dom.querySelector(document, 'main, [role="main"]');
+    const candidates = dom.querySelectorAll(document, 'main, [role~="main" i]') || [];
+    for (const el of candidates) {
+      const isMain =
+        String(dom.localName(el) || '').toLowerCase() === 'main' ||
+        helpers.aria.getExplicitRole(el) === 'main';
+      if (isMain) {
+        mainEl = el;
+        break;
+      }
+    }
   } catch {
     mainEl = null;
   }
@@ -48505,18 +48596,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The role the browser uses: the first token of the role attribute that
-  // names a concrete ARIA role, else the element's implicit role (dialog for
-  // a native <dialog>; the others are not in scope here).
-  const aria = helpers && helpers.aria;
+  // names a concrete ARIA role (in any case), else the element's implicit
+  // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
-    for (const t of tokens) {
-      const concrete =
-        aria && typeof aria.isValidConcreteRole === 'function'
-          ? aria.isValidConcreteRole(t)
-          : t === 'dialog' || t === 'alertdialog';
-      if (concrete) return t;
-    }
+    const explicit = helpers.aria.getExplicitRole(el);
+    if (explicit) return explicit;
     return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
 
@@ -48967,11 +49051,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // role presentation/none exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -49084,11 +49170,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -49232,10 +49318,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
@@ -49463,11 +49550,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A <th> with no conflicting explicit role, plus any element carrying an
-  // explicit columnheader/rowheader role (native or not).
-  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // explicit columnheader/rowheader role (native or not). The role attribute
+  // is a fallback list read in any case, so roles are selected by token and
+  // then resolved: the first known, non-abstract token is the role, and a
+  // <th role="foo"> (no known token) keeps its implicit header role.
+  const HEADER_ROLES = ['columnheader', 'rowheader'];
+  const selector = 'th, [role~="columnheader" i], [role~="rowheader" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
+    if (HEADER_ROLES.includes(role)) return true;
+    return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
+  });
 
   const occurrences = [];
   let applicableCount = 0;
@@ -49585,7 +49685,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tabindex = Number.parseInt(tabindexAttr, 10);
     if (!Number.isFinite(tabindex) || tabindex < 0) continue;
 
-    const role = (dom.getAttribute(el, 'role') || '').trim().toLowerCase();
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case. role="foo heading" is a heading; role="foo" gives
+    // no role at all, so the element is not in scope.
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
     if (!role) continue;
 
     applicableCount += 1;
@@ -49735,25 +49843,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ])
   };
 
+  // ARIA widget roles that make an element a field. The role attribute is a
+  // fallback list matched in any case: role~= finds the token anywhere in
+  // it, and hasResolvedRole below keeps only elements whose first real role
+  // token is one of these (role="foo textbox" yes, role="button textbox" no).
+  const FIELD_ROLES = [
+    'checkbox',
+    'combobox',
+    'listbox',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'radio',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'textbox'
+  ];
+  const NATIVE_FIELD_SELECTOR =
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea';
   const FIELD_SELECTOR = [
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
-    'select',
-    'textarea',
-    '[role="checkbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="radio"]',
-    '[role="searchbox"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="switch"]',
-    '[role="textbox"]'
+    NATIVE_FIELD_SELECTOR,
+    ...FIELD_ROLES.map((r) => `[role~="${r}" i]`)
   ].join(', ');
 
-  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
-  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  const ROW_TAGS = ['tr', 'li'];
+  const ROW_ROLES = ['row', 'listitem'];
+  const ROW_SELECTOR = 'tr, [role~="row" i], li, [role~="listitem" i]';
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
+
+  // Whether the element's role attribute resolves to one of `roles`.
+  function hasResolvedRole(el, roles) {
+    try {
+      return roles.includes(helpers.aria.getExplicitRole(el));
+    } catch {
+      return false;
+    }
+  }
+
+  function isTagOrRole(el, tags, roles) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return hasResolvedRole(el, roles);
+  }
+
+  function isField(el) {
+    try {
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, NATIVE_FIELD_SELECTOR))
+        return true;
+    } catch {
+      // fall through to the role check
+    }
+    return hasResolvedRole(el, FIELD_ROLES);
+  }
+
+  // Nearest table row or list item ancestor (or self): a native tr/li, or an
+  // element whose resolved role is row/listitem.
+  function closestRow(el) {
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.get(cur, 'closest') ? dom.closest(cur, ROW_SELECTOR) : null;
+      if (!hit) return null;
+      if (isTagOrRole(hit, ROW_TAGS, ROW_ROLES)) return hit;
+      cur = dom.parentElement(hit);
+    }
+    return null;
+  }
 
   function normalizeWs(s) {
     return String(s || '')
@@ -49935,7 +50090,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const headings = (() => {
     try {
-      return Array.prototype.slice.call(dom.querySelectorAll(document, HEADING_SELECTOR));
+      return Array.prototype.slice
+        .call(dom.querySelectorAll(document, HEADING_SELECTOR))
+        .filter((h) => isTagOrRole(h, HEADING_TAGS, ['heading']));
     } catch {
       return [];
     }
@@ -50001,7 +50158,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function rowContextText(el, labelText) {
     let row;
     try {
-      row = dom.get(el, 'closest') ? dom.closest(el, ROW_SELECTOR) : null;
+      row = closestRow(el);
     } catch {
       row = null;
     }
@@ -50027,6 +50184,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const fields = [];
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
+    if (!isField(el)) continue;
     if (!isVisible(el)) continue;
 
     const label = getVisibleLabelText(el);
@@ -50372,10 +50530,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!isEligibleAcc(el)) continue;
 
-    // role="presentation"/"none" exclusion only when NOT focusable
+    // role="presentation"/"none" exclusion only when NOT focusable. The
+    // role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively; none leaves the native role.
     let role;
     try {
-      role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -50653,9 +50813,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return trim(dom.getAttribute(el, 'role')).toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -50941,10 +51102,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   function getHeadingLevel(el) {
@@ -51238,10 +51400,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // The WAI-ARIA Global States and Properties set, same list and same
@@ -51795,14 +51958,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const NATIVE_LINK_TAGS = ['a'];
+  // A native link (<a> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role="link"]')
-    : helpers.queryAll('a[href], [role="link"]');
+    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -52541,17 +52715,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none means no explicit role at all.
   function getExplicitRole(el) {
-    if (ariaHelpers && typeof ariaHelpers.getExplicitRole === 'function') {
-      try {
-        return ariaHelpers.getExplicitRole(el) || '';
-      } catch {
-        return '';
-      }
-    }
     try {
-      const raw = trim(dom.getAttribute(el, 'role'));
-      return raw ? raw.split(/\s+/)[0].toLowerCase() : '';
+      return (ariaHelpers && ariaHelpers.getExplicitRole(el)) || '';
     } catch {
       return '';
     }
@@ -52866,9 +53034,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Role (presentation/none) exclusion only when NOT focusable.
+    // The resolved role: the first token naming a known role, in any case.
     let role;
     try {
-      role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -53008,9 +53177,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        // Fallback list: first token naming a known role, any case.
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -53232,11 +53400,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -53576,11 +53744,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -53770,12 +53938,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Applicability: focus/activation controls with explicit ARIA naming.
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
-  const selector =
-    ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  // The role attribute is a fallback list matched in any case, so roles are
+  // selected by token ([role~="x" i]) and then kept only when the role the
+  // attribute resolves to (its first known, non-abstract token) is one of
+  // these: role="link button" is a link, role="foo BUTTON" a button.
+  const NATIVE_CONTROLS = 'button, a[href], summary, input:not([type="hidden"]), textarea, select';
+  const CONTROL_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'searchbox',
+    'tab',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'treeitem',
+    'gridcell'
+  ];
+  const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isCandidate(el) {
+    try {
+      if (dom.matches(el, NATIVE_CONTROLS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return CONTROL_ROLES.includes(getExplicitRole(el));
+  }
+
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(isCandidate);
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -53838,13 +54045,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getElementDescriptor(el) {
     const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
-    let role;
-    try {
-      role = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') || '' : '';
-    } catch {
-      role = '';
-    }
-    const r = String(role || '').trim();
+    // The resolved role, not the raw attribute: <div role="foo button"> is
+    // described as div[role="button"], the role assistive technology sees.
+    const r = el ? getExplicitRole(el) : '';
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }
 
@@ -54977,7 +55181,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "landmark-role-name-present": { run: (function runInPage(ctx) {
-  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const NAME_REQUIRED_LANDMARK_ROLES = new Set(['region', 'form']);
@@ -54986,10 +55189,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of helpers.queryAllSmart('[role]')) {
-    const role = String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case (role="foo REGION" is a region).
+    const role = helpers.aria.getExplicitRole(el);
     if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
 
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
@@ -55157,6 +55359,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "link-in-text-block": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
+
+  // The element's resolved explicit role: the first known role token of
+  // its role attribute, lower-cased, or '' when none names a role.
+  function explicitRole(el) {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function safeComputedStyle(el) {
     try {
@@ -55418,7 +55632,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(dom.querySelectorAll(el, 'img, svg, picture, canvas, [role="img"]'));
+      imgs = Array.from(
+        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i]')
+      ).filter((img) => {
+        const name = String(dom.localName(img) || '').toLowerCase();
+        if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
+        return explicitRole(img) === 'img';
+      });
     } catch {
       return false;
     }
@@ -55537,10 +55757,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
-  const selector = 'a[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // `[role~="link" i]` also matches a fallback list whose first known role
+  // is something else (role="button link" is a button), so a role-only
+  // candidate is kept only when its resolved explicit role is link.
+  const selector = 'a[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    if (uaUnderlines(el)) return true;
+    return explicitRole(el) === 'link';
+  });
 
   const occurrences = [];
   const undecided = [];
@@ -55938,10 +56164,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return t.replace(/\s+/g, ' ').trim();
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // `[role~="link" i]` also matches role="button link" (a button), so a
+  // role-only candidate is kept only when its resolved role is link.
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
+    return explicitRole(el) === 'link';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -55962,11 +56206,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    const role = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    let roleNorm = String(role || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    let roleNorm = explicitRole(el);
     // WAI-ARIA's presentational-roles conflict resolution: a focusable
     // element keeps its implicit role whatever role="none"/"presentation"
     // says, so <a href="/" role="none">Home</a> is a link named "Home".
@@ -56340,7 +56580,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
+  const NATIVE_LINK_TAGS = ['a', 'area'];
+  // A native link (<a>/<area> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
+  const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -56350,6 +56600,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -56457,16 +56708,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // The first role token that names a concrete ARIA role, or '' when none
-  // does (the element keeps its native list role).
-  const aria = helpers && helpers.aria;
+  // The first role token that names a known, non-abstract ARIA role, in
+  // any case, or '' when none does (the element keeps its native role).
   function resolvedExplicitRole(el) {
-    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!aria || typeof aria.isValidConcreteRole !== 'function') return tokens[0] || '';
-    return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   // An element's child elements by sibling links, not el.children: in jsdom
@@ -56510,10 +56755,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!isExposedToAt(child)) continue;
       const tag = dom.tagName(child).toLowerCase();
 
-      const roleAttr = dom.get(child, 'getAttribute')
-        ? String(dom.getAttribute(child, 'role') || '').trim()
-        : '';
-      const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+      const explicitRole = resolvedExplicitRole(child);
 
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
@@ -56659,7 +56901,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="listbox"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is listbox (role="link listbox" is a link).
+  const selector = '[role~="listbox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -56708,6 +56952,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (helpers.aria.getExplicitRole(el) !== 'listbox') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -56777,6 +57022,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does (the element then
+  // keeps its native role).
+  function resolvedRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
   const occurrences = [];
@@ -56797,20 +57055,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // at all; there's no listitem semantics being claimed to validate.
     // role="listitem" itself is a no-op restatement, not an override, so
     // it still falls through to the normal parent check below.
-    const ownRoleAttr = dom.get(el, 'getAttribute')
-      ? String(dom.getAttribute(el, 'role') || '').trim()
-      : '';
-    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const ownExplicitRole = resolvedRole(el);
     if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 
     const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
 
-    const roleAttr = dom.get(parent, 'getAttribute')
-      ? String(dom.getAttribute(parent, 'role') || '').trim()
-      : '';
-    const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const explicitRole = resolvedRole(parent);
 
     let valid;
     if (explicitRole) {
@@ -57371,7 +57623,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="menuitem" i],[role~="menuitemcheckbox" i],[role~="menuitemradio" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -57397,7 +57651,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo menuitem" is a menuitem).
+    const role = helpers.aria.getExplicitRole(el);
     if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
 
     applicableCount += 1;
@@ -57868,7 +58124,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="meter"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="meter" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -57894,8 +58152,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'meter') continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo meter" is a meter).
+    if (helpers.aria.getExplicitRole(el) !== 'meter') continue;
 
     applicableCount += 1;
 
@@ -58091,30 +58350,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const INTERACTIVE_SELECTOR = [
+  const NATIVE_INTERACTIVE_SELECTOR = [
     'a[href]',
     'button',
     'input:not([type="hidden"])',
     'select',
-    'textarea',
-    '[role="button"]',
-    '[role="link"]',
-    '[role="checkbox"]',
-    '[role="radio"]',
-    '[role="switch"]',
-    '[role="tab"]',
-    '[role="textbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitem"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="option"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="searchbox"]',
-    '[role="treeitem"]'
+    'textarea'
   ].join(', ');
+  const WIDGET_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'treeitem'
+  ];
+  const WIDGET_ROLE_SET = new Set(WIDGET_ROLES);
+  // role is a fallback list matched in any case, so select by token
+  // (case-insensitive) and keep only elements whose resolved role is a
+  // widget role (matchesInteractive): role="link button" is a link.
+  const INTERACTIVE_SELECTOR = [NATIVE_INTERACTIVE_SELECTOR]
+    .concat(WIDGET_ROLES.map((r) => `[role~="${r}" i]`))
+    .join(', ');
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -58136,7 +58404,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       node &&
       dom.nodeType(node) === 1 &&
       typeof dom.get(node, 'matches') === 'function' &&
-      dom.matches(node, INTERACTIVE_SELECTOR)
+      (dom.matches(node, NATIVE_INTERACTIVE_SELECTOR) || WIDGET_ROLE_SET.has(getExplicitRole(node)))
     );
   }
 
@@ -58158,14 +58426,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     radio: ['radiogroup']
   };
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (role is a fallback list).
   function getExplicitRole(node) {
-    if (!node || dom.nodeType(node) !== 1 || typeof dom.get(node, 'getAttribute') !== 'function')
-      return '';
-    const raw = dom.getAttribute(node, 'role');
-    if (!raw) return '';
-    // role accepts a space-separated fallback list; the first token wins.
-    const first = raw.trim().split(/\s+/)[0];
-    return first ? first.toLowerCase() : '';
+    if (!node || dom.nodeType(node) !== 1) return '';
+    return helpers.aria.getExplicitRole(node);
   }
 
   function parentElementOf(node) {
@@ -58281,6 +58546,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
+    // The token selector also matches e.g. role="none button" (role none).
+    if (!matchesInteractive(el)) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
@@ -58610,11 +58877,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // role presentation/none exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -58723,11 +58992,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -58938,7 +59207,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="option"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="option" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -58962,6 +59233,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo option" is a option).
+    if (helpers.aria.getExplicitRole(el) !== 'option') continue;
 
     applicableCount += 1;
 
@@ -59043,9 +59317,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // Elements whose text already has a role of its own.
-  const OWN_ROLE_ANCESTORS =
-    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
+  // Elements whose text already has a role of its own: these native tags,
+  // or an element whose role attribute resolves to one of OWN_ROLES (the
+  // first token naming a real role, in any case: role="foo heading" counts,
+  // role="note heading" doesn't).
+  const OWN_ROLE_TAGS = 'h1, h2, h3, h4, h5, h6, button, label, legend, caption, th, summary';
+  const OWN_ROLES = ['heading', 'button', 'columnheader', 'rowheader'];
+  const OWN_ROLE_SELECTOR = OWN_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+
+  function hasOwnRoleAncestor(el) {
+    if (!dom.get(el, 'closest')) return false;
+    if (dom.closest(el, OWN_ROLE_TAGS)) return true;
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.closest(cur, OWN_ROLE_SELECTOR);
+      if (!hit) return false;
+      if (OWN_ROLES.includes(helpers.aria.getExplicitRole(hit))) return true;
+      cur = dom.parentElement(hit);
+    }
+    return false;
+  }
 
   // Anything but text and inline markup makes a <div> a container, not a
   // passage of text.
@@ -59080,10 +59371,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isCandidate(el) {
     const tag = (dom.tagName(el) || '').toLowerCase();
-    if (dom.get(el, 'closest') && dom.closest(el, OWN_ROLE_ANCESTORS)) return false;
+    if (hasOwnRoleAncestor(el)) return false;
     if (tag === 'p') return true;
     if (tag !== 'div') return false;
-    if (trim(dom.getAttribute(el, 'role'))) return false;
+    // A role attribute naming no real role leaves the <div> a plain <div>.
+    if (helpers.aria.getExplicitRole(el)) return false;
     return !dom.querySelector(el, NOT_INLINE);
   }
 
@@ -59179,10 +59471,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLevelOneHeading(el) {
@@ -59882,26 +60175,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over. Returns '' when the
-  // element has no role attribute or none of its tokens name a role: the
-  // cases where an <img alt=""> keeps the presentation role empty alt gives
-  // it.
+  // role wins, case-insensitively, and unknown tokens are skipped over.
+  // Returns '' when the element has no role attribute or none of its tokens
+  // name a role: the cases where an <img alt=""> keeps the presentation role
+  // empty alt gives it.
   function getEffectiveRoleToken(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
   }
 
+  // Token match, case-insensitive; the resolved-role check in the loop drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="presentation" i], [role~="none" i], img[alt=""]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
-    : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -59909,10 +60196,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Only reachable via the img[alt=""] branch of the selector: an explicit
-    // role other than presentation/none overrides the presentation role that
-    // empty alt would confer, leaving no presentational intent to conflict
-    // with.
+    // An explicit role other than presentation/none (e.g. role="link none",
+    // or an <img alt=""> with role="img") overrides any presentation role,
+    // leaving no presentational intent to conflict with.
     const roleToken = getEffectiveRoleToken(el);
     if (roleToken && roleToken !== 'presentation' && roleToken !== 'none') continue;
 
@@ -60061,20 +60347,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The role attribute holds a fallback list; the first token that names a
-  // real role wins. A role="tab" resolves here, a role="figure tab" does
-  // not (figure wins and has no presentational children), and a list of
-  // nothing but unknown tokens falls back to the native role.
+  // real role wins, in any case. A role="tab" or role="TAB" resolves here, a
+  // role="figure tab" does not (figure wins and has no presentational
+  // children), and a list of nothing but unknown tokens falls back to the
+  // native role.
   function getPresentationalChildrenRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (raw) {
-      const tokens = lower(raw).split(/\s+/);
-      for (const token of tokens) {
-        if (!token) continue;
-        if (roleSet.has(token)) return token;
-        const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-        if (known) return '';
-      }
-    }
+    const explicit = ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
+    if (explicit) return roleSet.has(explicit) ? explicit : '';
     const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
       ? NATIVE_ROLE_BY_TAG[tag]
@@ -60305,10 +60584,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="progressbar"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is progressbar, so role="link progressbar" (a link) is left out.
+  const selector = '[role~="progressbar" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -60342,8 +60634,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'progressbar') continue;
+    if (explicitRole(el) !== 'progressbar') continue;
 
     applicableCount += 1;
 
@@ -60413,10 +60704,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return String(s || '').toLowerCase();
   }
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (the element keeps its native role).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return lower(raw.split(/\s+/)[0]);
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLandmark(el) {
@@ -60686,17 +60977,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
+  const IMAGE_ROLES = new Set(['img', 'graphics-symbol', 'graphics-document']);
+
+  // The resolved explicit role: the first known role token, lower-cased, or
+  // '' when the attribute names no known role.
+  const explicitRole = (el) => {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  };
+
   const imgElements = (() => {
     // <img> and <svg> are left out: each has its own rule
     // (img-alt-present, svg-text-alternative-present), and counting an
     // unnamed <svg role="img"> here too would report it twice.
+    // `~=` matches a token anywhere in the role fallback list, so a match is
+    // kept only when its resolved explicit role (the first known token) is
+    // one of the three: role="foo img" is an img, role="button img" is not.
     const sel =
-      '[role="img" i]:not(img):not(svg), [role="graphics-symbol" i]:not(svg), [role="graphics-document" i]:not(svg)';
+      '[role~="img" i]:not(img):not(svg), [role~="graphics-symbol" i]:not(svg), [role~="graphics-document" i]:not(svg)';
+    let found;
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      found = Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
-      return queryAll(sel);
+      found = Array.from(queryAll(sel) || []);
     }
+    return found.filter((el) => IMAGE_ROLES.has(explicitRole(el)));
   })();
 
   if (!imgElements.length) {
@@ -60744,7 +61054,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const matchedRole = (() => {
       try {
-        return trim(dom.getAttribute(el, 'role')).split(/\s+/)[0].toLowerCase();
+        return explicitRole(el) || 'img';
       } catch {
         return 'img';
       }
@@ -61177,10 +61487,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="searchbox"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is searchbox. role="foo searchbox" and role="SEARCHBOX" count;
+  // role="link searchbox" is a link.
+  const selector = '[role~="searchbox" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'searchbox';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -61417,7 +61737,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // skip link sits whatever its wording.
   let positionalSkipLink = null;
   try {
-    const main = dom.querySelector(document, 'main, [role="main"]');
+    // The first <main>, or element whose role attribute resolves to main
+    // (the first token naming a real role, in any case).
+    const main =
+      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+        (el) =>
+          String(dom.localName(el) || '').toLowerCase() === 'main' ||
+          helpers.aria.getExplicitRole(el) === 'main'
+      ) || null;
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&
@@ -61676,10 +62003,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native input[type=range] belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="slider"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is slider. role="foo slider" and role="SLIDER" count;
+  // role="link slider" is a link.
+  const selector = '[role~="slider" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'slider';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -61745,7 +62082,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    const role = helpers.aria.getExplicitRole(el);
 
     let kind;
     if (tag === 'input' && type === 'range') kind = 'native-slider';
@@ -61900,7 +62237,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="spinbutton"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is spinbutton (role="link spinbutton" is a link).
+  const selector = '[role~="spinbutton" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -61959,6 +62298,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (helpers.aria.getExplicitRole(el) !== 'spinbutton') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -62277,7 +62617,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (elig && elig.eligible === false) continue;
     }
 
-    const role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+    // Resolved explicit role: the first known token of the role fallback
+    // list, so role="foo none" is presentational too.
+    const role = (() => {
+      try {
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
+      } catch {
+        return '';
+      }
+    })();
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -62528,11 +62878,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Applicability step 2: role (presentation/none) exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -62708,11 +63060,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return String(dom.getAttribute(el, 'role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -62934,10 +63285,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tab"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is tab. role="foo tab" and role="TAB" count;
+  // role="link tab" is a link.
+  const selector = '[role~="tab" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'tab';
+    } catch {
+      return false;
+    }
+  });
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -62958,9 +63319,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
-
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tab') continue;
 
     applicableCount += 1;
 
@@ -63143,8 +63501,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none leaves the native table role.
   function hasOtherRole(table) {
-    const role = trim(dom.getAttribute(table, 'role')).toLowerCase().split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(table);
     return !!role && !TABLE_ROLES.includes(role);
   }
 
@@ -63247,18 +63607,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over.
+  // role wins (in any case), and unknown tokens are skipped over.
   function getExplicitRole(el) {
-    const raw = el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers && el ? ariaHelpers.getExplicitRole(el) : '';
   }
 
   const nodes = helpers.queryAllSmart
@@ -63361,15 +63712,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does (the element
+  // then keeps its implicit role).
   function explicitRole(el) {
     try {
-      return String((el && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)[0];
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
     } catch {
       return '';
     }
+  }
+
+  // Elements under `scope` matching `selector` (token, case-insensitive role
+  // selectors) whose resolved explicit role is in `roles`: `[role~="x" i]`
+  // alone also matches role="link x", which is a link.
+  function queryByRole(scope, selector, roles) {
+    let found;
+    try {
+      found = scope
+        ? Array.from(dom.querySelectorAll(scope, selector))
+        : Array.from(
+            (helpers.queryAllSmart
+              ? helpers.queryAllSmart(selector)
+              : helpers.queryAll(selector)) || []
+          );
+    } catch {
+      found = [];
+    }
+    return found.filter((el) => roles.includes(explicitRole(el)));
   }
 
   function isIncludedInTree(el) {
@@ -63464,32 +63836,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // just keyed off ARIA roles instead of native tags -- a genuine
   // columnheader/rowheader with zero gridcell/cell-role elements anywhere
   // in the container is exactly as unambiguous as a <th>-only <table>.
-  const grids = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="grid"], [role="treegrid"]')
-    : helpers.queryAll('[role="grid"], [role="treegrid"]');
+  const grids = queryByRole(null, '[role~="grid" i], [role~="treegrid" i]', ['grid', 'treegrid']);
 
   for (const grid of grids) {
     if (!grid || !dom.get(grid, 'querySelectorAll')) continue;
     if (dom.tagName(grid) && dom.tagName(grid).toLowerCase() === 'table') continue; // already handled above
     if (!isIncludedInTree(grid)) continue;
 
-    let headerNodes;
-    try {
-      headerNodes = dom.querySelectorAll(grid, '[role="columnheader"], [role="rowheader"]');
-    } catch {
-      headerNodes = [];
-    }
-    const headers = Array.from(headerNodes).filter(isHeaderCellInScope);
+    const headerNodes = queryByRole(grid, '[role~="columnheader" i], [role~="rowheader" i]', [
+      'columnheader',
+      'rowheader'
+    ]);
+    const headers = headerNodes.filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;
 
-    let hasDataCell;
-    try {
-      hasDataCell = dom.querySelectorAll(grid, '[role="gridcell"], [role="cell"]').length > 0;
-    } catch {
-      hasDataCell = false;
-    }
+    const hasDataCell =
+      queryByRole(grid, '[role~="gridcell" i], [role~="cell" i]', ['gridcell', 'cell']).length > 0;
     if (hasDataCell) continue;
 
     for (const th of headers) {
@@ -63562,6 +63926,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return 'html';
   }
 
+  // The element's explicit role: the first token of its role attribute that
+  // names a real role, in any case (role="foo link" and role="LINK" are both
+  // links), or '' when none does.
+  function getExplicitRole(el) {
+    try {
+      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+    } catch {
+      return '';
+    }
+  }
+
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
   // carrying visible text. This is the shape the SC 2.5.8 inline exception is
   // about, without the surrounding-container requirement.
@@ -63570,12 +63945,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!el || dom.nodeType(el) !== 1) return false;
 
       const tag = (dom.tagName(el) || '').toLowerCase();
-      const role =
-        (dom.get(el, 'getAttribute') &&
-          String(dom.getAttribute(el, 'role') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
+      const role = getExplicitRole(el);
       const isLinkLike =
         (tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
         role === 'link';
@@ -63833,11 +64203,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const CANDIDATE_SELECTOR =
-    'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
+  const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // role~= matches the token anywhere in the fallback list, so the resolved
+  // role is checked below (role="tab button" is a tab, not a target here).
+  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+
+  function isCandidate(el) {
+    try {
+      if (
+        typeof dom.get(el, 'matches') === 'function' &&
+        dom.matches(el, NATIVE_CANDIDATE_SELECTOR)
+      )
+        return true;
+    } catch {}
+    const role = getExplicitRole(el);
+    return role === 'button' || role === 'link';
+  }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR);
+  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {
@@ -64377,8 +64761,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case ('' when none is), as user agents read the fallback list.
   function firstRole(el) {
-    return trim(dom.getAttribute(el, 'role')).toLowerCase().split(/\s+/)[0];
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // Content that can carry a name or a value even without text.
@@ -65324,7 +65714,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="textbox"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="textbox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -65384,6 +65776,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo textbox" is a textbox).
+    if (helpers.aria.getExplicitRole(el) !== 'textbox') continue;
 
     applicableCount += 1;
 
@@ -65507,7 +65902,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tooltip"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is tooltip (role="link tooltip" is a link).
+  const selector = '[role~="tooltip" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -65532,8 +65929,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tooltip') continue;
+    if (helpers.aria.getExplicitRole(el) !== 'tooltip') continue;
 
     applicableCount += 1;
 
@@ -65657,10 +66053,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="treeitem"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is treeitem, so role="link treeitem" (a link) is left out.
+  const selector = '[role~="treeitem" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function hasName(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -65680,6 +66089,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (explicitRole(el) !== 'treeitem') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -66091,7 +66501,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Role presentation/none excluded ONLY if not focusable (mirrors img behavior)
-    const role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+    // The resolved role: the first token naming a known role, in any case.
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -74993,16 +75404,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
     const tag = lower(dom.tagName(el) || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -75800,14 +76208,21 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {
@@ -76977,7 +77392,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // such an element as a generic container.
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
-    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    // The resolved role (#91): an attribute naming no known role leaves the
+    // element its native landmark, if any.
+    const token = aria.getExplicitRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -80212,7 +80629,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getSvgTitleChildText(node) {
     try {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
-      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
       const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
@@ -80349,7 +80766,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // same condition aria-required-parent.js's getRealContextRole
         // and aria-prohibited-children.js already use for the analogous
         // "roleless-but-included" boundary.
-        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        const presRole = aria.getExplicitRole(node);
         if (presRole === 'presentation' || presRole === 'none') {
           let restored = false;
           try {
@@ -80551,14 +80968,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const flags = [];
     if (!isElement(el)) return { role: '', source: 'none', flags: ['notElement'] };
 
-    const explicit = trim(getAttr(el, 'role'));
+    // The first token naming a known role (#91); an attribute naming none
+    // leaves the element its implicit role, as if it had none.
+    const explicit = aria.getExplicitRole(el);
     if (explicit) {
-      const v = explicit;
-      const low = v.toLowerCase();
-      if (low === 'presentation' || low === 'none') flags.push('presentation');
-      // Minimal sanity: role token should not contain spaces beyond role list; keep deterministic
-      if (/\s/.test(v)) flags.push('multiple-roles');
-      return { role: v, source: 'explicit', flags };
+      if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
+      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      return { role: explicit, source: 'explicit', flags };
     }
 
     const allowImplicit = !(opts && opts.disallowImplicit === true);

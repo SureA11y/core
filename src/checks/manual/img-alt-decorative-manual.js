@@ -106,17 +106,11 @@ function runInPage(ctx) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none means no explicit role at all.
   function getExplicitRole(el) {
-    if (ariaHelpers && typeof ariaHelpers.getExplicitRole === 'function') {
-      try {
-        return ariaHelpers.getExplicitRole(el) || '';
-      } catch {
-        return '';
-      }
-    }
     try {
-      const raw = trim(dom.getAttribute(el, 'role'));
-      return raw ? raw.split(/\s+/)[0].toLowerCase() : '';
+      return (ariaHelpers && ariaHelpers.getExplicitRole(el)) || '';
     } catch {
       return '';
     }

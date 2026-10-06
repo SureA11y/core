@@ -337,9 +337,22 @@ function runInPage(ctx) {
   function textLength(el) {
     return String((el && dom.textContent(el)) || '').replace(/\s+/g, '').length;
   }
+  // The main landmark: the first <main>, or element whose role attribute
+  // resolves to main. The role attribute is a fallback list matched in any
+  // case (the first real role wins: role="foo main" counts, role="region
+  // main" doesn't).
   let mainEl = null;
   try {
-    mainEl = dom.querySelector(document, 'main, [role="main"]');
+    const candidates = dom.querySelectorAll(document, 'main, [role~="main" i]') || [];
+    for (const el of candidates) {
+      const isMain =
+        String(dom.localName(el) || '').toLowerCase() === 'main' ||
+        helpers.aria.getExplicitRole(el) === 'main';
+      if (isMain) {
+        mainEl = el;
+        break;
+      }
+    }
   } catch {
     mainEl = null;
   }

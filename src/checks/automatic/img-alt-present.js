@@ -135,9 +135,10 @@ function runInPage(ctx) {
     }
 
     // Role (presentation/none) exclusion only when NOT focusable.
+    // The resolved role: the first token naming a known role, in any case.
     let role;
     try {
-      role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }

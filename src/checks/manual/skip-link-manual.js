@@ -18,7 +18,8 @@
  *     (Japanese). "jump to" sits beside "skip" because real skip links use
  *     both conventions (e.g. a "Jump to section" link);
  *   - or it is the first link in the document, and it comes before the
- *     `main` element (or `[role="main"]`): the usual place of a skip link
+ *     `main` element (or an element whose role attribute resolves to main,
+ *     its first real role token in any case): the usual place of a skip link
  *     whatever its wording.
  *   Other same-page anchor links are not skip links and are left alone.
  * @expectation
@@ -143,7 +144,14 @@ function runInPage(ctx) {
   // skip link sits whatever its wording.
   let positionalSkipLink = null;
   try {
-    const main = dom.querySelector(document, 'main, [role="main"]');
+    // The first <main>, or element whose role attribute resolves to main
+    // (the first token naming a real role, in any case).
+    const main =
+      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+        (el) =>
+          String(dom.localName(el) || '').toLowerCase() === 'main' ||
+          helpers.aria.getExplicitRole(el) === 'main'
+      ) || null;
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&

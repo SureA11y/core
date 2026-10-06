@@ -277,3 +277,19 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     'Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).'
   );
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo none" is excluded when not focusable (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><svg role="foo none" aria-label=""></svg></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="IMG" signals intent (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><svg role="IMG"></svg></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});

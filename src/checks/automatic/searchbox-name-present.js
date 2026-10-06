@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="searchbox" (the attribute must name
- *   that role alone, not a fallback list) that are included in the
- *   accessibility tree. An element with the matching implicit role but no
+ *   Applies to elements whose role attribute resolves to searchbox (the
+ *   attribute is a fallback list: its first known, non-abstract token, in
+ *   any case, is the role, so role="foo searchbox" counts and role="link searchbox"
+ *   does not) that are included in the accessibility tree. An element with the matching implicit role but no
  *   role attribute is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
@@ -156,10 +157,20 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="searchbox"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is searchbox. role="foo searchbox" and role="SEARCHBOX" count;
+  // role="link searchbox" is a link.
+  const selector = '[role~="searchbox" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'searchbox';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --

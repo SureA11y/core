@@ -199,3 +199,18 @@ for (const body of [
     assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   });
 }
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo none" and role="PRESENTATION" apply, role="link none" does not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo none" aria-label="x"></div>
+    <div id="b" role="PRESENTATION" tabindex="0"></div>
+    <div id="c" role="link none" aria-label="x"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+});

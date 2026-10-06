@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="slider" (the attribute must name that
- *   role alone, not a fallback list) that are included in the accessibility
- *   tree. An element with the matching implicit role but no role attribute
+ *   Applies to elements whose role attribute resolves to slider (the
+ *   attribute is a fallback list: its first known, non-abstract token, in
+ *   any case, is the role, so role="foo slider" counts and role="link slider"
+ *   does not) that are included in the accessibility tree. An element with the matching implicit role but no role attribute
  *   is out of scope. A native <input type="range"> without the role belongs
  *   to form-control-programmatic-label-present.
  * @expectation
@@ -160,10 +161,20 @@ function runInPage(ctx) {
 
   // Native input[type=range] belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="slider"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is slider. role="foo slider" and role="SLIDER" count;
+  // role="link slider" is a link.
+  const selector = '[role~="slider" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'slider';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -229,7 +240,7 @@ function runInPage(ctx) {
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    const role = helpers.aria.getExplicitRole(el);
 
     let kind;
     if (tag === 'input' && type === 'range') kind = 'native-slider';

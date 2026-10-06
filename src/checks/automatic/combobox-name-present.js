@@ -9,10 +9,12 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="combobox" (the attribute must name
- *   that role alone, not a fallback list) that are included in the
- *   accessibility tree. An element with the matching implicit role but no
- *   role attribute is out of scope.
+ *   Applies to elements whose role attribute resolves to combobox: its first
+ *   token naming a known role, matched in any case, is combobox, so
+ *   role="foo combobox" and role="COMBOBOX" count while role="link combobox"
+ *   (a link) does not. The element must be included in the accessibility
+ *   tree. An element with the matching implicit role but no role attribute
+ *   is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title.
@@ -156,10 +158,23 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="combobox"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is combobox, so role="link combobox" (a link) is left out.
+  const selector = '[role~="combobox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -218,8 +233,7 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'combobox') continue;
+    if (explicitRole(el) !== 'combobox') continue;
 
     applicableCount += 1;
 

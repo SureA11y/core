@@ -107,6 +107,16 @@ test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, (
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a fallback list or upper-case role (role="foo none", role="PRESENTATION") excludes the same way`, () => {
+  for (const role of ['foo none', 'PRESENTATION']) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="${role}" aria-label="Sales chart"></canvas></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: a focusable role="presentation" canvas is still reviewed`, () => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body><canvas id="canvas1" role="presentation" tabindex="0" aria-label="Sales chart"></canvas></body></html>`,

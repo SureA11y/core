@@ -420,3 +420,19 @@ test(`${RULE_ID}: a link listed in its own aria-labelledby keeps its text in the
   const res = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(res, RULE_ID, 'pass');
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo button" is a button (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="foo button" tabindex="0" aria-label="Send now">Cancel</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="BUTTON" is a button (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="BUTTON" tabindex="0" aria-label="Send now">Cancel</div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});

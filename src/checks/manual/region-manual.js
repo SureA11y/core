@@ -126,10 +126,10 @@ function runInPage(ctx) {
     return String(s || '').toLowerCase();
   }
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (the element keeps its native role).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return lower(raw.split(/\s+/)[0]);
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLandmark(el) {

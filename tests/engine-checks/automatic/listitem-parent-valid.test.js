@@ -166,3 +166,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/listitem-parent-valid-all-sce
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: the parent's role is a fallback list read in any case (#91)`, () => {
+  // role="foo list" and role="LIST" are lists; role="foo" is no role, so the
+  // <ul> stays a list; role="foo menu" on a <ul> makes it a menu.
+  const html = `<!doctype html><html><body>
+    <div role="foo list"><li id="fallback">a</li></div>
+    <div role="LIST"><li id="upper">b</li></div>
+    <ul role="foo"><li id="unknown">c</li></ul>
+    <ul role="foo menu"><li id="menu">d</li></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'menu'));
+});

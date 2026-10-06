@@ -284,3 +284,21 @@ test('link-in-text-block: whether a parent has text is read once, not once per l
   }
   assert.ok(reads < N * 20, `${reads} nodeType reads for ${N} links`);
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`, () => {
+  // role="foo link" and role="LINK" are links; role="button link" is a button.
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #222222; }
+    .weak { color: #2a2a2a; }
+  </style></head><body>
+    <p>Read <span role="foo link" tabindex="0" id="fallback" class="weak">this</span> now.</p>
+    <p>Read <span role="LINK" tabindex="0" id="upper" class="weak">that</span> now.</p>
+    <p>Read <span role="button link" tabindex="0" id="button" class="weak">other</span> now.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(hasOccurrenceForId(rule, 'upper'));
+  assert.ok(!hasOccurrenceForId(rule, 'button'));
+});

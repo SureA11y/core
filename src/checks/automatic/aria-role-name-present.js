@@ -17,8 +17,10 @@
  *   or out, and for the name-required roles no rule covers yet.
  *
  * @applicability
- *   Applies to elements whose role attribute is exactly one of grid, meter,
- *   progressbar, radiogroup or tree, and that are included in the
+ *   Applies to elements whose role attribute resolves to one of grid,
+ *   meter, progressbar, radiogroup or tree (its first token naming a known
+ *   role, matched in any case: role="foo tree" and role="TREE" count,
+ *   role="link tree" does not), and that are included in the
  *   accessibility tree. Membership is decided by WAI-ARIA's own "Accessible
  *   Name Required: True" characteristic, not by whether a role merely permits
  *   a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author
@@ -154,7 +156,10 @@ function runInPage(ctx) {
   // </generated:aria-name-required-roles>
 
   // Derived from the set above so the two cannot drift apart.
-  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // keeps only elements whose resolved explicit role (the first known token)
+  // is in the set, so role="link tree" (a link) is left out.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role~="${r}" i]`).join(',');
 
   const nodes = (() => {
     try {
@@ -176,10 +181,13 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Role normalization + allowlist check (defensive).
+    // Resolved explicit role (first known token of the fallback list,
+    // lower-cased) + allowlist check.
     const role = (() => {
       try {
-        return normalizeWs(dom.getAttribute(el, 'role')).toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }

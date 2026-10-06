@@ -276,3 +276,18 @@ test(`${RULE_ID}: suspicious alt has its own allowance, so 50 ordinary images ca
     { applicableCount: 61, reportedCount: 51, suspiciousCount: 1, truncated: true }
   );
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively; no known token leaves the native role.
+test(`${RULE_ID}: role="foo none" and role="PRESENTATION" take an <img> out of scope, role="foo" does not`, () => {
+  const excluded = runa11yCoreOnHtml(
+    `<!doctype html><html><body><img src="a.png" alt="Sales chart" role="foo none"><img src="b.png" alt="Sales chart" role="PRESENTATION"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(excluded, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const kept = runa11yCoreOnHtml(
+    `<!doctype html><html><body><img src="a.png" alt="Sales chart" role="foo"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(kept, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

@@ -53,6 +53,18 @@ test(`${RULE_ID}: pass when the page has role="heading" aria-level="1"`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a heading role in a fallback list or upper case counts, an unknown role leaves the <h1>`, () => {
+  for (const body of [
+    '<div role="foo heading" aria-level="1">Title</div>',
+    '<div role="HEADING" aria-level="1">Title</div>',
+    '<h1 role="foo">Title</h1>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {
   const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

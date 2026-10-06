@@ -235,3 +235,18 @@ test('binary-control-name-present: an explicit role keeps a native checkbox in s
     maxOccurrences: 0
   });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo switch" and role="CHECKBOX" are in scope, role="link switch" is not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo switch"></div>
+    <div id="b" role="CHECKBOX"></div>
+    <div id="c" role="link switch" href="#"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+});

@@ -195,7 +195,8 @@ function runInPage(ctx) {
     }
 
     // Role presentation/none excluded ONLY if not focusable (mirrors img behavior)
-    const role = trim(dom.getAttribute(el, 'role')).toLowerCase();
+    // The resolved role: the first token naming a known role, in any case.
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {

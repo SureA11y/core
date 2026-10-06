@@ -276,3 +276,18 @@ test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
   });
   assertRule(passed, RULE_ID, 'pass', { maxOccurrences: 0 });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo img" fails on fallback content, role="NONE" is decorative`, () => {
+  const img = runa11yCoreOnHtml(
+    `<!doctype html><html><body><canvas id="c" role="foo img">Ventes 2024</canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(img, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const none = runa11yCoreOnHtml(
+    `<!doctype html><html><body><canvas role="NONE"></canvas></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(none, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

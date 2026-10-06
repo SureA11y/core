@@ -9,7 +9,8 @@
  * @standard WCAG 2.2
  * @sc 2.4.4
  * @applicability
- *   Elements matching `a[href], area[href], [role="link"]` with a
+ *   `a[href]`, `area[href]` and elements whose role attribute resolves to
+ *   link (its first real role token, in any case) with a
  *   non-empty computed accessible name (programmatic first, then "name
  *   from content", same two-step resolution as `link-name-present`,
  *   same selector too). Links with no name at all are
@@ -346,7 +347,17 @@ function runInPage(ctx) {
     return false;
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
+  const NATIVE_LINK_TAGS = ['a', 'area'];
+  // A native link (<a>/<area> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
+  const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -356,6 +367,7 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =

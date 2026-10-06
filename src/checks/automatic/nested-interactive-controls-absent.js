@@ -13,9 +13,12 @@
  *   a[href], button, input (not hidden), select, textarea; or an explicit
  *   ARIA widget role: button, link, checkbox, radio, switch, tab, textbox,
  *   combobox, listbox, menuitem, menuitemcheckbox, menuitemradio, option,
- *   slider, spinbutton, searchbox, treeitem). The container is applicable
- *   regardless of whether it is itself focusable, focusability is only
- *   used to decide whether a *descendant* nests an interactive control.
+ *   slider, spinbutton, searchbox, treeitem, taken from the role
+ *   attribute's first token naming a known role, matched in any case, so
+ *   role="foo button" and role="BUTTON" count and role="none button" does
+ *   not). The container is applicable regardless of whether it is itself
+ *   focusable, focusability is only used to decide whether a *descendant*
+ *   nests an interactive control.
  * @expectation
  *   The element does not contain, as a descendant, another *operable*
  *   interactive control (e.g. a <button> wrapping a <select>, or a link
@@ -95,30 +98,39 @@ function runInPage(ctx) {
 
   // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const INTERACTIVE_SELECTOR = [
+  const NATIVE_INTERACTIVE_SELECTOR = [
     'a[href]',
     'button',
     'input:not([type="hidden"])',
     'select',
-    'textarea',
-    '[role="button"]',
-    '[role="link"]',
-    '[role="checkbox"]',
-    '[role="radio"]',
-    '[role="switch"]',
-    '[role="tab"]',
-    '[role="textbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitem"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="option"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="searchbox"]',
-    '[role="treeitem"]'
+    'textarea'
   ].join(', ');
+  const WIDGET_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'treeitem'
+  ];
+  const WIDGET_ROLE_SET = new Set(WIDGET_ROLES);
+  // role is a fallback list matched in any case, so select by token
+  // (case-insensitive) and keep only elements whose resolved role is a
+  // widget role (matchesInteractive): role="link button" is a link.
+  const INTERACTIVE_SELECTOR = [NATIVE_INTERACTIVE_SELECTOR]
+    .concat(WIDGET_ROLES.map((r) => `[role~="${r}" i]`))
+    .join(', ');
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -140,7 +152,7 @@ function runInPage(ctx) {
       node &&
       dom.nodeType(node) === 1 &&
       typeof dom.get(node, 'matches') === 'function' &&
-      dom.matches(node, INTERACTIVE_SELECTOR)
+      (dom.matches(node, NATIVE_INTERACTIVE_SELECTOR) || WIDGET_ROLE_SET.has(getExplicitRole(node)))
     );
   }
 
@@ -162,14 +174,11 @@ function runInPage(ctx) {
     radio: ['radiogroup']
   };
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (role is a fallback list).
   function getExplicitRole(node) {
-    if (!node || dom.nodeType(node) !== 1 || typeof dom.get(node, 'getAttribute') !== 'function')
-      return '';
-    const raw = dom.getAttribute(node, 'role');
-    if (!raw) return '';
-    // role accepts a space-separated fallback list; the first token wins.
-    const first = raw.trim().split(/\s+/)[0];
-    return first ? first.toLowerCase() : '';
+    if (!node || dom.nodeType(node) !== 1) return '';
+    return helpers.aria.getExplicitRole(node);
   }
 
   function parentElementOf(node) {
@@ -285,6 +294,8 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
+    // The token selector also matches e.g. role="none button" (role none).
+    if (!matchesInteractive(el)) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;

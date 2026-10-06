@@ -89,6 +89,22 @@ test(`${RULE_ID}: two undersized targets too close => fail (2 occurrences)`, () 
   }
 });
 
+test(`${RULE_ID}: a role in a fallback list or in upper case (role="foo button", role="LINK") is a target`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo button" data-rect="10,80,10,10">A</div>
+    <div id="b" role="LINK" data-rect="25,80,10,10">B</div>
+  </body></html>`;
+  assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
+test(`${RULE_ID}: a button token after a real role (role="tab button") is not a target`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="tab button" data-rect="10,80,10,10">A</div>
+    <div id="b" role="tab link" data-rect="25,80,10,10">B</div>
+  </body></html>`;
+  assertRule(run(html), RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: aria-hidden target still evaluated`, () => {
   const html = `<!doctype html><html><body>
     <button id="a" aria-hidden="true" data-rect="10,120,10,10">AH</button>

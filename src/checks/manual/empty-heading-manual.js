@@ -9,8 +9,10 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to elements with a heading role: native <h1>-<h6>, or any
- *   element with explicit role="heading" (unless overridden by another
- *   explicit role).
+ *   element whose role attribute resolves to heading (the first token
+ *   naming a known role, matched case-insensitively, so role="foo heading"
+ *   counts). A native heading keeps its role when no token is a known
+ *   role, and loses it to any other resolved role.
  * @expectation
  *   The heading has a non-empty accessible name: aria-label,
  *   aria-labelledby, visible text content not hidden from assistive
@@ -69,10 +71,11 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
