@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: RP-1.
+Sorted by severity, then by how many pages it touches. Next to fix: R-8.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [RP-1](#rp-1) | SARIF output fails the SARIF schema | Bug | **High** | Round 2 |
 | [R-8](#r-8) | Off-screen text is still contrast-checked by default; closed `<select>` options too | Debatable | Medium | Round 1 |
 | [R-1](#r-1) | Paint that isn't an ancestor's: stacking, fixed and sticky paint ignored | Bug | Medium | Round 1 (limits of the fix) |
 | [R-13](#r-13) | The viewport `content` parser: spaces, odd values, several metas | Bug | Medium | Round 1, round 2 (VS-5) |
@@ -100,12 +99,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: RP-1.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="rp-1"></a>**RP-1. SARIF output fails the SARIF schema** — Bug, High · [details](./2026-10-stress-test-2.md#rp-1)
-- *In plain words:* almost every SARIF file from a browser scan is invalid, so a tool that validates SARIF rejects it.
-- Example: any page with text, scanned in Chromium: the schema rejects `invocations[0].toolExecutionNotices`.
-- Basis: SARIF 2.1.0 names the property `toolExecutionNotifications`.
-- Where: `src/sarif.js:290`, `docs/SARIF.md:19,25`, `tests/sarif.test.js:627`.
 
 ### Medium
 
@@ -382,11 +375,14 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 Fixes on branch `fix/audit-2026-10-findings-2` (from `main` at `ceb26d1`), pushed, no pull request yet.
 
-<a id="vs-1"></a><a id="vs-2"></a>
+<a id="vs-1"></a><a id="vs-2"></a><a id="rp-1"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | VS-1 | An element's own `opacity` was counted twice when it had its own background | Option A: an element whose own opacity is below 1 and which paints a background is measured as one group, through the routine already used for an ancestor's opacity; when an image, gradient, blend mode or filter stops that, `contrast-computable` reports `cantTell` with the new reason code `ELEMENT_OPACITY`. A page with no opaque background is left to the existing root-canvas handling. Without a background of its own, an element's opacity keeps the opacity product, which was already right. Left as it was: in `auditorAssist` mode, which assumes a canvas color for such a page, the badge still gets the old estimate. | `e9850fd`, docs `4472e3a` | [#95](https://github.com/SureA11y/core/issues/95) | 2026-10-06 |
 | VS-2 | SVG shapes behind SVG text were ignored | Option B: SVG shapes count as paint for the overlap check, so any shape under or over SVG text gives `cantTell` (`BACKGROUND_OVERLAP`); the simple case is measured: a `<rect>` with a solid fill, painted before the text, unrotated, covering all of it clear of rounded corners and stroke, with no grouping effect in between, is the text's background, with its `fill-opacity` and `opacity`. Needs a layout: under jsdom results are unchanged. | `80ec026`, changelog `36674dc` | [#96](https://github.com/SureA11y/core/issues/96) | 2026-10-06 |
+| RP-1 | SARIF output failed the SARIF schema (`toolExecutionNotices`) | Option B: the notes are written as `toolExecutionNotifications`, the schema's name, in the code, `SARIF.md` and the test; a new test validates the SARIF of a scan of every fixture page and of edge cases against the official SARIF 2.1.0 schema (kept in `tests/schemas/` with its source and OASIS notice; `ajv` becomes a direct dev dependency). A consumer that read the old name has to read the new one. | `588e16b`, changelog `d127ee7` | [#97](https://github.com/SureA11y/core/issues/97) | 2026-10-06 |
+
+How RP-1 was checked: the SARIF of a Chromium scan of each of the 137 fixture pages, validated against the official schema, was invalid for 132 of them, all for this one property, and is now valid for all 137; nothing else in the output fails the schema. The new test fails on the old renderer. Engines A and B don't write SARIF, so there is nothing to compare. The full suite passes (the same one environmental failure). RP-7's dead `$schema` URL is a separate, still-open slip.
 
 How VS-2 was checked: a Chromium test covers each case (11 assertions, all failing before): the black badge passes (15.46:1), dark text on a `#333` rect fails at 1.66:1, white text on a black rect is measured (it was dropped as the same color as the page), a rect at `fill-opacity:.5` gives the composited 3.95:1, rounded corners clear of the text are measured, and a circle, a gradient fill, a rotated rect, a rect covering part of the text and a rect painted over it are `cantTell`. HTML text beside an inline SVG icon is unaffected. Checked on the SVG text itself, Engine A reports every one of these cases as needing review (background overlap), and Engine B doesn't evaluate SVG text; the second audit's "A: pass, B: pass" counted other text on the probe page (corrected in the report). The full suite passes (the same one environmental failure); an SVG-heavy page (1,000 icons and a 300-bar labelled chart) costs about the same (1.04×, within noise).
 
