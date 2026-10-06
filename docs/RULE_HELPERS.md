@@ -171,6 +171,24 @@ of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that can
 decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
 matching the values yourself, so every rule agrees on what visually hidden means.
 
+### `isVisuallyHidden(el)` → `boolean`
+Whether an element's box is drawn so that nothing in it can be seen, though it is
+rendered and stays in the accessibility tree: fully transparent, clipped away
+(`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
+compute), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
+patterns; the result holds for the whole subtree. For "is this text on screen?", as
+`label-in-name` asks of a control's visible label (#93).
+
+### `getTextBoundaryKind(el)` → `'inline' | 'inline-box' | 'block'`
+How an element breaks the text around it, from its computed `display`: `'inline'` breaks
+nothing (`<b>Down</b>load` reads "Download"); `'inline-box'` (`inline-block`,
+`inline-flex`, …) adds a space in an accessible name but no break in visible text;
+`'block'` starts a new line in visible text and adds a space in a name. A `<br>` is
+`'block'`; absolute or fixed positioning, a float and being a flex or grid item make a
+box block-level, as browsers compute it (jsdom doesn't); `display: contents` and `none`
+are `'inline'`. Use it when joining the text of several elements, so pieces split across
+inline tags aren't spaced apart.
+
 ### `isWholeDocumentScope()` → `boolean`
 `true` unless `engineOptions.fragment: true` was set, or `contextSelector` scoped the
 run narrower than the whole document. Required for any rule checking a page-wide,
@@ -280,6 +298,10 @@ Name"></a>` and `<button><span aria-label="Close"></span></button>` both name co
 A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
 speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
 `aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
+Pieces join as Chromium joins them: text in inline elements as written
+(`<b>Down</b>load` is "Download"), with a space around an element that isn't
+`display: inline` (`getTextBoundaryKind`) and around a piece that is a name of its own
+(`alt`, `aria-label`, an SVG title).
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
 Real `<label>` element(s) associated with `el` — a `<label for="id">` in its own tree (§4) pointing at it,
