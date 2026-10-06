@@ -348,7 +348,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
     'lin_case_02',
@@ -357,7 +357,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_14',
     'lin_case_15',
     'lin_case_18',
-    'lin_case_23'
+    'lin_case_23',
+    'lin_case_26'
   ];
 
   const expectedNoOccIds = [
@@ -376,7 +377,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_19',
     'lin_case_20',
     'lin_case_21',
-    'lin_case_22'
+    'lin_case_22',
+    'lin_case_24',
+    'lin_case_25'
   ];
 
   for (const id of expectedFailIds) {
@@ -436,3 +439,49 @@ test(`${RULE_ID}: an upper-case role resolves too: role="BUTTON" is a button (#9
   );
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+// The visible label is the element's visible inner text (ACT 2ee8b8): inline
+// elements add no space, a block or <br> starts a new line, and text nobody
+// can see is not part of it (#93).
+for (const [markup, want] of [
+  ['<button aria-label="Download the report"><b>Down</b>load</button>', 'pass'],
+  ['<a href="/d" aria-label="Download the report"><b>Down</b>load</a>', 'pass'],
+  ['<button aria-label="Submit form"><span>S</span>ubmit</button>', 'pass'],
+  [
+    '<button aria-label="Download the report"><span style="display:inline-block">Down</span>load</button>',
+    'pass'
+  ],
+  ['<button aria-label="Download the report"><b>Down</b> load</button>', 'fail'],
+  ['<button aria-label="Download the report"><div>Down</div>load</button>', 'fail'],
+  ['<button aria-label="Download the report">Down<br>load</button>', 'fail'],
+  [
+    '<button aria-label="Download the report" style="display:flex"><span>Down</span><span>load</span></button>',
+    'fail'
+  ]
+]) {
+  test(`${RULE_ID}: ${want} for ${markup} (#93)`, () => {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, want);
+  });
+}
+
+for (const [label, style] of [
+  [
+    'a screen-reader-only class',
+    'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0'
+  ],
+  ['clip-path', 'position:absolute;clip-path:inset(50%)'],
+  ['opacity 0', 'opacity:0']
+]) {
+  test(`${RULE_ID}: text hidden by ${label} is not part of the visible label (#93)`, () => {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>.hide{${style}}</style></head><body>
+        <button aria-label="Close dialog"><span class="hide">Dismiss</span>Close</button>
+      </body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+    assertRule(result, RULE_ID, 'pass');
+  });
+}

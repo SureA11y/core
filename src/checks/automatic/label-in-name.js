@@ -17,7 +17,12 @@
  *   and elements whose role attribute resolves (its first known,
  *   non-abstract token, in any case) to the button, link, checkbox, radio,
  *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
- *   option, treeitem or gridcell role, minus anything hidden or disabled. aria-hidden is not
+ *   option, treeitem or gridcell role, minus anything hidden or disabled.
+ *   The visible label is the visible inner text: text in inline elements
+ *   joins as written (<b>Down</b>load reads "Download"), a block-level box or
+ *   a <br> starts a new word, and text in a box nobody can see (clipped away,
+ *   1x1 px or fully transparent, as screen-reader-only text is) is left
+ *   out. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -96,7 +101,7 @@ const meta = {
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
@@ -266,61 +271,53 @@ function runInPage(ctx) {
     }
   }
 
-  // DOM's NodeFilter.SHOW_TEXT constant, inlined as a numeric literal rather
-  // than referencing the global NodeFilter object directly: runInPage must
-  // have zero free vars (see docs/RULE_AUTHORING.md's free-var footgun) and
-  // NodeFilter is not itself present in the execution realm this function
-  // actually runs in, unlike window/document. Referencing the global
-  // directly would silently make createTreeWalker throw on every call,
-  // falling back to raw container.textContent (which respects none of
-  // isNonRenderedTag/isDomVisible/isAccEligible below, since that whole
-  // per-node loop is skipped in the fallback path). Same pattern already
-  // used correctly in
-  // region-manual.js's own createTreeWalker call.
-  const SHOW_TEXT = 4;
-
+  // The element's visible inner text (ACT 2ee8b8): rendered, visible text
+  // joined as it is laid out. Pieces of text in inline elements join as
+  // written, so <b>Down</b>load is "Download"; a block-level box or a <br>
+  // starts a new line, read as a space (helpers.getTextBoundaryKind). Text in
+  // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
+  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden).
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
 
-    // TreeWalker is deterministic in document order.
-    let walker;
-    try {
-      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
-    } catch {
-      walker = null;
-    }
-    if (!walker) {
-      try {
-        const t = dom.textContent(container);
-        return t == null ? '' : String(t);
-      } catch {
-        return '';
-      }
-    }
+    const boundaryOf = (n) =>
+      typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
+    const hidden = (n) =>
+      typeof helpers.isVisuallyHidden === 'function' ? helpers.isVisuallyHidden(n) : false;
 
+    // Per parent element: whether its text is perceived (see isAccEligible).
+    const eligibleByParent = new Map();
     const parts = [];
-    let n;
-    while ((n = walker.nextNode())) {
-      try {
-        const raw = n && dom.nodeValue(n) != null ? String(dom.nodeValue(n)) : '';
-        const t = raw.replace(/\s+/g, ' ').trim();
-        if (!t) continue;
-
-        const p = dom.parentElement(n) || null;
-        if (!p || !dom.tagName(p)) continue;
-        if (isNonRenderedTag(p)) continue;
-
-        // Require the parent element to be visually eligible AND not inside
-        // an aria-hidden subtree (see isAccEligible's docblock above).
-        if (!isAccEligible(p)) continue;
-
-        parts.push(t);
-      } catch {
-        // no-throws
+    let budget = 20000;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0) return;
+        try {
+          const type = dom.nodeType(n);
+          if (type === 3) {
+            const p = dom.parentElement(n);
+            if (!p) continue;
+            let ok = eligibleByParent.get(p);
+            if (ok === undefined) {
+              ok = isAccEligible(p);
+              eligibleByParent.set(p, ok);
+            }
+            if (ok) parts.push(String(dom.nodeValue(n) || ''));
+            continue;
+          }
+          if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
+          const apart = boundaryOf(n) === 'block';
+          if (apart) parts.push(' ');
+          walk(n);
+          if (apart) parts.push(' ');
+        } catch {
+          // no-throws
+        }
       }
-    }
-    return parts.join(' ').replace(/\s+/g, ' ').trim();
+    };
+    if (!hidden(container)) walk(container);
+    return parts.join('').replace(/\s+/g, ' ').trim();
   }
 
   // Real <label> elements associated with a native form control -- the
