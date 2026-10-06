@@ -19,12 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: NM-3.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-3](#nm-3) | label-in-name reads `<b>Down</b>load` as "Down load" | Bug | **High** | Round 2 |
-| [NM-4](#nm-4) | label-in-name counts visually hidden text as visible | Bug | **High** | Round 2 |
 | [VS-1](#vs-1) | An element's own `opacity` is counted twice | Bug | **High** | Round 2 |
 | [VS-2](#vs-2) | SVG shapes behind SVG text are ignored | Bug | **High** | Round 2 |
 | [RP-1](#rp-1) | SARIF output fails the SARIF schema | Bug | **High** | Round 2 |
@@ -104,18 +102,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-3.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="nm-3"></a>**NM-3. label-in-name reads `<b>Down</b>load` as "Down load"** — Bug, High · [details](./2026-10-stress-test-2.md#nm-3)
-- *In plain words:* styling part of a word adds a space, so the visible label stops matching the name and a correct link fails.
-- Example: `<a href="/d" aria-label="Download the report"><b>Down</b>load</a>`: `fail`; should pass.
-- Basis: ACT 2ee8b8 uses the element's visible inner text, where inline elements add no space.
-- Where: `collectVisibleTextUnder` (`label-in-name.js:269-285`); also `getContentNameInfo`.
-
-<a id="nm-4"></a>**NM-4. label-in-name counts visually hidden text as visible** — Bug, High · [details](./2026-10-stress-test-2.md#nm-4)
-- *In plain words:* screen-reader-only text inside a button is treated as part of what sighted users see.
-- Example: `<button aria-label="Close dialog"><span class="sr-only">Dismiss</span>Close</button>`: `fail`; visible label "Close" is in the name, so pass.
-- Basis: WCAG 2.5.3 is about the visible label; ACT 2ee8b8 uses visible text only.
-- Where: `isDomVisibleEligible` in label-in-name has no clip, `clip-path`, 1px or opacity check; `isClipHidden` (`dom-helpers.js:4426`) exists.
 
 <a id="vs-1"></a>**VS-1. An element's own `opacity` is counted twice** — Bug, High · [details](./2026-10-stress-test-2.md#vs-1)
 - *In plain words:* a semi-transparent badge is measured as if faded twice, so a readable one fails.
@@ -407,9 +393,9 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed after the second audit (not yet merged into `main`)
 
-Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaiting a pull request.
+Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), in pull request [#94](https://github.com/SureA11y/core/pull/94), which closes their issues when merged.
 
-<a id="rb-1"></a><a id="rb-2"></a><a id="nm-1"></a><a id="nm-8"></a><a id="nm-2"></a>
+<a id="rb-1"></a><a id="rb-2"></a><a id="nm-1"></a><a id="nm-8"></a><a id="nm-2"></a><a id="nm-3"></a><a id="nm-4"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `04b9003`, docs `3cf988a` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
@@ -417,8 +403,12 @@ Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaitin
 | NM-1 | A role with a fallback (`role="foo button"`, `"none presentation"`) was read as no role, or as an invalid one | Fix fully, with NM-8: one resolver for an element's role (the first token naming a known role, in any case; none means no role, so the element keeps its implicit role), used by every rule for reading and selecting roles, and a lint rule against parsing `role` by hand. As a consequence `aria-allowed-attr` judges an element whose role names no known role by its implicit role. | `d1515a2`, docs `c817d40` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
 | NM-8 | Upper-case roles (`role="BUTTON"`) were skipped by most name rules | Same change as NM-1. | `d1515a2` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
 | NM-2 | `<label for>`, `aria-labelledby` and `headers` inside a shadow root weren't resolved; a reference from a shadow root to the page was | Fix in both directions, as the specs say and Chromium does: every ID reference resolves in the referring element's own tree (its shadow root, or the document), with a helper for rules (`getElementByIdInTree`) and the referring element passed to the IDREF helpers; a lint rule against looking an ID up in the document. Covers `for`, the ARIA ID references (names, descriptions, `aria-owns`), `headers`, `usemap` and the contrast exception for a disabled control's label. Fragment links keep resolving in the document, as HTML has them. Includes the first round's deferred "name computation across a shadow boundary". | `e693b75`, docs `82b357c` | [#92](https://github.com/SureA11y/core/issues/92) | 2026-10-06 |
+| NM-3 | label-in-name read `<b>Down</b>load` as "Down load" | Fix fully, with NM-4, in the shared name too: text joins as browsers lay it out. The name from content follows Chromium (no space between pieces in inline elements; a space around an element that isn't inline and around a piece that is a name of its own); label-in-name's visible label follows the visible inner text (a block-level box or `<br>` starts a new word, an inline-block doesn't). One shared `display` check (`getTextBoundaryKind`) decides both, blockifying positioned boxes, floats and flex or grid items as browsers do. | `9c31869`, docs `5584644` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
+| NM-4 | label-in-name counted visually hidden text as visible | Same change as NM-3: text in a box that is clipped away, at most 1×1 px with its overflow hidden, or fully transparent is not part of the visible label (`isVisuallyHidden`). | `9c31869` | [#93](https://github.com/SureA11y/core/issues/93) | 2026-10-06 |
 
 How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
+
+How NM-3 and NM-4 were checked: Chromium's accessibility tree and `innerText` were read for each case (inline, inline-block, block, flex item, `<br>`, image, `aria-label` on a span, hidden and clipped spans), and the engine's name and visible label now match them; tests pin each case for the shared name and for label-in-name, and three fixture cases were added (12 of the new tests failed before). Engines A and B on label-in-name, final code: all three agree on inline splits, real spaces, `<br>`, inline-block and the screen-reader-only, opacity and clip patterns, except that B fails text hidden with `clip-path: inset(50%)`, which we and A pass; on `<div>Down</div>load` against "Download…" A passes, B and we fail; on flex items (`<span style="display:flex"><span>Down</span><span>load</span></span>`) A and B pass, and we fail, since flex items are laid out as blocks and Chromium's visible text is "Down⏎load", as ACT's visible inner text reads it. The full suite passes (the same one environmental failure); no measurable cost (Chromium: fixtures 1.01×, large page 0.95×; jsdom 1.00×).
 
 How NM-2 was checked: a new test runs each changed rule with the reference inside a shadow root and across its boundary, both ways (18 cases, `tests/engine-checks/tree-scoped-id-references.test.js`; 15 failed before). Chromium's accessibility tree gives the same names: a label or `aria-labelledby` inside the shadow root names the control, and one across the boundary gives no name. Engines A and B agree on every label and name case. Where they differ: A passes `headers` pointing out of the shadow root (this engine fails an ID that resolves to nothing, as it does without a shadow root) and checks an `<area>` whose `<map>` no image in its tree uses; B fails `aria-owns` inside a shadow root. The full suite passes (the same one environmental failure); no measurable cost (fixtures 0.98×, jsdom 0.91×, large page 1.06× but within its noise: measured while another browser job ran, with runs from 2.97 to 4.11 s).
 

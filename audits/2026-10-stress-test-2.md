@@ -172,6 +172,7 @@ Sorted by severity within each area. "A" and "B" are the two other engines on th
   - `<button aria-label="Submit form"><span>S</span>ubmit</button>`: same.
 - **Spec.** ACT 2ee8b8 compares the name with the element's *visible inner text*, which follows how the text is rendered: inline elements add no space, so the visible label is "Download". (accname itself leaves this open: its editors' note says joining strings "with and without spaces, depending on the CSS display value" is under discussion in AccName #225.)
 - **Others.** A: pass. B: pass.
+- **Others, checked when fixing it** (label-in-name with `aria-label="Download the report"`; Chromium's accessibility tree and `innerText` as reference). `<b>Down</b> load` with a real space and `Down<br>load`: A, B and the fixed engine fail. `<span style="display:inline-block">Down</span>load`: all three pass (Chromium's visible text is "Download", its name "Down load"). `<div>Down</div>load`: A passes, B and the fixed engine fail. Flex items `<span>Down</span><span>load</span>` in a flex container: A and B pass, the fixed engine fails, as Chromium's visible text is "Down⏎load".
 - **Cause.** `collectVisibleTextUnder` (`label-in-name.js:269,280,285`) trims each text node and joins them with a space. The shared `getContentNameInfo` has the same flaw (`<button><b>Down</b>load</button>` is named "Down load").
 - **Evaluation.** Clear bug.
 
@@ -182,7 +183,7 @@ Sorted by severity within each area. "A" and "B" are the two other engines on th
 - Example: `.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0) }` and `<button aria-label="Close dialog"><span class="sr">Dismiss</span>Close</button>`. The visible label is "Close", which is in the name. Engine `fail`; should be pass.
 - The same happens with `opacity: 0` text.
 - **Spec.** WCAG 2.5.3 is about the *visible* label. ACT 2ee8b8 applies to "visible text content", where text clipped to nothing is not visible.
-- **Others.** A: pass. B: pass.
+- **Others.** A: pass. B: pass. On the fix, with `clip-path: inset(50%)` instead: A pass, B `fail`.
 - **Cause.** `isDomVisibleEligible` (label-in-name) has no clip, `clip-path`, 1px or opacity check. `isClipHidden` exists (`dom-helpers.js:4426`) but isn't used here. Not a jsdom artefact: the same result in Chromium.
 - **Evaluation.** Clear bug. The sr-only pattern inside icon buttons is everywhere.
 
