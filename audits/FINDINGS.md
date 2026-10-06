@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: NM-2.
+Sorted by severity, then by how many pages it touches. Next to fix: NM-3.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-2](#nm-2) | ID references inside a shadow root aren't resolved; one from a shadow root to the page is | Bug | **High** | Round 2 (and round 1 §6) |
 | [NM-3](#nm-3) | label-in-name reads `<b>Down</b>load` as "Down load" | Bug | **High** | Round 2 |
 | [NM-4](#nm-4) | label-in-name counts visually hidden text as visible | Bug | **High** | Round 2 |
 | [VS-1](#vs-1) | An element's own `opacity` is counted twice | Bug | **High** | Round 2 |
@@ -105,12 +104,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-2.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="nm-2"></a>**NM-2. ID references and shadow roots** — Bug, High · [details](./2026-10-stress-test-2.md#nm-2) · also first round §6 ("name computation across a shadow boundary", planned for 1.11.0)
-- *In plain words:* inside a web component, `<label for>`, `aria-labelledby` and `headers` that point to elements in the same component are not found, so correctly labelled controls fail. The opposite direction is also wrong: a reference from inside a component to the main page still gives a name, which browsers don't.
-- Examples: shadow root `<label for="z">Zip</label><input id="z">` fails form-control-programmatic-label-present; a shadow `<input aria-labelledby="lbl">` with `id="lbl"` only in the page passes.
-- Basis: IDs are scoped to their tree; HTML's labeled control is "an element **in the tree** whose ID is equal to the value of the for attribute".
-- Where: `__getLabelElementsForId` (`dom-helpers.js:1750`), `resolveIdRefs` (`:2905ff`), `table-headers-attr-valid.js:120`: resolve in `el.getRootNode()`.
 
 <a id="nm-3"></a>**NM-3. label-in-name reads `<b>Down</b>load` as "Down load"** — Bug, High · [details](./2026-10-stress-test-2.md#nm-3)
 - *In plain words:* styling part of a word adds a space, so the visible label stops matching the name and a correct link fails.
@@ -416,15 +409,18 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaiting a pull request.
 
-<a id="rb-1"></a><a id="rb-2"></a>
+<a id="rb-1"></a><a id="rb-2"></a><a id="nm-1"></a><a id="nm-8"></a><a id="nm-2"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `04b9003`, docs `3cf988a` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
 | RB-2 | Named images and forms overrode `document` and form properties the engine reads | Same change as RB-1. | `04b9003` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
 | NM-1 | A role with a fallback (`role="foo button"`, `"none presentation"`) was read as no role, or as an invalid one | Fix fully, with NM-8: one resolver for an element's role (the first token naming a known role, in any case; none means no role, so the element keeps its implicit role), used by every rule for reading and selecting roles, and a lint rule against parsing `role` by hand. As a consequence `aria-allowed-attr` judges an element whose role names no known role by its implicit role. | `d1515a2`, docs `c817d40` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
 | NM-8 | Upper-case roles (`role="BUTTON"`) were skipped by most name rules | Same change as NM-1. | `d1515a2` | [#91](https://github.com/SureA11y/core/issues/91) | 2026-10-06 |
+| NM-2 | `<label for>`, `aria-labelledby` and `headers` inside a shadow root weren't resolved; a reference from a shadow root to the page was | Fix in both directions, as the specs say and Chromium does: every ID reference resolves in the referring element's own tree (its shadow root, or the document), with a helper for rules (`getElementByIdInTree`) and the referring element passed to the IDREF helpers; a lint rule against looking an ID up in the document. Covers `for`, the ARIA ID references (names, descriptions, `aria-owns`), `headers`, `usemap` and the contrast exception for a disabled control's label. Fragment links keep resolving in the document, as HTML has them. Includes the first round's deferred "name computation across a shadow boundary". | `e693b75`, docs `82b357c` | [#92](https://github.com/SureA11y/core/issues/92) | 2026-10-06 |
 
 How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
+
+How NM-2 was checked: a new test runs each changed rule with the reference inside a shadow root and across its boundary, both ways (18 cases, `tests/engine-checks/tree-scoped-id-references.test.js`; 15 failed before). Chromium's accessibility tree gives the same names: a label or `aria-labelledby` inside the shadow root names the control, and one across the boundary gives no name. Engines A and B agree on every label and name case. Where they differ: A passes `headers` pointing out of the shadow root (this engine fails an ID that resolves to nothing, as it does without a shadow root) and checks an `<area>` whose `<map>` no image in its tree uses; B fails `aria-owns` inside a shadow root. The full suite passes (the same one environmental failure); no measurable cost (fixtures 0.98×, jsdom 0.91×, large page 1.06× but within its noise: measured while another browser job ran, with runs from 2.97 to 4.11 s).
 
 How NM-1 and NM-8 were checked: every fixture with a role attribute is scanned as written, with every `role="x"` as `role="zzunknown x"`, and with every role in upper case; no rule's result changes in either (`tests/role-tokens.test.js`; results in 51 rules changed before). Each changed rule's own tests pin a fallback list and an upper-case role. The full suite passes (the same one environmental failure); no measurable cost.
 
