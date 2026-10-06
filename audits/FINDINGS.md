@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: R-8.
+Sorted by severity, then by how many pages it touches. Next to fix: R-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [R-8](#r-8) | Off-screen text is still contrast-checked by default; closed `<select>` options too | Debatable | Medium | Round 1 |
 | [R-1](#r-1) | Paint that isn't an ancestor's: stacking, fixed and sticky paint ignored | Bug | Medium | Round 1 (limits of the fix) |
 | [R-13](#r-13) | The viewport `content` parser: spaces, odd values, several metas | Bug | Medium | Round 1, round 2 (VS-5) |
 | [R-14](#r-14) | Input values and placeholders are never contrast-checked | Gap | Medium | Round 1 |
@@ -101,12 +100,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: R-8.
 ### High
 
 ### Medium
-
-<a id="r-8"></a>**R-8. Off-screen text is still contrast-checked by default; closed `<select>` options too** — Debatable, Medium · [details](./2026-10-stress-test.md) (R-8)
-- *In plain words:* text moved off-screen (`left:-9999px`, a classic screen-reader-only technique) or squeezed to `height:0` still fails contrast, because by default the engine looks only at styles, not at where things are drawn. The unselected options of a closed `<select>` fail too, though nobody sees them until it opens.
-- Fixed part: `font-size:0` and `color:transparent` (1.10.0, see §3).
-- Re-checked: `left:-9999px` and `height:0; overflow:hidden` fail at 1.36 under the default `visibilityMode: 'styleOnly'`; cleared under `styleAndGeometry`. A closed select's unselected options fail at 1.18–1.61. Under `styleAndGeometry`, its *selected* option is dropped too, so the visible text goes unchecked.
-- Decision needed: make `styleAndGeometry` the default where layout exists (`contrast-helpers.js:466-470`), and check only a closed select's selected option.
 
 <a id="r-1"></a>**R-1. Paint that isn't an ancestor's: what the 1.10.0 fix left** — Bug, Medium · [details](./2026-10-stress-test-outcomes.md) (P1)
 - *In plain words:* 1.10.0 stopped failing text over images and overlays, by asking instead. Some layouts still slip through, and in one case a real failure is now hidden.
@@ -375,12 +368,15 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 Fixes on branch `fix/audit-2026-10-findings-2` (from `main` at `ceb26d1`), pushed, no pull request yet.
 
-<a id="vs-1"></a><a id="vs-2"></a><a id="rp-1"></a>
+<a id="vs-1"></a><a id="vs-2"></a><a id="rp-1"></a><a id="r-8"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | VS-1 | An element's own `opacity` was counted twice when it had its own background | Option A: an element whose own opacity is below 1 and which paints a background is measured as one group, through the routine already used for an ancestor's opacity; when an image, gradient, blend mode or filter stops that, `contrast-computable` reports `cantTell` with the new reason code `ELEMENT_OPACITY`. A page with no opaque background is left to the existing root-canvas handling. Without a background of its own, an element's opacity keeps the opacity product, which was already right. Left as it was: in `auditorAssist` mode, which assumes a canvas color for such a page, the badge still gets the old estimate. | `7fc1a2f`, docs `d682cbb` | [#95](https://github.com/SureA11y/core/issues/95) | 2026-10-06 |
 | VS-2 | SVG shapes behind SVG text were ignored | Option B: SVG shapes count as paint for the overlap check, so any shape under or over SVG text gives `cantTell` (`BACKGROUND_OVERLAP`); the simple case is measured: a `<rect>` with a solid fill, painted before the text, unrotated, covering all of it clear of rounded corners and stroke, with no grouping effect in between, is the text's background, with its `fill-opacity` and `opacity`. Needs a layout: under jsdom results are unchanged. | `ca5af42`, changelog `e512053` | [#96](https://github.com/SureA11y/core/issues/96) | 2026-10-06 |
 | RP-1 | SARIF output failed the SARIF schema (`toolExecutionNotices`) | Option B: the notes are written as `toolExecutionNotifications`, the schema's name, in the code, `SARIF.md` and the test; a new test validates the SARIF of a scan of every fixture page and of edge cases against the official SARIF 2.1.0 schema (kept in `tests/schemas/` with its source and OASIS notice; `ajv` becomes a direct dev dependency). A consumer that read the old name has to read the new one. | `7e8c08d`, changelog `36324fd` | [#97](https://github.com/SureA11y/core/issues/97) | 2026-10-06 |
+| R-8 | Off-screen and clipped-away text was contrast-checked by default in a browser; layout mode dropped a `<select>`'s text | Option A: unset, `visibilityMode` is `'styleAndGeometry'` where the page has a layout (any browser scan) and `'styleOnly'` under jsdom; an explicit setting is honored. Layout mode judges a `<select>`'s options by the select's place on the page, so the selected value and the options of the open list are checked, as before. Closed as Debatable → decided: the unselected options stay checked, since the list a select opens draws them with the author's colors (Chromium on Windows and Linux). | `2c07a24`, changelog `e587f9f` | [#99](https://github.com/SureA11y/core/issues/99) | 2026-10-06 |
+
+How R-8 was checked: a Chromium test covers off-page text, text clipped by `height:0; overflow:hidden`, text below the fold, a select's faint selected value and faint unselected option, a select off the page, and both explicit settings (4 cases failed before). On the five audit cases the engine now matches Engine B exactly: off-page and clipped text not checked, the two select cases and below-the-fold text failed; Engine A agrees except that it passes the faint unselected option. Layout mode costs 1–3% of a large page's scan, measured in one build; the clipping ancestors are measured once per scan. The full suite passes (the same one environmental failure).
 
 How RP-1 was checked: the SARIF of a Chromium scan of each of the 137 fixture pages, validated against the official schema, was invalid for 132 of them, all for this one property, and is now valid for all 137; nothing else in the output fails the schema. The new test fails on the old renderer. Engines A and B don't write SARIF, so there is nothing to compare. The full suite passes (the same one environmental failure). RP-7's dead `$schema` URL is a separate, still-open slip.
 
