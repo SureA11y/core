@@ -144,7 +144,8 @@ test('every listed name is an accessor or a method on some DOM interface', () =>
     'elementsFromPoint',
     'fonts',
     'timeline',
-    'getAnimations'
+    'getAnimations',
+    'getScreenCTM'
   ]);
   for (const name of [...SAFE_DOM_GETTERS, ...SAFE_DOM_METHODS]) {
     if (browserOnly.has(name)) continue;
