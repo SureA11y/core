@@ -5,8 +5,9 @@
  * The contrast rules measure against the stack of ancestor backgrounds, so
  * light text over a dark sibling, an <img> hero, a ::before overlay or a
  * block it is pulled over failed with high confidence against the white
- * page. Such text is now not computable (BACKGROUND_OVERLAP), while text
- * whose ancestors do give its background is judged as before.
+ * page. Such text is measured against a solid box under all of it, in the
+ * paint order (#101), and is otherwise not computable (BACKGROUND_OVERLAP),
+ * while text whose ancestors do give its background is judged as before.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -47,12 +48,18 @@ const TEXT = 'Hello world text';
 const BLACK =
   "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10'/></svg>";
 
-// Light text that sits on something dark the ancestors don't paint.
-const OVERLAPS = {
+// Light text on a solid dark box the ancestors don't paint, under all of
+// it in the paint order (#101): measured against the box, and it passes.
+const MEASURED = {
   'an absolutely positioned sibling': `<div style="position:relative;height:100px"><div style="position:absolute;inset:0;background:#000"></div><p style="position:absolute;top:0;margin:0;color:#ddd">${TEXT}</p></div>`,
+  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`
+};
+
+// Light text that sits on something dark the ancestors don't paint, which
+// can't be measured: an image, an overlay, a box that is not under all of it.
+const OVERLAPS = {
   'an <img> hero': `<div style="position:relative;height:200px"><img src="${BLACK}" alt="" style="position:absolute;inset:0;width:100%;height:100%"><h2 style="position:relative;margin:0;color:#ddd">${TEXT}</h2></div>`,
   'a ::before overlay': `<style>.h{position:relative;z-index:0}.h::before{content:"";position:absolute;inset:0;background:#000;z-index:-1}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`,
-  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`,
   'the menu of an open <details>': `<details open style="position:relative"><summary></summary><div style="position:absolute;top:100%;left:0;width:300px;height:200px;background:#000"></div></details><p style="color:#ddd">${TEXT}</p>`
 };
 
@@ -109,6 +116,14 @@ test('contrast over paint that is not an ancestor background, in Chromium', { sk
     } finally {
       await p.close();
     }
+  }
+
+  for (const [name, body] of Object.entries(MEASURED)) {
+    await t.test(`text over ${name} is measured against it`, async () => {
+      const r = await scan(body);
+      assert.equal(r.minimum, 'pass', name);
+      assert.equal(r.computable, 'pass', name);
+    });
   }
 
   for (const [name, body] of Object.entries(OVERLAPS)) {
