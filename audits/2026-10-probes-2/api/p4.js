@@ -1,0 +1,21 @@
+const { run, sum } = require('./h');
+const html = '<html lang="en"><head><title>t</title></head><body><main id="main"><img src="a.png" class="a"><img src="b.png" class="b"><img src="c.png" class="keep2"></main><footer><img src="d.png"></footer></body></html>';
+const s = (r) => r.checksResults.map(c=>c.ruleId+':'+c.outcome+':'+c.occurrences.map(o=>o.html).join('|'));
+const ro = ['img-alt-present'];
+console.log('is(.a,.b) string', s(run(html, null, { excludeSelectors: ':is(.a, .b)' }, ro)));
+console.log('is(.a,.b) array', s(run(html, null, { excludeSelectors: [':is(.a, .b)'] }, ro)));
+console.log('not string', s(run(html, null, { excludeSelectors: 'img:not(.a, .b)' }, ro)));
+console.log('rule-scoped not string', s(run(html, null, { rules: {'img-alt-present': {excludeSelectors: 'img:not(.a, .b)'}} }, ro)));
+// contextSelector forms
+const { setup, core } = require('./h');
+const t = (label, ctx) => { setup(html); let c = ctx; if (typeof ctx==='function') c = ctx(); try { const r = core.runa11yCoreInPage('https://x/', c, {}, ro); console.log(label, 'ctx=', JSON.stringify(r.contextSelector), JSON.stringify(r.contextMatch), s(r)); } catch(e) { console.log(label, 'THROW', e.code, e.message); } };
+t('element', () => document.querySelector('#main'));
+t('include/exclude object', { include: ['#main'], exclude: ['.a'] });
+t('number', 5);
+t('array with element', () => [document.querySelector('#main')]);
+t('array mixed', () => ['footer', 5]);
+t('empty string', '');
+t('whitespace', '   ');
+t('array empty strings', ['', ' ']);
+t('nested array', [['#main']]);
+t('NodeList', () => document.querySelectorAll('main'));

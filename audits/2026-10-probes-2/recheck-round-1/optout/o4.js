@@ -1,0 +1,10 @@
+const {JSDOM}=require('/home/user/core/node_modules/jsdom');const core=require('/home/user/core/src/index.js');
+const dom=new JSDOM('<html lang=en><title>t</title><body><main><a href="/x"></a><x-c id=h1></x-c><x-c></x-c><div class=o><x-c></x-c></div></main>',{url:'https://e.test/'});
+global.window=dom.window;global.document=dom.window.document;const d=dom.window.document;
+d.querySelectorAll('x-c').forEach(h=>{h.attachShadow({mode:'open'}).innerHTML='<a href="/y"></a>';});
+const inner=d.querySelector('.o x-c').shadowRoot; const nh=inner.appendChild(d.createElement('y-c')); nh.attachShadow({mode:'open'}).innerHTML='<a href="/z"></a>';
+const r=core.runa11yCoreInPage('https://e.test/',null,{},['link-name-present']);
+const c=r.checksResults[0];
+const res=c.occurrences.map(o=>{let root=d;for(const s of (o.shadowHostSelectors||[])){const h=root.querySelector(s);root=h&&h.shadowRoot;if(!root)return 'BROKEN';} return root.querySelector(o.selector);});
+console.log(c.occurrences.map(o=>({sel:o.selector,hosts:o.shadowHostSelectors,sp:o.structuralPath})));
+console.log('distinct elements:',new Set(res).size,'of',res.length, 'all anchors:',res.every(e=>e&&e.tagName==='A'));

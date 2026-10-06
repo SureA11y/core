@@ -1,0 +1,13 @@
+const p=require('./h');
+const A=['aria-allowed-attr','aria-prohibited-attr','aria-required-attr','aria-required-children','aria-required-parent','aria-allowed-role','aria-valid-attr-value','aria-conditional-attr','nested-interactive-controls-absent','presentational-children-focusable-absent','aria-hidden-focus'];
+p('upper slider aria-label','<div role="SLIDER" aria-valuenow="5" aria-label="v" tabindex="0"></div>',A);
+p('upper img aria-label','<div role="IMG" aria-label="v"></div>',A);
+p('upper button nested link','<div role="BUTTON" tabindex="0"><a href="#">x</a></div>',A);
+p('foo button nested link','<div role="foo button" tabindex="0"><a href="#">x</a></div>',A);
+p('upper menu child','<div role="MENU"><div role="MENUITEM" tabindex="-1">a</div></div>',A);
+p('menu child foo menuitem','<div role="menu"><div role="foo menuitem" tabindex="-1">a</div></div>',A);
+p('foo menu child menuitem','<div role="foo menu"><div role="menuitem" tabindex="-1">a</div></div>',A);
+p('foo row in table','<table><tr role="foo row"><td>a</td></tr></table>',A);
+p('tablist > foo tab','<div role="tablist"><div role="foo tab" aria-selected="true">a</div></div>',A);
+p('upper TAB inside tablist','<div role="tablist"><div role="TAB" aria-selected="true">a</div></div>',A);
+p('aria-selected on foo option','<div role="listbox" aria-label="l"><div role="foo option" aria-selected="true">a</div></div>',A);

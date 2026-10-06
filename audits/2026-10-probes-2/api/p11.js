@@ -1,0 +1,10 @@
+const { run } = require('./h');
+const html = '<html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>';
+const t = (label, eo) => { try { const r = run(html, null, eo, ['img-alt-present']); const c = r.checksResults[0]; console.log(label.padEnd(14), JSON.stringify(r.engine.locale), '|', c.title.slice(0,40), '|', (c.occurrences[0]||{}).summary?.slice(0,50), '| echo', JSON.stringify(c.engineOptions.locale)); try{JSON.stringify(r)}catch(e){console.log('nonser')} } catch (e) { console.log(label, 'THROW', e.stack.split('\n').slice(0,3).join(' ')); } };
+for (const l of ['de', 'DE-de', ' fr ', 'de_DE', 'zh-Hant-TW', '__proto__', 'constructor', 'toString', 'hasOwnProperty', 'en-US', 'x', '', 5, null, ['de'], {}]) t(JSON.stringify(l), { locale: l });
+t('messages proto', { locale: 'xx', messages: JSON.parse('{"xx": {"__proto__": {"img_altPresent_title":"POLLUTED"}}}') });
+t('messages toString', { locale: 'toString', messages: { toString: { img_altPresent_title: 'TS' } } });
+t('messages ctor key', { locale: 'de', messages: { de: { constructor: 'x' } } });
+t('messages non-string', { locale: 'de', messages: { de: { img_altPresent_title: 5 } } });
+t('messages array', { locale: 'de', messages: [] });
+console.log(({}).img_altPresent_title);

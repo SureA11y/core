@@ -1,0 +1,15 @@
+const p=require('./h');
+const S=['svg-image-text-alternative-present','role-img-text-alternative-present','svg-text-alternative-present'];
+p('svg role img','<svg role="img"></svg>',S);
+p('svg role img w/ circle','<svg role="img" width="10" height="10"><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role img in label','<label><svg role="img" width="10" height="10"><circle r="4" cx="5" cy="5"/></svg> Remember <input type="checkbox"></label>',S);
+p('svg role img title','<svg role="img" width="10" height="10"><title>Star</title><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role img title whitespace','<svg role="img" width="10" height="10"><title>   </title><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role img title not first child','<svg role="img" width="10" height="10"><circle r="4" cx="5" cy="5"/><title>Star</title></svg>',S);
+p('svg role img nested g title','<svg role="img" width="10" height="10"><g><title>Star</title></g><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role img text child','<svg role="img" width="10" height="10"><text>Star</text></svg>',S);
+p('svg role img aria-labelledby inner text','<svg role="img" aria-labelledby="t1" width="10" height="10"><text id="t1">Star</text></svg>',S);
+p('svg role IMG upper','<svg role="IMG" width="10" height="10"><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role graphics-symbol','<svg role="graphics-symbol" width="10" height="10"><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role graphics-document','<svg role="graphics-document" width="10" height="10"><circle r="4" cx="5" cy="5"/></svg>',S);
+p('svg role img xlink:title','<svg role="img" width="10" height="10"><a xlink:href="#"><circle r="4" cx="5" cy="5"/></a></svg>',S);
