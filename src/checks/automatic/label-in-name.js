@@ -14,9 +14,15 @@
  *   deterministically, from an associated <label>, from the control's own
  *   rendered text, or from the elements aria-labelledby points at. The
  *   candidates are <button>, <a href>, <summary>, non-hidden form controls,
- *   and the button, link, checkbox, radio, switch, searchbox, tab, menuitem,
- *   menuitemcheckbox, menuitemradio, option, treeitem and gridcell roles,
- *   minus anything hidden or disabled. aria-hidden is not
+ *   and elements whose role attribute resolves (its first known,
+ *   non-abstract token, in any case) to the button, link, checkbox, radio,
+ *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
+ *   option, treeitem or gridcell role, minus anything hidden or disabled.
+ *   The visible label is the visible inner text: text in inline elements
+ *   joins as written (<b>Down</b>load reads "Download"), a block-level box or
+ *   a <br> starts a new word, and text in a box nobody can see (clipped away,
+ *   1x1 px or fully transparent, as screen-reader-only text is) is left
+ *   out. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -94,19 +100,59 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
 
   // Applicability: focus/activation controls with explicit ARIA naming.
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
-  const selector =
-    ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  // The role attribute is a fallback list matched in any case, so roles are
+  // selected by token ([role~="x" i]) and then kept only when the role the
+  // attribute resolves to (its first known, non-abstract token) is one of
+  // these: role="link button" is a link, role="foo BUTTON" a button.
+  const NATIVE_CONTROLS = 'button, a[href], summary, input:not([type="hidden"]), textarea, select';
+  const CONTROL_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'searchbox',
+    'tab',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'treeitem',
+    'gridcell'
+  ];
+  const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isCandidate(el) {
+    try {
+      if (dom.matches(el, NATIVE_CONTROLS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return CONTROL_ROLES.includes(getExplicitRole(el));
+  }
+
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(isCandidate);
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -168,14 +214,11 @@ function runInPage(ctx) {
   }
 
   function getElementDescriptor(el) {
-    const tag = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
-    let role;
-    try {
-      role = el && el.getAttribute ? el.getAttribute('role') || '' : '';
-    } catch {
-      role = '';
-    }
-    const r = String(role || '').trim();
+    const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
+    // The resolved role, not the raw attribute: <div role="foo button"> is
+    // described as div[role="button"], the role assistive technology sees.
+    const r = el ? getExplicitRole(el) : '';
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }
 
@@ -186,7 +229,7 @@ function runInPage(ctx) {
   }
 
   function isNonRenderedTag(el) {
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
     return (
       tn === 'script' ||
       tn === 'style' ||
@@ -228,61 +271,53 @@ function runInPage(ctx) {
     }
   }
 
-  // DOM's NodeFilter.SHOW_TEXT constant, inlined as a numeric literal rather
-  // than referencing the global NodeFilter object directly: runInPage must
-  // have zero free vars (see docs/RULE_AUTHORING.md's free-var footgun) and
-  // NodeFilter is not itself present in the execution realm this function
-  // actually runs in, unlike window/document. Referencing the global
-  // directly would silently make createTreeWalker throw on every call,
-  // falling back to raw container.textContent (which respects none of
-  // isNonRenderedTag/isDomVisible/isAccEligible below, since that whole
-  // per-node loop is skipped in the fallback path). Same pattern already
-  // used correctly in
-  // region-manual.js's own createTreeWalker call.
-  const SHOW_TEXT = 4;
-
+  // The element's visible inner text (ACT 2ee8b8): rendered, visible text
+  // joined as it is laid out. Pieces of text in inline elements join as
+  // written, so <b>Down</b>load is "Download"; a block-level box or a <br>
+  // starts a new line, read as a space (helpers.getTextBoundaryKind). Text in
+  // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
+  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden).
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
 
-    // TreeWalker is deterministic in document order.
-    let walker;
-    try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
-    } catch {
-      walker = null;
-    }
-    if (!walker) {
-      try {
-        const t = container.textContent;
-        return t == null ? '' : String(t);
-      } catch {
-        return '';
-      }
-    }
+    const boundaryOf = (n) =>
+      typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
+    const hidden = (n) =>
+      typeof helpers.isVisuallyHidden === 'function' ? helpers.isVisuallyHidden(n) : false;
 
+    // Per parent element: whether its text is perceived (see isAccEligible).
+    const eligibleByParent = new Map();
     const parts = [];
-    let n;
-    while ((n = walker.nextNode())) {
-      try {
-        const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
-        const t = raw.replace(/\s+/g, ' ').trim();
-        if (!t) continue;
-
-        const p = n.parentElement || null;
-        if (!p || !p.tagName) continue;
-        if (isNonRenderedTag(p)) continue;
-
-        // Require the parent element to be visually eligible AND not inside
-        // an aria-hidden subtree (see isAccEligible's docblock above).
-        if (!isAccEligible(p)) continue;
-
-        parts.push(t);
-      } catch {
-        // no-throws
+    let budget = 20000;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0) return;
+        try {
+          const type = dom.nodeType(n);
+          if (type === 3) {
+            const p = dom.parentElement(n);
+            if (!p) continue;
+            let ok = eligibleByParent.get(p);
+            if (ok === undefined) {
+              ok = isAccEligible(p);
+              eligibleByParent.set(p, ok);
+            }
+            if (ok) parts.push(String(dom.nodeValue(n) || ''));
+            continue;
+          }
+          if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
+          const apart = boundaryOf(n) === 'block';
+          if (apart) parts.push(' ');
+          walk(n);
+          if (apart) parts.push(' ');
+        } catch {
+          // no-throws
+        }
       }
-    }
-    return parts.join(' ').replace(/\s+/g, ' ').trim();
+    };
+    if (!hidden(container)) walk(container);
+    return parts.join('').replace(/\s+/g, ' ').trim();
   }
 
   // Real <label> elements associated with a native form control -- the
@@ -314,7 +349,7 @@ function runInPage(ctx) {
     let text;
     let source = 'none';
 
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
 
     // 1) Label association (native form controls)
     const isFormControl = tn === 'input' || tn === 'select' || tn === 'textarea';
@@ -342,13 +377,14 @@ function runInPage(ctx) {
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
-      const idrefs = el && el.getAttribute ? el.getAttribute('aria-labelledby') : null;
+      const idrefs =
+        el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-labelledby') : null;
       if (idrefs && helpers.resolveIdRefs) {
-        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
         const parts = [];
         const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
-          if (!ref || !ref.tagName) continue;
+          if (!ref || !dom.tagName(ref)) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
           if (t) {
@@ -411,7 +447,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(node);
     } catch {
       // no computed style available

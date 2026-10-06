@@ -88,6 +88,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -122,8 +123,8 @@ function runInPage(ctx) {
   function safeQueryAll(sel) {
     try {
       if (queryAllSmart) return Array.from(queryAllSmart(sel) || []);
-      return safeRoot && safeRoot.querySelectorAll
-        ? Array.from(safeRoot.querySelectorAll(sel))
+      return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+        ? Array.from(dom.querySelectorAll(safeRoot, sel))
         : [];
     } catch {
       return [];
@@ -153,14 +154,19 @@ function runInPage(ctx) {
         if (r && r.eligible === false) return false;
       }
       if (helpers && typeof helpers.isClipHidden === 'function') {
-        const view = (el.ownerDocument && el.ownerDocument.defaultView) || null;
-        for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+        const view = (dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))) || null;
+        // Bounded as a safety net only: a walk up a real tree always ends.
+        for (
+          let n = el, i = 0;
+          n && dom.nodeType(n) === 1 && i < 100000;
+          n = dom.parentElement(n), i++
+        ) {
           const cs = view && view.getComputedStyle ? view.getComputedStyle(n) : null;
           if (cs && helpers.isClipHidden(cs)) return false;
           // jsdom neither computes clip nor keeps its value intact
           // (rect(0 0 0 0) reads back as rect(0px)), so read the declaration
           // as written in the style attribute too.
-          const declared = String(n.getAttribute('style') || '');
+          const declared = String(dom.getAttribute(n, 'style') || '');
           const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
           const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
           if (
@@ -205,13 +211,14 @@ function runInPage(ctx) {
   // visually hidden <label>: someone placed that text on purpose, and markup
   // can't tell whether it repeats a visible cue.
   function hasRenderedLabelledByRef(el) {
-    const ids = trim(el.getAttribute('aria-labelledby')).split(/\s+/).filter(Boolean);
+    const ids = trim(dom.getAttribute(el, 'aria-labelledby')).split(/\s+/).filter(Boolean);
     const scope =
-      el.getRootNode && typeof el.getRootNode().getElementById === 'function'
-        ? el.getRootNode()
+      dom.get(el, 'getRootNode') &&
+      typeof dom.get(dom.getRootNode(el), 'getElementById') === 'function'
+        ? dom.getRootNode(el)
         : document;
     for (const refId of ids) {
-      const ref = scope.getElementById(refId);
+      const ref = dom.getElementById(scope, refId);
       if (!ref) continue;
       if (!isDomVisibleEligible) return true;
       try {
@@ -246,7 +253,7 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (!isEligibleAcc(el)) continue;
     if (!isShownOnScreen(el)) {
@@ -254,9 +261,10 @@ function runInPage(ctx) {
       continue;
     }
 
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return trim(el.getAttribute('role')).toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -291,7 +299,7 @@ function runInPage(ctx) {
     metrics.flaggedCount += 1;
 
     const vf = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const element = (el.tagName || '').toLowerCase();
+    const element = (dom.tagName(el) || '').toLowerCase();
     const sourceText = label && label.value ? String(label.value).slice(0, 120) : '';
 
     let reasonCode;

@@ -76,6 +76,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -92,14 +93,14 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const type = trim(el.getAttribute('type')).toLowerCase();
+    const type = trim(dom.getAttribute(el, 'type')).toLowerCase();
     const isCheckbox = type === 'checkbox';
     const isRadio = type === 'radio';
     if (!isCheckbox && !isRadio) continue;
 
-    const rawAriaChecked = trim(el.getAttribute('aria-checked')).toLowerCase();
+    const rawAriaChecked = trim(dom.getAttribute(el, 'aria-checked')).toLowerCase();
     if (!rawAriaChecked) continue;
 
     applicableCount += 1;

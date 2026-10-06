@@ -89,6 +89,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -125,8 +126,8 @@ function runInPage(ctx) {
       // fall through
     }
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return Array.from(safeRoot.querySelectorAll(sel));
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return Array.from(dom.querySelectorAll(safeRoot, sel));
     } catch {
       // fall through
     }
@@ -141,7 +142,7 @@ function runInPage(ctx) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   function closestAriaHiddenTrue(node) {
@@ -149,8 +150,8 @@ function runInPage(ctx) {
     let guard = 0;
     while (cur && guard++ < 200) {
       try {
-        if (cur.getAttribute) {
-          const v = cur.getAttribute('aria-hidden');
+        if (dom.get(cur, 'getAttribute')) {
+          const v = dom.getAttribute(cur, 'aria-hidden');
           if (v != null && lower(v) === 'true') return cur;
         }
       } catch {
@@ -192,13 +193,22 @@ function runInPage(ctx) {
 
   // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
   // libraries that leave aria-modal off (e.g. Angular Material defaults to
-  // aria-modal="false") still count as an open modal.
+  // aria-modal="false") still count as an open modal. The role attribute is
+  // a fallback list matched case-insensitively, so role="foo dialog" is a
+  // dialog while role="region dialog" is not (the first real role wins).
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
   function collectOpenModalCandidates() {
-    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const nodes = qAll(
+      'dialog[open],[aria-modal="true"],[role~="dialog" i],[role~="alertdialog" i]'
+    );
     const out = [];
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
-      if (!n || !n.getAttribute) continue;
+      if (!n || !dom.get(n, 'getAttribute')) continue;
+      const byOther =
+        (lower(dom.tagName(n)) === 'dialog' && dom.hasAttribute(n, 'open')) ||
+        dom.getAttribute(n, 'aria-modal') === 'true';
+      if (!byOther && !MODAL_ROLES.has(helpers.aria.getExplicitRole(n))) continue;
       if (!isRenderedForModal(n)) continue;
       out.push(n);
     }
@@ -220,22 +230,22 @@ function runInPage(ctx) {
   }
 
   function getDeepActiveElement() {
-    let cur = document && document.activeElement ? document.activeElement : null;
+    let cur = document && dom.activeElement(document) ? dom.activeElement(document) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -247,14 +257,14 @@ function runInPage(ctx) {
     if (!node) return null;
     const tag = (() => {
       try {
-        return lower(node.tagName || '');
+        return lower(dom.tagName(node) || '');
       } catch {
         return '';
       }
     })();
     const idVal = (() => {
       try {
-        return trim(node.getAttribute && node.getAttribute('id'));
+        return trim(dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id'));
       } catch {
         return '';
       }
@@ -268,8 +278,8 @@ function runInPage(ctx) {
 
   function runFocusObservationWindow(fn) {
     const w =
-      document && document.defaultView
-        ? document.defaultView
+      document && dom.defaultView(document)
+        ? dom.defaultView(document)
         : typeof window !== 'undefined'
           ? window
           : null;
@@ -364,7 +374,7 @@ function runInPage(ctx) {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {
       // ignore
     }
@@ -376,7 +386,7 @@ function runInPage(ctx) {
       if (ref) focusTrace.push(ref);
     };
     try {
-      document.addEventListener('focusin', onFocusInCapture, true);
+      dom.addEventListener(document, 'focusin', onFocusInCapture, true);
     } catch {
       // ignore
     }
@@ -391,13 +401,13 @@ function runInPage(ctx) {
     });
 
     try {
-      document.removeEventListener('focusin', onFocusInCapture, true);
+      dom.removeEventListener(document, 'focusin', onFocusInCapture, true);
     } catch {
       // ignore
     }
 
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {
       // ignore
     }
@@ -417,14 +427,14 @@ function runInPage(ctx) {
 
     const redirectedTag = (() => {
       try {
-        return lower(after.tagName || '');
+        return lower(dom.tagName(after) || '');
       } catch {
         return '';
       }
     })();
     const redirectedId = (() => {
       try {
-        return trim(after.getAttribute && after.getAttribute('id'));
+        return trim(dom.get(after, 'getAttribute') && dom.getAttribute(after, 'id'));
       } catch {
         return '';
       }
@@ -447,8 +457,8 @@ function runInPage(ctx) {
     let cs;
     try {
       const w =
-        document && document.defaultView
-          ? document.defaultView
+        document && dom.defaultView(document)
+          ? dom.defaultView(document)
           : typeof window !== 'undefined'
             ? window
             : null;
@@ -554,27 +564,27 @@ function runInPage(ctx) {
   // <map> is used by an <img usemap> that is rendered and not inert; judge it
   // by that image instead.
   function isFocusableArea(el) {
-    if (!trim(el.getAttribute('href'))) return false;
+    if (!trim(dom.getAttribute(el, 'href'))) return false;
     let map;
     try {
-      map = el.closest ? el.closest('map') : null;
+      map = dom.get(el, 'closest') ? dom.closest(el, 'map') : null;
     } catch {
       map = null;
     }
     if (!map) return false;
-    const name = trim(map.getAttribute('name') || map.getAttribute('id'));
+    const name = trim(dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id'));
     if (!name) return false;
-    const scope = el.getRootNode ? el.getRootNode() : document;
-    if (!scope || typeof scope.querySelectorAll !== 'function') return false;
+    const scope = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
+    if (!scope || typeof dom.get(scope, 'querySelectorAll') !== 'function') return false;
     let imgs;
     try {
-      imgs = Array.from(scope.querySelectorAll('img[usemap]'));
+      imgs = Array.from(dom.querySelectorAll(scope, 'img[usemap]'));
     } catch {
       imgs = [];
     }
     const want = name.toLowerCase();
     for (const img of imgs) {
-      const usemap = lower(img.getAttribute('usemap')).replace(/^#/, '');
+      const usemap = lower(dom.getAttribute(img, 'usemap')).replace(/^#/, '');
       if (usemap !== want) continue;
       if (hasInertAncestor(img)) continue;
       if (isRenderedForFocus(img)) return true;
@@ -583,11 +593,11 @@ function runInPage(ctx) {
   }
 
   function isActuallyFocusable(el) {
-    if (!el || !el.getAttribute) return false;
+    if (!el || !dom.get(el, 'getAttribute')) return false;
 
     // An explicit negative tabindex takes the area out of the tab order too.
-    if (lower(el.tagName || '') === 'area') {
-      const ti = trim(el.getAttribute('tabindex'));
+    if (lower(dom.tagName(el) || '') === 'area') {
+      const ti = trim(dom.getAttribute(el, 'tabindex'));
       if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
       return isFocusableArea(el);
     }
@@ -604,7 +614,7 @@ function runInPage(ctx) {
     // focusability. Such an element is still programmatically focusable
     // (script could call .focus()), but that's not what "no focusable
     // content behind aria-hidden" cares about.
-    const explicitTabindex = trim(el.getAttribute('tabindex'));
+    const explicitTabindex = trim(dom.getAttribute(el, 'tabindex'));
     if (
       explicitTabindex !== '' &&
       !Number.isNaN(Number(explicitTabindex)) &&
@@ -625,33 +635,33 @@ function runInPage(ctx) {
     }
 
     // Local fallback that does NOT care about aria-hidden
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
     let fallbackFocusable = false;
 
     if (tag === 'a') {
-      const href = trim(el.getAttribute('href'));
+      const href = trim(dom.getAttribute(el, 'href'));
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
       fallbackFocusable = true;
     } else if (tag === 'input') {
-      const type = lower(el.getAttribute('type') || '');
+      const type = lower(dom.getAttribute(el, 'type') || '');
       fallbackFocusable = type !== 'hidden';
     } else if (tag === 'iframe') {
       fallbackFocusable = true;
     } else if (
       (tag === 'audio' || tag === 'video') &&
-      el.hasAttribute &&
-      el.hasAttribute('controls')
+      dom.get(el, 'hasAttribute') &&
+      dom.hasAttribute(el, 'controls')
     ) {
       fallbackFocusable = true;
-    } else if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+    } else if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'contenteditable')) {
       // contenteditable="false" explicitly disables the editing host and
       // does not by itself add the element to the tab order; only treat
       // presence/""/"true"/"plaintext-only" as focus-enabling.
-      const ceVal = lower(trim(el.getAttribute('contenteditable')));
+      const ceVal = lower(trim(dom.getAttribute(el, 'contenteditable')));
       fallbackFocusable = ceVal !== 'false';
     } else {
-      const ti = el.getAttribute('tabindex');
+      const ti = dom.getAttribute(el, 'tabindex');
       const s = trim(ti);
       if (ti != null && s !== '' && !Number.isNaN(Number(s))) {
         fallbackFocusable = true; // tabindex makes it programmatically focusable
@@ -673,7 +683,12 @@ function runInPage(ctx) {
     let guard = 0;
     while (cur && guard++ < 200) {
       try {
-        if (cur.nodeType === 1 && cur.hasAttribute && cur.hasAttribute('inert')) return true;
+        if (
+          dom.nodeType(cur) === 1 &&
+          dom.get(cur, 'hasAttribute') &&
+          dom.hasAttribute(cur, 'inert')
+        )
+          return true;
       } catch {
         // ignore
       }
@@ -687,7 +702,7 @@ function runInPage(ctx) {
       // :disabled also covers a control disabled by an ancestor
       // <fieldset disabled> (outside its first <legend>), which the
       // `disabled` IDL attribute does not reflect.
-      if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, ':disabled')) return true;
     } catch {
       // ignore
     }
@@ -698,7 +713,7 @@ function runInPage(ctx) {
       // ignore
     }
     try {
-      const tag = lower(el.tagName || '');
+      const tag = lower(dom.tagName(el) || '');
       if (
         (tag === 'button' ||
           tag === 'input' ||
@@ -706,8 +721,8 @@ function runInPage(ctx) {
           tag === 'textarea' ||
           tag === 'option' ||
           tag === 'optgroup') &&
-        el.hasAttribute &&
-        el.hasAttribute('disabled')
+        dom.get(el, 'hasAttribute') &&
+        dom.hasAttribute(el, 'disabled')
       ) {
         return true;
       }
@@ -735,7 +750,7 @@ function runInPage(ctx) {
 
   for (let i = 0; i < focusableCandidates.length; i++) {
     const el = focusableCandidates[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Cheap check first: a plain ancestor-attribute walk with no CSS
     // computation, vs. isActuallyFocusable's getComputedStyle-per-ancestor
@@ -774,22 +789,22 @@ function runInPage(ctx) {
       let type;
 
       try {
-        tag = lower(el.tagName || '');
+        tag = lower(dom.tagName(el) || '');
       } catch {
         tag = '';
       }
       try {
-        ti = el.getAttribute('tabindex');
+        ti = dom.getAttribute(el, 'tabindex');
       } catch {
         ti = null;
       }
       try {
-        href = tag === 'a' || tag === 'area' ? trim(el.getAttribute('href')) : null;
+        href = tag === 'a' || tag === 'area' ? trim(dom.getAttribute(el, 'href')) : null;
       } catch {
         href = null;
       }
       try {
-        type = tag === 'input' ? lower(el.getAttribute('type') || '') : null;
+        type = tag === 'input' ? lower(dom.getAttribute(el, 'type') || '') : null;
       } catch {
         type = null;
       }
@@ -842,7 +857,7 @@ function runInPage(ctx) {
 
     const tagName = (() => {
       try {
-        return lower(el.tagName || '');
+        return lower(dom.tagName(el) || '');
       } catch {
         return '';
       }

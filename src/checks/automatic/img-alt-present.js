@@ -52,6 +52,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -86,16 +87,16 @@ function runInPage(ctx) {
     }
 
     try {
-      if (safeRoot && typeof safeRoot.getElementsByTagName === 'function') {
-        return safeRoot.getElementsByTagName('img'); // HTMLCollection (live)
+      if (safeRoot && typeof dom.get(safeRoot, 'getElementsByTagName') === 'function') {
+        return dom.getElementsByTagName(safeRoot, 'img'); // HTMLCollection (live)
       }
     } catch {
       // fall through
     }
 
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return safeRoot.querySelectorAll('img');
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return dom.querySelectorAll(safeRoot, 'img');
     } catch {
       // fall through
     }
@@ -118,7 +119,7 @@ function runInPage(ctx) {
 
   for (let i = 0; i < imgLen; i++) {
     const el = imgs[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Eligibility: only imgs exposed to assistive tech.
     if (isEligibleHelper) {
@@ -134,9 +135,10 @@ function runInPage(ctx) {
     }
 
     // Role (presentation/none) exclusion only when NOT focusable.
+    // The resolved role: the first token naming a known role, in any case.
     let role;
     try {
-      role = trim(el.getAttribute('role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -166,7 +168,7 @@ function runInPage(ctx) {
     // accessible name is empty -- a real failure, not a decorative image.
     let rawAlt;
     try {
-      rawAlt = el.getAttribute('alt');
+      rawAlt = dom.getAttribute(el, 'alt');
     } catch {
       rawAlt = null;
     }
@@ -194,7 +196,7 @@ function runInPage(ctx) {
     // explicitly marks decorative and stays excluded from this branch since
     // hasAlt already short-circuited above). An `<img src="..." title="...">`
     // with no alt attribute at all is not missing a text alternative.
-    const title = trim(el.getAttribute('title'));
+    const title = trim(dom.getAttribute(el, 'title'));
     if (title) continue;
 
     const eligInfo = getEligibilityInfo

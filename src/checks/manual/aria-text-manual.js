@@ -8,7 +8,9 @@
  * @summary role="text" elements should have no focusable descendants
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Elements with an explicit `role="text"`.
+ *   Elements whose role attribute resolves to text: its first token naming
+ *   a known role, matched in any case, is `text`, so `role="foo text"` and
+ *   `role="TEXT"` count while `role="link text"` (a link) does not.
  * @expectation
  *   `role="text"` tells assistive technology to treat an element's whole
  *   subtree as a single unit of plain text (e.g. text visually split
@@ -50,27 +52,32 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Content the page does not show (a closed <details>, hidden="until-found")
   // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
-    for (const d of el.querySelectorAll('*')) {
+    for (const d of dom.querySelectorAll(el, '*')) {
       if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;
   }
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="text"]')
-    : helpers.queryAll('[role="text"]');
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is text (role="link text" is a link).
+  const nodes = (
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart('[role~="text" i]')
+      : helpers.queryAll('[role~="text" i]')
+  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelector) continue;
+    if (!el || !dom.get(el, 'querySelector')) continue;
 
     applicableCount += 1;
 
@@ -83,7 +90,9 @@ function runInPage(ctx) {
     if (!focusableDescendant) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

@@ -50,6 +50,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -60,8 +61,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -121,7 +122,7 @@ function runInPage(ctx) {
       };
     }
 
-    const title = trim(el.getAttribute && el.getAttribute('title'));
+    const title = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
     if (title) {
       flags.push('title-used');
       return { present: true, value: title, mechanism: 'title', flags };
@@ -142,7 +143,7 @@ function runInPage(ctx) {
   let anyPassedViaWeakMechanism = false;
 
   for (const el of embeds) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -156,11 +157,13 @@ function runInPage(ctx) {
     }
 
     // role presentation/none exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -177,7 +180,7 @@ function runInPage(ctx) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null &&
           String(tabindex).trim() !== '' &&

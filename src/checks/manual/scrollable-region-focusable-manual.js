@@ -78,17 +78,20 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -107,7 +110,7 @@ function runInPage(ctx) {
 
   function isSelfFocusable(el) {
     try {
-      const tabindexAttr = el.getAttribute ? el.getAttribute('tabindex') : null;
+      const tabindexAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexAttr != null) {
         const n = Number.parseInt(tabindexAttr, 10);
         if (Number.isFinite(n) && n >= 0) return true;
@@ -123,8 +126,8 @@ function runInPage(ctx) {
   // hidden="until-found") takes no focus.
   function hasFocusableDescendant(el) {
     try {
-      if (!el.querySelectorAll) return false;
-      for (const d of el.querySelectorAll(FOCUSABLE_DESCENDANT_SELECTOR)) {
+      if (!dom.get(el, 'querySelectorAll')) return false;
+      for (const d of dom.querySelectorAll(el, FOCUSABLE_DESCENDANT_SELECTOR)) {
         if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
       }
     } catch {}
@@ -141,7 +144,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const cs = safeComputedStyle(el);
     if (!isScrollableOverflow(cs)) continue;
@@ -151,9 +154,11 @@ function runInPage(ctx) {
     if (isSelfFocusable(el)) continue;
     if (hasFocusableDescendant(el)) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

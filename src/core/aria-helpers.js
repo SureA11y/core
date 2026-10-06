@@ -2,6 +2,8 @@
 
 'use strict';
 
+const { createSafeDom } = require('./safe-dom');
+
 /**
  * Shared WAI-ARIA 1.2 role/attribute reference data + validation helpers,
  * exposed to rules via ctx.helpers.aria.
@@ -37,6 +39,7 @@
  */
 
 function createAriaHelpers(opts, shared) {
+  const dom = createSafeDom();
   const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
   const lower = (v) => trim(v).toLowerCase();
   const ariaDocument = opts && opts.document;
@@ -61,12 +64,13 @@ function createAriaHelpers(opts, shared) {
   function idExists(id, el) {
     let scope = ariaDocument;
     try {
-      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
-      if (root && typeof root.getElementById === 'function') scope = root;
+      const root =
+        el && typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
     } catch {}
-    if (!scope || typeof scope.getElementById !== 'function') return true;
+    if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return true;
     try {
-      return !!scope.getElementById(id);
+      return !!dom.getElementById(scope, id);
     } catch {
       return true;
     }
@@ -83,11 +87,17 @@ function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = ariaDocument.getElementById(refId);
-          if (ref && trim(ref.textContent)) return true;
+          const ref = dom.getElementById(scope, refId);
+          if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
     }
@@ -120,17 +130,14 @@ function createAriaHelpers(opts, shared) {
   ]);
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
-    const tag = lower(el.tagName || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    const tag = lower(dom.tagName(el) || '');
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -138,7 +145,7 @@ function createAriaHelpers(opts, shared) {
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     let guard = 0;
     while (cur && guard++ < 200) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -146,7 +153,7 @@ function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
@@ -901,24 +908,24 @@ function createAriaHelpers(opts, shared) {
   // example covers the crossing.
   function hasNativeContext(el, context) {
     const tags = context.tags;
-    let cur = el && el.parentElement ? el.parentElement : null;
+    let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
     while (cur && guard++ < 200) {
-      const tag = lower(cur.tagName || '');
+      const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
 
   function isElement(el) {
-    return !!(el && el.nodeType === 1);
+    return !!(el && dom.nodeType(el) === 1);
   }
 
   function getAttr(el, name) {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -928,14 +935,21 @@ function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {
@@ -1156,7 +1170,7 @@ function createAriaHelpers(opts, shared) {
   // attribute-conditioned entries. Returns '' when no key applies.
   function getElementRoleKey(el) {
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'a' || tag === 'area') {
       const href = getAttr(el, 'href');
@@ -1222,7 +1236,7 @@ function createAriaHelpers(opts, shared) {
         // with aria-pressed (W3C ARIA-in-HTML).
         let hasAriaPressed = false;
         try {
-          hasAriaPressed = !!(el.hasAttribute && el.hasAttribute('aria-pressed'));
+          hasAriaPressed = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'aria-pressed'));
         } catch {}
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
@@ -1236,7 +1250,7 @@ function createAriaHelpers(opts, shared) {
       // its cells and rows free (ARIA in HTML).
       let table;
       try {
-        table = el.closest ? el.closest('table') : null;
+        table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
       } catch {
         table = null;
       }
@@ -1258,7 +1272,7 @@ function createAriaHelpers(opts, shared) {
       // NATIVE_ROLE_BY_ELEMENT_KEY above.
       let isMultiSelect;
       try {
-        isMultiSelect = !!(el.hasAttribute && el.hasAttribute('multiple'));
+        isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
           const sizeAttr = getAttr(el, 'size');
           const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
@@ -1322,7 +1336,7 @@ function createAriaHelpers(opts, shared) {
     if (explicit && isValidConcreteRole(explicit)) return explicit;
 
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'input') {
       const type = lower(getAttr(el, 'type') || 'text');

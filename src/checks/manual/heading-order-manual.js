@@ -56,6 +56,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -64,25 +65,28 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   function getHeadingLevel(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return 0;
-      const raw = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
       const n = parseInt(raw, 10);
       return Number.isFinite(n) && n >= 1 ? n : 2;
     }
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
     if (!m) return 0;
     // Browsers expose a valid aria-level on <hx> in place of the tag level.
-    const ariaLevel = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+    const ariaLevel = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
+    );
     if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
       return parseInt(ariaLevel, 10);
     }

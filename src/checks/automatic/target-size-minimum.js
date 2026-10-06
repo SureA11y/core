@@ -10,7 +10,8 @@
  * @sc 2.5.8
  * @applicability
  *   Applies to <button>, <summary>, <a href>, <area href>, <input>,
- *   <select>, <textarea> and elements with role="button"/"link" that are
+ *   <select>, <textarea> and elements whose role resolves to button or link
+ *   (the first real role in the role attribute, in any case) that are
  *   pointer-reachable: rendered, not suppressed by pointer-events:none, and
  *   with a measurable box of non-zero size. Accessibility-tree exclusion isn't
  *   a filter here: an aria-hidden control is still a target a pointer can hit.
@@ -161,7 +162,8 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  'use strict';
+  const dom = ctx.helpers.dom;
+  ('use strict');
 
   const { document, helpers, rule } = ctx;
 
@@ -191,9 +193,20 @@ function runInPage(ctx) {
       if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
     } catch {}
     try {
-      if (el && el.id) return `#${el.id}`;
+      if (el && dom.get(el, 'id')) return `#${dom.get(el, 'id')}`;
     } catch {}
     return 'html';
+  }
+
+  // The element's explicit role: the first token of its role attribute that
+  // names a real role, in any case (role="foo link" and role="LINK" are both
+  // links), or '' when none does.
+  function getExplicitRole(el) {
+    try {
+      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+    } catch {
+      return '';
+    }
   }
 
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
@@ -201,17 +214,13 @@ function runInPage(ctx) {
   // about, without the surrounding-container requirement.
   function isInlineLinkTarget(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return false;
 
-      const tag = (el.tagName || '').toLowerCase();
-      const role =
-        (el.getAttribute &&
-          String(el.getAttribute('role') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
+      const tag = (dom.tagName(el) || '').toLowerCase();
+      const role = getExplicitRole(el);
       const isLinkLike =
-        (tag === 'a' && el.getAttribute && el.getAttribute('href')) || role === 'link';
+        (tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        role === 'link';
       if (!isLinkLike) return false;
 
       const cs = getStyle(el);
@@ -226,7 +235,7 @@ function runInPage(ctx) {
         display === 'inline-table';
       if (!isInline) return false;
 
-      return (el.textContent || '').trim().length > 0;
+      return (dom.textContent(el) || '').trim().length > 0;
     } catch {
       return false;
     }
@@ -258,8 +267,8 @@ function runInPage(ctx) {
 
   function getRects(el) {
     try {
-      if (!el || typeof el.getClientRects !== 'function') return [];
-      const r = el.getClientRects();
+      if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
+      const r = dom.getClientRects(el);
       return r ? Array.from(r) : [];
     } catch {
       return [];
@@ -268,8 +277,8 @@ function runInPage(ctx) {
 
   function getBcr(el) {
     try {
-      if (!el || typeof el.getBoundingClientRect !== 'function') return null;
-      return el.getBoundingClientRect();
+      if (!el || typeof dom.get(el, 'getBoundingClientRect') !== 'function') return null;
+      return dom.getBoundingClientRect(el);
     } catch {
       return null;
     }
@@ -277,7 +286,7 @@ function runInPage(ctx) {
 
   function hasHiddenAttr(el) {
     try {
-      return !!(el && el.hasAttribute && el.hasAttribute('hidden'));
+      return !!(el && dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'));
     } catch {
       return false;
     }
@@ -285,7 +294,7 @@ function runInPage(ctx) {
 
   function closest(el, sel) {
     try {
-      return el && typeof el.closest === 'function' ? el.closest(sel) : null;
+      return el && typeof dom.get(el, 'closest') === 'function' ? dom.closest(el, sel) : null;
     } catch {
       return null;
     }
@@ -301,13 +310,13 @@ function runInPage(ctx) {
       let cur = helpers.composedParent(el);
       for (let guard = 0; cur && guard < 1000; guard++) {
         if (
-          cur.nodeType === 1 &&
-          String(cur.localName || '').toLowerCase() === 'details' &&
-          !cur.hasAttribute('open')
+          dom.nodeType(cur) === 1 &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open')
         ) {
-          let first = cur.firstElementChild;
-          while (first && String(first.localName || '').toLowerCase() !== 'summary') {
-            first = first.nextElementSibling;
+          let first = dom.firstElementChild(cur);
+          while (first && String(dom.localName(first) || '').toLowerCase() !== 'summary') {
+            first = dom.nextElementSibling(first);
           }
           if (child !== first) return true;
         }
@@ -342,8 +351,8 @@ function runInPage(ctx) {
     let cs;
     try {
       cs =
-        document && document.defaultView && document.defaultView.getComputedStyle
-          ? document.defaultView.getComputedStyle(el)
+        document && dom.defaultView(document) && dom.defaultView(document).getComputedStyle
+          ? dom.defaultView(document).getComputedStyle(el)
           : null;
     } catch {
       cs = null;
@@ -356,7 +365,12 @@ function runInPage(ctx) {
   // the usual screen-reader-only pattern does. A pointer cannot hit any of
   // it, so it is not a target, however small its box (helpers.isClipHidden).
   function isClippedAway(el) {
-    for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (
+      let a = el, i = 0;
+      a && dom.nodeType(a) === 1 && i < 100000;
+      a = dom.parentElement(a), i++
+    ) {
       const cs = getStyle(a);
       if (cs && helpers.isClipHidden(cs)) return true;
     }
@@ -374,7 +388,7 @@ function runInPage(ctx) {
     // - exclude elements inside closed details (except summary)
     // - exclude elements with no client rects
     // - DO NOT exclude aria-hidden or opacity:0
-    if (!el || el.nodeType !== 1) return false;
+    if (!el || dom.nodeType(el) !== 1) return false;
 
     if (hasHiddenAttr(el)) return false;
     if (inInertSubtree(el)) return false;
@@ -383,20 +397,22 @@ function runInPage(ctx) {
     // content-visibility:hidden): the element keeps a box in Chromium, but
     // nothing of it is drawn for a pointer to hit.
     try {
-      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
+        return false;
     } catch {}
     if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
 
     // Not operable => exclude
     try {
-      if (typeof el.matches === 'function' && el.matches(':disabled')) return false;
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, ':disabled'))
+        return false;
     } catch {}
 
     // aria-disabled elements are typically treated as not operable
     try {
       const ad =
-        el.getAttribute &&
-        String(el.getAttribute('aria-disabled') || '')
+        dom.get(el, 'getAttribute') &&
+        String(dom.getAttribute(el, 'aria-disabled') || '')
           .trim()
           .toLowerCase();
       if (ad === 'true') return false;
@@ -432,8 +448,8 @@ function runInPage(ctx) {
 
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof document.elementFromPoint === 'function')
-        return document.elementFromPoint(x, y);
+      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
+        return dom.elementFromPoint(document, x, y);
     } catch {}
     return null;
   }
@@ -451,19 +467,33 @@ function runInPage(ctx) {
     try {
       if (!a || !b) return false;
       if (a === b) return true;
-      if (typeof a.contains === 'function' && a.contains(b)) return true;
-      if (typeof b.contains === 'function' && b.contains(a)) return true;
+      if (typeof dom.get(a, 'contains') === 'function' && dom.contains(a, b)) return true;
+      if (typeof dom.get(b, 'contains') === 'function' && dom.contains(b, a)) return true;
       return false;
     } catch {
       return false;
     }
   }
 
-  const CANDIDATE_SELECTOR =
-    'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
+  const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // role~= matches the token anywhere in the fallback list, so the resolved
+  // role is checked below (role="tab button" is a tab, not a target here).
+  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+
+  function isCandidate(el) {
+    try {
+      if (
+        typeof dom.get(el, 'matches') === 'function' &&
+        dom.matches(el, NATIVE_CANDIDATE_SELECTOR)
+      )
+        return true;
+    } catch {}
+    const role = getExplicitRole(el);
+    return role === 'button' || role === 'link';
+  }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR);
+  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {
@@ -509,7 +539,7 @@ function runInPage(ctx) {
     const inScope = new Set(applicable);
     let all;
     try {
-      all = Array.from(document.querySelectorAll(CANDIDATE_SELECTOR));
+      all = Array.from(dom.querySelectorAll(document, CANDIDATE_SELECTOR));
     } catch {
       all = [];
     }
@@ -587,7 +617,7 @@ function runInPage(ctx) {
         if (!hit) continue;
         answered = true;
         try {
-          if (hit === other.el || other.el.contains(hit)) return false;
+          if (hit === other.el || dom.contains(other.el, hit)) return false;
         } catch {
           return false;
         }
@@ -649,7 +679,7 @@ function runInPage(ctx) {
 
       let hitCandidate = null;
       try {
-        hitCandidate = hit.closest ? hit.closest(CANDIDATE_SELECTOR) : null;
+        hitCandidate = dom.get(hit, 'closest') ? dom.closest(hit, CANDIDATE_SELECTOR) : null;
       } catch {}
 
       if (!hitCandidate) continue;
@@ -706,13 +736,13 @@ function runInPage(ctx) {
   // control chrome, so the size is UA-determined rather than authored.
   function isUserAgentSizedControl(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
-      const tag = (el.tagName || '').toLowerCase();
+      if (!el || dom.nodeType(el) !== 1) return false;
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag !== 'input') return false;
 
       const type =
-        (el.getAttribute &&
-          String(el.getAttribute('type') || '')
+        (dom.get(el, 'getAttribute') &&
+          String(dom.getAttribute(el, 'type') || '')
             .trim()
             .toLowerCase()) ||
         '';
@@ -742,9 +772,9 @@ function runInPage(ctx) {
 
   function isPlausiblyEssentialOrEquivalent(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return false;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       // Image map targets are often constrained by the underlying image.
       // Currently unreachable in practice: <area> never becomes a
@@ -775,7 +805,7 @@ function runInPage(ctx) {
   // fail; a centre distance would mislead there, since the neighbour is often
   // a large element whose centre is far away.
   const round1 = (n) => Math.round(n * 10) / 10;
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
   function measurements(it, info) {
     const metrics = {

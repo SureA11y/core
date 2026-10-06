@@ -12,7 +12,8 @@
  *   Applies to SVG <image> elements that are exposed to assistive technologies.
  *   Elements otherwise hidden from the accessibility tree remain applicable
  *   if they are tabbable or referenced by IDREF relationships (per engine eligibility checks).
- *   SVG <image> elements with role="presentation" or role="none" are excluded only when they are not focusable.
+ *   SVG <image> elements whose role attribute resolves to presentation or none (the first known
+ *   role token, in any case) are excluded only when they are not focusable.
  * @expectation
  *   Each applicable SVG <image> element has a text alternative via:
  *   - a non-empty direct <title> child, OR
@@ -54,6 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -64,8 +66,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -98,10 +100,10 @@ function runInPage(ctx) {
   function firstChildTitleText(el) {
     try {
       if (!el) return '';
-      const first = el.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(el);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
       if (tn === 'title') {
-        const t = trim(first.textContent);
+        const t = trim(dom.textContent(first));
         if (t) return t;
       }
     } catch {}
@@ -114,16 +116,18 @@ function runInPage(ctx) {
   function descText(el) {
     try {
       if (!el) return '';
-      const first = el.firstElementChild;
-      const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(el);
+      const firstTag = first
+        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        : '';
       if (firstTag === 'desc') {
-        const t = trim(first.textContent);
+        const t = trim(dom.textContent(first));
         if (t) return t;
-      } else if (firstTag === 'title' && first.nextElementSibling) {
-        const second = first.nextElementSibling;
-        const secondTag = (second.localName || second.tagName || '').toLowerCase();
+      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
+        const second = dom.nextElementSibling(first);
+        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
         if (secondTag === 'desc') {
-          const t = trim(second.textContent);
+          const t = trim(dom.textContent(second));
           if (t) return t;
         }
       }
@@ -143,8 +147,8 @@ function runInPage(ctx) {
     try {
       return (
         el &&
-        el.namespaceURI === 'http://www.w3.org/2000/svg' &&
-        String(el.localName).toLowerCase() === 'image'
+        dom.namespaceURI(el) === 'http://www.w3.org/2000/svg' &&
+        String(dom.localName(el)).toLowerCase() === 'image'
       );
     } catch {
       return false;
@@ -158,7 +162,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of images) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -171,7 +175,17 @@ function runInPage(ctx) {
       if (elig && elig.eligible === false) continue;
     }
 
-    const role = trim(el.getAttribute('role')).toLowerCase();
+    // Resolved explicit role: the first known token of the role fallback
+    // list, so role="foo none" is presentational too.
+    const role = (() => {
+      try {
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
+      } catch {
+        return '';
+      }
+    })();
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -184,7 +198,7 @@ function runInPage(ctx) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
@@ -202,21 +216,21 @@ function runInPage(ctx) {
     // Only now check “accessible name” (but scoped to allowed mechanisms)
     const ariaLabelRaw = (() => {
       try {
-        return el.getAttribute('aria-label');
+        return dom.getAttribute(el, 'aria-label');
       } catch {
         return null;
       }
     })();
     const ariaLabelledbyRaw = (() => {
       try {
-        return el.getAttribute('aria-labelledby');
+        return dom.getAttribute(el, 'aria-labelledby');
       } catch {
         return null;
       }
     })();
     const titleAttrRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }

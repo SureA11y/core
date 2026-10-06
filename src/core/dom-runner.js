@@ -21,6 +21,10 @@
  *   ENGINE_VERSION (the package version, baked in at build time).
  */
 
+// The only module required here: a self-contained one, inlined into the
+// page bundle next to these functions.
+const { createSafeDom } = require('./safe-dom');
+
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
@@ -469,11 +473,20 @@ function rollupCompositeResults(
  * describes nothing that was measured, so only `layout: false` is reported.
  */
 function readRenderingEnvironment(win, doc) {
+  const dom = createSafeDom();
   let layout;
   try {
-    const root = doc && doc.documentElement;
-    const rects = root && typeof root.getClientRects === 'function' ? root.getClientRects() : null;
-    layout = !!(win && rects && rects.length > 0 && typeof doc.createRange === 'function');
+    const root = doc && dom.documentElement(doc);
+    const rects =
+      root && typeof dom.get(root, 'getClientRects') === 'function'
+        ? dom.getClientRects(root)
+        : null;
+    layout = !!(
+      win &&
+      rects &&
+      rects.length > 0 &&
+      typeof dom.get(doc, 'createRange') === 'function'
+    );
   } catch {
     layout = false;
   }
@@ -487,7 +500,9 @@ function readRenderingEnvironment(win, doc) {
   if (Number.isFinite(dpr) && dpr > 0) env.devicePixelRatio = dpr;
   try {
     if (typeof win.matchMedia === 'function') {
-      env.colorScheme = win.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      env.colorScheme = dom.get(win.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
     }
   } catch {}
   // Whether a font face is still loading, asked of each face rather than of
@@ -496,7 +511,7 @@ function readRenderingEnvironment(win, doc) {
   // does, while every face is loaded and nothing is fetched. A second scan
   // straight after a first would otherwise say its fonts were loading.
   try {
-    const fonts = doc.fonts;
+    const fonts = dom.fonts(doc);
     if (fonts && typeof fonts.forEach === 'function') {
       let loading = false;
       fonts.forEach((face) => {
@@ -511,10 +526,10 @@ function readRenderingEnvironment(win, doc) {
   // and may never load in a scan. Queried rather than read from
   // document.images, which is a live collection.
   try {
-    if (typeof doc.querySelectorAll === 'function') {
+    if (typeof dom.get(doc, 'querySelectorAll') === 'function') {
       let loading = false;
-      for (const img of doc.querySelectorAll('img')) {
-        const lazy = String(img.getAttribute('loading') || '').toLowerCase() === 'lazy';
+      for (const img of dom.querySelectorAll(doc, 'img')) {
+        const lazy = String(dom.getAttribute(img, 'loading') || '').toLowerCase() === 'lazy';
         if (!img.complete && !lazy) loading = true;
       }
       env.images = loading ? 'loading' : 'loaded';
@@ -544,9 +559,11 @@ function readRenderingEnvironment(win, doc) {
  * Without getAnimations (jsdom) there is nothing to settle.
  */
 function settleAnimations(doc) {
+  const dom = createSafeDom();
   let animations = [];
   try {
-    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+    if (doc && typeof dom.get(doc, 'getAnimations') === 'function')
+      animations = dom.getAnimations(doc);
   } catch {
     animations = [];
   }
@@ -554,7 +571,8 @@ function settleAnimations(doc) {
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
-      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      if (dom.timeline(anim) && dom.timeline(doc) && dom.timeline(anim) !== dom.timeline(doc))
+        continue;
       const currentTime = anim.currentTime;
       if (typeof currentTime !== 'number') continue;
       const timing =
@@ -590,26 +608,35 @@ function runCore(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
-  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  // Plain reads unless this page has an element named after a DOM property,
+  // which could override what the engine reads (src/core/safe-dom.js).
+  const restoreDomProtection = createSafeDom().protectFor(
+    typeof document !== 'undefined' ? document : null
+  );
   try {
-    const result = runCoreSettled(
-      pageUrl,
-      contextSelector,
-      engineOptions,
-      runOnly,
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
     try {
-      const env = result && result.engine && result.engine.environment;
-      if (env && env.layout) env.animationsSettled = settled.count;
-    } catch {}
-    return result;
+      const result = runCoreSettled(
+        pageUrl,
+        contextSelector,
+        engineOptions,
+        runOnly,
+        CHECK_DEFS,
+        RULE_IMPLS,
+        ENGINE_TAG,
+        SCHEMA_VERSION,
+        COMPOSITE_RULES
+      );
+      try {
+        const env = result && result.engine && result.engine.environment;
+        if (env && env.layout) env.animationsSettled = settled.count;
+      } catch {}
+      return result;
+    } finally {
+      settled.restore();
+    }
   } finally {
-    settled.restore();
+    restoreDomProtection();
   }
 }
 
@@ -624,6 +651,7 @@ function runCoreSettled(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
+  const dom = createSafeDom();
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -686,7 +714,7 @@ function runCoreSettled(
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
   const url = pageUrl || (document.location && document.location.href) || null;
-  const title = document.title || null;
+  const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
   const timestamp =
     engineOptionsResolved &&
@@ -696,7 +724,7 @@ function runCoreSettled(
       : null;
 
   // Read before any rule runs: some change the page while they measure it.
-  const environment = readRenderingEnvironment(document.defaultView || window, document);
+  const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
 
   // createDomHelpers()/createContrastHelpers() persist their element-keyed
   // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache

@@ -39,7 +39,9 @@
  *   one normal-weight word does not.
  * - A `<div>` is only considered when it has no block, list, table, form
  *   control or image inside it, so only the innermost block is asked
- *   about. A `<div>` with a role, and text inside a heading, button,
+ *   about. A `<div>` with a role (a role attribute whose tokens name a
+ *   real role; the first such token wins, in any case), and text inside a
+ *   heading, button,
  *   label, legend, caption, table header or `<summary>`, are left out:
  *   that text already has a role of its own.
  */
@@ -74,6 +76,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
@@ -85,13 +88,15 @@ function runInPage(ctx) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -105,9 +110,26 @@ function runInPage(ctx) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // Elements whose text already has a role of its own.
-  const OWN_ROLE_ANCESTORS =
-    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
+  // Elements whose text already has a role of its own: these native tags,
+  // or an element whose role attribute resolves to one of OWN_ROLES (the
+  // first token naming a real role, in any case: role="foo heading" counts,
+  // role="note heading" doesn't).
+  const OWN_ROLE_TAGS = 'h1, h2, h3, h4, h5, h6, button, label, legend, caption, th, summary';
+  const OWN_ROLES = ['heading', 'button', 'columnheader', 'rowheader'];
+  const OWN_ROLE_SELECTOR = OWN_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+
+  function hasOwnRoleAncestor(el) {
+    if (!dom.get(el, 'closest')) return false;
+    if (dom.closest(el, OWN_ROLE_TAGS)) return true;
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.closest(cur, OWN_ROLE_SELECTOR);
+      if (!hit) return false;
+      if (OWN_ROLES.includes(helpers.aria.getExplicitRole(hit))) return true;
+      cur = dom.parentElement(hit);
+    }
+    return false;
+  }
 
   // Anything but text and inline markup makes a <div> a container, not a
   // passage of text.
@@ -116,11 +138,12 @@ function runInPage(ctx) {
 
   function textPieces(el) {
     const pieces = [];
-    const doc = el.ownerDocument;
-    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    const doc = dom.ownerDocument(el);
+    const walker = dom.createTreeWalker(doc, el, 4);
     let node = walker.nextNode();
     while (node) {
-      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
+        pieces.push(dom.parentElement(node));
       node = walker.nextNode();
     }
     return pieces;
@@ -140,12 +163,13 @@ function runInPage(ctx) {
   }
 
   function isCandidate(el) {
-    const tag = (el.tagName || '').toLowerCase();
-    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    if (hasOwnRoleAncestor(el)) return false;
     if (tag === 'p') return true;
     if (tag !== 'div') return false;
-    if (trim(el.getAttribute('role'))) return false;
-    return !el.querySelector(NOT_INLINE);
+    // A role attribute naming no real role leaves the <div> a plain <div>.
+    if (helpers.aria.getExplicitRole(el)) return false;
+    return !dom.querySelector(el, NOT_INLINE);
   }
 
   const nodes = helpers.queryAllSmart
@@ -156,10 +180,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    const text = trim(el.textContent || '');
+    const text = trim(dom.textContent(el) || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
@@ -167,9 +191,11 @@ function runInPage(ctx) {
     const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
-    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
+    const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = isParagraph
       ? {

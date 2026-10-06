@@ -54,6 +54,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -65,24 +66,24 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!parent) continue;
 
     applicableCount += 1;
 
-    const parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
+    const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
     let valid = parentTag === 'dl';
 
     if (!valid && parentTag === 'div') {
-      const grandparent = parent.parentElement;
+      const grandparent = dom.parentElement(parent);
       const grandparentTag =
-        grandparent && grandparent.tagName ? grandparent.tagName.toLowerCase() : '';
+        grandparent && dom.tagName(grandparent) ? dom.tagName(grandparent).toLowerCase() : '';
       valid = grandparentTag === 'dl';
     }
 
     if (valid) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

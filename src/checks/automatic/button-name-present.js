@@ -10,8 +10,10 @@
  * @sc 4.1.2
  * @applicability
  *   Applies to <button>, <input type="button">, <input type="submit">,
- *   <input type="reset"> and elements with role="button", where the element
- *   is included in the accessibility tree. role="presentation"/"none" takes
+ *   <input type="reset"> and elements whose role attribute resolves to
+ *   button (its first known, non-abstract token, in any case, so
+ *   role="foo button" counts and role="link button" does not), where the
+ *   element is included in the accessibility tree. role="presentation"/"none" takes
  *   an element out of scope unless a global ARIA attribute or focusability
  *   restores its role, per presentational roles conflict resolution.
  * @expectation
@@ -63,6 +65,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const occurrences = [];
@@ -85,15 +88,17 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
   function getInputButtonValueName(el) {
     try {
-      const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
+      const type = normalizeWs(
+        dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'type') : ''
+      ).toLowerCase();
       if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const vAttr = el.getAttribute ? el.getAttribute('value') : '';
+      const vAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : '';
       const explicit = normalizeWs(
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
@@ -109,11 +114,33 @@ function runInPage(ctx) {
     }
   }
 
-  const selector =
-    'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The element's explicit role as user agents resolve it: the first known,
+  // non-abstract token of the role attribute, in any case ('' for none).
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The role attribute is a fallback list, so role="foo button" and
+  // role="BUTTON" are buttons; role="link button" is a link. Select by token,
+  // case-insensitively, then keep role-only candidates that resolve to button.
+  const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
+  const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      if (dom.matches(el, NATIVE_BUTTONS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return getExplicitRole(el) === 'button';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -129,9 +156,9 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
-    const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = normalizeWs(role).toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const role = getExplicitRole(el);
+    const roleNorm = role;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;
@@ -146,7 +173,8 @@ function runInPage(ctx) {
     // through themselves (e.g. aria-prohibited-children's "transparent
     // wrapper" traversal).
     if (roleNorm === 'none' || roleNorm === 'presentation') {
-      const ariaHiddenTrue = el.getAttribute && el.getAttribute('aria-hidden') === 'true';
+      const ariaHiddenTrue =
+        dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-hidden') === 'true';
       if (!ariaHiddenTrue) {
         const GLOBAL_ARIA_ATTRS = [
           'aria-atomic',
@@ -175,7 +203,7 @@ function runInPage(ctx) {
           'aria-roledescription'
         ];
         const hasConflict = GLOBAL_ARIA_ATTRS.some((a) =>
-          el.hasAttribute ? el.hasAttribute(a) : false
+          dom.get(el, 'hasAttribute') ? dom.hasAttribute(el, a) : false
         );
         let isFocusable = false;
         if (!hasConflict && helpers.getFocusableInfo) {

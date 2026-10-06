@@ -12,8 +12,9 @@
  * @applicability
  *   Applies to <img> elements whose alt attribute is present and non-empty.
  *   The element must be included in the accessibility tree, and
- *   role="presentation"/"none" takes it out of scope unless it is focusable,
- *   which restores its role. An <img> with no alt at all is
+ *   a role attribute resolving to presentation/none (its first token naming
+ *   a known role, matched case-insensitively) takes it out of scope unless
+ *   it is focusable, which restores its role. An <img> with no alt at all is
  *   img-alt-present's failure, and one with alt="" is img-alt-decorative's
  *   review.
  * @expectation
@@ -94,6 +95,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -112,8 +114,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -132,9 +134,8 @@ function runInPage(ctx) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        // Fallback list: first token naming a known role, any case.
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -153,7 +154,7 @@ function runInPage(ctx) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -209,7 +210,7 @@ function runInPage(ctx) {
   let suspiciousReported = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -227,7 +228,7 @@ function runInPage(ctx) {
     // Rule-specific applicability: non-empty alt
     const alt = (() => {
       try {
-        return String(el.getAttribute('alt') || '').trim();
+        return String(dom.getAttribute(el, 'alt') || '').trim();
       } catch {
         return '';
       }
@@ -240,7 +241,7 @@ function runInPage(ctx) {
     // against before any expensive occurrence building.
     const signal = (() => {
       try {
-        return getTextAlternativeSignal(el, el.getAttribute('alt'));
+        return getTextAlternativeSignal(el, dom.getAttribute(el, 'alt'));
       } catch {
         return null;
       }

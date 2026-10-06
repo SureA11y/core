@@ -211,3 +211,12 @@ test(`${RULE_ID}: a captioned figure with more than the video, or an empty capti
     assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   }
 });
+
+test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#91)`, () => {
+  const html = `<!doctype html><html><body>
+    <video poster="p.png" role="foo presentation"></video>
+    <video poster="q.png" role="NONE"></video>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

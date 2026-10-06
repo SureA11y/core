@@ -12,9 +12,10 @@
  *   `<table>` elements with at least 4 rows and at least 4 columns
  *   (a "large" table, where implicit row/column header association is
  *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (first
- *   token) is anything but table, grid or treegrid, such as a layout table
- *   with role="presentation", is left out: it has no data cells.
+ *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (the
+ *   role attribute's first known, non-abstract token, in any case) is
+ *   anything but table, grid or treegrid, such as a layout table with
+ *   role="presentation", is left out: it has no data cells.
  * @expectation
  *   Every non-empty `<td>` has an associated header, via one of:
  *     - a non-empty `headers` attribute (trusted here; whether it
@@ -74,6 +75,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
@@ -97,8 +99,14 @@ function runInPage(ctx) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case ('' when none is), as user agents read the fallback list.
   function firstRole(el) {
-    return trim(el.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // Content that can carry a name or a value even without text.
@@ -106,9 +114,9 @@ function runInPage(ctx) {
     'img, svg, canvas, input, select, textarea, button, object, embed, video, audio, iframe, meter, progress, [role], [aria-label], [aria-labelledby], [title]';
 
   function isEmptyCell(cell) {
-    if (trim(cell.textContent)) return false;
+    if (trim(dom.textContent(cell))) return false;
     try {
-      return !cell.querySelector(NAMED_CONTENT);
+      return !dom.querySelector(cell, NAMED_CONTENT);
     } catch {
       return false;
     }
@@ -134,8 +142,8 @@ function runInPage(ctx) {
 
     const hasSpan = rowCells.some((cells) =>
       cells.some((c) => {
-        const cs = Number.parseInt(c.getAttribute('colspan') || '1', 10);
-        const rs = Number.parseInt(c.getAttribute('rowspan') || '1', 10);
+        const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
+        const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
         return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
       })
     );
@@ -148,10 +156,10 @@ function runInPage(ctx) {
     // another cell's row/column header, even though it's still structurally
     // a <th>.
     function isHeaderCell(cell) {
-      if (!cell || !cell.tagName || !isEligible(cell)) return false;
+      if (!cell || !dom.tagName(cell) || !isEligible(cell)) return false;
       const role = firstRole(cell);
       if (role === 'columnheader' || role === 'rowheader') return true;
-      return cell.tagName.toLowerCase() === 'th' && !role;
+      return dom.tagName(cell).toLowerCase() === 'th' && !role;
     }
 
     // "Was there a <th> above this cell's column" and "was there a <th>
@@ -181,7 +189,7 @@ function runInPage(ctx) {
         // no need for an accessible header association.
         if (!isEligible(cell)) continue;
 
-        const headersAttr = trim(cell.getAttribute('headers'));
+        const headersAttr = trim(dom.getAttribute(cell, 'headers'));
         if (headersAttr) continue;
 
         // An empty cell holds no data to associate with a header.

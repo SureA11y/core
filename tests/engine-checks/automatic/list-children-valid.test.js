@@ -176,3 +176,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/list-children-valid-all-scena
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a child's role is read from a fallback list, in any case (#91)`, () => {
+  // role="foo listitem" / role="LISTITEM" make a <div> a list item;
+  // role="foo" names no role, so an <li> keeps its listitem role.
+  const pass = `<!doctype html><html><body><ul id="l1">
+    <div role="foo listitem">A</div><div role="LISTITEM">B</div><li role="foo">C</li>
+  </ul></body></html>`;
+  assertRule(runa11yCoreOnHtml(pass, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+
+  // role="foo NONE" is none: the <li> is no longer a list item.
+  const fail = `<!doctype html><html><body><ul id="l2">
+    <li>A</li><li role="foo NONE">B</li>
+  </ul></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(fail, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'l2'));
+});

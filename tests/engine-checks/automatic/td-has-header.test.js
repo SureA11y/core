@@ -209,3 +209,19 @@ test(`${RULE_ID}: same outcomes under wcag22-aa`, () => {
   );
   assertRule(run(`<table>${TABLE_4X4_WELL_HEADED}</table>`), RULE_ID, 'pass');
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: a role="foo presentation" table is left out (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><table role="foo presentation">${TABLE_4X4_NO_HEADERS}</table></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: a role="PRESENTATION" table is left out (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><table role="PRESENTATION">${TABLE_4X4_NO_HEADERS}</table></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

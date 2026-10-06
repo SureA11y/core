@@ -89,3 +89,18 @@ test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its titl
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The role attribute is a fallback list (#91): the first token naming a known
+// role wins, matched case-insensitively.
+test(`${RULE_ID}: role="foo meter" and role="METER" are in scope, role="link meter" is not`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="a" role="foo meter"></div>
+    <div id="b" role="METER"></div>
+    <div id="c" role="link meter" href="#"></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.ok(hasOccurrenceForId(rule, 'b'));
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+});

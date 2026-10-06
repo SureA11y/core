@@ -420,3 +420,17 @@ test('link-name-present: a focusable link keeps its role and its content name un
   assert.equal(rule.occurrences.length, 1);
   assert.ok(hasOccurrenceForId(rule, 'empty'));
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`, () => {
+  // role="foo link" and role="LINK" are links; role="button link" is a button.
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+    <span role="foo link" tabindex="0" id="fallback"></span>
+    <span role="LINK" tabindex="0" id="upper"></span>
+    <span role="button link" tabindex="0" id="button"></span>
+  </main></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(hasOccurrenceForId(rule, 'upper'));
+  assert.ok(!hasOccurrenceForId(rule, 'button'));
+});

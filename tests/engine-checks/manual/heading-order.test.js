@@ -43,6 +43,20 @@ test(`${RULE_ID}: cantTell when a heading skips a level`, () => {
   assert.equal(rule.occurrences[0].data.details.toLevel, 3);
 });
 
+test(`${RULE_ID}: a heading role in a fallback list or upper case is a heading, an unknown role leaves the native one`, () => {
+  for (const second of [
+    '<div role="foo heading" aria-level="3" id="a">B</div>',
+    '<div role="HEADING" aria-level="3" id="a">B</div>',
+    '<h3 role="foo" id="a">B</h3>'
+  ]) {
+    const html = `<!doctype html><html><body><h1>A</h1>${second}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+    assert.equal(rule.occurrences[0].data.details.toLevel, 3);
+  }
+});
+
 // Browsers expose aria-level on <hx> in place of the tag level.
 test(`${RULE_ID}: aria-level on a native heading gives its level`, () => {
   const quiet = `<!doctype html><html><body><h1>S</h1><h4 aria-level="2">N</h4></body></html>`;

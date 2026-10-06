@@ -75,6 +75,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -88,7 +89,7 @@ function runInPage(ctx) {
   }
 
   function autocompleteTokens(el) {
-    return normalizeWs(el.getAttribute && el.getAttribute('autocomplete'))
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'autocomplete'))
       .toLowerCase()
       .split(' ')
       .filter(Boolean);
@@ -103,13 +104,15 @@ function runInPage(ctx) {
   // autocomplete purpose that is not an authentication one says so, and takes
   // the field back out of scope.
   function isAuthField(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     if (tag !== 'input' && tag !== 'textarea') return false;
 
     const tokens = autocompleteTokens(el);
     if (AUTH_AUTOCOMPLETE_TOKENS.some((t) => tokens.includes(t))) return true;
 
-    const type = normalizeWs(el.getAttribute && el.getAttribute('type')).toLowerCase();
+    const type = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type')
+    ).toLowerCase();
     if (tag !== 'input' || type !== 'password') return false;
 
     const declaresOtherPurpose = tokens.some(
@@ -121,7 +124,10 @@ function runInPage(ctx) {
   // A field that takes no input at all cannot be pasted into either, so a
   // paste handler on it blocks nothing.
   function acceptsInput(el) {
-    if (el.hasAttribute && (el.hasAttribute('disabled') || el.hasAttribute('readonly'))) {
+    if (
+      dom.get(el, 'hasAttribute') &&
+      (dom.hasAttribute(el, 'disabled') || dom.hasAttribute(el, 'readonly'))
+    ) {
       return false;
     }
     return true;
@@ -184,7 +190,7 @@ function runInPage(ctx) {
   const undetermined = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isAuthField(el)) continue;
 
     if (!acceptsInput(el)) continue;
@@ -194,7 +200,7 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const handler = el.getAttribute('onpaste');
+    const handler = dom.getAttribute(el, 'onpaste');
     if (handler === null) continue;
 
     const verdict = classifyHandler(handler);

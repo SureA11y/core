@@ -43,6 +43,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
@@ -55,8 +56,8 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('scope') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'scope') || '').trim();
     if (!raw) continue;
 
     applicableCount += 1;

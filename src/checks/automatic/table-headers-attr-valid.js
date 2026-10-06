@@ -65,23 +65,15 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over.
+  // role wins (in any case), and unknown tokens are skipped over.
   function getExplicitRole(el) {
-    const raw = el && el.getAttribute ? el.getAttribute('role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers && el ? ariaHelpers.getExplicitRole(el) : '';
   }
 
   const nodes = helpers.queryAllSmart
@@ -92,14 +84,14 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const raw = String(el.getAttribute('headers') || '').trim();
+    const raw = String(dom.getAttribute(el, 'headers') || '').trim();
     if (!raw) continue;
     const ids = raw.split(/\s+/).filter(Boolean);
     if (!ids.length) continue;
 
-    const table = el.closest ? el.closest('table') : null;
+    const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
 
     // An explicit role on the <table> replaces its native table role. Only
     // the three roles that still describe a table keep the cell's headers
@@ -117,7 +109,7 @@ function runInPage(ctx) {
     for (const headerId of ids) {
       let ref;
       try {
-        ref = document.getElementById(headerId);
+        ref = helpers.getElementByIdInTree(el, headerId);
       } catch {
         ref = null;
       }
@@ -130,12 +122,12 @@ function runInPage(ctx) {
         invalid.push({ id: headerId, reason: 'self-reference' });
         continue;
       }
-      const refTag = ref.tagName ? ref.tagName.toLowerCase() : '';
+      const refTag = dom.tagName(ref) ? dom.tagName(ref).toLowerCase() : '';
       if (refTag !== 'th' && refTag !== 'td') {
         invalid.push({ id: headerId, reason: 'not-a-cell' });
         continue;
       }
-      if (table && (!ref.closest || ref.closest('table') !== table)) {
+      if (table && (!dom.get(ref, 'closest') || dom.closest(ref, 'table') !== table)) {
         invalid.push({ id: headerId, reason: 'different-table' });
       }
     }
@@ -144,7 +136,7 @@ function runInPage(ctx) {
 
     const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

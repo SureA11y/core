@@ -24,7 +24,8 @@
  *   Applies to <input>, <select> and <textarea> elements included in the
  *   accessibility tree, excluding the input types hidden, submit, reset,
  *   button and image, which take their name from a value or alt attribute
- *   rather than from a label. A control carrying
+ *   rather than from a label. A control whose role attribute resolves
+ *   (first token naming a known role, case-insensitively) to
  *   an explicit ARIA widget role is out of scope, button, checkbox,
  *   combobox, listbox, textbox, slider and the rest of ROLE_OWNED_ELSEWHERE
  *   each have a naming rule of their own, and role="presentation"/"none"
@@ -88,6 +89,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // ACT e086e5 applies only to controls included in the accessibility tree, so
@@ -212,10 +214,10 @@ function runInPage(ctx) {
           : [];
 
     for (const el of candidates || []) {
-      if (!el || !el.getAttribute) continue;
-      const tag = (el.tagName || '').toLowerCase();
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'input') {
-        const t = trim(el.getAttribute('type')).toLowerCase();
+        const t = trim(dom.getAttribute(el, 'type')).toLowerCase();
         // exclude hidden|submit|reset|button|image
         if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image')
           continue;
@@ -240,14 +242,16 @@ function runInPage(ctx) {
 
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (!isEligibleAcc(el)) continue;
 
-    // role="presentation"/"none" exclusion only when NOT focusable
+    // role="presentation"/"none" exclusion only when NOT focusable. The
+    // role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively; none leaves the native role.
     let role;
     try {
-      role = trim(el.getAttribute('role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -304,7 +308,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
         hintKey: 'formControl_programmaticLabelPresent_hint_fail',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: vf

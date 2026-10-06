@@ -347,6 +347,34 @@ test(`${RULE_ID}: cantTell for the Angular Material default (role="dialog" with 
   assert.strictEqual(occ.data.details.reasonCode, 'ariaHiddenFocusable_modalOpen_needsReview');
 });
 
+test(`${RULE_ID}: cantTell for a fallback-list or upper-case dialog role (role="foo dialog", role="ALERTDIALOG") behind an aria-hidden background`, () => {
+  for (const role of ['foo dialog', 'ALERTDIALOG']) {
+    const html = `<!doctype html><html><body>
+        <div id="ah_bg_fallback" aria-hidden="true">
+          <a href="#x">Background link</a>
+        </div>
+        <div role="${role}" aria-modal="false"><button>OK</button></div>
+      </body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    const occ = getOccurrenceForId(rule, 'ah_bg_fallback');
+    assert.ok(occ, role);
+    assert.strictEqual(occ.data.details.reasonCode, 'ariaHiddenFocusable_modalOpen_needsReview');
+  }
+});
+
+test(`${RULE_ID}: stays fail when the dialog token is only a fallback after a real role (role="region dialog")`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_bg_region" aria-hidden="true">
+        <a href="#x">Background link</a>
+      </div>
+      <div role="region dialog" aria-label="Panel"><button>OK</button></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(getOccurrenceForId(rule, 'ah_bg_region'));
+});
+
 test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (button)`, () => {
   const html = `<!doctype html><html><body>
       <button id="ah_btn" aria-hidden="true">Hidden button</button>

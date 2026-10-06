@@ -185,3 +185,19 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     'Checks that <embed> elements provide a text alternative via an accessible name.'
   );
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo presentation" is excluded when not focusable (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><embed src="x.pdf" role="foo presentation"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="NONE" is excluded when not focusable (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><embed src="x.pdf" role="NONE"></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

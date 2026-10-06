@@ -67,9 +67,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }

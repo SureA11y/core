@@ -16229,8 +16229,514 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
   };
 }
 
+// Inlined from src/core/safe-dom.js -- DOM reads a page's named form
+// controls and images can't redirect.
+const SAFE_DOM_GETTERS = [
+  "activeElement",
+  "assignedSlot",
+  "attributes",
+  "baseURI",
+  "body",
+  "childElementCount",
+  "childNodes",
+  "children",
+  "contentDocument",
+  "contentWindow",
+  "defaultView",
+  "doctype",
+  "documentElement",
+  "firstChild",
+  "firstElementChild",
+  "fonts",
+  "head",
+  "host",
+  "isConnected",
+  "lastChild",
+  "lastElementChild",
+  "localName",
+  "namespaceURI",
+  "nextElementSibling",
+  "nextSibling",
+  "nodeName",
+  "nodeType",
+  "nodeValue",
+  "outerHTML",
+  "ownerDocument",
+  "parentElement",
+  "parentNode",
+  "previousElementSibling",
+  "previousSibling",
+  "readyState",
+  "shadowRoot",
+  "styleSheets",
+  "tagName",
+  "textContent",
+  "timeline"
+];
+const SAFE_DOM_METHODS = [
+  "addEventListener",
+  "appendChild",
+  "assignedElements",
+  "assignedNodes",
+  "blur",
+  "checkVisibility",
+  "cloneNode",
+  "closest",
+  "compareDocumentPosition",
+  "contains",
+  "createElement",
+  "createRange",
+  "createTreeWalker",
+  "elementFromPoint",
+  "elementsFromPoint",
+  "focus",
+  "getAnimations",
+  "getAttribute",
+  "getAttributeNames",
+  "getBoundingClientRect",
+  "getClientRects",
+  "getElementById",
+  "getElementsByClassName",
+  "getElementsByTagName",
+  "getRootNode",
+  "hasAttribute",
+  "hasChildNodes",
+  "insertBefore",
+  "matches",
+  "querySelector",
+  "querySelectorAll",
+  "removeAttribute",
+  "removeChild",
+  "removeEventListener",
+  "setAttribute"
+];
+const SAFE_DOM_OTHER_NAMES = [
+  "clientHeight",
+  "clientWidth",
+  "id",
+  "style",
+  "title"
+];
+const createSafeDom = (function createSafeDom() {
+  // One instance per realm of this script: the lookups depend only on the
+  // prototypes they are given, so sharing it across scans is safe.
+  if (createSafeDom.__instance) return createSafeDom.__instance;
+
+  // Captured once, so a page that later replaces them doesn't change how
+  // the engine reads its own DOM.
+  const getProto = Object.getPrototypeOf;
+  const getOwnDesc = Object.getOwnPropertyDescriptor;
+  const apply = Reflect.apply;
+  const objectHasOwn = Object.prototype.hasOwnProperty;
+  const hasOwn =
+    typeof Object.hasOwn === 'function'
+      ? Object.hasOwn
+      : (obj, name) => apply(objectHasOwn, obj, [name]);
+
+  // What a prototype chain defines for a name: its getter, its method, or
+  // nothing -- and then whether the chain is a DOM node's, which reads a
+  // name it doesn't define as undefined (an ordinary read would reach a named
+  // element), unlike any other object, which is read the ordinary way.
+  const NONE = Object.freeze({ getter: null, value: undefined, node: false });
+  const NONE_NODE = Object.freeze({ getter: null, value: undefined, node: true });
+
+  // Only an accessor or a function counts: a named-properties object
+  // (Window's, which holds `window.<id>` entries) has plain data properties
+  // for named elements, and those must be passed over to reach the real
+  // method further up.
+  function findOnChain(proto, name) {
+    for (let p = proto; p; p = getProto(p)) {
+      const d = getOwnDesc(p, name);
+      if (d && typeof d.get === 'function') return { getter: d.get, value: undefined, node: false };
+      if (d && typeof d.value === 'function') return { getter: null, value: d.value, node: false };
+    }
+    return null;
+  }
+
+  function isNodeChain(proto) {
+    const found = proto ? findOnChain(proto, 'nodeType') : null;
+    return !!(found && found.getter);
+  }
+
+  // Whether `v` is what a named element puts in place of a property: an
+  // element, a collection of them (two controls sharing a name), or a
+  // window (an iframe's name).
+  function isNamedElementValue(v) {
+    if (v === null || (typeof v !== 'object' && typeof v !== 'function')) return false;
+    const proto = getProto(v);
+    if (!proto) return false;
+    if (isNodeChain(proto)) return true;
+    const item = findOnChain(proto, 'item');
+    if (item && item.value && findOnChain(proto, 'length')) return true;
+    try {
+      return v.window === v;
+    } catch {
+      return true;
+    }
+  }
+
+  // Whether objects with this prototype can have properties overridden by
+  // named elements: a form (HTMLFormElement), a document (Document) or a
+  // window (whose named-properties object sits in its chain). Every other
+  // object is read the ordinary way. Recognised by what their prototypes
+  // define, so it works for any realm.
+  // 0: not guarded; FORM: a form; OWNER: a document or a window, where a
+  // script or a test may have put its own wrapper on the object itself.
+  const FORM = 1;
+  const OWNER = 2;
+  const guardedByProto = new WeakMap();
+  function guardOf(proto) {
+    let g = guardedByProto.get(proto);
+    if (g !== undefined) return g;
+    g = 0;
+    for (let p = proto; p && !g; p = getProto(p)) {
+      if (getOwnDesc(p, 'acceptCharset'))
+        g = FORM; // HTMLFormElement.prototype
+      else if (getOwnDesc(p, 'documentElement') || getOwnDesc(p, 'getComputedStyle')) {
+        g = OWNER; // Document.prototype, Window.prototype
+      }
+    }
+    guardedByProto.set(proto, g);
+    return g;
+  }
+
+  // What the prototype chain defines for each name, per prototype: read on a
+  // form, a document or a window.
+  const byName = new Map();
+  function protectedGet(obj, name) {
+    const proto = getProto(obj);
+    // On a document or a window, a property the object holds itself (a
+    // wrapper a script put on it, a test's stand-in) is honoured, as an
+    // ordinary read would, unless it is a named element. Forms are not
+    // checked: asking a form for its own properties means searching its
+    // named controls, which is slow, and scripts don't wrap form methods.
+    if (guardOf(proto) === OWNER && hasOwn(obj, name)) {
+      let d;
+      try {
+        d = getOwnDesc(obj, name);
+      } catch {
+        d = null;
+      }
+      if (d && !('value' in d && isNamedElementValue(d.value))) {
+        return d.get ? apply(d.get, obj, []) : d.value;
+      }
+    }
+    let byProto = byName.get(name);
+    if (!byProto) {
+      byProto = new WeakMap();
+      byName.set(name, byProto);
+    }
+    let entry = byProto.get(proto);
+    if (!entry) {
+      entry = findOnChain(proto, name) || (isNodeChain(proto) ? NONE_NODE : NONE);
+      byProto.set(proto, entry);
+    }
+    if (entry.getter) return apply(entry.getter, obj, []);
+    if (entry.value) return entry.value;
+    return entry.node ? undefined : obj[name];
+  }
+  function protectedCall(obj, name, ...args) {
+    return apply(protectedGet(obj, name), obj, args);
+  }
+
+  // Whether the page being scanned can override properties at all. Only an
+  // element whose id or name is the name of a DOM property can (a form's
+  // controls, document's and window's named elements), so a scan checks the
+  // page once at its start (protectFor) and, on the nearly every page where
+  // no such element exists, the accessors are the plain reads they replace.
+  // Outside a scan, and whenever the check can't tell, they protect.
+  let protect = true;
+
+  // The names a named element could override and the engine would then
+  // read wrongly: on a form or a document, every name the accessors read; on
+  // a window, the EventTarget methods (the only ones a window's named
+  // elements can reach, sitting below its own prototype).
+  const READ_NAMES = new Set([...SAFE_DOM_GETTERS, ...SAFE_DOM_METHODS, ...SAFE_DOM_OTHER_NAMES]);
+  const WINDOW_NAMES = new Set(['addEventListener', 'removeEventListener', 'dispatchEvent']);
+  // The elements a name or id of which names a property of their form (the
+  // listed elements, images, and form-associated custom elements) or of the
+  // document (embeds, forms, iframes, images, objects).
+  const NAMED_TAGS = new Set([
+    'button',
+    'embed',
+    'fieldset',
+    'form',
+    'iframe',
+    'img',
+    'input',
+    'object',
+    'output',
+    'select',
+    'textarea'
+  ]);
+
+  // Whether an element in `doc`, or in an open shadow root inside it, has an
+  // id or name that would override something the engine reads. Reads
+  // through the protected path throughout, since the page may be one that
+  // overrides.
+  function pageCanOverride(doc) {
+    const docEl = protectedGet(doc, 'documentElement');
+    if (!docEl) return false;
+    // The element methods and getters, found once on the root element's
+    // prototype chain and applied to every element: they are Element's, so
+    // they work on any element, and resolving them per element would cost
+    // more than the check itself on a small page.
+    const elProto = getProto(docEl);
+    const found = (name) => findOnChain(elProto, name) || {};
+    const getAttribute = found('getAttribute').value;
+    const localName = found('localName').getter;
+    const shadowRoot = found('shadowRoot').getter;
+    if (!getAttribute || !localName) return true;
+    const roots = [doc];
+    for (let i = 0; i < roots.length; i++) {
+      const root = roots[i];
+      for (const el of protectedCall(root, 'querySelectorAll', '[id], [name]')) {
+        const id = apply(getAttribute, el, ['id']);
+        const name = apply(getAttribute, el, ['name']);
+        if ((id !== null && WINDOW_NAMES.has(id)) || (name !== null && WINDOW_NAMES.has(name))) {
+          return true;
+        }
+        const tag = String(apply(localName, el, []) || '');
+        if (!NAMED_TAGS.has(tag) && tag.indexOf('-') === -1) continue;
+        if ((id !== null && READ_NAMES.has(id)) || (name !== null && READ_NAMES.has(name))) {
+          return true;
+        }
+      }
+      if (!shadowRoot) continue;
+      const walker = protectedCall(doc, 'createTreeWalker', root === doc ? docEl : root, 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (el === root) continue;
+        const shadow = apply(shadowRoot, el, []);
+        if (shadow) roots.push(shadow);
+      }
+    }
+    return false;
+  }
+
+  // Sets the accessors for a scan of `doc`, and returns what puts them back.
+  function protectFor(doc) {
+    const before = protect;
+    let can;
+    try {
+      can = !doc || pageCanOverride(doc);
+    } catch {
+      can = true;
+    }
+    protect = can;
+    return () => {
+      protect = before;
+    };
+  }
+
+  // Whether `obj` needs the protected read, remembering the last prototype
+  // seen: loops over the DOM meet the same few prototypes over and over.
+  // Object.getPrototypeOf throws on null and undefined, as reading a property
+  // of them does.
+  let lastProto;
+  let lastGuard = 0;
+  function guard(obj) {
+    const proto = getProto(obj);
+    if (proto !== lastProto) {
+      lastProto = proto;
+      lastGuard = proto === null ? 0 : guardOf(proto);
+    }
+    return lastGuard;
+  }
+
+  // One accessor per name, written out with the name in the source rather
+  // than looked up by a variable, so the engine running this code can
+  // optimise each one, and inline it where it is called, as it would the
+  // plain read it replaces. On an object no named element can affect, it is
+  // that plain read. Methods pass four arguments through: the DOM methods
+  // here take at most three, and an argument passed as undefined is the same
+  // to them as one left out. tests/core/safe-dom.test.js checks this list
+  // against SAFE_DOM_GETTERS and SAFE_DOM_METHODS.
+  const dom = {
+    get: (o, name) => (protect && guard(o) ? protectedGet(o, name) : o[name]),
+    call: (o, name, ...args) =>
+      protect && guard(o) ? protectedCall(o, name, ...args) : apply(o[name], o, args),
+    protectFor,
+    activeElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'activeElement') : o.activeElement,
+    assignedSlot: (o) => (protect && guard(o) ? protectedGet(o, 'assignedSlot') : o.assignedSlot),
+    attributes: (o) => (protect && guard(o) ? protectedGet(o, 'attributes') : o.attributes),
+    baseURI: (o) => (protect && guard(o) ? protectedGet(o, 'baseURI') : o.baseURI),
+    body: (o) => (protect && guard(o) ? protectedGet(o, 'body') : o.body),
+    childElementCount: (o) =>
+      protect && guard(o) ? protectedGet(o, 'childElementCount') : o.childElementCount,
+    childNodes: (o) => (protect && guard(o) ? protectedGet(o, 'childNodes') : o.childNodes),
+    children: (o) => (protect && guard(o) ? protectedGet(o, 'children') : o.children),
+    contentDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentDocument') : o.contentDocument,
+    contentWindow: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentWindow') : o.contentWindow,
+    defaultView: (o) => (protect && guard(o) ? protectedGet(o, 'defaultView') : o.defaultView),
+    doctype: (o) => (protect && guard(o) ? protectedGet(o, 'doctype') : o.doctype),
+    documentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'documentElement') : o.documentElement,
+    firstChild: (o) => (protect && guard(o) ? protectedGet(o, 'firstChild') : o.firstChild),
+    firstElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'firstElementChild') : o.firstElementChild,
+    fonts: (o) => (protect && guard(o) ? protectedGet(o, 'fonts') : o.fonts),
+    head: (o) => (protect && guard(o) ? protectedGet(o, 'head') : o.head),
+    host: (o) => (protect && guard(o) ? protectedGet(o, 'host') : o.host),
+    isConnected: (o) => (protect && guard(o) ? protectedGet(o, 'isConnected') : o.isConnected),
+    lastChild: (o) => (protect && guard(o) ? protectedGet(o, 'lastChild') : o.lastChild),
+    lastElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'lastElementChild') : o.lastElementChild,
+    localName: (o) => (protect && guard(o) ? protectedGet(o, 'localName') : o.localName),
+    namespaceURI: (o) => (protect && guard(o) ? protectedGet(o, 'namespaceURI') : o.namespaceURI),
+    nextElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'nextElementSibling') : o.nextElementSibling,
+    nextSibling: (o) => (protect && guard(o) ? protectedGet(o, 'nextSibling') : o.nextSibling),
+    nodeName: (o) => (protect && guard(o) ? protectedGet(o, 'nodeName') : o.nodeName),
+    nodeType: (o) => (protect && guard(o) ? protectedGet(o, 'nodeType') : o.nodeType),
+    nodeValue: (o) => (protect && guard(o) ? protectedGet(o, 'nodeValue') : o.nodeValue),
+    outerHTML: (o) => (protect && guard(o) ? protectedGet(o, 'outerHTML') : o.outerHTML),
+    ownerDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'ownerDocument') : o.ownerDocument,
+    parentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'parentElement') : o.parentElement,
+    parentNode: (o) => (protect && guard(o) ? protectedGet(o, 'parentNode') : o.parentNode),
+    previousElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousElementSibling') : o.previousElementSibling,
+    previousSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousSibling') : o.previousSibling,
+    readyState: (o) => (protect && guard(o) ? protectedGet(o, 'readyState') : o.readyState),
+    shadowRoot: (o) => (protect && guard(o) ? protectedGet(o, 'shadowRoot') : o.shadowRoot),
+    styleSheets: (o) => (protect && guard(o) ? protectedGet(o, 'styleSheets') : o.styleSheets),
+    tagName: (o) => (protect && guard(o) ? protectedGet(o, 'tagName') : o.tagName),
+    textContent: (o) => (protect && guard(o) ? protectedGet(o, 'textContent') : o.textContent),
+    timeline: (o) => (protect && guard(o) ? protectedGet(o, 'timeline') : o.timeline),
+    addEventListener: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'addEventListener', a, b, c, d)
+        : o.addEventListener(a, b, c, d),
+    appendChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'appendChild', a, b, c, d) : o.appendChild(a, b, c, d),
+    assignedElements: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedElements', a, b, c, d)
+        : o.assignedElements(a, b, c, d),
+    assignedNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedNodes', a, b, c, d)
+        : o.assignedNodes(a, b, c, d),
+    blur: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'blur', a, b, c, d) : o.blur(a, b, c, d),
+    checkVisibility: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'checkVisibility', a, b, c, d)
+        : o.checkVisibility(a, b, c, d),
+    cloneNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'cloneNode', a, b, c, d) : o.cloneNode(a, b, c, d),
+    closest: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'closest', a, b, c, d) : o.closest(a, b, c, d),
+    compareDocumentPosition: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'compareDocumentPosition', a, b, c, d)
+        : o.compareDocumentPosition(a, b, c, d),
+    contains: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'contains', a, b, c, d) : o.contains(a, b, c, d),
+    createElement: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createElement', a, b, c, d)
+        : o.createElement(a, b, c, d),
+    createRange: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'createRange', a, b, c, d) : o.createRange(a, b, c, d),
+    createTreeWalker: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createTreeWalker', a, b, c, d)
+        : o.createTreeWalker(a, b, c, d),
+    elementFromPoint: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'elementFromPoint', a, b, c, d)
+        : o.elementFromPoint(a, b, c, d),
+    elementsFromPoint: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'elementsFromPoint', a, b, c, d)
+        : o.elementsFromPoint(a, b, c, d),
+    focus: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'focus', a, b, c, d) : o.focus(a, b, c, d),
+    getAnimations: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAnimations', a, b, c, d)
+        : o.getAnimations(a, b, c, d),
+    getAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAttribute', a, b, c, d)
+        : o.getAttribute(a, b, c, d),
+    getAttributeNames: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getAttributeNames', a, b, c, d)
+        : o.getAttributeNames(a, b, c, d),
+    getBoundingClientRect: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getBoundingClientRect', a, b, c, d)
+        : o.getBoundingClientRect(a, b, c, d),
+    getClientRects: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getClientRects', a, b, c, d)
+        : o.getClientRects(a, b, c, d),
+    getElementById: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getElementById', a, b, c, d)
+        : o.getElementById(a, b, c, d),
+    getElementsByClassName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByClassName', a, b, c, d)
+        : o.getElementsByClassName(a, b, c, d),
+    getElementsByTagName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByTagName', a, b, c, d)
+        : o.getElementsByTagName(a, b, c, d),
+    getRootNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    hasAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasAttribute', a, b, c, d)
+        : o.hasAttribute(a, b, c, d),
+    hasChildNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasChildNodes', a, b, c, d)
+        : o.hasChildNodes(a, b, c, d),
+    insertBefore: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'insertBefore', a, b, c, d)
+        : o.insertBefore(a, b, c, d),
+    matches: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'matches', a, b, c, d) : o.matches(a, b, c, d),
+    querySelector: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelector', a, b, c, d)
+        : o.querySelector(a, b, c, d),
+    querySelectorAll: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelectorAll', a, b, c, d)
+        : o.querySelectorAll(a, b, c, d),
+    removeAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'removeAttribute', a, b, c, d)
+        : o.removeAttribute(a, b, c, d),
+    removeChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'removeChild', a, b, c, d) : o.removeChild(a, b, c, d),
+    removeEventListener: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'removeEventListener', a, b, c, d)
+        : o.removeEventListener(a, b, c, d),
+    setAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'setAttribute', a, b, c, d)
+        : o.setAttribute(a, b, c, d)
+  };
+
+  createSafeDom.__instance = Object.freeze(dom);
+  return createSafeDom.__instance;
+});
+
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  const dom = createSafeDom();
   const window = opts && opts.window ? opts.window : null;
 
   const trim = shared.trim;
@@ -16325,7 +16831,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __contrastComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return computedStyle(el);
+      if (!el || dom.nodeType(el) !== 1) return computedStyle(el);
       if (__computedStyleCache.has(el)) return __computedStyleCache.get(el);
       const cs = computedStyle(el);
       __computedStyleCache.set(el, cs);
@@ -16334,7 +16840,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Always no-throw: return empty object on any failure
       try {
         const cs = computedStyle(el);
-        if (el && el.nodeType === 1) __computedStyleCache.set(el, cs);
+        if (el && dom.nodeType(el) === 1) __computedStyleCache.set(el, cs);
         return cs;
       } catch {
         return {};
@@ -16464,11 +16970,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // still recognized as inactive.
   function isDisabledWidget(node) {
     try {
-      if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
+      if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
+        return true;
     } catch {}
     try {
-      const ad = node.getAttribute
-        ? String(node.getAttribute('aria-disabled') || '')
+      const ad = dom.get(node, 'getAttribute')
+        ? String(dom.getAttribute(node, 'aria-disabled') || '')
             .trim()
             .toLowerCase()
         : '';
@@ -16481,12 +16988,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let node = el;
     let depth = 0;
     let labelAncestor = null;
-    while (node && node.nodeType === 1 && depth++ < 100) {
+    while (node && dom.nodeType(node) === 1 && depth++ < 100) {
       if (isDisabledWidget(node)) return true;
-      if (!labelAncestor && String(node.tagName || '').toLowerCase() === 'label') {
+      if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
-      node = node.parentElement;
+      node = dom.parentElement(node);
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -16509,10 +17016,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = labelAncestor.ownerDocument;
-        const labelId = labelAncestor.id;
-        if (doc && labelId) {
-          const referrers = doc.querySelectorAll('[aria-labelledby~="' + labelId + '"]');
+        // Only an element in the label's own tree (its shadow root, or the
+        // document) can reference it by id.
+        const root = dom.getRootNode(labelAncestor);
+        const tree =
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(labelAncestor);
+        const labelId = dom.get(labelAncestor, 'id');
+        if (tree && labelId) {
+          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -16527,7 +17040,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
 
-      const w = (ctx && ctx.window) || (d && d.defaultView) || window || null;
+      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
       const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
 
@@ -16536,7 +17049,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? 'styleAndGeometry'
           : 'styleOnly';
 
-      if (!d || typeof d.createTreeWalker !== 'function') {
+      if (!d || typeof dom.get(d, 'createTreeWalker') !== 'function') {
         return { eligibleTextCount: 0, elements: [], visibilityMode };
       }
 
@@ -16557,9 +17070,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? Array.isArray(ctx.root)
             ? ctx.root
             : [ctx.root]
-          : [d.body || d.documentElement || d];
+          : [dom.body(d) || dom.documentElement(d) || d];
       const lightRoots = walkRootsRaw
-        .map((wr) => (wr && wr.nodeType === 9 ? wr.body || wr.documentElement || wr : wr))
+        .map((wr) =>
+          wr && dom.nodeType(wr) === 9 ? dom.body(wr) || dom.documentElement(wr) || wr : wr
+        )
         .filter(Boolean);
 
       // A TreeWalker stops at a shadow boundary and querySelectorAll does not
@@ -16581,12 +17096,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
           let hosts;
           try {
-            hosts = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            hosts = dom.get(root, 'querySelectorAll') ? dom.querySelectorAll(root, '*') : [];
           } catch {
             continue;
           }
           for (const el of hosts) {
-            if (el && el.shadowRoot && !seen.has(el.shadowRoot)) queue.push(el.shadowRoot);
+            if (el && dom.shadowRoot(el) && !seen.has(dom.shadowRoot(el)))
+              queue.push(dom.shadowRoot(el));
           }
         }
 
@@ -16632,13 +17148,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           let cur = el;
           let guard = 0;
-          while (cur && cur.nodeType === 1 && guard++ < 100) {
+          while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
             const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
             if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
               hidden = true;
               break;
             }
-            cur = composedParent ? composedParent(cur) : cur.parentElement;
+            cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
           }
         } catch {
           hidden = false;
@@ -16693,13 +17209,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
-          typeof el.getBoundingClientRect !== 'function'
+          typeof dom.get(el, 'getBoundingClientRect') !== 'function'
         ) {
           return false;
         }
-        const r = el.getBoundingClientRect();
+        const r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
-        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         const sx = (win && win.scrollX) || 0;
         const sy = (win && win.scrollY) || 0;
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
@@ -16708,14 +17224,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let right = r.right;
         let bottom = r.bottom;
         let cur = composedParent(el);
-        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
           const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
           const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
           if (clipsX || clipsY) {
-            const a = cur.getBoundingClientRect();
+            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -16817,7 +17333,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (guard >= 500000) break;
         let walker;
         try {
-          walker = d.createTreeWalker(walkRoot, SHOW_TEXT, null);
+          walker = dom.createTreeWalker(d, walkRoot, SHOW_TEXT, null);
         } catch {
           continue;
         }
@@ -16826,16 +17342,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (visitedTextNodes.has(node)) continue;
           visitedTextNodes.add(node);
 
-          const text = node && node.nodeValue;
+          const text = node && dom.nodeValue(node);
           if (!isNonEmptyText(text)) continue;
 
-          const parentNode = node.parentNode;
+          const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
           // it renders with the host's inherited color and background.
           const el =
-            node.parentElement ||
-            (parentNode && parentNode.nodeType === 1 ? parentNode : null) ||
-            (parentNode && parentNode.nodeType === 11 && parentNode.host ? parentNode.host : null);
+            dom.parentElement(node) ||
+            (parentNode && dom.nodeType(parentNode) === 1 ? parentNode : null) ||
+            (parentNode && dom.nodeType(parentNode) === 11 && dom.host(parentNode)
+              ? dom.host(parentNode)
+              : null);
 
           if (!el) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
@@ -16870,7 +17388,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       for (const walkRoot of walkRoots) {
         let candidates;
         try {
-          candidates = walkRoot.querySelectorAll(
+          candidates = dom.querySelectorAll(
+            walkRoot,
             'input[type="submit" i], input[type="button" i], input[type="reset" i]'
           );
         } catch {
@@ -16880,7 +17399,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (visitedValueInputs.has(el)) continue;
           visitedValueInputs.add(el);
 
-          const value = el.getAttribute ? el.getAttribute('value') : el.value;
+          const value = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : el.value;
           if (!isNonEmptyText(value)) continue;
 
           try {
@@ -17370,10 +17889,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (
         w &&
         d &&
-        typeof d.createElement === 'function' &&
+        typeof dom.get(d, 'createElement') === 'function' &&
         typeof w.getComputedStyle === 'function'
       ) {
-        const probe = d.createElement('span');
+        const probe = dom.createElement(d, 'span');
         // Avoid layout/paint side effects
         probe.style.position = 'absolute';
         probe.style.left = '-9999px';
@@ -17383,8 +17902,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // A value the platform rejects leaves the property unset, and the
         // probe would then report the color it inherits.
         if (!probe.style.color) return null;
-        const parent = d.body || d.documentElement;
-        if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+        const parent = dom.body(d) || dom.documentElement(d);
+        if (parent && typeof dom.get(parent, 'appendChild') === 'function')
+          dom.appendChild(parent, probe);
 
         let computed = '';
         try {
@@ -17394,7 +17914,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         try {
-          if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+          if (probe && dom.parentNode(probe)) dom.removeChild(dom.parentNode(probe), probe);
         } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
@@ -17536,7 +18056,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBackgroundImageOrGradient(cs);
       if (__hasBgImgCache.has(el)) return __hasBgImgCache.get(el);
       const v = hasBackgroundImageOrGradient(cs);
       __hasBgImgCache.set(el, v);
@@ -17548,7 +18068,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasBlendModeEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBlendMode(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -17560,7 +18080,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasFilterEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasFilter(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -17585,7 +18105,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // unaffected either way.
   function __textShadowInfoEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         const raw = cs && cs.textShadow; // single read
         const value = raw == null ? '' : String(raw);
         return { has: hasTextShadow(value), value };
@@ -17616,7 +18136,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let cur = el;
       let guard = 0;
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -17654,8 +18174,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __isSvgTextElement(el) {
     return (
       !!el &&
-      el.namespaceURI === __SVG_NS &&
-      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+      dom.namespaceURI(el) === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(dom.localName(el) || '').toLowerCase())
     );
   }
 
@@ -17778,7 +18298,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let unparsable = null;
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -17789,7 +18309,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
         unparsable = {
-          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          selector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
           value: truncateCssValue(trim(cs.backgroundColor), 80)
         };
         break;
@@ -17799,7 +18322,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+            selector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
             bg: { r: layer.r, g: layer.g, b: layer.b, a: layer.a },
             opacity: op
           });
@@ -17893,7 +18419,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __getSimpleSelectorCached(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return '';
+      if (!el || dom.nodeType(el) !== 1) return '';
       if (__simpleSelectorCache.has(el)) return __simpleSelectorCache.get(el) || '';
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
@@ -17972,7 +18498,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
 
     try {
-      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+      if (!el || dom.nodeType(el) !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
       const elColor = parseCssColorToRgba(
@@ -17986,7 +18512,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let guard = 0;
 
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -18086,7 +18612,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const chain = [];
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -18098,7 +18624,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'MIX_BLEND_MODE',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'mix-blend-mode',
           blockerValue: truncateCssValue(cs && cs.mixBlendMode, 80)
@@ -18123,7 +18649,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
             blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
@@ -18152,7 +18678,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'TEXT_SHADOW',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'text-shadow',
           blockerValue: truncateCssValue(textShadowInfo.value, 80)
@@ -18170,7 +18696,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'background-image',
           blockerValue: truncateCssValue(bgImg, 80),
@@ -18218,7 +18744,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             reasonCode: 'ANCESTOR_OPACITY',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
@@ -18301,7 +18827,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function __paintCandidate(node, cs) {
-    const tag = String(node.localName || '').toLowerCase();
+    const tag = String(dom.localName(node) || '').toLowerCase();
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -18328,7 +18854,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let cur = node;
     let pinned = false;
     let guard = 0;
-    while (cur && cur.nodeType === 1 && guard++ < 200) {
+    while (cur && dom.nodeType(cur) === 1 && guard++ < 200) {
       if (__pinnedCache.has(cur)) {
         pinned = __pinnedCache.get(cur);
         break;
@@ -18351,19 +18877,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // is painted. checkVisibility() answers that; without it, the two are
   // looked for along the composed ancestors.
   function __isUnpainted(node) {
-    if (typeof node.checkVisibility === 'function') {
+    if (typeof dom.get(node, 'checkVisibility') === 'function') {
       try {
-        return !node.checkVisibility();
+        return !dom.checkVisibility(node);
       } catch {}
     }
     // A shadow root on the way up is stepped over to its host.
     let child = node;
     let cur = composedParent(node);
     for (let guard = 0; cur && guard < 1000; guard++) {
-      if (cur.nodeType === 1) {
+      if (dom.nodeType(cur) === 1) {
         if (
-          String(cur.localName || '').toLowerCase() === 'details' &&
-          !cur.hasAttribute('open') &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open') &&
           child !== __firstSummaryChild(cur)
         ) {
           return true;
@@ -18379,17 +18905,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // Only the first <summary> child of a <details> is its toggle.
   function __firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function __buildOverlapIndex() {
     const doc = window && window.document;
-    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    if (!doc || !dom.documentElement(doc) || typeof dom.get(doc, 'createRange') !== 'function')
+      return null;
     try {
-      const rootRects = doc.documentElement.getClientRects();
+      const rootRects = dom.getClientRects(dom.documentElement(doc));
       if (!rootRects || !rootRects.length) return null;
     } catch {
       return null;
@@ -18400,12 +18927,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     for (let ri = 0; ri < roots.length; ri++) {
       let all;
       try {
-        all = roots[ri].querySelectorAll('*');
+        all = dom.querySelectorAll(roots[ri], '*');
       } catch {
         continue;
       }
       for (const node of all) {
-        if (node.shadowRoot) roots.push(node.shadowRoot);
+        if (dom.shadowRoot(node)) roots.push(dom.shadowRoot(node));
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
         if (!paint || __isUnpainted(node)) continue;
@@ -18417,9 +18944,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           boxes =
             cs &&
             String(cs.display).startsWith('inline') &&
-            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
-              ? Array.from(node.getClientRects())
-              : [node.getBoundingClientRect()];
+            !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
+              ? Array.from(dom.getClientRects(node))
+              : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
         }
@@ -18464,19 +18991,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // The line boxes of el's own text.
   function __ownTextRects(el) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     const out = [];
     let range;
     try {
-      range = doc.createRange();
+      range = dom.createRange(doc);
     } catch {
       return out;
     }
-    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
-      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+    for (let n = dom.firstChild(el); n && out.length < 50; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
       try {
         range.selectNodeContents(n);
-        for (const r of range.getClientRects()) {
+        for (const r of dom.getClientRects(range)) {
           if (r.width >= 1 && r.height >= 1) out.push(r);
         }
       } catch {}
@@ -18537,7 +19064,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
-      const r = host.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(host);
       const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
       const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
       const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
@@ -18604,7 +19131,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // opaque background of its own (all of them when none has one).
   function __findPaintUnderText(el, chain) {
     try {
-      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
       if (!index) return null;
       const opaque = chain[chain.length - 1];
@@ -18628,7 +19155,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       };
       let box = null;
       try {
-        box = el.getBoundingClientRect();
+        box = dom.getBoundingClientRect(el);
       } catch {}
       const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       if (box && !pseudoCandidates && !near(box)) return null;
@@ -18671,7 +19198,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
                 continue;
               return {
-                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                selector: __getSimpleSelectorCached(p.el, String(dom.localName(p.el) || '')),
                 property: p.paint.property,
                 value: p.paint.value
               };
@@ -18690,14 +19217,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let hostRect = pseudo.box;
         if (!hostRect) {
           try {
-            hostRect = host.getBoundingClientRect();
+            hostRect = dom.getBoundingClientRect(host);
           } catch {
             hostRect = null;
           }
         }
         if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
         return {
-          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          selector:
+            __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
           property: pseudo.property,
           value: pseudo.value
         };
@@ -18739,6 +19267,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
 // Inlined from src/core/aria-helpers.js
 const createAriaHelpers = (function createAriaHelpers(opts, shared) {
+  const dom = createSafeDom();
   const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
   const lower = (v) => trim(v).toLowerCase();
   const ariaDocument = opts && opts.document;
@@ -18763,12 +19292,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function idExists(id, el) {
     let scope = ariaDocument;
     try {
-      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
-      if (root && typeof root.getElementById === 'function') scope = root;
+      const root =
+        el && typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
     } catch {}
-    if (!scope || typeof scope.getElementById !== 'function') return true;
+    if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return true;
     try {
-      return !!scope.getElementById(id);
+      return !!dom.getElementById(scope, id);
     } catch {
       return true;
     }
@@ -18785,11 +19315,17 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = ariaDocument.getElementById(refId);
-          if (ref && trim(ref.textContent)) return true;
+          const ref = dom.getElementById(scope, refId);
+          if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
     }
@@ -18822,17 +19358,14 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   ]);
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
-    const tag = lower(el.tagName || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    const tag = lower(dom.tagName(el) || '');
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -18840,7 +19373,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     let guard = 0;
     while (cur && guard++ < 200) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -18848,7 +19381,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
@@ -19603,24 +20136,24 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // example covers the crossing.
   function hasNativeContext(el, context) {
     const tags = context.tags;
-    let cur = el && el.parentElement ? el.parentElement : null;
+    let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
     while (cur && guard++ < 200) {
-      const tag = lower(cur.tagName || '');
+      const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
 
   function isElement(el) {
-    return !!(el && el.nodeType === 1);
+    return !!(el && dom.nodeType(el) === 1);
   }
 
   function getAttr(el, name) {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -19630,14 +20163,21 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {
@@ -19858,7 +20398,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // attribute-conditioned entries. Returns '' when no key applies.
   function getElementRoleKey(el) {
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'a' || tag === 'area') {
       const href = getAttr(el, 'href');
@@ -19924,7 +20464,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // with aria-pressed (W3C ARIA-in-HTML).
         let hasAriaPressed = false;
         try {
-          hasAriaPressed = !!(el.hasAttribute && el.hasAttribute('aria-pressed'));
+          hasAriaPressed = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'aria-pressed'));
         } catch {}
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
@@ -19938,7 +20478,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // its cells and rows free (ARIA in HTML).
       let table;
       try {
-        table = el.closest ? el.closest('table') : null;
+        table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
       } catch {
         table = null;
       }
@@ -19960,7 +20500,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // NATIVE_ROLE_BY_ELEMENT_KEY above.
       let isMultiSelect;
       try {
-        isMultiSelect = !!(el.hasAttribute && el.hasAttribute('multiple'));
+        isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
           const sizeAttr = getAttr(el, 'size');
           const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
@@ -20024,7 +20564,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (explicit && isValidConcreteRole(explicit)) return explicit;
 
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'input') {
       const type = lower(getAttr(el, 'type') || 'text');
@@ -20101,6 +20641,7 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   return [];
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
+  const dom = createSafeDom();
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
         const list = contextSelector
@@ -20113,7 +20654,8 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       : null;
 
   if (!ctxSelector) {
-    const whole = document.documentElement || document.body || document.querySelector('html');
+    const whole =
+      dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
   }
 
@@ -20124,7 +20666,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   for (const sel of selectorList) {
     let matches;
     try {
-      matches = document.querySelectorAll(sel);
+      matches = dom.querySelectorAll(document, sel);
     } catch {
       const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
       err.code = 'INVALID_CONTEXT_SELECTOR';
@@ -20143,6 +20685,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots, unmatchedSelectors };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
+  const dom = createSafeDom();
   // <generated:language-subtags>
   const LANGUAGE_SUBTAGS =
     'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
@@ -20168,7 +20711,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
-  const realmWindow = window || (document && document.defaultView) || null;
+  const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
   // existing call site, including every test, passes one) or an array of
   // elements (multi-region contextSelector support, dom-runner.js). Every
@@ -20241,6 +20784,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
+  var __idRefCacheByTree = null; // WeakMap<ShadowRoot|Document, Map<...>>, the same for a tree other than the document
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
@@ -20349,7 +20893,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   // --- eligibility utilities ---
-  const isElement = (n) => !!n && n.nodeType === 1;
+  const isElement = (n) => !!n && dom.nodeType(n) === 1;
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -20375,7 +20919,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let cs;
     try {
       const w = realmWindow || window;
-      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && el.style) || {};
+      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && dom.get(el, 'style')) || {};
     } catch {
       cs = {};
     }
@@ -20401,7 +20945,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
-    if (!document || !document.querySelectorAll) return [];
+    if (!document || !dom.get(document, 'querySelectorAll')) return [];
     if (!__openModalDialogsByDoc) {
       __perfInc('modalDialogs.nocache');
     }
@@ -20429,7 +20973,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let list = [];
     for (const sel of ['dialog:modal', 'dialog[open][aria-modal="true"]']) {
       try {
-        for (const el of document.querySelectorAll(sel)) {
+        for (const el of dom.querySelectorAll(document, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -20462,9 +21006,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // level at a time.
   const composedParent = (n) => {
     if (!n) return null;
-    if (n.assignedSlot) return n.assignedSlot;
-    if (n.parentNode) return n.parentNode;
-    return n.host || null;
+    if (dom.assignedSlot(n)) return dom.assignedSlot(n);
+    if (dom.parentNode(n)) return dom.parentNode(n);
+    return dom.host(n) || null;
   };
   const ancestorsIncludingSelf = (n) => {
     if (!n) return [];
@@ -20531,7 +21075,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getClosestMap(el) {
     try {
       if (!isElement(el)) return null;
-      return el.closest ? el.closest('map') : null;
+      return dom.get(el, 'closest') ? dom.closest(el, 'map') : null;
     } catch {
       return null;
     }
@@ -20540,7 +21084,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
 
-    const tag = (node.tagName || '').toLowerCase();
+    const tag = (dom.tagName(node) || '').toLowerCase();
     const isArea = tag === 'area';
     const mapEl = isArea ? getClosestMap(node) : null;
 
@@ -20556,7 +21100,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // of the <img>+<map> pairing does.
       if (isArea && (a === node || a === mapEl)) continue;
 
-      if (a.hasAttribute && a.hasAttribute('inert')) return true;
+      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -20565,7 +21109,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const getAttr = (el, name) => {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -20606,7 +21150,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
     } else {
       const flags = [];
-      const disabled = !!(el.matches && el.matches(':disabled'));
+      const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
       if (disabled) {
         result = { focusable: false, tabbable: false, mechanism: 'disabled', flags: ['disabled'] };
       } else {
@@ -20694,7 +21238,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!ariaLabelledBy)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts);
+    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -20804,12 +21348,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // such an element as a generic container.
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
-    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    // The resolved role (#91): an attribute naming no known role leaves the
+    // element its native landmark, if any.
+    const token = aria.getExplicitRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
     } else {
-      const tag = lower(el.tagName);
+      const tag = lower(dom.tagName(el));
       if (tag === 'header' || tag === 'footer') {
         if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
           role = tag === 'header' ? 'banner' : 'contentinfo';
@@ -20843,7 +21389,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.doc.miss');
     let el = null;
     try {
-      if (document && document.getElementById) el = document.getElementById(key);
+      if (document && dom.get(document, 'getElementById')) el = dom.getElementById(document, key);
     } catch {
       el = null;
     }
@@ -20876,9 +21422,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !r.querySelector) continue;
+      if (!r || !dom.get(r, 'querySelector')) continue;
       try {
-        el = r.querySelector('#' + key);
+        el = dom.querySelector(r, '#' + key);
       } catch {
         el = null;
       }
@@ -20893,6 +21439,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The tree an ID reference on `el` resolves in: its shadow root, or its
+  // document. IDs are scoped to their tree (HTML's labeled control is "an
+  // element in the tree" with that ID; ARIA ID references and `headers` use
+  // the same lookup), so a reference never crosses a shadow boundary. Null
+  // for a node in no such tree (a detached subtree), where callers keep
+  // their document lookup.
+  function __idTreeOf(el) {
+    try {
+      const root = el && dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      return root && typeof dom.get(root, 'getElementById') === 'function' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The element an ID reference on `from` points to: the first element with
+  // that id in `from`'s own tree (see __idTreeOf). For an element in the
+  // scanned document this is the cached document lookup.
+  function getElementByIdInTree(from, id) {
+    const key = trim(id);
+    if (!key) return null;
+    const tree = __idTreeOf(from);
+    if (!tree || tree === document) return safeDocGetById(key) || safeRootQueryById(key);
+    try {
+      return dom.getElementById(tree, key) || null;
+    } catch {
+      return null;
+    }
+  }
+
   // A closed <details> shows only its summary: its first <summary> child,
   // which stays on the page as the toggle. Every other descendant is hidden,
   // including another <summary> and anything in an open <details> nested in
@@ -20905,12 +21481,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const chain = ancestorsIncludingSelf(node);
       for (let i = 1; i < chain.length; i++) {
         const a = chain[i];
-        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
-        if (a.hasAttribute('open')) continue;
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
+        if (dom.hasAttribute(a, 'open')) continue;
         const child = chain[i - 1];
         const isToggle =
-          (child.localName || '').toLowerCase() === 'summary' &&
-          child.parentNode === a &&
+          (dom.localName(child) || '').toLowerCase() === 'summary' &&
+          dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
         if (!isToggle) return true;
       }
@@ -20919,21 +21495,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if ((dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function isPlatformFocusable(el) {
     if (!isElement(el) || hasBlockingInert(el)) return false;
-    const tag = (el.tagName || '').toLowerCase();
-    const type = (el.getAttribute && (el.getAttribute('type') || '').toLowerCase()) || '';
-    const disabled = !!(el.matches && el.matches(':disabled'));
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const type =
+      (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || '').toLowerCase()) || '';
+    const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -20941,15 +21518,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // *used* image map. Without href an <area> is not a hyperlink at all
       // per the HTML spec, so it falls through to the generic tabindex
       // check below, same as any other non-interactive element.
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) {
         const map = getClosestMap(el);
         if (map) {
           const rawName = (
-            map.getAttribute &&
-            (map.getAttribute('name') || map.getAttribute('id') || '')
+            dom.get(map, 'getAttribute') &&
+            (dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id') || '')
           ).trim();
-          if (rawName && document && document.querySelector) {
+          if (rawName && document && dom.get(document, 'querySelector')) {
             const esc = __cssEscapeSafe;
             const n = esc(rawName);
 
@@ -20958,7 +21535,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             for (const sel of sels) {
               try {
-                if (document.querySelector(sel)) return true;
+                if (dom.querySelector(document, sel)) return true;
               } catch {}
             }
           }
@@ -20975,16 +21552,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // without controls is focusable in Firefox only, and <embed>/<object>
     // depend on the type of what they embed, so neither is counted.
     if (tag === 'iframe' || tag === 'frame') return true;
-    if ((tag === 'audio' || tag === 'video') && el.hasAttribute && el.hasAttribute('controls'))
+    if (
+      (tag === 'audio' || tag === 'video') &&
+      dom.get(el, 'hasAttribute') &&
+      dom.hasAttribute(el, 'controls')
+    )
       return true;
-    if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'contenteditable')) {
       // contenteditable="false" explicitly disables the editing host
       // and does not by itself add the element to the tab order.
       const ceVal = lower(getAttr(el, 'contenteditable'));
       if (ceVal !== 'false') return true;
     }
 
-    const tabindex = el.getAttribute && el.getAttribute('tabindex');
+    const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
     if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
       return true;
 
@@ -20994,7 +21575,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getIdRefReverseIndex(scopeObj) {
     // Reverse index: id token -> referencing elements (aria-labelledby / aria-describedby)
     // Built once per scope per run. Deterministic: querySelectorAll order is document order.
-    if (!scopeObj || !scopeObj.querySelectorAll) return null;
+    if (!scopeObj || !dom.get(scopeObj, 'querySelectorAll')) return null;
 
     if (!__idRefReverseIndexByScope) {
       __perfInc('idrefReverseIndex.nocache');
@@ -21017,7 +21598,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(scopeObj.querySelectorAll('[aria-labelledby],[aria-describedby]'));
+      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
     } catch {
       refs = [];
     }
@@ -21069,12 +21650,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
-    const id = node.getAttribute && node.getAttribute('id');
+    const id = dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id');
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
+    // Only an element in the same tree can reference it (see __idTreeOf).
+    const tree = __idTreeOf(node) || document;
+
     // Prefer reverse-index lookup (single build per run) over repeated querySelectorAll per node.
-    const idx = getIdRefReverseIndex(document);
+    const idx = getIdRefReverseIndex(tree);
     if (idx && typeof idx.get === 'function') {
       let refs;
       try {
@@ -21100,8 +21684,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(document.querySelectorAll('[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(document.querySelectorAll('[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -21137,7 +21721,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
-    if (!eff.length || !el || !el.matches) return false;
+    if (!eff.length || !el || !dom.get(el, 'matches')) return false;
 
     const memo = __getExcludedCacheForOpts();
     if (memo) {
@@ -21152,7 +21736,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let result = false;
     for (let i = 0; i < eff.length; i++) {
       try {
-        if (el.matches(eff[i])) {
+        if (dom.matches(el, eff[i])) {
           result = true;
           break;
         }
@@ -21164,7 +21748,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (!result) {
-      const parent = el.parentElement;
+      const parent = dom.parentElement(el);
       result = parent ? isExcluded(parent) : false;
     }
 
@@ -21196,16 +21780,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // self-match every rule using this helper would be blind to an issue
       // asserted directly on <html> (e.g. `<html role="...">`, `[lang]`,
       // any `[aria-*]`).
-      if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
+      if (dom.nodeType(r) === 1 && typeof dom.get(r, 'matches') === 'function' && !seen.has(r)) {
         try {
-          if (r.matches(sel)) {
+          if (dom.matches(r, sel)) {
             seen.add(r);
             out.push(r);
           }
         } catch {}
       }
       try {
-        const list = r.querySelectorAll(sel);
+        const list = dom.querySelectorAll(r, sel);
         for (const el of list) {
           if (el && !seen.has(el)) {
             seen.add(el);
@@ -21230,10 +21814,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const visitedRoots = new Set();
 
     const pushMatches = (scope) => {
-      if (!scope || !scope.querySelectorAll) return;
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return;
       let els;
       try {
-        els = scope.querySelectorAll(sel);
+        els = dom.querySelectorAll(scope, sel);
       } catch {
         els = [];
       }
@@ -21249,13 +21833,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // (or the top-level <html> root) matching `sel` directly would
       // otherwise be invisible here too.
       if (
-        scope.nodeType === 1 &&
-        typeof scope.matches === 'function' &&
+        dom.nodeType(scope) === 1 &&
+        typeof dom.get(scope, 'matches') === 'function' &&
         !seen.has(scope) &&
         !isExcluded(scope)
       ) {
         try {
-          if (scope.matches(sel)) {
+          if (dom.matches(scope, sel)) {
             seen.add(scope);
             results.push(scope);
           }
@@ -21264,7 +21848,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
 
     const collectShadowRoots = (scope) => {
-      if (!scope || !scope.querySelectorAll) return [];
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
       // IMPORTANT: do not cache when the effective exclude list (global
@@ -21281,15 +21865,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
           let hosts = [];
           try {
-            hosts = scope.querySelectorAll('*');
+            hosts = dom.querySelectorAll(scope, '*');
           } catch {
             hosts = [];
           }
 
           const roots = [];
           for (const el of hosts) {
-            if (!el || el.nodeType !== 1) continue;
-            const sr = el.shadowRoot;
+            if (!el || dom.nodeType(el) !== 1) continue;
+            const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
@@ -21310,15 +21894,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Uncached path (preserves excludeSelectors filtering semantics).
       let hosts;
       try {
-        hosts = scope.querySelectorAll('*');
+        hosts = dom.querySelectorAll(scope, '*');
       } catch {
         hosts = [];
       }
       const roots = [];
       for (const el of hosts) {
-        if (!el || el.nodeType !== 1) continue;
+        if (!el || dom.nodeType(el) !== 1) continue;
         if (isExcluded(el)) continue;
-        const sr = el.shadowRoot;
+        const sr = dom.shadowRoot(el);
         if (sr) roots.push(sr);
       }
       return roots;
@@ -21338,8 +21922,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // querySelectorAll('*') never returns curRoot itself, so a scope
       // that is a shadow host would leave out its own shadow root.
-      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
-        q.push(curRoot.shadowRoot);
+      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !isExcluded(curRoot)) {
+        q.push(dom.shadowRoot(curRoot));
       }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
@@ -21432,7 +22016,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   //   'none'    no doctype
   // Public ids are compared case-insensitively, as HTML's parser does.
   function getDoctypeInfo() {
-    const doctype = document ? document.doctype : null;
+    const doctype = document ? dom.doctype(document) : null;
     if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
     const name = String(doctype.name || '');
     const publicId = String(doctype.publicId || '');
@@ -21455,7 +22039,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   try {
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -21557,6 +22141,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __idLookupRootCache = null;
   }
 
+  // IDREF resolution in a shadow root (or another document): per tree
+  try {
+    __idRefCacheByTree =
+      __domSharedCache.idRefCacheByTree instanceof WeakMap
+        ? __domSharedCache.idRefCacheByTree
+        : (__domSharedCache.idRefCacheByTree = new WeakMap());
+  } catch {
+    __idRefCacheByTree = null;
+  }
+
   // IDREF resolution: cache resolveIdRefs results (root-scoped) within a run
   try {
     __idRefCacheByRoot =
@@ -21613,7 +22207,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -21768,20 +22362,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  // Real `<label for="...">` element references for one `for` value, built
-  // via a single `document.querySelectorAll('label[for]')` pass and cached
-  // per document for the whole run, for callers that need the actual label
-  // element (to compute its accessible name, or to check whether it
-  // contributes one), not just whether one exists.
-  function __getLabelElementsForId(id) {
+  // Real `<label for="...">` element references for one `for` value in the
+  // tree `root` (a document or a shadow root: a label labels a control in its
+  // own tree only), built via a single `root.querySelectorAll('label[for]')`
+  // pass and cached per tree for the whole run, for callers that need the
+  // actual label element (to compute its accessible name, or to check
+  // whether it contributes one), not just whether one exists.
+  function __getLabelElementsForId(id, root) {
     const key = trim(id);
-    if (!key || !document || !document.querySelectorAll) return [];
+    const tree = root || document;
+    if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          const forVal = trim(label.getAttribute('for'));
+        for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+          const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -21793,10 +22389,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
 
-    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    let byId = __labelElementsByForIdIndexByDoc.get(tree);
     if (!(byId instanceof Map)) {
       byId = buildIndex();
-      __labelElementsByForIdIndexByDoc.set(document, byId);
+      __labelElementsByForIdIndexByDoc.set(tree, byId);
     }
     return byId.get(key) || [];
   }
@@ -21839,7 +22435,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // either browser's accessibility tree.
     let isLabelable;
     try {
-      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
     } catch {
       isLabelable = false;
     }
@@ -21850,27 +22446,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // A `for` label labels the first element in its tree with that id
       // (HTML's labeled control), so a second element sharing the id has no
       // label from it; Chromium names only the first.
-      const forLabels = __getLabelElementsForId(id);
+      const root = __idTreeOf(el);
+      const forLabels = __getLabelElementsForId(id, root);
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = l.getRootNode ? l.getRootNode() : null;
-          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+          if (root && typeof dom.get(root, 'getElementById') === 'function')
+            target = dom.getElementById(root, id);
         } catch {}
         if (target === el) out.push(l);
       }
     }
     try {
-      const wrap = el.closest ? el.closest('label') : null;
+      const wrap = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
       if (
         wrap &&
         isElement(wrap) &&
-        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
         let firstControl = null;
         try {
-          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrap, 'querySelector')
+            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -21884,7 +22483,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (out.length > 1) {
       try {
         out.sort((a, b) => {
-          const bits = a.compareDocumentPosition(b);
+          const bits = dom.compareDocumentPosition(a, b);
           if (bits & 4) return -1;
           if (bits & 2) return 1;
           return 0;
@@ -21902,16 +22501,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getLabelControl(label) {
     if (!isElement(label)) return null;
     try {
-      if (label.hasAttribute('for')) {
+      if (dom.hasAttribute(label, 'for')) {
         const id = getAttr(label, 'for');
         if (!id) return null;
-        const root = label.getRootNode ? label.getRootNode() : null;
+        const root = dom.get(label, 'getRootNode') ? dom.getRootNode(label) : null;
         const scope =
-          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
-        const el = scope ? scope.getElementById(id) : null;
-        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(label);
+        const el = scope ? dom.getElementById(scope, id) : null;
+        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
       }
-      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
     } catch {
       return null;
     }
@@ -22039,22 +22640,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // probe last in <body>: a parent whose first or last element child has
   // changed since is indexed again.
   function __siblingInfo(node) {
-    const parent = node && node.parentElement;
+    const parent = node && dom.parentElement(node);
     if (!parent) return null;
-    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
     const build = () => {
       const info = new Map();
       const tagCounts = new Map();
       let index = 0;
-      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+      for (let c = dom.firstElementChild(parent); c; c = dom.nextElementSibling(c)) {
         const tag = tagOf(c);
         const ofType = (tagCounts.get(tag) || 0) + 1;
         tagCounts.set(tag, ofType);
         info.set(c, { index: index++, ofType, tag });
       }
       return {
-        first: parent.firstElementChild,
-        last: parent.lastElementChild,
+        first: dom.firstElementChild(parent),
+        last: dom.lastElementChild(parent),
         info,
         tagCounts
       };
@@ -22065,8 +22666,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     if (
       !entry ||
-      entry.first !== parent.firstElementChild ||
-      entry.last !== parent.lastElementChild ||
+      entry.first !== dom.firstElementChild(parent) ||
+      entry.last !== dom.lastElementChild(parent) ||
       !entry.info.has(node)
     ) {
       entry = build();
@@ -22096,20 +22697,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // changes with any edit anywhere, and the snippet is part of a
       // finding's identity (baselines, SARIF). What a page-level finding is
       // about is the element itself: its start tag.
-      const name = String(el.localName || '').toLowerCase();
+      const name = String(dom.localName(el) || '').toLowerCase();
       const isPage =
         (name === 'html' || name === 'head' || name === 'body') &&
-        el.ownerDocument &&
-        el.parentNode &&
-        (el === el.ownerDocument.documentElement ||
-          el.parentNode === el.ownerDocument.documentElement);
+        dom.ownerDocument(el) &&
+        dom.parentNode(el) &&
+        (el === dom.documentElement(dom.ownerDocument(el)) ||
+          dom.parentNode(el) === dom.documentElement(dom.ownerDocument(el)));
       let html;
       if (isPage) {
-        const shallow = el.cloneNode(false).outerHTML || '';
+        const shallow = dom.outerHTML(dom.cloneNode(el, false)) || '';
         const end = shallow.lastIndexOf('</');
         html = end > 0 ? shallow.slice(0, end) : shallow;
       } else {
-        html = el.outerHTML || '';
+        html = dom.outerHTML(el) || '';
       }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
@@ -22161,7 +22762,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
-    const __tag0 = (node.tagName || '').toLowerCase();
+    const __tag0 = (dom.tagName(node) || '').toLowerCase();
     const __isAreaNode = __tag0 === 'area';
     const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
@@ -22178,8 +22779,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerAcc.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -22190,7 +22791,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -22227,7 +22830,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Without it, an `until-found` panel would be excluded even from
       // rules checking its own attributes.
       if (struct === 'hiddenAttr' && a === node) {
-        const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
+        const hiddenVal = String(
+          (dom.get(a, 'getAttribute') && dom.getAttribute(a, 'hidden')) || ''
+        )
           .trim()
           .toLowerCase();
         if (hiddenVal === 'until-found') struct = null;
@@ -22260,7 +22865,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (node.contains && node.contains(d))) {
+          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
             reachable = true;
             break;
           }
@@ -22280,7 +22885,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // <area> is a non-rendered element; some DOMs report display:none for it.
       // Don’t treat the *area itself* as ineligible based on computed style.
       if (a === node) {
-        const tn = (a.tagName || '').toLowerCase();
+        const tn = (dom.tagName(a) || '').toLowerCase();
         if (tn === 'area') continue;
       }
 
@@ -22354,7 +22959,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // walking ancestors (which would incorrectly treat visibility like
     // the non-inherited `display` property above).
     {
-      const tn = (node.tagName || '').toLowerCase();
+      const tn = (dom.tagName(node) || '').toLowerCase();
       if (tn !== 'area') {
         const cs = computedStyle(node);
         if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
@@ -22367,7 +22972,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let ariaHidden = false;
     for (const a of chain) {
       if (!isElement(a)) continue;
-      const v = a.getAttribute && a.getAttribute('aria-hidden');
+      const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') {
         ariaHidden = true;
         break;
@@ -22399,10 +23004,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // Exception: allow aria-hidden override for mechanisms where the engine must
       // still evaluate required labeling/alt checks. Keep this narrowly scoped.
-      const tag = (node.tagName || '').toLowerCase();
+      const tag = (dom.tagName(node) || '').toLowerCase();
       const type =
         tag === 'input'
-          ? (node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || ''
+          ? (dom.get(node, 'getAttribute') &&
+              (dom.getAttribute(node, 'type') || '').toLowerCase()) ||
+            ''
           : '';
 
       // Native form controls are tabbable by default (even without tabindex)
@@ -22530,8 +23137,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerDom.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -22542,7 +23149,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -22888,15 +23497,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (useGeometry) {
       try {
-        if (node.getClientRects) {
-          const rects = node.getClientRects();
+        if (dom.get(node, 'getClientRects')) {
+          const rects = dom.getClientRects(node);
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
-          const r = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+          const r = dom.get(node, 'getBoundingClientRect') ? dom.getBoundingClientRect(node) : null;
           const w = r && Number.isFinite(r.width) ? r.width : 0;
           const h = r && Number.isFinite(r.height) ? r.height : 0;
 
@@ -22935,7 +23544,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // E) IDREF helpers
-  function resolveIdRefs(idrefString, _ctx, opts) {
+  // `from` is the element carrying the reference: the IDs resolve in its own
+  // tree (see __idTreeOf). Without it they resolve in the document.
+  function resolveIdRefs(idrefString, _ctx, opts, from) {
     const raw = trim(idrefString);
     if (!raw) return { refs: [], missing: [], flags: ['empty'] };
 
@@ -22943,16 +23554,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = raw.split(/\s+/).filter(Boolean);
     const normKey = parts.join(' ');
 
+    // A shadow root (or another document) is its own tree, with its own cache.
+    let tree = from ? __idTreeOf(from) : null;
+    if (tree === document) tree = null;
+
     // Root-scoped cache map
     let cacheMap = null;
-    if (__idRefCacheByRoot) {
-      const scopeObj = __getScopeObj();
+    const cacheByKey = tree ? __idRefCacheByTree : __idRefCacheByRoot;
+    if (cacheByKey) {
+      const scopeObj = tree || __getScopeObj();
       if (scopeObj) {
         try {
-          cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
+          cacheMap = cacheByKey.get(scopeObj) || null;
           if (!cacheMap) {
             cacheMap = new Map();
-            __idRefCacheByRoot.set(scopeObj, cacheMap);
+            cacheByKey.set(scopeObj, cacheMap);
           }
         } catch {
           cacheMap = null;
@@ -22993,8 +23609,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const key = trim(id);
       if (!key) continue;
 
-      let el = safeDocGetById(key);
-      if (!el) el = safeRootQueryById(key);
+      let el;
+      if (tree) {
+        try {
+          el = dom.getElementById(tree, key);
+        } catch {
+          el = null;
+        }
+      } else {
+        el = safeDocGetById(key);
+        if (!el) el = safeRootQueryById(key);
+      }
 
       if (!el || !isElement(el)) {
         missing.push(key);
@@ -23036,7 +23661,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // an IDREF *target*'s own text alternative (see computeIdRefTargetTextAlternative).
   function __getElementValueLikeName(el) {
     if (!isElement(el)) return '';
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     if (tag === 'img' || tag === 'area') {
       const alt = getAttr(el, 'alt');
@@ -23150,8 +23775,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
-  function getTextFromIdRefs(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefs(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -23184,8 +23809,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { eligible: true, reasons: [] };
   }
 
-  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
@@ -23194,7 +23819,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
-        const id = trim(el.getAttribute && el.getAttribute('id'));
+        const id = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
         excluded.push({ id: id || null, reasons: elig.reasons.slice(0) });
         continue;
       }
@@ -23241,7 +23866,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let guardCount = 0;
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -23251,8 +23876,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       guardCount += 1;
       if (guardCount > 5000) return;
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      if (dom.nodeType(node) === 3) {
+        const t = trim(dom.nodeValue(node));
         if (t) parts.push(t);
         return;
       }
@@ -23284,12 +23909,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) walk(kid);
     }
 
     try {
-      const kids = labelEl.childNodes ? Array.from(labelEl.childNodes) : [];
+      const kids = dom.childNodes(labelEl) ? Array.from(dom.childNodes(labelEl)) : [];
       for (const kid of kids) walk(kid);
     } catch {}
 
@@ -23423,7 +24048,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // these tags (kept as a direct attribute read here, not a call into
     // getTextAlternativeInfo, since that function itself calls back into
     // this one when alt is absent).
-    const tagForAlt = lower(el.tagName);
+    const tagForAlt = lower(dom.tagName(el));
     const typeForAlt = tagForAlt === 'input' ? lower(getAttr(el, 'type')) : '';
     const isImageLikeForAlt =
       tagForAlt === 'img' ||
@@ -23527,7 +24152,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
     if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts);
+      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -23600,21 +24225,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // textContent alone misses that, since alt text isn't part of it.
   function __hasMeaningfulCanvasFallbackDescendant(container) {
     try {
-      if (!container || !container.querySelectorAll) return false;
+      if (!container || !dom.get(container, 'querySelectorAll')) return false;
 
-      const imgs = container.querySelectorAll('img[alt]');
+      const imgs = dom.querySelectorAll(container, 'img[alt]');
       for (const img of imgs) {
-        if (trim(img.getAttribute && img.getAttribute('alt'))) return true;
+        if (trim(dom.get(img, 'getAttribute') && dom.getAttribute(img, 'alt'))) return true;
       }
 
-      const areas = container.querySelectorAll('area[alt]');
+      const areas = dom.querySelectorAll(container, 'area[alt]');
       for (const area of areas) {
-        if (trim(area.getAttribute && area.getAttribute('alt'))) return true;
+        if (trim(dom.get(area, 'getAttribute') && dom.getAttribute(area, 'alt'))) return true;
       }
 
-      const named = container.querySelectorAll('[aria-label]');
+      const named = dom.querySelectorAll(container, '[aria-label]');
       for (const n of named) {
-        if (trim(n.getAttribute && n.getAttribute('aria-label'))) return true;
+        if (trim(dom.get(n, 'getAttribute') && dom.getAttribute(n, 'aria-label'))) return true;
       }
 
       return false;
@@ -23779,12 +24404,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // roots; '' when none is declared.
   function textAlternativeLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -23796,10 +24422,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function textAlternativeFileName(el) {
-    if (!el || typeof el.getAttribute !== 'function') return '';
+    if (!el || typeof dom.get(el, 'getAttribute') !== 'function') return '';
     let src;
     try {
-      src = String(el.getAttribute('src') || '');
+      src = String(dom.getAttribute(el, 'src') || '');
     } catch {
       return '';
     }
@@ -23921,7 +24547,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
     }
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
 
     const isImageLike = tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
@@ -23957,7 +24583,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(el.textContent || '');
+      const fallbackText = trim(dom.textContent(el) || '');
       if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
         return {
           present: true,
@@ -24019,13 +24645,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (which a <title> does not override: it is not a global ARIA attribute).
   function getSvgTitleChildText(node) {
     try {
-      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
-      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
+      const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
-      const kids = node.children ? Array.from(node.children) : [];
+      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
-          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        if (
+          lower(dom.localName(kid)) === 'title' &&
+          dom.namespaceURI(kid) === dom.namespaceURI(node)
+        ) {
+          return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
         }
       }
     } catch {}
@@ -24042,6 +24671,42 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // name from an attribute rather than visible text, e.g. a logo link
   // `<a href="..."><img alt="Company Name"></a>` or an icon-only button
   // `<button><span role="img" aria-label="Close"></span></button>`.
+  // How an element breaks the text around it, from its computed display:
+  // 'inline' (no break: <b>Down</b>load reads "Download"), 'inline-box'
+  // (inline-block, inline-flex and the like: a break in an accessible name,
+  // none in visible text) or 'block' (a new line in visible text, a space in
+  // a name). Absolute and fixed positioning, floats and being a flex or grid
+  // item make a box block-level (CSS Display "blockification"), which
+  // browsers report in the computed value and jsdom doesn't, so it is
+  // applied here. A <br> breaks the line; `display: contents` and `none`
+  // have no box of their own and break nothing.
+  const __INLINE_BOX_DISPLAYS = {
+    'inline-block': 1,
+    'inline-flex': 1,
+    'inline-grid': 1,
+    'inline-table': 1,
+    'inline-flow-root': 1
+  };
+  function getTextBoundaryKind(el) {
+    if (!isElement(el)) return 'inline';
+    if (lower(dom.tagName(el)) === 'br') return 'block';
+    const cs = computedStyle(el) || {};
+    const display = lower(cs.display || '');
+    if (!display || display === 'none' || display === 'contents') return 'inline';
+    const position = lower(cs.position || '');
+    const float = lower(cs.cssFloat || cs.float || '');
+    let blockified = position === 'absolute' || position === 'fixed' || (float && float !== 'none');
+    if (!blockified) {
+      const parent = dom.parentElement(el);
+      const parentDisplay = parent ? lower((computedStyle(parent) || {}).display || '') : '';
+      blockified = /(^|-)(flex|grid)$/.test(parentDisplay);
+    }
+    if (blockified) return 'block';
+    if (display === 'inline' || display.indexOf('ruby') === 0) return 'inline';
+    if (__INLINE_BOX_DISPLAYS[display]) return 'inline-box';
+    return 'block';
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -24091,7 +24756,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     ];
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -24105,8 +24770,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return;
       }
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      // Text keeps its own whitespace: pieces of text in inline elements
+      // join as they are written, so <b>Down</b>load is "Download".
+      if (dom.nodeType(node) === 3) {
+        const t = dom.nodeValue(node);
         if (t) parts.push(t);
         return;
       }
@@ -24132,7 +24799,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // resolve to unnamed and collapse into one false "not unique" cluster
       // (landmark-unique, dialog/tab/menuitem-name-present, etc.).
       if (opts && opts.includeHidden) {
-        const tag = lower(node.tagName);
+        const tag = lower(dom.tagName(node));
         if (tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'template') return;
       } else {
         let eligible;
@@ -24154,7 +24821,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // same condition aria-required-parent.js's getRealContextRole
         // and aria-prohibited-children.js already use for the analogous
         // "roleless-but-included" boundary.
-        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        const presRole = aria.getExplicitRole(node);
         if (presRole === 'presentation' || presRole === 'none') {
           let restored = false;
           try {
@@ -24183,7 +24850,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // win over its real alt text).
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:image-aria') === -1)
             flags.push('descendant-name-used:image-aria');
           return;
@@ -24195,14 +24862,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // element-specific name mapping, so it's checked here,
         // ahead of alt/title, same relative order getAccessibleNameInfo
         // itself uses for every other labelable control.
-        if (lower(node.tagName) === 'input') {
+        if (lower(dom.tagName(node)) === 'input') {
           try {
             const imageLabels = getAssociatedLabelElements(node);
             if (imageLabels.length) {
               for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
-                  parts.push(labelInfo.value);
+                  parts.push(' ' + labelInfo.value + ' ');
                   if (flags.indexOf('descendant-name-used:image-label') === -1)
                     flags.push('descendant-name-used:image-label');
                   return;
@@ -24225,7 +24892,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const usedFlag = alt.present
             ? 'descendant-alt-used'
             : 'descendant-name-used:image-title-fallback';
-          parts.push(alt.value);
+          parts.push(' ' + alt.value + ' ');
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
@@ -24239,12 +24906,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (svgTitle) {
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:svg-aria') === -1)
             flags.push('descendant-name-used:svg-aria');
           return;
         }
-        parts.push(svgTitle);
+        parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
         return;
@@ -24266,7 +24933,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
 
       if (ownName && ownName.present && ownName.value && !titleOnlyName) {
-        parts.push(ownName.value);
+        parts.push(' ' + ownName.value + ' ');
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
@@ -24278,9 +24945,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // since a whitespace-only text node pushes a part but no name text.
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(' '))) {
+        if (!trim(parts.slice(before).join(''))) {
           parts.length = before;
-          parts.push(ownName.value);
+          parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
             flags.push('descendant-name-used:title-fallback');
         } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
@@ -24292,6 +24959,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       walkChildren(node, parts);
     }
 
+    // A child element that isn't inline is set apart by spaces, as browsers
+    // set it apart in the name (see getTextBoundaryKind).
+    function collectChild(kid, parts) {
+      const apart = isElement(kid) && getTextBoundaryKind(kid) !== 'inline';
+      if (apart) parts.push(' ');
+      collect(kid, parts);
+      if (apart) parts.push(' ');
+    }
+
     // Extracted from collect() so the title-only branch above can walk a
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
@@ -24301,28 +24977,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // IS distributed into it, that's what's exposed to the accessibility
       // tree, and it lives elsewhere in the light DOM, not as this node's
       // children, so prefer assignedNodes() and fall back to childNodes.
-      if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
+      if (
+        lower(dom.tagName(node)) === 'slot' &&
+        typeof dom.get(node, 'assignedNodes') === 'function'
+      ) {
         let assigned;
         try {
-          assigned = node.assignedNodes({ flatten: true }) || [];
+          assigned = dom.assignedNodes(node, { flatten: true }) || [];
         } catch {
           assigned = [];
         }
         const kids = assigned.length
           ? assigned
-          : node.childNodes
-            ? Array.from(node.childNodes)
+          : dom.childNodes(node)
+            ? Array.from(dom.childNodes(node))
             : [];
         for (const kid of kids) {
-          collect(kid, parts);
+          collectChild(kid, parts);
           if (truncated) break;
         }
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     }
@@ -24330,16 +25009,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = [];
     __nameComputationDepth += 1;
     try {
-      const topKids = el.childNodes ? Array.from(el.childNodes) : [];
+      const topKids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
       for (const kid of topKids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     } finally {
       __nameComputationDepth -= 1;
     }
 
-    const value = trim(parts.join(' ').replace(/\s+/g, ' '));
+    const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,
       value,
@@ -24353,20 +25032,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const flags = [];
     if (!isElement(el)) return { role: '', source: 'none', flags: ['notElement'] };
 
-    const explicit = trim(getAttr(el, 'role'));
+    // The first token naming a known role (#91); an attribute naming none
+    // leaves the element its implicit role, as if it had none.
+    const explicit = aria.getExplicitRole(el);
     if (explicit) {
-      const v = explicit;
-      const low = v.toLowerCase();
-      if (low === 'presentation' || low === 'none') flags.push('presentation');
-      // Minimal sanity: role token should not contain spaces beyond role list; keep deterministic
-      if (/\s/.test(v)) flags.push('multiple-roles');
-      return { role: v, source: 'explicit', flags };
+      if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
+      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      return { role: explicit, source: 'explicit', flags };
     }
 
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
@@ -24464,6 +25142,45 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(style.clip))
       return true;
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
+  }
+
+  // Whether an element's box is drawn so that nothing in it can be seen,
+  // though it is rendered and stays in the accessibility tree: fully
+  // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
+  // overflow hidden -- the "screen-reader-only" patterns. Applies to the
+  // whole subtree. jsdom neither computes clip nor keeps its value intact, so
+  // the declaration in the style attribute is read too.
+  function isVisuallyHidden(el) {
+    if (!isElement(el)) return false;
+    const cs = computedStyle(el) || {};
+    const opacity = Number.parseFloat(cs.opacity);
+    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    if (isClipHidden(cs)) return true;
+    const declared = String(getAttr(el, 'style') || '');
+    if (declared) {
+      const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
+      const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
+      if (
+        (clip || clipPath) &&
+        isClipHidden({
+          position: cs.position,
+          clip: clip ? clip[1].trim() : '',
+          clipPath: clipPath ? clipPath[1].trim() : ''
+        })
+      )
+        return true;
+    }
+    const overflow = lower(cs.overflow || '');
+    if (/hidden|clip/.test(overflow)) {
+      const w = /^-?[\d.]+px$/.test(String(cs.width || '').trim())
+        ? Number.parseFloat(cs.width)
+        : NaN;
+      const h = /^-?[\d.]+px$/.test(String(cs.height || '').trim())
+        ? Number.parseFloat(cs.height)
+        : NaN;
+      if (w <= 1 && h <= 1) return true;
+    }
+    return false;
   }
 
   function getVisibilityHintsInfo(el, _ctx, _opts) {
@@ -24629,8 +25346,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       nodes = [];
       const seen = new Set();
       for (const r of roots) {
-        if (!r || !r.querySelectorAll) continue;
-        for (const el of r.querySelectorAll(sel)) {
+        if (!r || !dom.get(r, 'querySelectorAll')) continue;
+        for (const el of dom.querySelectorAll(r, sel)) {
           if (el && !seen.has(el)) {
             seen.add(el);
             nodes.push(el);
@@ -24638,32 +25355,32 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       }
       if (!nodes.length && !roots.length && document) {
-        nodes = Array.from(document.querySelectorAll(sel));
+        nodes = Array.from(dom.querySelectorAll(document, sel));
       }
     }
 
     const inc = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
     for (const el of nodes) {
-      if (!el || el.nodeType !== 1) continue;
+      if (!el || dom.nodeType(el) !== 1) continue;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
-      const elementId = el.getAttribute('id');
+      const elementId = dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute(a);
+        const v = dom.getAttribute(el, a);
         if (v && v.trim()) inc(testIdCount, a + '=' + v.trim());
       }
 
-      const name = el.getAttribute('name');
+      const name = dom.getAttribute(el, 'name');
       if (name && name.trim() && tag) inc(nameCount, tag + '|' + name.trim());
 
-      const aria = el.getAttribute('aria-label');
+      const aria = dom.getAttribute(el, 'aria-label');
       if (aria && aria.trim() && tag) inc(ariaLabelCount, tag + '|' + aria.trim());
 
-      const role = el.getAttribute('role');
+      const role = dom.getAttribute(el, 'role');
       if (role && role.trim() && aria && aria.trim()) {
         inc(roleAriaLabelCount, role.trim() + '|' + aria.trim());
       }
@@ -24674,9 +25391,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function buildSimpleSelector(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return fallbackTag || 'html';
+      if (!el || dom.nodeType(el) !== 1) return fallbackTag || 'html';
 
-      const tag = (el.tagName || fallbackTag || 'html').toLowerCase();
+      const tag = (dom.tagName(el) || fallbackTag || 'html').toLowerCase();
 
       const cssEscapeIdent = __cssEscapeIdent;
 
@@ -24686,15 +25403,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
-      const elementId = el.getAttribute && el.getAttribute('id');
+      const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute && el.getAttribute(a);
+        const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
         if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
-      const name = el.getAttribute && el.getAttribute('name');
+      const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
       if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
@@ -24747,12 +25464,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
     try {
-      if (!el || el.nodeType !== 1) return 'html';
+      if (!el || dom.nodeType(el) !== 1) return 'html';
 
       const cssEscape = __cssEscapeIdent;
 
       const idx = getUniqIndex();
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       // NOTE: every anchor builder below keys its uniqueness-index lookup on
       // the *trimmed* attribute value (matching how the index itself was
@@ -24774,7 +25491,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // `querySelector` (this comparisons project's own tooling included)
       // silently gets the *wrong* element instead of an error.
       const uniqueIdSel = () => {
-        const elementId = el.getAttribute('id');
+        const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
@@ -24783,7 +25500,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-          const v = el.getAttribute(a);
+          const v = dom.getAttribute(el, a);
           if (!v || !v.trim()) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
@@ -24794,7 +25511,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueNameSel = () => {
-        const v = el.getAttribute('name');
+        const v = dom.getAttribute(el, 'name');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
@@ -24803,7 +25520,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueAriaSel = () => {
-        const v = el.getAttribute('aria-label');
+        const v = dom.getAttribute(el, 'aria-label');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
@@ -24812,8 +25529,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueRoleAriaSel = () => {
-        const role = el.getAttribute('role');
-        const aria = el.getAttribute('aria-label');
+        const role = dom.getAttribute(el, 'role');
+        const aria = dom.getAttribute(el, 'aria-label');
         if (!role || !role.trim() || !aria || !aria.trim()) return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
@@ -24836,8 +25553,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const parts = [];
 
       function nthOfType(node) {
-        const t = (node.tagName || '').toLowerCase() || '*';
-        const p = node.parentElement;
+        const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        const p = dom.parentElement(node);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
@@ -24878,19 +25595,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // uniqueness re-check.
       const stopAtMatchedRoot = roots.length <= 1;
 
-      while (node && node.nodeType === 1 && safety++ < 20) {
+      while (node && dom.nodeType(node) === 1 && safety++ < 20) {
         let anchor = null;
 
         if (node !== el) {
-          const t = (node.tagName || '').toLowerCase();
+          const t = (dom.tagName(node) || '').toLowerCase();
           // Same trimmed-key-lookup / raw-value-embed split as the direct
           // anchor builders above -- see this function's header comment.
-          const id = node.getAttribute('id');
+          const id = dom.getAttribute(node, 'id');
           if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
             anchor = '#' + cssEscape(id);
           if (!anchor) {
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-              const v = node.getAttribute(a);
+              const v = dom.getAttribute(node, a);
               if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
                 anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                 break;
@@ -24898,7 +25615,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const name = node.getAttribute('name');
+            const name = dom.getAttribute(node, 'name');
             if (
               name &&
               name.trim() &&
@@ -24910,7 +25627,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const aria = node.getAttribute('aria-label');
+            const aria = dom.getAttribute(node, 'aria-label');
             if (
               aria &&
               aria.trim() &&
@@ -24932,8 +25649,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           parts.unshift(nthOfType(node));
         }
 
-        if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
-        node = node.parentElement;
+        if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) break;
+        node = dom.parentElement(node);
       }
 
       const candidate = parts.join(' > ') || tag || 'html';
@@ -24962,7 +25679,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // flat, unidentified siblings (e.g. hundreds of unlabeled
       // <img>s), while contributing no realistic additional safety.
       try {
-        if (el && typeof el.matches === 'function' && el.matches(candidate)) return candidate;
+        if (el && typeof dom.get(el, 'matches') === 'function' && dom.matches(el, candidate))
+          return candidate;
       } catch {}
 
       return buildSimpleSelector(el, tag || 'html');
@@ -25007,9 +25725,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // The only unbounded walk here. A consistent tree ends it at the
       // root; this bound covers a parent chain that cycles, and sits far
       // above any depth a real document reaches.
-      while (node && node.parentElement) {
+      while (node && dom.parentElement(node)) {
         if (guard++ >= 10000) return null;
-        const parent = node.parentElement;
+        const parent = dom.parentElement(node);
         // Counted by sibling links, not parent.children: in jsdom that
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
@@ -25018,7 +25736,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         let idx = info ? info.index : -1;
         if (idx < 0) {
           idx = 0;
-          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+          for (
+            let sib = dom.previousElementSibling(node);
+            sib;
+            sib = dom.previousElementSibling(sib)
+          )
+            idx++;
         }
         path.unshift(idx);
         node = parent;
@@ -25026,7 +25749,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // The path is from documentElement down. An element in a shadow tree
       // is not under it: its path would count from the shadow root's first
       // element and name an element in the document instead.
-      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
+      if (node && dom.parentNode(node) && dom.nodeType(dom.parentNode(node)) === 11) return null;
     } catch {
       return null;
     }
@@ -25039,13 +25762,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // element in the document, or when a host gets no selector.
   function buildShadowHostSelectors(el) {
     try {
-      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
+        return null;
       const hosts = [];
-      let root = el.getRootNode();
+      let root = dom.getRootNode(el);
       let guard = 0;
-      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
-        hosts.unshift(root.host);
-        root = root.host.getRootNode();
+      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+        hosts.unshift(dom.host(root));
+        root = dom.getRootNode(dom.host(root));
       }
       if (!hosts.length) return null;
       const out = [];
@@ -25080,7 +25804,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       selector &&
       typeof selector === 'string' &&
       document &&
-      typeof document.querySelector === 'function'
+      typeof dom.get(document, 'querySelector') === 'function'
     ) {
       // A rule that reports its element never lands here. Counted so the
       // cost of re-finding one shows up in perfStats, not just as a slow scan.
@@ -25088,7 +25812,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       let el;
       try {
-        el = document.querySelector(selector);
+        el = dom.querySelector(document, selector);
       } catch {
         el = null;
       }
@@ -25116,10 +25840,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // for those.
     try {
       if (!isElement(el)) return false;
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'textarea') return true;
       if (tag !== 'input') return false;
-      const type = ((el.getAttribute && (el.getAttribute('type') || 'text')) || 'text')
+      const type = (
+        (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || 'text')) ||
+        'text'
+      )
         .toLowerCase()
         .trim();
       const t = type || 'text';
@@ -25166,9 +25893,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // visually hidden (clipped) label is rendered, so it counts too.
   function isLabelHiddenApartFromControl(lab, control) {
     const controlChain = new Set();
-    for (let n = control; n; n = n.parentElement) controlChain.add(n);
-    for (let n = lab; n && !controlChain.has(n); n = n.parentElement) {
-      if (n.hasAttribute('hidden')) return true;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let n = control, i = 0; n && i < 100000; n = dom.parentElement(n), i++)
+      controlChain.add(n);
+    for (
+      let n = lab, i = 0;
+      n && i < 100000 && !controlChain.has(n);
+      n = dom.parentElement(n), i++
+    ) {
+      if (dom.hasAttribute(n, 'hidden')) return true;
       if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
       if (computedStyle(n).display === 'none') return true;
     }
@@ -25269,8 +26002,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getNativeHostNameInfo(el, _ctx, opts) {
     const none = { present: false, value: '', mechanism: 'none' };
     if (!isElement(el)) return none;
-    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
-    const tag = lower(el.localName || el.tagName);
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return none;
+    const tag = lower(dom.localName(el) || dom.tagName(el));
 
     try {
       const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
@@ -25283,9 +26017,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = el.children ? Array.from(el.children) : [];
+      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === childTag) return kid;
+        if (lower(dom.localName(kid)) === childTag) return kid;
       }
       return null;
     };
@@ -25439,7 +26173,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // so we must be able to recover the stable realm window to share caches.
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -25499,7 +26233,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isWholeDocumentScope() {
     if (fragment) return false;
-    return roots.includes(document.documentElement);
+    return roots.includes(dom.documentElement(document));
   }
 
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
@@ -25525,6 +26259,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   return {
+    // DOM reads a page's named form controls and images can't redirect
+    // (src/core/safe-dom.js): rules read the DOM through these.
+    dom,
+
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
 
@@ -25562,6 +26300,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // IDREF primitives
     resolveIdRefs,
+    getElementByIdInTree,
     getTextFromIdRefs,
     getTextFromIdRefsIdrefEligible,
 
@@ -25600,6 +26339,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getTextBoundaryKind,
+    isVisuallyHidden,
 
     // Role / focusability
     getRoleInfo,
@@ -25673,6 +26414,7 @@ const normalizeUncertainty = (function normalizeUncertainty(input) {
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 const resolveMargin = (function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
+  const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
@@ -25703,7 +26445,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const position = (a, b) => {
     try {
-      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+      return typeof dom.get(a, 'compareDocumentPosition') === 'function'
+        ? dom.compareDocumentPosition(a, b)
+        : 0;
     } catch {
       return 0;
     }
@@ -26397,11 +27141,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
 });
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
+  const dom = createSafeDom();
   let layout;
   try {
-    const root = doc && doc.documentElement;
-    const rects = root && typeof root.getClientRects === 'function' ? root.getClientRects() : null;
-    layout = !!(win && rects && rects.length > 0 && typeof doc.createRange === 'function');
+    const root = doc && dom.documentElement(doc);
+    const rects =
+      root && typeof dom.get(root, 'getClientRects') === 'function'
+        ? dom.getClientRects(root)
+        : null;
+    layout = !!(
+      win &&
+      rects &&
+      rects.length > 0 &&
+      typeof dom.get(doc, 'createRange') === 'function'
+    );
   } catch {
     layout = false;
   }
@@ -26415,7 +27168,9 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (Number.isFinite(dpr) && dpr > 0) env.devicePixelRatio = dpr;
   try {
     if (typeof win.matchMedia === 'function') {
-      env.colorScheme = win.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      env.colorScheme = dom.get(win.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
     }
   } catch {}
   // Whether a font face is still loading, asked of each face rather than of
@@ -26424,7 +27179,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // does, while every face is loaded and nothing is fetched. A second scan
   // straight after a first would otherwise say its fonts were loading.
   try {
-    const fonts = doc.fonts;
+    const fonts = dom.fonts(doc);
     if (fonts && typeof fonts.forEach === 'function') {
       let loading = false;
       fonts.forEach((face) => {
@@ -26439,10 +27194,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // and may never load in a scan. Queried rather than read from
   // document.images, which is a live collection.
   try {
-    if (typeof doc.querySelectorAll === 'function') {
+    if (typeof dom.get(doc, 'querySelectorAll') === 'function') {
       let loading = false;
-      for (const img of doc.querySelectorAll('img')) {
-        const lazy = String(img.getAttribute('loading') || '').toLowerCase() === 'lazy';
+      for (const img of dom.querySelectorAll(doc, 'img')) {
+        const lazy = String(dom.getAttribute(img, 'loading') || '').toLowerCase() === 'lazy';
         if (!img.complete && !lazy) loading = true;
       }
       env.images = loading ? 'loading' : 'loaded';
@@ -26452,9 +27207,11 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  const dom = createSafeDom();
   let animations = [];
   try {
-    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+    if (doc && typeof dom.get(doc, 'getAnimations') === 'function')
+      animations = dom.getAnimations(doc);
   } catch {
     animations = [];
   }
@@ -26462,7 +27219,8 @@ const settleAnimations = (function settleAnimations(doc) {
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
-      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      if (dom.timeline(anim) && dom.timeline(doc) && dom.timeline(anim) !== dom.timeline(doc))
+        continue;
       const currentTime = anim.currentTime;
       if (typeof currentTime !== 'number') continue;
       const timing =
@@ -26497,6 +27255,7 @@ const runCoreSettled = (function runCoreSettled(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
+  const dom = createSafeDom();
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -26559,7 +27318,7 @@ const runCoreSettled = (function runCoreSettled(
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
   const url = pageUrl || (document.location && document.location.href) || null;
-  const title = document.title || null;
+  const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
   const timestamp =
     engineOptionsResolved &&
@@ -26569,7 +27328,7 @@ const runCoreSettled = (function runCoreSettled(
       : null;
 
   // Read before any rule runs: some change the page while they measure it.
-  const environment = readRenderingEnvironment(document.defaultView || window, document);
+  const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
 
   // createDomHelpers()/createContrastHelpers() persist their element-keyed
   // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
@@ -27334,26 +28093,35 @@ const runCore = (function runCore(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
-  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  // Plain reads unless this page has an element named after a DOM property,
+  // which could override what the engine reads (src/core/safe-dom.js).
+  const restoreDomProtection = createSafeDom().protectFor(
+    typeof document !== 'undefined' ? document : null
+  );
   try {
-    const result = runCoreSettled(
-      pageUrl,
-      contextSelector,
-      engineOptions,
-      runOnly,
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
     try {
-      const env = result && result.engine && result.engine.environment;
-      if (env && env.layout) env.animationsSettled = settled.count;
-    } catch {}
-    return result;
+      const result = runCoreSettled(
+        pageUrl,
+        contextSelector,
+        engineOptions,
+        runOnly,
+        CHECK_DEFS,
+        RULE_IMPLS,
+        ENGINE_TAG,
+        SCHEMA_VERSION,
+        COMPOSITE_RULES
+      );
+      try {
+        const env = result && result.engine && result.engine.environment;
+        if (env && env.layout) env.animationsSettled = settled.count;
+      } catch {}
+      return result;
+    } finally {
+      settled.restore();
+    }
   } finally {
-    settled.restore();
+    restoreDomProtection();
   }
 });
 
@@ -27373,10 +28141,11 @@ const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
   return win.__a11yCoreFrameRpc__;
 });
 const installFrameRpcListener = (function installFrameRpcListener(win, channel) {
+  const dom = createSafeDom();
   const registry = getFrameRpcRegistry(win);
   if (registry.listening) return registry;
 
-  win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
+  dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
     const data = event && event.data;
     if (!data || data.__a11ycore !== true || data.channel !== channel) return;
 
@@ -38096,6 +38865,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const RULE_IMPLS = {
     "accesskeys": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[accesskey]')
@@ -38104,8 +38874,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const groups = new Map(); // normalized key -> elements[]
   let keyedCount = 0;
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('accesskey') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'accesskey') || '').trim();
     if (!raw) continue;
     keyedCount += 1;
     const key = raw.toLowerCase();
@@ -38161,6 +38931,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "area-alt-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -38171,8 +38942,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -38207,42 +38978,52 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getMapName(mapEl) {
     try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
+      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
+      const n = String(
+        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
+      ).trim();
       return n ? n.toLowerCase() : '';
     } catch {
       return '';
     }
   }
 
-  // Cache mapName -> first referencing <img> in document order (deterministic)
-  const __usemapIndex = (() => {
-    const idx = new Map();
+  // Cache mapName -> first referencing <img> in tree order (deterministic),
+  // per tree: an <img usemap> uses a <map> in its own tree only, the
+  // document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
     try {
       const imgs =
-        document && document.querySelectorAll ? document.querySelectorAll('img[usemap]') : [];
+        tree && dom.get(tree, 'querySelectorAll') ? dom.querySelectorAll(tree, 'img[usemap]') : [];
       for (const img of imgs) {
-        if (!img || !img.getAttribute) continue;
-        const u = normUsemap(img.getAttribute('usemap'));
+        if (!img || !dom.get(img, 'getAttribute')) continue;
+        const u = normUsemap(dom.getAttribute(img, 'usemap'));
         if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img); // first in document order wins
+        if (!idx.has(u)) idx.set(u, img); // first in tree order wins
       }
     } catch {
       // ignore
     }
     return idx;
-  })();
+  }
 
   function getReferencingImgForArea(areaEl) {
     try {
-      if (!areaEl || !areaEl.closest) return null;
-      const map = areaEl.closest('map');
+      if (!areaEl || !dom.get(areaEl, 'closest')) return null;
+      const map = dom.closest(areaEl, 'map');
       if (!map) return null;
 
       const mapName = getMapName(map);
       if (!mapName) return null;
 
-      return __usemapIndex.get(mapName) || null;
+      const root = dom.getRootNode(map);
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      return usemapIndexFor(tree).get(mapName) || null;
     } catch {}
     return null;
   }
@@ -38263,7 +39044,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of areas) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // 0) Must belong to a *used* image map: an <img usemap> must reference its <map>.
     // If not used, <area> is not applicable (matches your observed focus behavior).
@@ -38273,7 +39054,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // 0b) Without href an <area> is not a hyperlink at all per the HTML
     // spec -- just a shape with no associated action -- so it has nothing
     // for this rule to name.
-    const hrefRaw = el.getAttribute('href');
+    const hrefRaw = dom.getAttribute(el, 'href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
     // 1) The referencing <img> must actually be rendered: a used map's
@@ -38315,7 +39096,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let altRaw;
     try {
-      altRaw = el.getAttribute('alt');
+      altRaw = dom.getAttribute(el, 'alt');
     } catch {
       altRaw = null;
     }
@@ -38344,7 +39125,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // img-alt-present handles for <img title="..."> with no alt.
     const titleRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }
@@ -38408,6 +39189,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "area-alt-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -38418,8 +39200,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -38483,8 +39265,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   function getMapName(mapEl) {
     try {
-      if (!mapEl || !mapEl.getAttribute) return '';
-      const n = String(mapEl.getAttribute('name') || mapEl.getAttribute('id') || '').trim();
+      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
+      const n = String(
+        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
+      ).trim();
       return n ? n.toLowerCase() : '';
     } catch {
       return '';
@@ -38495,11 +39279,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -38518,7 +39302,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -38537,7 +39321,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function collectTextAlternativeSources(el) {
     const attr = (name) => {
       try {
-        const v = el.getAttribute(name);
+        const v = dom.getAttribute(el, name);
         return v == null ? '' : String(v).trim();
       } catch {
         return '';
@@ -38589,25 +39373,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const __usemapIndex = new Map(); // mapName -> img (first in document order)
-  try {
-    const imgs = Array.from(document.querySelectorAll('img[usemap]'));
-    for (const img of imgs) {
-      const u = normUsemap(img.getAttribute('usemap'));
-      if (!u) continue;
-      if (!__usemapIndex.has(u)) __usemapIndex.set(u, img);
-    }
-  } catch {}
+  // mapName -> img (first in tree order), per tree: an <img usemap> uses a
+  // <map> in its own tree only, the document or the shadow root both are in.
+  const __usemapIndexByTree = new Map();
+  function usemapIndexFor(tree) {
+    let idx = __usemapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __usemapIndexByTree.set(tree, idx);
+    try {
+      const imgs = Array.from(dom.querySelectorAll(tree, 'img[usemap]'));
+      for (const img of imgs) {
+        const u = normUsemap(dom.getAttribute(img, 'usemap'));
+        if (!u) continue;
+        if (!idx.has(u)) idx.set(u, img);
+      }
+    } catch {}
+    return idx;
+  }
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
     let img;
     try {
-      const map = el.closest && el.closest('map');
+      const map = dom.get(el, 'closest') && dom.closest(el, 'map');
       const mapName = map ? getMapName(map) : '';
-      img = mapName ? __usemapIndex.get(mapName) || null : null;
+      const root = map ? dom.getRootNode(map) : null;
+      const tree = root && dom.get(root, 'getElementById') ? root : document;
+      img = mapName ? usemapIndexFor(tree).get(mapName) || null : null;
     } catch {
       img = null;
     }
@@ -38615,7 +39410,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // Without href an <area> is not a hyperlink at all per the HTML spec,
     // so there is nothing here for this rule to review.
-    const hrefRaw = el.getAttribute('href');
+    const hrefRaw = dom.getAttribute(el, 'href');
     if (!hrefRaw || !hrefRaw.trim()) continue;
 
     // The referencing <img> must actually be rendered. <area> is not a DOM
@@ -38675,7 +39470,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : {
             summaryKey: 'area_altQuality_summary_cantTell',
             hintKey: 'area_altQuality_hint_cantTell',
-            params: { element: (el.tagName || '').toLowerCase(), sources: sourcesText }
+            params: { element: (dom.tagName(el) || '').toLowerCase(), sources: sourcesText }
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -38697,6 +39492,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -39443,7 +40239,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // applicable count.
   function rolelessOccurrences(el, tag) {
     let seen = 0;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -39471,7 +40267,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.attributes) continue;
+    if (!el || !dom.attributes(el)) continue;
 
     // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
     // an element with no role attribute is judged against its implicit role.
@@ -39480,10 +40276,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const explicitRole = ariaHelpers.getExplicitRole(el);
     let role = explicitRole;
     if (!role) {
-      const tag = String(el.tagName || '').toLowerCase();
+      const tag = String(dom.tagName(el) || '').toLowerCase();
       const key =
         tag === 'input'
-          ? 'input[type=' + String(el.getAttribute('type') || 'text').toLowerCase() + ']'
+          ? 'input[type=' + String(dom.getAttribute(el, 'type') || 'text').toLowerCase() + ']'
           : tag;
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
@@ -39514,7 +40310,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const roleSupportedSet = new Set(roleSupported);
 
     let disallowed = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -39591,6 +40387,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-allowed-role": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -39606,7 +40403,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -39618,7 +40415,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (info.allowed) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -39657,6 +40454,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-braille-equivalent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -39675,7 +40473,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -39687,10 +40485,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const brailleLabel = trim(el.getAttribute('aria-braillelabel'));
-    const brailleRoleDesc = trim(el.getAttribute('aria-brailleroledescription'));
+    const brailleLabel = trim(dom.getAttribute(el, 'aria-braillelabel'));
+    const brailleRoleDesc = trim(dom.getAttribute(el, 'aria-brailleroledescription'));
     if (!brailleLabel && !brailleRoleDesc) continue;
 
     applicableCount += 1;
@@ -39717,7 +40515,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (brailleRoleDesc) {
-      const roleDesc = trim(el.getAttribute('aria-roledescription'));
+      const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
       if (!roleDesc)
         missing.push({
           attr: 'aria-brailleroledescription',
@@ -39731,7 +40529,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!missing.length) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     for (const m of missing) {
       occurrences.push(
@@ -39775,6 +40573,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-checked-state-mismatch": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -39791,14 +40590,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const type = trim(el.getAttribute('type')).toLowerCase();
+    const type = trim(dom.getAttribute(el, 'type')).toLowerCase();
     const isCheckbox = type === 'checkbox';
     const isRadio = type === 'radio';
     if (!isCheckbox && !isRadio) continue;
 
-    const rawAriaChecked = trim(el.getAttribute('aria-checked')).toLowerCase();
+    const rawAriaChecked = trim(dom.getAttribute(el, 'aria-checked')).toLowerCase();
     if (!rawAriaChecked) continue;
 
     applicableCount += 1;
@@ -39856,6 +40655,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-conditional-attr": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -39872,17 +40672,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const errorMessageRef = trim(el.getAttribute('aria-errormessage'));
+    const errorMessageRef = trim(dom.getAttribute(el, 'aria-errormessage'));
     if (!errorMessageRef) continue;
 
     applicableCount += 1;
 
-    const invalidValue = trim(el.getAttribute('aria-invalid')).toLowerCase();
+    const invalidValue = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -39920,6 +40720,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-deprecated-role": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -39948,14 +40749,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const up =
         typeof helpers.composedParent === 'function'
           ? helpers.composedParent
-          : (n) => n.parentElement;
+          : (n) => dom.parentElement(n);
 
       // A shadow root has no getAttribute, so skip past it rather than
       // stopping: the host one step further up is the node that matters.
       for (let n = el; n; n = up(n)) {
-        if (!n.getAttribute) continue;
-        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
-        if (n.hasAttribute && n.hasAttribute('inert')) return true;
+        if (!dom.get(n, 'getAttribute')) continue;
+        if (String(dom.getAttribute(n, 'aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')) return true;
       }
     } catch {
       return false;
@@ -39964,7 +40765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isHidden(el)) continue;
 
@@ -40071,14 +40872,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const raw = body.getAttribute ? body.getAttribute('aria-hidden') : null;
+  const raw = dom.get(body, 'getAttribute') ? dom.getAttribute(body, 'aria-hidden') : null;
   const isHidden = raw != null && String(raw).trim().toLowerCase() === 'true';
 
   if (!isHidden) {
@@ -40111,6 +40913,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "aria-hidden-focus": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -40147,8 +40950,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // fall through
     }
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return Array.from(safeRoot.querySelectorAll(sel));
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return Array.from(dom.querySelectorAll(safeRoot, sel));
     } catch {
       // fall through
     }
@@ -40163,7 +40966,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   function closestAriaHiddenTrue(node) {
@@ -40171,8 +40974,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let guard = 0;
     while (cur && guard++ < 200) {
       try {
-        if (cur.getAttribute) {
-          const v = cur.getAttribute('aria-hidden');
+        if (dom.get(cur, 'getAttribute')) {
+          const v = dom.getAttribute(cur, 'aria-hidden');
           if (v != null && lower(v) === 'true') return cur;
         }
       } catch {
@@ -40214,13 +41017,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native <dialog>, aria-modal="true", or a dialog/alertdialog role, so
   // libraries that leave aria-modal off (e.g. Angular Material defaults to
-  // aria-modal="false") still count as an open modal.
+  // aria-modal="false") still count as an open modal. The role attribute is
+  // a fallback list matched case-insensitively, so role="foo dialog" is a
+  // dialog while role="region dialog" is not (the first real role wins).
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
   function collectOpenModalCandidates() {
-    const nodes = qAll('dialog[open],[aria-modal="true"],[role="dialog"],[role="alertdialog"]');
+    const nodes = qAll(
+      'dialog[open],[aria-modal="true"],[role~="dialog" i],[role~="alertdialog" i]'
+    );
     const out = [];
     for (let i = 0; i < nodes.length; i++) {
       const n = nodes[i];
-      if (!n || !n.getAttribute) continue;
+      if (!n || !dom.get(n, 'getAttribute')) continue;
+      const byOther =
+        (lower(dom.tagName(n)) === 'dialog' && dom.hasAttribute(n, 'open')) ||
+        dom.getAttribute(n, 'aria-modal') === 'true';
+      if (!byOther && !MODAL_ROLES.has(helpers.aria.getExplicitRole(n))) continue;
       if (!isRenderedForModal(n)) continue;
       out.push(n);
     }
@@ -40242,22 +41054,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getDeepActiveElement() {
-    let cur = document && document.activeElement ? document.activeElement : null;
+    let cur = document && dom.activeElement(document) ? dom.activeElement(document) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -40269,14 +41081,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!node) return null;
     const tag = (() => {
       try {
-        return lower(node.tagName || '');
+        return lower(dom.tagName(node) || '');
       } catch {
         return '';
       }
     })();
     const idVal = (() => {
       try {
-        return trim(node.getAttribute && node.getAttribute('id'));
+        return trim(dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id'));
       } catch {
         return '';
       }
@@ -40290,8 +41102,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function runFocusObservationWindow(fn) {
     const w =
-      document && document.defaultView
-        ? document.defaultView
+      document && dom.defaultView(document)
+        ? dom.defaultView(document)
         : typeof window !== 'undefined'
           ? window
           : null;
@@ -40386,7 +41198,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {
       // ignore
     }
@@ -40398,7 +41210,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (ref) focusTrace.push(ref);
     };
     try {
-      document.addEventListener('focusin', onFocusInCapture, true);
+      dom.addEventListener(document, 'focusin', onFocusInCapture, true);
     } catch {
       // ignore
     }
@@ -40413,13 +41225,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
 
     try {
-      document.removeEventListener('focusin', onFocusInCapture, true);
+      dom.removeEventListener(document, 'focusin', onFocusInCapture, true);
     } catch {
       // ignore
     }
 
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {
       // ignore
     }
@@ -40439,14 +41251,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const redirectedTag = (() => {
       try {
-        return lower(after.tagName || '');
+        return lower(dom.tagName(after) || '');
       } catch {
         return '';
       }
     })();
     const redirectedId = (() => {
       try {
-        return trim(after.getAttribute && after.getAttribute('id'));
+        return trim(dom.get(after, 'getAttribute') && dom.getAttribute(after, 'id'));
       } catch {
         return '';
       }
@@ -40469,8 +41281,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cs;
     try {
       const w =
-        document && document.defaultView
-          ? document.defaultView
+        document && dom.defaultView(document)
+          ? dom.defaultView(document)
           : typeof window !== 'undefined'
             ? window
             : null;
@@ -40576,27 +41388,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <map> is used by an <img usemap> that is rendered and not inert; judge it
   // by that image instead.
   function isFocusableArea(el) {
-    if (!trim(el.getAttribute('href'))) return false;
+    if (!trim(dom.getAttribute(el, 'href'))) return false;
     let map;
     try {
-      map = el.closest ? el.closest('map') : null;
+      map = dom.get(el, 'closest') ? dom.closest(el, 'map') : null;
     } catch {
       map = null;
     }
     if (!map) return false;
-    const name = trim(map.getAttribute('name') || map.getAttribute('id'));
+    const name = trim(dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id'));
     if (!name) return false;
-    const scope = el.getRootNode ? el.getRootNode() : document;
-    if (!scope || typeof scope.querySelectorAll !== 'function') return false;
+    const scope = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
+    if (!scope || typeof dom.get(scope, 'querySelectorAll') !== 'function') return false;
     let imgs;
     try {
-      imgs = Array.from(scope.querySelectorAll('img[usemap]'));
+      imgs = Array.from(dom.querySelectorAll(scope, 'img[usemap]'));
     } catch {
       imgs = [];
     }
     const want = name.toLowerCase();
     for (const img of imgs) {
-      const usemap = lower(img.getAttribute('usemap')).replace(/^#/, '');
+      const usemap = lower(dom.getAttribute(img, 'usemap')).replace(/^#/, '');
       if (usemap !== want) continue;
       if (hasInertAncestor(img)) continue;
       if (isRenderedForFocus(img)) return true;
@@ -40605,11 +41417,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isActuallyFocusable(el) {
-    if (!el || !el.getAttribute) return false;
+    if (!el || !dom.get(el, 'getAttribute')) return false;
 
     // An explicit negative tabindex takes the area out of the tab order too.
-    if (lower(el.tagName || '') === 'area') {
-      const ti = trim(el.getAttribute('tabindex'));
+    if (lower(dom.tagName(el) || '') === 'area') {
+      const ti = trim(dom.getAttribute(el, 'tabindex'));
       if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
       return isFocusableArea(el);
     }
@@ -40626,7 +41438,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // focusability. Such an element is still programmatically focusable
     // (script could call .focus()), but that's not what "no focusable
     // content behind aria-hidden" cares about.
-    const explicitTabindex = trim(el.getAttribute('tabindex'));
+    const explicitTabindex = trim(dom.getAttribute(el, 'tabindex'));
     if (
       explicitTabindex !== '' &&
       !Number.isNaN(Number(explicitTabindex)) &&
@@ -40647,33 +41459,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Local fallback that does NOT care about aria-hidden
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
     let fallbackFocusable = false;
 
     if (tag === 'a') {
-      const href = trim(el.getAttribute('href'));
+      const href = trim(dom.getAttribute(el, 'href'));
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
       fallbackFocusable = true;
     } else if (tag === 'input') {
-      const type = lower(el.getAttribute('type') || '');
+      const type = lower(dom.getAttribute(el, 'type') || '');
       fallbackFocusable = type !== 'hidden';
     } else if (tag === 'iframe') {
       fallbackFocusable = true;
     } else if (
       (tag === 'audio' || tag === 'video') &&
-      el.hasAttribute &&
-      el.hasAttribute('controls')
+      dom.get(el, 'hasAttribute') &&
+      dom.hasAttribute(el, 'controls')
     ) {
       fallbackFocusable = true;
-    } else if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+    } else if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'contenteditable')) {
       // contenteditable="false" explicitly disables the editing host and
       // does not by itself add the element to the tab order; only treat
       // presence/""/"true"/"plaintext-only" as focus-enabling.
-      const ceVal = lower(trim(el.getAttribute('contenteditable')));
+      const ceVal = lower(trim(dom.getAttribute(el, 'contenteditable')));
       fallbackFocusable = ceVal !== 'false';
     } else {
-      const ti = el.getAttribute('tabindex');
+      const ti = dom.getAttribute(el, 'tabindex');
       const s = trim(ti);
       if (ti != null && s !== '' && !Number.isNaN(Number(s))) {
         fallbackFocusable = true; // tabindex makes it programmatically focusable
@@ -40695,7 +41507,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let guard = 0;
     while (cur && guard++ < 200) {
       try {
-        if (cur.nodeType === 1 && cur.hasAttribute && cur.hasAttribute('inert')) return true;
+        if (
+          dom.nodeType(cur) === 1 &&
+          dom.get(cur, 'hasAttribute') &&
+          dom.hasAttribute(cur, 'inert')
+        )
+          return true;
       } catch {
         // ignore
       }
@@ -40709,7 +41526,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // :disabled also covers a control disabled by an ancestor
       // <fieldset disabled> (outside its first <legend>), which the
       // `disabled` IDL attribute does not reflect.
-      if (typeof el.matches === 'function' && el.matches(':disabled')) return true;
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, ':disabled')) return true;
     } catch {
       // ignore
     }
@@ -40720,7 +41537,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // ignore
     }
     try {
-      const tag = lower(el.tagName || '');
+      const tag = lower(dom.tagName(el) || '');
       if (
         (tag === 'button' ||
           tag === 'input' ||
@@ -40728,8 +41545,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           tag === 'textarea' ||
           tag === 'option' ||
           tag === 'optgroup') &&
-        el.hasAttribute &&
-        el.hasAttribute('disabled')
+        dom.get(el, 'hasAttribute') &&
+        dom.hasAttribute(el, 'disabled')
       ) {
         return true;
       }
@@ -40757,7 +41574,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (let i = 0; i < focusableCandidates.length; i++) {
     const el = focusableCandidates[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Cheap check first: a plain ancestor-attribute walk with no CSS
     // computation, vs. isActuallyFocusable's getComputedStyle-per-ancestor
@@ -40796,22 +41613,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let type;
 
       try {
-        tag = lower(el.tagName || '');
+        tag = lower(dom.tagName(el) || '');
       } catch {
         tag = '';
       }
       try {
-        ti = el.getAttribute('tabindex');
+        ti = dom.getAttribute(el, 'tabindex');
       } catch {
         ti = null;
       }
       try {
-        href = tag === 'a' || tag === 'area' ? trim(el.getAttribute('href')) : null;
+        href = tag === 'a' || tag === 'area' ? trim(dom.getAttribute(el, 'href')) : null;
       } catch {
         href = null;
       }
       try {
-        type = tag === 'input' ? lower(el.getAttribute('type') || '') : null;
+        type = tag === 'input' ? lower(dom.getAttribute(el, 'type') || '') : null;
       } catch {
         type = null;
       }
@@ -40864,7 +41681,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tagName = (() => {
       try {
-        return lower(el.tagName || '');
+        return lower(dom.tagName(el) || '');
       } catch {
         return '';
       }
@@ -40990,6 +41807,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -41037,13 +41855,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const explicitRole = ariaHelpers.getExplicitRole(el);
     let role = explicitRole;
     if (
       (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
-      String(el.localName || '').toLowerCase() === 'caption'
+      String(dom.localName(el) || '').toLowerCase() === 'caption'
     ) {
       role = 'caption';
     }
@@ -41053,7 +41871,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
 
@@ -41156,7 +41974,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // Nearest ancestor's real role (explicit-if-valid, else native/implicit),
@@ -41168,7 +41986,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = getComposedParent(cur);
         continue;
       }
@@ -41223,9 +42041,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(namingSelector);
 
   for (const el of namingNodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (!ROLELESS_NATIVE_TAGS.has(tag) && !isRolelessCustomElementTag(tag)) continue;
     const explicitRole = ariaHelpers.getExplicitRole(el);
     if (explicitRole && ariaHelpers.isValidConcreteRole(explicitRole)) continue; // has a real, recognized role: Tier 1's concern (if in ROLES_PROHIBITING_NAME) or a role this rule has no opinion on. An INVALID role token (e.g. a typo) is ignored per spec, same as no role attribute at all, and must still fall through to this branch.
@@ -41233,7 +42051,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const present = [];
     for (const attr of PROHIBITED_NAMING_ATTRS) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
     if (!present.length) continue;
@@ -41317,6 +42135,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-prohibited-children": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -41371,7 +42190,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      const v = el.getAttribute ? el.getAttribute(attr) : null;
+      const v = dom.get(el, 'getAttribute') ? dom.getAttribute(el, attr) : null;
       if (v != null) return attr;
     }
     return null;
@@ -41416,7 +42235,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
@@ -41424,7 +42244,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (depth > MAX_DEPTH) return;
     const kids = childElementsOf(el);
     for (const kid of kids) {
-      if (!kid || kid.nodeType !== 1) continue;
+      if (!kid || dom.nodeType(kid) !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
@@ -41504,7 +42324,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue;
@@ -41600,6 +42420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-required-attr": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -41644,16 +42465,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
 
   function isNativeCheckable(el) {
-    if (String(el.localName || '').toLowerCase() !== 'input') return false;
-    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
-    const type = String(el.getAttribute('type') || '')
+    if (String(dom.localName(el) || '').toLowerCase() !== 'input') return false;
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return false;
+    const type = String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
     return type === 'checkbox' || type === 'radio';
   }
 
   function isMarkedBusy(el) {
-    const v = el.getAttribute('aria-busy');
+    const v = dom.getAttribute(el, 'aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
@@ -41666,7 +42488,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -41689,7 +42511,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // combobox's aria-controls is required only once the popup is actually
     // displayed (aria-expanded="true") -- see this file's header comment.
-    if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
+    if (
+      role === 'combobox' &&
+      String(dom.getAttribute(el, 'aria-expanded') || '').trim() === 'true'
+    ) {
       required.push('aria-controls');
     }
 
@@ -41708,7 +42533,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const missing = [];
     for (const attr of required) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (attr === 'aria-checked' && nativeChecked) continue;
       if (v == null || String(v).trim() === '') missing.push(attr);
     }
@@ -41779,6 +42604,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-required-children": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -41800,7 +42626,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isMarkedBusy(el) {
-    const v = el.getAttribute('aria-busy');
+    const v = dom.getAttribute(el, 'aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
@@ -41839,23 +42665,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
   function collectComposedDescendants(node, out, seen, limit) {
-    if (!node || !node.firstElementChild) return;
+    if (!node || !dom.firstElementChild(node)) return;
     for (const child of childElementsOf(node)) {
       if (out.length >= limit) return;
       if (seen.has(child)) continue;
 
       if (
-        (child.tagName || '').toLowerCase() === 'slot' &&
-        typeof child.assignedElements === 'function'
+        (dom.tagName(child) || '').toLowerCase() === 'slot' &&
+        typeof dom.get(child, 'assignedElements') === 'function'
       ) {
         let assigned;
         try {
-          assigned = child.assignedElements({ flatten: true }) || [];
+          assigned = dom.assignedElements(child, { flatten: true }) || [];
         } catch {
           assigned = [];
         }
@@ -41877,7 +42704,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -41898,7 +42725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // DOM involved at all) with zero added cost.
     let descendants;
     try {
-      descendants = el.querySelectorAll(CANDIDATE_SELECTOR);
+      descendants = dom.querySelectorAll(el, CANDIDATE_SELECTOR);
     } catch {
       descendants = [];
     }
@@ -41916,7 +42743,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!found) {
       let hasSlot;
       try {
-        hasSlot = !!el.querySelector('slot');
+        hasSlot = !!dom.querySelector(el, 'slot');
       } catch {
         hasSlot = false;
       }
@@ -41928,7 +42755,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // fall through with whatever was collected before the error
         }
         for (const cand of composed) {
-          if (!cand || !cand.getAttribute) continue;
+          if (!cand || !dom.get(cand, 'getAttribute')) continue;
           const candRole = ariaHelpers.getContainmentRole(cand);
           if (candRole && ownedSet.has(candRole)) {
             found = true;
@@ -41939,9 +42766,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (!found) {
-      const ownsAttr = el.getAttribute('aria-owns');
+      const ownsAttr = dom.getAttribute(el, 'aria-owns');
       if (ownsAttr && helpers.resolveIdRefs) {
-        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 });
+        const resolved = helpers.resolveIdRefs(ownsAttr, ctx, { maxRefs: 50 }, el);
         for (const ownedEl of resolved.refs || []) {
           const candRole = ariaHelpers.getContainmentRole(ownedEl);
           if (candRole && ownedSet.has(candRole)) {
@@ -41971,7 +42798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             role,
             requiredOwnedRoles: requiredOwned,
             childElementCount:
-              typeof el.childElementCount === 'number' ? el.childElementCount : null
+              typeof dom.childElementCount(el) === 'number' ? dom.childElementCount(el) : null
           }
         },
         data: {
@@ -41996,6 +42823,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-required-parent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -42060,7 +42888,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
@@ -42101,7 +42929,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // The escape hatch marks the container being assembled, not the item inside
@@ -42110,8 +42938,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType === 1 && cur.getAttribute) {
-        const v = cur.getAttribute('aria-busy');
+      if (dom.nodeType(cur) === 1 && dom.get(cur, 'getAttribute')) {
+        const v = dom.getAttribute(cur, 'aria-busy');
         if (v != null && String(v).trim().toLowerCase() === 'true') return true;
       }
       cur = getComposedParent(cur);
@@ -42131,7 +42959,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // mutated.
     let roles = acceptableRoles;
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = getComposedParent(cur);
         continue;
       }
@@ -42152,7 +42980,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasAcceptableOwnerContext(el, acceptableRoles) {
-    const elId = el.getAttribute('id');
+    const elId = dom.getAttribute(el, 'id');
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
@@ -42160,10 +42988,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAllSmart('[aria-owns]')
       : helpers.queryAll('[aria-owns]');
     for (const owner of owners) {
-      if (!owner || !owner.getAttribute) continue;
-      const ownsAttr = owner.getAttribute('aria-owns') || '';
+      if (!owner || !dom.get(owner, 'getAttribute')) continue;
+      const ownsAttr = dom.getAttribute(owner, 'aria-owns') || '';
       const tokens = ownsAttr.split(/\s+/).filter(Boolean);
       if (tokens.indexOf(idTok) === -1) continue;
+      // The reference resolves in the owner's own tree: the shadow root
+      // or document both must share.
+      if (helpers.getElementByIdInTree(owner, idTok) !== el) continue;
 
       const role = ariaHelpers.getContainmentRole(owner);
       if (role && acceptableRoles.has(role)) return true;
@@ -42179,7 +43010,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -42233,6 +43064,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-role-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -42244,7 +43076,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel, rt) => {
           try {
             const scope = rt || safeRoot;
-            return scope && scope.querySelectorAll ? Array.from(scope.querySelectorAll(sel)) : [];
+            return scope && dom.get(scope, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(scope, sel))
+              : [];
           } catch {
             return [];
           }
@@ -42268,8 +43102,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const getAttr = (el, name) => {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -42310,7 +43144,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // </generated:aria-name-required-roles>
 
   // Derived from the set above so the two cannot drift apart.
-  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role="${r}"]`).join(',');
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // keeps only elements whose resolved explicit role (the first known token)
+  // is in the set, so role="link tree" (a link) is left out.
+  const selector = [...NAME_REQUIRED_ROLES].map((r) => `[role~="${r}" i]`).join(',');
 
   const nodes = (() => {
     try {
@@ -42330,12 +43167,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Role normalization + allowlist check (defensive).
+    // Resolved explicit role (first known token of the fallback list,
+    // lower-cased) + allowlist check.
     const role = (() => {
       try {
-        return normalizeWs(el.getAttribute('role')).toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -42418,6 +43258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -42448,14 +43289,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const up =
         typeof helpers.composedParent === 'function'
           ? helpers.composedParent
-          : (n) => n.parentElement;
+          : (n) => dom.parentElement(n);
 
       // A shadow root has no getAttribute, so skip past it rather than
       // stopping: the host one step further up is the node that matters.
       for (let n = el; n; n = up(n)) {
-        if (!n.getAttribute) continue;
-        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
-        if (n.hasAttribute && n.hasAttribute('inert')) return true;
+        if (!dom.get(n, 'getAttribute')) continue;
+        if (String(dom.getAttribute(n, 'aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')) return true;
       }
     } catch {
       return false;
@@ -42464,7 +43305,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // ACT 674b10 is not applicable to a programmatically hidden element.
     if (isHidden(el)) continue;
@@ -42554,27 +43395,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-text": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Content the page does not show (a closed <details>, hidden="until-found")
   // takes no focus, so it is left out.
   function findFocusableDescendant(el) {
-    for (const d of el.querySelectorAll('*')) {
+    for (const d of dom.querySelectorAll(el, '*')) {
       if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
       if (helpers.getFocusableInfo(d, ctx).focusable) return d;
     }
     return null;
   }
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="text"]')
-    : helpers.queryAll('[role="text"]');
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is text (role="link text" is a link).
+  const nodes = (
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart('[role~="text" i]')
+      : helpers.queryAll('[role~="text" i]')
+  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelector) continue;
+    if (!el || !dom.get(el, 'querySelector')) continue;
 
     applicableCount += 1;
 
@@ -42587,7 +43433,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!focusableDescendant) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -42627,6 +43475,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-valid-attr": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -42640,10 +43489,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.attributes) continue;
+    if (!el || !dom.attributes(el)) continue;
 
     let invalidNames = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -42689,6 +43538,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-valid-attr-value": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -42703,11 +43553,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.attributes || !el.getAttribute) continue;
+    if (!el || !dom.attributes(el) || !dom.get(el, 'getAttribute')) continue;
 
     let invalid = null;
     let review = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;
@@ -42715,7 +43565,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       applicableCount += 1;
 
-      const rawValue = el.getAttribute(name);
+      const rawValue = dom.getAttribute(el, name);
       const result = ariaHelpers.validateAttrValue(name, rawValue, el);
       if (result.valid) continue;
 
@@ -42811,6 +43661,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "autocomplete-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -42921,26 +43772,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
 
   function isExempt(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (tag === 'input') {
-      const type = String(el.getAttribute('type') || 'text').toLowerCase();
+      const type = String(dom.getAttribute(el, 'type') || 'text').toLowerCase();
       if (FIXED_VALUE_TYPES.has(type)) return true;
     }
-    if (el.hasAttribute && el.hasAttribute('disabled')) return true;
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'disabled')) return true;
     // A control inside a disabled fieldset (outside its first legend) is
     // disabled too.
     try {
-      if (el.matches && el.matches(':disabled')) return true;
+      if (dom.get(el, 'matches') && dom.matches(el, ':disabled')) return true;
     } catch {
       /* selector unsupported */
     }
-    if (String(el.getAttribute('aria-disabled') || '').toLowerCase() === 'true') return true;
+    if (String(dom.getAttribute(el, 'aria-disabled') || '').toLowerCase() === 'true') return true;
     return false;
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('autocomplete') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'autocomplete') || '').trim();
     if (!raw) continue;
 
     const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
@@ -42951,7 +43802,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (isValidAutocomplete(raw)) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -42983,6 +43834,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "avoid-inline-spacing": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
@@ -43034,11 +43886,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasVisibleTextChild(el) {
     let kids;
     try {
-      kids = el.childNodes ? Array.from(el.childNodes) : [];
+      kids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
     } catch {
       return false;
     }
-    return kids.some((n) => n && n.nodeType === 3 && String(n.nodeValue || '').trim() !== '');
+    return kids.some(
+      (n) => n && dom.nodeType(n) === 3 && String(dom.nodeValue(n) || '').trim() !== ''
+    );
   }
 
   function isRendered(el) {
@@ -43067,7 +43921,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {
       // no computed style available
@@ -43084,7 +43938,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
     if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
 
-    if (!/(^|;)\s*width\s*:/i.test(String(el.getAttribute('style') || ''))) return false;
+    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return false;
 
     const chain =
       helpers && typeof helpers.ancestorsIncludingSelf === 'function'
@@ -43092,7 +43946,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : null;
     const ancestors = chain || [];
     if (!chain) {
-      for (let a = el.parentElement; a; a = a.parentElement) ancestors.push(a);
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let a = dom.parentElement(el), i = 0; a && i < 100000; a = dom.parentElement(a), i++)
+        ancestors.push(a);
     }
 
     for (const ancestor of ancestors) {
@@ -43111,7 +43967,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const WIDE_CHAR =
     /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]/;
   function blockText(el) {
-    return String(el.textContent || '')
+    return String(dom.textContent(el) || '')
       .replace(/\s+/g, ' ')
       .trim();
   }
@@ -43198,8 +44054,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('style') || '');
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'style') || '');
     if (!raw.trim()) continue;
 
     const lower = raw.toLowerCase();
@@ -43247,7 +44103,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -43279,7 +44135,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'avoidInlineSpacing_summary_cantTell_noSoftWrap',
           hintKey: 'avoidInlineSpacing_hint_cantTell_noSoftWrap',
           params: {
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props.join(', ')
           }
         },
@@ -43287,7 +44143,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           code: 'not-computable',
           needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
           evidence: {
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props,
             reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP'
           }
@@ -43295,7 +44151,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: {
             reasonCode: 'INLINE_SPACING_NO_SOFT_WRAP',
-            element: (el.tagName || '').toLowerCase(),
+            element: (dom.tagName(el) || '').toLowerCase(),
             properties: props
           }
         }
@@ -43311,7 +44167,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'avoidInlineSpacing_summary_cantTell_shortText',
             hintKey: 'avoidInlineSpacing_hint_cantTell_shortText',
             params: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props.join(', ')
             }
           },
@@ -43319,7 +44175,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             code: 'not-computable',
             needed: 'Whether this text ever contains a soft wrap break, which needs layout.',
             evidence: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props,
               reasonCode: 'INLINE_SPACING_SHORT_TEXT'
             }
@@ -43327,7 +44183,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           data: {
             details: {
               reasonCode: 'INLINE_SPACING_SHORT_TEXT',
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props
             }
           }
@@ -43344,7 +44200,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
             hintKey: 'avoidInlineSpacing_hint_cantTell',
             params: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props.join(', ')
             }
           },
@@ -43352,7 +44208,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             code: 'not-computable',
             needed: 'A resolved value for the spacing declarations marked !important.',
             evidence: {
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props,
               reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE'
             }
@@ -43360,7 +44216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           data: {
             details: {
               reasonCode: 'INLINE_SPACING_NOT_RESOLVABLE',
-              element: (el.tagName || '').toLowerCase(),
+              element: (dom.tagName(el) || '').toLowerCase(),
               properties: props
             }
           }
@@ -43383,6 +44239,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "binary-control-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -43395,8 +44252,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -43414,7 +44271,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -43454,7 +44311,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -43486,7 +44343,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native checkbox/radio without an explicit role belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
+  // Token match, case-insensitive; the resolved-role filter below drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="checkbox" i], [role~="radio" i], [role~="switch" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -43546,9 +44405,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     // Determine control type
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins (role="foo switch" is a switch, role="link switch" a link).
+    const role = helpers.aria.getExplicitRole(el);
+    if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') continue;
 
     let controlType;
     if (tag === 'input' && type === 'checkbox') controlType = 'checkbox';
@@ -43608,6 +44470,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "button-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const occurrences = [];
@@ -43630,15 +44493,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
   function getInputButtonValueName(el) {
     try {
-      const type = normalizeWs(el.getAttribute ? el.getAttribute('type') : '').toLowerCase();
+      const type = normalizeWs(
+        dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'type') : ''
+      ).toLowerCase();
       if (type !== 'button' && type !== 'submit' && type !== 'reset') return '';
-      const vAttr = el.getAttribute ? el.getAttribute('value') : '';
+      const vAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : '';
       const explicit = normalizeWs(
         vAttr != null ? vAttr : typeof el.value === 'string' ? el.value : ''
       );
@@ -43654,11 +44519,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const selector =
-    'button, input[type="button"], input[type="submit"], input[type="reset"], [role="button"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The element's explicit role as user agents resolve it: the first known,
+  // non-abstract token of the role attribute, in any case ('' for none).
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The role attribute is a fallback list, so role="foo button" and
+  // role="BUTTON" are buttons; role="link button" is a link. Select by token,
+  // case-insensitively, then keep role-only candidates that resolve to button.
+  const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
+  const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      if (dom.matches(el, NATIVE_BUTTONS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return getExplicitRole(el) === 'button';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -43674,9 +44561,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
-    const role = el.getAttribute ? el.getAttribute('role') : null;
-    const roleNorm = normalizeWs(role).toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const role = getExplicitRole(el);
+    const roleNorm = role;
     // The role the name is computed for: the explicit one, unless the
     // presentational-role conflict below restores the implicit role.
     let nameRole = roleNorm;
@@ -43691,7 +44578,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // through themselves (e.g. aria-prohibited-children's "transparent
     // wrapper" traversal).
     if (roleNorm === 'none' || roleNorm === 'presentation') {
-      const ariaHiddenTrue = el.getAttribute && el.getAttribute('aria-hidden') === 'true';
+      const ariaHiddenTrue =
+        dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-hidden') === 'true';
       if (!ariaHiddenTrue) {
         const GLOBAL_ARIA_ATTRS = [
           'aria-atomic',
@@ -43720,7 +44608,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'aria-roledescription'
         ];
         const hasConflict = GLOBAL_ARIA_ATTRS.some((a) =>
-          el.hasAttribute ? el.hasAttribute(a) : false
+          dom.get(el, 'hasAttribute') ? dom.hasAttribute(el, a) : false
         );
         let isFocusable = false;
         if (!hasConflict && helpers.getFocusableInfo) {
@@ -43856,9 +44744,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "bypass-blocks-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -43881,7 +44770,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
         ? helpers.queryAllSmart(selector)
-        : document.querySelectorAll(selector);
+        : dom.querySelectorAll(document, selector);
     } catch {
       return [];
     }
@@ -43895,9 +44784,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // non-rendered <main>/heading must not be credited here, since that would
   // wrongly treat a page with zero currently-exposed bypass mechanisms as
   // having one.
+  // A native element of one of `tags`, or an element whose role attribute
+  // resolves to `role`: the first token naming a real role wins, in any case,
+  // so role="foo main" and role="MAIN" count but role="region main" doesn't.
+  function isTagOrRole(el, tags, role) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return helpers.aria.getExplicitRole(el) === role;
+  }
+
   function hasMainLandmark() {
-    for (const el of queryAll('main, [role="main"]')) {
-      if (el && isExposedToAt(el)) return true;
+    for (const el of queryAll('main, [role~="main" i]')) {
+      if (el && isTagOrRole(el, ['main'], 'main') && isExposedToAt(el)) return true;
     }
     return false;
   }
@@ -43910,16 +44807,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!root) return null;
     let target;
     try {
-      target = typeof root.getElementById === 'function' ? root.getElementById(fragment) : null;
+      target =
+        typeof dom.get(root, 'getElementById') === 'function'
+          ? dom.getElementById(root, fragment)
+          : null;
     } catch {
       target = null;
     }
     if (target) return target;
     try {
       target =
-        typeof root.querySelectorAll === 'function'
-          ? Array.from(root.querySelectorAll('a[name]')).find(
-              (a) => a.getAttribute('name') === fragment
+        typeof dom.get(root, 'querySelectorAll') === 'function'
+          ? Array.from(dom.querySelectorAll(root, 'a[name]')).find(
+              (a) => dom.getAttribute(a, 'name') === fragment
             ) || null
           : null;
     } catch {
@@ -43946,13 +44846,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       links =
         helpers && typeof helpers.queryAllSmart === 'function'
           ? helpers.queryAllSmart('a[href]')
-          : document.querySelectorAll('a[href]');
+          : dom.querySelectorAll(document, 'a[href]');
     } catch {
       links = [];
     }
     for (const a of links) {
-      if (!a || !a.getAttribute) continue;
-      const href = String(a.getAttribute('href') || '').trim();
+      if (!a || !dom.get(a, 'getAttribute')) continue;
+      const href = String(dom.getAttribute(a, 'href') || '').trim();
       if (href.length < 2 || href.charAt(0) !== '#') continue;
       let fragment = href.slice(1);
       try {
@@ -43965,8 +44865,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       let root = document;
       try {
-        if (typeof a.getRootNode === 'function') {
-          const r = a.getRootNode();
+        if (typeof dom.get(a, 'getRootNode') === 'function') {
+          const r = dom.getRootNode(a);
           if (r) root = r;
         }
       } catch {
@@ -44001,9 +44901,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   function hasHeading() {
-    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role="heading"]')) {
-      if (el && isExposedToAt(el) && !isCssHidden(el)) return true;
+    for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
+      if (isExposedToAt(el) && !isCssHidden(el)) return true;
     }
     return false;
   }
@@ -44046,6 +44948,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "canvas-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -44056,8 +44959,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -44090,16 +44993,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function attrText(el, name) {
     try {
-      const v = el.getAttribute(name);
+      const v = dom.getAttribute(el, name);
       return v == null ? '' : String(v).trim();
     } catch {
       return '';
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a known
+  // role wins, case-insensitively; '' when none does (no explicit role).
   function firstRoleToken(el) {
-    const raw = attrText(el, 'role').toLowerCase();
-    return raw ? raw.split(/\s+/)[0] : '';
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // ARIA's presentational role conflict: a focusable element, or one with a
@@ -44256,6 +45164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "canvas-text-alternative-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -44266,8 +45175,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -44301,11 +45210,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -44326,7 +45235,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else {
       let tabindex;
       try {
-        tabindex = el.getAttribute('tabindex');
+        tabindex = dom.getAttribute(el, 'tabindex');
       } catch {
         tabindex = null;
       }
@@ -44352,7 +45261,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = accEligibleCached(el);
@@ -44389,7 +45298,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       i18n: {
         summaryKey: 'canvas_textAltQuality_summary_cantTell',
         hintKey: 'canvas_textAltQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -44411,6 +45320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "combobox-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -44423,8 +45333,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -44442,7 +45352,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -44482,7 +45392,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -44512,10 +45422,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="combobox"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is combobox, so role="link combobox" (a link) is left out.
+  const selector = '[role~="combobox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -44574,8 +45497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'combobox') continue;
+    if (explicitRole(el) !== 'combobox') continue;
 
     applicableCount += 1;
 
@@ -45021,13 +45943,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "contrast-enhanced": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   function toElement(node) {
     try {
       if (!node) return null;
-      if (node.nodeType === 1) return node; // ELEMENT_NODE
-      if (node.nodeType === 3) return node.parentElement || null; // TEXT_NODE
+      if (dom.nodeType(node) === 1) return node; // ELEMENT_NODE
+      if (dom.nodeType(node) === 3) return dom.parentElement(node) || null; // TEXT_NODE
       return null;
     } catch {
       return null;
@@ -45057,7 +45980,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
 
       // Prefer engine helper (matches checks/engine behavior + may be cached)
       if (helpers && typeof helpers.computedStyle === 'function') {
@@ -45066,7 +45989,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
 
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
@@ -45075,7 +46000,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getFontInfo(el) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         return {
           fontSizePx: 0,
           fontSizePt: '',
@@ -45219,12 +46144,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let nodeSelector = '';
       try {
         const elementId =
-          el && typeof el.getAttribute === 'function' ? el.getAttribute('id') || '' : '';
+          el && typeof dom.get(el, 'getAttribute') === 'function'
+            ? dom.getAttribute(el, 'id') || ''
+            : '';
         if (elementId) nodeSelector = `#${elementId}`;
       } catch {
         // no-throw
       }
-      const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+      const tagName = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
 
       let occ = { ...occBase };
 
@@ -45559,13 +46486,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "contrast-minimum": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   function toElement(node) {
     try {
       if (!node) return null;
-      if (node.nodeType === 1) return node; // ELEMENT_NODE
-      if (node.nodeType === 3) return node.parentElement || null; // TEXT_NODE
+      if (dom.nodeType(node) === 1) return node; // ELEMENT_NODE
+      if (dom.nodeType(node) === 3) return dom.parentElement(node) || null; // TEXT_NODE
       return null;
     } catch {
       return null;
@@ -45611,14 +46539,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
 
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -45626,7 +46556,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getFontInfo(el) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         return {
           fontSizePx: 0,
           fontSizePt: '',
@@ -45773,12 +46703,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let nodeSelector = '';
       try {
         const elementId =
-          el && typeof el.getAttribute === 'function' ? el.getAttribute('id') || '' : '';
+          el && typeof dom.get(el, 'getAttribute') === 'function'
+            ? dom.getAttribute(el, 'id') || ''
+            : '';
         if (elementId) nodeSelector = `#${elementId}`;
       } catch {
         // no-throw
       }
-      const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+      const tagName = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
 
       let occ = { ...occBase };
 
@@ -46117,6 +47049,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "css-focus-indicator-suppressed": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -46281,18 +47214,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function matchesSafe(el, selector) {
-    if (!el || typeof el.matches !== 'function' || !selector) return false;
+    if (!el || typeof dom.get(el, 'matches') !== 'function' || !selector) return false;
     try {
-      return el.matches(selector);
+      return dom.matches(el, selector);
     } catch {
       return false; // selector this engine cannot parse, skip rather than guess
     }
   }
 
   function closestSafe(el, selector) {
-    if (!el || typeof el.closest !== 'function' || !selector) return false;
+    if (!el || typeof dom.get(el, 'closest') !== 'function' || !selector) return false;
     try {
-      return !!el.closest(selector);
+      return !!dom.closest(el, selector);
     } catch {
       return false;
     }
@@ -46388,7 +47321,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   let sheetCount = 0;
   try {
-    const sheets = document.styleSheets || [];
+    const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
       let rules = null;
       try {
@@ -46448,7 +47381,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of candidates) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isTabbable(el)) continue;
     if (!isRendered(el)) continue;
 
@@ -46509,6 +47442,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "css-hidden-focus": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -46537,8 +47471,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // fall through
     }
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return Array.from(safeRoot.querySelectorAll(sel));
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return Array.from(dom.querySelectorAll(safeRoot, sel));
     } catch {
       // fall through
     }
@@ -46548,8 +47482,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function getComputedStyleSafe(el) {
     try {
       const w =
-        document && document.defaultView
-          ? document.defaultView
+        document && dom.defaultView(document)
+          ? dom.defaultView(document)
           : typeof window !== 'undefined'
             ? window
             : null;
@@ -46751,7 +47685,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      for (const sheet of document.styleSheets || []) {
+      for (const sheet of dom.styleSheets(document) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -46768,7 +47702,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function matchesSafe(el, selector) {
     try {
-      return typeof el.matches === 'function' && el.matches(selector);
+      return typeof dom.get(el, 'matches') === 'function' && dom.matches(el, selector);
     } catch {
       return false;
     }
@@ -46779,7 +47713,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function focusedVisibilityHints(el) {
     const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
     if (!rules.length) return null;
-    const inline = el.style || null;
+    const inline = dom.get(el, 'style') || null;
     const inlineHas = (p) => {
       try {
         return !!(inline && trim(inline.getPropertyValue(p)));
@@ -46823,22 +47757,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getDeepActiveElement(docRef) {
-    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let cur = docRef && dom.activeElement(docRef) ? dom.activeElement(docRef) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -46848,8 +47782,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function runFocusObservationWindow(docRef, fn) {
     const w =
-      docRef && docRef.defaultView
-        ? docRef.defaultView
+      docRef && dom.defaultView(docRef)
+        ? dom.defaultView(docRef)
         : typeof window !== 'undefined'
           ? window
           : null;
@@ -46937,22 +47871,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function restoreFocus(before) {
     const now = getDeepActiveElement(document);
     if (now === before) return;
-    const hadFocus = before && before !== document.body && before !== document.documentElement;
+    const hadFocus =
+      before && before !== dom.body(document) && before !== dom.documentElement(document);
     if (hadFocus && focusElementSafe(before) && getDeepActiveElement(document) === before) return;
     try {
-      if (now && typeof now.blur === 'function') now.blur();
+      if (now && typeof dom.get(now, 'blur') === 'function') dom.blur(now);
     } catch {}
   }
 
   function probeImmediateFocusRedirect(candidate) {
-    if (!candidate || typeof candidate.addEventListener !== 'function') return null;
+    if (!candidate || typeof dom.get(candidate, 'addEventListener') !== 'function') return null;
 
     let focusedByEvent = false;
     const onFocusCapture = () => {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     const before = getDeepActiveElement(document);
@@ -46962,7 +47897,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
 
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
     if (!focused || !focusedByEvent) return null;
 
@@ -46972,14 +47907,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!after || after === candidate) return null;
     const redirectedTag = (() => {
       try {
-        return lower(after.tagName || '');
+        return lower(dom.tagName(after) || '');
       } catch {
         return '';
       }
     })();
     const redirectedId = (() => {
       try {
-        return trim(after.getAttribute && after.getAttribute('id'));
+        return trim(dom.get(after, 'getAttribute') && dom.getAttribute(after, 'id'));
       } catch {
         return '';
       }
@@ -47027,7 +47962,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let runtimeProbeCount = 0;
 
   for (const el of candidates) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const finfo = getFocusableInfoSafe(el);
     if (!isTabbable(el, finfo)) continue;
@@ -47044,7 +47979,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tagName = (() => {
       try {
-        return lower(el.tagName || '');
+        return lower(dom.tagName(el) || '');
       } catch {
         return '';
       }
@@ -47118,6 +48053,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "css-orientation-lock": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const CSS_MEDIA_RULE = 4;
@@ -47346,21 +48282,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // content: the root, the body, the main landmark or an ancestor of it, or,
   // with no main landmark, most of the body's text.
   function textLength(el) {
-    return String((el && el.textContent) || '').replace(/\s+/g, '').length;
+    return String((el && dom.textContent(el)) || '').replace(/\s+/g, '').length;
   }
+  // The main landmark: the first <main>, or element whose role attribute
+  // resolves to main. The role attribute is a fallback list matched in any
+  // case (the first real role wins: role="foo main" counts, role="region
+  // main" doesn't).
   let mainEl = null;
   try {
-    mainEl = document.querySelector('main, [role="main"]');
+    const candidates = dom.querySelectorAll(document, 'main, [role~="main" i]') || [];
+    for (const el of candidates) {
+      const isMain =
+        String(dom.localName(el) || '').toLowerCase() === 'main' ||
+        helpers.aria.getExplicitRole(el) === 'main';
+      if (isMain) {
+        mainEl = el;
+        break;
+      }
+    }
   } catch {
     mainEl = null;
   }
-  const bodyTextLength = document.body ? textLength(document.body) : 0;
+  const bodyTextLength = dom.body(document) ? textLength(dom.body(document)) : 0;
 
   function holdsPageContent(el) {
-    if (!el || el.nodeType !== 1) return false;
-    const tag = String(el.localName || '').toLowerCase();
+    if (!el || dom.nodeType(el) !== 1) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (tag === 'html' || tag === 'body') return true;
-    if (mainEl) return el === mainEl || (typeof el.contains === 'function' && el.contains(mainEl));
+    if (mainEl)
+      return (
+        el === mainEl || (typeof dom.get(el, 'contains') === 'function' && dom.contains(el, mainEl))
+      );
     return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
   }
 
@@ -47370,7 +48322,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let unreadableSheetCount = 0;
 
   try {
-    const sheets = document.styleSheets || [];
+    const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
       let rules = null;
       try {
@@ -47393,7 +48345,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // no-throw: treat as no accessible stylesheets
   }
 
-  const scanTarget = document.documentElement || document.body || null;
+  const scanTarget = dom.documentElement(document) || dom.body(document) || null;
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
@@ -47425,7 +48377,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const h of hidings) {
     let matched;
     try {
-      matched = Array.from(document.querySelectorAll(h.selectorText));
+      matched = Array.from(dom.querySelectorAll(document, h.selectorText));
     } catch {
       matched = [];
     }
@@ -47542,6 +48494,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "definition-list-children-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -47556,8 +48509,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Non-whitespace text directly inside `parent` (the <dl> or a wrapping
   // <div>).
   function hasDirectText(parent) {
-    for (const node of parent.childNodes || []) {
-      if (node && node.nodeType === 3 && /\S/.test(node.nodeValue || '')) return true;
+    for (const node of dom.childNodes(parent) || []) {
+      if (node && dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')) return true;
     }
     return false;
   }
@@ -47567,14 +48520,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     const dlHasText = hasDirectText(el);
-    if (!el.firstElementChild && !dlHasText) continue;
+    if (!dom.firstElementChild(el) && !dlHasText) continue;
 
     applicableCount += 1;
 
@@ -47582,11 +48536,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const flattened = [];
     let hasText = dlHasText;
     for (const child of childElementsOf(el)) {
-      if (!child || !child.tagName) continue;
-      if (child.tagName.toLowerCase() === 'div') {
+      if (!child || !dom.tagName(child)) continue;
+      if (dom.tagName(child).toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
         for (const grandchild of childElementsOf(child)) {
-          if (grandchild && grandchild.tagName) flattened.push(grandchild);
+          if (grandchild && dom.tagName(grandchild)) flattened.push(grandchild);
         }
       } else {
         flattened.push(child);
@@ -47599,7 +48553,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // The dt/dd sequence in document order, for the group-order check.
     const sequence = [];
     for (const node of flattened) {
-      const tag = node.tagName.toLowerCase();
+      const tag = dom.tagName(node).toLowerCase();
       if (tag === 'dt') {
         hasDt = true;
         sequence.push(tag);
@@ -47685,6 +48639,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -47694,9 +48649,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -47734,6 +48689,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "dialog-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -47746,8 +48702,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -47769,7 +48725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // all, the same pattern every other *-name-present rule guards against.
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -47823,19 +48779,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The role the browser uses: the first token of the role attribute that
-  // names a concrete ARIA role, else the element's implicit role (dialog for
-  // a native <dialog>; the others are not in scope here).
-  const aria = helpers && helpers.aria;
+  // names a concrete ARIA role (in any case), else the element's implicit
+  // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
-    for (const t of tokens) {
-      const concrete =
-        aria && typeof aria.isValidConcreteRole === 'function'
-          ? aria.isValidConcreteRole(t)
-          : t === 'dialog' || t === 'alertdialog';
-      if (concrete) return t;
-    }
-    return String(el.tagName || '').toLowerCase() === 'dialog' ? 'dialog' : '';
+    const explicit = helpers.aria.getExplicitRole(el);
+    if (explicit) return explicit;
+    return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
 
   for (const el of nodes) {
@@ -47891,6 +48840,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -47902,24 +48852,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!parent) continue;
 
     applicableCount += 1;
 
-    const parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
+    const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
     let valid = parentTag === 'dl';
 
     if (!valid && parentTag === 'div') {
-      const grandparent = parent.parentElement;
+      const grandparent = dom.parentElement(parent);
       const grandparentTag =
-        grandparent && grandparent.tagName ? grandparent.tagName.toLowerCase() : '';
+        grandparent && dom.tagName(grandparent) ? dom.tagName(grandparent).toLowerCase() : '';
       valid = grandparentTag === 'dl';
     }
 
     if (valid) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -47951,12 +48901,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "duplicate-id": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Detection spans the whole document; see the header comment on scope.
   const all = new Set();
   try {
-    const nodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+    const nodes = dom.get(document, 'querySelectorAll')
+      ? dom.querySelectorAll(document, '[id]')
+      : [];
     for (const el of nodes) all.add(el);
   } catch {
     // no-throw: fall through to the helper-provided set below
@@ -47982,7 +48935,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Ids resolve within their own tree, so group by root before comparing.
   function rootOf(el) {
     try {
-      if (typeof el.getRootNode === 'function') return el.getRootNode();
+      if (typeof dom.get(el, 'getRootNode') === 'function') return dom.getRootNode(el);
     } catch {
       // fall through
     }
@@ -47993,11 +48946,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of all) {
-    if (!el || el.nodeType !== 1 || !el.getAttribute) continue;
+    if (!el || dom.nodeType(el) !== 1 || !dom.get(el, 'getAttribute')) continue;
     // Compared as written: "a " and "a" are different ids in the DOM, and
     // getElementById does not trim. Whitespace inside an id is a separate
     // validity error, not a duplicate.
-    const value = String(el.getAttribute('id') || '');
+    const value = String(dom.getAttribute(el, 'id') || '');
     if (!value) continue;
 
     applicableCount += 1;
@@ -48071,6 +49024,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "duplicate-id-aria": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -48087,10 +49041,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
 
   const idMap = new Map(); // id -> element[]
-  const idNodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+  const idNodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, '[id]')
+    : [];
   for (const el of idNodes) {
-    if (!el || !el.getAttribute) continue;
-    const value = String(el.getAttribute('id') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const value = String(dom.getAttribute(el, 'id') || '').trim();
     if (!value) continue;
     if (!idMap.has(value)) idMap.set(value, []);
     idMap.get(value).push(el);
@@ -48099,10 +49055,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const referencedIds = new Set();
   for (const attr of IDREF_ATTRS) {
     const selector = `[${attr}]`;
-    const nodes = document.querySelectorAll ? document.querySelectorAll(selector) : [];
+    const nodes = dom.get(document, 'querySelectorAll')
+      ? dom.querySelectorAll(document, selector)
+      : [];
     for (const el of nodes) {
-      if (!el || !el.getAttribute) continue;
-      const raw = String(el.getAttribute(attr) || '').trim();
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const raw = String(dom.getAttribute(el, attr) || '').trim();
       if (!raw) continue;
       for (const token of raw.split(/\s+/)) {
         if (token) referencedIds.add(token);
@@ -48169,6 +49127,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "embed-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -48179,8 +49138,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -48240,7 +49199,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
 
-    const title = trim(el.getAttribute && el.getAttribute('title'));
+    const title = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
     if (title) {
       flags.push('title-used');
       return { present: true, value: title, mechanism: 'title', flags };
@@ -48261,7 +49220,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let anyPassedViaWeakMechanism = false;
 
   for (const el of embeds) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -48275,11 +49234,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // role presentation/none exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -48296,7 +49257,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null &&
           String(tabindex).trim() !== '' &&
@@ -48359,6 +49320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "embed-text-alternative-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -48373,8 +49335,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -48391,11 +49353,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -48414,7 +49376,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -48439,7 +49401,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -48458,9 +49420,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let ariaLabelledBy;
     let title;
     try {
-      ariaLabel = trim(el.getAttribute('aria-label'));
-      ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
-      title = trim(el.getAttribute('title'));
+      ariaLabel = trim(dom.getAttribute(el, 'aria-label'));
+      ariaLabelledBy = trim(dom.getAttribute(el, 'aria-labelledby'));
+      title = trim(dom.getAttribute(el, 'title'));
     } catch {
       ariaLabel = '';
       ariaLabelledBy = '';
@@ -48472,7 +49434,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!ariaLabel && ariaLabelledBy && getTextFromIdRefs) {
       try {
-        const t = getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {
         labelledByText = '';
@@ -48508,7 +49470,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       i18n: {
         summaryKey: 'embed_textAltQuality_summary_cantTell',
         hintKey: 'embed_textAltQuality_hint_cantTell',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -48530,7 +49492,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "empty-heading": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -48538,10 +49501,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
@@ -48580,13 +49544,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
 
   function isHeading(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
 
     const explicit = getExplicitRoleToken(el);
@@ -48599,16 +49563,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -48629,7 +49593,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (info && info.present && info.value) return info.value;
       } catch {}
     }
-    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
   }
 
   const nodes = helpers.queryAllSmart
@@ -48706,7 +49670,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "empty-table-header": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -48734,29 +49699,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // AT announces nothing for it.
   function getVisibleText(el) {
     function walk(node) {
-      if (node.nodeType === 3) return node.nodeValue || '';
-      if (node.nodeType !== 1) return '';
+      if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
+      if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
       let text = '';
-      for (const child of node.childNodes || []) text += walk(child);
+      for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
     }
     let text = '';
-    for (const child of el.childNodes || []) text += walk(child);
+    for (const child of dom.childNodes(el) || []) text += walk(child);
     return normalizeWs(text);
   }
 
   function getAriaOnlyName(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -48768,11 +49733,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A <th> with no conflicting explicit role, plus any element carrying an
-  // explicit columnheader/rowheader role (native or not).
-  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // explicit columnheader/rowheader role (native or not). The role attribute
+  // is a fallback list read in any case, so roles are selected by token and
+  // then resolved: the first known, non-abstract token is the role, and a
+  // <th role="foo"> (no known token) keeps its implicit header role.
+  const HEADER_ROLES = ['columnheader', 'rowheader'];
+  const selector = 'th, [role~="columnheader" i], [role~="rowheader" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
+    if (HEADER_ROLES.includes(role)) return true;
+    return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
+  });
 
   const occurrences = [];
   let applicableCount = 0;
@@ -48839,6 +49817,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const NON_INTERACTIVE_ROLES = new Set([
@@ -48883,13 +49862,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const tabindexAttr = el.getAttribute('tabindex');
+    const tabindexAttr = dom.getAttribute(el, 'tabindex');
     const tabindex = Number.parseInt(tabindexAttr, 10);
     if (!Number.isFinite(tabindex) || tabindex < 0) continue;
 
-    const role = (el.getAttribute('role') || '').trim().toLowerCase();
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case. role="foo heading" is a heading; role="foo" gives
+    // no role at all, so the element is not in scope.
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
     if (!role) continue;
 
     applicableCount += 1;
@@ -48897,7 +49884,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!NON_INTERACTIVE_ROLES.has(role)) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -48937,6 +49926,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "form-control-label-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -49036,25 +50026,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ])
   };
 
+  // ARIA widget roles that make an element a field. The role attribute is a
+  // fallback list matched in any case: role~= finds the token anywhere in
+  // it, and hasResolvedRole below keeps only elements whose first real role
+  // token is one of these (role="foo textbox" yes, role="button textbox" no).
+  const FIELD_ROLES = [
+    'checkbox',
+    'combobox',
+    'listbox',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'radio',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'textbox'
+  ];
+  const NATIVE_FIELD_SELECTOR =
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea';
   const FIELD_SELECTOR = [
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
-    'select',
-    'textarea',
-    '[role="checkbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="radio"]',
-    '[role="searchbox"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="switch"]',
-    '[role="textbox"]'
+    NATIVE_FIELD_SELECTOR,
+    ...FIELD_ROLES.map((r) => `[role~="${r}" i]`)
   ].join(', ');
 
-  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
-  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  const ROW_TAGS = ['tr', 'li'];
+  const ROW_ROLES = ['row', 'listitem'];
+  const ROW_SELECTOR = 'tr, [role~="row" i], li, [role~="listitem" i]';
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
+
+  // Whether the element's role attribute resolves to one of `roles`.
+  function hasResolvedRole(el, roles) {
+    try {
+      return roles.includes(helpers.aria.getExplicitRole(el));
+    } catch {
+      return false;
+    }
+  }
+
+  function isTagOrRole(el, tags, roles) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return hasResolvedRole(el, roles);
+  }
+
+  function isField(el) {
+    try {
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, NATIVE_FIELD_SELECTOR))
+        return true;
+    } catch {
+      // fall through to the role check
+    }
+    return hasResolvedRole(el, FIELD_ROLES);
+  }
+
+  // Nearest table row or list item ancestor (or self): a native tr/li, or an
+  // element whose resolved role is row/listitem.
+  function closestRow(el) {
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.get(cur, 'closest') ? dom.closest(cur, ROW_SELECTOR) : null;
+      if (!hit) return null;
+      if (isTagOrRole(hit, ROW_TAGS, ROW_ROLES)) return hit;
+      cur = dom.parentElement(hit);
+    }
+    return null;
+  }
 
   function normalizeWs(s) {
     return String(s || '')
@@ -49076,12 +50113,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -49132,13 +50170,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return true;
   }
 
-  function resolveIdRefs(el, attr) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute(attr));
+  function getReferencedElements(el, attr) {
+    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, attr));
     if (!raw) return [];
     const out = [];
     for (const refId of raw.split(/\s+/).filter(Boolean)) {
       try {
-        const ref = document.getElementById(refId);
+        const ref = helpers.getElementByIdInTree(el, refId);
         if (ref) out.push(ref);
       } catch {
         // ignore an unusable reference
@@ -49148,18 +50186,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Index of `<label for="...">` elements by their `for` value, built once
-  // (not the native `el.labels`, deliberately -- see getNativeLabels).
-  const labelsByForId = new Map();
-  try {
-    for (const label of document.querySelectorAll('label[for]')) {
-      const forVal = normalizeWs(label.getAttribute('for'));
-      if (!forVal) continue;
-      const bucket = labelsByForId.get(forVal);
-      if (bucket) bucket.push(label);
-      else labelsByForId.set(forVal, [label]);
+  // per tree (not the native `el.labels`, deliberately -- see
+  // getNativeLabels). A label labels a control in its own tree only: the
+  // document, or the shadow root both are in.
+  const labelsByForIdByTree = new Map();
+  function labelsByForIdIn(tree) {
+    let labelsByForId = labelsByForIdByTree.get(tree);
+    if (labelsByForId) return labelsByForId;
+    labelsByForId = new Map();
+    labelsByForIdByTree.set(tree, labelsByForId);
+    try {
+      for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+        const forVal = normalizeWs(dom.getAttribute(label, 'for'));
+        if (!forVal) continue;
+        const bucket = labelsByForId.get(forVal);
+        if (bucket) bucket.push(label);
+        else labelsByForId.set(forVal, [label]);
+      }
+    } catch {
+      // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
     }
-  } catch {
-    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+    return labelsByForId;
   }
 
   // Per HTML's label-control algorithm, a wrapping <label> with no `for`
@@ -49185,20 +50232,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
+    const idVal = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
     if (idVal) {
-      const forLabels = labelsByForId.get(idVal);
+      let tree = document;
+      try {
+        const root = dom.getRootNode(el);
+        if (root && typeof dom.get(root, 'getElementById') === 'function') tree = root;
+      } catch {
+        // keep the document
+      }
+      const forLabels = labelsByForIdIn(tree).get(idVal);
       if (forLabels) {
         for (const label of forLabels) labels.push(label);
       }
     }
     try {
-      const wrapping = el.closest ? el.closest('label') : null;
-      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      const wrapping = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
+      const hasForAttr = !!(
+        wrapping &&
+        dom.get(wrapping, 'hasAttribute') &&
+        dom.hasAttribute(wrapping, 'for')
+      );
       if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
         let firstControl = null;
         try {
-          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrapping, 'querySelector')
+            ? dom.querySelector(wrapping, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -49214,12 +50274,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // present, otherwise the <label> elements associated with it. aria-label is
   // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
-    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const referenced = getReferencedElements(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
     const parts = [];
     let hiddenParts = 0;
     for (const label of labels) {
-      const text = normalizeWs(label.textContent);
+      const text = normalizeWs(dom.textContent(label));
       if (!text) continue;
       if (isVisible(label)) parts.push(text);
       else hiddenParts += 1;
@@ -49229,7 +50289,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const headings = (() => {
     try {
-      return Array.prototype.slice.call(document.querySelectorAll(HEADING_SELECTOR));
+      return Array.prototype.slice
+        .call(dom.querySelectorAll(document, HEADING_SELECTOR))
+        .filter((h) => isTagOrRole(h, HEADING_TAGS, ['heading']));
     } catch {
       return [];
     }
@@ -49238,7 +50300,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function precedes(a, b) {
     try {
       // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
-      return !!(b.compareDocumentPosition(a) & 2);
+      return !!(dom.compareDocumentPosition(b, a) & 2);
     } catch {
       return false;
     }
@@ -49260,23 +50322,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function fieldsetLegendText(el) {
     let fieldset;
     try {
-      fieldset = el.closest ? el.closest('fieldset') : null;
+      fieldset = dom.get(el, 'closest') ? dom.closest(el, 'fieldset') : null;
     } catch {
       fieldset = null;
     }
-    while (fieldset) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; fieldset && steps < 100000; steps++) {
       let legend;
       try {
-        legend = fieldset.querySelector('legend');
+        legend = dom.querySelector(fieldset, 'legend');
       } catch {
         legend = null;
       }
       if (legend && isVisible(legend)) {
-        const text = normalizeWs(legend.textContent);
+        const text = normalizeWs(dom.textContent(legend));
         if (text) return text;
       }
       try {
-        fieldset = fieldset.parentElement ? fieldset.parentElement.closest('fieldset') : null;
+        fieldset = dom.parentElement(fieldset)
+          ? dom.closest(dom.parentElement(fieldset), 'fieldset')
+          : null;
       } catch {
         fieldset = null;
       }
@@ -49292,14 +50357,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function rowContextText(el, labelText) {
     let row;
     try {
-      row = el.closest ? el.closest(ROW_SELECTOR) : null;
+      row = closestRow(el);
     } catch {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
     let text = rowTextCache.get(row);
     if (text === undefined) {
-      text = normalizeWs(row.textContent);
+      text = normalizeWs(dom.textContent(row));
       rowTextCache.set(row, text);
     }
     if (!text) return '';
@@ -49317,7 +50382,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const fields = [];
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    if (!isField(el)) continue;
     if (!isVisible(el)) continue;
 
     const label = getVisibleLabelText(el);
@@ -49362,7 +50428,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let sameRoot;
       try {
         sameRoot =
-          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+          typeof dom.get(field.el, 'getRootNode') !== 'function' ||
+          dom.getRootNode(field.el) === document;
       } catch {
         sameRoot = true;
       }
@@ -49376,7 +50443,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     orderedFields.sort((a, b) => {
       try {
-        const bits = a.el.compareDocumentPosition(b.el);
+        const bits = dom.compareDocumentPosition(a.el, b.el);
         if (bits & 4) return -1; // b follows a
         if (bits & 2) return 1; // b precedes a
       } catch {
@@ -49392,7 +50459,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const heading = headings[hIdx];
         hIdx += 1;
         if (!isVisible(heading)) continue;
-        const text = normalizeWs(heading.textContent);
+        const text = normalizeWs(dom.textContent(heading));
         if (text) current = text;
       }
       nearestVisibleHeadingByField.set(field.el, current);
@@ -49505,6 +50572,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "form-control-programmatic-label-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // ACT e086e5 applies only to controls included in the accessibility tree, so
@@ -49629,10 +50697,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : [];
 
     for (const el of candidates || []) {
-      if (!el || !el.getAttribute) continue;
-      const tag = (el.tagName || '').toLowerCase();
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'input') {
-        const t = trim(el.getAttribute('type')).toLowerCase();
+        const t = trim(dom.getAttribute(el, 'type')).toLowerCase();
         // exclude hidden|submit|reset|button|image
         if (t === 'hidden' || t === 'submit' || t === 'reset' || t === 'button' || t === 'image')
           continue;
@@ -49657,14 +50725,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (let i = 0; i < nodes.length; i++) {
     const el = nodes[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (!isEligibleAcc(el)) continue;
 
-    // role="presentation"/"none" exclusion only when NOT focusable
+    // role="presentation"/"none" exclusion only when NOT focusable. The
+    // role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively; none leaves the native role.
     let role;
     try {
-      role = trim(el.getAttribute('role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -49721,7 +50791,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
         hintKey: 'formControl_programmaticLabelPresent_hint_fail',
-        params: { element: (el.tagName || '').toLowerCase() }
+        params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
         visibilityFilter: vf
@@ -49769,6 +50839,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "form-control-programmatic-label-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -49803,8 +50874,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function safeQueryAll(sel) {
     try {
       if (queryAllSmart) return Array.from(queryAllSmart(sel) || []);
-      return safeRoot && safeRoot.querySelectorAll
-        ? Array.from(safeRoot.querySelectorAll(sel))
+      return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+        ? Array.from(dom.querySelectorAll(safeRoot, sel))
         : [];
     } catch {
       return [];
@@ -49834,14 +50905,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (r && r.eligible === false) return false;
       }
       if (helpers && typeof helpers.isClipHidden === 'function') {
-        const view = (el.ownerDocument && el.ownerDocument.defaultView) || null;
-        for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+        const view = (dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))) || null;
+        // Bounded as a safety net only: a walk up a real tree always ends.
+        for (
+          let n = el, i = 0;
+          n && dom.nodeType(n) === 1 && i < 100000;
+          n = dom.parentElement(n), i++
+        ) {
           const cs = view && view.getComputedStyle ? view.getComputedStyle(n) : null;
           if (cs && helpers.isClipHidden(cs)) return false;
           // jsdom neither computes clip nor keeps its value intact
           // (rect(0 0 0 0) reads back as rect(0px)), so read the declaration
           // as written in the style attribute too.
-          const declared = String(n.getAttribute('style') || '');
+          const declared = String(dom.getAttribute(n, 'style') || '');
           const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
           const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
           if (
@@ -49886,13 +50962,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // visually hidden <label>: someone placed that text on purpose, and markup
   // can't tell whether it repeats a visible cue.
   function hasRenderedLabelledByRef(el) {
-    const ids = trim(el.getAttribute('aria-labelledby')).split(/\s+/).filter(Boolean);
+    const ids = trim(dom.getAttribute(el, 'aria-labelledby')).split(/\s+/).filter(Boolean);
     const scope =
-      el.getRootNode && typeof el.getRootNode().getElementById === 'function'
-        ? el.getRootNode()
+      dom.get(el, 'getRootNode') &&
+      typeof dom.get(dom.getRootNode(el), 'getElementById') === 'function'
+        ? dom.getRootNode(el)
         : document;
     for (const refId of ids) {
-      const ref = scope.getElementById(refId);
+      const ref = dom.getElementById(scope, refId);
       if (!ref) continue;
       if (!isDomVisibleEligible) return true;
       try {
@@ -49927,7 +51004,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (!isEligibleAcc(el)) continue;
     if (!isShownOnScreen(el)) {
@@ -49935,9 +51012,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return trim(el.getAttribute('role')).toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -49972,7 +51050,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     metrics.flaggedCount += 1;
 
     const vf = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const element = (el.tagName || '').toLowerCase();
+    const element = (dom.tagName(el) || '').toLowerCase();
     const sourceText = label && label.value ? String(label.value).slice(0, 120) : '';
 
     let reasonCode;
@@ -50054,6 +51132,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "form-control-single-label": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const isAccTreeEligible =
@@ -50075,10 +51154,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // attribute-selector construction / CSS.escape, which is not guaranteed
   // to exist as a global in every runtime this engine executes in).
   const labelsByFor = new Map();
-  const allLabels = document.getElementsByTagName ? document.getElementsByTagName('label') : [];
+  const allLabels = dom.get(document, 'getElementsByTagName')
+    ? dom.getElementsByTagName(document, 'label')
+    : [];
   for (const lab of allLabels) {
-    if (!lab || !lab.getAttribute) continue;
-    const forValue = String(lab.getAttribute('for') || '').trim();
+    if (!lab || !dom.get(lab, 'getAttribute')) continue;
+    const forValue = String(dom.getAttribute(lab, 'for') || '').trim();
     if (!forValue) continue;
     if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
     labelsByFor.get(forValue).push(lab);
@@ -50089,16 +51170,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     applicableCount += 1;
 
     const labels = new Set();
 
-    const wrappingLabel = el.closest ? el.closest('label') : null;
+    const wrappingLabel = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
     if (wrappingLabel) labels.add(wrappingLabel);
 
-    const controlId = String(el.getAttribute('id') || '').trim();
+    const controlId = String(dom.getAttribute(el, 'id') || '').trim();
     if (controlId && labelsByFor.has(controlId)) {
       for (const lab of labelsByFor.get(controlId)) labels.add(lab);
     }
@@ -50126,7 +51207,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? [...eligibleLabels].filter((lab) => labelContributesName(lab))
       : [...eligibleLabels];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
       failOccurrences.push(
@@ -50211,6 +51292,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "heading-order": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -50219,25 +51301,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   function getHeadingLevel(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return 0;
-      const raw = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
       const n = parseInt(raw, 10);
       return Number.isFinite(n) && n >= 1 ? n : 2;
     }
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const m = /^h([1-6])$/.exec(tag);
     if (!m) return 0;
     // Browsers expose a valid aria-level on <hx> in place of the tag level.
-    const ariaLevel = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+    const ariaLevel = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
+    );
     if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
       return parseInt(ariaLevel, 10);
     }
@@ -50334,7 +51419,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "heading-quality": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
@@ -50497,12 +51583,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -50512,10 +51599,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // The WAI-ARIA Global States and Properties set, same list and same
@@ -50552,13 +51640,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
 
   function isHeading(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
 
     const explicit = getExplicitRoleToken(el);
@@ -50574,17 +51662,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // what a heading is called: aria-label, then aria-labelledby, then the
   // shared accname-aligned "name from content" helper, then title.
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
 
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {
@@ -50604,7 +51692,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
-    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
   }
 
   const isAccTreeEligible =
@@ -50658,7 +51746,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isHeading(el)) continue;
     if (!isEligible(el)) continue;
 
@@ -50721,10 +51809,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "html-lang-attr-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, rule, helpers } = ctx;
-  const html = document && document.documentElement;
+  const html = document && dom.documentElement(document);
 
-  const tag = html && html.tagName ? String(html.tagName).toLowerCase() : '';
+  const tag = html && dom.tagName(html) ? String(dom.tagName(html)).toLowerCase() : '';
   if (!html || tag !== 'html') {
     return {
       ruleId: rule.ruleId,
@@ -50759,7 +51848,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return [{ selector: '', html: '', ...baseOccurrence }];
   }
 
-  const rawLang = html.getAttribute('lang'); // null if missing
+  const rawLang = dom.getAttribute(html, 'lang'); // null if missing
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {
@@ -50820,16 +51909,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "html-xml-lang-mismatch": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const html = document && document.documentElement;
-  const tag = html && html.tagName ? String(html.tagName).toLowerCase() : '';
+  const html = document && dom.documentElement(document);
+  const tag = html && dom.tagName(html) ? String(dom.tagName(html)).toLowerCase() : '';
   if (!html || tag !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const lang = String(html.getAttribute('lang') || '').trim();
-  const xmlLang = String(html.getAttribute('xml:lang') || '').trim();
+  const lang = String(dom.getAttribute(html, 'lang') || '').trim();
+  const xmlLang = String(dom.getAttribute(html, 'xml:lang') || '').trim();
 
   if (!lang || !xmlLang) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
@@ -50866,6 +51956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "identical-iframes-same-purpose": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -50891,10 +51982,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       let cur = el;
       let guard = 0;
-      while (cur && cur.nodeType === 1 && guard++ < 100) {
-        const parent = cur.parentNode;
-        if (!parent || parent.nodeType !== 1) return false;
-        if (parent.shadowRoot && cur.assignedSlot == null) return true;
+      while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
+        const parent = dom.parentNode(cur);
+        if (!parent || dom.nodeType(parent) !== 1) return false;
+        if (dom.shadowRoot(parent) && dom.assignedSlot(cur) == null) return true;
         cur = parent;
       }
       return false;
@@ -50918,21 +52009,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function resourceKey(el) {
     let raw;
     try {
-      raw = el.getAttribute('src');
+      raw = dom.getAttribute(el, 'src');
     } catch {
       return null;
     }
     if (raw == null || !String(raw).trim()) return null;
 
-    const doc = (ctx && ctx.document) || (el.ownerDocument ? el.ownerDocument : null);
-    const base = doc && doc.baseURI ? doc.baseURI : undefined;
+    const doc = (ctx && ctx.document) || (dom.ownerDocument(el) ? dom.ownerDocument(el) : null);
+    const base = doc && dom.baseURI(doc) ? dom.baseURI(doc) : undefined;
     try {
       const u = new URL(String(raw).trim(), base);
       let pathname = u.pathname;
       if (pathname.length > 1 && pathname.charAt(pathname.length - 1) === '/') {
         pathname = pathname.slice(0, -1);
       }
-      return u.protocol + '//' + u.host + pathname + u.search;
+      return u.protocol + '//' + dom.host(u) + pathname + u.search;
     } catch {
       return null;
     }
@@ -50941,7 +52032,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const groups = new Map();
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
     if (!inAccessibilityTree(el)) continue;
 
     const name = normalizedName(el);
@@ -50972,7 +52063,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
-      const tag = el.tagName.toLowerCase();
+      const tag = dom.tagName(el).toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
@@ -51034,6 +52125,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "identical-links-same-purpose": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normName(s) {
@@ -51050,13 +52142,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveOnclickLocation(el) {
     try {
-      const onclick = el.getAttribute('onclick') || '';
+      const onclick = dom.getAttribute(el, 'onclick') || '';
       if (!onclick) return '';
       const m = onclick.match(ONCLICK_LOCATION_RE);
       const raw = m ? m[1] || m[2] : '';
       if (!raw) return '';
       try {
-        return new URL(raw, el.ownerDocument.baseURI).href;
+        return new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
       } catch {
         return raw;
       }
@@ -51065,14 +52157,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  const NATIVE_LINK_TAGS = ['a'];
+  // A native link (<a> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role="link"]')
-    : helpers.queryAll('a[href], [role="link"]');
+    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -51093,7 +52196,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       rawName =
         contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
           ? contentInfo.value
-          : el.textContent || '';
+          : dom.textContent(el) || '';
     }
     const name = normName(rawName);
     if (!name) continue;
@@ -51108,10 +52211,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       href = typeof el.href === 'string' ? el.href : '';
       if (!href) {
-        const raw = el.getAttribute('href') || el.getAttribute('xlink:href') || '';
+        const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
         if (raw) {
           try {
-            href = new URL(raw, el.ownerDocument.baseURI).href;
+            href = new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
           } catch {
             href = raw;
           }
@@ -51137,7 +52240,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
+        : dom.outerHTML(el) || '';
 
       const baseOccurrence = {
         selector: stableSelector,
@@ -51195,6 +52298,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "iframe-focusable-content": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, document } = ctx;
 
   // Self-contained rendering check for the embedded document (a distinct
@@ -51211,26 +52315,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
     try {
-      if (el.closest && el.closest('[inert]')) return false;
-      if (typeof el.checkVisibility === 'function') {
-        return el.checkVisibility({ visibilityProperty: true });
+      if (dom.get(el, 'closest') && dom.closest(el, '[inert]')) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function') {
+        return dom.checkVisibility(el, { visibilityProperty: true });
       }
-      const view = doc.defaultView;
+      const view = dom.defaultView(doc);
       if (!view || typeof view.getComputedStyle !== 'function') return true;
       let child = null;
       let node = el;
-      while (node && node.nodeType === 1) {
-        if (node.hasAttribute && node.hasAttribute('hidden')) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let steps = 0; node && dom.nodeType(node) === 1 && steps < 100000; steps++) {
+        if (dom.get(node, 'hasAttribute') && dom.hasAttribute(node, 'hidden')) {
           // hidden="until-found" hides the element's content, not itself.
-          const v = String(node.getAttribute('hidden') || '')
+          const v = String(dom.getAttribute(node, 'hidden') || '')
             .trim()
             .toLowerCase();
           if (v !== 'until-found' || child) return false;
         }
         // A closed <details> shows only its first <summary> child.
-        if (child && node.localName === 'details' && !node.hasAttribute('open')) {
-          let first = node.firstElementChild;
-          while (first && first.localName !== 'summary') first = first.nextElementSibling;
+        if (child && dom.localName(node) === 'details' && !dom.hasAttribute(node, 'open')) {
+          let first = dom.firstElementChild(node);
+          while (first && dom.localName(first) !== 'summary') first = dom.nextElementSibling(first);
           if (child !== first) return false;
         }
         const cs = view.getComputedStyle(node);
@@ -51240,7 +52345,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           if (!child && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) return false;
         }
         child = node;
-        node = node.parentElement;
+        node = dom.parentElement(node);
       }
       return true;
     } catch {
@@ -51249,22 +52354,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getDeepActiveElement(docRef) {
-    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let cur = docRef && dom.activeElement(docRef) ? dom.activeElement(docRef) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -51350,10 +52455,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getFocusableCandidates(doc) {
-    if (!doc || !doc.querySelectorAll) return [];
+    if (!doc || !dom.get(doc, 'querySelectorAll')) return [];
     let els;
     try {
-      els = doc.querySelectorAll(
+      els = dom.querySelectorAll(
+        doc,
         'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
           'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
       );
@@ -51362,8 +52468,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const candidates = [];
     for (const el of els) {
-      if (!el || !el.getAttribute) continue;
-      const raw = el.getAttribute('tabindex');
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const raw = dom.getAttribute(el, 'tabindex');
       if (raw != null) {
         const n = Number(String(raw).trim());
         if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
@@ -51376,7 +52482,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function probeImmediateFocusRedirect(frameEl, embeddedDoc, candidate) {
     if (!frameEl || !embeddedDoc || !candidate) return null;
-    const embeddedWindow = embeddedDoc.defaultView;
+    const embeddedWindow = dom.defaultView(embeddedDoc);
     if (!embeddedWindow) return null;
 
     let focusedByEvent = false;
@@ -51384,7 +52490,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     const innerFocusTrace = [];
@@ -51396,8 +52502,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (ev && ev.target) outerFocusTrace.push(ev.target);
     };
     try {
-      embeddedDoc.addEventListener('focusin', onInnerFocusIn, true);
-      document.addEventListener('focusin', onOuterFocusIn, true);
+      dom.addEventListener(embeddedDoc, 'focusin', onInnerFocusIn, true);
+      dom.addEventListener(document, 'focusin', onOuterFocusIn, true);
     } catch {}
 
     const beforeInner = getDeepActiveElement(embeddedDoc);
@@ -51407,11 +52513,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       focused = focusElementSafe(candidate);
     });
     try {
-      embeddedDoc.removeEventListener('focusin', onInnerFocusIn, true);
-      document.removeEventListener('focusin', onOuterFocusIn, true);
+      dom.removeEventListener(embeddedDoc, 'focusin', onInnerFocusIn, true);
+      dom.removeEventListener(document, 'focusin', onOuterFocusIn, true);
     } catch {}
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     if (!focused) return null;
@@ -51442,7 +52548,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getNegativeTabIndex(el) {
-    const raw = el.getAttribute('tabindex');
+    const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
     const n = Number(String(raw).trim());
     return !Number.isNaN(n) && n < 0;
@@ -51456,9 +52562,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // already-loaded contentDocument is always preferred untouched.
   function parseSrcdocFallback(el) {
     try {
-      const raw = el.getAttribute('srcdoc');
+      const raw = dom.getAttribute(el, 'srcdoc');
       if (raw == null) return null;
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       const DOMParserCtor = view && view.DOMParser;
       if (!DOMParserCtor) return null;
       return new DOMParserCtor().parseFromString(raw, 'text/html');
@@ -51475,8 +52581,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // layout jsdom doesn't have (see docs/LIMITATIONS.md).
   function isIframeVisiblyTiny(el) {
     try {
-      const wAttr = el.getAttribute('width');
-      const hAttr = el.getAttribute('height');
+      const wAttr = dom.getAttribute(el, 'width');
+      const hAttr = dom.getAttribute(el, 'height');
       if (wAttr == null || hAttr == null) return false;
       const w = Number(String(wAttr).trim());
       const h = Number(String(hAttr).trim());
@@ -51495,21 +52601,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!getNegativeTabIndex(el)) continue;
 
     let contentDoc;
     try {
-      contentDoc = el.contentDocument || null;
+      contentDoc = dom.contentDocument(el) || null;
     } catch {
       contentDoc = null;
     }
-    const looksEmpty = !contentDoc || !contentDoc.body || !contentDoc.body.hasChildNodes();
-    if (looksEmpty && el.getAttribute('srcdoc') != null) {
+    const looksEmpty =
+      !contentDoc || !dom.body(contentDoc) || !dom.hasChildNodes(dom.body(contentDoc));
+    if (looksEmpty && dom.getAttribute(el, 'srcdoc') != null) {
       const parsed = parseSrcdocFallback(el);
       if (parsed) contentDoc = parsed;
     }
-    if (!contentDoc || !contentDoc.querySelectorAll) continue; // cross-origin/unreachable: no constraint asserted
+    if (!contentDoc || !dom.get(contentDoc, 'querySelectorAll')) continue; // cross-origin/unreachable: no constraint asserted
 
     applicableCount += 1;
 
@@ -51517,7 +52624,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!candidates.length) continue;
     if (isIframeVisiblyTiny(el)) continue; // ACT akn7bn: no visible content at all
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
     const shouldProbe = candidates.length === 1;
     const runtimeProbe = shouldProbe
       ? probeImmediateFocusRedirect(el, contentDoc, candidates[0])
@@ -51582,6 +52689,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "iframe-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -51596,7 +52704,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // removes them from the tab order.
   function isFrameFocusable(el) {
     try {
-      const tabindexRaw = el.getAttribute ? el.getAttribute('tabindex') : null;
+      const tabindexRaw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexRaw == null) return true;
       const n = Number(String(tabindexRaw).trim());
       if (Number.isFinite(n) && n < 0) return false;
@@ -51607,7 +52715,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
 
     if (!isFrameFocusable(el)) continue;
 
@@ -51633,7 +52741,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         })()
       : null;
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -51670,6 +52778,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -51683,11 +52792,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
     let text = '';
-    for (const child of parent.childNodes || []) {
+    for (const child of dom.childNodes(parent) || []) {
       if (child === imgEl) continue;
-      if (child.nodeType === 3) {
-        text += ' ' + (child.nodeValue || '');
-      } else if (child.nodeType === 1 && child !== imgEl) {
+      if (dom.nodeType(child) === 3) {
+        text += ' ' + (dom.nodeValue(child) || '');
+      } else if (dom.nodeType(child) === 1 && child !== imgEl) {
         // An aria-hidden sibling is never actually announced to assistive
         // technology, so its text can't cause the "same words twice"
         // double-announcement this rule exists to catch -- counting it
@@ -51703,7 +52812,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           })();
           if (elig && elig.eligible === false) continue;
         }
-        text += ' ' + (child.textContent || '');
+        text += ' ' + (dom.textContent(child) || '');
       }
     }
     return normalizeWs(text);
@@ -51717,11 +52826,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const alt = normalizeWs(el.getAttribute('alt'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const alt = normalizeWs(dom.getAttribute(el, 'alt'));
     if (!alt) continue;
 
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!parent) continue;
 
     const otherText = getOwnTextExcludingImg(parent, el);
@@ -51761,6 +52870,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "img-alt-decorative": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -51771,8 +52881,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -51804,17 +52914,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none means no explicit role at all.
   function getExplicitRole(el) {
-    if (ariaHelpers && typeof ariaHelpers.getExplicitRole === 'function') {
-      try {
-        return ariaHelpers.getExplicitRole(el) || '';
-      } catch {
-        return '';
-      }
-    }
     try {
-      const raw = trim(el.getAttribute('role'));
-      return raw ? raw.split(/\s+/)[0].toLowerCase() : '';
+      return (ariaHelpers && ariaHelpers.getExplicitRole(el)) || '';
     } catch {
       return '';
     }
@@ -51830,7 +52934,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       return (
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -51863,7 +52967,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasAriaNamingAttr(el) {
     try {
-      return el.getAttribute('aria-label') != null || el.getAttribute('aria-labelledby') != null;
+      return (
+        dom.getAttribute(el, 'aria-label') != null ||
+        dom.getAttribute(el, 'aria-labelledby') != null
+      );
     } catch {
       return false;
     }
@@ -51872,9 +52979,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Same first-child <title>/<desc> convention as svg-text-alternative-present.js.
   function hasNonEmptyFirstChildTitleOrDesc(svg) {
     try {
-      const first = svg.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
-      if (tn === 'title' || tn === 'desc') return !!trim(first.textContent);
+      const first = dom.firstElementChild(svg);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
+      if (tn === 'title' || tn === 'desc') return !!trim(dom.textContent(first));
     } catch {
       // ignore
     }
@@ -51905,7 +53012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = getExplicitRole(el);
     let presentational = role === 'presentation' || role === 'none';
     if (!presentational && tag === 'img') {
-      presentational = el.getAttribute('alt') === '';
+      presentational = dom.getAttribute(el, 'alt') === '';
     }
     if (!presentational) return false;
     return !isFocusable(el);
@@ -51949,12 +53056,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const getComposedParent =
       helpers && typeof helpers.composedParent === 'function'
         ? helpers.composedParent
-        : (n) => (n && n.parentElement ? n.parentElement : null);
+        : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
 
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType === 1) {
+      if (dom.nodeType(cur) === 1) {
         try {
           const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
           if (
@@ -51999,8 +53106,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of uniqueEls) {
-    if (!el || !el.tagName) continue;
-    const tag = el.tagName.toLowerCase();
+    if (!el || !dom.tagName(el)) continue;
+    const tag = dom.tagName(el).toLowerCase();
 
     if (!isDomVisible(el)) continue;
     if (isOffscreen(el)) continue;
@@ -52043,6 +53150,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "img-alt-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -52077,16 +53185,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     try {
-      if (safeRoot && typeof safeRoot.getElementsByTagName === 'function') {
-        return safeRoot.getElementsByTagName('img'); // HTMLCollection (live)
+      if (safeRoot && typeof dom.get(safeRoot, 'getElementsByTagName') === 'function') {
+        return dom.getElementsByTagName(safeRoot, 'img'); // HTMLCollection (live)
       }
     } catch {
       // fall through
     }
 
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return safeRoot.querySelectorAll('img');
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return dom.querySelectorAll(safeRoot, 'img');
     } catch {
       // fall through
     }
@@ -52109,7 +53217,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (let i = 0; i < imgLen; i++) {
     const el = imgs[i];
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Eligibility: only imgs exposed to assistive tech.
     if (isEligibleHelper) {
@@ -52125,9 +53233,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Role (presentation/none) exclusion only when NOT focusable.
+    // The resolved role: the first token naming a known role, in any case.
     let role;
     try {
-      role = trim(el.getAttribute('role')).toLowerCase();
+      role = helpers.aria.getExplicitRole(el);
     } catch {
       role = '';
     }
@@ -52157,7 +53266,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // accessible name is empty -- a real failure, not a decorative image.
     let rawAlt;
     try {
-      rawAlt = el.getAttribute('alt');
+      rawAlt = dom.getAttribute(el, 'alt');
     } catch {
       rawAlt = null;
     }
@@ -52185,7 +53294,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // explicitly marks decorative and stays excluded from this branch since
     // hasAlt already short-circuited above). An `<img src="..." title="...">`
     // with no alt attribute at all is not missing a text alternative.
-    const title = trim(el.getAttribute('title'));
+    const title = trim(dom.getAttribute(el, 'title'));
     if (title) continue;
 
     const eligInfo = getEligibilityInfo
@@ -52228,6 +53337,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "img-alt-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -52246,8 +53356,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -52266,9 +53376,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isRolePresentationExcluded(el) {
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        // Fallback list: first token naming a known role, any case.
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -52287,7 +53396,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -52343,7 +53452,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let suspiciousReported = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -52361,7 +53470,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Rule-specific applicability: non-empty alt
     const alt = (() => {
       try {
-        return String(el.getAttribute('alt') || '').trim();
+        return String(dom.getAttribute(el, 'alt') || '').trim();
       } catch {
         return '';
       }
@@ -52374,7 +53483,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // against before any expensive occurrence building.
     const signal = (() => {
       try {
-        return getTextAlternativeSignal(el, el.getAttribute('alt'));
+        return getTextAlternativeSignal(el, dom.getAttribute(el, 'alt'));
       } catch {
         return null;
       }
@@ -52458,6 +53567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "input-image-alt-decorative": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -52468,8 +53578,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -52489,11 +53599,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -52512,7 +53622,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -52534,7 +53644,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      const title = el.getAttribute('title');
+      const title = dom.getAttribute(el, 'title');
       return title != null && String(title).trim() !== '';
     } catch {
       return false;
@@ -52560,7 +53670,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -52576,7 +53686,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isRolePresentationExcluded(el)) continue;
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!(dom.getAttribute(el, 'alt') != null && String(dom.getAttribute(el, 'alt')).trim() === ''))
+      continue;
     if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;
@@ -52611,6 +53722,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "input-image-alt-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -52621,8 +53733,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -52664,7 +53776,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of inputs) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isEligibleHelper) {
       const elig = (() => {
@@ -52697,11 +53809,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
       if (!v) {
-        const alt = el.getAttribute('alt');
+        const alt = dom.getAttribute(el, 'alt');
         if (alt != null && String(alt).trim()) v = String(alt);
       }
       if (!v) {
-        const t = el.getAttribute('title');
+        const t = dom.getAttribute(el, 'title');
         if (t != null && String(t).trim()) v = String(t);
       }
       return v.trim().toLowerCase();
@@ -52746,7 +53858,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // An image button is a control, so an empty name fails whether alt is
     // absent or present-but-empty. alt="" marks a decorative image, and an
     // image button is never decorative.
-    const emptyAlt = el.getAttribute('alt') !== null;
+    const emptyAlt = dom.getAttribute(el, 'alt') !== null;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
@@ -52802,6 +53914,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "input-image-alt-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -52812,8 +53925,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -52830,11 +53943,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -52853,7 +53966,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -52872,7 +53985,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function collectTextAlternativeSources(el) {
     const attr = (name) => {
       try {
-        const v = el.getAttribute(name);
+        const v = dom.getAttribute(el, name);
         return v == null ? '' : String(v).trim();
       } catch {
         return '';
@@ -52928,7 +54041,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -52947,7 +54060,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // it is left there rather than asked twice.
     let altRaw;
     try {
-      altRaw = el.getAttribute('alt');
+      altRaw = dom.getAttribute(el, 'alt');
     } catch {
       altRaw = null;
     }
@@ -53016,19 +54129,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   const occurrences = [];
   let applicableCount = 0;
 
   // Applicability: focus/activation controls with explicit ARIA naming.
   // NOTE: aria-hidden is intentionally NOT excluded here; it does not affect visual rendering.
-  const selector =
-    ':is(button, a[href], summary, input:not([type="hidden"]), textarea, select, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="searchbox"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="treeitem"], [role="gridcell"]):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  // The role attribute is a fallback list matched in any case, so roles are
+  // selected by token ([role~="x" i]) and then kept only when the role the
+  // attribute resolves to (its first known, non-abstract token) is one of
+  // these: role="link button" is a link, role="foo BUTTON" a button.
+  const NATIVE_CONTROLS = 'button, a[href], summary, input:not([type="hidden"]), textarea, select';
+  const CONTROL_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'searchbox',
+    'tab',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'treeitem',
+    'gridcell'
+  ];
+  const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
 
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  function getExplicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isCandidate(el) {
+    try {
+      if (dom.matches(el, NATIVE_CONTROLS)) return true;
+    } catch {
+      // fall through to the role check
+    }
+    return CONTROL_ROLES.includes(getExplicitRole(el));
+  }
+
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(isCandidate);
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -53090,14 +54243,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getElementDescriptor(el) {
-    const tag = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
-    let role;
-    try {
-      role = el && el.getAttribute ? el.getAttribute('role') || '' : '';
-    } catch {
-      role = '';
-    }
-    const r = String(role || '').trim();
+    const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
+    // The resolved role, not the raw attribute: <div role="foo button"> is
+    // described as div[role="button"], the role assistive technology sees.
+    const r = el ? getExplicitRole(el) : '';
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }
 
@@ -53108,7 +54258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isNonRenderedTag(el) {
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
     return (
       tn === 'script' ||
       tn === 'style' ||
@@ -53150,61 +54300,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // DOM's NodeFilter.SHOW_TEXT constant, inlined as a numeric literal rather
-  // than referencing the global NodeFilter object directly: runInPage must
-  // have zero free vars (see docs/RULE_AUTHORING.md's free-var footgun) and
-  // NodeFilter is not itself present in the execution realm this function
-  // actually runs in, unlike window/document. Referencing the global
-  // directly would silently make createTreeWalker throw on every call,
-  // falling back to raw container.textContent (which respects none of
-  // isNonRenderedTag/isDomVisible/isAccEligible below, since that whole
-  // per-node loop is skipped in the fallback path). Same pattern already
-  // used correctly in
-  // region-manual.js's own createTreeWalker call.
-  const SHOW_TEXT = 4;
-
+  // The element's visible inner text (ACT 2ee8b8): rendered, visible text
+  // joined as it is laid out. Pieces of text in inline elements join as
+  // written, so <b>Down</b>load is "Download"; a block-level box or a <br>
+  // starts a new line, read as a space (helpers.getTextBoundaryKind). Text in
+  // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
+  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden).
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
 
-    // TreeWalker is deterministic in document order.
-    let walker;
-    try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
-    } catch {
-      walker = null;
-    }
-    if (!walker) {
-      try {
-        const t = container.textContent;
-        return t == null ? '' : String(t);
-      } catch {
-        return '';
-      }
-    }
+    const boundaryOf = (n) =>
+      typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
+    const hidden = (n) =>
+      typeof helpers.isVisuallyHidden === 'function' ? helpers.isVisuallyHidden(n) : false;
 
+    // Per parent element: whether its text is perceived (see isAccEligible).
+    const eligibleByParent = new Map();
     const parts = [];
-    let n;
-    while ((n = walker.nextNode())) {
-      try {
-        const raw = n && n.nodeValue != null ? String(n.nodeValue) : '';
-        const t = raw.replace(/\s+/g, ' ').trim();
-        if (!t) continue;
-
-        const p = n.parentElement || null;
-        if (!p || !p.tagName) continue;
-        if (isNonRenderedTag(p)) continue;
-
-        // Require the parent element to be visually eligible AND not inside
-        // an aria-hidden subtree (see isAccEligible's docblock above).
-        if (!isAccEligible(p)) continue;
-
-        parts.push(t);
-      } catch {
-        // no-throws
+    let budget = 20000;
+    const walk = (node) => {
+      for (const n of dom.childNodes(node) || []) {
+        if (budget-- <= 0) return;
+        try {
+          const type = dom.nodeType(n);
+          if (type === 3) {
+            const p = dom.parentElement(n);
+            if (!p) continue;
+            let ok = eligibleByParent.get(p);
+            if (ok === undefined) {
+              ok = isAccEligible(p);
+              eligibleByParent.set(p, ok);
+            }
+            if (ok) parts.push(String(dom.nodeValue(n) || ''));
+            continue;
+          }
+          if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
+          const apart = boundaryOf(n) === 'block';
+          if (apart) parts.push(' ');
+          walk(n);
+          if (apart) parts.push(' ');
+        } catch {
+          // no-throws
+        }
       }
-    }
-    return parts.join(' ').replace(/\s+/g, ' ').trim();
+    };
+    if (!hidden(container)) walk(container);
+    return parts.join('').replace(/\s+/g, ' ').trim();
   }
 
   // Real <label> elements associated with a native form control -- the
@@ -53236,7 +54378,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let text;
     let source = 'none';
 
-    const tn = el && el.tagName ? String(el.tagName).toLowerCase() : '';
+    const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
 
     // 1) Label association (native form controls)
     const isFormControl = tn === 'input' || tn === 'select' || tn === 'textarea';
@@ -53264,13 +54406,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
-      const idrefs = el && el.getAttribute ? el.getAttribute('aria-labelledby') : null;
+      const idrefs =
+        el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-labelledby') : null;
       if (idrefs && helpers.resolveIdRefs) {
-        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+        const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
         const parts = [];
         const contributing = [];
         for (const ref of r && Array.isArray(r.refs) ? r.refs : []) {
-          if (!ref || !ref.tagName) continue;
+          if (!ref || !dom.tagName(ref)) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
           if (t) {
@@ -53333,7 +54476,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(node);
     } catch {
       // no computed style available
@@ -53538,6 +54681,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "landmark-banner-is-top-level": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
   // A candidate must actually have the banner role. Per HTML-AAM a <header>
@@ -53549,13 +54693,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
-    let p = el.parentElement;
-    while (p) {
+    let p = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; p && steps < 100000; steps++) {
       if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
-      p = p.parentElement;
+      p = dom.parentElement(p);
     }
     return false;
   }
@@ -53640,6 +54785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-complementary-is-top-level": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
   // A candidate must actually carry the complementary role. An <aside> that
@@ -53651,13 +54797,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
-    let p = el.parentElement;
-    while (p) {
+    let p = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; p && steps < 100000; steps++) {
       if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
-      p = p.parentElement;
+      p = dom.parentElement(p);
     }
     return false;
   }
@@ -53740,6 +54887,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-contentinfo-is-top-level": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
   // A candidate must actually have the contentinfo role: a <footer> inside
@@ -53751,13 +54899,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
-    let p = el.parentElement;
-    while (p) {
+    let p = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; p && steps < 100000; steps++) {
       if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
-      p = p.parentElement;
+      p = dom.parentElement(p);
     }
     return false;
   }
@@ -53842,17 +54991,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-main-is-top-level": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
-    let p = el.parentElement;
-    while (p) {
+    let p = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; p && steps < 100000; steps++) {
       if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
-      p = p.parentElement;
+      p = dom.parentElement(p);
     }
     return false;
   }
@@ -54150,9 +55301,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "landmark-one-main": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -54228,10 +55380,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of helpers.queryAllSmart('[role]')) {
-    const role = String(el.getAttribute('role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case (role="foo REGION" is a region).
+    const role = helpers.aria.getExplicitRole(el);
     if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
 
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
@@ -54397,17 +55548,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "link-in-text-block": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
+
+  // The element's resolved explicit role: the first known role token of
+  // its role attribute, lower-cased, or '' when none names a role.
+  function explicitRole(el) {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -54508,15 +55674,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // default decoration.
   function uaUnderlines(el) {
     return (
-      String(el.localName || '').toLowerCase() === 'a' &&
-      typeof el.hasAttribute === 'function' &&
-      el.hasAttribute('href')
+      String(dom.localName(el) || '').toLowerCase() === 'a' &&
+      typeof dom.get(el, 'hasAttribute') === 'function' &&
+      dom.hasAttribute(el, 'href')
     );
   }
 
   function resolveUnderlineFromCssom(el) {
-    const doc = el && el.ownerDocument ? el.ownerDocument : null;
-    if (!doc || typeof el.matches !== 'function') return { underlined: false, resolved: false };
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function')
+      return { underlined: false, resolved: false };
 
     let best = null; // { rank, order, underlined }
     let order = 0;
@@ -54537,7 +55704,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         let matched;
         try {
-          matched = el.matches(part);
+          matched = dom.matches(el, part);
         } catch {
           unparsableSelector = true;
           continue;
@@ -54568,7 +55735,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     try {
-      for (const sheet of doc.styleSheets || []) {
+      for (const sheet of dom.styleSheets(doc) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -54583,7 +55750,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // The inline style attribute outranks every stylesheet declaration.
-    const inline = underlineFromDeclaration(el.style);
+    const inline = underlineFromDeclaration(dom.get(el, 'style'));
     if (inline) return { underlined: inline.underlined, resolved: true };
 
     if (best) return { underlined: best.underlined, resolved: true };
@@ -54656,7 +55823,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(el.querySelectorAll('img, svg, picture, canvas, [role="img"]'));
+      imgs = Array.from(
+        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i]')
+      ).filter((img) => {
+        const name = String(dom.localName(img) || '').toLowerCase();
+        if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
+        return explicitRole(img) === 'img';
+      });
     } catch {
       return false;
     }
@@ -54712,7 +55885,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      for (const sheet of (doc && doc.styleSheets) || []) {
+      for (const sheet of (doc && dom.styleSheets(doc)) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -54728,9 +55901,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasPseudoContent(el) {
-    return getPseudoContentRules(el.ownerDocument).some((base) => {
+    return getPseudoContentRules(dom.ownerDocument(el)).some((base) => {
       try {
-        return el.matches(base);
+        return dom.matches(el, base);
       } catch {
         return false;
       }
@@ -54753,8 +55926,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!parent) return false;
     if (parentHasText.has(parent)) return parentHasText.get(parent);
     let found = false;
-    for (let n = parent.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) {
+    for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0) {
         found = true;
         break;
       }
@@ -54775,10 +55948,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
-  const selector = 'a[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // `[role~="link" i]` also matches a fallback list whose first known role
+  // is something else (role="button link" is a button), so a role-only
+  // candidate is kept only when its resolved explicit role is link.
+  const selector = 'a[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    if (uaUnderlines(el)) return true;
+    return explicitRole(el) === 'link';
+  });
 
   const occurrences = [];
   const undecided = [];
@@ -54798,7 +55977,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // as frameworks often wrap one) is part of the link as far as the text
   // around it goes: the surrounding text is its parent's.
   function wrapperHasCue(wrapper, cs) {
-    const outerCs = safeComputedStyle(wrapper.parentElement);
+    const outerCs = safeComputedStyle(dom.parentElement(wrapper));
     if (
       c &&
       outerCs &&
@@ -54814,10 +55993,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function textParentOf(el) {
     let child = el;
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     for (let depth = 0; parent && depth < 5; depth++) {
       if (hasSurroundingText(child, parent)) break;
-      if (parent.firstElementChild !== child || parent.lastElementChild !== child) break;
+      if (dom.firstElementChild(parent) !== child || dom.lastElementChild(parent) !== child) break;
       const wcs = safeComputedStyle(parent) || {};
       const display = String(wcs.display || '');
       if (!display.startsWith('inline') || display === 'inline-block') break;
@@ -54826,7 +56005,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const valign = String(wcs.verticalAlign || 'baseline');
       if (valign !== 'baseline' || wrapperHasCue(parent, wcs)) break;
       child = parent;
-      parent = parent.parentElement;
+      parent = dom.parentElement(parent);
     }
     return parent;
   }
@@ -54848,14 +56027,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
     };
     let sawText = false;
-    const doc = el.ownerDocument;
-    const walker = doc && doc.createTreeWalker ? doc.createTreeWalker(el, 4) : null;
+    const doc = dom.ownerDocument(el);
+    const walker =
+      doc && dom.get(doc, 'createTreeWalker') ? dom.createTreeWalker(doc, el, 4) : null;
     if (!walker) return false;
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-      if (!n.nodeValue || !n.nodeValue.trim()) continue;
+      if (!dom.nodeValue(n) || !dom.nodeValue(n).trim()) continue;
       sawText = true;
       let cued = false;
-      for (let a = n.parentElement; a && a !== el; a = a.parentElement) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (
+        let a = dom.parentElement(n), i = 0;
+        a && a !== el && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
         if (hasCue(a)) {
           cued = true;
           break;
@@ -54867,7 +56052,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -55035,7 +56220,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const eligInfo = helpers.getEligibilityInfo
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : null;
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
     occurrences.push(
@@ -55149,6 +56334,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const occurrences = [];
@@ -55165,14 +56351,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // `[role~="link" i]` also matches role="button link" (a button), so a
+  // role-only candidate is kept only when its resolved role is link.
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
+    return explicitRole(el) === 'link';
+  });
 
   for (const el of nodes) {
     // isAccTreeEligible returns { eligible, reasons }, not a boolean.
@@ -55193,11 +56397,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
     const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
-    const role = el.getAttribute ? el.getAttribute('role') : null;
-    let roleNorm = String(role || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    let roleNorm = explicitRole(el);
     // WAI-ARIA's presentational-roles conflict resolution: a focusable
     // element keeps its implicit role whatever role="none"/"presentation"
     // says, so <a href="/" role="none">Home</a> is a link named "Home".
@@ -55267,7 +56467,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       occurrences.push(
         helpers.reportOccurrence(el, {
@@ -55312,6 +56512,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-name-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT_EN = new Set([
@@ -55474,12 +56675,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -55491,10 +56693,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function ownDirectText(el) {
     let out = '';
-    const kids = el.childNodes || [];
+    const kids = dom.childNodes(el) || [];
     for (let i = 0; i < kids.length; i++) {
       const n = kids[i];
-      if (n.nodeType === 3) out += n.nodeValue || '';
+      if (dom.nodeType(n) === 3) out += dom.nodeValue(n) || '';
     }
     return out.replace(/\s+/g, ' ').trim();
   }
@@ -55509,17 +56711,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // nested list of links, e.g. "Ulysses" above per-format download
   // links).
   function nearestBlockContextText(el) {
-    let node = el.parentElement;
+    let node = dom.parentElement(el);
     let liHops = 0;
-    while (node) {
-      const tag = (node.tagName || '').toLowerCase();
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; node && steps < 100000; steps++) {
+      const tag = (dom.tagName(node) || '').toLowerCase();
       if (tag === 'li') {
         const text = ownDirectText(node);
         if (text) return text;
         liHops += 1;
         if (liHops >= 4) return '';
-        const list = node.parentElement;
-        node = list ? list.parentElement : null;
+        const list = dom.parentElement(node);
+        node = list ? dom.parentElement(list) : null;
         continue;
       }
       if (CONTEXT_BLOCK_TAGS.has(tag)) return ownDirectText(node);
@@ -55529,10 +56732,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function describedByContextText(el) {
-    const describedBy = el.getAttribute ? el.getAttribute('aria-describedby') : null;
+    const describedBy = dom.get(el, 'getAttribute')
+      ? dom.getAttribute(el, 'aria-describedby')
+      : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
-      const info = helpers.getTextFromIdRefs(describedBy, ctx);
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
       return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
     } catch {
       return '';
@@ -55543,17 +56748,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the same table -- naming the row's subject is exactly what turns a
   // bare format name ("HTML") into a link whose destination is clear.
   function firstRowHeaderText(el) {
-    const cell = el.closest ? el.closest('td, th') : null;
+    const cell = dom.get(el, 'closest') ? dom.closest(el, 'td, th') : null;
     if (!cell) return '';
-    const table = cell.closest ? cell.closest('table') : null;
+    const table = dom.get(cell, 'closest') ? dom.closest(cell, 'table') : null;
     if (!table || !table.rows || !table.rows.length) return '';
     const headerRow = table.rows[0];
-    const cellRow = cell.closest ? cell.closest('tr') : null;
+    const cellRow = dom.get(cell, 'closest') ? dom.closest(cell, 'tr') : null;
     if (!cellRow || headerRow === cellRow) return '';
-    const ths = headerRow.querySelectorAll ? headerRow.querySelectorAll('th') : [];
+    const ths = dom.get(headerRow, 'querySelectorAll') ? dom.querySelectorAll(headerRow, 'th') : [];
     if (!ths.length) return '';
     return Array.prototype.map
-      .call(ths, (th) => th.textContent || '')
+      .call(ths, (th) => dom.textContent(th) || '')
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -55566,7 +56771,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
+  const NATIVE_LINK_TAGS = ['a', 'area'];
+  // A native link (<a>/<area> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
+  const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -55575,7 +56790,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -55655,6 +56871,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "list-children-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -55682,16 +56899,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // The first role token that names a concrete ARIA role, or '' when none
-  // does (the element keeps its native list role).
-  const aria = helpers && helpers.aria;
+  // The first role token that names a known, non-abstract ARIA role, in
+  // any case, or '' when none does (the element keeps its native role).
   function resolvedExplicitRole(el) {
-    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!aria || typeof aria.isValidConcreteRole !== 'function') return tokens[0] || '';
-    return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   // An element's child elements by sibling links, not el.children: in jsdom
@@ -55702,15 +56913,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the host's <li> children), or for its fallback content when none is.
   function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
-      if (String(c.localName) !== 'slot' || depth > 20) {
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c)) !== 'slot' || depth > 20) {
         out.push(c);
         continue;
       }
       let assigned;
       try {
         assigned =
-          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+          typeof dom.get(c, 'assignedElements') === 'function'
+            ? dom.assignedElements(c, { flatten: true })
+            : [];
       } catch {
         assigned = [];
       }
@@ -55721,7 +56934,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.firstElementChild) continue;
+    if (!el || !dom.firstElementChild(el)) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
@@ -55729,12 +56942,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const invalidTags = [];
     for (const child of childElementsOf(el)) {
-      if (!child || !child.tagName) continue;
+      if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
-      const tag = child.tagName.toLowerCase();
+      const tag = dom.tagName(child).toLowerCase();
 
-      const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
-      const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+      const explicitRole = resolvedExplicitRole(child);
 
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
@@ -55746,7 +56958,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -55778,6 +56990,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listbox-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -55790,8 +57003,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -55809,7 +57022,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -55849,7 +57062,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -55879,7 +57092,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="listbox"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is listbox (role="link listbox" is a link).
+  const selector = '[role~="listbox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -55928,6 +57143,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (helpers.aria.getExplicitRole(el) !== 'listbox') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -55976,24 +57192,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listitem-parent-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The element an <li> renders in: its parent in the flat tree, through an
   // assigned slot and past any <slot> or shadow root on the way. undefined
   // for a child of a shadow host that no slot takes: it isn't rendered.
   function flatParent(el) {
-    const parent = el.parentElement;
-    if (parent && parent.shadowRoot && !el.assignedSlot) return undefined;
+    const parent = dom.parentElement(el);
+    if (parent && dom.shadowRoot(parent) && !dom.assignedSlot(el)) return undefined;
     const up = (n) =>
       typeof helpers.composedParent === 'function'
         ? helpers.composedParent(n)
-        : n.assignedSlot || n.parentNode || n.host || null;
+        : dom.assignedSlot(n) || dom.parentNode(n) || dom.host(n) || null;
     let p = up(el);
     for (let guard = 0; p && guard < 100; guard++) {
-      if (p.nodeType === 1 && String(p.localName) !== 'slot') return p;
+      if (dom.nodeType(p) === 1 && String(dom.localName(p)) !== 'slot') return p;
       p = up(p);
     }
     return null;
+  }
+
+  // The resolved explicit role: the first token of the role fallback list
+  // naming a known role, lower-cased, or '' when none does (the element then
+  // keeps its native role).
+  function resolvedRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
@@ -56016,16 +57246,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // at all; there's no listitem semantics being claimed to validate.
     // role="listitem" itself is a no-op restatement, not an override, so
     // it still falls through to the normal parent check below.
-    const ownRoleAttr = el.getAttribute ? String(el.getAttribute('role') || '').trim() : '';
-    const ownExplicitRole = ownRoleAttr ? (ownRoleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const ownExplicitRole = resolvedRole(el);
     if (ownExplicitRole && ownExplicitRole !== 'listitem') continue;
 
     applicableCount += 1;
 
-    const parentTag = parent.tagName ? parent.tagName.toLowerCase() : '';
+    const parentTag = dom.tagName(parent) ? dom.tagName(parent).toLowerCase() : '';
 
-    const roleAttr = parent.getAttribute ? String(parent.getAttribute('role') || '').trim() : '';
-    const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+    const explicitRole = resolvedRole(parent);
 
     let valid;
     if (explicitRole) {
@@ -56068,12 +57296,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "manual-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
 
   const getOuterHtmlSnippet =
     helpers && helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet
-      : (el) => (el && el.outerHTML) || '';
+      : (el) => (el && dom.outerHTML(el)) || '';
 
   const contextSelector = ctx.contextSelector || null;
 
@@ -56082,19 +57311,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (!rootEl) {
     if (contextSelector) {
       try {
-        rootEl = document.querySelector(contextSelector);
+        rootEl = dom.querySelector(document, contextSelector);
       } catch {
         // invalid selector, fallback to full document
         rootEl = null;
       }
     }
     if (!rootEl) {
-      rootEl = document.documentElement || document.body || document.querySelector('html');
+      rootEl =
+        dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     }
   }
 
   const fallbackRoot =
-    rootEl || document.documentElement || document.body || document.querySelector('html');
+    rootEl ||
+    dom.documentElement(document) ||
+    dom.body(document) ||
+    dom.querySelector(document, 'html');
 
   const html = getOuterHtmlSnippet(fallbackRoot);
 
@@ -56118,6 +57351,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "media-alternative-transcript-evidence": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -56170,20 +57404,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function getNodeText(el) {
     try {
       if (!el) return '';
-      return el.textContent || '';
+      return dom.textContent(el) || '';
     } catch {
       return '';
     }
   }
 
   function isElement(el) {
-    return !!(el && el.nodeType === 1);
+    return !!(el && dom.nodeType(el) === 1);
   }
 
   const __eligCache = new WeakMap();
 
   function getEligibility(node) {
-    if (!node || node.nodeType !== 1)
+    if (!node || dom.nodeType(node) !== 1)
       return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
     const cached = __eligCache.get(node);
     if (cached) return cached;
@@ -56225,10 +57459,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function nodeRef(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
-      const elementId = el.getAttribute && el.getAttribute('id');
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
       if (elementId) return { type: 'id', value: String(elementId) };
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
       return { type: 'tag', value: tag };
     } catch {
       return null;
@@ -56264,16 +57498,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // 2) In-container transcript heading + substantial visible text
-    const parent = mediaEl.parentElement;
+    const parent = dom.parentElement(mediaEl);
     if (isElement(parent) && isEligible(parent)) {
-      const headings = parent.querySelectorAll('h1,h2,h3,h4,h5,h6');
+      const headings = dom.querySelectorAll(parent, 'h1,h2,h3,h4,h5,h6');
       for (const h of headings) {
         if (!isEligible(h)) continue;
         const hText = getNodeText(h);
         if (!containsTranscriptToken(hText)) continue;
 
         // Look at a small set of following siblings for substantial text (and ensure visibility).
-        let sib = h.nextElementSibling;
+        let sib = dom.nextElementSibling(h);
         let steps = 0;
         while (isElement(sib) && steps < 4) {
           if (isEligible(sib)) {
@@ -56288,7 +57522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               return evidence;
             }
           }
-          sib = sib.nextElementSibling;
+          sib = dom.nextElementSibling(sib);
           steps += 1;
         }
       }
@@ -56298,7 +57532,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // - Same-document anchors can be verified (strong).
     // - Cross-document links are unverified (weak).
     if (isElement(parent) && isEligible(parent)) {
-      const links = parent.querySelectorAll('a[href]');
+      const links = dom.querySelectorAll(parent, 'a[href]');
       for (const a of links) {
         if (!isEligible(a)) continue;
 
@@ -56308,7 +57542,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const linkName = nameInfo && nameInfo.value ? nameInfo.value : getNodeText(a);
         if (!containsTranscriptToken(linkName)) continue;
 
-        const href = a.getAttribute('href') || '';
+        const href = dom.getAttribute(a, 'href') || '';
         evidence.transcriptLinkHref = href;
         evidence.transcriptNodeSelector = nodeRef(a);
 
@@ -56316,14 +57550,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (href.startsWith('#')) {
           const targetId = href.slice(1);
           const target = targetId
-            ? safeRoot.getElementById
-              ? safeRoot.getElementById(targetId)
-              : document.getElementById(targetId)
+            ? dom.get(safeRoot, 'getElementById')
+              ? dom.getElementById(safeRoot, targetId)
+              : // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document
+                dom.getElementById(document, targetId)
             : null;
 
           if (isElement(target) && isEligible(target)) {
             // Find a transcript heading in the target, and ensure there is substantial text in the target subtree.
-            const targetHeadings = target.querySelectorAll('h1,h2,h3,h4,h5,h6');
+            const targetHeadings = dom.querySelectorAll(target, 'h1,h2,h3,h4,h5,h6');
             let hasTranscriptHeading = false;
             for (const th of targetHeadings) {
               if (!isEligible(th)) continue;
@@ -56380,28 +57615,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hiddenByBrowserStylesheet(el) {
     return (
-      String(el.tagName || '').toLowerCase() === 'audio' &&
-      !(el.hasAttribute && el.hasAttribute('controls'))
+      String(dom.tagName(el) || '').toLowerCase() === 'audio' &&
+      !(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'controls'))
     );
   }
 
   // The eligibility that decides whether the media element is in scope.
   function getMediaEligibility(el) {
     if (!hiddenByBrowserStylesheet(el)) return getEligibility(el);
-    if (el.hasAttribute('hidden')) {
+    if (dom.hasAttribute(el, 'hidden')) {
       return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
     }
     if (
-      String(el.getAttribute('aria-hidden') || '')
+      String(dom.getAttribute(el, 'aria-hidden') || '')
         .trim()
         .toLowerCase() === 'true'
     ) {
       return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
     }
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     if (!parent) {
-      const rootNode = el.getRootNode ? el.getRootNode() : null;
-      parent = rootNode && rootNode.host ? rootNode.host : null;
+      const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      parent = rootNode && dom.host(rootNode) ? dom.host(rootNode) : null;
     }
     return parent ? getEligibility(parent) : getEligibility(el);
   }
@@ -56427,7 +57662,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       __evidenceCache.set(el, evidence);
     }
 
-    const mediaTag = (el.tagName || '').toLowerCase();
+    const mediaTag = (dom.tagName(el) || '').toLowerCase();
 
     if (evidence.strength === 'none') {
       const baseOccurrence = {
@@ -56504,6 +57739,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "menuitem-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -56516,8 +57752,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -56535,7 +57771,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -56549,7 +57785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -56579,7 +57815,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="menuitem" i],[role~="menuitemcheckbox" i],[role~="menuitemradio" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -56605,7 +57843,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo menuitem" is a menuitem).
+    const role = helpers.aria.getExplicitRole(el);
     if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
 
     applicableCount += 1;
@@ -56654,10 +57894,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "meta-refresh-no-exceptions": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   const occurrences = [];
@@ -56692,9 +57933,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
     const delay = parseRefreshDelay(raw);
     if (delay === null) continue;
@@ -56740,13 +57981,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "meta-refresh-timing-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // WCAG 2.2.1 Exception 3: time limits longer than 20 hours are exempt.
   const EXEMPT_DELAY_SECONDS = 20 * 60 * 60;
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   const occurrences = [];
@@ -56781,9 +58023,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
     const delay = parseRefreshDelay(raw);
@@ -56830,6 +58072,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "meta-viewport-large": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function parseContent(raw) {
@@ -56847,16 +58090,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[name="viewport" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
     applicableCount += 1;
@@ -56911,6 +58154,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "meta-viewport-zoom-enabled": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function parseContent(raw) {
@@ -56928,16 +58172,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[name="viewport" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
 
     const parsed = parseContent(raw);
@@ -57012,6 +58256,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "meter-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -57024,8 +58269,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -57041,7 +58286,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -57071,7 +58316,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="meter"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="meter" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -57097,8 +58344,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'meter') continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo meter" is a meter).
+    if (helpers.aria.getExplicitRole(el) !== 'meter') continue;
 
     applicableCount += 1;
 
@@ -57146,6 +58394,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "mouse-only-event-handlers": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MOUSE_ONLY_ATTRS = [
@@ -57186,7 +58435,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
     let descendants;
     try {
-      descendants = Array.from(el.querySelectorAll(FOCUSABLE_CANDIDATES));
+      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
     } catch {
       return true;
     }
@@ -57206,9 +58455,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (!presentMouseAttrs.length) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
@@ -57218,7 +58467,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
     const unreachable = presentKeyboardAttrs.length > 0;
 
@@ -57288,34 +58537,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
   // ("runInPage MUST be self-contained").
-  const INTERACTIVE_SELECTOR = [
+  const NATIVE_INTERACTIVE_SELECTOR = [
     'a[href]',
     'button',
     'input:not([type="hidden"])',
     'select',
-    'textarea',
-    '[role="button"]',
-    '[role="link"]',
-    '[role="checkbox"]',
-    '[role="radio"]',
-    '[role="switch"]',
-    '[role="tab"]',
-    '[role="textbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitem"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="option"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="searchbox"]',
-    '[role="treeitem"]'
+    'textarea'
   ].join(', ');
+  const WIDGET_ROLES = [
+    'button',
+    'link',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'treeitem'
+  ];
+  const WIDGET_ROLE_SET = new Set(WIDGET_ROLES);
+  // role is a fallback list matched in any case, so select by token
+  // (case-insensitive) and keep only elements whose resolved role is a
+  // widget role (matchesInteractive): role="link button" is a link.
+  const INTERACTIVE_SELECTOR = [NATIVE_INTERACTIVE_SELECTOR]
+    .concat(WIDGET_ROLES.map((r) => `[role~="${r}" i]`))
+    .join(', ');
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -57335,9 +58594,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function matchesInteractive(node) {
     return !!(
       node &&
-      node.nodeType === 1 &&
-      typeof node.matches === 'function' &&
-      node.matches(INTERACTIVE_SELECTOR)
+      dom.nodeType(node) === 1 &&
+      typeof dom.get(node, 'matches') === 'function' &&
+      (dom.matches(node, NATIVE_INTERACTIVE_SELECTOR) || WIDGET_ROLE_SET.has(getExplicitRole(node)))
     );
   }
 
@@ -57359,20 +58618,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     radio: ['radiogroup']
   };
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (role is a fallback list).
   function getExplicitRole(node) {
-    if (!node || node.nodeType !== 1 || typeof node.getAttribute !== 'function') return '';
-    const raw = node.getAttribute('role');
-    if (!raw) return '';
-    // role accepts a space-separated fallback list; the first token wins.
-    const first = raw.trim().split(/\s+/)[0];
-    return first ? first.toLowerCase() : '';
+    if (!node || dom.nodeType(node) !== 1) return '';
+    return helpers.aria.getExplicitRole(node);
   }
 
   function parentElementOf(node) {
     if (!node) return null;
-    if (node.parentElement) return node.parentElement;
-    const p = node.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    if (dom.parentElement(node)) return dom.parentElement(node);
+    const p = dom.parentNode(node);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   // True when `node` is an owned child of a composite widget: its role is a
@@ -57385,7 +58642,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const containers = COMPOSITE_CHILD_CONTAINERS[role];
     if (!containers) return false;
     let p = parentElementOf(node);
-    while (p && p.nodeType === 1) {
+    while (p && dom.nodeType(p) === 1) {
       if (containers.indexOf(getExplicitRole(p)) !== -1) return true;
       p = parentElementOf(p);
     }
@@ -57427,17 +58684,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function flatChildren(node) {
     if (!node) return [];
     let assigned = null;
-    if (String(node.localName) === 'slot' && typeof node.assignedElements === 'function') {
+    if (
+      String(dom.localName(node)) === 'slot' &&
+      typeof dom.get(node, 'assignedElements') === 'function'
+    ) {
       try {
-        assigned = node.assignedElements({ flatten: true });
+        assigned = dom.assignedElements(node, { flatten: true });
       } catch {
         assigned = null;
       }
     }
     if (assigned && assigned.length) return assigned;
-    const from = node.shadowRoot || node;
+    const from = dom.shadowRoot(node) || node;
     const out = [];
-    for (let c = from.firstElementChild; c; c = c.nextElementSibling) out.push(c);
+    for (let c = dom.firstElementChild(from); c; c = dom.nextElementSibling(c)) out.push(c);
     return out;
   }
 
@@ -57448,7 +58708,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let guard = 0;
     while (stack.length && guard++ < 200000) {
       const node = stack.pop();
-      if (node && node.nodeType === 1) {
+      if (node && dom.nodeType(node) === 1) {
         // A composite-owned child (option in a listbox/combobox, tab in a
         // tablist, ...) is not a nested interactive control: its container
         // owns it and drives its focus (roving tabindex or
@@ -57477,7 +58737,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    // The token selector also matches e.g. role="none button" (role none).
+    if (!matchesInteractive(el)) continue;
     if (!isEligible(el)) continue;
 
     applicableCount += 1;
@@ -57485,10 +58747,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const nested = collectNestedOperable(el);
     if (!nested.length) continue;
 
-    const nestedTags = nested.map((n) => (n && n.tagName ? n.tagName.toLowerCase() : 'unknown'));
+    const nestedTags = nested.map((n) =>
+      n && dom.tagName(n) ? dom.tagName(n).toLowerCase() : 'unknown'
+    );
     const dedupedNestedTags = [...new Set(nestedTags)];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -57524,6 +58788,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Every match in scope, hidden or not (see @implementation-notes).
@@ -57543,13 +58808,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.hasAttribute) continue;
-    if (el.hasAttribute('muted')) continue;
+    if (!el || !dom.get(el, 'hasAttribute')) continue;
+    if (dom.hasAttribute(el, 'muted')) continue;
 
     applicableCount += 1;
 
-    const mediaTag = (el.tagName || '').toLowerCase();
-    if (el.hasAttribute('controls')) {
+    const mediaTag = (dom.tagName(el) || '').toLowerCase();
+    if (dom.hasAttribute(el, 'controls')) {
       const shown = helpers.isDomVisibleEligible(el, ctx, {
         visibilityMode: 'styleOnly',
         ignoreOpacity: true
@@ -57574,7 +58839,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -57605,7 +58872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const PLUGIN_TYPES = /^(application\/x-shockwave-flash|application\/futuresplash)$/i;
 
   function attr(el, name) {
-    return String(el.getAttribute(name) || '').trim();
+    return String(dom.getAttribute(el, name) || '').trim();
   }
 
   function mayPlaySound(el, urlAttr) {
@@ -57616,15 +58883,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function startsDisabled(el) {
     const isOff = (v) => /^(false|0|no)$/i.test(String(v || '').trim());
-    if (isOff(el.getAttribute('autostart')) || isOff(el.getAttribute('autoplay'))) return true;
+    if (isOff(dom.getAttribute(el, 'autostart')) || isOff(dom.getAttribute(el, 'autoplay')))
+      return true;
     const kids = [];
-    for (let c = el.firstElementChild; c; c = c.nextElementSibling) kids.push(c);
+    for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) kids.push(c);
     return kids.some((c) => {
-      if ((c.tagName || '').toLowerCase() !== 'param') return false;
+      if ((dom.tagName(c) || '').toLowerCase() !== 'param') return false;
       const name = attr(c, 'name').toLowerCase();
       return (
         (name === 'autostart' || name === 'autoplay' || name === 'play') &&
-        isOff(c.getAttribute('value'))
+        isOff(dom.getAttribute(c, 'value'))
       );
     });
   }
@@ -57633,9 +58901,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const askedObjects = [];
 
   for (const el of queryAllUnfiltered('embed, object, bgsound')) {
-    if (!el || !el.getAttribute) continue;
-    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
-    const tag = (el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (askedObjects.some((o) => o !== el && dom.contains(o, el))) continue;
+    const tag = (dom.tagName(el) || '').toLowerCase();
     if (tag === 'embed' && !mayPlaySound(el, 'src')) continue;
     if (tag === 'object' && !mayPlaySound(el, 'data')) continue;
     if (tag !== 'bgsound' && startsDisabled(el)) continue;
@@ -57645,7 +58913,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const baseOccurrence = {
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
-      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       summary: 'This element may play sound as soon as the page loads.',
       hint: 'Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.',
       i18n: {
@@ -57682,6 +58950,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "object-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -57692,8 +58961,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -57760,7 +59029,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
 
-    const title = trim(el.getAttribute && el.getAttribute('title'));
+    const title = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
     if (title) {
       flags.push('title-used');
       return { present: true, value: title, mechanism: 'title', flags };
@@ -57776,7 +59045,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function computeFallbackText(el) {
     try {
       // Deterministic + bounded: textContent can be large
-      const raw = trim(el.textContent || '');
+      const raw = trim(dom.textContent(el) || '');
       const t = raw.length > 1000 ? raw.slice(0, 1000) : raw;
       return { present: !!t, value: t, mechanism: 'fallback', flags: t ? [] : ['empty'] };
     } catch {
@@ -57785,7 +59054,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of objects) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isEligibleHelper) {
       const elig = (() => {
@@ -57800,11 +59069,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // role presentation/none exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -57821,7 +59092,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null &&
           String(tabindex).trim() !== '' &&
@@ -57884,6 +59155,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "object-text-alternative-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -57894,8 +59166,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -57912,11 +59184,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -57935,7 +59207,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -57960,7 +59232,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -57984,10 +59256,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let labelledByText = '';
 
     try {
-      fallbackText = trim(el.textContent || '');
-      ariaLabel = trim(el.getAttribute('aria-label'));
-      ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
-      title = trim(el.getAttribute('title'));
+      fallbackText = trim(dom.textContent(el) || '');
+      ariaLabel = trim(dom.getAttribute(el, 'aria-label'));
+      ariaLabelledBy = trim(dom.getAttribute(el, 'aria-labelledby'));
+      title = trim(dom.getAttribute(el, 'title'));
     } catch {}
 
     // Only resolve idrefs if needed/present
@@ -57998,7 +59270,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }
@@ -58051,6 +59323,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "option-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -58063,8 +59336,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -58082,7 +59355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -58096,7 +59369,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -58126,7 +59399,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="option"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="option" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -58150,6 +59425,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo option" is a option).
+    if (helpers.aria.getExplicitRole(el) !== 'option') continue;
 
     applicableCount += 1;
 
@@ -58197,6 +59475,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "p-as-heading": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MAX_HEADING_LIKE_CHARS = 120;
@@ -58208,13 +59487,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -58228,9 +59509,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) && n >= 700;
   }
 
-  // Elements whose text already has a role of its own.
-  const OWN_ROLE_ANCESTORS =
-    'h1, h2, h3, h4, h5, h6, [role="heading"], button, [role="button"], label, legend, caption, th, [role="columnheader"], [role="rowheader"], summary';
+  // Elements whose text already has a role of its own: these native tags,
+  // or an element whose role attribute resolves to one of OWN_ROLES (the
+  // first token naming a real role, in any case: role="foo heading" counts,
+  // role="note heading" doesn't).
+  const OWN_ROLE_TAGS = 'h1, h2, h3, h4, h5, h6, button, label, legend, caption, th, summary';
+  const OWN_ROLES = ['heading', 'button', 'columnheader', 'rowheader'];
+  const OWN_ROLE_SELECTOR = OWN_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+
+  function hasOwnRoleAncestor(el) {
+    if (!dom.get(el, 'closest')) return false;
+    if (dom.closest(el, OWN_ROLE_TAGS)) return true;
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.closest(cur, OWN_ROLE_SELECTOR);
+      if (!hit) return false;
+      if (OWN_ROLES.includes(helpers.aria.getExplicitRole(hit))) return true;
+      cur = dom.parentElement(hit);
+    }
+    return false;
+  }
 
   // Anything but text and inline markup makes a <div> a container, not a
   // passage of text.
@@ -58239,11 +59537,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function textPieces(el) {
     const pieces = [];
-    const doc = el.ownerDocument;
-    const walker = doc.createTreeWalker(el, 4 /* NodeFilter.SHOW_TEXT */);
+    const doc = dom.ownerDocument(el);
+    const walker = dom.createTreeWalker(doc, el, 4);
     let node = walker.nextNode();
     while (node) {
-      if (trim(node.nodeValue) && node.parentElement) pieces.push(node.parentElement);
+      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
+        pieces.push(dom.parentElement(node));
       node = walker.nextNode();
     }
     return pieces;
@@ -58263,12 +59562,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isCandidate(el) {
-    const tag = (el.tagName || '').toLowerCase();
-    if (el.closest && el.closest(OWN_ROLE_ANCESTORS)) return false;
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    if (hasOwnRoleAncestor(el)) return false;
     if (tag === 'p') return true;
     if (tag !== 'div') return false;
-    if (trim(el.getAttribute('role'))) return false;
-    return !el.querySelector(NOT_INLINE);
+    // A role attribute naming no real role leaves the <div> a plain <div>.
+    if (helpers.aria.getExplicitRole(el)) return false;
+    return !dom.querySelector(el, NOT_INLINE);
   }
 
   const nodes = helpers.queryAllSmart
@@ -58279,10 +59579,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    const text = trim(el.textContent || '');
+    const text = trim(dom.textContent(el) || '');
     if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
 
     applicableCount += 1;
@@ -58290,9 +59590,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const fontSizePx = boldSize(el);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
-    const isParagraph = (el.tagName || '').toLowerCase() === 'p';
+    const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = isParagraph
       ? {
@@ -58347,9 +59649,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "page-has-heading-one": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -58360,20 +59663,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLevelOneHeading(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return false;
-      const raw = normalizeWs(el.getAttribute && el.getAttribute('aria-level'));
+      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
       return raw === '1';
     }
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     return tag === 'h1';
   }
 
@@ -58398,7 +59702,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
         ? helpers.queryAllSmart('h1, [role]')
-        : document.querySelectorAll('h1, [role]');
+        : dom.querySelectorAll(document, 'h1, [role]');
   } catch {
     nodes = [];
   }
@@ -58434,6 +59738,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "page-title-patterns": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const probes =
     ctx && ctx.inputs && ctx.inputs.probes && typeof ctx.inputs.probes === 'object'
@@ -58454,8 +59759,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <svg><title> is not the page title.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
@@ -58463,10 +59768,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Kept as the stable selector for the usual place; a <title> elsewhere gets
   // the selector the engine builds for the node.
   const titleSelector =
-    titleEl && titleEl.parentElement && titleEl.parentElement.localName === 'head'
+    titleEl && dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
       ? 'head > title'
       : undefined;
-  const rawTitle = document.title || '';
+  const rawTitle = dom.get(document, 'title') || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
   // =========================
@@ -58603,8 +59908,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           occurrences.push({
             ...occBase,
             html:
-              titleEl && titleEl.outerHTML
-                ? String(titleEl.outerHTML).slice(0, 2000)
+              titleEl && dom.outerHTML(titleEl)
+                ? String(dom.outerHTML(titleEl)).slice(0, 2000)
                 : '<title>(unknown)</title>'
           });
         }
@@ -58656,10 +59961,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ja: ['ホーム', 'トップページ', 'トップ', 'ようこそ']
   };
 
-  const htmlEl = document.documentElement;
+  const htmlEl = dom.documentElement(document);
   const pageLang =
-    htmlEl && htmlEl.getAttribute && htmlEl.getAttribute('lang')
-      ? htmlEl.getAttribute('lang').trim().split('-')[0].toLowerCase()
+    htmlEl && dom.get(htmlEl, 'getAttribute') && dom.getAttribute(htmlEl, 'lang')
+      ? dom.getAttribute(htmlEl, 'lang').trim().split('-')[0].toLowerCase()
       : '';
   const titleNorm = titleLc.normalize('NFKC').replace(/[\u2018\u2019]/g, "'");
 
@@ -58733,8 +60038,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push({
         ...occBase,
         html:
-          titleEl && titleEl.outerHTML
-            ? String(titleEl.outerHTML).slice(0, 2000)
+          titleEl && dom.outerHTML(titleEl)
+            ? String(dom.outerHTML(titleEl)).slice(0, 2000)
             : '<title>(unknown)</title>'
       });
     }
@@ -58759,6 +60064,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "page-title-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const occurrences = [];
@@ -58773,13 +60079,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // and document.title ignores it.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
   }
-  const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
+  const titleText = (dom.get(document, 'title') || '').replace(/\s+/g, ' ').trim();
 
   const missingTitleEl = !titleEl;
   const emptyTitle = !missingTitleEl && titleText.length === 0;
@@ -58835,6 +60141,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "password-paste-enabled": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -58848,7 +60155,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function autocompleteTokens(el) {
-    return normalizeWs(el.getAttribute && el.getAttribute('autocomplete'))
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'autocomplete'))
       .toLowerCase()
       .split(' ')
       .filter(Boolean);
@@ -58863,13 +60170,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // autocomplete purpose that is not an authentication one says so, and takes
   // the field back out of scope.
   function isAuthField(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     if (tag !== 'input' && tag !== 'textarea') return false;
 
     const tokens = autocompleteTokens(el);
     if (AUTH_AUTOCOMPLETE_TOKENS.some((t) => tokens.includes(t))) return true;
 
-    const type = normalizeWs(el.getAttribute && el.getAttribute('type')).toLowerCase();
+    const type = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type')
+    ).toLowerCase();
     if (tag !== 'input' || type !== 'password') return false;
 
     const declaresOtherPurpose = tokens.some(
@@ -58881,7 +60190,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A field that takes no input at all cannot be pasted into either, so a
   // paste handler on it blocks nothing.
   function acceptsInput(el) {
-    if (el.hasAttribute && (el.hasAttribute('disabled') || el.hasAttribute('readonly'))) {
+    if (
+      dom.get(el, 'hasAttribute') &&
+      (dom.hasAttribute(el, 'disabled') || dom.hasAttribute(el, 'readonly'))
+    ) {
       return false;
     }
     return true;
@@ -58944,7 +60256,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const undetermined = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isAuthField(el)) continue;
 
     if (!acceptsInput(el)) continue;
@@ -58954,7 +60266,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const handler = el.getAttribute('onpaste');
+    const handler = dom.getAttribute(el, 'onpaste');
     if (handler === null) continue;
 
     const verdict = classifyHandler(handler);
@@ -59016,6 +60328,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "presentation-role-conflict": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The full set of ARIA attributes marked `global: true` per the WAI-ARIA
@@ -59054,37 +60367,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over. Returns '' when the
-  // element has no role attribute or none of its tokens name a role: the
-  // cases where an <img alt=""> keeps the presentation role empty alt gives
-  // it.
+  // role wins, case-insensitively, and unknown tokens are skipped over.
+  // Returns '' when the element has no role attribute or none of its tokens
+  // name a role: the cases where an <img alt=""> keeps the presentation role
+  // empty alt gives it.
   function getEffectiveRoleToken(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
   }
 
+  // Token match, case-insensitive; the resolved-role check in the loop drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="presentation" i], [role~="none" i], img[alt=""]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="presentation"], [role="none"], img[alt=""]')
-    : helpers.queryAll('[role="presentation"], [role="none"], img[alt=""]');
+    ? helpers.queryAllSmart(selector)
+    : helpers.queryAll(selector);
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Only reachable via the img[alt=""] branch of the selector: an explicit
-    // role other than presentation/none overrides the presentation role that
-    // empty alt would confer, leaving no presentational intent to conflict
-    // with.
+    // An explicit role other than presentation/none (e.g. role="link none",
+    // or an <img alt=""> with role="img") overrides any presentation role,
+    // leaving no presentational intent to conflict with.
     const roleToken = getEffectiveRoleToken(el);
     if (roleToken && roleToken !== 'presentation' && roleToken !== 'none') continue;
 
@@ -59096,7 +60402,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // aria-hidden="" (empty string) is still a specified attribute. A
     // truthy-value check would miss this.
     let present = CONFLICTING_ATTRS.filter((attr) =>
-      el.hasAttribute ? el.hasAttribute(attr) : el.getAttribute(attr) != null
+      dom.get(el, 'hasAttribute') ? dom.hasAttribute(el, attr) : dom.getAttribute(el, attr) != null
     );
 
     // aria-hidden="true" (the exact, valid truthy value, not the
@@ -59115,7 +60421,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // still tab onto an aria-hidden="true" focusable element (the
     // aria-hidden-focus anti-pattern), a real, independent hazard
     // aria-hidden does nothing to prevent.
-    if (el.getAttribute('aria-hidden') === 'true') {
+    if (dom.getAttribute(el, 'aria-hidden') === 'true') {
       present = [];
     }
 
@@ -59173,6 +60479,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentational-children-focusable-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -59232,21 +60539,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The role attribute holds a fallback list; the first token that names a
-  // real role wins. A role="tab" resolves here, a role="figure tab" does
-  // not (figure wins and has no presentational children), and a list of
-  // nothing but unknown tokens falls back to the native role.
+  // real role wins, in any case. A role="tab" or role="TAB" resolves here, a
+  // role="figure tab" does not (figure wins and has no presentational
+  // children), and a list of nothing but unknown tokens falls back to the
+  // native role.
   function getPresentationalChildrenRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
-    if (raw) {
-      const tokens = lower(raw).split(/\s+/);
-      for (const token of tokens) {
-        if (!token) continue;
-        if (roleSet.has(token)) return token;
-        const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-        if (known) return '';
-      }
-    }
-    const tag = lower(el.tagName);
+    const explicit = ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
+    if (explicit) return roleSet.has(explicit) ? explicit : '';
+    const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
       ? NATIVE_ROLE_BY_TAG[tag]
       : '';
@@ -59270,7 +60570,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.composedParent === 'function'
       ? helpers.composedParent
       : function (n) {
-          return n && n.parentElement ? n.parentElement : null;
+          return n && dom.parentElement(n) ? dom.parentElement(n) : null;
         };
 
   // isAccTreeEligible keeps an aria-hidden element that holds
@@ -59282,7 +60582,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = node;
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (lower(cur.getAttribute && cur.getAttribute('aria-hidden')) === 'true') return true;
+      if (lower(dom.get(cur, 'getAttribute') && dom.getAttribute(cur, 'aria-hidden')) === 'true')
+        return true;
       cur = composedParent(cur);
     }
     return false;
@@ -59316,15 +60617,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the nearest role that removes it from the accessibility tree.
   function collectTabStops(root) {
     const out = [];
-    if (!root || !root.lastElementChild) return out;
+    if (!root || !dom.lastElementChild(root)) return out;
     // Sibling links, not root.children, which in jsdom stays live once read
     // and is rebuilt on every later change under a large parent.
     const stack = [];
-    for (let c = root.lastElementChild; c; c = c.previousElementSibling) stack.push(c);
+    for (let c = dom.lastElementChild(root); c; c = dom.previousElementSibling(c)) stack.push(c);
     while (stack.length) {
       const node = stack.pop();
-      if (!node || node.nodeType !== 1) continue;
-      if (lower(node.getAttribute && node.getAttribute('aria-hidden')) === 'true') continue;
+      if (!node || dom.nodeType(node) !== 1) continue;
+      if (lower(dom.get(node, 'getAttribute') && dom.getAttribute(node, 'aria-hidden')) === 'true')
+        continue;
       if (!isRendered(node)) continue;
       if (isTabStop(node)) {
         out.push(node);
@@ -59335,7 +60637,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // loop). It is only a boundary when it is not itself a tab stop,
       // a focusable one lands focus inside THIS element and belongs here.
       if (getPresentationalChildrenRole(node)) continue;
-      for (let c = node ? node.lastElementChild : null; c; c = c.previousElementSibling)
+      for (let c = node ? dom.lastElementChild(node) : null; c; c = dom.previousElementSibling(c))
         stack.push(c);
     }
     return out;
@@ -59350,7 +60652,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
 
     const role = getPresentationalChildrenRole(el);
     if (!role) continue;
@@ -59363,7 +60665,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tabStops = collectTabStops(el);
     if (!tabStops.length) continue;
 
-    const tabStopTags = tabStops.map((n) => (n && n.tagName ? lower(n.tagName) : 'unknown'));
+    const tabStopTags = tabStops.map((n) =>
+      n && dom.tagName(n) ? lower(dom.tagName(n)) : 'unknown'
+    );
     const dedupedTabStopTags = [...new Set(tabStopTags)];
 
     const eligInfo = getEligibilityInfo
@@ -59390,7 +60694,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             reasonCode: 'PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT',
             role,
-            element: lower(el.tagName),
+            element: lower(dom.tagName(el)),
             focusableElements: tabStopTags
           }
         }
@@ -59412,6 +60716,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "progressbar-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -59424,8 +60729,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -59441,7 +60746,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -59471,10 +60776,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="progressbar"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is progressbar, so role="link progressbar" (a link) is left out.
+  const selector = '[role~="progressbar" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -59508,8 +60826,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'progressbar') continue;
+    if (explicitRole(el) !== 'progressbar') continue;
 
     applicableCount += 1;
 
@@ -59561,9 +60878,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "region": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -59578,10 +60896,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return String(s || '').toLowerCase();
   }
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (the element keeps its native role).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return lower(raw.split(/\s+/)[0]);
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLandmark(el) {
@@ -59596,12 +60914,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
 
   function isAriaLive(el) {
-    const v = lower(normalizeWs(el.getAttribute && el.getAttribute('aria-live')));
+    const v = lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-live')));
     return v === 'polite' || v === 'assertive';
   }
 
   function isDialogLike(el) {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'dialog') return true;
     const role = getExplicitRoleToken(el);
     return role === 'dialog' || role === 'alertdialog';
@@ -59610,10 +60928,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isButtonLike(el) {
     const role = getExplicitRoleToken(el);
     if (role) return role === 'button';
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'button' || tag === 'summary') return true;
     if (tag === 'input') {
-      const type = lower(normalizeWs(el.getAttribute && el.getAttribute('type')));
+      const type = lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type')));
       return type === 'button' || type === 'submit' || type === 'reset' || type === 'image';
     }
     return false;
@@ -59625,12 +60943,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // placeholder) avoids flagging a helpful, common accessibility pattern
   // as the very thing this rule is meant to catch.
   function isResolvableSkipLink(el) {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag !== 'a') return false;
-    const href = el.getAttribute && el.getAttribute('href');
+    const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
     if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
-      return !!(document.getElementById && document.getElementById(href.slice(1)));
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
+      return !!(dom.get(document, 'getElementById') && dom.getElementById(document, href.slice(1)));
     } catch {
       return false;
     }
@@ -59643,7 +60962,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (role && LIVE_REGION_ROLES.has(role)) return true;
     if (isDialogLike(el)) return true;
     if (isButtonLike(el)) return true;
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'svg' || tag === 'iframe' || tag === 'frame') return true;
     if (isResolvableSkipLink(el)) return true;
     return false;
@@ -59658,19 +60977,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <div> included) until reaching the actual content-bearing node, rather
   // than a coarse ancestor swallowing everything beneath it into one report.
   function hasOwnContent(el) {
-    const kids = el.childNodes || [];
+    const kids = dom.childNodes(el) || [];
     for (let i = 0; i < kids.length; i++) {
       const k = kids[i];
-      if (k.nodeType === 3 && normalizeWs(k.nodeValue)) return true;
+      if (dom.nodeType(k) === 3 && normalizeWs(dom.nodeValue(k))) return true;
     }
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (VISUAL_CONTENT_TAGS.has(tag)) return true;
     if (
       tag === 'input' &&
-      lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden'
+      lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type'))) !== 'hidden'
     )
       return true;
-    if (normalizeWs(el.getAttribute && el.getAttribute('aria-label'))) return true;
+    if (normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'))) return true;
     return false;
   }
 
@@ -59690,23 +61009,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function markFlaggedUpToBody(el) {
     let cur = el;
-    while (cur) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; cur && steps < 100000; steps++) {
       if (stopperFlagged.has(cur)) break; // everything above is already marked
       stopperFlagged.add(cur);
       if (cur === body) break;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
   }
 
   function walk(el) {
-    if (truncated || !el || el.nodeType !== 1) return;
+    if (truncated || !el || dom.nodeType(el) !== 1) return;
     visited += 1;
     if (visited > MAX_VISITED_NODES) {
       truncated = true;
       return;
     }
 
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (SKIP_TAGS.has(tag)) return;
 
     const eligRes = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el) : { eligible: true };
@@ -59720,7 +61040,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (
         !placedContent &&
         isLandmark(el) &&
-        (normalizeWs(el.textContent) || el.firstElementChild)
+        (normalizeWs(dom.textContent(el)) || dom.firstElementChild(el))
       ) {
         placedContent = true;
       }
@@ -59737,13 +61057,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // live once read, and each later change under a large parent rebuilds
     // it, so reading body.children made a 20,000-node page slow to scan
     // and to close.
-    for (let kid = el.firstElementChild; kid; kid = kid.nextElementSibling) {
+    for (let kid = dom.firstElementChild(el); kid; kid = dom.nextElementSibling(kid)) {
       walk(kid);
       if (truncated) return;
     }
   }
 
-  for (let child = body.firstElementChild; child; child = child.nextElementSibling) walk(child);
+  for (let child = dom.firstElementChild(body); child; child = dom.nextElementSibling(child))
+    walk(child);
 
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
@@ -59754,12 +61075,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const seen = new Set();
   for (const leaf of leaves) {
     let cur = leaf;
-    while (
-      cur.parentElement &&
-      cur.parentElement !== body &&
-      !stopperFlagged.has(cur.parentElement)
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (
+      let steps = 0;
+      steps < 100000 &&
+      dom.parentElement(cur) &&
+      dom.parentElement(cur) !== body &&
+      !stopperFlagged.has(dom.parentElement(cur));
+      steps++
     ) {
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     if (!seen.has(cur)) {
       seen.add(cur);
@@ -59770,7 +61095,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Report the element itself: without a node reference the engine re-finds
   // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     const partial = {
       summary: 'This content is not contained within a landmark region.',
       hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
@@ -59790,7 +61115,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     return {
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
-      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       ...partial
     };
   });
@@ -59813,6 +61138,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "role-img-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -59823,8 +61149,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -59844,17 +61170,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
+  const IMAGE_ROLES = new Set(['img', 'graphics-symbol', 'graphics-document']);
+
+  // The resolved explicit role: the first known role token, lower-cased, or
+  // '' when the attribute names no known role.
+  const explicitRole = (el) => {
+    try {
+      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  };
+
   const imgElements = (() => {
     // <img> and <svg> are left out: each has its own rule
     // (img-alt-present, svg-text-alternative-present), and counting an
     // unnamed <svg role="img"> here too would report it twice.
+    // `~=` matches a token anywhere in the role fallback list, so a match is
+    // kept only when its resolved explicit role (the first known token) is
+    // one of the three: role="foo img" is an img, role="button img" is not.
     const sel =
-      '[role="img" i]:not(img):not(svg), [role="graphics-symbol" i]:not(svg), [role="graphics-document" i]:not(svg)';
+      '[role~="img" i]:not(img):not(svg), [role~="graphics-symbol" i]:not(svg), [role~="graphics-document" i]:not(svg)';
+    let found;
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      found = Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
     } catch {
-      return queryAll(sel);
+      found = Array.from(queryAll(sel) || []);
     }
+    return found.filter((el) => IMAGE_ROLES.has(explicitRole(el)));
   })();
 
   if (!imgElements.length) {
@@ -59881,7 +61226,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
 
   for (const el of imgElements) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Applicability: eligible in the acc tree (with helper exceptions).
     if (isAccTreeEligible) {
@@ -59902,7 +61247,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const matchedRole = (() => {
       try {
-        return trim(el.getAttribute('role')).split(/\s+/)[0].toLowerCase();
+        return explicitRole(el) || 'img';
       } catch {
         return 'img';
       }
@@ -59913,7 +61258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const ariaLabelRaw = (() => {
       try {
-        return el.getAttribute('aria-label');
+        return dom.getAttribute(el, 'aria-label');
       } catch {
         return null;
       }
@@ -59922,7 +61267,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const ariaLabelledbyRaw = (() => {
       try {
-        return el.getAttribute('aria-labelledby');
+        return dom.getAttribute(el, 'aria-labelledby');
       } catch {
         return null;
       }
@@ -59938,7 +61283,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Last-resort naming mechanism per HTML-AAM: a non-empty title attribute.
     const titleRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }
@@ -59952,12 +61297,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // text alternative, same as a role="img" <svg>.
     const svgTitleChildText = (() => {
       try {
-        const isSvgNamespace = el.namespaceURI === 'http://www.w3.org/2000/svg';
+        const isSvgNamespace = dom.namespaceURI(el) === 'http://www.w3.org/2000/svg';
         if (!isSvgNamespace) return '';
-        const first = el.firstElementChild;
-        const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+        const first = dom.firstElementChild(el);
+        const firstTag = first
+          ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+          : '';
         if (firstTag !== 'title') return '';
-        return trim(first.textContent);
+        return trim(dom.textContent(first));
       } catch {
         return '';
       }
@@ -60056,6 +61403,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "scope-attr-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
@@ -60068,8 +61416,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('scope') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'scope') || '').trim();
     if (!raw) continue;
 
     applicableCount += 1;
@@ -60106,17 +61454,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scrollable-region-focusable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
       if (helpers && typeof helpers.computedStyle === 'function') {
         const cs = helpers.computedStyle(el);
         if (cs) return cs;
       }
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
     return null;
@@ -60135,7 +61486,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isSelfFocusable(el) {
     try {
-      const tabindexAttr = el.getAttribute ? el.getAttribute('tabindex') : null;
+      const tabindexAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexAttr != null) {
         const n = Number.parseInt(tabindexAttr, 10);
         if (Number.isFinite(n) && n >= 0) return true;
@@ -60151,8 +61502,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // hidden="until-found") takes no focus.
   function hasFocusableDescendant(el) {
     try {
-      if (!el.querySelectorAll) return false;
-      for (const d of el.querySelectorAll(FOCUSABLE_DESCENDANT_SELECTOR)) {
+      if (!dom.get(el, 'querySelectorAll')) return false;
+      for (const d of dom.querySelectorAll(el, FOCUSABLE_DESCENDANT_SELECTOR)) {
         if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
       }
     } catch {}
@@ -60169,7 +61520,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const cs = safeComputedStyle(el);
     if (!isScrollableOverflow(cs)) continue;
@@ -60179,9 +61530,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (isSelfFocusable(el)) continue;
     if (hasFocusableDescendant(el)) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -60225,6 +61578,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -60237,8 +61591,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -60256,7 +61610,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -60296,7 +61650,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -60326,10 +61680,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="searchbox"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is searchbox. role="foo searchbox" and role="SEARCHBOX" count;
+  // role="link searchbox" is a link.
+  const selector = '[role~="searchbox" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'searchbox';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -60437,6 +61801,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "server-side-image-map-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -60451,7 +61816,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // ismap does something only on an image inside a hyperlink.
     let link;
     try {
-      link = el.closest ? el.closest('a[href]') : null;
+      link = dom.get(el, 'closest') ? dom.closest(el, 'a[href]') : null;
     } catch {
       link = null;
     }
@@ -60472,7 +61837,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           code: 'equivalence-unknown',
           needed:
             'Whether the destinations of this image map are also offered as keyboard-operable links.',
-          evidence: { href: link.getAttribute('href') }
+          evidence: { href: dom.getAttribute(link, 'href') }
         },
         data: {
           details: { reasonCode: 'SERVER_SIDE_IMAGE_MAP' }
@@ -60497,6 +61862,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "skip-link": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -60506,16 +61872,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -60523,16 +61889,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const joined = normalizeWs(parts.join(' '));
       if (joined) return joined;
     }
-    return normalizeWs(el.textContent);
+    return normalizeWs(dom.textContent(el));
   }
 
   function hasReliableGeometrySupport() {
-    const probe = document.documentElement || document.body || null;
-    if (!probe || !probe.getClientRects || !probe.getBoundingClientRect) return false;
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || !dom.get(probe, 'getClientRects') || !dom.get(probe, 'getBoundingClientRect'))
+      return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       const rectCount = rects ? rects.length : 0;
-      const r = probe.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(probe);
       const w = r && Number.isFinite(r.width) ? r.width : 0;
       const h = r && Number.isFinite(r.height) ? r.height : 0;
       return rectCount > 0 && (w > 0 || h > 0);
@@ -60549,7 +61916,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const geometrySupported = hasReliableGeometrySupport();
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -60563,13 +61930,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // skip link sits whatever its wording.
   let positionalSkipLink = null;
   try {
-    const main = document.querySelector('main, [role="main"]');
+    // The first <main>, or element whose role attribute resolves to main
+    // (the first token naming a real role, in any case).
+    const main =
+      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+        (el) =>
+          String(dom.localName(el) || '').toLowerCase() === 'main' ||
+          helpers.aria.getExplicitRole(el) === 'main'
+      ) || null;
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&
       first &&
-      typeof first.compareDocumentPosition === 'function' &&
-      first.compareDocumentPosition(main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
+      typeof dom.get(first, 'compareDocumentPosition') === 'function' &&
+      dom.compareDocumentPosition(first, main) & 4 // Node.DOCUMENT_POSITION_FOLLOWING
     ) {
       positionalSkipLink = first;
     }
@@ -60581,9 +61955,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const href = String(el.getAttribute('href') || '').trim();
+    const href = String(dom.getAttribute(el, 'href') || '').trim();
     if (href.length < 2 || href.charAt(0) !== '#') continue;
 
     const name = getAccessibleNameText(el);
@@ -60600,7 +61974,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let target = null;
     if (fragment) {
       try {
-        target = document.getElementById(fragment);
+        // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
+        target = dom.getElementById(document, fragment);
       } catch {
         target = null;
       }
@@ -60609,8 +61984,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // selector, which a backslash or quote in the name would break.
         try {
           target =
-            Array.from(document.querySelectorAll('a[name]')).find(
-              (a) => a.getAttribute('name') === fragment
+            Array.from(dom.querySelectorAll(document, 'a[name]')).find(
+              (a) => dom.getAttribute(a, 'name') === fragment
             ) || null;
         } catch {
           target = null;
@@ -60718,6 +62093,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "slider-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -60730,8 +62106,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -60749,7 +62125,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -60789,7 +62165,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -60821,10 +62197,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Native input[type=range] belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="slider"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is slider. role="foo slider" and role="SLIDER" count;
+  // role="link slider" is a link.
+  const selector = '[role~="slider" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'slider';
+    } catch {
+      return false;
+    }
+  });
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
   // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
@@ -60888,9 +62274,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    const role = helpers.aria.getExplicitRole(el);
 
     let kind;
     if (tag === 'input' && type === 'range') kind = 'native-slider';
@@ -60943,6 +62329,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "spinbutton-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -60955,8 +62342,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -60974,7 +62361,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -61014,7 +62401,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -61044,7 +62431,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="spinbutton"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is spinbutton (role="link spinbutton" is a link).
+  const selector = '[role~="spinbutton" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -61103,6 +62492,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (helpers.aria.getExplicitRole(el) !== 'spinbutton') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -61155,6 +62545,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "summary-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -61167,8 +62558,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -61186,7 +62577,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -61200,7 +62591,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -61300,6 +62691,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "svg-image-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -61310,8 +62702,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -61344,10 +62736,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function firstChildTitleText(el) {
     try {
       if (!el) return '';
-      const first = el.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(el);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
       if (tn === 'title') {
-        const t = trim(first.textContent);
+        const t = trim(dom.textContent(first));
         if (t) return t;
       }
     } catch {}
@@ -61360,16 +62752,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function descText(el) {
     try {
       if (!el) return '';
-      const first = el.firstElementChild;
-      const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(el);
+      const firstTag = first
+        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        : '';
       if (firstTag === 'desc') {
-        const t = trim(first.textContent);
+        const t = trim(dom.textContent(first));
         if (t) return t;
-      } else if (firstTag === 'title' && first.nextElementSibling) {
-        const second = first.nextElementSibling;
-        const secondTag = (second.localName || second.tagName || '').toLowerCase();
+      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
+        const second = dom.nextElementSibling(first);
+        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
         if (secondTag === 'desc') {
-          const t = trim(second.textContent);
+          const t = trim(dom.textContent(second));
           if (t) return t;
         }
       }
@@ -61389,8 +62783,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       return (
         el &&
-        el.namespaceURI === 'http://www.w3.org/2000/svg' &&
-        String(el.localName).toLowerCase() === 'image'
+        dom.namespaceURI(el) === 'http://www.w3.org/2000/svg' &&
+        String(dom.localName(el)).toLowerCase() === 'image'
       );
     } catch {
       return false;
@@ -61404,7 +62798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of images) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -61417,7 +62811,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (elig && elig.eligible === false) continue;
     }
 
-    const role = trim(el.getAttribute('role')).toLowerCase();
+    // Resolved explicit role: the first known token of the role fallback
+    // list, so role="foo none" is presentational too.
+    const role = (() => {
+      try {
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
+      } catch {
+        return '';
+      }
+    })();
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -61430,7 +62834,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
@@ -61448,21 +62852,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Only now check “accessible name” (but scoped to allowed mechanisms)
     const ariaLabelRaw = (() => {
       try {
-        return el.getAttribute('aria-label');
+        return dom.getAttribute(el, 'aria-label');
       } catch {
         return null;
       }
     })();
     const ariaLabelledbyRaw = (() => {
       try {
-        return el.getAttribute('aria-labelledby');
+        return dom.getAttribute(el, 'aria-labelledby');
       } catch {
         return null;
       }
     })();
     const titleAttrRaw = (() => {
       try {
-        return el.getAttribute('title');
+        return dom.getAttribute(el, 'title');
       } catch {
         return null;
       }
@@ -61532,6 +62936,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "svg-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -61542,8 +62947,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -61576,10 +62981,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // is commonly ignored by AT even though it's still a valid DOM child.
   function nonEmptyFirstChildTitleText(svg) {
     try {
-      const first = svg.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(svg);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
       if (tn === 'title') {
-        const txt = trim(first.textContent);
+        const txt = trim(dom.textContent(first));
         if (txt) return txt;
       }
     } catch {}
@@ -61592,16 +62997,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // appearing later than that is not reliably read by AT.
   function nonEmptyDescText(svg) {
     try {
-      const first = svg.firstElementChild;
-      const firstTag = first ? (first.localName || first.tagName || '').toLowerCase() : '';
+      const first = dom.firstElementChild(svg);
+      const firstTag = first
+        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        : '';
       if (firstTag === 'desc') {
-        const txt = trim(first.textContent);
+        const txt = trim(dom.textContent(first));
         if (txt) return txt;
-      } else if (firstTag === 'title' && first.nextElementSibling) {
-        const second = first.nextElementSibling;
-        const secondTag = (second.localName || second.tagName || '').toLowerCase();
+      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
+        const second = dom.nextElementSibling(first);
+        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
         if (secondTag === 'desc') {
-          const txt = trim(second.textContent);
+          const txt = trim(dom.textContent(second));
           if (txt) return txt;
         }
       }
@@ -61622,7 +63029,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     // deterministic fallback: tabindex presence/valid number
     try {
-      const tabindex = svg && svg.getAttribute ? svg.getAttribute('tabindex') : null;
+      const tabindex =
+        svg && dom.get(svg, 'getAttribute') ? dom.getAttribute(svg, 'tabindex') : null;
       return (
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -61649,7 +63057,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of svgs) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Applicability step 1: only acc-tree eligible nodes (with helper exceptions)
     if (isAccTreeEligible) {
@@ -61664,11 +63072,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Applicability step 2: role (presentation/none) exclusion only when not focusable
+    // The resolved role: the attribute's first known, non-abstract token,
+    // in any case (role="foo NONE" is none; role="foo" is no role at all).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+          ? helpers.aria.getExplicitRole(el)
+          : '';
       } catch {
         return '';
       }
@@ -61684,7 +63094,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let hasAriaNamingAttr = false;
     try {
       hasAriaNamingAttr =
-        el.getAttribute('aria-label') != null || el.getAttribute('aria-labelledby') != null;
+        dom.getAttribute(el, 'aria-label') != null ||
+        dom.getAttribute(el, 'aria-labelledby') != null;
     } catch {}
 
     const titleText = nonEmptyFirstChildTitleText(el);
@@ -61720,7 +63131,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const ariaLabel = trim(
           (() => {
             try {
-              return el.getAttribute('aria-label');
+              return dom.getAttribute(el, 'aria-label');
             } catch {
               return '';
             }
@@ -61729,7 +63140,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const ariaLabelledby = trim(
           (() => {
             try {
-              return el.getAttribute('aria-labelledby');
+              return dom.getAttribute(el, 'aria-labelledby');
             } catch {
               return '';
             }
@@ -61790,6 +63201,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "svg-text-alternative-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -61800,8 +63212,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -61813,9 +63225,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.buildSelector
       : (el) => {
           try {
-            if (!el || !el.tagName) return 'html';
-            const tag = (el.tagName || 'html').toLowerCase();
-            return el.id ? `${tag}#${el.id}` : tag;
+            if (!el || !dom.tagName(el)) return 'html';
+            const tag = (dom.tagName(el) || 'html').toLowerCase();
+            return dom.get(el, 'id') ? `${tag}#${dom.get(el, 'id')}` : tag;
           } catch {
             return 'html';
           }
@@ -61826,7 +63238,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.getOuterHtmlSnippet
       : (el) => {
           try {
-            return el && el.outerHTML ? String(el.outerHTML).slice(0, 2000) : '';
+            return el && dom.outerHTML(el) ? String(dom.outerHTML(el)).slice(0, 2000) : '';
           } catch {
             return '';
           }
@@ -61842,11 +63254,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -61865,7 +63276,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -61892,7 +63303,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // acc eligibility
     if (isAccTreeEligible) {
@@ -61916,13 +63327,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let labelledByText = '';
 
     try {
-      const titleEl = el.querySelector ? el.querySelector('title') : null;
-      const descEl = el.querySelector ? el.querySelector('desc') : null;
-      titleText = trim(titleEl && titleEl.textContent);
-      descText = trim(descEl && descEl.textContent);
+      const titleEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'title') : null;
+      const descEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'desc') : null;
+      titleText = trim(titleEl && dom.textContent(titleEl));
+      descText = trim(descEl && dom.textContent(descEl));
 
-      ariaLabel = trim(el.getAttribute('aria-label'));
-      ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
+      ariaLabel = trim(dom.getAttribute(el, 'aria-label'));
+      ariaLabelledBy = trim(dom.getAttribute(el, 'aria-labelledby'));
     } catch {}
 
     if (
@@ -61932,7 +63343,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }
@@ -61992,6 +63403,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "tab-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -62004,8 +63416,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -62023,7 +63435,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -62037,7 +63449,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -62067,10 +63479,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tab"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The role attribute is a fallback list matched in any case: select by
+  // token, then keep the elements whose resolved role (the first known,
+  // non-abstract token) is tab. role="foo tab" and role="TAB" count;
+  // role="link tab" is a link.
+  const selector = '[role~="tab" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    try {
+      return helpers.aria.getExplicitRole(el) === 'tab';
+    } catch {
+      return false;
+    }
+  });
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -62091,9 +63513,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
-
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tab') continue;
 
     applicableCount += 1;
 
@@ -62141,6 +63560,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tabindex": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -62151,8 +63571,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('tabindex') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'tabindex') || '').trim();
     if (!raw) continue;
     const n = Number(raw);
     if (!Number.isInteger(n)) continue;
@@ -62191,6 +63611,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-duplicate-name": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
@@ -62207,12 +63628,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const summary = normalizeWs(el.getAttribute('summary'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const summary = normalizeWs(dom.getAttribute(el, 'summary'));
     if (!summary) continue;
 
-    const captionEl = el.querySelector ? el.querySelector('caption') : null;
-    const captionText = captionEl ? normalizeWs(captionEl.textContent) : '';
+    const captionEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'caption') : null;
+    const captionText = captionEl ? normalizeWs(dom.textContent(captionEl)) : '';
     if (!captionText) continue;
 
     applicableCount += 1;
@@ -62249,6 +63670,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-fake-caption": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -62273,15 +63695,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none leaves the native table role.
   function hasOtherRole(table) {
-    const role = trim(table.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(table);
     return !!role && !TABLE_ROLES.includes(role);
   }
 
   // A name from aria-labelledby, aria-label or title already gives the table
   // a title that assistive technology announces.
   function isNamed(table) {
-    if (trim(table.getAttribute('title'))) return true;
+    if (trim(dom.getAttribute(table, 'title'))) return true;
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(table, ctx);
@@ -62290,7 +63714,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return false;
       }
     }
-    return !!trim(table.getAttribute('aria-label'));
+    return !!trim(dom.getAttribute(table, 'aria-label'));
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
@@ -62301,7 +63725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(table.querySelector && table.querySelector('caption'));
+    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
@@ -62319,7 +63743,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
-    const candidateText = trim(candidateCell.textContent || '');
+    const candidateText = trim(dom.textContent(candidateCell) || '');
     if (!candidateText) continue;
 
     const hasMultiCellRow = rows
@@ -62330,7 +63754,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(table)
-      : table.outerHTML || '';
+      : dom.outerHTML(table) || '';
 
     const baseOccurrence = {
       selector: stableSelector,
@@ -62371,23 +63795,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-headers-attr-valid": { run: (function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
 
   // The role attribute holds a fallback list; the first token naming a real
-  // role wins, and unknown tokens are skipped over.
+  // role wins (in any case), and unknown tokens are skipped over.
   function getExplicitRole(el) {
-    const raw = el && el.getAttribute ? el.getAttribute('role') : null;
-    if (!raw) return '';
-    const tokens = String(raw).trim().toLowerCase().split(/\s+/);
-    for (const token of tokens) {
-      if (!token) continue;
-      if (token === 'presentation' || token === 'none') return token;
-      const known = ariaHelpers ? ariaHelpers.isValidConcreteRole(token) : true;
-      if (known) return token;
-    }
-    return '';
+    return ariaHelpers && el ? ariaHelpers.getExplicitRole(el) : '';
   }
 
   const nodes = helpers.queryAllSmart
@@ -62398,14 +63814,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const raw = String(el.getAttribute('headers') || '').trim();
+    const raw = String(dom.getAttribute(el, 'headers') || '').trim();
     if (!raw) continue;
     const ids = raw.split(/\s+/).filter(Boolean);
     if (!ids.length) continue;
 
-    const table = el.closest ? el.closest('table') : null;
+    const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
 
     // An explicit role on the <table> replaces its native table role. Only
     // the three roles that still describe a table keep the cell's headers
@@ -62423,7 +63839,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const headerId of ids) {
       let ref;
       try {
-        ref = document.getElementById(headerId);
+        ref = helpers.getElementByIdInTree(el, headerId);
       } catch {
         ref = null;
       }
@@ -62436,12 +63852,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         invalid.push({ id: headerId, reason: 'self-reference' });
         continue;
       }
-      const refTag = ref.tagName ? ref.tagName.toLowerCase() : '';
+      const refTag = dom.tagName(ref) ? dom.tagName(ref).toLowerCase() : '';
       if (refTag !== 'th' && refTag !== 'td') {
         invalid.push({ id: headerId, reason: 'not-a-cell' });
         continue;
       }
-      if (table && (!ref.closest || ref.closest('table') !== table)) {
+      if (table && (!dom.get(ref, 'closest') || dom.closest(ref, 'table') !== table)) {
         invalid.push({ id: headerId, reason: 'different-table' });
       }
     }
@@ -62450,7 +63866,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const dedupedInvalidIds = [...new Set(invalid.map((i) => i.id))];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -62482,6 +63898,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "table-th-has-data-cells": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
@@ -62489,15 +63906,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does (the element
+  // then keeps its implicit role).
   function explicitRole(el) {
     try {
-      return String((el && el.getAttribute && el.getAttribute('role')) || '')
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)[0];
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
     } catch {
       return '';
     }
+  }
+
+  // Elements under `scope` matching `selector` (token, case-insensitive role
+  // selectors) whose resolved explicit role is in `roles`: `[role~="x" i]`
+  // alone also matches role="link x", which is a link.
+  function queryByRole(scope, selector, roles) {
+    let found;
+    try {
+      found = scope
+        ? Array.from(dom.querySelectorAll(scope, selector))
+        : Array.from(
+            (helpers.queryAllSmart
+              ? helpers.queryAllSmart(selector)
+              : helpers.queryAll(selector)) || []
+          );
+    } catch {
+      found = [];
+    }
+    return found.filter((el) => roles.includes(explicitRole(el)));
   }
 
   function isIncludedInTree(el) {
@@ -62541,7 +63979,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const table of tables) {
-    if (!table || !table.querySelectorAll) continue;
+    if (!table || !dom.get(table, 'querySelectorAll')) continue;
 
     // A table stripped of its semantics has no header cells to describe
     // anything, so nothing in it is in scope.
@@ -62549,7 +63987,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let ths;
     try {
-      ths = table.querySelectorAll('th');
+      ths = dom.querySelectorAll(table, 'th');
     } catch {
       ths = [];
     }
@@ -62561,7 +63999,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let hasDataCell;
     try {
-      hasDataCell = table.querySelectorAll('td').length > 0;
+      hasDataCell = dom.querySelectorAll(table, 'td').length > 0;
     } catch {
       hasDataCell = false;
     }
@@ -62592,32 +64030,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // just keyed off ARIA roles instead of native tags -- a genuine
   // columnheader/rowheader with zero gridcell/cell-role elements anywhere
   // in the container is exactly as unambiguous as a <th>-only <table>.
-  const grids = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[role="grid"], [role="treegrid"]')
-    : helpers.queryAll('[role="grid"], [role="treegrid"]');
+  const grids = queryByRole(null, '[role~="grid" i], [role~="treegrid" i]', ['grid', 'treegrid']);
 
   for (const grid of grids) {
-    if (!grid || !grid.querySelectorAll) continue;
-    if (grid.tagName && grid.tagName.toLowerCase() === 'table') continue; // already handled above
+    if (!grid || !dom.get(grid, 'querySelectorAll')) continue;
+    if (dom.tagName(grid) && dom.tagName(grid).toLowerCase() === 'table') continue; // already handled above
     if (!isIncludedInTree(grid)) continue;
 
-    let headerNodes;
-    try {
-      headerNodes = grid.querySelectorAll('[role="columnheader"], [role="rowheader"]');
-    } catch {
-      headerNodes = [];
-    }
-    const headers = Array.from(headerNodes).filter(isHeaderCellInScope);
+    const headerNodes = queryByRole(grid, '[role~="columnheader" i], [role~="rowheader" i]', [
+      'columnheader',
+      'rowheader'
+    ]);
+    const headers = headerNodes.filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;
 
-    let hasDataCell;
-    try {
-      hasDataCell = grid.querySelectorAll('[role="gridcell"], [role="cell"]').length > 0;
-    } catch {
-      hasDataCell = false;
-    }
+    const hasDataCell =
+      queryByRole(grid, '[role~="gridcell" i], [role~="cell" i]', ['gridcell', 'cell']).length > 0;
     if (hasDataCell) continue;
 
     for (const th of headers) {
@@ -62654,7 +64084,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "target-size-minimum": { run: (function runInPage(ctx) {
-  'use strict';
+  const dom = ctx.helpers.dom;
+  ('use strict');
 
   const { document, helpers, rule } = ctx;
 
@@ -62684,9 +64115,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
     } catch {}
     try {
-      if (el && el.id) return `#${el.id}`;
+      if (el && dom.get(el, 'id')) return `#${dom.get(el, 'id')}`;
     } catch {}
     return 'html';
+  }
+
+  // The element's explicit role: the first token of its role attribute that
+  // names a real role, in any case (role="foo link" and role="LINK" are both
+  // links), or '' when none does.
+  function getExplicitRole(el) {
+    try {
+      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+    } catch {
+      return '';
+    }
   }
 
   // A link-like target (a[href] or role="link") rendered inline/inline-* and
@@ -62694,17 +64136,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // about, without the surrounding-container requirement.
   function isInlineLinkTarget(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return false;
 
-      const tag = (el.tagName || '').toLowerCase();
-      const role =
-        (el.getAttribute &&
-          String(el.getAttribute('role') || '')
-            .trim()
-            .toLowerCase()) ||
-        '';
+      const tag = (dom.tagName(el) || '').toLowerCase();
+      const role = getExplicitRole(el);
       const isLinkLike =
-        (tag === 'a' && el.getAttribute && el.getAttribute('href')) || role === 'link';
+        (tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        role === 'link';
       if (!isLinkLike) return false;
 
       const cs = getStyle(el);
@@ -62719,7 +64157,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         display === 'inline-table';
       if (!isInline) return false;
 
-      return (el.textContent || '').trim().length > 0;
+      return (dom.textContent(el) || '').trim().length > 0;
     } catch {
       return false;
     }
@@ -62751,8 +64189,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getRects(el) {
     try {
-      if (!el || typeof el.getClientRects !== 'function') return [];
-      const r = el.getClientRects();
+      if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
+      const r = dom.getClientRects(el);
       return r ? Array.from(r) : [];
     } catch {
       return [];
@@ -62761,8 +64199,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getBcr(el) {
     try {
-      if (!el || typeof el.getBoundingClientRect !== 'function') return null;
-      return el.getBoundingClientRect();
+      if (!el || typeof dom.get(el, 'getBoundingClientRect') !== 'function') return null;
+      return dom.getBoundingClientRect(el);
     } catch {
       return null;
     }
@@ -62770,7 +64208,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasHiddenAttr(el) {
     try {
-      return !!(el && el.hasAttribute && el.hasAttribute('hidden'));
+      return !!(el && dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'));
     } catch {
       return false;
     }
@@ -62778,7 +64216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function closest(el, sel) {
     try {
-      return el && typeof el.closest === 'function' ? el.closest(sel) : null;
+      return el && typeof dom.get(el, 'closest') === 'function' ? dom.closest(el, sel) : null;
     } catch {
       return null;
     }
@@ -62794,13 +64232,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let cur = helpers.composedParent(el);
       for (let guard = 0; cur && guard < 1000; guard++) {
         if (
-          cur.nodeType === 1 &&
-          String(cur.localName || '').toLowerCase() === 'details' &&
-          !cur.hasAttribute('open')
+          dom.nodeType(cur) === 1 &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open')
         ) {
-          let first = cur.firstElementChild;
-          while (first && String(first.localName || '').toLowerCase() !== 'summary') {
-            first = first.nextElementSibling;
+          let first = dom.firstElementChild(cur);
+          while (first && String(dom.localName(first) || '').toLowerCase() !== 'summary') {
+            first = dom.nextElementSibling(first);
           }
           if (child !== first) return true;
         }
@@ -62835,8 +64273,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cs;
     try {
       cs =
-        document && document.defaultView && document.defaultView.getComputedStyle
-          ? document.defaultView.getComputedStyle(el)
+        document && dom.defaultView(document) && dom.defaultView(document).getComputedStyle
+          ? dom.defaultView(document).getComputedStyle(el)
           : null;
     } catch {
       cs = null;
@@ -62849,7 +64287,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the usual screen-reader-only pattern does. A pointer cannot hit any of
   // it, so it is not a target, however small its box (helpers.isClipHidden).
   function isClippedAway(el) {
-    for (let a = el; a && a.nodeType === 1; a = a.parentElement) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (
+      let a = el, i = 0;
+      a && dom.nodeType(a) === 1 && i < 100000;
+      a = dom.parentElement(a), i++
+    ) {
       const cs = getStyle(a);
       if (cs && helpers.isClipHidden(cs)) return true;
     }
@@ -62867,7 +64310,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // - exclude elements inside closed details (except summary)
     // - exclude elements with no client rects
     // - DO NOT exclude aria-hidden or opacity:0
-    if (!el || el.nodeType !== 1) return false;
+    if (!el || dom.nodeType(el) !== 1) return false;
 
     if (hasHiddenAttr(el)) return false;
     if (inInertSubtree(el)) return false;
@@ -62876,20 +64319,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // content-visibility:hidden): the element keeps a box in Chromium, but
     // nothing of it is drawn for a pointer to hit.
     try {
-      if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
+        return false;
     } catch {}
     if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
 
     // Not operable => exclude
     try {
-      if (typeof el.matches === 'function' && el.matches(':disabled')) return false;
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, ':disabled'))
+        return false;
     } catch {}
 
     // aria-disabled elements are typically treated as not operable
     try {
       const ad =
-        el.getAttribute &&
-        String(el.getAttribute('aria-disabled') || '')
+        dom.get(el, 'getAttribute') &&
+        String(dom.getAttribute(el, 'aria-disabled') || '')
           .trim()
           .toLowerCase();
       if (ad === 'true') return false;
@@ -62925,8 +64370,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function elementFromPoint(x, y) {
     try {
-      if (document && typeof document.elementFromPoint === 'function')
-        return document.elementFromPoint(x, y);
+      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
+        return dom.elementFromPoint(document, x, y);
     } catch {}
     return null;
   }
@@ -62944,19 +64389,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (!a || !b) return false;
       if (a === b) return true;
-      if (typeof a.contains === 'function' && a.contains(b)) return true;
-      if (typeof b.contains === 'function' && b.contains(a)) return true;
+      if (typeof dom.get(a, 'contains') === 'function' && dom.contains(a, b)) return true;
+      if (typeof dom.get(b, 'contains') === 'function' && dom.contains(b, a)) return true;
       return false;
     } catch {
       return false;
     }
   }
 
-  const CANDIDATE_SELECTOR =
-    'button, summary, a[href], area[href], input, select, textarea, [role="button"], [role="link"]';
+  const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // role~= matches the token anywhere in the fallback list, so the resolved
+  // role is checked below (role="tab button" is a tab, not a target here).
+  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+
+  function isCandidate(el) {
+    try {
+      if (
+        typeof dom.get(el, 'matches') === 'function' &&
+        dom.matches(el, NATIVE_CANDIDATE_SELECTOR)
+      )
+        return true;
+    } catch {}
+    const role = getExplicitRole(el);
+    return role === 'button' || role === 'link';
+  }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR);
+  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {
@@ -63002,7 +64461,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inScope = new Set(applicable);
     let all;
     try {
-      all = Array.from(document.querySelectorAll(CANDIDATE_SELECTOR));
+      all = Array.from(dom.querySelectorAll(document, CANDIDATE_SELECTOR));
     } catch {
       all = [];
     }
@@ -63080,7 +64539,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!hit) continue;
         answered = true;
         try {
-          if (hit === other.el || other.el.contains(hit)) return false;
+          if (hit === other.el || dom.contains(other.el, hit)) return false;
         } catch {
           return false;
         }
@@ -63142,7 +64601,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       let hitCandidate = null;
       try {
-        hitCandidate = hit.closest ? hit.closest(CANDIDATE_SELECTOR) : null;
+        hitCandidate = dom.get(hit, 'closest') ? dom.closest(hit, CANDIDATE_SELECTOR) : null;
       } catch {}
 
       if (!hitCandidate) continue;
@@ -63199,13 +64658,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // control chrome, so the size is UA-determined rather than authored.
   function isUserAgentSizedControl(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
-      const tag = (el.tagName || '').toLowerCase();
+      if (!el || dom.nodeType(el) !== 1) return false;
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag !== 'input') return false;
 
       const type =
-        (el.getAttribute &&
-          String(el.getAttribute('type') || '')
+        (dom.get(el, 'getAttribute') &&
+          String(dom.getAttribute(el, 'type') || '')
             .trim()
             .toLowerCase()) ||
         '';
@@ -63235,9 +64694,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isPlausiblyEssentialOrEquivalent(el) {
     try {
-      if (!el || el.nodeType !== 1) return false;
+      if (!el || dom.nodeType(el) !== 1) return false;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       // Image map targets are often constrained by the underlying image.
       // Currently unreachable in practice: <area> never becomes a
@@ -63268,7 +64727,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // fail; a centre distance would mislead there, since the neighbour is often
   // a large element whose centre is far away.
   const round1 = (n) => Math.round(n * 10) / 10;
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
   function measurements(it, info) {
     const metrics = {
@@ -63472,6 +64931,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
 }), applicability: null },
     "td-has-header": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MIN_SIZE = 4;
@@ -63495,8 +64955,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case ('' when none is), as user agents read the fallback list.
   function firstRole(el) {
-    return trim(el.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    try {
+      return helpers.aria.getExplicitRole(el);
+    } catch {
+      return '';
+    }
   }
 
   // Content that can carry a name or a value even without text.
@@ -63504,9 +64970,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'img, svg, canvas, input, select, textarea, button, object, embed, video, audio, iframe, meter, progress, [role], [aria-label], [aria-labelledby], [title]';
 
   function isEmptyCell(cell) {
-    if (trim(cell.textContent)) return false;
+    if (trim(dom.textContent(cell))) return false;
     try {
-      return !cell.querySelector(NAMED_CONTENT);
+      return !dom.querySelector(cell, NAMED_CONTENT);
     } catch {
       return false;
     }
@@ -63532,8 +64998,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const hasSpan = rowCells.some((cells) =>
       cells.some((c) => {
-        const cs = Number.parseInt(c.getAttribute('colspan') || '1', 10);
-        const rs = Number.parseInt(c.getAttribute('rowspan') || '1', 10);
+        const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
+        const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
         return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
       })
     );
@@ -63546,10 +65012,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // another cell's row/column header, even though it's still structurally
     // a <th>.
     function isHeaderCell(cell) {
-      if (!cell || !cell.tagName || !isEligible(cell)) return false;
+      if (!cell || !dom.tagName(cell) || !isEligible(cell)) return false;
       const role = firstRole(cell);
       if (role === 'columnheader' || role === 'rowheader') return true;
-      return cell.tagName.toLowerCase() === 'th' && !role;
+      return dom.tagName(cell).toLowerCase() === 'th' && !role;
     }
 
     // "Was there a <th> above this cell's column" and "was there a <th>
@@ -63579,7 +65045,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // no need for an accessible header association.
         if (!isEligible(cell)) continue;
 
-        const headersAttr = trim(cell.getAttribute('headers'));
+        const headersAttr = trim(dom.getAttribute(cell, 'headers'));
         if (headersAttr) continue;
 
         // An empty cell holds no data to associate with a header.
@@ -63621,8 +65087,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "text-spacing-content-loss": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
   const SPACING_PROPS = Object.keys(MIN_RATIO);
@@ -63657,7 +65124,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (unit === 'em') return n;
     if (unit === 'rem') {
       const root = px(
-        styleOf(document.documentElement) && styleOf(document.documentElement).fontSize
+        styleOf(dom.documentElement(document)) && styleOf(dom.documentElement(document)).fontSize
       );
       return (n * (root || 16)) / fontSize;
     }
@@ -63668,7 +65135,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.round(n * 10) / 10;
   }
   function textOf(el) {
-    return String(el.textContent || '')
+    return String(dom.textContent(el) || '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 60);
@@ -63726,7 +65193,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      for (const sheet of document.styleSheets || []) {
+      for (const sheet of dom.styleSheets(document) || []) {
         let rules = null;
         try {
           rules = sheet.cssRules;
@@ -63741,11 +65208,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ---- Lines of text, before and after the spacing ----
 
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof document.createRange !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!view || !probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(document, 'createRange') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -63764,7 +65231,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Clipping boxes already reported as a finding.
   const reportedClip = new Set();
 
-  if (hasLayout() && document.body) {
+  if (hasLayout() && dom.body(document)) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
 
     // The text this scan judges: inside the scope (contextSelector), not
@@ -63775,12 +65242,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // inert, and the scan judges the dialog.
     const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
     const wholeDocument =
-      !roots.length || roots.some((r) => r === document || r === document.documentElement);
+      !roots.length || roots.some((r) => r === document || r === dom.documentElement(document));
     function inScope(el) {
       if (wholeDocument) return true;
       return roots.some((r) => {
         try {
-          return r === el || (typeof r.contains === 'function' && r.contains(el));
+          return r === el || (typeof dom.get(r, 'contains') === 'function' && dom.contains(r, el));
         } catch {
           return false;
         }
@@ -63816,17 +65283,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const nodes = [];
     const judged = new Set();
-    const walker = document.createTreeWalker(document.body, 4);
+    const walker = dom.createTreeWalker(document, dom.body(document), 4);
     for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
-      if (!/\S/.test(n.nodeValue || '')) continue;
-      const parent = n.parentElement;
-      if (!parent || SKIP.has(String(parent.localName))) continue;
+      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+      const parent = dom.parentElement(n);
+      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
       if (isBehindModal(parent)) continue;
       // Text the page does not render (display:none, a closed <details>,
       // content-visibility:hidden) is never judged, so it does not take a
       // place in the budget either.
       try {
-        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility()) continue;
+        if (
+          typeof dom.get(parent, 'checkVisibility') === 'function' &&
+          !dom.checkVisibility(parent)
+        )
+          continue;
       } catch {}
       nodes.push(n);
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
@@ -63841,10 +65312,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const out = [];
       let scrollX = false;
       let scrollY = false;
+      // Bounded as a safety net only: a walk up a real tree always ends.
       for (
-        let a = el;
-        a && a.nodeType === 1 && a !== document.documentElement;
-        a = a.parentElement
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
+        a = dom.parentElement(a), i++
       ) {
         const cs = styleOf(a);
         if (!cs) continue;
@@ -63861,8 +65333,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     function shown(el) {
       try {
-        return typeof el.checkVisibility === 'function'
-          ? el.checkVisibility({ opacityProperty: true, visibilityProperty: true })
+        return typeof dom.get(el, 'checkVisibility') === 'function'
+          ? dom.checkVisibility(el, { opacityProperty: true, visibilityProperty: true })
           : true;
       } catch {
         return true;
@@ -63872,13 +65344,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const sx = () => view.scrollX || 0;
     const sy = () => view.scrollY || 0;
     function linesOf(node) {
-      const range = document.createRange();
+      const range = dom.createRange(document);
       try {
         range.selectNodeContents(node);
         const out = [];
         const ox = sx();
         const oy = sy();
-        for (const r of range.getClientRects()) {
+        for (const r of dom.getClientRects(range)) {
           if (r.width < 1 || r.height < 1) continue;
           out.push({
             left: r.left + ox,
@@ -63897,7 +65369,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     function boxOf(el) {
-      const r = el.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(el);
       const cs = styleOf(el);
       const bl = px(cs && cs.borderLeftWidth) || 0;
       const bt = px(cs && cs.borderTopWidth) || 0;
@@ -63906,8 +65378,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return {
         left: r.left + ox + bl,
         top: r.top + oy + bt,
-        right: r.left + ox + bl + el.clientWidth,
-        bottom: r.top + oy + bt + el.clientHeight
+        right: r.left + ox + bl + dom.get(el, 'clientWidth'),
+        bottom: r.top + oy + bt + dom.get(el, 'clientHeight')
       };
     }
 
@@ -63916,7 +65388,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
-        for (const c of clippersOf(n.parentElement)) {
+        for (const c of clippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -63927,7 +65399,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const before = measure();
     const fontSizes = new Map();
     for (const n of nodes) {
-      const cs = styleOf(n.parentElement);
+      const cs = styleOf(dom.parentElement(n));
       fontSizes.set(n, px(cs && cs.fontSize) || 16);
     }
 
@@ -63938,8 +65410,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const visibleBefore = new Set();
     for (const n of nodes) {
       const lines = before.lines.get(n) || [];
-      if (!lines.length || !shown(n.parentElement)) continue;
-      const inside = clippersOf(n.parentElement).every((c) => {
+      if (!lines.length || !shown(dom.parentElement(n))) continue;
+      const inside = clippersOf(dom.parentElement(n)).every((c) => {
         const b0 = before.boxes.get(c.el);
         return (
           !!b0 &&
@@ -63952,8 +65424,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (inside) visibleBefore.add(n);
     }
 
-    const sheet = document.createElement('style');
-    sheet.setAttribute('data-surea11y', LAYER);
+    const sheet = dom.createElement(document, 'style');
+    dom.setAttribute(sheet, 'data-surea11y', LAYER);
     sheet.textContent =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
@@ -63961,11 +65433,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       '}';
     let after;
     try {
-      const head = document.head || document.documentElement;
-      head.insertBefore(sheet, head.firstChild);
+      const head = dom.head(document) || dom.documentElement(document);
+      dom.insertBefore(head, sheet, dom.firstChild(head));
       after = measure();
     } finally {
-      if (sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       try {
         view.scrollTo(scroll[0], scroll[1]);
       } catch {}
@@ -63990,7 +65462,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       movedForEver = new Set();
       let animations;
       try {
-        animations = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+        animations =
+          typeof dom.get(document, 'getAnimations') === 'function'
+            ? dom.getAnimations(document)
+            : [];
       } catch {
         animations = [];
       }
@@ -64009,7 +65484,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     function isMovedForEver(from, stop) {
       const targets = movedForEverTargets();
       if (!targets.size) return false;
-      for (let el = from; el && el !== stop; el = el.parentElement) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let el = from, i = 0; el && el !== stop && i < 100000; el = dom.parentElement(el), i++) {
         if (targets.has(el)) return true;
       }
       return false;
@@ -64079,7 +65555,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
-      for (const c of clippersOf(n.parentElement)) {
+      for (const c of clippersOf(dom.parentElement(n))) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(c.el);
         if (!b1) continue;
@@ -64103,13 +65579,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
           }
         }
-        const moved = isMovedForEver(n.parentElement, c.el);
+        const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
           const list = moved ? moving : worst.lost ? clipped : partly;
           list.push({
             el: c.el,
-            text: textOf(n.parentElement),
+            text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
               thresholdPx: round1(worst.thresholdPx),
@@ -64131,7 +65607,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           b1,
           c,
           fontSize,
-          n.parentElement,
+          dom.parentElement(n),
           before.boxes.get(c.el)
         );
         if (approach) {
@@ -64139,7 +65615,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             el: c.el,
             value: approach.value,
             threshold: approach.threshold,
-            context: { axis: approach.axis, text: textOf(n.parentElement) }
+            context: { axis: approach.axis, text: textOf(dom.parentElement(n)) }
           });
         }
       }
@@ -64156,7 +65632,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of clippersOf(n.parentElement)) {
+          for (const c of clippersOf(dom.parentElement(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
@@ -64199,9 +65675,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             // be anywhere on the page.
             const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
             if (!judged.has(a.n)) continue;
-            const pa = a.n.parentElement;
-            const pb = b.n.parentElement;
-            if (pa === pb || pa.contains(pb) || pb.contains(pa)) continue;
+            const pa = dom.parentElement(a.n);
+            const pb = dom.parentElement(b.n);
+            if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
             if (reported.has(pa) || reported.has(pb)) continue;
             if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
             reported.add(pa);
@@ -64330,6 +65806,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "textbox-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64342,8 +65819,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -64361,7 +65838,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -64401,7 +65878,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -64431,7 +65908,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="textbox"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="textbox" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -64491,6 +65970,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo textbox" is a textbox).
+    if (helpers.aria.getExplicitRole(el) !== 'textbox') continue;
 
     applicableCount += 1;
 
@@ -64538,6 +66020,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "tooltip-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64550,8 +66033,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -64569,7 +66052,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -64583,7 +66066,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -64613,7 +66096,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="tooltip"]';
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is tooltip (role="link tooltip" is a link).
+  const selector = '[role~="tooltip" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -64638,8 +66123,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'tooltip') continue;
+    if (helpers.aria.getExplicitRole(el) !== 'tooltip') continue;
 
     applicableCount += 1;
 
@@ -64687,6 +66171,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "treeitem-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64699,8 +66184,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -64718,7 +66203,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -64732,7 +66217,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -64762,10 +66247,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="treeitem"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is treeitem, so role="link treeitem" (a link) is left out.
+  const selector = '[role~="treeitem" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function hasName(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -64785,6 +66283,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
+    if (explicitRole(el) !== 'treeitem') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -64833,6 +66332,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "valid-lang": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
@@ -64855,7 +66355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasOwnNonEmptyLang(node) {
     try {
-      const v = node.getAttribute ? node.getAttribute('lang') : null;
+      const v = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'lang') : null;
       return v != null && v.trim() !== '';
     } catch {
       return false;
@@ -64863,11 +66363,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isAltBearing(node) {
-    const tag = (node.tagName || '').toLowerCase();
+    const tag = (dom.tagName(node) || '').toLowerCase();
     if (tag === 'img' || tag === 'area') return true;
     if (tag !== 'input') return false;
     try {
-      return (node.getAttribute('type') || '').toLowerCase() === 'image';
+      return (dom.getAttribute(node, 'type') || '').toLowerCase() === 'image';
     } catch {
       return false;
     }
@@ -64887,26 +66387,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     function walk(node, isRoot) {
       if (found || visits++ > MAX_VISITS) return;
-      if (!node || node.nodeType !== 1) return;
+      if (!node || dom.nodeType(node) !== 1) return;
       if (!isRoot && hasOwnNonEmptyLang(node)) return; // re-scoped to itself
 
       if (isAltBearing(node)) {
-        const alt = node.getAttribute ? node.getAttribute('alt') : null;
+        const alt = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'alt') : null;
         if (alt != null && alt.trim() !== '' && isDomVisible(node)) found = true;
         return; // alt-bearing elements have no other text to walk into
       }
 
       if (!isDomVisible(node)) return;
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
         if (found) return;
-        if (kid.nodeType === 3) {
-          if (String(kid.nodeValue || '').trim()) {
+        if (dom.nodeType(kid) === 3) {
+          if (String(dom.nodeValue(kid) || '').trim()) {
             found = true;
             return;
           }
-        } else if (kid.nodeType === 1) {
+        } else if (dom.nodeType(kid) === 1) {
           walk(kid, false);
         }
       }
@@ -64924,10 +66424,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.tagName && el.tagName.toLowerCase() === 'html') continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.tagName(el) && dom.tagName(el).toLowerCase() === 'html') continue;
 
-    const rawAttr = el.getAttribute('lang');
+    const rawAttr = dom.getAttribute(el, 'lang');
     if (rawAttr === null || rawAttr === '') continue; // ACT de46e4: empty is out of scope
 
     // The rule applies only where text actually inherits the language from
@@ -64942,7 +66442,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const raw = String(rawAttr).trim();
     if (isValidTag(raw.split('-')[0])) continue;
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -64974,6 +66474,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-caption": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
@@ -64982,19 +66483,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.querySelectorAll) continue;
+    if (!el || !dom.get(el, 'querySelectorAll')) continue;
 
     applicableCount += 1;
 
     let hasCaptionsTrack = false;
     let hasSubtitlesTrack = false;
-    const tracks = el.querySelectorAll('track');
+    const tracks = dom.querySelectorAll(el, 'track');
     for (const t of tracks) {
       // A missing kind means subtitles (HTML's missing-value default).
-      const kind = t.hasAttribute('kind')
-        ? (t.getAttribute('kind') || '').trim().toLowerCase()
+      const kind = dom.hasAttribute(t, 'kind')
+        ? (dom.getAttribute(t, 'kind') || '').trim().toLowerCase()
         : 'subtitles';
-      const src = (t.getAttribute('src') || '').trim();
+      const src = (dom.getAttribute(t, 'src') || '').trim();
       if (!src) continue;
       if (kind === 'captions') {
         hasCaptionsTrack = true;
@@ -65006,7 +66507,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (hasCaptionsTrack) continue;
 
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
-    const html = helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '';
+    const html = helpers.getOuterHtmlSnippet
+      ? helpers.getOuterHtmlSnippet(el)
+      : dom.outerHTML(el) || '';
 
     const baseOccurrence = hasSubtitlesTrack
       ? {
@@ -65064,6 +66567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-poster-text-alternative-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -65116,7 +66620,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
 
-    const title = trim(el.getAttribute && el.getAttribute('title'));
+    const title = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
     if (title) {
       flags.push('title-used');
       return { present: true, value: title, mechanism: 'title', flags };
@@ -65133,13 +66637,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
       if (queryAll) return Array.from(queryAll('video') || []);
-      return safeRoot && safeRoot.querySelectorAll
-        ? Array.from(safeRoot.querySelectorAll('video'))
+      return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+        ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
         : [];
     } catch {
       try {
-        return safeRoot && safeRoot.querySelectorAll
-          ? Array.from(safeRoot.querySelectorAll('video'))
+        return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+          ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
           : [];
       } catch {
         return [];
@@ -65158,24 +66662,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <figcaption>'s text, or '' when the video shares the figure with other
   // content, or the caption is empty.
   function soleFigureCaption(el) {
-    const figure = el.parentElement;
-    if (!figure || String(figure.localName) !== 'figure') return '';
+    const figure = dom.parentElement(el);
+    if (!figure || String(dom.localName(figure)) !== 'figure') return '';
     let caption = null;
-    for (let c = figure.firstElementChild; c; c = c.nextElementSibling) {
+    for (let c = dom.firstElementChild(figure); c; c = dom.nextElementSibling(c)) {
       if (c === el) continue;
-      if (String(c.localName) === 'figcaption' && !caption) caption = c;
+      if (String(dom.localName(c)) === 'figcaption' && !caption) caption = c;
       else return '';
     }
-    for (let n = figure.firstChild; n; n = n.nextSibling) {
-      if (n.nodeType === 3 && trim(n.nodeValue)) return '';
+    for (let n = dom.firstChild(figure); n; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) === 3 && trim(dom.nodeValue(n))) return '';
     }
-    return caption ? trim(caption.textContent).replace(/\s+/g, ' ') : '';
+    return caption ? trim(dom.textContent(caption)).replace(/\s+/g, ' ') : '';
   }
 
   for (const el of videos) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const poster = trim(el.getAttribute('poster'));
+    const poster = trim(dom.getAttribute(el, 'poster'));
     if (!poster) continue; // not applicable: no poster image
 
     // Eligibility: only elements exposed to AT (with helper exceptions)
@@ -65191,7 +66695,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Role presentation/none excluded ONLY if not focusable (mirrors img behavior)
-    const role = trim(el.getAttribute('role')).toLowerCase();
+    // The resolved role: the first token naming a known role, in any case.
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'presentation' || role === 'none') {
       let focusable;
       if (isFocusableInfo) {
@@ -65204,7 +66709,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })();
         focusable = !!(fi && fi.focusable);
       } else {
-        const tabindex = el.getAttribute('tabindex');
+        const tabindex = dom.getAttribute(el, 'tabindex');
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
@@ -70975,8 +72480,514 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
   };
 }
 
+// Inlined from src/core/safe-dom.js -- DOM reads a page's named form
+// controls and images can't redirect.
+const SAFE_DOM_GETTERS = [
+  "activeElement",
+  "assignedSlot",
+  "attributes",
+  "baseURI",
+  "body",
+  "childElementCount",
+  "childNodes",
+  "children",
+  "contentDocument",
+  "contentWindow",
+  "defaultView",
+  "doctype",
+  "documentElement",
+  "firstChild",
+  "firstElementChild",
+  "fonts",
+  "head",
+  "host",
+  "isConnected",
+  "lastChild",
+  "lastElementChild",
+  "localName",
+  "namespaceURI",
+  "nextElementSibling",
+  "nextSibling",
+  "nodeName",
+  "nodeType",
+  "nodeValue",
+  "outerHTML",
+  "ownerDocument",
+  "parentElement",
+  "parentNode",
+  "previousElementSibling",
+  "previousSibling",
+  "readyState",
+  "shadowRoot",
+  "styleSheets",
+  "tagName",
+  "textContent",
+  "timeline"
+];
+const SAFE_DOM_METHODS = [
+  "addEventListener",
+  "appendChild",
+  "assignedElements",
+  "assignedNodes",
+  "blur",
+  "checkVisibility",
+  "cloneNode",
+  "closest",
+  "compareDocumentPosition",
+  "contains",
+  "createElement",
+  "createRange",
+  "createTreeWalker",
+  "elementFromPoint",
+  "elementsFromPoint",
+  "focus",
+  "getAnimations",
+  "getAttribute",
+  "getAttributeNames",
+  "getBoundingClientRect",
+  "getClientRects",
+  "getElementById",
+  "getElementsByClassName",
+  "getElementsByTagName",
+  "getRootNode",
+  "hasAttribute",
+  "hasChildNodes",
+  "insertBefore",
+  "matches",
+  "querySelector",
+  "querySelectorAll",
+  "removeAttribute",
+  "removeChild",
+  "removeEventListener",
+  "setAttribute"
+];
+const SAFE_DOM_OTHER_NAMES = [
+  "clientHeight",
+  "clientWidth",
+  "id",
+  "style",
+  "title"
+];
+const createSafeDom = (function createSafeDom() {
+  // One instance per realm of this script: the lookups depend only on the
+  // prototypes they are given, so sharing it across scans is safe.
+  if (createSafeDom.__instance) return createSafeDom.__instance;
+
+  // Captured once, so a page that later replaces them doesn't change how
+  // the engine reads its own DOM.
+  const getProto = Object.getPrototypeOf;
+  const getOwnDesc = Object.getOwnPropertyDescriptor;
+  const apply = Reflect.apply;
+  const objectHasOwn = Object.prototype.hasOwnProperty;
+  const hasOwn =
+    typeof Object.hasOwn === 'function'
+      ? Object.hasOwn
+      : (obj, name) => apply(objectHasOwn, obj, [name]);
+
+  // What a prototype chain defines for a name: its getter, its method, or
+  // nothing -- and then whether the chain is a DOM node's, which reads a
+  // name it doesn't define as undefined (an ordinary read would reach a named
+  // element), unlike any other object, which is read the ordinary way.
+  const NONE = Object.freeze({ getter: null, value: undefined, node: false });
+  const NONE_NODE = Object.freeze({ getter: null, value: undefined, node: true });
+
+  // Only an accessor or a function counts: a named-properties object
+  // (Window's, which holds `window.<id>` entries) has plain data properties
+  // for named elements, and those must be passed over to reach the real
+  // method further up.
+  function findOnChain(proto, name) {
+    for (let p = proto; p; p = getProto(p)) {
+      const d = getOwnDesc(p, name);
+      if (d && typeof d.get === 'function') return { getter: d.get, value: undefined, node: false };
+      if (d && typeof d.value === 'function') return { getter: null, value: d.value, node: false };
+    }
+    return null;
+  }
+
+  function isNodeChain(proto) {
+    const found = proto ? findOnChain(proto, 'nodeType') : null;
+    return !!(found && found.getter);
+  }
+
+  // Whether `v` is what a named element puts in place of a property: an
+  // element, a collection of them (two controls sharing a name), or a
+  // window (an iframe's name).
+  function isNamedElementValue(v) {
+    if (v === null || (typeof v !== 'object' && typeof v !== 'function')) return false;
+    const proto = getProto(v);
+    if (!proto) return false;
+    if (isNodeChain(proto)) return true;
+    const item = findOnChain(proto, 'item');
+    if (item && item.value && findOnChain(proto, 'length')) return true;
+    try {
+      return v.window === v;
+    } catch {
+      return true;
+    }
+  }
+
+  // Whether objects with this prototype can have properties overridden by
+  // named elements: a form (HTMLFormElement), a document (Document) or a
+  // window (whose named-properties object sits in its chain). Every other
+  // object is read the ordinary way. Recognised by what their prototypes
+  // define, so it works for any realm.
+  // 0: not guarded; FORM: a form; OWNER: a document or a window, where a
+  // script or a test may have put its own wrapper on the object itself.
+  const FORM = 1;
+  const OWNER = 2;
+  const guardedByProto = new WeakMap();
+  function guardOf(proto) {
+    let g = guardedByProto.get(proto);
+    if (g !== undefined) return g;
+    g = 0;
+    for (let p = proto; p && !g; p = getProto(p)) {
+      if (getOwnDesc(p, 'acceptCharset'))
+        g = FORM; // HTMLFormElement.prototype
+      else if (getOwnDesc(p, 'documentElement') || getOwnDesc(p, 'getComputedStyle')) {
+        g = OWNER; // Document.prototype, Window.prototype
+      }
+    }
+    guardedByProto.set(proto, g);
+    return g;
+  }
+
+  // What the prototype chain defines for each name, per prototype: read on a
+  // form, a document or a window.
+  const byName = new Map();
+  function protectedGet(obj, name) {
+    const proto = getProto(obj);
+    // On a document or a window, a property the object holds itself (a
+    // wrapper a script put on it, a test's stand-in) is honoured, as an
+    // ordinary read would, unless it is a named element. Forms are not
+    // checked: asking a form for its own properties means searching its
+    // named controls, which is slow, and scripts don't wrap form methods.
+    if (guardOf(proto) === OWNER && hasOwn(obj, name)) {
+      let d;
+      try {
+        d = getOwnDesc(obj, name);
+      } catch {
+        d = null;
+      }
+      if (d && !('value' in d && isNamedElementValue(d.value))) {
+        return d.get ? apply(d.get, obj, []) : d.value;
+      }
+    }
+    let byProto = byName.get(name);
+    if (!byProto) {
+      byProto = new WeakMap();
+      byName.set(name, byProto);
+    }
+    let entry = byProto.get(proto);
+    if (!entry) {
+      entry = findOnChain(proto, name) || (isNodeChain(proto) ? NONE_NODE : NONE);
+      byProto.set(proto, entry);
+    }
+    if (entry.getter) return apply(entry.getter, obj, []);
+    if (entry.value) return entry.value;
+    return entry.node ? undefined : obj[name];
+  }
+  function protectedCall(obj, name, ...args) {
+    return apply(protectedGet(obj, name), obj, args);
+  }
+
+  // Whether the page being scanned can override properties at all. Only an
+  // element whose id or name is the name of a DOM property can (a form's
+  // controls, document's and window's named elements), so a scan checks the
+  // page once at its start (protectFor) and, on the nearly every page where
+  // no such element exists, the accessors are the plain reads they replace.
+  // Outside a scan, and whenever the check can't tell, they protect.
+  let protect = true;
+
+  // The names a named element could override and the engine would then
+  // read wrongly: on a form or a document, every name the accessors read; on
+  // a window, the EventTarget methods (the only ones a window's named
+  // elements can reach, sitting below its own prototype).
+  const READ_NAMES = new Set([...SAFE_DOM_GETTERS, ...SAFE_DOM_METHODS, ...SAFE_DOM_OTHER_NAMES]);
+  const WINDOW_NAMES = new Set(['addEventListener', 'removeEventListener', 'dispatchEvent']);
+  // The elements a name or id of which names a property of their form (the
+  // listed elements, images, and form-associated custom elements) or of the
+  // document (embeds, forms, iframes, images, objects).
+  const NAMED_TAGS = new Set([
+    'button',
+    'embed',
+    'fieldset',
+    'form',
+    'iframe',
+    'img',
+    'input',
+    'object',
+    'output',
+    'select',
+    'textarea'
+  ]);
+
+  // Whether an element in `doc`, or in an open shadow root inside it, has an
+  // id or name that would override something the engine reads. Reads
+  // through the protected path throughout, since the page may be one that
+  // overrides.
+  function pageCanOverride(doc) {
+    const docEl = protectedGet(doc, 'documentElement');
+    if (!docEl) return false;
+    // The element methods and getters, found once on the root element's
+    // prototype chain and applied to every element: they are Element's, so
+    // they work on any element, and resolving them per element would cost
+    // more than the check itself on a small page.
+    const elProto = getProto(docEl);
+    const found = (name) => findOnChain(elProto, name) || {};
+    const getAttribute = found('getAttribute').value;
+    const localName = found('localName').getter;
+    const shadowRoot = found('shadowRoot').getter;
+    if (!getAttribute || !localName) return true;
+    const roots = [doc];
+    for (let i = 0; i < roots.length; i++) {
+      const root = roots[i];
+      for (const el of protectedCall(root, 'querySelectorAll', '[id], [name]')) {
+        const id = apply(getAttribute, el, ['id']);
+        const name = apply(getAttribute, el, ['name']);
+        if ((id !== null && WINDOW_NAMES.has(id)) || (name !== null && WINDOW_NAMES.has(name))) {
+          return true;
+        }
+        const tag = String(apply(localName, el, []) || '');
+        if (!NAMED_TAGS.has(tag) && tag.indexOf('-') === -1) continue;
+        if ((id !== null && READ_NAMES.has(id)) || (name !== null && READ_NAMES.has(name))) {
+          return true;
+        }
+      }
+      if (!shadowRoot) continue;
+      const walker = protectedCall(doc, 'createTreeWalker', root === doc ? docEl : root, 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (el === root) continue;
+        const shadow = apply(shadowRoot, el, []);
+        if (shadow) roots.push(shadow);
+      }
+    }
+    return false;
+  }
+
+  // Sets the accessors for a scan of `doc`, and returns what puts them back.
+  function protectFor(doc) {
+    const before = protect;
+    let can;
+    try {
+      can = !doc || pageCanOverride(doc);
+    } catch {
+      can = true;
+    }
+    protect = can;
+    return () => {
+      protect = before;
+    };
+  }
+
+  // Whether `obj` needs the protected read, remembering the last prototype
+  // seen: loops over the DOM meet the same few prototypes over and over.
+  // Object.getPrototypeOf throws on null and undefined, as reading a property
+  // of them does.
+  let lastProto;
+  let lastGuard = 0;
+  function guard(obj) {
+    const proto = getProto(obj);
+    if (proto !== lastProto) {
+      lastProto = proto;
+      lastGuard = proto === null ? 0 : guardOf(proto);
+    }
+    return lastGuard;
+  }
+
+  // One accessor per name, written out with the name in the source rather
+  // than looked up by a variable, so the engine running this code can
+  // optimise each one, and inline it where it is called, as it would the
+  // plain read it replaces. On an object no named element can affect, it is
+  // that plain read. Methods pass four arguments through: the DOM methods
+  // here take at most three, and an argument passed as undefined is the same
+  // to them as one left out. tests/core/safe-dom.test.js checks this list
+  // against SAFE_DOM_GETTERS and SAFE_DOM_METHODS.
+  const dom = {
+    get: (o, name) => (protect && guard(o) ? protectedGet(o, name) : o[name]),
+    call: (o, name, ...args) =>
+      protect && guard(o) ? protectedCall(o, name, ...args) : apply(o[name], o, args),
+    protectFor,
+    activeElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'activeElement') : o.activeElement,
+    assignedSlot: (o) => (protect && guard(o) ? protectedGet(o, 'assignedSlot') : o.assignedSlot),
+    attributes: (o) => (protect && guard(o) ? protectedGet(o, 'attributes') : o.attributes),
+    baseURI: (o) => (protect && guard(o) ? protectedGet(o, 'baseURI') : o.baseURI),
+    body: (o) => (protect && guard(o) ? protectedGet(o, 'body') : o.body),
+    childElementCount: (o) =>
+      protect && guard(o) ? protectedGet(o, 'childElementCount') : o.childElementCount,
+    childNodes: (o) => (protect && guard(o) ? protectedGet(o, 'childNodes') : o.childNodes),
+    children: (o) => (protect && guard(o) ? protectedGet(o, 'children') : o.children),
+    contentDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentDocument') : o.contentDocument,
+    contentWindow: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentWindow') : o.contentWindow,
+    defaultView: (o) => (protect && guard(o) ? protectedGet(o, 'defaultView') : o.defaultView),
+    doctype: (o) => (protect && guard(o) ? protectedGet(o, 'doctype') : o.doctype),
+    documentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'documentElement') : o.documentElement,
+    firstChild: (o) => (protect && guard(o) ? protectedGet(o, 'firstChild') : o.firstChild),
+    firstElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'firstElementChild') : o.firstElementChild,
+    fonts: (o) => (protect && guard(o) ? protectedGet(o, 'fonts') : o.fonts),
+    head: (o) => (protect && guard(o) ? protectedGet(o, 'head') : o.head),
+    host: (o) => (protect && guard(o) ? protectedGet(o, 'host') : o.host),
+    isConnected: (o) => (protect && guard(o) ? protectedGet(o, 'isConnected') : o.isConnected),
+    lastChild: (o) => (protect && guard(o) ? protectedGet(o, 'lastChild') : o.lastChild),
+    lastElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'lastElementChild') : o.lastElementChild,
+    localName: (o) => (protect && guard(o) ? protectedGet(o, 'localName') : o.localName),
+    namespaceURI: (o) => (protect && guard(o) ? protectedGet(o, 'namespaceURI') : o.namespaceURI),
+    nextElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'nextElementSibling') : o.nextElementSibling,
+    nextSibling: (o) => (protect && guard(o) ? protectedGet(o, 'nextSibling') : o.nextSibling),
+    nodeName: (o) => (protect && guard(o) ? protectedGet(o, 'nodeName') : o.nodeName),
+    nodeType: (o) => (protect && guard(o) ? protectedGet(o, 'nodeType') : o.nodeType),
+    nodeValue: (o) => (protect && guard(o) ? protectedGet(o, 'nodeValue') : o.nodeValue),
+    outerHTML: (o) => (protect && guard(o) ? protectedGet(o, 'outerHTML') : o.outerHTML),
+    ownerDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'ownerDocument') : o.ownerDocument,
+    parentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'parentElement') : o.parentElement,
+    parentNode: (o) => (protect && guard(o) ? protectedGet(o, 'parentNode') : o.parentNode),
+    previousElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousElementSibling') : o.previousElementSibling,
+    previousSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousSibling') : o.previousSibling,
+    readyState: (o) => (protect && guard(o) ? protectedGet(o, 'readyState') : o.readyState),
+    shadowRoot: (o) => (protect && guard(o) ? protectedGet(o, 'shadowRoot') : o.shadowRoot),
+    styleSheets: (o) => (protect && guard(o) ? protectedGet(o, 'styleSheets') : o.styleSheets),
+    tagName: (o) => (protect && guard(o) ? protectedGet(o, 'tagName') : o.tagName),
+    textContent: (o) => (protect && guard(o) ? protectedGet(o, 'textContent') : o.textContent),
+    timeline: (o) => (protect && guard(o) ? protectedGet(o, 'timeline') : o.timeline),
+    addEventListener: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'addEventListener', a, b, c, d)
+        : o.addEventListener(a, b, c, d),
+    appendChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'appendChild', a, b, c, d) : o.appendChild(a, b, c, d),
+    assignedElements: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedElements', a, b, c, d)
+        : o.assignedElements(a, b, c, d),
+    assignedNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedNodes', a, b, c, d)
+        : o.assignedNodes(a, b, c, d),
+    blur: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'blur', a, b, c, d) : o.blur(a, b, c, d),
+    checkVisibility: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'checkVisibility', a, b, c, d)
+        : o.checkVisibility(a, b, c, d),
+    cloneNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'cloneNode', a, b, c, d) : o.cloneNode(a, b, c, d),
+    closest: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'closest', a, b, c, d) : o.closest(a, b, c, d),
+    compareDocumentPosition: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'compareDocumentPosition', a, b, c, d)
+        : o.compareDocumentPosition(a, b, c, d),
+    contains: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'contains', a, b, c, d) : o.contains(a, b, c, d),
+    createElement: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createElement', a, b, c, d)
+        : o.createElement(a, b, c, d),
+    createRange: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'createRange', a, b, c, d) : o.createRange(a, b, c, d),
+    createTreeWalker: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createTreeWalker', a, b, c, d)
+        : o.createTreeWalker(a, b, c, d),
+    elementFromPoint: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'elementFromPoint', a, b, c, d)
+        : o.elementFromPoint(a, b, c, d),
+    elementsFromPoint: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'elementsFromPoint', a, b, c, d)
+        : o.elementsFromPoint(a, b, c, d),
+    focus: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'focus', a, b, c, d) : o.focus(a, b, c, d),
+    getAnimations: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAnimations', a, b, c, d)
+        : o.getAnimations(a, b, c, d),
+    getAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAttribute', a, b, c, d)
+        : o.getAttribute(a, b, c, d),
+    getAttributeNames: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getAttributeNames', a, b, c, d)
+        : o.getAttributeNames(a, b, c, d),
+    getBoundingClientRect: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getBoundingClientRect', a, b, c, d)
+        : o.getBoundingClientRect(a, b, c, d),
+    getClientRects: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getClientRects', a, b, c, d)
+        : o.getClientRects(a, b, c, d),
+    getElementById: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getElementById', a, b, c, d)
+        : o.getElementById(a, b, c, d),
+    getElementsByClassName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByClassName', a, b, c, d)
+        : o.getElementsByClassName(a, b, c, d),
+    getElementsByTagName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByTagName', a, b, c, d)
+        : o.getElementsByTagName(a, b, c, d),
+    getRootNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    hasAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasAttribute', a, b, c, d)
+        : o.hasAttribute(a, b, c, d),
+    hasChildNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasChildNodes', a, b, c, d)
+        : o.hasChildNodes(a, b, c, d),
+    insertBefore: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'insertBefore', a, b, c, d)
+        : o.insertBefore(a, b, c, d),
+    matches: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'matches', a, b, c, d) : o.matches(a, b, c, d),
+    querySelector: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelector', a, b, c, d)
+        : o.querySelector(a, b, c, d),
+    querySelectorAll: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelectorAll', a, b, c, d)
+        : o.querySelectorAll(a, b, c, d),
+    removeAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'removeAttribute', a, b, c, d)
+        : o.removeAttribute(a, b, c, d),
+    removeChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'removeChild', a, b, c, d) : o.removeChild(a, b, c, d),
+    removeEventListener: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'removeEventListener', a, b, c, d)
+        : o.removeEventListener(a, b, c, d),
+    setAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'setAttribute', a, b, c, d)
+        : o.setAttribute(a, b, c, d)
+  };
+
+  createSafeDom.__instance = Object.freeze(dom);
+  return createSafeDom.__instance;
+});
+
 // Inlined from src/core/contrast-helpers.js
 const createContrastHelpers = (function createContrastHelpers(opts, shared) {
+  const dom = createSafeDom();
   const window = opts && opts.window ? opts.window : null;
 
   const trim = shared.trim;
@@ -71071,7 +73082,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __contrastComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return computedStyle(el);
+      if (!el || dom.nodeType(el) !== 1) return computedStyle(el);
       if (__computedStyleCache.has(el)) return __computedStyleCache.get(el);
       const cs = computedStyle(el);
       __computedStyleCache.set(el, cs);
@@ -71080,7 +73091,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Always no-throw: return empty object on any failure
       try {
         const cs = computedStyle(el);
-        if (el && el.nodeType === 1) __computedStyleCache.set(el, cs);
+        if (el && dom.nodeType(el) === 1) __computedStyleCache.set(el, cs);
         return cs;
       } catch {
         return {};
@@ -71210,11 +73221,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // still recognized as inactive.
   function isDisabledWidget(node) {
     try {
-      if (typeof node.matches === 'function' && node.matches(':disabled')) return true;
+      if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
+        return true;
     } catch {}
     try {
-      const ad = node.getAttribute
-        ? String(node.getAttribute('aria-disabled') || '')
+      const ad = dom.get(node, 'getAttribute')
+        ? String(dom.getAttribute(node, 'aria-disabled') || '')
             .trim()
             .toLowerCase()
         : '';
@@ -71227,12 +73239,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let node = el;
     let depth = 0;
     let labelAncestor = null;
-    while (node && node.nodeType === 1 && depth++ < 100) {
+    while (node && dom.nodeType(node) === 1 && depth++ < 100) {
       if (isDisabledWidget(node)) return true;
-      if (!labelAncestor && String(node.tagName || '').toLowerCase() === 'label') {
+      if (!labelAncestor && String(dom.tagName(node) || '').toLowerCase() === 'label') {
         labelAncestor = node;
       }
-      node = node.parentElement;
+      node = dom.parentElement(node);
     }
 
     // WCAG 1.4.3/1.4.6 "disabled label" exception: text that forms the
@@ -71255,10 +73267,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       } catch {}
 
       try {
-        const doc = labelAncestor.ownerDocument;
-        const labelId = labelAncestor.id;
-        if (doc && labelId) {
-          const referrers = doc.querySelectorAll('[aria-labelledby~="' + labelId + '"]');
+        // Only an element in the label's own tree (its shadow root, or the
+        // document) can reference it by id.
+        const root = dom.getRootNode(labelAncestor);
+        const tree =
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(labelAncestor);
+        const labelId = dom.get(labelAncestor, 'id');
+        if (tree && labelId) {
+          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -71273,7 +73291,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
 
-      const w = (ctx && ctx.window) || (d && d.defaultView) || window || null;
+      const w = (ctx && ctx.window) || (d && dom.defaultView(d)) || window || null;
 
       const rawMode = __resolveVisibilityMode(ctx, engineOptions, d, w);
 
@@ -71282,7 +73300,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? 'styleAndGeometry'
           : 'styleOnly';
 
-      if (!d || typeof d.createTreeWalker !== 'function') {
+      if (!d || typeof dom.get(d, 'createTreeWalker') !== 'function') {
         return { eligibleTextCount: 0, elements: [], visibilityMode };
       }
 
@@ -71303,9 +73321,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           ? Array.isArray(ctx.root)
             ? ctx.root
             : [ctx.root]
-          : [d.body || d.documentElement || d];
+          : [dom.body(d) || dom.documentElement(d) || d];
       const lightRoots = walkRootsRaw
-        .map((wr) => (wr && wr.nodeType === 9 ? wr.body || wr.documentElement || wr : wr))
+        .map((wr) =>
+          wr && dom.nodeType(wr) === 9 ? dom.body(wr) || dom.documentElement(wr) || wr : wr
+        )
         .filter(Boolean);
 
       // A TreeWalker stops at a shadow boundary and querySelectorAll does not
@@ -71327,12 +73347,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
           let hosts;
           try {
-            hosts = root.querySelectorAll ? root.querySelectorAll('*') : [];
+            hosts = dom.get(root, 'querySelectorAll') ? dom.querySelectorAll(root, '*') : [];
           } catch {
             continue;
           }
           for (const el of hosts) {
-            if (el && el.shadowRoot && !seen.has(el.shadowRoot)) queue.push(el.shadowRoot);
+            if (el && dom.shadowRoot(el) && !seen.has(dom.shadowRoot(el)))
+              queue.push(dom.shadowRoot(el));
           }
         }
 
@@ -71378,13 +73399,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         try {
           let cur = el;
           let guard = 0;
-          while (cur && cur.nodeType === 1 && guard++ < 100) {
+          while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
             const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
             if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
               hidden = true;
               break;
             }
-            cur = composedParent ? composedParent(cur) : cur.parentElement;
+            cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
           }
         } catch {
           hidden = false;
@@ -71439,13 +73460,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
-          typeof el.getBoundingClientRect !== 'function'
+          typeof dom.get(el, 'getBoundingClientRect') !== 'function'
         ) {
           return false;
         }
-        const r = el.getBoundingClientRect();
+        const r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
-        const win = el.ownerDocument && el.ownerDocument.defaultView;
+        const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
         const sx = (win && win.scrollX) || 0;
         const sy = (win && win.scrollY) || 0;
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
@@ -71454,14 +73475,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let right = r.right;
         let bottom = r.bottom;
         let cur = composedParent(el);
-        for (let depth = 0; cur && cur.nodeType === 1 && depth < 100; depth++) {
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 100; depth++) {
           const acs = __contrastComputedStyle(cur);
           // hidden and clip cut content off; auto and scroll let a reader
           // scroll to it.
           const clipsX = !!acs && (acs.overflowX === 'hidden' || acs.overflowX === 'clip');
           const clipsY = !!acs && (acs.overflowY === 'hidden' || acs.overflowY === 'clip');
           if (clipsX || clipsY) {
-            const a = cur.getBoundingClientRect();
+            const a = dom.getBoundingClientRect(cur);
             if (clipsX) {
               left = Math.max(left, a.left);
               right = Math.min(right, a.right);
@@ -71563,7 +73584,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (guard >= 500000) break;
         let walker;
         try {
-          walker = d.createTreeWalker(walkRoot, SHOW_TEXT, null);
+          walker = dom.createTreeWalker(d, walkRoot, SHOW_TEXT, null);
         } catch {
           continue;
         }
@@ -71572,16 +73593,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (visitedTextNodes.has(node)) continue;
           visitedTextNodes.add(node);
 
-          const text = node && node.nodeValue;
+          const text = node && dom.nodeValue(node);
           if (!isNonEmptyText(text)) continue;
 
-          const parentNode = node.parentNode;
+          const parentNode = dom.parentNode(node);
           // Text assigned straight to a shadow root has no parent element, but
           // it renders with the host's inherited color and background.
           const el =
-            node.parentElement ||
-            (parentNode && parentNode.nodeType === 1 ? parentNode : null) ||
-            (parentNode && parentNode.nodeType === 11 && parentNode.host ? parentNode.host : null);
+            dom.parentElement(node) ||
+            (parentNode && dom.nodeType(parentNode) === 1 ? parentNode : null) ||
+            (parentNode && dom.nodeType(parentNode) === 11 && dom.host(parentNode)
+              ? dom.host(parentNode)
+              : null);
 
           if (!el) continue;
           // Respect subtree exclusions from engineOptions.excludeSelectors
@@ -71616,7 +73639,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       for (const walkRoot of walkRoots) {
         let candidates;
         try {
-          candidates = walkRoot.querySelectorAll(
+          candidates = dom.querySelectorAll(
+            walkRoot,
             'input[type="submit" i], input[type="button" i], input[type="reset" i]'
           );
         } catch {
@@ -71626,7 +73650,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (visitedValueInputs.has(el)) continue;
           visitedValueInputs.add(el);
 
-          const value = el.getAttribute ? el.getAttribute('value') : el.value;
+          const value = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'value') : el.value;
           if (!isNonEmptyText(value)) continue;
 
           try {
@@ -72116,10 +74140,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (
         w &&
         d &&
-        typeof d.createElement === 'function' &&
+        typeof dom.get(d, 'createElement') === 'function' &&
         typeof w.getComputedStyle === 'function'
       ) {
-        const probe = d.createElement('span');
+        const probe = dom.createElement(d, 'span');
         // Avoid layout/paint side effects
         probe.style.position = 'absolute';
         probe.style.left = '-9999px';
@@ -72129,8 +74153,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // A value the platform rejects leaves the property unset, and the
         // probe would then report the color it inherits.
         if (!probe.style.color) return null;
-        const parent = d.body || d.documentElement;
-        if (parent && typeof parent.appendChild === 'function') parent.appendChild(probe);
+        const parent = dom.body(d) || dom.documentElement(d);
+        if (parent && typeof dom.get(parent, 'appendChild') === 'function')
+          dom.appendChild(parent, probe);
 
         let computed = '';
         try {
@@ -72140,7 +74165,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         try {
-          if (probe && probe.parentNode) probe.parentNode.removeChild(probe);
+          if (probe && dom.parentNode(probe)) dom.removeChild(dom.parentNode(probe), probe);
         } catch {}
 
         const normalized = __normalizeCssColorCacheKey(computed);
@@ -72282,7 +74307,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasBackgroundImageOrGradientEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBackgroundImageOrGradient(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBackgroundImageOrGradient(cs);
       if (__hasBgImgCache.has(el)) return __hasBgImgCache.get(el);
       const v = hasBackgroundImageOrGradient(cs);
       __hasBgImgCache.set(el, v);
@@ -72294,7 +74319,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasBlendModeEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasBlendMode(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasBlendMode(cs);
       if (__hasBlendModeCache.has(el)) return __hasBlendModeCache.get(el);
       const v = hasBlendMode(cs);
       __hasBlendModeCache.set(el, v);
@@ -72306,7 +74331,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __hasFilterEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) return hasFilter(cs);
+      if (!el || dom.nodeType(el) !== 1) return hasFilter(cs);
       if (__hasFilterCache.has(el)) return __hasFilterCache.get(el);
       const v = hasFilter(cs);
       __hasFilterCache.set(el, v);
@@ -72331,7 +74356,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // unaffected either way.
   function __textShadowInfoEl(el, cs) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         const raw = cs && cs.textShadow; // single read
         const value = raw == null ? '' : String(raw);
         return { has: hasTextShadow(value), value };
@@ -72362,7 +74387,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let cur = el;
       let guard = 0;
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -72400,8 +74425,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   function __isSvgTextElement(el) {
     return (
       !!el &&
-      el.namespaceURI === __SVG_NS &&
-      __SVG_TEXT_TAGS.has(String(el.localName || '').toLowerCase())
+      dom.namespaceURI(el) === __SVG_NS &&
+      __SVG_TEXT_TAGS.has(String(dom.localName(el) || '').toLowerCase())
     );
   }
 
@@ -72524,7 +74549,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let unparsable = null;
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -72535,7 +74560,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
       if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
         unparsable = {
-          selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+          selector: __getSimpleSelectorCached(
+            cur,
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
+          ),
           value: truncateCssValue(trim(cs.backgroundColor), 80)
         };
         break;
@@ -72545,7 +74573,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
           stack.push({
-            selector: __getSimpleSelectorCached(cur, (cur.tagName || '').toLowerCase() || 'html'),
+            selector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
             bg: { r: layer.r, g: layer.g, b: layer.b, a: layer.a },
             opacity: op
           });
@@ -72639,7 +74670,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __getSimpleSelectorCached(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return '';
+      if (!el || dom.nodeType(el) !== 1) return '';
       if (__simpleSelectorCache.has(el)) return __simpleSelectorCache.get(el) || '';
       const s = buildSimpleSelector(el, fallbackTag);
       __simpleSelectorCache.set(el, s || '');
@@ -72718,7 +74749,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
 
     try {
-      if (!el || el.nodeType !== 1) return __cacheAndReturn(null);
+      if (!el || dom.nodeType(el) !== 1) return __cacheAndReturn(null);
 
       const elCs = __contrastComputedStyle(el);
       const elColor = parseCssColorToRgba(
@@ -72732,7 +74763,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let guard = 0;
 
       while (cur && guard++ < 200) {
-        if (cur.nodeType !== 1) {
+        if (dom.nodeType(cur) !== 1) {
           cur = composedParent(cur);
           continue;
         }
@@ -72832,7 +74863,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const chain = [];
 
     while (cur && guard++ < 200) {
-      if (cur.nodeType !== 1) {
+      if (dom.nodeType(cur) !== 1) {
         cur = composedParent(cur);
         continue;
       }
@@ -72844,7 +74875,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'MIX_BLEND_MODE',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'mix-blend-mode',
           blockerValue: truncateCssValue(cs && cs.mixBlendMode, 80)
@@ -72869,7 +74900,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
             blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
@@ -72898,7 +74929,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'TEXT_SHADOW',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'text-shadow',
           blockerValue: truncateCssValue(textShadowInfo.value, 80)
@@ -72916,7 +74947,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           reasonCode: 'BACKGROUND_IMAGE_OR_GRADIENT',
           blockerSelector: __getSimpleSelectorCached(
             cur,
-            (cur.tagName || '').toLowerCase() || 'html'
+            (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
           blockerProperty: 'background-image',
           blockerValue: truncateCssValue(bgImg, 80),
@@ -72964,7 +74995,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             reasonCode: 'ANCESTOR_OPACITY',
             blockerSelector: __getSimpleSelectorCached(
               cur,
-              (cur.tagName || '').toLowerCase() || 'html'
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
@@ -73047,7 +75078,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   function __paintCandidate(node, cs) {
-    const tag = String(node.localName || '').toLowerCase();
+    const tag = String(dom.localName(node) || '').toLowerCase();
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -73074,7 +75105,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let cur = node;
     let pinned = false;
     let guard = 0;
-    while (cur && cur.nodeType === 1 && guard++ < 200) {
+    while (cur && dom.nodeType(cur) === 1 && guard++ < 200) {
       if (__pinnedCache.has(cur)) {
         pinned = __pinnedCache.get(cur);
         break;
@@ -73097,19 +75128,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // is painted. checkVisibility() answers that; without it, the two are
   // looked for along the composed ancestors.
   function __isUnpainted(node) {
-    if (typeof node.checkVisibility === 'function') {
+    if (typeof dom.get(node, 'checkVisibility') === 'function') {
       try {
-        return !node.checkVisibility();
+        return !dom.checkVisibility(node);
       } catch {}
     }
     // A shadow root on the way up is stepped over to its host.
     let child = node;
     let cur = composedParent(node);
     for (let guard = 0; cur && guard < 1000; guard++) {
-      if (cur.nodeType === 1) {
+      if (dom.nodeType(cur) === 1) {
         if (
-          String(cur.localName || '').toLowerCase() === 'details' &&
-          !cur.hasAttribute('open') &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open') &&
           child !== __firstSummaryChild(cur)
         ) {
           return true;
@@ -73125,17 +75156,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // Only the first <summary> child of a <details> is its toggle.
   function __firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if (String(c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function __buildOverlapIndex() {
     const doc = window && window.document;
-    if (!doc || !doc.documentElement || typeof doc.createRange !== 'function') return null;
+    if (!doc || !dom.documentElement(doc) || typeof dom.get(doc, 'createRange') !== 'function')
+      return null;
     try {
-      const rootRects = doc.documentElement.getClientRects();
+      const rootRects = dom.getClientRects(dom.documentElement(doc));
       if (!rootRects || !rootRects.length) return null;
     } catch {
       return null;
@@ -73146,12 +75178,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     for (let ri = 0; ri < roots.length; ri++) {
       let all;
       try {
-        all = roots[ri].querySelectorAll('*');
+        all = dom.querySelectorAll(roots[ri], '*');
       } catch {
         continue;
       }
       for (const node of all) {
-        if (node.shadowRoot) roots.push(node.shadowRoot);
+        if (dom.shadowRoot(node)) roots.push(dom.shadowRoot(node));
         const cs = __contrastComputedStyle(node);
         const paint = __paintOf(node, cs);
         if (!paint || __isUnpainted(node)) continue;
@@ -73163,9 +75195,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           boxes =
             cs &&
             String(cs.display).startsWith('inline') &&
-            !__REPLACED_PAINT.has(String(node.localName || '').toLowerCase())
-              ? Array.from(node.getClientRects())
-              : [node.getBoundingClientRect()];
+            !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
+              ? Array.from(dom.getClientRects(node))
+              : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
         }
@@ -73210,19 +75242,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // The line boxes of el's own text.
   function __ownTextRects(el) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     const out = [];
     let range;
     try {
-      range = doc.createRange();
+      range = dom.createRange(doc);
     } catch {
       return out;
     }
-    for (let n = el.firstChild; n && out.length < 50; n = n.nextSibling) {
-      if (n.nodeType !== 3 || !trim(n.nodeValue)) continue;
+    for (let n = dom.firstChild(el); n && out.length < 50; n = dom.nextSibling(n)) {
+      if (dom.nodeType(n) !== 3 || !trim(dom.nodeValue(n))) continue;
       try {
         range.selectNodeContents(n);
-        for (const r of range.getClientRects()) {
+        for (const r of dom.getClientRects(range)) {
           if (r.width >= 1 && r.height >= 1) out.push(r);
         }
       } catch {}
@@ -73283,7 +75315,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
-      const r = host.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(host);
       const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
       const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
       const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
@@ -73350,7 +75382,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // opaque background of its own (all of them when none has one).
   function __findPaintUnderText(el, chain) {
     try {
-      if (!el || el.nodeType !== 1 || !chain.length) return null;
+      if (!el || dom.nodeType(el) !== 1 || !chain.length) return null;
       const index = __getOverlapIndex();
       if (!index) return null;
       const opaque = chain[chain.length - 1];
@@ -73374,7 +75406,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       };
       let box = null;
       try {
-        box = el.getBoundingClientRect();
+        box = dom.getBoundingClientRect(el);
       } catch {}
       const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       if (box && !pseudoCandidates && !near(box)) return null;
@@ -73417,7 +75449,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (p.paint.property === 'background-color' && sameAsMeasured(p.paint.value))
                 continue;
               return {
-                selector: __getSimpleSelectorCached(p.el, String(p.el.localName || '')),
+                selector: __getSimpleSelectorCached(p.el, String(dom.localName(p.el) || '')),
                 property: p.paint.property,
                 value: p.paint.value
               };
@@ -73436,14 +75468,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         let hostRect = pseudo.box;
         if (!hostRect) {
           try {
-            hostRect = host.getBoundingClientRect();
+            hostRect = dom.getBoundingClientRect(host);
           } catch {
             hostRect = null;
           }
         }
         if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
         return {
-          selector: __getSimpleSelectorCached(host, String(host.localName || '')) + pseudo.name,
+          selector:
+            __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
           property: pseudo.property,
           value: pseudo.value
         };
@@ -73485,6 +75518,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
 // Inlined from src/core/aria-helpers.js
 const createAriaHelpers = (function createAriaHelpers(opts, shared) {
+  const dom = createSafeDom();
   const trim = (shared && shared.trim) || ((v) => (v == null ? '' : String(v)).trim());
   const lower = (v) => trim(v).toLowerCase();
   const ariaDocument = opts && opts.document;
@@ -73509,12 +75543,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function idExists(id, el) {
     let scope = ariaDocument;
     try {
-      const root = el && typeof el.getRootNode === 'function' ? el.getRootNode() : null;
-      if (root && typeof root.getElementById === 'function') scope = root;
+      const root =
+        el && typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
     } catch {}
-    if (!scope || typeof scope.getElementById !== 'function') return true;
+    if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return true;
     try {
-      return !!scope.getElementById(id);
+      return !!dom.getElementById(scope, id);
     } catch {
       return true;
     }
@@ -73531,11 +75566,17 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const al = trim(getAttr(el, 'aria-label'));
     if (al) return true;
     const alb = trim(getAttr(el, 'aria-labelledby'));
-    if (alb && ariaDocument && typeof ariaDocument.getElementById === 'function') {
+    // The references resolve in the element's own tree, as in idExists.
+    let scope = ariaDocument;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      if (root && typeof dom.get(root, 'getElementById') === 'function') scope = root;
+    } catch {}
+    if (alb && scope && typeof dom.get(scope, 'getElementById') === 'function') {
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = ariaDocument.getElementById(refId);
-          if (ref && trim(ref.textContent)) return true;
+          const ref = dom.getElementById(scope, refId);
+          if (ref && trim(dom.textContent(ref))) return true;
         } catch {}
       }
     }
@@ -73568,17 +75609,14 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   ]);
 
   function isLandmarkScopingAncestorElement(el, includeMain) {
-    const tag = lower(el.tagName || '');
-    const roleAttr = getAttr(el, 'role');
-    if (roleAttr == null) {
-      // No role attribute at all: falls back to the plain HTML tag.
+    const tag = lower(dom.tagName(el) || '');
+    // The resolved role (#91). A role attribute naming no known role is as if
+    // there were none, so the plain HTML tag decides.
+    const token = getExplicitRole(el);
+    if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
     }
-    // A role attribute is present (even empty/invalid); the element's
-    // bare TAG no longer counts; only an explicit, scoping-relevant
-    // role value does.
-    const token = trim(roleAttr).split(/\s+/)[0].toLowerCase();
     if (LANDMARK_SCOPING_ROLE_TOKENS.has(token)) return true;
     return includeMain && token === 'main';
   }
@@ -73586,7 +75624,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function hasLandmarkScopingAncestor(el, opts) {
     if (!isElement(el)) return false;
     const includeMain = !!(opts && opts.includeMain);
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     let guard = 0;
     while (cur && guard++ < 200) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
@@ -73594,7 +75632,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // (or fragment) scan should never let ancestry OUTSIDE the
       // analyzed subtree affect a role computed WITHIN it.
       if (ariaRoots.includes(cur)) break;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
@@ -74349,24 +76387,24 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // example covers the crossing.
   function hasNativeContext(el, context) {
     const tags = context.tags;
-    let cur = el && el.parentElement ? el.parentElement : null;
+    let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
     while (cur && guard++ < 200) {
-      const tag = lower(cur.tagName || '');
+      const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return false;
   }
 
   function isElement(el) {
-    return !!(el && el.nodeType === 1);
+    return !!(el && dom.nodeType(el) === 1);
   }
 
   function getAttr(el, name) {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -74376,14 +76414,21 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // Public API
   // -------------------------------------------------------------------
 
+  // The role an element's role attribute gives it, lower-cased, or '' when it
+  // gives none. The attribute is a fallback list: WAI-ARIA has user agents
+  // use "the first token in the sequence of tokens in the role attribute
+  // value that matches the name of any non-abstract WAI-ARIA role", and treat
+  // the element "as if no role had been provided" when none does. Browsers
+  // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
     const raw = trim(getAttr(el, 'role'));
     if (!raw) return '';
-    // role attribute may be a space-separated fallback list; the first
-    // token is the "primary" role used by the accessibility tree.
-    const tokens = raw.split(/\s+/).filter(Boolean);
-    return tokens.length ? lower(tokens[0]) : '';
+    for (const token of raw.split(/\s+/)) {
+      const t = lower(token);
+      if (t && CONCRETE_ROLES.has(t)) return t;
+    }
+    return '';
   }
 
   function getAllRoleTokens(el) {
@@ -74604,7 +76649,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // attribute-conditioned entries. Returns '' when no key applies.
   function getElementRoleKey(el) {
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'a' || tag === 'area') {
       const href = getAttr(el, 'href');
@@ -74670,7 +76715,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         // with aria-pressed (W3C ARIA-in-HTML).
         let hasAriaPressed = false;
         try {
-          hasAriaPressed = !!(el.hasAttribute && el.hasAttribute('aria-pressed'));
+          hasAriaPressed = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'aria-pressed'));
         } catch {}
         return hasAriaPressed ? 'input[type=checkbox][aria-pressed]' : 'input[type=checkbox]';
       }
@@ -74684,7 +76729,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // its cells and rows free (ARIA in HTML).
       let table;
       try {
-        table = el.closest ? el.closest('table') : null;
+        table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
       } catch {
         table = null;
       }
@@ -74706,7 +76751,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
       // NATIVE_ROLE_BY_ELEMENT_KEY above.
       let isMultiSelect;
       try {
-        isMultiSelect = !!(el.hasAttribute && el.hasAttribute('multiple'));
+        isMultiSelect = !!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'multiple'));
         if (!isMultiSelect) {
           const sizeAttr = getAttr(el, 'size');
           const size = sizeAttr != null ? parseInt(sizeAttr, 10) : NaN;
@@ -74770,7 +76815,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (explicit && isValidConcreteRole(explicit)) return explicit;
 
     if (!isElement(el)) return '';
-    const tag = lower(el.tagName || '');
+    const tag = lower(dom.tagName(el) || '');
 
     if (tag === 'input') {
       const type = lower(getAttr(el, 'type') || 'text');
@@ -74847,6 +76892,7 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   return [];
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
+  const dom = createSafeDom();
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
         const list = contextSelector
@@ -74859,7 +76905,8 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       : null;
 
   if (!ctxSelector) {
-    const whole = document.documentElement || document.body || document.querySelector('html');
+    const whole =
+      dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
   }
 
@@ -74870,7 +76917,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   for (const sel of selectorList) {
     let matches;
     try {
-      matches = document.querySelectorAll(sel);
+      matches = dom.querySelectorAll(document, sel);
     } catch {
       const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
       err.code = 'INVALID_CONTEXT_SELECTOR';
@@ -74889,6 +76936,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots, unmatchedSelectors };
 });
 const createDomHelpers = (function createDomHelpers(opts) {
+  const dom = createSafeDom();
   // <generated:language-subtags>
   const LANGUAGE_SUBTAGS =
     'aa aaa aab aac aad aae aaf aag aah aai aak aal aam aan aao aap aaq aas aat aau aav aaw aax aaz ab aba abb abc abd abe abf abg abh abi abj abl abm abn abo abp abq abr abs abt abu abv abw abx aby abz aca acb acd ace acf ach aci ack acl acm acn acp acq acr acs act acu acv acw acx acy acz ada adb add ade adf adg adh adi adj adl adn ado adp adq adr ads adt adu adw adx ady adz ae aea aeb aec aed aee aek ael aem aen aeq aer aes aeu aew aey aez af afa afb afd afe afg afh afi afk afn afo afp afs aft afu afz aga agb agc agd age agf agg agh agi agj agk agl agm agn ago agp agq agr ags agt agu agv agw agx agy agz aha ahb ahg ahh ahi ahk ahl ahm ahn aho ahp ahr ahs aht aia aib aic aid aie aif aig aih aii aij aik ail aim ain aio aip aiq air ais ait aiw aix aiy aja ajg aji ajn ajp ajs ajt aju ajw ajz ak akb akc akd ake akf akg akh aki akj akk akl akm ako akp akq akr aks akt aku akv akw akx aky akz ala alc ald ale alf alg alh ali alj alk all alm aln alo alp alq alr als alt alu alv alw alx aly alz am ama amb amc ame amf amg ami amj amk aml amm amn amo amp amq amr ams amt amu amv amw amx amy amz an ana anb anc and ane anf ang anh ani anj ank anl anm ann ano anp anq anr ans ant anu anv anw anx any anz aoa aob aoc aod aoe aof aog aoh aoi aoj aok aol aom aon aor aos aot aou aox aoz apa apb apc apd ape apf apg aph api apj apk apl apm apn apo app apq apr aps apt apu apv apw apx apy apz aqa aqc aqd aqg aqk aql aqm aqn aqp aqr aqt aqz ar arb arc ard are arh ari arj ark arl arn aro arp arq arr ars art aru arv arw arx ary arz as asa asb asc asd ase asf asg ash asi asj ask asl asn aso asp asq asr ass ast asu asv asw asx asy asz ata atb atc atd ate atg ath ati atj atk atl atm atn ato atp atq atr ats att atu atv atw atx aty atz aua aub auc aud aue auf aug auh aui auj auk aul aum aun auo aup auq aur aus aut auu auw aux auy auz av avb avd avi avk avl avm avn avo avs avt avu avv awa awb awc awd awe awg awh awi awk awm awn awo awr aws awt awu awv aww awx awy axb axe axg axk axl axm axx ay aya ayb ayc ayd aye ayg ayh ayi ayk ayl ayn ayo ayp ayq ayr ays ayt ayu ayx ayy ayz az aza azb azc azd azg azj azm azn azo azt azz ba baa bab bac bad bae baf bag bah bai baj bal ban bao bap bar bas bat bau bav baw bax bay baz bba bbb bbc bbd bbe bbf bbg bbh bbi bbj bbk bbl bbm bbn bbo bbp bbq bbr bbs bbt bbu bbv bbw bbx bby bbz bca bcb bcc bcd bce bcf bcg bch bci bcj bck bcl bcm bcn bco bcp bcq bcr bcs bct bcu bcv bcw bcy bcz bda bdb bdc bdd bde bdf bdg bdh bdi bdj bdk bdl bdm bdn bdo bdp bdq bdr bds bdt bdu bdv bdw bdx bdy bdz be bea beb bec bed bee bef beg beh bei bej bek bem beo bep beq ber bes bet beu bev bew bex bey bez bfa bfb bfc bfd bfe bff bfg bfh bfi bfj bfk bfl bfm bfn bfo bfp bfq bfr bfs bft bfu bfw bfx bfy bfz bg bga bgb bgc bgd bge bgf bgg bgi bgj bgk bgl bgm bgn bgo bgp bgq bgr bgs bgt bgu bgv bgw bgx bgy bgz bh bha bhb bhc bhd bhe bhf bhg bhh bhi bhj bhk bhl bhm bhn bho bhp bhq bhr bhs bht bhu bhv bhw bhx bhy bhz bi bia bib bic bid bie bif big bij bik bil bim bin bio bip biq bir bit biu biv biw bix biy biz bja bjb bjc bjd bje bjf bjg bjh bji bjj bjk bjl bjm bjn bjo bjp bjq bjr bjs bjt bju bjv bjw bjx bjy bjz bka bkb bkc bkd bkf bkg bkh bki bkj bkk bkl bkm bkn bko bkp bkq bkr bks bkt bku bkv bkw bkx bky bkz bla blb blc bld ble blf blg blh bli blj blk bll blm bln blo blp blq blr bls blt blv blw blx bly blz bm bma bmb bmc bmd bme bmf bmg bmh bmi bmj bmk bml bmm bmn bmo bmp bmq bmr bms bmt bmu bmv bmw bmx bmy bmz bn bna bnb bnc bnd bne bnf bng bni bnj bnk bnl bnm bnn bno bnp bnq bnr bns bnt bnu bnv bnw bnx bny bnz bo boa bob boe bof bog boh boi boj bok bol bom bon boo bop boq bor bot bou bov bow box boy boz bpa bpb bpc bpd bpe bpg bph bpi bpj bpk bpl bpm bpn bpo bpp bpq bpr bps bpt bpu bpv bpw bpx bpy bpz bqa bqb bqc bqd bqf bqg bqh bqi bqj bqk bql bqm bqn bqo bqp bqq bqr bqs bqt bqu bqv bqw bqx bqy bqz br bra brb brc brd brf brg brh bri brj brk brl brm brn bro brp brq brr brs brt bru brv brw brx bry brz bs bsa bsb bsc bse bsf bsg bsh bsi bsj bsk bsl bsm bsn bso bsp bsq bsr bss bst bsu bsv bsw bsx bsy bta btb btc btd bte btf btg bth bti btj btk btl btm btn bto btp btq btr bts btt btu btv btw btx bty btz bua bub buc bud bue buf bug buh bui buj buk bum bun buo bup buq bus but buu buv buw bux buy buz bva bvb bvc bvd bve bvf bvg bvh bvi bvj bvk bvl bvm bvn bvo bvp bvq bvr bvt bvu bvv bvw bvx bvy bvz bwa bwb bwc bwd bwe bwf bwg bwh bwi bwj bwk bwl bwm bwn bwo bwp bwq bwr bws bwt bwu bww bwx bwy bwz bxa bxb bxc bxd bxe bxf bxg bxh bxi bxj bxk bxl bxm bxn bxo bxp bxq bxr bxs bxu bxv bxw bxx bxz bya byb byc byd bye byf byg byh byi byj byk byl bym byn byo byp byq byr bys byt byv byw byx byy byz bza bzb bzc bzd bze bzf bzg bzh bzi bzj bzk bzl bzm bzn bzo bzp bzq bzr bzs bzt bzu bzv bzw bzx bzy bzz ca caa cab cac cad cae caf cag cah cai caj cak cal cam can cao cap caq car cas cau cav caw cax cay caz cba cbb cbc cbd cbe cbg cbh cbi cbj cbk cbl cbn cbo cbq cbr cbs cbt cbu cbv cbw cby cca ccc ccd cce ccg cch ccj ccl ccm ccn cco ccp ccq ccr ccs cda cdc cdd cde cdf cdg cdh cdi cdj cdm cdn cdo cdr cds cdy cdz ce cea ceb ceg cek cel cen cet cey cfa cfd cfg cfm cga cgc cgg cgk ch chb chc chd chf chg chh chj chk chl chm chn cho chp chq chr cht chw chx chy chz cia cib cic cid cie cih cik cim cin cip cir ciw ciy cja cje cjh cji cjk cjm cjn cjo cjp cjr cjs cjv cjy cka ckb ckh ckl ckm ckn cko ckq ckr cks ckt cku ckv ckx cky ckz cla clc cld cle clh cli clj clk cll clm clo cls clt clu clw cly cma cmc cme cmg cmi cmk cml cmm cmn cmo cmr cms cmt cna cnb cnc cng cnh cni cnk cnl cno cnp cnq cnr cns cnt cnu cnw cnx co coa cob coc cod coe cof cog coh coj cok col com con coo cop coq cot cou cov cow cox coy coz cpa cpb cpc cpe cpf cpg cpi cpn cpo cpp cps cpu cpx cpy cqd cqu cr cra crb crc crd crf crg crh cri crj crk crl crm crn cro crp crq crr crs crt crv crw crx cry crz cs csa csb csc csd cse csf csg csh csi csj csk csl csm csn cso csp csq csr css cst csu csv csw csx csy csz cta ctc ctd cte ctg cth ctl ctm ctn cto ctp cts ctt ctu cty ctz cu cua cub cuc cug cuh cui cuj cuk cul cum cuo cup cuq cur cus cut cuu cuv cuw cux cuy cv cvg cvn cwa cwb cwd cwe cwg cwt cxh cy cya cyb cyo czh czk czn czo czt da daa dac dad dae daf dag dah dai daj dak dal dam dao dap daq dar das dau dav daw dax day daz dba dbb dbd dbe dbf dbg dbi dbj dbl dbm dbn dbo dbp dbq dbr dbt dbu dbv dbw dby dcc dcr dda ddd dde ddg ddi ddj ddn ddo ddr dds ddw de dec ded dee def deg deh dei dek del dem den dep deq der des dev dez dga dgb dgc dgd dge dgg dgh dgi dgk dgl dgn dgo dgr dgs dgt dgu dgw dgx dgz dha dhd dhg dhi dhl dhm dhn dho dhr dhs dhu dhv dhw dhx dia dib dic did dif dig dih dii dij dik dil dim din dio dip diq dir dis dit diu diw dix diy diz dja djb djc djd dje djf dji djj djk djl djm djn djo djr dju djw dka dkg dkk dkl dkr dks dkx dlg dlk dlm dln dma dmb dmc dmd dme dmf dmg dmk dml dmm dmn dmo dmr dms dmu dmv dmw dmx dmy dna dnd dne dng dni dnj dnk dnn dno dnr dnt dnu dnv dnw dny doa dob doc doe dof doh doi dok dol don doo dop doq dor dos dot dov dow dox doy doz dpp dra drb drc drd dre drg drh dri drl drn dro drq drr drs drt dru drw dry dsb dse dsh dsi dsk dsl dsn dso dsq dsz dta dtb dtd dth dti dtk dtm dtn dto dtp dtr dts dtt dtu dty dua dub duc dud due duf dug duh dui duj duk dul dum dun duo dup duq dur dus duu duv duw dux duy duz dv dva dwa dwk dwl dwr dws dwu dww dwy dwz dya dyb dyd dyg dyi dym dyn dyo dyr dyu dyy dz dza dzd dze dzg dzl dzn eaa ebc ebg ebk ebo ebr ebu ecr ecs ecy ee eee efa efe efi ega egl egm ego egx egy ehs ehu eip eit eiv eja eka ekc eke ekg eki ekk ekl ekm eko ekp ekr eky el ele elh eli elk elm elo elp elu elx ema emb eme emg emi emk emm emn emo emp emq ems emu emw emx emy emz en ena enb enc end enf enh enl enm enn eno enq enr enu env enw enx eo eot epi era erg erh eri erk ero err ers ert erw es ese esg esh esi esk esl esm esn eso esq ess esu esx esy et etb etc eth etn eto etr ets ett etu etx etz eu eud euq eve evh evn ewo ext eya eyo eza eze fa faa fab fad faf fag fah fai faj fak fal fam fan fap far fat fau fax fay faz fbl fcs fer ff ffi ffm fgr fi fia fie fif fil fip fir fit fiu fiw fj fkk fkv fla flh fli fll fln flr fly fmp fmu fnb fng fni fo fod foi fom fon for fos fox fpe fqs fr frc frd frk frm fro frp frq frr frs frt fse fsl fss fub fuc fud fue fuf fuh fui fuj fum fun fuq fur fut fuu fuv fuy fvr fwa fwe fy ga gaa gab gac gad gae gaf gag gah gai gaj gak gal gam gan gao gap gaq gar gas gat gau gav gaw gax gay gaz gba gbb gbc gbd gbe gbf gbg gbh gbi gbj gbk gbl gbm gbn gbo gbp gbq gbr gbs gbu gbv gbw gbx gby gbz gcc gcd gce gcf gcl gcn gcr gct gd gda gdb gdc gdd gde gdf gdg gdh gdi gdj gdk gdl gdm gdn gdo gdq gdr gds gdt gdu gdx gea geb gec ged gef geg geh gei gej gek gel gem geq ges gev gew gex gey gez gfk gft gfx gga ggb ggd gge ggg ggk ggl ggn ggo ggr ggt ggu ggw gha ghc ghe ghh ghk ghl ghn gho ghr ghs ght gia gib gic gid gie gig gih gii gil gim gin gio gip giq gir gis git giu giw gix giy giz gji gjk gjm gjn gjr gju gka gkd gke gkn gko gkp gku gl glb glc gld glh gli glj glk gll glo glr glu glw gly gma gmb gmd gme gmg gmh gml gmm gmn gmq gmr gmu gmv gmw gmx gmy gmz gn gna gnb gnc gnd gne gng gnh gni gnj gnk gnl gnm gnn gno gnq gnr gnt gnu gnw gnz goa gob goc god goe gof gog goh goi goj gok gol gom gon goo gop goq gor gos got gou gov gow gox goy goz gpa gpe gpn gqa gqi gqn gqr gqu gra grb grc grd grg grh gri grj grk grm gro grq grr grs grt gru grv grw grx gry grz gse gsg gsl gsm gsn gso gsp gss gsw gta gti gtu gu gua gub guc gud gue guf gug guh gui guk gul gum gun guo gup guq gur gus gut guu guv guw gux guz gv gva gvc gve gvf gvj gvl gvm gvn gvo gvp gvr gvs gvy gwa gwb gwc gwd gwe gwf gwg gwi gwj gwm gwn gwr gwt gwu gww gwx gxx gya gyb gyd gye gyf gyg gyi gyl gym gyn gyo gyr gyy gyz gza gzi gzn ha haa hab hac had hae haf hag hah hai haj hak hal ham han hao hap haq har has hav haw hax hay haz hba hbb hbn hbo hbu hca hch hdn hds hdy he hea hed heg heh hei hem hgm hgw hhi hhr hhy hi hia hib hid hif hig hih hii hij hik hil him hio hir hit hiw hix hji hka hke hkh hkk hkn hks hla hlb hld hle hlt hlu hma hmb hmc hmd hme hmf hmg hmh hmi hmj hmk hml hmm hmn hmp hmq hmr hms hmt hmu hmv hmw hmx hmy hmz hna hnd hne hng hnh hni hnj hnm hnn hno hns hnu ho hoa hob hoc hod hoe hoh hoi hoj hok hol hom hoo hop hor hos hot hov how hoy hoz hpo hps hr hra hrc hre hrk hrm hro hrp hrr hrt hru hrw hrx hrz hsb hsh hsl hsn hss ht hti hto hts htu htx hu hub huc hud hue huf hug huh hui huj huk hul hum huo hup huq hur hus hut huu huv huw hux huy huz hvc hve hvk hvn hvv hwa hwc hwo hy hya hyw hyx hz ia iai ian iap iar iba ibb ibd ibe ibg ibh ibi ibl ibm ibn ibr ibu iby ica ich icl icr id ida idb idc idd ide idi idr ids idt idu ie ifa ifb ife iff ifk ifm ifu ify ig igb ige igg igl igm ign igo igs igw ihb ihi ihp ihw ii iin iir ijc ije ijj ijn ijo ijs ik ike ikh iki ikk ikl iko ikp ikr iks ikt ikv ikw ikx ikz ila ilb ilg ili ilk ill ilm ilo ilp ils ilu ilv ilw ima ime imi iml imn imo imr ims imt imy in inb inc ine ing inh inj inl inm inn ino inp ins int inz io ior iou iow ipi ipo iqu iqw ira ire irh iri irk irn iro irr iru irx iry is isa isc isd ise isg ish isi isk ism isn iso isr ist isu isv it itb itc itd ite iti itk itl itm ito itr its itt itv itw itx ity itz iu ium ivb ivv iw iwk iwm iwo iws ixc ixl iya iyo iyx izh izi izm izr izz ja jaa jab jac jad jae jaf jah jaj jak jal jam jan jao jaq jar jas jat jau jax jay jaz jbe jbi jbj jbk jbm jbn jbo jbr jbt jbu jbw jcs jct jda jdg jdt jeb jee jeg jeh jei jek jel jen jer jet jeu jgb jge jgk jgo jhi jhs ji jia jib jic jid jie jig jih jii jil jim jio jiq jit jiu jiv jiy jje jjr jka jkm jko jkp jkr jks jku jle jls jma jmb jmc jmd jmi jml jmn jmr jms jmw jmx jna jnd jng jni jnj jnl jns job jod jog jor jos jow jpa jpr jpx jqr jra jrb jrr jrt jru jsl jua jub juc jud juh jui juk jul jum jun juo jup jur jus jut juu juw juy jv jvd jvn jw jwi jya jye jyy ka kaa kab kac kad kae kaf kag kah kai kaj kak kam kao kap kaq kar kav kaw kax kay kba kbb kbc kbd kbe kbf kbg kbh kbi kbj kbk kbl kbm kbn kbo kbp kbq kbr kbs kbt kbu kbv kbw kbx kby kbz kca kcb kcc kcd kce kcf kcg kch kci kcj kck kcl kcm kcn kco kcp kcq kcr kcs kct kcu kcv kcw kcx kcy kcz kda kdc kdd kde kdf kdg kdh kdi kdj kdk kdl kdm kdn kdo kdp kdq kdr kdt kdu kdv kdw kdx kdy kdz kea keb kec ked kee kef keg keh kei kej kek kel kem ken keo kep keq ker kes ket keu kev kew kex key kez kfa kfb kfc kfd kfe kff kfg kfh kfi kfj kfk kfl kfm kfn kfo kfp kfq kfr kfs kft kfu kfv kfw kfx kfy kfz kg kga kgb kgc kgd kge kgf kgg kgh kgi kgj kgk kgl kgm kgn kgo kgp kgq kgr kgs kgt kgu kgv kgw kgx kgy kha khb khc khd khe khf khg khh khi khj khk khl khn kho khp khq khr khs kht khu khv khw khx khy khz ki kia kib kic kid kie kif kig kih kii kij kil kim kio kip kiq kis kit kiu kiv kiw kix kiy kiz kj kja kjb kjc kjd kje kjf kjg kjh kji kjj kjk kjl kjm kjn kjo kjp kjq kjr kjs kjt kju kjv kjx kjy kjz kk kka kkb kkc kkd kke kkf kkg kkh kki kkj kkk kkl kkm kkn kko kkp kkq kkr kks kkt kku kkv kkw kkx kky kkz kl kla klb klc kld kle klf klg klh kli klj klk kll klm kln klo klp klq klr kls klt klu klv klw klx kly klz km kma kmb kmc kmd kme kmf kmg kmh kmi kmj kmk kml kmm kmn kmo kmp kmq kmr kms kmt kmu kmv kmw kmx kmy kmz kn kna knb knc knd kne knf kng kni knj knk knl knm knn kno knp knq knr kns knt knu knv knw knx kny knz ko koa koc kod koe kof kog koh koi koj kok kol koo kop koq kos kot kou kov kow kox koy koz kpa kpb kpc kpd kpe kpf kpg kph kpi kpj kpk kpl kpm kpn kpo kpp kpq kpr kps kpt kpu kpv kpw kpx kpy kpz kqa kqb kqc kqd kqe kqf kqg kqh kqi kqj kqk kql kqm kqn kqo kqp kqq kqr kqs kqt kqu kqv kqw kqx kqy kqz kr kra krb krc krd kre krf krh kri krj krk krl krm krn kro krp krr krs krt kru krv krw krx kry krz ks ksa ksb ksc ksd kse ksf ksg ksh ksi ksj ksk ksl ksm ksn kso ksp ksq ksr kss kst ksu ksv ksw ksx ksy ksz kta ktb ktc ktd kte ktf ktg kth kti ktj ktk ktl ktm ktn kto ktp ktq ktr kts ktt ktu ktv ktw ktx kty ktz ku kub kuc kud kue kuf kug kuh kui kuj kuk kul kum kun kuo kup kuq kus kut kuu kuv kuw kux kuy kuz kv kva kvb kvc kvd kve kvf kvg kvh kvi kvj kvk kvl kvm kvn kvo kvp kvq kvr kvs kvt kvu kvv kvw kvx kvy kvz kw kwa kwb kwc kwd kwe kwf kwg kwh kwi kwj kwk kwl kwm kwn kwo kwp kwq kwr kws kwt kwu kwv kww kwx kwy kwz kxa kxb kxc kxd kxe kxf kxh kxi kxj kxk kxl kxm kxn kxo kxp kxq kxr kxs kxt kxu kxv kxw kxx kxy kxz ky kya kyb kyc kyd kye kyf kyg kyh kyi kyj kyk kyl kym kyn kyo kyp kyq kyr kys kyt kyu kyv kyw kyx kyy kyz kza kzb kzc kzd kze kzf kzg kzh kzi kzj kzk kzl kzm kzn kzo kzp kzq kzr kzs kzt kzu kzv kzw kzx kzy kzz la laa lab lac lad lae laf lag lah lai laj lak lal lam lan lap laq lar las lau law lax lay laz lb lba lbb lbc lbe lbf lbg lbi lbj lbk lbl lbm lbn lbo lbq lbr lbs lbt lbu lbv lbw lbx lby lbz lcc lcd lce lcf lch lcl lcm lcp lcq lcs lda ldb ldd ldg ldh ldi ldj ldk ldl ldm ldn ldo ldp ldq lea leb lec led lee lef leg leh lei lej lek lel lem len leo lep leq ler les let leu lev lew lex ley lez lfa lfn lg lga lgb lgg lgh lgi lgk lgl lgm lgn lgo lgq lgr lgs lgt lgu lgz lha lhh lhi lhl lhm lhn lhp lhs lht lhu li lia lib lic lid lie lif lig lih lii lij lik lil lio lip liq lir lis liu liv liw lix liy liz lja lje lji ljl ljp ljw ljx lka lkb lkc lkd lke lkh lki lkj lkl lkm lkn lko lkr lks lkt lku lky lla llb llc lld lle llf llg llh lli llj llk lll llm lln llo llp llq lls llu llx lma lmb lmc lmd lme lmf lmg lmh lmi lmj lmk lml lmm lmn lmo lmp lmq lmr lmu lmv lmw lmx lmy lmz ln lna lnb lnd lng lnh lni lnj lnl lnm lnn lno lns lnu lnw lnz lo loa lob loc loe lof log loh loi loj lok lol lom lon loo lop loq lor los lot lou lov low lox loy loz lpa lpe lpn lpo lpx lqr lra lrc lre lrg lri lrk lrl lrm lrn lro lrr lrt lrv lrz lsa lsb lsc lsd lse lsg lsh lsi lsl lsm lsn lso lsp lsr lss lst lsv lsw lsy lt ltc ltg lth lti ltn lto lts ltu lu lua luc lud lue luf luh lui luj luk lul lum lun luo lup luq lur lus lut luu luv luw luy luz lv lva lvi lvk lvl lvs lvu lwa lwe lwg lwh lwl lwm lwo lws lwt lwu lww lxm lya lyg lyn lzh lzl lzn lzz maa mab mad mae maf mag mai maj mak mam man map maq mas mat mau mav maw max maz mba mbb mbc mbd mbe mbf mbh mbi mbj mbk mbl mbm mbn mbo mbp mbq mbr mbs mbt mbu mbv mbw mbx mby mbz mca mcb mcc mcd mce mcf mcg mch mci mcj mck mcl mcm mcn mco mcp mcq mcr mcs mct mcu mcv mcw mcx mcy mcz mda mdb mdc mdd mde mdf mdg mdh mdi mdj mdk mdl mdm mdn mdp mdq mdr mds mdt mdu mdv mdw mdx mdy mdz mea meb mec med mee mef meg meh mei mej mek mel mem men meo mep meq mer mes met meu mev mew mey mez mfa mfb mfc mfd mfe mff mfg mfh mfi mfj mfk mfl mfm mfn mfo mfp mfq mfr mfs mft mfu mfv mfw mfx mfy mfz mg mga mgb mgc mgd mge mgf mgg mgh mgi mgj mgk mgl mgm mgn mgo mgp mgq mgr mgs mgt mgu mgv mgw mgx mgy mgz mh mha mhb mhc mhd mhe mhf mhg mhh mhi mhj mhk mhl mhm mhn mho mhp mhq mhr mhs mht mhu mhw mhx mhy mhz mi mia mib mic mid mie mif mig mih mii mij mik mil mim min mio mip miq mir mis mit miu miw mix miy miz mja mjb mjc mjd mje mjg mjh mji mjj mjk mjl mjm mjn mjo mjp mjq mjr mjs mjt mju mjv mjw mjx mjy mjz mk mka mkb mkc mke mkf mkg mkh mki mkj mkk mkl mkm mkn mko mkp mkq mkr mks mkt mku mkv mkw mkx mky mkz ml mla mlb mlc mld mle mlf mlh mli mlj mlk mll mlm mln mlo mlp mlq mlr mls mlu mlv mlw mlx mlz mma mmb mmc mmd mme mmf mmg mmh mmi mmj mmk mml mmm mmn mmo mmp mmq mmr mmt mmu mmv mmw mmx mmy mmz mn mna mnb mnc mnd mne mnf mng mnh mni mnj mnk mnl mnm mnn mno mnp mnq mnr mns mnt mnu mnv mnw mnx mny mnz mo moa moc mod moe mof mog moh moi moj mok mom moo mop moq mor mos mot mou mov mow mox moy moz mpa mpb mpc mpd mpe mpg mph mpi mpj mpk mpl mpm mpn mpo mpp mpq mpr mps mpt mpu mpv mpw mpx mpy mpz mqa mqb mqc mqe mqf mqg mqh mqi mqj mqk mql mqm mqn mqo mqp mqq mqr mqs mqt mqu mqv mqw mqx mqy mqz mr mra mrb mrc mrd mre mrf mrg mrh mrj mrk mrl mrm mrn mro mrp mrq mrr mrs mrt mru mrv mrw mrx mry mrz ms msb msc msd mse msf msg msh msi msj msk msl msm msn mso msp msq msr mss mst msu msv msw msx msy msz mt mta mtb mtc mtd mte mtf mtg mth mti mtj mtk mtl mtm mtn mto mtp mtq mtr mts mtt mtu mtv mtw mtx mty mua mub muc mud mue mug muh mui muj muk mul mum mun muo mup muq mur mus mut muu muv mux muy muz mva mvb mvd mve mvf mvg mvh mvi mvk mvl mvm mvn mvo mvp mvq mvr mvs mvt mvu mvv mvw mvx mvy mvz mwa mwb mwc mwd mwe mwf mwg mwh mwi mwj mwk mwl mwm mwn mwo mwp mwq mwr mws mwt mwu mwv mww mwx mwy mwz mxa mxb mxc mxd mxe mxf mxg mxh mxi mxj mxk mxl mxm mxn mxo mxp mxq mxr mxs mxt mxu mxv mxw mxx mxy mxz my myb myc myd mye myf myg myh myi myj myk myl mym myn myo myp myq myr mys myt myu myv myw myx myy myz mza mzb mzc mzd mze mzg mzh mzi mzj mzk mzl mzm mzn mzo mzp mzq mzr mzs mzt mzu mzv mzw mzx mzy mzz na naa nab nac nad nae naf nag nah nai naj nak nal nam nan nao nap naq nar nas nat naw nax nay naz nb nba nbb nbc nbd nbe nbf nbg nbh nbi nbj nbk nbm nbn nbo nbp nbq nbr nbs nbt nbu nbv nbw nbx nby nca ncb ncc ncd nce ncf ncg nch nci ncj nck ncl ncm ncn nco ncp ncq ncr ncs nct ncu ncx ncz nd nda ndb ndc ndd ndf ndg ndh ndi ndj ndk ndl ndm ndn ndp ndq ndr nds ndt ndu ndv ndw ndx ndy ndz ne nea neb nec ned nee nef neg neh nei nej nek nem nen neo neq ner nes net neu nev new nex ney nez nfa nfd nfl nfr nfu ng nga ngb ngc ngd nge ngf ngg ngh ngi ngj ngk ngl ngm ngn ngo ngp ngq ngr ngs ngt ngu ngv ngw ngx ngy ngz nha nhb nhc nhd nhe nhf nhg nhh nhi nhk nhm nhn nho nhp nhq nhr nht nhu nhv nhw nhx nhy nhz nia nib nic nid nie nif nig nih nii nij nik nil nim nin nio niq nir nis nit niu niv niw nix niy niz nja njb njd njh nji njj njl njm njn njo njr njs njt nju njx njy njz nka nkb nkc nkd nke nkf nkg nkh nki nkj nkk nkm nkn nko nkp nkq nkr nks nkt nku nkv nkw nkx nkz nl nla nlc nle nlg nli nlj nlk nll nlm nln nlo nlq nlr nlu nlv nlw nlx nly nlz nma nmb nmc nmd nme nmf nmg nmh nmi nmj nmk nml nmm nmn nmo nmp nmq nmr nms nmt nmu nmv nmw nmx nmy nmz nn nna nnb nnc nnd nne nnf nng nnh nni nnj nnk nnl nnm nnn nnp nnq nnr nns nnt nnu nnv nnw nnx nny nnz no noa noc nod noe nof nog noh noi noj nok nol nom non noo nop noq nos not nou nov now noy noz npa npb npg nph npi npl npn npo nps npu npx npy nqg nqk nql nqm nqn nqo nqq nqt nqy nr nra nrb nrc nre nrf nrg nri nrk nrl nrm nrn nrp nrr nrt nru nrx nrz nsa nsb nsc nsd nse nsf nsg nsh nsi nsk nsl nsm nsn nso nsp nsq nsr nss nst nsu nsv nsw nsx nsy nsz ntd nte ntg nti ntj ntk ntm nto ntp ntr nts ntu ntw ntx nty ntz nua nub nuc nud nue nuf nug nuh nui nuj nuk nul num nun nuo nup nuq nur nus nut nuu nuv nuw nux nuy nuz nv nvh nvm nvo nwa nwb nwc nwe nwg nwi nwm nwo nwr nww nwx nwy nxa nxd nxe nxg nxi nxk nxl nxm nxn nxo nxq nxr nxu nxx ny nyb nyc nyd nye nyf nyg nyh nyi nyj nyk nyl nym nyn nyo nyp nyq nyr nys nyt nyu nyv nyw nyx nyy nza nzb nzd nzi nzk nzm nzr nzs nzu nzy nzz oaa oac oak oar oav obi obk obl obm obo obr obt obu oc oca och ocm oco ocu oda odk odt odu ofo ofs ofu ogb ogc oge ogg ogo ogu oht ohu oia oie oin oj ojb ojc ojg ojp ojs ojv ojw oka okb okc okd oke okg okh oki okj okk okl okm okn oko okr oks oku okv okx okz ola old ole olk olm olo olr olt olu om oma omb omc ome omg omi omk oml omn omo omp omq omr omt omu omv omw omx omy ona onb one ong oni onj onk onn ono onp onr ons ont onu onw onx ood oog oon oor oos opa opk opm opo opt opy or ora orc ore org orh orn oro orr ors ort oru orv orw orx ory orz os osa osc osi osn oso osp ost osu osx ota otb otd ote oti otk otl otm otn oto otq otr ots ott otu otw otx oty otz oua oub oue oui oum oun ovd owi owl oyb oyd oym oyy ozm pa paa pab pac pad pae paf pag pah pai pak pal pam pao pap paq par pas pat pau pav paw pax pay paz pbb pbc pbe pbf pbg pbh pbi pbl pbm pbn pbo pbp pbr pbs pbt pbu pbv pby pbz pca pcb pcc pcd pce pcf pcg pch pci pcj pck pcl pcm pcn pcp pcr pcw pda pdc pdi pdn pdo pdt pdu pea peb ped pee pef peg peh pei pej pek pel pem peo pep peq pes pev pex pey pez pfa pfe pfl pga pgd pgg pgi pgk pgl pgn pgs pgu pgy pgz pha phd phg phh phi phj phk phl phm phn pho phq phr pht phu phv phw pi pia pib pic pid pie pif pig pih pii pij pil pim pin pio pip pir pis pit piu piv piw pix piy piz pjt pka pkb pkc pkg pkh pkn pko pkp pkr pks pkt pku pl pla plb plc pld ple plf plg plh plj plk pll pln plo plp plq plr pls plt plu plv plw ply plz pma pmb pmc pmd pme pmf pmh pmi pmj pmk pml pmm pmn pmo pmq pmr pms pmt pmu pmw pmx pmy pmz pna pnb pnc pnd pne png pnh pni pnj pnk pnl pnm pnn pno pnp pnq pnr pns pnt pnu pnv pnw pnx pny pnz poc pod poe pof pog poh poi pok pom pon poo pop poq pos pot pov pow pox poy poz ppa ppe ppi ppk ppl ppm ppn ppo ppp ppq ppr pps ppt ppu pqa pqe pqm pqw pra prb prc prd pre prf prg prh pri prk prl prm prn pro prp prq prr prs prt pru prw prx pry prz ps psa psc psd pse psg psh psi psl psm psn pso psp psq psr pss pst psu psw psy pt pta pth pti ptn pto ptp ptq ptr ptt ptu ptv ptw pty pua pub puc pud pue puf pug pui puj puk pum puo pup puq pur put puu puw pux puy puz pwa pwb pwg pwi pwm pwn pwo pwr pww pxm pye pym pyn pys pyu pyx pyy pze pzh pzn qaa..qtz qu qua qub quc qud quf qug quh qui quk qul qum qun qup quq qur qus quv quw qux quy quz qva qvc qve qvh qvi qvj qvl qvm qvn qvo qvp qvs qvw qvy qvz qwa qwc qwe qwh qwm qws qwt qxa qxc qxh qxl qxn qxo qxp qxq qxr qxs qxt qxu qxw qya qyp raa rab rac rad raf rag rah rai raj rak ral ram ran rao rap raq rar ras rat rau rav raw rax ray raz rbb rbk rbl rbp rcf rdb rea reb ree reg rei rej rel rem ren rer res ret rey rga rge rgk rgn rgr rgs rgu rhg rhp ria rib rie rif ril rim rin rir rit riu rjg rji rjs rka rkb rkh rki rkm rkt rkw rm rma rmb rmc rmd rme rmf rmg rmh rmi rmk rml rmm rmn rmo rmp rmq rmr rms rmt rmu rmv rmw rmx rmy rmz rn rna rnb rnd rng rnl rnn rnp rnr rnw ro roa rob roc rod roe rof rog rol rom roo rop ror rou row rpn rpt rri rrm rro rrt rsb rsi rsk rsl rsm rsn rsw rtc rth rtm rts rtw ru rub ruc rue ruf rug ruh rui ruk ruo rup ruq rut ruu ruy ruz rw rwa rwk rwl rwm rwo rwr rxd rxw ryn rys ryu rzh sa saa sab sac sad sae saf sah sai saj sak sal sam sao sap saq sar sas sat sau sav saw sax say saz sba sbb sbc sbd sbe sbf sbg sbh sbi sbj sbk sbl sbm sbn sbo sbp sbq sbr sbs sbt sbu sbv sbw sbx sby sbz sc sca scb sce scf scg sch sci sck scl scn sco scp scq scs sct scu scv scw scx sd sda sdb sdc sde sdf sdg sdh sdj sdk sdl sdm sdn sdo sdp sdq sdr sds sdt sdu sdv sdx sdz se sea seb sec sed see sef seg seh sei sej sek sel sem sen seo sep seq ser ses set seu sev sew sey sez sfb sfe sfm sfs sfw sg sga sgb sgc sgd sge sgg sgh sgi sgj sgk sgl sgm sgn sgo sgp sgr sgs sgt sgu sgw sgx sgy sgz sh sha shb shc shd she shg shh shi shj shk shl shm shn sho shp shq shr shs sht shu shv shw shx shy shz si sia sib sid sie sif sig sih sii sij sik sil sim sio sip siq sir sis sit siu siv siw six siy siz sja sjb sjc sjd sje sjg sjk sjl sjm sjn sjo sjp sjr sjs sjt sju sjw sk ska skb skc skd ske skf skg skh ski skj skk skm skn sko skp skq skr sks skt sku skv skw skx sky skz sl sla slc sld sle slf slg slh sli slj sll slm sln slp slq slr sls slt slu slw slx sly slz sm sma smb smc smd smf smg smh smi smj smk sml smm smn smp smq smr sms smt smu smv smw smx smy smz sn snb snc sne snf sng snh sni snj snk snl snm snn sno snp snq snr sns snu snv snw snx sny snz so soa sob soc sod soe sog soh soi soj sok sol son soo sop soq sor sos sou sov sow sox soy soz spb spc spd spe spg spi spk spl spm spn spo spp spq spr sps spt spu spv spx spy sq sqa sqh sqj sqk sqm sqn sqo sqq sqr sqs sqt squ sqx sr sra srb src sre srf srg srh sri srk srl srm srn sro srq srr srs srt sru srv srw srx sry srz ss ssa ssb ssc ssd sse ssf ssg ssh ssi ssj ssk ssl ssm ssn sso ssp ssq ssr sss sst ssu ssv ssx ssy ssz st sta stb std ste stf stg sth sti stj stk stl stm stn sto stp stq str sts stt stu stv stw sty su sua sub suc sue sug sui suj suk sul sum suo suq sur sus sut suv suw sux suy suz sv sva svb svc sve svk svm svr svs svx sw swb swc swf swg swh swi swj swk swl swm swn swo swp swq swr sws swt swu swv sww swx swy sxb sxc sxe sxg sxk sxl sxm sxn sxo sxr sxs sxu sxw sya syb syc syd syi syk syl sym syn syo syr sys syw syx syy sza szb szc szd sze szg szl szn szp szs szv szw szy ta taa tab tac tad tae taf tag tai taj tak tal tan tao tap taq tar tas tau tav taw tax tay taz tba tbb tbc tbd tbe tbf tbg tbh tbi tbj tbk tbl tbm tbn tbo tbp tbq tbr tbs tbt tbu tbv tbw tbx tby tbz tca tcb tcc tcd tce tcf tcg tch tci tck tcl tcm tcn tco tcp tcq tcs tct tcu tcw tcx tcy tcz tda tdb tdc tdd tde tdf tdg tdh tdi tdj tdk tdl tdm tdn tdo tdq tdr tds tdt tdu tdv tdx tdy te tea teb tec ted tee tef teg teh tei tek tem ten teo tep teq ter tes tet teu tev tew tex tey tez tfi tfn tfo tfr tft tg tga tgb tgc tgd tge tgf tgg tgh tgi tgj tgn tgo tgp tgq tgr tgs tgt tgu tgv tgw tgx tgy tgz th thc thd the thf thh thi thk thl thm thn thp thq thr ths tht thu thv thw thx thy thz ti tia tic tid tie tif tig tih tii tij tik til tim tin tio tip tiq tis tit tiu tiv tiw tix tiy tiz tja tjg tji tjj tjl tjm tjn tjo tjp tjs tju tjw tk tka tkb tkd tke tkf tkg tkk tkl tkm tkn tkp tkq tkr tks tkt tku tkv tkw tkx tkz tl tla tlb tlc tld tlf tlg tlh tli tlj tlk tll tlm tln tlo tlp tlq tlr tls tlt tlu tlv tlw tlx tly tma tmb tmc tmd tme tmf tmg tmh tmi tmj tmk tml tmm tmn tmo tmp tmq tmr tms tmt tmu tmv tmw tmy tmz tn tna tnb tnc tnd tne tnf tng tnh tni tnk tnl tnm tnn tno tnp tnq tnr tns tnt tnu tnv tnw tnx tny tnz to tob toc tod toe tof tog toh toi toj tok tol tom too top toq tor tos tou tov tow tox toy toz tpa tpc tpe tpf tpg tpi tpj tpk tpl tpm tpn tpo tpp tpq tpr tpt tpu tpv tpw tpx tpy tpz tqb tql tqm tqn tqo tqp tqq tqr tqt tqu tqw tr tra trb trc trd tre trf trg trh tri trj trk trl trm trn tro trp trq trr trs trt tru trv trw trx try trz ts tsa tsb tsc tsd tse tsf tsg tsh tsi tsj tsk tsl tsm tsp tsq tsr tss tst tsu tsv tsw tsx tsy tsz tt tta ttb ttc ttd tte ttf ttg tth tti ttj ttk ttl ttm ttn tto ttp ttq ttr tts ttt ttu ttv ttw tty ttz tua tub tuc tud tue tuf tug tuh tui tuj tul tum tun tuo tup tuq tus tut tuu tuv tuw tux tuy tuz tva tvd tve tvi tvk tvl tvm tvn tvo tvs tvt tvu tvw tvx tvy tw twa twb twc twd twe twf twg twh twl twm twn two twp twq twr twt twu tww twx twy txa txb txc txe txg txh txi txj txm txn txo txq txr txs txt txu txx txy ty tya tye tyh tyi tyj tyl tyn typ tyr tys tyt tyu tyv tyx tyy tyz tza tzh tzj tzl tzm tzn tzo tzx uam uan uar uba ubi ubl ubr ubu uby uda ude udg udi udj udl udm udu ues ufi ug uga ugb uge ugh ugn ugo ugy uha uhn uis uiv uji uk uka ukg ukh uki ukk ukl ukp ukq uks uku ukv ukw uky ula ulb ulc ule ulf uli ulk ull ulm uln ulu ulw uly uma umb umc umd umg umi umm umn umo ump umr ums umu una und une ung uni unk unm unn unp unr unu unx unz uok uon upi upv ur ura urb urc ure urf urg urh uri urj urk url urm urn uro urp urr urt uru urv urw urx ury urz usa ush usi usk usp uss usu uta ute uth utp utr utu uum uun uur uuu uve uvh uvl uwa uya uz uzn uzs vaa vae vaf vag vah vai vaj val vam van vao vap var vas vau vav vay vbb vbk ve vec ved vel vem veo vep ver vgr vgt vi vic vid vif vig vil vin vis vit viv vjk vka vki vkj vkk vkl vkm vkn vko vkp vkt vku vkz vlp vls vma vmb vmc vmd vme vmf vmg vmh vmi vmj vmk vml vmm vmp vmq vmr vms vmu vmv vmw vmx vmy vmz vnk vnm vnp vo vor vot vra vro vrs vrt vsi vsl vsn vsv vto vum vun vut vwa wa waa wab wac wad wae waf wag wah wai waj wak wal wam wan wao wap waq war was wat wau wav waw wax way waz wba wbb wbe wbf wbh wbi wbj wbk wbl wbm wbp wbq wbr wbs wbt wbv wbw wca wci wdd wdg wdj wdk wdt wdu wdy wea wec wed weg weh wei wem wen weo wep wer wes wet weu wew wfg wga wgb wgg wgi wgo wgu wgw wgy wha whg whk whu wib wic wie wif wig wih wii wij wik wil wim win wir wit wiu wiv wiw wiy wja wji wka wkb wkd wkl wkr wku wkw wky wla wlc wle wlg wlh wli wlk wll wlm wlo wlr wls wlu wlv wlw wlx wly wma wmb wmc wmd wme wmg wmh wmi wmm wmn wmo wms wmt wmw wmx wnb wnc wnd wne wng wni wnk wnm wnn wno wnp wnu wnw wny wo woa wob woc wod woe wof wog woi wok wom won woo wor wos wow woy wpc wra wrb wrd wrg wrh wri wrk wrl wrm wrn wro wrp wrr wrs wru wrv wrw wrx wry wrz wsa wsg wsi wsk wsr wss wsu wsv wtb wtf wth wti wtk wtm wtw wua wub wud wuh wul wum wun wur wut wuu wuv wux wuy wwa wwb wwo wwr www wxa wxw wya wyb wyi wym wyn wyr wyy xaa xab xac xad xae xag xai xaj xak xal xam xan xao xap xaq xar xas xat xau xav xaw xay xba xbb xbc xbd xbe xbg xbi xbj xbm xbn xbo xbp xbr xbw xbx xby xcb xcc xce xcg xch xcl xcm xcn xco xcr xct xcu xcv xcw xcy xda xdc xdk xdm xdo xdq xdy xeb xed xeg xel xem xep xer xes xet xeu xfa xga xgb xgd xgf xgg xgi xgl xgm xgn xgr xgu xgw xh xha xhc xhd xhe xhm xhr xht xhu xhv xia xib xii xil xin xip xir xis xiv xiy xjb xjt xka xkb xkc xkd xke xkf xkg xkh xki xkj xkk xkl xkn xko xkp xkq xkr xks xkt xku xkv xkw xkx xky xkz xla xlb xlc xld xle xlg xli xln xlo xlp xls xlu xly xma xmb xmc xmd xme xmf xmg xmh xmj xmk xml xmm xmn xmo xmp xmq xmr xms xmt xmu xmv xmw xmx xmy xmz xna xnb xnd xng xnh xni xnj xnk xnm xnn xno xnq xnr xns xnt xnu xny xnz xoc xod xog xoi xok xom xon xoo xop xor xow xpa xpb xpc xpd xpe xpf xpg xph xpi xpj xpk xpl xpm xpn xpo xpp xpq xpr xps xpt xpu xpv xpw xpx xpy xpz xqa xqt xra xrb xrd xre xrg xri xrm xrn xrq xrr xrt xru xrw xsa xsb xsc xsd xse xsh xsi xsj xsl xsm xsn xso xsp xsq xsr xss xsu xsv xsy xta xtb xtc xtd xte xtg xth xti xtj xtl xtm xtn xto xtp xtq xtr xts xtt xtu xtv xtw xty xtz xua xub xud xug xuj xul xum xun xuo xup xur xut xuu xve xvi xvn xvo xvs xwa xwc xwd xwe xwg xwj xwk xwl xwo xwr xwt xww xxb xxk xxm xxr xxt xya xyb xyj xyk xyl xyt xyy xzh xzm xzp yaa yab yac yad yae yaf yag yah yai yaj yak yal yam yan yao yap yaq yar yas yat yau yav yaw yax yay yaz yba ybb ybd ybe ybh ybi ybj ybk ybl ybm ybn ybo ybx yby ych ycl ycn ycp ycr yda ydd yde ydg ydk yds yea yec yee yei yej yel yen yer yes yet yeu yev yey yga ygi ygl ygm ygp ygr ygs ygu ygw yha yhd yhl yhs yi yia yif yig yih yii yij yik yil yim yin yip yiq yir yis yit yiu yiv yix yiy yiz yka ykg ykh yki ykk ykl ykm ykn yko ykr ykt yku yky yla ylb yle ylg yli yll ylm yln ylo ylr ylu yly yma ymb ymc ymd yme ymg ymh ymi ymk yml ymm ymn ymo ymp ymq ymr yms ymt ymx ymz yna ynb ynd yne yng ynh ynk ynl ynn yno ynq yns ynu yo yob yog yoi yok yol yom yon yos yot yox yoy ypa ypb ypg yph ypk ypm ypn ypo ypp ypz yra yrb yre yri yrk yrl yrm yrn yro yrs yrw yry ysc ysd ysg ysl ysm ysn yso ysp ysr yss ysy yta ytl ytp ytw yty yua yub yuc yud yue yuf yug yui yuj yuk yul yum yun yup yuq yur yut yuu yuw yux yuy yuz yva yvt ywa ywg ywl ywn ywq ywr ywt ywu yww yxa yxg yxl yxm yxu yxy yyr yyu yyz yzg yzk za zaa zab zac zad zae zaf zag zah zai zaj zak zal zam zao zap zaq zar zas zat zau zav zaw zax zay zaz zba zbc zbe zbl zbt zbu zbw zca zcd zch zdj zea zeg zeh zem zen zga zgb zgh zgm zgn zgr zh zhb zhd zhi zhn zhw zhx zia zib zik zil zim zin zir ziw ziz zka zkb zkd zkg zkh zkk zkn zko zkp zkr zkt zku zkv zkz zla zle zlj zlm zln zlq zls zlu zlw zma zmb zmc zmd zme zmf zmg zmh zmi zmj zmk zml zmm zmn zmo zmp zmq zmr zms zmt zmu zmv zmw zmx zmy zmz zna znd zne zng znk zns zoc zoh zom zoo zoq zor zos zpa zpb zpc zpd zpe zpf zpg zph zpi zpj zpk zpl zpm zpn zpo zpp zpq zpr zps zpt zpu zpv zpw zpx zpy zpz zqe zra zrg zrn zro zrp zrs zsa zsk zsl zsm zsr zsu zte ztg ztl ztm ztn ztp ztq zts ztt ztu ztx zty zu zua zuh zum zun zuy zwa zxx zyb zyg zyj zyn zyp zza zzj';
@@ -74914,7 +76962,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
   // Some engine paths may not pass opts.window; recover it from document when possible.
-  const realmWindow = window || (document && document.defaultView) || null;
+  const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
   // existing call site, including every test, passes one) or an array of
   // elements (multi-region contextSelector support, dom-runner.js). Every
@@ -74987,6 +77035,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   var __idLookupDocCache = null; // Map<string, Element|null>
   var __idLookupRootCache = null; // Map<string, Element|null>
   var __idRefCacheByRoot = null; // WeakMap<object, Map<string, {refs, missing, flags, partsLen}>>
+  var __idRefCacheByTree = null; // WeakMap<ShadowRoot|Document, Map<...>>, the same for a tree other than the document
   var __idRefReverseIndexByScope = null; // WeakMap<object, Map<string, Set<Element>>>
   var __uniqIndexByScope = null; // WeakMap<object, object> (selector uniqueness index per scope)
   var __shadowRootsByRoot = null; // WeakMap<object, Array<object>> (cached open shadow roots per root)
@@ -75095,7 +77144,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
   // --- eligibility utilities ---
-  const isElement = (n) => !!n && n.nodeType === 1;
+  const isElement = (n) => !!n && dom.nodeType(n) === 1;
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -75121,7 +77170,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let cs;
     try {
       const w = realmWindow || window;
-      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && el.style) || {};
+      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && dom.get(el, 'style')) || {};
     } catch {
       cs = {};
     }
@@ -75147,7 +77196,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
-    if (!document || !document.querySelectorAll) return [];
+    if (!document || !dom.get(document, 'querySelectorAll')) return [];
     if (!__openModalDialogsByDoc) {
       __perfInc('modalDialogs.nocache');
     }
@@ -75175,7 +77224,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let list = [];
     for (const sel of ['dialog:modal', 'dialog[open][aria-modal="true"]']) {
       try {
-        for (const el of document.querySelectorAll(sel)) {
+        for (const el of dom.querySelectorAll(document, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -75208,9 +77257,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // level at a time.
   const composedParent = (n) => {
     if (!n) return null;
-    if (n.assignedSlot) return n.assignedSlot;
-    if (n.parentNode) return n.parentNode;
-    return n.host || null;
+    if (dom.assignedSlot(n)) return dom.assignedSlot(n);
+    if (dom.parentNode(n)) return dom.parentNode(n);
+    return dom.host(n) || null;
   };
   const ancestorsIncludingSelf = (n) => {
     if (!n) return [];
@@ -75277,7 +77326,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getClosestMap(el) {
     try {
       if (!isElement(el)) return null;
-      return el.closest ? el.closest('map') : null;
+      return dom.get(el, 'closest') ? dom.closest(el, 'map') : null;
     } catch {
       return null;
     }
@@ -75286,7 +77335,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
 
-    const tag = (node.tagName || '').toLowerCase();
+    const tag = (dom.tagName(node) || '').toLowerCase();
     const isArea = tag === 'area';
     const mapEl = isArea ? getClosestMap(node) : null;
 
@@ -75302,7 +77351,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // of the <img>+<map> pairing does.
       if (isArea && (a === node || a === mapEl)) continue;
 
-      if (a.hasAttribute && a.hasAttribute('inert')) return true;
+      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -75311,7 +77360,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const getAttr = (el, name) => {
     try {
-      return el && el.getAttribute ? el.getAttribute(name) : null;
+      return el && dom.get(el, 'getAttribute') ? dom.getAttribute(el, name) : null;
     } catch {
       return null;
     }
@@ -75352,7 +77401,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
     } else {
       const flags = [];
-      const disabled = !!(el.matches && el.matches(':disabled'));
+      const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
       if (disabled) {
         result = { focusable: false, tabbable: false, mechanism: 'disabled', flags: ['disabled'] };
       } else {
@@ -75440,7 +77489,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!ariaLabelledBy)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts);
+    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -75550,12 +77599,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // such an element as a generic container.
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
-    const token = lower(getAttr(el, 'role')).split(/\s+/)[0];
+    // The resolved role (#91): an attribute naming no known role leaves the
+    // element its native landmark, if any.
+    const token = aria.getExplicitRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
     } else {
-      const tag = lower(el.tagName);
+      const tag = lower(dom.tagName(el));
       if (tag === 'header' || tag === 'footer') {
         if (!aria.hasLandmarkScopingAncestor(el, { includeMain: true })) {
           role = tag === 'header' ? 'banner' : 'contentinfo';
@@ -75589,7 +77640,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.doc.miss');
     let el = null;
     try {
-      if (document && document.getElementById) el = document.getElementById(key);
+      if (document && dom.get(document, 'getElementById')) el = dom.getElementById(document, key);
     } catch {
       el = null;
     }
@@ -75622,9 +77673,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !r.querySelector) continue;
+      if (!r || !dom.get(r, 'querySelector')) continue;
       try {
-        el = r.querySelector('#' + key);
+        el = dom.querySelector(r, '#' + key);
       } catch {
         el = null;
       }
@@ -75639,6 +77690,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The tree an ID reference on `el` resolves in: its shadow root, or its
+  // document. IDs are scoped to their tree (HTML's labeled control is "an
+  // element in the tree" with that ID; ARIA ID references and `headers` use
+  // the same lookup), so a reference never crosses a shadow boundary. Null
+  // for a node in no such tree (a detached subtree), where callers keep
+  // their document lookup.
+  function __idTreeOf(el) {
+    try {
+      const root = el && dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      return root && typeof dom.get(root, 'getElementById') === 'function' ? root : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The element an ID reference on `from` points to: the first element with
+  // that id in `from`'s own tree (see __idTreeOf). For an element in the
+  // scanned document this is the cached document lookup.
+  function getElementByIdInTree(from, id) {
+    const key = trim(id);
+    if (!key) return null;
+    const tree = __idTreeOf(from);
+    if (!tree || tree === document) return safeDocGetById(key) || safeRootQueryById(key);
+    try {
+      return dom.getElementById(tree, key) || null;
+    } catch {
+      return null;
+    }
+  }
+
   // A closed <details> shows only its summary: its first <summary> child,
   // which stays on the page as the toggle. Every other descendant is hidden,
   // including another <summary> and anything in an open <details> nested in
@@ -75651,12 +77732,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const chain = ancestorsIncludingSelf(node);
       for (let i = 1; i < chain.length; i++) {
         const a = chain[i];
-        if (!isElement(a) || (a.localName || '').toLowerCase() !== 'details') continue;
-        if (a.hasAttribute('open')) continue;
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
+        if (dom.hasAttribute(a, 'open')) continue;
         const child = chain[i - 1];
         const isToggle =
-          (child.localName || '').toLowerCase() === 'summary' &&
-          child.parentNode === a &&
+          (dom.localName(child) || '').toLowerCase() === 'summary' &&
+          dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
         if (!isToggle) return true;
       }
@@ -75665,21 +77746,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function firstSummaryChild(details) {
-    for (let c = details.firstElementChild; c; c = c.nextElementSibling) {
-      if ((c.localName || '').toLowerCase() === 'summary') return c;
+    for (let c = dom.firstElementChild(details); c; c = dom.nextElementSibling(c)) {
+      if ((dom.localName(c) || '').toLowerCase() === 'summary') return c;
     }
     return null;
   }
 
   function isPlatformFocusable(el) {
     if (!isElement(el) || hasBlockingInert(el)) return false;
-    const tag = (el.tagName || '').toLowerCase();
-    const type = (el.getAttribute && (el.getAttribute('type') || '').toLowerCase()) || '';
-    const disabled = !!(el.matches && el.matches(':disabled'));
+    const tag = (dom.tagName(el) || '').toLowerCase();
+    const type =
+      (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || '').toLowerCase()) || '';
+    const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -75687,15 +77769,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // *used* image map. Without href an <area> is not a hyperlink at all
       // per the HTML spec, so it falls through to the generic tabindex
       // check below, same as any other non-interactive element.
-      const href = el.getAttribute && el.getAttribute('href');
+      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) {
         const map = getClosestMap(el);
         if (map) {
           const rawName = (
-            map.getAttribute &&
-            (map.getAttribute('name') || map.getAttribute('id') || '')
+            dom.get(map, 'getAttribute') &&
+            (dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id') || '')
           ).trim();
-          if (rawName && document && document.querySelector) {
+          if (rawName && document && dom.get(document, 'querySelector')) {
             const esc = __cssEscapeSafe;
             const n = esc(rawName);
 
@@ -75704,7 +77786,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
             for (const sel of sels) {
               try {
-                if (document.querySelector(sel)) return true;
+                if (dom.querySelector(document, sel)) return true;
               } catch {}
             }
           }
@@ -75721,16 +77803,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // without controls is focusable in Firefox only, and <embed>/<object>
     // depend on the type of what they embed, so neither is counted.
     if (tag === 'iframe' || tag === 'frame') return true;
-    if ((tag === 'audio' || tag === 'video') && el.hasAttribute && el.hasAttribute('controls'))
+    if (
+      (tag === 'audio' || tag === 'video') &&
+      dom.get(el, 'hasAttribute') &&
+      dom.hasAttribute(el, 'controls')
+    )
       return true;
-    if (el.hasAttribute && el.hasAttribute('contenteditable')) {
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'contenteditable')) {
       // contenteditable="false" explicitly disables the editing host
       // and does not by itself add the element to the tab order.
       const ceVal = lower(getAttr(el, 'contenteditable'));
       if (ceVal !== 'false') return true;
     }
 
-    const tabindex = el.getAttribute && el.getAttribute('tabindex');
+    const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
     if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
       return true;
 
@@ -75740,7 +77826,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getIdRefReverseIndex(scopeObj) {
     // Reverse index: id token -> referencing elements (aria-labelledby / aria-describedby)
     // Built once per scope per run. Deterministic: querySelectorAll order is document order.
-    if (!scopeObj || !scopeObj.querySelectorAll) return null;
+    if (!scopeObj || !dom.get(scopeObj, 'querySelectorAll')) return null;
 
     if (!__idRefReverseIndexByScope) {
       __perfInc('idrefReverseIndex.nocache');
@@ -75763,7 +77849,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(scopeObj.querySelectorAll('[aria-labelledby],[aria-describedby]'));
+      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
     } catch {
       refs = [];
     }
@@ -75815,12 +77901,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
-    const id = node.getAttribute && node.getAttribute('id');
+    const id = dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id');
     const idTok = id && id.trim ? id.trim() : '';
     if (!idTok) return false;
 
+    // Only an element in the same tree can reference it (see __idTreeOf).
+    const tree = __idTreeOf(node) || document;
+
     // Prefer reverse-index lookup (single build per run) over repeated querySelectorAll per node.
-    const idx = getIdRefReverseIndex(document);
+    const idx = getIdRefReverseIndex(tree);
     if (idx && typeof idx.get === 'function') {
       let refs;
       try {
@@ -75846,8 +77935,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(document.querySelectorAll('[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(document.querySelectorAll('[aria-describedby~="' + idSel + '"]'))
+        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
+        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
       ];
     } catch {
       refs = [];
@@ -75883,7 +77972,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isExcluded(el) {
     const eff = __getEffectiveExcludeSelectors();
-    if (!eff.length || !el || !el.matches) return false;
+    if (!eff.length || !el || !dom.get(el, 'matches')) return false;
 
     const memo = __getExcludedCacheForOpts();
     if (memo) {
@@ -75898,7 +77987,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let result = false;
     for (let i = 0; i < eff.length; i++) {
       try {
-        if (el.matches(eff[i])) {
+        if (dom.matches(el, eff[i])) {
           result = true;
           break;
         }
@@ -75910,7 +77999,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (!result) {
-      const parent = el.parentElement;
+      const parent = dom.parentElement(el);
       result = parent ? isExcluded(parent) : false;
     }
 
@@ -75942,16 +78031,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // self-match every rule using this helper would be blind to an issue
       // asserted directly on <html> (e.g. `<html role="...">`, `[lang]`,
       // any `[aria-*]`).
-      if (r.nodeType === 1 && typeof r.matches === 'function' && !seen.has(r)) {
+      if (dom.nodeType(r) === 1 && typeof dom.get(r, 'matches') === 'function' && !seen.has(r)) {
         try {
-          if (r.matches(sel)) {
+          if (dom.matches(r, sel)) {
             seen.add(r);
             out.push(r);
           }
         } catch {}
       }
       try {
-        const list = r.querySelectorAll(sel);
+        const list = dom.querySelectorAll(r, sel);
         for (const el of list) {
           if (el && !seen.has(el)) {
             seen.add(el);
@@ -75976,10 +78065,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const visitedRoots = new Set();
 
     const pushMatches = (scope) => {
-      if (!scope || !scope.querySelectorAll) return;
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return;
       let els;
       try {
-        els = scope.querySelectorAll(sel);
+        els = dom.querySelectorAll(scope, sel);
       } catch {
         els = [];
       }
@@ -75995,13 +78084,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // (or the top-level <html> root) matching `sel` directly would
       // otherwise be invisible here too.
       if (
-        scope.nodeType === 1 &&
-        typeof scope.matches === 'function' &&
+        dom.nodeType(scope) === 1 &&
+        typeof dom.get(scope, 'matches') === 'function' &&
         !seen.has(scope) &&
         !isExcluded(scope)
       ) {
         try {
-          if (scope.matches(sel)) {
+          if (dom.matches(scope, sel)) {
             seen.add(scope);
             results.push(scope);
           }
@@ -76010,7 +78099,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
 
     const collectShadowRoots = (scope) => {
-      if (!scope || !scope.querySelectorAll) return [];
+      if (!scope || !dom.get(scope, 'querySelectorAll')) return [];
 
       // Cache shadow root discovery per root to avoid repeated querySelectorAll('*') walks.
       // IMPORTANT: do not cache when the effective exclude list (global
@@ -76027,15 +78116,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
           let hosts = [];
           try {
-            hosts = scope.querySelectorAll('*');
+            hosts = dom.querySelectorAll(scope, '*');
           } catch {
             hosts = [];
           }
 
           const roots = [];
           for (const el of hosts) {
-            if (!el || el.nodeType !== 1) continue;
-            const sr = el.shadowRoot;
+            if (!el || dom.nodeType(el) !== 1) continue;
+            const sr = dom.shadowRoot(el);
             if (sr) roots.push(sr);
           }
 
@@ -76056,15 +78145,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Uncached path (preserves excludeSelectors filtering semantics).
       let hosts;
       try {
-        hosts = scope.querySelectorAll('*');
+        hosts = dom.querySelectorAll(scope, '*');
       } catch {
         hosts = [];
       }
       const roots = [];
       for (const el of hosts) {
-        if (!el || el.nodeType !== 1) continue;
+        if (!el || dom.nodeType(el) !== 1) continue;
         if (isExcluded(el)) continue;
-        const sr = el.shadowRoot;
+        const sr = dom.shadowRoot(el);
         if (sr) roots.push(sr);
       }
       return roots;
@@ -76084,8 +78173,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // querySelectorAll('*') never returns curRoot itself, so a scope
       // that is a shadow host would leave out its own shadow root.
-      if (curRoot.nodeType === 1 && curRoot.shadowRoot && !isExcluded(curRoot)) {
-        q.push(curRoot.shadowRoot);
+      if (dom.nodeType(curRoot) === 1 && dom.shadowRoot(curRoot) && !isExcluded(curRoot)) {
+        q.push(dom.shadowRoot(curRoot));
       }
       const childShadowRoots = collectShadowRoots(curRoot);
       for (const sr of childShadowRoots) q.push(sr);
@@ -76178,7 +78267,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   //   'none'    no doctype
   // Public ids are compared case-insensitively, as HTML's parser does.
   function getDoctypeInfo() {
-    const doctype = document ? document.doctype : null;
+    const doctype = document ? dom.doctype(document) : null;
     if (!doctype) return { kind: 'none', name: '', publicId: '', systemId: '' };
     const name = String(doctype.name || '');
     const publicId = String(doctype.publicId || '');
@@ -76201,7 +78290,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   try {
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -76303,6 +78392,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __idLookupRootCache = null;
   }
 
+  // IDREF resolution in a shadow root (or another document): per tree
+  try {
+    __idRefCacheByTree =
+      __domSharedCache.idRefCacheByTree instanceof WeakMap
+        ? __domSharedCache.idRefCacheByTree
+        : (__domSharedCache.idRefCacheByTree = new WeakMap());
+  } catch {
+    __idRefCacheByTree = null;
+  }
+
   // IDREF resolution: cache resolveIdRefs results (root-scoped) within a run
   try {
     __idRefCacheByRoot =
@@ -76359,7 +78458,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   let __ancestorBlockerDomStructFinalByScope = null; // WeakMap<object, WeakMap<Element, string|null>> (final structural blocker per element per scope)
   let __labelAssociationCache = null;
   let __labelMethodCache = null;
-  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
+  let __labelElementsByForIdIndexByDoc = null; // WeakMap<Document|ShadowRoot, Map<string, Element[]>> (label[for] by id -> real elements, see getAssociatedLabelElements)
   // Map<string, WeakMap<Element, Info>>. Only names computed at
   // __nameComputationDepth 0 are stored: a name computed deeper is the value
   // that traversal saw, not the element's own. Resolving an aria-labelledby
@@ -76514,20 +78613,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return document && typeof document === 'object' ? document : null;
   }
 
-  // Real `<label for="...">` element references for one `for` value, built
-  // via a single `document.querySelectorAll('label[for]')` pass and cached
-  // per document for the whole run, for callers that need the actual label
-  // element (to compute its accessible name, or to check whether it
-  // contributes one), not just whether one exists.
-  function __getLabelElementsForId(id) {
+  // Real `<label for="...">` element references for one `for` value in the
+  // tree `root` (a document or a shadow root: a label labels a control in its
+  // own tree only), built via a single `root.querySelectorAll('label[for]')`
+  // pass and cached per tree for the whole run, for callers that need the
+  // actual label element (to compute its accessible name, or to check
+  // whether it contributes one), not just whether one exists.
+  function __getLabelElementsForId(id, root) {
     const key = trim(id);
-    if (!key || !document || !document.querySelectorAll) return [];
+    const tree = root || document;
+    if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
     function buildIndex() {
       const byId = new Map();
       try {
-        for (const label of document.querySelectorAll('label[for]')) {
-          const forVal = trim(label.getAttribute('for'));
+        for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+          const forVal = trim(dom.getAttribute(label, 'for'));
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -76539,10 +78640,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (!__labelElementsByForIdIndexByDoc) return buildIndex().get(key) || [];
 
-    let byId = __labelElementsByForIdIndexByDoc.get(document);
+    let byId = __labelElementsByForIdIndexByDoc.get(tree);
     if (!(byId instanceof Map)) {
       byId = buildIndex();
-      __labelElementsByForIdIndexByDoc.set(document, byId);
+      __labelElementsByForIdIndexByDoc.set(tree, byId);
     }
     return byId.get(key) || [];
   }
@@ -76585,7 +78686,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // either browser's accessibility tree.
     let isLabelable;
     try {
-      isLabelable = !!(el && el.matches && el.matches(LABELABLE_SELECTOR));
+      isLabelable = !!(el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR));
     } catch {
       isLabelable = false;
     }
@@ -76596,27 +78697,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // A `for` label labels the first element in its tree with that id
       // (HTML's labeled control), so a second element sharing the id has no
       // label from it; Chromium names only the first.
-      const forLabels = __getLabelElementsForId(id);
+      const root = __idTreeOf(el);
+      const forLabels = __getLabelElementsForId(id, root);
       for (const l of forLabels) {
         let target = el;
         try {
-          const root = l.getRootNode ? l.getRootNode() : null;
-          if (root && typeof root.getElementById === 'function') target = root.getElementById(id);
+          if (root && typeof dom.get(root, 'getElementById') === 'function')
+            target = dom.getElementById(root, id);
         } catch {}
         if (target === el) out.push(l);
       }
     }
     try {
-      const wrap = el.closest ? el.closest('label') : null;
+      const wrap = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
       if (
         wrap &&
         isElement(wrap) &&
-        !(wrap.hasAttribute && wrap.hasAttribute('for')) &&
+        !(dom.get(wrap, 'hasAttribute') && dom.hasAttribute(wrap, 'for')) &&
         out.indexOf(wrap) === -1
       ) {
         let firstControl = null;
         try {
-          firstControl = wrap.querySelector ? wrap.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrap, 'querySelector')
+            ? dom.querySelector(wrap, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -76630,7 +78734,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (out.length > 1) {
       try {
         out.sort((a, b) => {
-          const bits = a.compareDocumentPosition(b);
+          const bits = dom.compareDocumentPosition(a, b);
           if (bits & 4) return -1;
           if (bits & 2) return 1;
           return 0;
@@ -76648,16 +78752,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getLabelControl(label) {
     if (!isElement(label)) return null;
     try {
-      if (label.hasAttribute('for')) {
+      if (dom.hasAttribute(label, 'for')) {
         const id = getAttr(label, 'for');
         if (!id) return null;
-        const root = label.getRootNode ? label.getRootNode() : null;
+        const root = dom.get(label, 'getRootNode') ? dom.getRootNode(label) : null;
         const scope =
-          root && typeof root.getElementById === 'function' ? root : label.ownerDocument;
-        const el = scope ? scope.getElementById(id) : null;
-        return el && el.matches && el.matches(LABELABLE_SELECTOR) ? el : null;
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? root
+            : dom.ownerDocument(label);
+        const el = scope ? dom.getElementById(scope, id) : null;
+        return el && dom.get(el, 'matches') && dom.matches(el, LABELABLE_SELECTOR) ? el : null;
       }
-      return label.querySelector ? label.querySelector(LABELABLE_SELECTOR) : null;
+      return dom.get(label, 'querySelector') ? dom.querySelector(label, LABELABLE_SELECTOR) : null;
     } catch {
       return null;
     }
@@ -76785,22 +78891,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // probe last in <body>: a parent whose first or last element child has
   // changed since is indexed again.
   function __siblingInfo(node) {
-    const parent = node && node.parentElement;
+    const parent = node && dom.parentElement(node);
     if (!parent) return null;
-    const tagOf = (el) => (el.tagName || '').toLowerCase();
+    const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
     const build = () => {
       const info = new Map();
       const tagCounts = new Map();
       let index = 0;
-      for (let c = parent.firstElementChild; c; c = c.nextElementSibling) {
+      for (let c = dom.firstElementChild(parent); c; c = dom.nextElementSibling(c)) {
         const tag = tagOf(c);
         const ofType = (tagCounts.get(tag) || 0) + 1;
         tagCounts.set(tag, ofType);
         info.set(c, { index: index++, ofType, tag });
       }
       return {
-        first: parent.firstElementChild,
-        last: parent.lastElementChild,
+        first: dom.firstElementChild(parent),
+        last: dom.lastElementChild(parent),
         info,
         tagCounts
       };
@@ -76811,8 +78917,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     if (
       !entry ||
-      entry.first !== parent.firstElementChild ||
-      entry.last !== parent.lastElementChild ||
+      entry.first !== dom.firstElementChild(parent) ||
+      entry.last !== dom.lastElementChild(parent) ||
       !entry.info.has(node)
     ) {
       entry = build();
@@ -76842,20 +78948,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // changes with any edit anywhere, and the snippet is part of a
       // finding's identity (baselines, SARIF). What a page-level finding is
       // about is the element itself: its start tag.
-      const name = String(el.localName || '').toLowerCase();
+      const name = String(dom.localName(el) || '').toLowerCase();
       const isPage =
         (name === 'html' || name === 'head' || name === 'body') &&
-        el.ownerDocument &&
-        el.parentNode &&
-        (el === el.ownerDocument.documentElement ||
-          el.parentNode === el.ownerDocument.documentElement);
+        dom.ownerDocument(el) &&
+        dom.parentNode(el) &&
+        (el === dom.documentElement(dom.ownerDocument(el)) ||
+          dom.parentNode(el) === dom.documentElement(dom.ownerDocument(el)));
       let html;
       if (isPage) {
-        const shallow = el.cloneNode(false).outerHTML || '';
+        const shallow = dom.outerHTML(dom.cloneNode(el, false)) || '';
         const end = shallow.lastIndexOf('</');
         html = end > 0 ? shallow.slice(0, end) : shallow;
       } else {
-        html = el.outerHTML || '';
+        html = dom.outerHTML(el) || '';
       }
       if (html.length > 2000) out = html.slice(0, 2000) + '…';
       else out = html;
@@ -76907,7 +79013,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const chain = ancestorsIncludingSelf(node);
-    const __tag0 = (node.tagName || '').toLowerCase();
+    const __tag0 = (dom.tagName(node) || '').toLowerCase();
     const __isAreaNode = __tag0 === 'area';
     const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
 
@@ -76924,8 +79030,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerAcc.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -76936,7 +79042,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -76973,7 +79081,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Without it, an `until-found` panel would be excluded even from
       // rules checking its own attributes.
       if (struct === 'hiddenAttr' && a === node) {
-        const hiddenVal = String((a.getAttribute && a.getAttribute('hidden')) || '')
+        const hiddenVal = String(
+          (dom.get(a, 'getAttribute') && dom.getAttribute(a, 'hidden')) || ''
+        )
           .trim()
           .toLowerCase();
         if (hiddenVal === 'until-found') struct = null;
@@ -77006,7 +79116,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (node.contains && node.contains(d))) {
+          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
             reachable = true;
             break;
           }
@@ -77026,7 +79136,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // <area> is a non-rendered element; some DOMs report display:none for it.
       // Don’t treat the *area itself* as ineligible based on computed style.
       if (a === node) {
-        const tn = (a.tagName || '').toLowerCase();
+        const tn = (dom.tagName(a) || '').toLowerCase();
         if (tn === 'area') continue;
       }
 
@@ -77100,7 +79210,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // walking ancestors (which would incorrectly treat visibility like
     // the non-inherited `display` property above).
     {
-      const tn = (node.tagName || '').toLowerCase();
+      const tn = (dom.tagName(node) || '').toLowerCase();
       if (tn !== 'area') {
         const cs = computedStyle(node);
         if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
@@ -77113,7 +79223,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let ariaHidden = false;
     for (const a of chain) {
       if (!isElement(a)) continue;
-      const v = a.getAttribute && a.getAttribute('aria-hidden');
+      const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') {
         ariaHidden = true;
         break;
@@ -77145,10 +79255,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       // Exception: allow aria-hidden override for mechanisms where the engine must
       // still evaluate required labeling/alt checks. Keep this narrowly scoped.
-      const tag = (node.tagName || '').toLowerCase();
+      const tag = (dom.tagName(node) || '').toLowerCase();
       const type =
         tag === 'input'
-          ? (node.getAttribute && (node.getAttribute('type') || '').toLowerCase()) || ''
+          ? (dom.get(node, 'getAttribute') &&
+              (dom.getAttribute(node, 'type') || '').toLowerCase()) ||
+            ''
           : '';
 
       // Native form controls are tabbable by default (even without tabindex)
@@ -77276,8 +79388,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           struct = cached && cached.struct ? String(cached.struct) : null;
         } else {
           __perfInc('ancestorBlockerDom.struct.miss');
-          const tn = (a.tagName || '').toLowerCase();
-          if (a.hasAttribute && a.hasAttribute('hidden')) struct = 'hiddenAttr';
+          const tn = (dom.tagName(a) || '').toLowerCase();
+          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -77288,7 +79400,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           )
             struct = 'nonRenderedElement';
           else if (tn === 'input') {
-            const t = (a.getAttribute && (a.getAttribute('type') || '').toLowerCase()) || '';
+            const t =
+              (dom.get(a, 'getAttribute') && (dom.getAttribute(a, 'type') || '').toLowerCase()) ||
+              '';
             if (t === 'hidden') struct = 'inputHidden';
           }
           try {
@@ -77634,15 +79748,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (useGeometry) {
       try {
-        if (node.getClientRects) {
-          const rects = node.getClientRects();
+        if (dom.get(node, 'getClientRects')) {
+          const rects = dom.getClientRects(node);
           const rectCount = rects ? rects.length : 0;
 
           if (!rectCount) {
             return __cacheAndReturn(out(false, ['noClientRects'], { rectCount: 0 }));
           }
 
-          const r = node.getBoundingClientRect ? node.getBoundingClientRect() : null;
+          const r = dom.get(node, 'getBoundingClientRect') ? dom.getBoundingClientRect(node) : null;
           const w = r && Number.isFinite(r.width) ? r.width : 0;
           const h = r && Number.isFinite(r.height) ? r.height : 0;
 
@@ -77681,7 +79795,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // E) IDREF helpers
-  function resolveIdRefs(idrefString, _ctx, opts) {
+  // `from` is the element carrying the reference: the IDs resolve in its own
+  // tree (see __idTreeOf). Without it they resolve in the document.
+  function resolveIdRefs(idrefString, _ctx, opts, from) {
     const raw = trim(idrefString);
     if (!raw) return { refs: [], missing: [], flags: ['empty'] };
 
@@ -77689,16 +79805,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = raw.split(/\s+/).filter(Boolean);
     const normKey = parts.join(' ');
 
+    // A shadow root (or another document) is its own tree, with its own cache.
+    let tree = from ? __idTreeOf(from) : null;
+    if (tree === document) tree = null;
+
     // Root-scoped cache map
     let cacheMap = null;
-    if (__idRefCacheByRoot) {
-      const scopeObj = __getScopeObj();
+    const cacheByKey = tree ? __idRefCacheByTree : __idRefCacheByRoot;
+    if (cacheByKey) {
+      const scopeObj = tree || __getScopeObj();
       if (scopeObj) {
         try {
-          cacheMap = __idRefCacheByRoot.get(scopeObj) || null;
+          cacheMap = cacheByKey.get(scopeObj) || null;
           if (!cacheMap) {
             cacheMap = new Map();
-            __idRefCacheByRoot.set(scopeObj, cacheMap);
+            cacheByKey.set(scopeObj, cacheMap);
           }
         } catch {
           cacheMap = null;
@@ -77739,8 +79860,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const key = trim(id);
       if (!key) continue;
 
-      let el = safeDocGetById(key);
-      if (!el) el = safeRootQueryById(key);
+      let el;
+      if (tree) {
+        try {
+          el = dom.getElementById(tree, key);
+        } catch {
+          el = null;
+        }
+      } else {
+        el = safeDocGetById(key);
+        if (!el) el = safeRootQueryById(key);
+      }
 
       if (!el || !isElement(el)) {
         missing.push(key);
@@ -77782,7 +79912,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // an IDREF *target*'s own text alternative (see computeIdRefTargetTextAlternative).
   function __getElementValueLikeName(el) {
     if (!isElement(el)) return '';
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
 
     if (tag === 'img' || tag === 'area') {
       const alt = getAttr(el, 'alt');
@@ -77896,8 +80026,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
-  function getTextFromIdRefs(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefs(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -77930,8 +80060,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { eligible: true, reasons: [] };
   }
 
-  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts) {
-    const r = resolveIdRefs(idrefString, _ctx, opts);
+  function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
+    const r = resolveIdRefs(idrefString, _ctx, opts, from);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
@@ -77940,7 +80070,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
-        const id = trim(el.getAttribute && el.getAttribute('id'));
+        const id = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
         excluded.push({ id: id || null, reasons: elig.reasons.slice(0) });
         continue;
       }
@@ -77987,7 +80117,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let guardCount = 0;
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -77997,8 +80127,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       guardCount += 1;
       if (guardCount > 5000) return;
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      if (dom.nodeType(node) === 3) {
+        const t = trim(dom.nodeValue(node));
         if (t) parts.push(t);
         return;
       }
@@ -78030,12 +80160,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) walk(kid);
     }
 
     try {
-      const kids = labelEl.childNodes ? Array.from(labelEl.childNodes) : [];
+      const kids = dom.childNodes(labelEl) ? Array.from(dom.childNodes(labelEl)) : [];
       for (const kid of kids) walk(kid);
     } catch {}
 
@@ -78169,7 +80299,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // these tags (kept as a direct attribute read here, not a call into
     // getTextAlternativeInfo, since that function itself calls back into
     // this one when alt is absent).
-    const tagForAlt = lower(el.tagName);
+    const tagForAlt = lower(dom.tagName(el));
     const typeForAlt = tagForAlt === 'input' ? lower(getAttr(el, 'type')) : '';
     const isImageLikeForAlt =
       tagForAlt === 'img' ||
@@ -78273,7 +80403,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
     if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts);
+      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -78346,21 +80476,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // textContent alone misses that, since alt text isn't part of it.
   function __hasMeaningfulCanvasFallbackDescendant(container) {
     try {
-      if (!container || !container.querySelectorAll) return false;
+      if (!container || !dom.get(container, 'querySelectorAll')) return false;
 
-      const imgs = container.querySelectorAll('img[alt]');
+      const imgs = dom.querySelectorAll(container, 'img[alt]');
       for (const img of imgs) {
-        if (trim(img.getAttribute && img.getAttribute('alt'))) return true;
+        if (trim(dom.get(img, 'getAttribute') && dom.getAttribute(img, 'alt'))) return true;
       }
 
-      const areas = container.querySelectorAll('area[alt]');
+      const areas = dom.querySelectorAll(container, 'area[alt]');
       for (const area of areas) {
-        if (trim(area.getAttribute && area.getAttribute('alt'))) return true;
+        if (trim(dom.get(area, 'getAttribute') && dom.getAttribute(area, 'alt'))) return true;
       }
 
-      const named = container.querySelectorAll('[aria-label]');
+      const named = dom.querySelectorAll(container, '[aria-label]');
       for (const n of named) {
-        if (trim(n.getAttribute && n.getAttribute('aria-label'))) return true;
+        if (trim(dom.get(n, 'getAttribute') && dom.getAttribute(n, 'aria-label'))) return true;
       }
 
       return false;
@@ -78525,12 +80655,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // roots; '' when none is declared.
   function textAlternativeLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -78542,10 +80673,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function textAlternativeFileName(el) {
-    if (!el || typeof el.getAttribute !== 'function') return '';
+    if (!el || typeof dom.get(el, 'getAttribute') !== 'function') return '';
     let src;
     try {
-      src = String(el.getAttribute('src') || '');
+      src = String(dom.getAttribute(el, 'src') || '');
     } catch {
       return '';
     }
@@ -78667,7 +80798,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
     }
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
 
     const isImageLike = tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
@@ -78703,7 +80834,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(el.textContent || '');
+      const fallbackText = trim(dom.textContent(el) || '');
       if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
         return {
           present: true,
@@ -78765,13 +80896,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (which a <title> does not override: it is not a global ARIA attribute).
   function getSvgTitleChildText(node) {
     try {
-      if (!isElement(node) || node.namespaceURI !== 'http://www.w3.org/2000/svg') return '';
-      const role = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
+      const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
-      const kids = node.children ? Array.from(node.children) : [];
+      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === 'title' && kid.namespaceURI === node.namespaceURI) {
-          return trim(String(kid.textContent || '').replace(/\s+/g, ' '));
+        if (
+          lower(dom.localName(kid)) === 'title' &&
+          dom.namespaceURI(kid) === dom.namespaceURI(node)
+        ) {
+          return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
         }
       }
     } catch {}
@@ -78788,6 +80922,42 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // name from an attribute rather than visible text, e.g. a logo link
   // `<a href="..."><img alt="Company Name"></a>` or an icon-only button
   // `<button><span role="img" aria-label="Close"></span></button>`.
+  // How an element breaks the text around it, from its computed display:
+  // 'inline' (no break: <b>Down</b>load reads "Download"), 'inline-box'
+  // (inline-block, inline-flex and the like: a break in an accessible name,
+  // none in visible text) or 'block' (a new line in visible text, a space in
+  // a name). Absolute and fixed positioning, floats and being a flex or grid
+  // item make a box block-level (CSS Display "blockification"), which
+  // browsers report in the computed value and jsdom doesn't, so it is
+  // applied here. A <br> breaks the line; `display: contents` and `none`
+  // have no box of their own and break nothing.
+  const __INLINE_BOX_DISPLAYS = {
+    'inline-block': 1,
+    'inline-flex': 1,
+    'inline-grid': 1,
+    'inline-table': 1,
+    'inline-flow-root': 1
+  };
+  function getTextBoundaryKind(el) {
+    if (!isElement(el)) return 'inline';
+    if (lower(dom.tagName(el)) === 'br') return 'block';
+    const cs = computedStyle(el) || {};
+    const display = lower(cs.display || '');
+    if (!display || display === 'none' || display === 'contents') return 'inline';
+    const position = lower(cs.position || '');
+    const float = lower(cs.cssFloat || cs.float || '');
+    let blockified = position === 'absolute' || position === 'fixed' || (float && float !== 'none');
+    if (!blockified) {
+      const parent = dom.parentElement(el);
+      const parentDisplay = parent ? lower((computedStyle(parent) || {}).display || '') : '';
+      blockified = /(^|-)(flex|grid)$/.test(parentDisplay);
+    }
+    if (blockified) return 'block';
+    if (display === 'inline' || display.indexOf('ruby') === 0) return 'inline';
+    if (__INLINE_BOX_DISPLAYS[display]) return 'inline-box';
+    return 'block';
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -78837,7 +81007,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     ];
 
     function isImageLikeNode(node) {
-      const tag = lower(node.tagName);
+      const tag = lower(dom.tagName(node));
       const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
       return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
     }
@@ -78851,8 +81021,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
         return;
       }
 
-      if (node.nodeType === 3) {
-        const t = trim(node.nodeValue);
+      // Text keeps its own whitespace: pieces of text in inline elements
+      // join as they are written, so <b>Down</b>load is "Download".
+      if (dom.nodeType(node) === 3) {
+        const t = dom.nodeValue(node);
         if (t) parts.push(t);
         return;
       }
@@ -78878,7 +81050,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // resolve to unnamed and collapse into one false "not unique" cluster
       // (landmark-unique, dialog/tab/menuitem-name-present, etc.).
       if (opts && opts.includeHidden) {
-        const tag = lower(node.tagName);
+        const tag = lower(dom.tagName(node));
         if (tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'template') return;
       } else {
         let eligible;
@@ -78900,7 +81072,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // same condition aria-required-parent.js's getRealContextRole
         // and aria-prohibited-children.js already use for the analogous
         // "roleless-but-included" boundary.
-        const presRole = lower(getAttr(node, 'role') || '').split(/\s+/)[0];
+        const presRole = aria.getExplicitRole(node);
         if (presRole === 'presentation' || presRole === 'none') {
           let restored = false;
           try {
@@ -78929,7 +81101,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // win over its real alt text).
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:image-aria') === -1)
             flags.push('descendant-name-used:image-aria');
           return;
@@ -78941,14 +81113,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // element-specific name mapping, so it's checked here,
         // ahead of alt/title, same relative order getAccessibleNameInfo
         // itself uses for every other labelable control.
-        if (lower(node.tagName) === 'input') {
+        if (lower(dom.tagName(node)) === 'input') {
           try {
             const imageLabels = getAssociatedLabelElements(node);
             if (imageLabels.length) {
               for (const labelEl of imageLabels) {
                 const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
                 if (labelInfo.present && labelInfo.value) {
-                  parts.push(labelInfo.value);
+                  parts.push(' ' + labelInfo.value + ' ');
                   if (flags.indexOf('descendant-name-used:image-label') === -1)
                     flags.push('descendant-name-used:image-label');
                   return;
@@ -78971,7 +81143,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const usedFlag = alt.present
             ? 'descendant-alt-used'
             : 'descendant-name-used:image-title-fallback';
-          parts.push(alt.value);
+          parts.push(' ' + alt.value + ' ');
           if (flags.indexOf(usedFlag) === -1) flags.push(usedFlag);
         }
         return; // image-like elements have no meaningful children to recurse into
@@ -78985,12 +81157,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (svgTitle) {
         const ariaName = getAriaNameInfo(node, _ctx, opts);
         if (ariaName && ariaName.present && ariaName.value) {
-          parts.push(ariaName.value);
+          parts.push(' ' + ariaName.value + ' ');
           if (flags.indexOf('descendant-name-used:svg-aria') === -1)
             flags.push('descendant-name-used:svg-aria');
           return;
         }
-        parts.push(svgTitle);
+        parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
         return;
@@ -79012,7 +81184,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       );
 
       if (ownName && ownName.present && ownName.value && !titleOnlyName) {
-        parts.push(ownName.value);
+        parts.push(' ' + ownName.value + ' ');
         const tag = `descendant-name-used:${ownName.mechanism || 'unknown'}`;
         if (flags.indexOf(tag) === -1) flags.push(tag);
         return; // this descendant speaks for itself; don't also use its content
@@ -79024,9 +81196,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // since a whitespace-only text node pushes a part but no name text.
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(' '))) {
+        if (!trim(parts.slice(before).join(''))) {
           parts.length = before;
-          parts.push(ownName.value);
+          parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
             flags.push('descendant-name-used:title-fallback');
         } else if (flags.indexOf('descendant-title-superseded-by-content') === -1) {
@@ -79038,6 +81210,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       walkChildren(node, parts);
     }
 
+    // A child element that isn't inline is set apart by spaces, as browsers
+    // set it apart in the name (see getTextBoundaryKind).
+    function collectChild(kid, parts) {
+      const apart = isElement(kid) && getTextBoundaryKind(kid) !== 'inline';
+      if (apart) parts.push(' ');
+      collect(kid, parts);
+      if (apart) parts.push(' ');
+    }
+
     // Extracted from collect() so the title-only branch above can walk a
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
@@ -79047,28 +81228,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // IS distributed into it, that's what's exposed to the accessibility
       // tree, and it lives elsewhere in the light DOM, not as this node's
       // children, so prefer assignedNodes() and fall back to childNodes.
-      if (lower(node.tagName) === 'slot' && typeof node.assignedNodes === 'function') {
+      if (
+        lower(dom.tagName(node)) === 'slot' &&
+        typeof dom.get(node, 'assignedNodes') === 'function'
+      ) {
         let assigned;
         try {
-          assigned = node.assignedNodes({ flatten: true }) || [];
+          assigned = dom.assignedNodes(node, { flatten: true }) || [];
         } catch {
           assigned = [];
         }
         const kids = assigned.length
           ? assigned
-          : node.childNodes
-            ? Array.from(node.childNodes)
+          : dom.childNodes(node)
+            ? Array.from(dom.childNodes(node))
             : [];
         for (const kid of kids) {
-          collect(kid, parts);
+          collectChild(kid, parts);
           if (truncated) break;
         }
         return;
       }
 
-      const kids = node.childNodes ? Array.from(node.childNodes) : [];
+      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
       for (const kid of kids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     }
@@ -79076,16 +81260,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const parts = [];
     __nameComputationDepth += 1;
     try {
-      const topKids = el.childNodes ? Array.from(el.childNodes) : [];
+      const topKids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
       for (const kid of topKids) {
-        collect(kid, parts);
+        collectChild(kid, parts);
         if (truncated) break;
       }
     } finally {
       __nameComputationDepth -= 1;
     }
 
-    const value = trim(parts.join(' ').replace(/\s+/g, ' '));
+    const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,
       value,
@@ -79099,20 +81283,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const flags = [];
     if (!isElement(el)) return { role: '', source: 'none', flags: ['notElement'] };
 
-    const explicit = trim(getAttr(el, 'role'));
+    // The first token naming a known role (#91); an attribute naming none
+    // leaves the element its implicit role, as if it had none.
+    const explicit = aria.getExplicitRole(el);
     if (explicit) {
-      const v = explicit;
-      const low = v.toLowerCase();
-      if (low === 'presentation' || low === 'none') flags.push('presentation');
-      // Minimal sanity: role token should not contain spaces beyond role list; keep deterministic
-      if (/\s/.test(v)) flags.push('multiple-roles');
-      return { role: v, source: 'explicit', flags };
+      if (explicit === 'presentation' || explicit === 'none') flags.push('presentation');
+      if (/\s/.test(trim(getAttr(el, 'role')))) flags.push('multiple-roles');
+      return { role: explicit, source: 'explicit', flags };
     }
 
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
-    const tag = lower(el.tagName);
+    const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
@@ -79210,6 +81393,45 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if ((position === 'absolute' || position === 'fixed') && isEmptyClipRect(style.clip))
       return true;
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
+  }
+
+  // Whether an element's box is drawn so that nothing in it can be seen,
+  // though it is rendered and stays in the accessibility tree: fully
+  // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
+  // overflow hidden -- the "screen-reader-only" patterns. Applies to the
+  // whole subtree. jsdom neither computes clip nor keeps its value intact, so
+  // the declaration in the style attribute is read too.
+  function isVisuallyHidden(el) {
+    if (!isElement(el)) return false;
+    const cs = computedStyle(el) || {};
+    const opacity = Number.parseFloat(cs.opacity);
+    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    if (isClipHidden(cs)) return true;
+    const declared = String(getAttr(el, 'style') || '');
+    if (declared) {
+      const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
+      const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
+      if (
+        (clip || clipPath) &&
+        isClipHidden({
+          position: cs.position,
+          clip: clip ? clip[1].trim() : '',
+          clipPath: clipPath ? clipPath[1].trim() : ''
+        })
+      )
+        return true;
+    }
+    const overflow = lower(cs.overflow || '');
+    if (/hidden|clip/.test(overflow)) {
+      const w = /^-?[\d.]+px$/.test(String(cs.width || '').trim())
+        ? Number.parseFloat(cs.width)
+        : NaN;
+      const h = /^-?[\d.]+px$/.test(String(cs.height || '').trim())
+        ? Number.parseFloat(cs.height)
+        : NaN;
+      if (w <= 1 && h <= 1) return true;
+    }
+    return false;
   }
 
   function getVisibilityHintsInfo(el, _ctx, _opts) {
@@ -79375,8 +81597,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       nodes = [];
       const seen = new Set();
       for (const r of roots) {
-        if (!r || !r.querySelectorAll) continue;
-        for (const el of r.querySelectorAll(sel)) {
+        if (!r || !dom.get(r, 'querySelectorAll')) continue;
+        for (const el of dom.querySelectorAll(r, sel)) {
           if (el && !seen.has(el)) {
             seen.add(el);
             nodes.push(el);
@@ -79384,32 +81606,32 @@ const createDomHelpers = (function createDomHelpers(opts) {
         }
       }
       if (!nodes.length && !roots.length && document) {
-        nodes = Array.from(document.querySelectorAll(sel));
+        nodes = Array.from(dom.querySelectorAll(document, sel));
       }
     }
 
     const inc = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
     for (const el of nodes) {
-      if (!el || el.nodeType !== 1) continue;
+      if (!el || dom.nodeType(el) !== 1) continue;
 
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
-      const elementId = el.getAttribute('id');
+      const elementId = dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) inc(idCount, elementId.trim());
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute(a);
+        const v = dom.getAttribute(el, a);
         if (v && v.trim()) inc(testIdCount, a + '=' + v.trim());
       }
 
-      const name = el.getAttribute('name');
+      const name = dom.getAttribute(el, 'name');
       if (name && name.trim() && tag) inc(nameCount, tag + '|' + name.trim());
 
-      const aria = el.getAttribute('aria-label');
+      const aria = dom.getAttribute(el, 'aria-label');
       if (aria && aria.trim() && tag) inc(ariaLabelCount, tag + '|' + aria.trim());
 
-      const role = el.getAttribute('role');
+      const role = dom.getAttribute(el, 'role');
       if (role && role.trim() && aria && aria.trim()) {
         inc(roleAriaLabelCount, role.trim() + '|' + aria.trim());
       }
@@ -79420,9 +81642,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function buildSimpleSelector(el, fallbackTag) {
     try {
-      if (!el || el.nodeType !== 1) return fallbackTag || 'html';
+      if (!el || dom.nodeType(el) !== 1) return fallbackTag || 'html';
 
-      const tag = (el.tagName || fallbackTag || 'html').toLowerCase();
+      const tag = (dom.tagName(el) || fallbackTag || 'html').toLowerCase();
 
       const cssEscapeIdent = __cssEscapeIdent;
 
@@ -79432,15 +81654,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
-      const elementId = el.getAttribute && el.getAttribute('id');
+      const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
       if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-        const v = el.getAttribute && el.getAttribute(a);
+        const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
         if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
-      const name = el.getAttribute && el.getAttribute('name');
+      const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
       if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
@@ -79493,12 +81715,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
     try {
-      if (!el || el.nodeType !== 1) return 'html';
+      if (!el || dom.nodeType(el) !== 1) return 'html';
 
       const cssEscape = __cssEscapeIdent;
 
       const idx = getUniqIndex();
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
 
       // NOTE: every anchor builder below keys its uniqueness-index lookup on
       // the *trimmed* attribute value (matching how the index itself was
@@ -79520,7 +81742,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // `querySelector` (this comparisons project's own tooling included)
       // silently gets the *wrong* element instead of an error.
       const uniqueIdSel = () => {
-        const elementId = el.getAttribute('id');
+        const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
@@ -79529,7 +81751,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-          const v = el.getAttribute(a);
+          const v = dom.getAttribute(el, a);
           if (!v || !v.trim()) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
@@ -79540,7 +81762,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueNameSel = () => {
-        const v = el.getAttribute('name');
+        const v = dom.getAttribute(el, 'name');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
@@ -79549,7 +81771,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueAriaSel = () => {
-        const v = el.getAttribute('aria-label');
+        const v = dom.getAttribute(el, 'aria-label');
         if (!v || !v.trim() || !tag) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
@@ -79558,8 +81780,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       };
 
       const uniqueRoleAriaSel = () => {
-        const role = el.getAttribute('role');
-        const aria = el.getAttribute('aria-label');
+        const role = dom.getAttribute(el, 'role');
+        const aria = dom.getAttribute(el, 'aria-label');
         if (!role || !role.trim() || !aria || !aria.trim()) return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
@@ -79582,8 +81804,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const parts = [];
 
       function nthOfType(node) {
-        const t = (node.tagName || '').toLowerCase() || '*';
-        const p = node.parentElement;
+        const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        const p = dom.parentElement(node);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
@@ -79624,19 +81846,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // uniqueness re-check.
       const stopAtMatchedRoot = roots.length <= 1;
 
-      while (node && node.nodeType === 1 && safety++ < 20) {
+      while (node && dom.nodeType(node) === 1 && safety++ < 20) {
         let anchor = null;
 
         if (node !== el) {
-          const t = (node.tagName || '').toLowerCase();
+          const t = (dom.tagName(node) || '').toLowerCase();
           // Same trimmed-key-lookup / raw-value-embed split as the direct
           // anchor builders above -- see this function's header comment.
-          const id = node.getAttribute('id');
+          const id = dom.getAttribute(node, 'id');
           if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
             anchor = '#' + cssEscape(id);
           if (!anchor) {
             for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-              const v = node.getAttribute(a);
+              const v = dom.getAttribute(node, a);
               if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
                 anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                 break;
@@ -79644,7 +81866,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const name = node.getAttribute('name');
+            const name = dom.getAttribute(node, 'name');
             if (
               name &&
               name.trim() &&
@@ -79656,7 +81878,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
             }
           }
           if (!anchor) {
-            const aria = node.getAttribute('aria-label');
+            const aria = dom.getAttribute(node, 'aria-label');
             if (
               aria &&
               aria.trim() &&
@@ -79678,8 +81900,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
           parts.unshift(nthOfType(node));
         }
 
-        if (!node.parentElement || (stopAtMatchedRoot && roots.includes(node))) break;
-        node = node.parentElement;
+        if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) break;
+        node = dom.parentElement(node);
       }
 
       const candidate = parts.join(' > ') || tag || 'html';
@@ -79708,7 +81930,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // flat, unidentified siblings (e.g. hundreds of unlabeled
       // <img>s), while contributing no realistic additional safety.
       try {
-        if (el && typeof el.matches === 'function' && el.matches(candidate)) return candidate;
+        if (el && typeof dom.get(el, 'matches') === 'function' && dom.matches(el, candidate))
+          return candidate;
       } catch {}
 
       return buildSimpleSelector(el, tag || 'html');
@@ -79753,9 +81976,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // The only unbounded walk here. A consistent tree ends it at the
       // root; this bound covers a parent chain that cycles, and sits far
       // above any depth a real document reaches.
-      while (node && node.parentElement) {
+      while (node && dom.parentElement(node)) {
         if (guard++ >= 10000) return null;
-        const parent = node.parentElement;
+        const parent = dom.parentElement(node);
         // Counted by sibling links, not parent.children: in jsdom that
         // collection stays live once read, and every later change under a
         // large parent (body, say) rebuilds it, which made closing a
@@ -79764,7 +81987,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         let idx = info ? info.index : -1;
         if (idx < 0) {
           idx = 0;
-          for (let sib = node.previousElementSibling; sib; sib = sib.previousElementSibling) idx++;
+          for (
+            let sib = dom.previousElementSibling(node);
+            sib;
+            sib = dom.previousElementSibling(sib)
+          )
+            idx++;
         }
         path.unshift(idx);
         node = parent;
@@ -79772,7 +82000,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // The path is from documentElement down. An element in a shadow tree
       // is not under it: its path would count from the shadow root's first
       // element and name an element in the document instead.
-      if (node && node.parentNode && node.parentNode.nodeType === 11) return null;
+      if (node && dom.parentNode(node) && dom.nodeType(dom.parentNode(node)) === 11) return null;
     } catch {
       return null;
     }
@@ -79785,13 +82013,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // element in the document, or when a host gets no selector.
   function buildShadowHostSelectors(el) {
     try {
-      if (!el || el.nodeType !== 1 || typeof el.getRootNode !== 'function') return null;
+      if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
+        return null;
       const hosts = [];
-      let root = el.getRootNode();
+      let root = dom.getRootNode(el);
       let guard = 0;
-      while (root && root.nodeType === 11 && root.host && guard++ < 100) {
-        hosts.unshift(root.host);
-        root = root.host.getRootNode();
+      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+        hosts.unshift(dom.host(root));
+        root = dom.getRootNode(dom.host(root));
       }
       if (!hosts.length) return null;
       const out = [];
@@ -79826,7 +82055,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       selector &&
       typeof selector === 'string' &&
       document &&
-      typeof document.querySelector === 'function'
+      typeof dom.get(document, 'querySelector') === 'function'
     ) {
       // A rule that reports its element never lands here. Counted so the
       // cost of re-finding one shows up in perfStats, not just as a slow scan.
@@ -79834,7 +82063,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       let el;
       try {
-        el = document.querySelector(selector);
+        el = dom.querySelector(document, selector);
       } catch {
         el = null;
       }
@@ -79862,10 +82091,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // for those.
     try {
       if (!isElement(el)) return false;
-      const tag = (el.tagName || '').toLowerCase();
+      const tag = (dom.tagName(el) || '').toLowerCase();
       if (tag === 'textarea') return true;
       if (tag !== 'input') return false;
-      const type = ((el.getAttribute && (el.getAttribute('type') || 'text')) || 'text')
+      const type = (
+        (dom.get(el, 'getAttribute') && (dom.getAttribute(el, 'type') || 'text')) ||
+        'text'
+      )
         .toLowerCase()
         .trim();
       const t = type || 'text';
@@ -79912,9 +82144,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // visually hidden (clipped) label is rendered, so it counts too.
   function isLabelHiddenApartFromControl(lab, control) {
     const controlChain = new Set();
-    for (let n = control; n; n = n.parentElement) controlChain.add(n);
-    for (let n = lab; n && !controlChain.has(n); n = n.parentElement) {
-      if (n.hasAttribute('hidden')) return true;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let n = control, i = 0; n && i < 100000; n = dom.parentElement(n), i++)
+      controlChain.add(n);
+    for (
+      let n = lab, i = 0;
+      n && i < 100000 && !controlChain.has(n);
+      n = dom.parentElement(n), i++
+    ) {
+      if (dom.hasAttribute(n, 'hidden')) return true;
       if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
       if (computedStyle(n).display === 'none') return true;
     }
@@ -80015,8 +82253,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getNativeHostNameInfo(el, _ctx, opts) {
     const none = { present: false, value: '', mechanism: 'none' };
     if (!isElement(el)) return none;
-    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return none;
-    const tag = lower(el.localName || el.tagName);
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return none;
+    const tag = lower(dom.localName(el) || dom.tagName(el));
 
     try {
       const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
@@ -80029,9 +82268,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = el.children ? Array.from(el.children) : [];
+      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
       for (const kid of kids) {
-        if (lower(kid.localName) === childTag) return kid;
+        if (lower(dom.localName(kid)) === childTag) return kid;
       }
       return null;
     };
@@ -80185,7 +82424,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // so we must be able to recover the stable realm window to share caches.
     const w =
       realmWindow ||
-      (document && document.defaultView) ||
+      (document && dom.defaultView(document)) ||
       (typeof global !== 'undefined' && global.window ? global.window : null);
 
     if (w) {
@@ -80245,7 +82484,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function isWholeDocumentScope() {
     if (fragment) return false;
-    return roots.includes(document.documentElement);
+    return roots.includes(dom.documentElement(document));
   }
 
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
@@ -80271,6 +82510,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   return {
+    // DOM reads a page's named form controls and images can't redirect
+    // (src/core/safe-dom.js): rules read the DOM through these.
+    dom,
+
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
 
@@ -80308,6 +82551,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // IDREF primitives
     resolveIdRefs,
+    getElementByIdInTree,
     getTextFromIdRefs,
     getTextFromIdRefsIdrefEligible,
 
@@ -80346,6 +82590,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getTextBoundaryKind,
+    isVisuallyHidden,
 
     // Role / focusability
     getRoleInfo,
@@ -80419,6 +82665,7 @@ const normalizeUncertainty = (function normalizeUncertainty(input) {
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 const resolveMargin = (function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
+  const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
@@ -80449,7 +82696,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   const position = (a, b) => {
     try {
-      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+      return typeof dom.get(a, 'compareDocumentPosition') === 'function'
+        ? dom.compareDocumentPosition(a, b)
+        : 0;
     } catch {
       return 0;
     }
@@ -81143,11 +83392,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
 });
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
+  const dom = createSafeDom();
   let layout;
   try {
-    const root = doc && doc.documentElement;
-    const rects = root && typeof root.getClientRects === 'function' ? root.getClientRects() : null;
-    layout = !!(win && rects && rects.length > 0 && typeof doc.createRange === 'function');
+    const root = doc && dom.documentElement(doc);
+    const rects =
+      root && typeof dom.get(root, 'getClientRects') === 'function'
+        ? dom.getClientRects(root)
+        : null;
+    layout = !!(
+      win &&
+      rects &&
+      rects.length > 0 &&
+      typeof dom.get(doc, 'createRange') === 'function'
+    );
   } catch {
     layout = false;
   }
@@ -81161,7 +83419,9 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   if (Number.isFinite(dpr) && dpr > 0) env.devicePixelRatio = dpr;
   try {
     if (typeof win.matchMedia === 'function') {
-      env.colorScheme = win.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      env.colorScheme = dom.get(win.matchMedia('(prefers-color-scheme: dark)'), 'matches')
+        ? 'dark'
+        : 'light';
     }
   } catch {}
   // Whether a font face is still loading, asked of each face rather than of
@@ -81170,7 +83430,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // does, while every face is loaded and nothing is fetched. A second scan
   // straight after a first would otherwise say its fonts were loading.
   try {
-    const fonts = doc.fonts;
+    const fonts = dom.fonts(doc);
     if (fonts && typeof fonts.forEach === 'function') {
       let loading = false;
       fonts.forEach((face) => {
@@ -81185,10 +83445,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // and may never load in a scan. Queried rather than read from
   // document.images, which is a live collection.
   try {
-    if (typeof doc.querySelectorAll === 'function') {
+    if (typeof dom.get(doc, 'querySelectorAll') === 'function') {
       let loading = false;
-      for (const img of doc.querySelectorAll('img')) {
-        const lazy = String(img.getAttribute('loading') || '').toLowerCase() === 'lazy';
+      for (const img of dom.querySelectorAll(doc, 'img')) {
+        const lazy = String(dom.getAttribute(img, 'loading') || '').toLowerCase() === 'lazy';
         if (!img.complete && !lazy) loading = true;
       }
       env.images = loading ? 'loading' : 'loaded';
@@ -81198,9 +83458,11 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  const dom = createSafeDom();
   let animations = [];
   try {
-    if (doc && typeof doc.getAnimations === 'function') animations = doc.getAnimations();
+    if (doc && typeof dom.get(doc, 'getAnimations') === 'function')
+      animations = dom.getAnimations(doc);
   } catch {
     animations = [];
   }
@@ -81208,7 +83470,8 @@ const settleAnimations = (function settleAnimations(doc) {
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
-      if (anim.timeline && doc.timeline && anim.timeline !== doc.timeline) continue;
+      if (dom.timeline(anim) && dom.timeline(doc) && dom.timeline(anim) !== dom.timeline(doc))
+        continue;
       const currentTime = anim.currentTime;
       if (typeof currentTime !== 'number') continue;
       const timing =
@@ -81243,6 +83506,7 @@ const runCoreSettled = (function runCoreSettled(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
+  const dom = createSafeDom();
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -81305,7 +83569,7 @@ const runCoreSettled = (function runCoreSettled(
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
   const url = pageUrl || (document.location && document.location.href) || null;
-  const title = document.title || null;
+  const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
   const timestamp =
     engineOptionsResolved &&
@@ -81315,7 +83579,7 @@ const runCoreSettled = (function runCoreSettled(
       : null;
 
   // Read before any rule runs: some change the page while they measure it.
-  const environment = readRenderingEnvironment(document.defaultView || window, document);
+  const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
 
   // createDomHelpers()/createContrastHelpers() persist their element-keyed
   // caches (outerHtmlCache, selectorCache, etc.) on window.__a11ycoreSharedCache
@@ -82080,26 +84344,35 @@ const runCore = (function runCore(
   SCHEMA_VERSION,
   COMPOSITE_RULES
 ) {
-  const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+  // Plain reads unless this page has an element named after a DOM property,
+  // which could override what the engine reads (src/core/safe-dom.js).
+  const restoreDomProtection = createSafeDom().protectFor(
+    typeof document !== 'undefined' ? document : null
+  );
   try {
-    const result = runCoreSettled(
-      pageUrl,
-      contextSelector,
-      engineOptions,
-      runOnly,
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    );
+    const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
     try {
-      const env = result && result.engine && result.engine.environment;
-      if (env && env.layout) env.animationsSettled = settled.count;
-    } catch {}
-    return result;
+      const result = runCoreSettled(
+        pageUrl,
+        contextSelector,
+        engineOptions,
+        runOnly,
+        CHECK_DEFS,
+        RULE_IMPLS,
+        ENGINE_TAG,
+        SCHEMA_VERSION,
+        COMPOSITE_RULES
+      );
+      try {
+        const env = result && result.engine && result.engine.environment;
+        if (env && env.layout) env.animationsSettled = settled.count;
+      } catch {}
+      return result;
+    } finally {
+      settled.restore();
+    }
   } finally {
-    settled.restore();
+    restoreDomProtection();
   }
 });
 
@@ -82119,10 +84392,11 @@ const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
   return win.__a11yCoreFrameRpc__;
 });
 const installFrameRpcListener = (function installFrameRpcListener(win, channel) {
+  const dom = createSafeDom();
   const registry = getFrameRpcRegistry(win);
   if (registry.listening) return registry;
 
-  win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
+  dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
     const data = event && event.data;
     if (!data || data.__a11ycore !== true || data.channel !== channel) return;
 
@@ -82347,6 +84621,508 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
 // =======================
 const __a11yCoreCrossFrameApi = (function () {
   const FRAME_RPC_CHANNEL = "__frame_rpc_v1__";
+  const SAFE_DOM_GETTERS = [
+  "activeElement",
+  "assignedSlot",
+  "attributes",
+  "baseURI",
+  "body",
+  "childElementCount",
+  "childNodes",
+  "children",
+  "contentDocument",
+  "contentWindow",
+  "defaultView",
+  "doctype",
+  "documentElement",
+  "firstChild",
+  "firstElementChild",
+  "fonts",
+  "head",
+  "host",
+  "isConnected",
+  "lastChild",
+  "lastElementChild",
+  "localName",
+  "namespaceURI",
+  "nextElementSibling",
+  "nextSibling",
+  "nodeName",
+  "nodeType",
+  "nodeValue",
+  "outerHTML",
+  "ownerDocument",
+  "parentElement",
+  "parentNode",
+  "previousElementSibling",
+  "previousSibling",
+  "readyState",
+  "shadowRoot",
+  "styleSheets",
+  "tagName",
+  "textContent",
+  "timeline"
+];
+  const SAFE_DOM_METHODS = [
+  "addEventListener",
+  "appendChild",
+  "assignedElements",
+  "assignedNodes",
+  "blur",
+  "checkVisibility",
+  "cloneNode",
+  "closest",
+  "compareDocumentPosition",
+  "contains",
+  "createElement",
+  "createRange",
+  "createTreeWalker",
+  "elementFromPoint",
+  "elementsFromPoint",
+  "focus",
+  "getAnimations",
+  "getAttribute",
+  "getAttributeNames",
+  "getBoundingClientRect",
+  "getClientRects",
+  "getElementById",
+  "getElementsByClassName",
+  "getElementsByTagName",
+  "getRootNode",
+  "hasAttribute",
+  "hasChildNodes",
+  "insertBefore",
+  "matches",
+  "querySelector",
+  "querySelectorAll",
+  "removeAttribute",
+  "removeChild",
+  "removeEventListener",
+  "setAttribute"
+];
+const SAFE_DOM_OTHER_NAMES = [
+  "clientHeight",
+  "clientWidth",
+  "id",
+  "style",
+  "title"
+];
+const createSafeDom = (function createSafeDom() {
+  // One instance per realm of this script: the lookups depend only on the
+  // prototypes they are given, so sharing it across scans is safe.
+  if (createSafeDom.__instance) return createSafeDom.__instance;
+
+  // Captured once, so a page that later replaces them doesn't change how
+  // the engine reads its own DOM.
+  const getProto = Object.getPrototypeOf;
+  const getOwnDesc = Object.getOwnPropertyDescriptor;
+  const apply = Reflect.apply;
+  const objectHasOwn = Object.prototype.hasOwnProperty;
+  const hasOwn =
+    typeof Object.hasOwn === 'function'
+      ? Object.hasOwn
+      : (obj, name) => apply(objectHasOwn, obj, [name]);
+
+  // What a prototype chain defines for a name: its getter, its method, or
+  // nothing -- and then whether the chain is a DOM node's, which reads a
+  // name it doesn't define as undefined (an ordinary read would reach a named
+  // element), unlike any other object, which is read the ordinary way.
+  const NONE = Object.freeze({ getter: null, value: undefined, node: false });
+  const NONE_NODE = Object.freeze({ getter: null, value: undefined, node: true });
+
+  // Only an accessor or a function counts: a named-properties object
+  // (Window's, which holds `window.<id>` entries) has plain data properties
+  // for named elements, and those must be passed over to reach the real
+  // method further up.
+  function findOnChain(proto, name) {
+    for (let p = proto; p; p = getProto(p)) {
+      const d = getOwnDesc(p, name);
+      if (d && typeof d.get === 'function') return { getter: d.get, value: undefined, node: false };
+      if (d && typeof d.value === 'function') return { getter: null, value: d.value, node: false };
+    }
+    return null;
+  }
+
+  function isNodeChain(proto) {
+    const found = proto ? findOnChain(proto, 'nodeType') : null;
+    return !!(found && found.getter);
+  }
+
+  // Whether `v` is what a named element puts in place of a property: an
+  // element, a collection of them (two controls sharing a name), or a
+  // window (an iframe's name).
+  function isNamedElementValue(v) {
+    if (v === null || (typeof v !== 'object' && typeof v !== 'function')) return false;
+    const proto = getProto(v);
+    if (!proto) return false;
+    if (isNodeChain(proto)) return true;
+    const item = findOnChain(proto, 'item');
+    if (item && item.value && findOnChain(proto, 'length')) return true;
+    try {
+      return v.window === v;
+    } catch {
+      return true;
+    }
+  }
+
+  // Whether objects with this prototype can have properties overridden by
+  // named elements: a form (HTMLFormElement), a document (Document) or a
+  // window (whose named-properties object sits in its chain). Every other
+  // object is read the ordinary way. Recognised by what their prototypes
+  // define, so it works for any realm.
+  // 0: not guarded; FORM: a form; OWNER: a document or a window, where a
+  // script or a test may have put its own wrapper on the object itself.
+  const FORM = 1;
+  const OWNER = 2;
+  const guardedByProto = new WeakMap();
+  function guardOf(proto) {
+    let g = guardedByProto.get(proto);
+    if (g !== undefined) return g;
+    g = 0;
+    for (let p = proto; p && !g; p = getProto(p)) {
+      if (getOwnDesc(p, 'acceptCharset'))
+        g = FORM; // HTMLFormElement.prototype
+      else if (getOwnDesc(p, 'documentElement') || getOwnDesc(p, 'getComputedStyle')) {
+        g = OWNER; // Document.prototype, Window.prototype
+      }
+    }
+    guardedByProto.set(proto, g);
+    return g;
+  }
+
+  // What the prototype chain defines for each name, per prototype: read on a
+  // form, a document or a window.
+  const byName = new Map();
+  function protectedGet(obj, name) {
+    const proto = getProto(obj);
+    // On a document or a window, a property the object holds itself (a
+    // wrapper a script put on it, a test's stand-in) is honoured, as an
+    // ordinary read would, unless it is a named element. Forms are not
+    // checked: asking a form for its own properties means searching its
+    // named controls, which is slow, and scripts don't wrap form methods.
+    if (guardOf(proto) === OWNER && hasOwn(obj, name)) {
+      let d;
+      try {
+        d = getOwnDesc(obj, name);
+      } catch {
+        d = null;
+      }
+      if (d && !('value' in d && isNamedElementValue(d.value))) {
+        return d.get ? apply(d.get, obj, []) : d.value;
+      }
+    }
+    let byProto = byName.get(name);
+    if (!byProto) {
+      byProto = new WeakMap();
+      byName.set(name, byProto);
+    }
+    let entry = byProto.get(proto);
+    if (!entry) {
+      entry = findOnChain(proto, name) || (isNodeChain(proto) ? NONE_NODE : NONE);
+      byProto.set(proto, entry);
+    }
+    if (entry.getter) return apply(entry.getter, obj, []);
+    if (entry.value) return entry.value;
+    return entry.node ? undefined : obj[name];
+  }
+  function protectedCall(obj, name, ...args) {
+    return apply(protectedGet(obj, name), obj, args);
+  }
+
+  // Whether the page being scanned can override properties at all. Only an
+  // element whose id or name is the name of a DOM property can (a form's
+  // controls, document's and window's named elements), so a scan checks the
+  // page once at its start (protectFor) and, on the nearly every page where
+  // no such element exists, the accessors are the plain reads they replace.
+  // Outside a scan, and whenever the check can't tell, they protect.
+  let protect = true;
+
+  // The names a named element could override and the engine would then
+  // read wrongly: on a form or a document, every name the accessors read; on
+  // a window, the EventTarget methods (the only ones a window's named
+  // elements can reach, sitting below its own prototype).
+  const READ_NAMES = new Set([...SAFE_DOM_GETTERS, ...SAFE_DOM_METHODS, ...SAFE_DOM_OTHER_NAMES]);
+  const WINDOW_NAMES = new Set(['addEventListener', 'removeEventListener', 'dispatchEvent']);
+  // The elements a name or id of which names a property of their form (the
+  // listed elements, images, and form-associated custom elements) or of the
+  // document (embeds, forms, iframes, images, objects).
+  const NAMED_TAGS = new Set([
+    'button',
+    'embed',
+    'fieldset',
+    'form',
+    'iframe',
+    'img',
+    'input',
+    'object',
+    'output',
+    'select',
+    'textarea'
+  ]);
+
+  // Whether an element in `doc`, or in an open shadow root inside it, has an
+  // id or name that would override something the engine reads. Reads
+  // through the protected path throughout, since the page may be one that
+  // overrides.
+  function pageCanOverride(doc) {
+    const docEl = protectedGet(doc, 'documentElement');
+    if (!docEl) return false;
+    // The element methods and getters, found once on the root element's
+    // prototype chain and applied to every element: they are Element's, so
+    // they work on any element, and resolving them per element would cost
+    // more than the check itself on a small page.
+    const elProto = getProto(docEl);
+    const found = (name) => findOnChain(elProto, name) || {};
+    const getAttribute = found('getAttribute').value;
+    const localName = found('localName').getter;
+    const shadowRoot = found('shadowRoot').getter;
+    if (!getAttribute || !localName) return true;
+    const roots = [doc];
+    for (let i = 0; i < roots.length; i++) {
+      const root = roots[i];
+      for (const el of protectedCall(root, 'querySelectorAll', '[id], [name]')) {
+        const id = apply(getAttribute, el, ['id']);
+        const name = apply(getAttribute, el, ['name']);
+        if ((id !== null && WINDOW_NAMES.has(id)) || (name !== null && WINDOW_NAMES.has(name))) {
+          return true;
+        }
+        const tag = String(apply(localName, el, []) || '');
+        if (!NAMED_TAGS.has(tag) && tag.indexOf('-') === -1) continue;
+        if ((id !== null && READ_NAMES.has(id)) || (name !== null && READ_NAMES.has(name))) {
+          return true;
+        }
+      }
+      if (!shadowRoot) continue;
+      const walker = protectedCall(doc, 'createTreeWalker', root === doc ? docEl : root, 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (el === root) continue;
+        const shadow = apply(shadowRoot, el, []);
+        if (shadow) roots.push(shadow);
+      }
+    }
+    return false;
+  }
+
+  // Sets the accessors for a scan of `doc`, and returns what puts them back.
+  function protectFor(doc) {
+    const before = protect;
+    let can;
+    try {
+      can = !doc || pageCanOverride(doc);
+    } catch {
+      can = true;
+    }
+    protect = can;
+    return () => {
+      protect = before;
+    };
+  }
+
+  // Whether `obj` needs the protected read, remembering the last prototype
+  // seen: loops over the DOM meet the same few prototypes over and over.
+  // Object.getPrototypeOf throws on null and undefined, as reading a property
+  // of them does.
+  let lastProto;
+  let lastGuard = 0;
+  function guard(obj) {
+    const proto = getProto(obj);
+    if (proto !== lastProto) {
+      lastProto = proto;
+      lastGuard = proto === null ? 0 : guardOf(proto);
+    }
+    return lastGuard;
+  }
+
+  // One accessor per name, written out with the name in the source rather
+  // than looked up by a variable, so the engine running this code can
+  // optimise each one, and inline it where it is called, as it would the
+  // plain read it replaces. On an object no named element can affect, it is
+  // that plain read. Methods pass four arguments through: the DOM methods
+  // here take at most three, and an argument passed as undefined is the same
+  // to them as one left out. tests/core/safe-dom.test.js checks this list
+  // against SAFE_DOM_GETTERS and SAFE_DOM_METHODS.
+  const dom = {
+    get: (o, name) => (protect && guard(o) ? protectedGet(o, name) : o[name]),
+    call: (o, name, ...args) =>
+      protect && guard(o) ? protectedCall(o, name, ...args) : apply(o[name], o, args),
+    protectFor,
+    activeElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'activeElement') : o.activeElement,
+    assignedSlot: (o) => (protect && guard(o) ? protectedGet(o, 'assignedSlot') : o.assignedSlot),
+    attributes: (o) => (protect && guard(o) ? protectedGet(o, 'attributes') : o.attributes),
+    baseURI: (o) => (protect && guard(o) ? protectedGet(o, 'baseURI') : o.baseURI),
+    body: (o) => (protect && guard(o) ? protectedGet(o, 'body') : o.body),
+    childElementCount: (o) =>
+      protect && guard(o) ? protectedGet(o, 'childElementCount') : o.childElementCount,
+    childNodes: (o) => (protect && guard(o) ? protectedGet(o, 'childNodes') : o.childNodes),
+    children: (o) => (protect && guard(o) ? protectedGet(o, 'children') : o.children),
+    contentDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentDocument') : o.contentDocument,
+    contentWindow: (o) =>
+      protect && guard(o) ? protectedGet(o, 'contentWindow') : o.contentWindow,
+    defaultView: (o) => (protect && guard(o) ? protectedGet(o, 'defaultView') : o.defaultView),
+    doctype: (o) => (protect && guard(o) ? protectedGet(o, 'doctype') : o.doctype),
+    documentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'documentElement') : o.documentElement,
+    firstChild: (o) => (protect && guard(o) ? protectedGet(o, 'firstChild') : o.firstChild),
+    firstElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'firstElementChild') : o.firstElementChild,
+    fonts: (o) => (protect && guard(o) ? protectedGet(o, 'fonts') : o.fonts),
+    head: (o) => (protect && guard(o) ? protectedGet(o, 'head') : o.head),
+    host: (o) => (protect && guard(o) ? protectedGet(o, 'host') : o.host),
+    isConnected: (o) => (protect && guard(o) ? protectedGet(o, 'isConnected') : o.isConnected),
+    lastChild: (o) => (protect && guard(o) ? protectedGet(o, 'lastChild') : o.lastChild),
+    lastElementChild: (o) =>
+      protect && guard(o) ? protectedGet(o, 'lastElementChild') : o.lastElementChild,
+    localName: (o) => (protect && guard(o) ? protectedGet(o, 'localName') : o.localName),
+    namespaceURI: (o) => (protect && guard(o) ? protectedGet(o, 'namespaceURI') : o.namespaceURI),
+    nextElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'nextElementSibling') : o.nextElementSibling,
+    nextSibling: (o) => (protect && guard(o) ? protectedGet(o, 'nextSibling') : o.nextSibling),
+    nodeName: (o) => (protect && guard(o) ? protectedGet(o, 'nodeName') : o.nodeName),
+    nodeType: (o) => (protect && guard(o) ? protectedGet(o, 'nodeType') : o.nodeType),
+    nodeValue: (o) => (protect && guard(o) ? protectedGet(o, 'nodeValue') : o.nodeValue),
+    outerHTML: (o) => (protect && guard(o) ? protectedGet(o, 'outerHTML') : o.outerHTML),
+    ownerDocument: (o) =>
+      protect && guard(o) ? protectedGet(o, 'ownerDocument') : o.ownerDocument,
+    parentElement: (o) =>
+      protect && guard(o) ? protectedGet(o, 'parentElement') : o.parentElement,
+    parentNode: (o) => (protect && guard(o) ? protectedGet(o, 'parentNode') : o.parentNode),
+    previousElementSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousElementSibling') : o.previousElementSibling,
+    previousSibling: (o) =>
+      protect && guard(o) ? protectedGet(o, 'previousSibling') : o.previousSibling,
+    readyState: (o) => (protect && guard(o) ? protectedGet(o, 'readyState') : o.readyState),
+    shadowRoot: (o) => (protect && guard(o) ? protectedGet(o, 'shadowRoot') : o.shadowRoot),
+    styleSheets: (o) => (protect && guard(o) ? protectedGet(o, 'styleSheets') : o.styleSheets),
+    tagName: (o) => (protect && guard(o) ? protectedGet(o, 'tagName') : o.tagName),
+    textContent: (o) => (protect && guard(o) ? protectedGet(o, 'textContent') : o.textContent),
+    timeline: (o) => (protect && guard(o) ? protectedGet(o, 'timeline') : o.timeline),
+    addEventListener: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'addEventListener', a, b, c, d)
+        : o.addEventListener(a, b, c, d),
+    appendChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'appendChild', a, b, c, d) : o.appendChild(a, b, c, d),
+    assignedElements: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedElements', a, b, c, d)
+        : o.assignedElements(a, b, c, d),
+    assignedNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'assignedNodes', a, b, c, d)
+        : o.assignedNodes(a, b, c, d),
+    blur: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'blur', a, b, c, d) : o.blur(a, b, c, d),
+    checkVisibility: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'checkVisibility', a, b, c, d)
+        : o.checkVisibility(a, b, c, d),
+    cloneNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'cloneNode', a, b, c, d) : o.cloneNode(a, b, c, d),
+    closest: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'closest', a, b, c, d) : o.closest(a, b, c, d),
+    compareDocumentPosition: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'compareDocumentPosition', a, b, c, d)
+        : o.compareDocumentPosition(a, b, c, d),
+    contains: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'contains', a, b, c, d) : o.contains(a, b, c, d),
+    createElement: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createElement', a, b, c, d)
+        : o.createElement(a, b, c, d),
+    createRange: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'createRange', a, b, c, d) : o.createRange(a, b, c, d),
+    createTreeWalker: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'createTreeWalker', a, b, c, d)
+        : o.createTreeWalker(a, b, c, d),
+    elementFromPoint: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'elementFromPoint', a, b, c, d)
+        : o.elementFromPoint(a, b, c, d),
+    elementsFromPoint: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'elementsFromPoint', a, b, c, d)
+        : o.elementsFromPoint(a, b, c, d),
+    focus: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'focus', a, b, c, d) : o.focus(a, b, c, d),
+    getAnimations: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAnimations', a, b, c, d)
+        : o.getAnimations(a, b, c, d),
+    getAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getAttribute', a, b, c, d)
+        : o.getAttribute(a, b, c, d),
+    getAttributeNames: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getAttributeNames', a, b, c, d)
+        : o.getAttributeNames(a, b, c, d),
+    getBoundingClientRect: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getBoundingClientRect', a, b, c, d)
+        : o.getBoundingClientRect(a, b, c, d),
+    getClientRects: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getClientRects', a, b, c, d)
+        : o.getClientRects(a, b, c, d),
+    getElementById: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getElementById', a, b, c, d)
+        : o.getElementById(a, b, c, d),
+    getElementsByClassName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByClassName', a, b, c, d)
+        : o.getElementsByClassName(a, b, c, d),
+    getElementsByTagName: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'getElementsByTagName', a, b, c, d)
+        : o.getElementsByTagName(a, b, c, d),
+    getRootNode: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    hasAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasAttribute', a, b, c, d)
+        : o.hasAttribute(a, b, c, d),
+    hasChildNodes: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'hasChildNodes', a, b, c, d)
+        : o.hasChildNodes(a, b, c, d),
+    insertBefore: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'insertBefore', a, b, c, d)
+        : o.insertBefore(a, b, c, d),
+    matches: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'matches', a, b, c, d) : o.matches(a, b, c, d),
+    querySelector: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelector', a, b, c, d)
+        : o.querySelector(a, b, c, d),
+    querySelectorAll: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'querySelectorAll', a, b, c, d)
+        : o.querySelectorAll(a, b, c, d),
+    removeAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'removeAttribute', a, b, c, d)
+        : o.removeAttribute(a, b, c, d),
+    removeChild: (o, a, b, c, d) =>
+      protect && guard(o) ? protectedCall(o, 'removeChild', a, b, c, d) : o.removeChild(a, b, c, d),
+    removeEventListener: (o, a, b, c, d) =>
+      guard(o)
+        ? protectedCall(o, 'removeEventListener', a, b, c, d)
+        : o.removeEventListener(a, b, c, d),
+    setAttribute: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'setAttribute', a, b, c, d)
+        : o.setAttribute(a, b, c, d)
+  };
+
+  createSafeDom.__instance = Object.freeze(dom);
+  return createSafeDom.__instance;
+});
 const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
   if (!win.__a11yCoreFrameRpc__) {
     win.__a11yCoreFrameRpc__ = {
@@ -82359,10 +85135,11 @@ const getFrameRpcRegistry = (function getFrameRpcRegistry(win) {
   return win.__a11yCoreFrameRpc__;
 });
 const installFrameRpcListener = (function installFrameRpcListener(win, channel) {
+  const dom = createSafeDom();
   const registry = getFrameRpcRegistry(win);
   if (registry.listening) return registry;
 
-  win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
+  dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
     const data = event && event.data;
     if (!data || data.__a11ycore !== true || data.channel !== channel) return;
 
@@ -82583,6 +85360,7 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   return [];
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
+  const dom = createSafeDom();
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
         const list = contextSelector
@@ -82595,7 +85373,8 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
       : null;
 
   if (!ctxSelector) {
-    const whole = document.documentElement || document.body || document.querySelector('html');
+    const whole =
+      dom.documentElement(document) || dom.body(document) || dom.querySelector(document, 'html');
     return { ctxSelector, roots: whole ? [whole] : [], unmatchedSelectors: [] };
   }
 
@@ -82606,7 +85385,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   for (const sel of selectorList) {
     let matches;
     try {
-      matches = document.querySelectorAll(sel);
+      matches = dom.querySelectorAll(document, sel);
     } catch {
       const err = new Error('contextSelector: "' + sel + '" is not a valid CSS selector.');
       err.code = 'INVALID_CONTEXT_SELECTOR';
@@ -82626,13 +85405,14 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
 });
 
 function findChildFrameElements(roots) {
+  const dom = createSafeDom();
   const seen = new Set();
   const out = [];
   for (const root of roots) {
-    if (!root || typeof root.querySelectorAll !== 'function') continue;
+    if (!root || typeof dom.get(root, 'querySelectorAll') !== 'function') continue;
     let matches;
     try {
-      matches = root.querySelectorAll('iframe, frame');
+      matches = dom.querySelectorAll(root, 'iframe, frame');
     } catch {
       matches = [];
     }
@@ -82647,27 +85427,34 @@ function findChildFrameElements(roots) {
 }
 
 function isFrameShown(el) {
+  const dom = createSafeDom();
   try {
-    if (typeof el.checkVisibility === 'function') {
-      return el.checkVisibility({ visibilityProperty: true });
+    if (typeof dom.get(el, 'checkVisibility') === 'function') {
+      return dom.checkVisibility(el, { visibilityProperty: true });
     }
   } catch {}
   return true;
 }
 
 function getFrameElementUrl(el) {
+  const dom = createSafeDom();
   try {
-    if (el.contentWindow && el.contentWindow.location && el.contentWindow.location.href) {
-      return el.contentWindow.location.href;
+    if (
+      dom.contentWindow(el) &&
+      dom.contentWindow(el).location &&
+      dom.contentWindow(el).location.href
+    ) {
+      return dom.contentWindow(el).location.href;
     }
   } catch {
     // Cross-origin: reading contentWindow.location.href itself throws. Fall
     // back to the authored src attribute (always readable, any origin).
   }
-  return el.getAttribute ? el.getAttribute('src') || null : null;
+  return dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'src') || null : null;
 }
 
 function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnly) {
+  const dom = createSafeDom();
   // An invalid contextSelector (or runOnly) throws in the local scan; reject
   // with it, as any other failure of this promise-returning call would.
   let topFrame;
@@ -82690,7 +85477,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
     const url = getFrameElementUrl(el);
     let targetWindow = null;
     try {
-      targetWindow = el.contentWindow || null;
+      targetWindow = dom.contentWindow(el) || null;
     } catch {
       targetWindow = null;
     }
@@ -82750,9 +85537,45 @@ const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrame
 // Waits for the page to load before a scan; the scan itself never calls it
 // (src/core/page-ready.js).
 async function waitForPageReady(options) {
+  // Reads DOM properties through the prototypes, so a page's named form
+  // controls and images can't redirect them (#90): the same lookup as
+  // src/core/safe-dom.js, repeated because this function travels alone.
+  const dom = (() => {
+    const lookup = (obj, name) => {
+      for (let p = Object.getPrototypeOf(obj); p; p = Object.getPrototypeOf(p)) {
+        const d = Object.getOwnPropertyDescriptor(p, name);
+        if (d && (typeof d.get === 'function' || typeof d.value === 'function')) return d;
+      }
+      return null;
+    };
+    const get = (obj, name) => {
+      const d = lookup(obj, name);
+      return d ? (d.get ? Reflect.apply(d.get, obj, []) : d.value) : obj[name];
+    };
+    const read = (name) => (obj) => {
+      const d = lookup(obj, name);
+      return d && d.get ? Reflect.apply(d.get, obj, []) : obj[name];
+    };
+    const call =
+      (name) =>
+      (obj, ...args) => {
+        const d = lookup(obj, name);
+        return Reflect.apply(d && typeof d.value === 'function' ? d.value : obj[name], obj, args);
+      };
+    return {
+      get,
+      defaultView: read('defaultView'),
+      fonts: read('fonts'),
+      readyState: read('readyState'),
+      querySelectorAll: call('querySelectorAll'),
+      getAttribute: call('getAttribute'),
+      addEventListener: call('addEventListener'),
+      removeEventListener: call('removeEventListener')
+    };
+  })();
   const opts = options && typeof options === 'object' ? options : {};
   const doc = opts.document || (typeof document !== 'undefined' ? document : null);
-  const win = doc && doc.defaultView ? doc.defaultView : null;
+  const win = doc && dom.defaultView(doc) ? dom.defaultView(doc) : null;
   const validTimeout = Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0;
   if (opts.timeoutMs !== undefined && !validTimeout) {
     try {
@@ -82781,17 +85604,18 @@ async function waitForPageReady(options) {
   }
 
   function pendingImages() {
-    if (!doc || typeof doc.querySelectorAll !== 'function') return [];
-    return Array.from(doc.querySelectorAll('img')).filter(
-      (img) => !img.complete && String(img.getAttribute('loading') || '').toLowerCase() !== 'lazy'
+    if (!doc || typeof dom.get(doc, 'querySelectorAll') !== 'function') return [];
+    return Array.from(dom.querySelectorAll(doc, 'img')).filter(
+      (img) =>
+        !img.complete && String(dom.getAttribute(img, 'loading') || '').toLowerCase() !== 'lazy'
     );
   }
 
   function fontsLoading() {
     let loading = false;
     try {
-      if (doc.fonts && typeof doc.fonts.forEach === 'function') {
-        doc.fonts.forEach((face) => {
+      if (dom.fonts(doc) && typeof dom.fonts(doc).forEach === 'function') {
+        dom.fonts(doc).forEach((face) => {
           if (face && face.status === 'loading') loading = true;
         });
       }
@@ -82801,18 +85625,18 @@ async function waitForPageReady(options) {
 
   let domQuiet;
   if (doc) {
-    if (doc.readyState !== 'complete' && win) {
+    if (dom.readyState(doc) !== 'complete' && win) {
       let onLoad = null;
       await within(
         new Promise((resolve) => {
           onLoad = resolve;
-          win.addEventListener('load', resolve, { once: true });
+          dom.addEventListener(win, 'load', resolve, { once: true });
         })
       );
-      if (onLoad) win.removeEventListener('load', onLoad);
+      if (onLoad) dom.removeEventListener(win, 'load', onLoad);
     }
 
-    if (doc.fonts && doc.fonts.ready && left() > 0) await within(doc.fonts.ready);
+    if (dom.fonts(doc) && dom.fonts(doc).ready && left() > 0) await within(dom.fonts(doc).ready);
 
     const images = pendingImages();
     if (images.length && left() > 0) {
@@ -82823,11 +85647,11 @@ async function waitForPageReady(options) {
             (img) =>
               new Promise((resolve) => {
                 if (img.complete) return resolve();
-                img.addEventListener('load', resolve, { once: true });
-                img.addEventListener('error', resolve, { once: true });
+                dom.addEventListener(img, 'load', resolve, { once: true });
+                dom.addEventListener(img, 'error', resolve, { once: true });
                 cleanups.push(() => {
-                  img.removeEventListener('load', resolve);
-                  img.removeEventListener('error', resolve);
+                  dom.removeEventListener(img, 'load', resolve);
+                  dom.removeEventListener(img, 'error', resolve);
                 });
               })
           )
@@ -82872,7 +85696,7 @@ async function waitForPageReady(options) {
   }
 
   const pending = {
-    load: !!doc && doc.readyState !== 'complete',
+    load: !!doc && dom.readyState(doc) !== 'complete',
     fonts: !!doc && fontsLoading(),
     images: pendingImages().length
   };

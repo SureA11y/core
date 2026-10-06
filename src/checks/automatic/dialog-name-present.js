@@ -52,6 +52,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64,8 +65,8 @@ function runInPage(ctx) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -87,7 +88,7 @@ function runInPage(ctx) {
     // all, the same pattern every other *-name-present rule guards against.
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -141,19 +142,12 @@ function runInPage(ctx) {
   }
 
   // The role the browser uses: the first token of the role attribute that
-  // names a concrete ARIA role, else the element's implicit role (dialog for
-  // a native <dialog>; the others are not in scope here).
-  const aria = helpers && helpers.aria;
+  // names a concrete ARIA role (in any case), else the element's implicit
+  // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const tokens = getAttr(el, 'role').toLowerCase().split(' ').filter(Boolean);
-    for (const t of tokens) {
-      const concrete =
-        aria && typeof aria.isValidConcreteRole === 'function'
-          ? aria.isValidConcreteRole(t)
-          : t === 'dialog' || t === 'alertdialog';
-      if (concrete) return t;
-    }
-    return String(el.tagName || '').toLowerCase() === 'dialog' ? 'dialog' : '';
+    const explicit = helpers.aria.getExplicitRole(el);
+    if (explicit) return explicit;
+    return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
 
   for (const el of nodes) {

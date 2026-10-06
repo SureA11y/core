@@ -17,6 +17,10 @@ serialization constraint as everything else in `runInPage` (§1 of `RULE_AUTHORI
 
 ---
 
+## 0) `dom`: reading the DOM safely
+
+`helpers.dom` reads DOM properties and calls DOM methods in a way a page's named form controls and images can't redirect (`src/core/safe-dom.js`): `dom.parentNode(el)`, `dom.getAttribute(el, 'role')`, `dom.get(document, 'title')`, `dom.call(walker, 'nextSibling')`. Every rule reads the DOM through it; see [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §1.2 for why and how.
+
 ## 1) Query & traversal
 
 ### `queryAll(selector)` → `Element[]`
@@ -167,6 +171,24 @@ of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that can
 decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
 matching the values yourself, so every rule agrees on what visually hidden means.
 
+### `isVisuallyHidden(el)` → `boolean`
+Whether an element's box is drawn so that nothing in it can be seen, though it is
+rendered and stays in the accessibility tree: fully transparent, clipped away
+(`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
+compute), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
+patterns; the result holds for the whole subtree. For "is this text on screen?", as
+`label-in-name` asks of a control's visible label (#93).
+
+### `getTextBoundaryKind(el)` → `'inline' | 'inline-box' | 'block'`
+How an element breaks the text around it, from its computed `display`: `'inline'` breaks
+nothing (`<b>Down</b>load` reads "Download"); `'inline-box'` (`inline-block`,
+`inline-flex`, …) adds a space in an accessible name but no break in visible text;
+`'block'` starts a new line in visible text and adds a space in a name. A `<br>` is
+`'block'`; absolute or fixed positioning, a float and being a flex or grid item make a
+box block-level, as browsers compute it (jsdom doesn't); `display: contents` and `none`
+are `'inline'`. Use it when joining the text of several elements, so pieces split across
+inline tags aren't spaced apart.
+
 ### `isWholeDocumentScope()` → `boolean`
 `true` unless `engineOptions.fragment: true` was set, or `contextSelector` scoped the
 run narrower than the whole document. Required for any rule checking a page-wide,
@@ -276,9 +298,13 @@ Name"></a>` and `<button><span aria-label="Close"></span></button>` both name co
 A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
 speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
 `aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
+Pieces join as Chromium joins them: text in inline elements as written
+(`<b>Down</b>load` is "Download"), with a space around an element that isn't
+`display: inline` (`getTextBoundaryKind`) and around a piece that is a name of its own
+(`alt`, `aria-label`, an SVG title).
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
-Real `<label>` element(s) associated with `el` — a `<label for="id">` pointing at it,
+Real `<label>` element(s) associated with `el` — a `<label for="id">` in its own tree (§4) pointing at it,
 plus a wrapping `<label>` whose first labelable descendant it is. **Does not call the
 native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 `.labels` is an expensive whole-document walk per element (`.control` resolution is
@@ -321,17 +347,29 @@ Back-compat convenience: `!!getAccessibleNameInfo(el).value`.
 Backs `aria-labelledby`/`aria-describedby` and any other space-separated ID-reference
 attribute.
 
-### `resolveIdRefs(idrefString, ctx, opts)` → `{ refs: Element[], missing: string[], flags[] }`
-Splits and resolves a space-separated ID list to elements (deduped, cached per scope).
+An ID reference resolves in the referring element's own tree: the shadow root it is in,
+or the document. IDs are scoped to their tree (HTML's labeled control is "an element in
+the tree" with that ID), so a reference never crosses a shadow boundary, either way.
+Each helper below takes the element carrying the reference as its last argument, `from`;
+without it, the IDs resolve in the document, which is right only for an element in the
+document itself.
+
+### `getElementByIdInTree(from, id)` → `Element | null`
+The first element with that id in `from`'s own tree. Use it instead of
+`dom.getElementById(document, id)` for any single ID reference (`headers`, one
+`aria-owns` token, an `aria-labelledby` target read by hand).
+
+### `resolveIdRefs(idrefString, ctx, opts, from)` → `{ refs: Element[], missing: string[], flags[] }`
+Splits and resolves a space-separated ID list to elements (deduped, cached per tree).
 `opts.maxRefs` truncates deterministically (adds `'truncated'` to `flags`).
 
-### `getTextFromIdRefs(idrefString, ctx, opts)` → `{ text, refsCount, missing[], flags[] }`
+### `getTextFromIdRefs(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], flags[] }`
 Resolves refs, then computes **each target's own text alternative** recursively
 (accname-aligned — a referenced element's name is recomputed, not read as raw
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
-### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts)` → `{ text, refsCount, missing[], excluded[], flags[] }`
+### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], excluded[], flags[] }`
 Same, but under IDREF eligibility rules specifically: hidden/`aria-hidden`/collapsed
 targets are still included (IDREF targets aren't scoped by visibility the way rendered
 content is — see the `root` note in the source), only `inert` targets are excluded.
@@ -342,8 +380,8 @@ content is — see the `root` note in the source), only `inert` targets are excl
 ## 5) Role & focusability
 
 ### `getRoleInfo(el, ctx, opts)` → `{ role, source, flags[] }`
-Explicit `role` attribute if present (flags `'presentation'` for
-`presentation`/`none`, `'multiple-roles'` if it contains whitespace), else a small,
+The explicit role, resolved as `aria.getExplicitRole` does (flags `'presentation'` for
+`presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else a small,
 deliberately minimal implicit-role mapping (`a[href]`→`link`, `button`→`button`,
 `input[type=checkbox]`→`checkbox`, etc.) unless `opts.disallowImplicit`.
 
@@ -453,6 +491,17 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
 `getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
 author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+
+`getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
+fallback list, and browsers use "the first token in the sequence of tokens in the role
+attribute value that matches the name of any non-abstract WAI-ARIA role" (WAI-ARIA),
+matched in any case. It returns that token lower-cased, or `''` when no token names a
+known role, which is the same as having no role. So `role="switch checkbox"` is a
+switch, `role="foo button"` and `role="BUTTON"` are buttons, and `role="foo"` leaves
+the element its implicit role. Select elements by role with `[role~="button" i]` and
+keep those whose `getExplicitRole` is `'button'` (`role="link button"` is a link);
+`[role="button"]` misses both a fallback list and another case. `npm run lint` flags a
+rule that reads `role` itself.
 `helpers.landmarkCandidateSelector` is the CSS selector for every element that can be a
 landmark, and `ctx.engineTag` the engine's tag (`"a11ycore"`), the one every rule carries in
 `meta.tags`. Backs the whole

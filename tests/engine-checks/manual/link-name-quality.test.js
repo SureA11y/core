@@ -30,6 +30,21 @@ test(`${RULE_ID}: cantTell when the link text is a known generic phrase`, () => 
   assert.equal(rule.occurrences[0].data.details.normalizedName, 'click here');
 });
 
+test(`${RULE_ID}: a link role in a fallback list or upper case (role="foo link", role="LINK") is a link, a link token after a real role is not`, () => {
+  for (const role of ['foo link', 'LINK']) {
+    const html = `<!doctype html><html><body><span role="${role}" tabindex="0">Click here</span></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'GENERIC_LINK_TEXT');
+  }
+  const html = `<!doctype html><html><body><span role="button link" tabindex="0">Click here</span></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: normalizes whitespace, case, and trailing punctuation before matching`, () => {
   const html = `<!doctype html><html><body><a href="/x">  MORE.  </a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

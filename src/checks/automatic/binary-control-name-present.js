@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements carrying role="checkbox", role="radio" or
- *   role="switch" (the attribute must name one of those roles alone, not a
- *   fallback list) that are included in the accessibility tree. A native
+ *   Applies to elements whose role attribute resolves to checkbox, radio
+ *   or switch (the first token naming a known role, matched
+ *   case-insensitively, so role="foo switch" and role="SWITCH" count) that
+ *   are included in the accessibility tree. A native
  *   <input type="checkbox">/<input type="radio"> is in scope only when it
  *   carries one of those roles explicitly; without a role attribute it
  *   belongs to form-control-programmatic-label-present.
@@ -66,6 +67,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -78,8 +80,8 @@ function runInPage(ctx) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -97,7 +99,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(container, ctx);
       return info && info.present ? info.value : '';
     }
-    const t = container && container.textContent ? String(container.textContent) : '';
+    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
     return t.replace(/\s+/g, ' ').trim();
   }
 
@@ -137,7 +139,7 @@ function runInPage(ctx) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -169,7 +171,9 @@ function runInPage(ctx) {
 
   // Native checkbox/radio without an explicit role belongs to
   // form-control-programmatic-label-present.
-  const selector = '[role="checkbox"], [role="radio"], [role="switch"]';
+  // Token match, case-insensitive; the resolved-role filter below drops
+  // fallback lists whose first known token is some other role.
+  const selector = '[role~="checkbox" i], [role~="radio" i], [role~="switch" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -229,9 +233,12 @@ function runInPage(ctx) {
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     // Determine control type
-    const tag = (el.tagName || '').toLowerCase();
+    const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = getAttr(el, 'role').toLowerCase();
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins (role="foo switch" is a switch, role="link switch" a link).
+    const role = helpers.aria.getExplicitRole(el);
+    if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') continue;
 
     let controlType;
     if (tag === 'input' && type === 'checkbox') controlType = 'checkbox';

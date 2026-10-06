@@ -63,6 +63,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -76,10 +77,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.attributes) continue;
+    if (!el || !dom.attributes(el)) continue;
 
     let invalidNames = null;
-    const attrs = el.attributes;
+    const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
       if (name.slice(0, 5) !== 'aria-') continue;

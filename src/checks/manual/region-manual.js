@@ -108,9 +108,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const body = document && document.body ? document.body : null;
+  const body = document && dom.body(document) ? dom.body(document) : null;
   if (!body) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -125,10 +126,10 @@ function runInPage(ctx) {
     return String(s || '').toLowerCase();
   }
 
+  // The resolved explicit role: the first token naming a known role,
+  // lower-cased, or '' when none does (the element keeps its native role).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return lower(raw.split(/\s+/)[0]);
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isLandmark(el) {
@@ -143,12 +144,12 @@ function runInPage(ctx) {
   const LIVE_REGION_ROLES = new Set(['alert', 'status', 'log', 'marquee', 'timer']);
 
   function isAriaLive(el) {
-    const v = lower(normalizeWs(el.getAttribute && el.getAttribute('aria-live')));
+    const v = lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-live')));
     return v === 'polite' || v === 'assertive';
   }
 
   function isDialogLike(el) {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'dialog') return true;
     const role = getExplicitRoleToken(el);
     return role === 'dialog' || role === 'alertdialog';
@@ -157,10 +158,10 @@ function runInPage(ctx) {
   function isButtonLike(el) {
     const role = getExplicitRoleToken(el);
     if (role) return role === 'button';
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'button' || tag === 'summary') return true;
     if (tag === 'input') {
-      const type = lower(normalizeWs(el.getAttribute && el.getAttribute('type')));
+      const type = lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type')));
       return type === 'button' || type === 'submit' || type === 'reset' || type === 'image';
     }
     return false;
@@ -172,12 +173,13 @@ function runInPage(ctx) {
   // placeholder) avoids flagging a helpful, common accessibility pattern
   // as the very thing this rule is meant to catch.
   function isResolvableSkipLink(el) {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag !== 'a') return false;
-    const href = el.getAttribute && el.getAttribute('href');
+    const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
     if (!href || href.charAt(0) !== '#' || href.length < 2) return false;
     try {
-      return !!(document.getElementById && document.getElementById(href.slice(1)));
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
+      return !!(dom.get(document, 'getElementById') && dom.getElementById(document, href.slice(1)));
     } catch {
       return false;
     }
@@ -190,7 +192,7 @@ function runInPage(ctx) {
     if (role && LIVE_REGION_ROLES.has(role)) return true;
     if (isDialogLike(el)) return true;
     if (isButtonLike(el)) return true;
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (tag === 'svg' || tag === 'iframe' || tag === 'frame') return true;
     if (isResolvableSkipLink(el)) return true;
     return false;
@@ -205,19 +207,19 @@ function runInPage(ctx) {
   // <div> included) until reaching the actual content-bearing node, rather
   // than a coarse ancestor swallowing everything beneath it into one report.
   function hasOwnContent(el) {
-    const kids = el.childNodes || [];
+    const kids = dom.childNodes(el) || [];
     for (let i = 0; i < kids.length; i++) {
       const k = kids[i];
-      if (k.nodeType === 3 && normalizeWs(k.nodeValue)) return true;
+      if (dom.nodeType(k) === 3 && normalizeWs(dom.nodeValue(k))) return true;
     }
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (VISUAL_CONTENT_TAGS.has(tag)) return true;
     if (
       tag === 'input' &&
-      lower(normalizeWs(el.getAttribute && el.getAttribute('type'))) !== 'hidden'
+      lower(normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'type'))) !== 'hidden'
     )
       return true;
-    if (normalizeWs(el.getAttribute && el.getAttribute('aria-label'))) return true;
+    if (normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'))) return true;
     return false;
   }
 
@@ -237,23 +239,24 @@ function runInPage(ctx) {
 
   function markFlaggedUpToBody(el) {
     let cur = el;
-    while (cur) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; cur && steps < 100000; steps++) {
       if (stopperFlagged.has(cur)) break; // everything above is already marked
       stopperFlagged.add(cur);
       if (cur === body) break;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
   }
 
   function walk(el) {
-    if (truncated || !el || el.nodeType !== 1) return;
+    if (truncated || !el || dom.nodeType(el) !== 1) return;
     visited += 1;
     if (visited > MAX_VISITED_NODES) {
       truncated = true;
       return;
     }
 
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     if (SKIP_TAGS.has(tag)) return;
 
     const eligRes = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el) : { eligible: true };
@@ -267,7 +270,7 @@ function runInPage(ctx) {
       if (
         !placedContent &&
         isLandmark(el) &&
-        (normalizeWs(el.textContent) || el.firstElementChild)
+        (normalizeWs(dom.textContent(el)) || dom.firstElementChild(el))
       ) {
         placedContent = true;
       }
@@ -284,13 +287,14 @@ function runInPage(ctx) {
     // live once read, and each later change under a large parent rebuilds
     // it, so reading body.children made a 20,000-node page slow to scan
     // and to close.
-    for (let kid = el.firstElementChild; kid; kid = kid.nextElementSibling) {
+    for (let kid = dom.firstElementChild(el); kid; kid = dom.nextElementSibling(kid)) {
       walk(kid);
       if (truncated) return;
     }
   }
 
-  for (let child = body.firstElementChild; child; child = child.nextElementSibling) walk(child);
+  for (let child = dom.firstElementChild(body); child; child = dom.nextElementSibling(child))
+    walk(child);
 
   // Collapse each candidate leaf upward through parents that have no OTHER
   // stopper anywhere in their subtree, so contiguous unplaced content
@@ -301,12 +305,16 @@ function runInPage(ctx) {
   const seen = new Set();
   for (const leaf of leaves) {
     let cur = leaf;
-    while (
-      cur.parentElement &&
-      cur.parentElement !== body &&
-      !stopperFlagged.has(cur.parentElement)
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (
+      let steps = 0;
+      steps < 100000 &&
+      dom.parentElement(cur) &&
+      dom.parentElement(cur) !== body &&
+      !stopperFlagged.has(dom.parentElement(cur));
+      steps++
     ) {
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     if (!seen.has(cur)) {
       seen.add(cur);
@@ -317,7 +325,7 @@ function runInPage(ctx) {
   // Report the element itself: without a node reference the engine re-finds
   // each one with document.querySelector to build its structuralPath.
   const occurrences = collapsed.map((el) => {
-    const tag = el.tagName ? lower(el.tagName) : '';
+    const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     const partial = {
       summary: 'This content is not contained within a landmark region.',
       hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
@@ -337,7 +345,7 @@ function runInPage(ctx) {
 
     return {
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
-      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : el.outerHTML || '',
+      html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       ...partial
     };
   });

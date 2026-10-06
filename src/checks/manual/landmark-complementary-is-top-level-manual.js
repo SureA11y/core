@@ -54,6 +54,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
   // A candidate must actually carry the complementary role. An <aside> that
@@ -65,13 +66,14 @@ function runInPage(ctx) {
 
   function hasLandmarkAncestor(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
-    let p = el.parentElement;
-    while (p) {
+    let p = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; p && steps < 100000; steps++) {
       if (helpers.getLandmarkRole(p, ctx)) return true;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
-      p = p.parentElement;
+      p = dom.parentElement(p);
     }
     return false;
   }

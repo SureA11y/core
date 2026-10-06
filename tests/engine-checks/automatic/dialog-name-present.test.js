@@ -198,6 +198,12 @@ test(`${RULE_ID}: the role is the first concrete token of a fallback list`, () =
     minOccurrences: 1,
     maxOccurrences: 1
   });
+  // Tokens are separated by any ASCII whitespace and matched in any case.
+  const tabUpper = `<!doctype html><html><body><div role="modal\tDIALOG" id="d"></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(tabUpper, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   // A dialog token after a concrete role does not make the element a dialog.
   const regionFirst = `<!doctype html><html><body><div role="region dialog"></div><dialog open role="none"><p>x</p></dialog></body></html>`;
   assertRule(runa11yCoreOnHtml(regionFirst, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {

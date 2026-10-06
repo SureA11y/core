@@ -9,8 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.4.9
  * @applicability
- *   Sets of two or more `a[href]` or `[role="link"]` elements that share a
- *   non-empty accessible name (trimmed, whitespace-collapsed,
+ *   Sets of two or more `a[href]` elements, or elements whose role
+ *   attribute resolves to link (its first real role token, in any case),
+ *   that share a non-empty accessible name (trimmed, whitespace-collapsed,
  *   case-folded), as in ACT b20e66. A link whose name no other link shares
  *   has nothing to be compared with.
  * @expectation
@@ -76,6 +77,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function normName(s) {
@@ -92,13 +94,13 @@ function runInPage(ctx) {
 
   function resolveOnclickLocation(el) {
     try {
-      const onclick = el.getAttribute('onclick') || '';
+      const onclick = dom.getAttribute(el, 'onclick') || '';
       if (!onclick) return '';
       const m = onclick.match(ONCLICK_LOCATION_RE);
       const raw = m ? m[1] || m[2] : '';
       if (!raw) return '';
       try {
-        return new URL(raw, el.ownerDocument.baseURI).href;
+        return new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
       } catch {
         return raw;
       }
@@ -107,14 +109,25 @@ function runInPage(ctx) {
     }
   }
 
+  const NATIVE_LINK_TAGS = ['a'];
+  // A native link (<a> with href), or an element whose role attribute
+  // resolves to link: the first token naming a real role wins, in any case,
+  // so role="foo link" and role="LINK" count but role="button link" doesn't.
+  function isLinkCandidate(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
+    return helpers.aria.getExplicitRole(el) === 'link';
+  }
+
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role="link"]')
-    : helpers.queryAll('a[href], [role="link"]');
+    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!isLinkCandidate(el)) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -135,7 +148,7 @@ function runInPage(ctx) {
       rawName =
         contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
           ? contentInfo.value
-          : el.textContent || '';
+          : dom.textContent(el) || '';
     }
     const name = normName(rawName);
     if (!name) continue;
@@ -150,10 +163,10 @@ function runInPage(ctx) {
     try {
       href = typeof el.href === 'string' ? el.href : '';
       if (!href) {
-        const raw = el.getAttribute('href') || el.getAttribute('xlink:href') || '';
+        const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
         if (raw) {
           try {
-            href = new URL(raw, el.ownerDocument.baseURI).href;
+            href = new URL(raw, dom.baseURI(dom.ownerDocument(el))).href;
           } catch {
             href = raw;
           }
@@ -179,7 +192,7 @@ function runInPage(ctx) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
-        : el.outerHTML || '';
+        : dom.outerHTML(el) || '';
 
       const baseOccurrence = {
         selector: stableSelector,

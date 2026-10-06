@@ -9,10 +9,12 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to elements carrying role="progressbar" (the attribute must name
- *   that role alone, not a fallback list) that are included in the
- *   accessibility tree. An element with the matching implicit role but no
- *   role attribute is out of scope.
+ *   Applies to elements whose role attribute resolves to progressbar: its first
+ *   token naming a known role, matched in any case, is progressbar, so
+ *   role="foo progressbar" and role="PROGRESSBAR" count while role="link progressbar"
+ *   (a link) does not. The element must be included in the accessibility
+ *   tree. An element with the matching implicit role but no role attribute
+ *   is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title.
@@ -51,6 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -63,8 +66,8 @@ function runInPage(ctx) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -80,7 +83,7 @@ function runInPage(ctx) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -110,10 +113,23 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="progressbar"]';
+  // `~=` matches the token anywhere in the role fallback list; the loop
+  // below keeps only elements whose resolved explicit role (the first known
+  // token) is progressbar, so role="link progressbar" (a link) is left out.
+  const selector = '[role~="progressbar" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  function explicitRole(el) {
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
 
   function evaluate(el) {
     const ariaLabel = getAttr(el, 'aria-label');
@@ -147,8 +163,7 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'progressbar') continue;
+    if (explicitRole(el) !== 'progressbar') continue;
 
     applicableCount += 1;
 

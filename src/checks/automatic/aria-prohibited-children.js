@@ -153,6 +153,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -207,7 +208,7 @@ function runInPage(ctx) {
 
   function getGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      const v = el.getAttribute ? el.getAttribute(attr) : null;
+      const v = dom.get(el, 'getAttribute') ? dom.getAttribute(el, attr) : null;
       if (v != null) return attr;
     }
     return null;
@@ -252,7 +253,8 @@ function runInPage(ctx) {
   // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) out.push(c);
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
+      out.push(c);
     return out;
   }
 
@@ -260,7 +262,7 @@ function runInPage(ctx) {
     if (depth > MAX_DEPTH) return;
     const kids = childElementsOf(el);
     for (const kid of kids) {
-      if (!kid || kid.nodeType !== 1) continue;
+      if (!kid || dom.nodeType(kid) !== 1) continue;
       if (!isEligibleAcc(kid)) continue;
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
@@ -340,7 +342,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue;

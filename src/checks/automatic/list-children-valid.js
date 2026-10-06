@@ -10,18 +10,22 @@
  * @sc 1.3.1
  * @applicability
  *   Applies to <ul>/<ol> elements that have at least one direct element
- *   child and whose role is list: no role attribute, role="list", or a role
- *   attribute naming no concrete ARIA role. A <ul>/<ol> given another role
+ *   child and whose role is list: no role attribute, a role attribute
+ *   resolving to list (its first token naming a known role, in any case),
+ *   or one naming no known ARIA role. A <ul>/<ol> given another role
  *   (listbox, menubar, tablist, none, ...) is not a list, so its children
  *   follow that role's rules instead.
  * @expectation
  *   Every direct element child is <li>, <script>, or <template>. UNLESS it
- *   has an explicit `role` attribute, in which case the explicit role wins
+ *   has an explicit role (its role attribute's first token naming a known
+ *   role, matched in any case), in which case the explicit role wins
  *   over the tag entirely: a child is valid iff that role is "listitem"
  *   (so `<li role="presentation">`/`<li role="menuitem">` are invalid
  *   despite the <li> tag, and conversely a non-<li> element explicitly
- *   given `role="listitem"` is valid). A wrapper <div> used for styling
- *   (no role at all) still breaks list semantics the same as before.
+ *   given `role="listitem"` or `role="foo LISTITEM"` is valid). A role
+ *   attribute naming no known role leaves the tag to decide. A wrapper
+ *   <div> used for styling (no role at all) still breaks list semantics
+ *   the same as before.
  * @reports
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child.
@@ -77,6 +81,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -104,16 +109,10 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // The first role token that names a concrete ARIA role, or '' when none
-  // does (the element keeps its native list role).
-  const aria = helpers && helpers.aria;
+  // The first role token that names a known, non-abstract ARIA role, in
+  // any case, or '' when none does (the element keeps its native role).
   function resolvedExplicitRole(el) {
-    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!aria || typeof aria.isValidConcreteRole !== 'function') return tokens[0] || '';
-    return tokens.find((t) => aria.isValidConcreteRole(t)) || '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   // An element's child elements by sibling links, not el.children: in jsdom
@@ -124,15 +123,17 @@ function runInPage(ctx) {
   // the host's <li> children), or for its fallback content when none is.
   function childElementsOf(el, depth = 0) {
     const out = [];
-    for (let c = el ? el.firstElementChild : null; c; c = c.nextElementSibling) {
-      if (String(c.localName) !== 'slot' || depth > 20) {
+    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c)) {
+      if (String(dom.localName(c)) !== 'slot' || depth > 20) {
         out.push(c);
         continue;
       }
       let assigned;
       try {
         assigned =
-          typeof c.assignedElements === 'function' ? c.assignedElements({ flatten: true }) : [];
+          typeof dom.get(c, 'assignedElements') === 'function'
+            ? dom.assignedElements(c, { flatten: true })
+            : [];
       } catch {
         assigned = [];
       }
@@ -143,7 +144,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.firstElementChild) continue;
+    if (!el || !dom.firstElementChild(el)) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
@@ -151,12 +152,11 @@ function runInPage(ctx) {
 
     const invalidTags = [];
     for (const child of childElementsOf(el)) {
-      if (!child || !child.tagName) continue;
+      if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
-      const tag = child.tagName.toLowerCase();
+      const tag = dom.tagName(child).toLowerCase();
 
-      const roleAttr = child.getAttribute ? String(child.getAttribute('role') || '').trim() : '';
-      const explicitRole = roleAttr ? (roleAttr.split(/\s+/)[0] || '').toLowerCase() : '';
+      const explicitRole = resolvedExplicitRole(child);
 
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
@@ -168,7 +168,7 @@ function runInPage(ctx) {
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
-    const tag = el.tagName.toLowerCase();
+    const tag = dom.tagName(el).toLowerCase();
 
     occurrences.push(
       helpers.reportOccurrence(el, {

@@ -60,6 +60,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const occurrences = [];
@@ -74,13 +75,13 @@ function runInPage(ctx) {
   // and document.title ignores it.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
   }
-  const titleText = (document.title || '').replace(/\s+/g, ' ').trim();
+  const titleText = (dom.get(document, 'title') || '').replace(/\s+/g, ' ').trim();
 
   const missingTitleEl = !titleEl;
   const emptyTitle = !missingTitleEl && titleText.length === 0;

@@ -182,6 +182,38 @@ test(`${RULE_ID}: ARIA widget roles are in scope alongside native controls`, () 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: roles are resolved from the fallback list, in any case`, () => {
+  // A widget role first in the list or in upper case makes a field; a
+  // widget token after a real role does not.
+  for (const role of ['foo textbox', 'TEXTBOX']) {
+    const result = runa11yCoreOnHtml(
+      page(`<p id="l">Label</p><div id="a" role="${role}" aria-labelledby="l"></div>`),
+      { runOnly: [RULE_ID] }
+    );
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.ok(hasOccurrenceForId(rule, 'a'));
+  }
+  assertRule(
+    runa11yCoreOnHtml(
+      page('<p id="l">Label</p><div role="button textbox" aria-labelledby="l"></div>'),
+      { runOnly: [RULE_ID] }
+    ),
+    RULE_ID,
+    'notApplicable',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+  // Headings and rows named by a fallback list or upper case give context.
+  for (const body of [
+    '<div role="foo heading">Shipping</div><label>Name <input></label><div role="HEADING">Billing</div><label>Name <input></label>',
+    '<div role="foo row"><span>Widget</span><label>Quantity <input></label></div><div role="ROW"><span>Gadget</span><label>Quantity <input></label></div>'
+  ]) {
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
 test(`${RULE_ID}: manual rule never reports fail`, () => {
   const result = runa11yCoreOnHtml(page('<label>Label <input id="a"></label>'), {
     runOnly: [RULE_ID]

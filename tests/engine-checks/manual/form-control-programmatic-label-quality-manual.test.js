@@ -359,3 +359,17 @@ test(`${RULE_ID}: a hidden control beside a shown one; only the shown one is jud
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'shown'));
 });
+
+test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#91)`, () => {
+  const html = `<!doctype html><html><body>
+    <input type="text" role="foo presentation" tabindex="-1" placeholder="X">
+    <input type="text" role="NONE" tabindex="-1" placeholder="Y">
+  </body></html>`;
+
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  assert.equal(rule.data.details.metrics.applicableCount, 0);
+});

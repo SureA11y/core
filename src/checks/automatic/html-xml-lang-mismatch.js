@@ -66,16 +66,17 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  const html = document && document.documentElement;
-  const tag = html && html.tagName ? String(html.tagName).toLowerCase() : '';
+  const html = document && dom.documentElement(document);
+  const tag = html && dom.tagName(html) ? String(dom.tagName(html)).toLowerCase() : '';
   if (!html || tag !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const lang = String(html.getAttribute('lang') || '').trim();
-  const xmlLang = String(html.getAttribute('xml:lang') || '').trim();
+  const lang = String(dom.getAttribute(html, 'lang') || '').trim();
+  const xmlLang = String(dom.getAttribute(html, 'xml:lang') || '').trim();
 
   if (!lang || !xmlLang) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };

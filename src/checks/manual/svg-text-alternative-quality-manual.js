@@ -67,6 +67,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -77,8 +78,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -90,9 +91,9 @@ function runInPage(ctx) {
       ? helpers.buildSelector
       : (el) => {
           try {
-            if (!el || !el.tagName) return 'html';
-            const tag = (el.tagName || 'html').toLowerCase();
-            return el.id ? `${tag}#${el.id}` : tag;
+            if (!el || !dom.tagName(el)) return 'html';
+            const tag = (dom.tagName(el) || 'html').toLowerCase();
+            return dom.get(el, 'id') ? `${tag}#${dom.get(el, 'id')}` : tag;
           } catch {
             return 'html';
           }
@@ -103,7 +104,7 @@ function runInPage(ctx) {
       ? helpers.getOuterHtmlSnippet
       : (el) => {
           try {
-            return el && el.outerHTML ? String(el.outerHTML).slice(0, 2000) : '';
+            return el && dom.outerHTML(el) ? String(dom.outerHTML(el)).slice(0, 2000) : '';
           } catch {
             return '';
           }
@@ -119,11 +120,10 @@ function runInPage(ctx) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The resolved role: the first token naming a known role, in any case.
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -142,7 +142,7 @@ function runInPage(ctx) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -169,7 +169,7 @@ function runInPage(ctx) {
   const trim = (v) => (v == null ? '' : String(v)).trim();
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // acc eligibility
     if (isAccTreeEligible) {
@@ -193,13 +193,13 @@ function runInPage(ctx) {
     let labelledByText = '';
 
     try {
-      const titleEl = el.querySelector ? el.querySelector('title') : null;
-      const descEl = el.querySelector ? el.querySelector('desc') : null;
-      titleText = trim(titleEl && titleEl.textContent);
-      descText = trim(descEl && descEl.textContent);
+      const titleEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'title') : null;
+      const descEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'desc') : null;
+      titleText = trim(titleEl && dom.textContent(titleEl));
+      descText = trim(descEl && dom.textContent(descEl));
 
-      ariaLabel = trim(el.getAttribute('aria-label'));
-      ariaLabelledBy = trim(el.getAttribute('aria-labelledby'));
+      ariaLabel = trim(dom.getAttribute(el, 'aria-label'));
+      ariaLabelledBy = trim(dom.getAttribute(el, 'aria-labelledby'));
     } catch {}
 
     if (
@@ -209,7 +209,7 @@ function runInPage(ctx) {
       typeof helpers.getTextFromIdRefs === 'function'
     ) {
       try {
-        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx);
+        const t = helpers.getTextFromIdRefs(ariaLabelledBy, ctx, undefined, el);
         labelledByText = trim(t && t.text);
       } catch {}
     }

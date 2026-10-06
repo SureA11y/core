@@ -79,3 +79,17 @@ for (const [label, inner] of [
     assert.ok(hasOccurrenceForId(rule, 't'));
   });
 }
+
+test(`${RULE_ID}: role is a fallback list matched in any case (#91)`, () => {
+  // role="foo text" and role="TEXT" are text; role="link text" is a link.
+  const html = `<!doctype html><html><body>
+    <span id="fb" role="foo text">A <a href="#x">link</a></span>
+    <span id="up" role="TEXT">B <a href="#y">link</a></span>
+    <a id="lk" href="#z" role="link text">C <button>b</button></a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fb'));
+  assert.ok(hasOccurrenceForId(rule, 'up'));
+  assert.ok(!hasOccurrenceForId(rule, 'lk'));
+});

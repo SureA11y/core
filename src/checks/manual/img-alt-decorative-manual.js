@@ -62,6 +62,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -72,8 +73,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -105,17 +106,11 @@ function runInPage(ctx) {
     }
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none means no explicit role at all.
   function getExplicitRole(el) {
-    if (ariaHelpers && typeof ariaHelpers.getExplicitRole === 'function') {
-      try {
-        return ariaHelpers.getExplicitRole(el) || '';
-      } catch {
-        return '';
-      }
-    }
     try {
-      const raw = trim(el.getAttribute('role'));
-      return raw ? raw.split(/\s+/)[0].toLowerCase() : '';
+      return (ariaHelpers && ariaHelpers.getExplicitRole(el)) || '';
     } catch {
       return '';
     }
@@ -131,7 +126,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       return (
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -164,7 +159,10 @@ function runInPage(ctx) {
 
   function hasAriaNamingAttr(el) {
     try {
-      return el.getAttribute('aria-label') != null || el.getAttribute('aria-labelledby') != null;
+      return (
+        dom.getAttribute(el, 'aria-label') != null ||
+        dom.getAttribute(el, 'aria-labelledby') != null
+      );
     } catch {
       return false;
     }
@@ -173,9 +171,9 @@ function runInPage(ctx) {
   // Same first-child <title>/<desc> convention as svg-text-alternative-present.js.
   function hasNonEmptyFirstChildTitleOrDesc(svg) {
     try {
-      const first = svg.firstElementChild;
-      const tn = first ? (first.localName || first.tagName || '').toLowerCase() : '';
-      if (tn === 'title' || tn === 'desc') return !!trim(first.textContent);
+      const first = dom.firstElementChild(svg);
+      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
+      if (tn === 'title' || tn === 'desc') return !!trim(dom.textContent(first));
     } catch {
       // ignore
     }
@@ -206,7 +204,7 @@ function runInPage(ctx) {
     const role = getExplicitRole(el);
     let presentational = role === 'presentation' || role === 'none';
     if (!presentational && tag === 'img') {
-      presentational = el.getAttribute('alt') === '';
+      presentational = dom.getAttribute(el, 'alt') === '';
     }
     if (!presentational) return false;
     return !isFocusable(el);
@@ -250,12 +248,12 @@ function runInPage(ctx) {
     const getComposedParent =
       helpers && typeof helpers.composedParent === 'function'
         ? helpers.composedParent
-        : (n) => (n && n.parentElement ? n.parentElement : null);
+        : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
 
     let cur = getComposedParent(el);
     let guard = 0;
     while (cur && guard++ < 200) {
-      if (cur.nodeType === 1) {
+      if (dom.nodeType(cur) === 1) {
         try {
           const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
           if (
@@ -300,8 +298,8 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of uniqueEls) {
-    if (!el || !el.tagName) continue;
-    const tag = el.tagName.toLowerCase();
+    if (!el || !dom.tagName(el)) continue;
+    const tag = dom.tagName(el).toLowerCase();
 
     if (!isDomVisible(el)) continue;
     if (isOffscreen(el)) continue;

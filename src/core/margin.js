@@ -2,6 +2,8 @@
 
 'use strict';
 
+const { createSafeDom } = require('./safe-dom');
+
 /**
  * Margins: how close a rule's closest measurement came to its threshold while
  * still meeting it. A rule that measures against a threshold (a contrast
@@ -36,6 +38,7 @@ const MARGIN_LIMITS = Object.freeze(['min', 'max']);
 // smallest headroom; a tie goes to the element first in document order, so the
 // same page always gives the same margin.
 function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
+  const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
 
@@ -66,7 +69,9 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
 
   const position = (a, b) => {
     try {
-      return typeof a.compareDocumentPosition === 'function' ? a.compareDocumentPosition(b) : 0;
+      return typeof dom.get(a, 'compareDocumentPosition') === 'function'
+        ? dom.compareDocumentPosition(a, b)
+        : 0;
     } catch {
       return 0;
     }

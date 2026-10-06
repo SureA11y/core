@@ -62,6 +62,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage, see scripts/build-core.js header
@@ -78,10 +79,12 @@ function runInPage(ctx) {
   ];
 
   const idMap = new Map(); // id -> element[]
-  const idNodes = document.querySelectorAll ? document.querySelectorAll('[id]') : [];
+  const idNodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, '[id]')
+    : [];
   for (const el of idNodes) {
-    if (!el || !el.getAttribute) continue;
-    const value = String(el.getAttribute('id') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const value = String(dom.getAttribute(el, 'id') || '').trim();
     if (!value) continue;
     if (!idMap.has(value)) idMap.set(value, []);
     idMap.get(value).push(el);
@@ -90,10 +93,12 @@ function runInPage(ctx) {
   const referencedIds = new Set();
   for (const attr of IDREF_ATTRS) {
     const selector = `[${attr}]`;
-    const nodes = document.querySelectorAll ? document.querySelectorAll(selector) : [];
+    const nodes = dom.get(document, 'querySelectorAll')
+      ? dom.querySelectorAll(document, selector)
+      : [];
     for (const el of nodes) {
-      if (!el || !el.getAttribute) continue;
-      const raw = String(el.getAttribute(attr) || '').trim();
+      if (!el || !dom.get(el, 'getAttribute')) continue;
+      const raw = String(dom.getAttribute(el, attr) || '').trim();
       if (!raw) continue;
       for (const token of raw.split(/\s+/)) {
         if (token) referencedIds.add(token);

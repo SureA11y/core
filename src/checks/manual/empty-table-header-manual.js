@@ -9,10 +9,13 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <th> elements that don't carry a conflicting explicit role,
- *   plus any element (native <th> or not) with role="columnheader" or
- *   role="rowheader" (`th:not([role]), [role="columnheader"], [role="rowheader"]`):
- *   a <th> that explicitly restates role="columnheader"/"rowheader" is still
- *   covered via the second clause, but a <th role="presentation"> (no longer
+ *   plus any element (native <th> or not) whose role resolves to
+ *   columnheader or rowheader. The role attribute is a fallback list: its
+ *   first known, non-abstract token, in any case, is the role, so
+ *   role="foo columnheader" counts, and a <th role="foo"> (no known token)
+ *   keeps its implicit header role. A <th> that explicitly restates
+ *   role="columnheader"/"rowheader" is still covered, but a
+ *   <th role="presentation"> (no longer
  *   meaningfully a header) is correctly excluded, and an ARIA-role-only header
  *   (e.g. a <div role="columnheader"> in a role="grid"/role="table" widget) is
  *   caught too.
@@ -62,7 +65,8 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -90,29 +94,29 @@ function runInPage(ctx) {
   // AT announces nothing for it.
   function getVisibleText(el) {
     function walk(node) {
-      if (node.nodeType === 3) return node.nodeValue || '';
-      if (node.nodeType !== 1) return '';
+      if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
+      if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
       let text = '';
-      for (const child of node.childNodes || []) text += walk(child);
+      for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
     }
     let text = '';
-    for (const child of el.childNodes || []) text += walk(child);
+    for (const child of dom.childNodes(el) || []) text += walk(child);
     return normalizeWs(text);
   }
 
   function getAriaOnlyName(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -124,11 +128,24 @@ function runInPage(ctx) {
   }
 
   // A <th> with no conflicting explicit role, plus any element carrying an
-  // explicit columnheader/rowheader role (native or not).
-  const selector = 'th:not([role]), [role="columnheader"], [role="rowheader"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // explicit columnheader/rowheader role (native or not). The role attribute
+  // is a fallback list read in any case, so roles are selected by token and
+  // then resolved: the first known, non-abstract token is the role, and a
+  // <th role="foo"> (no known token) keeps its implicit header role.
+  const HEADER_ROLES = ['columnheader', 'rowheader'];
+  const selector = 'th, [role~="columnheader" i], [role~="rowheader" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    let role;
+    try {
+      role = helpers.aria.getExplicitRole(el);
+    } catch {
+      role = '';
+    }
+    if (HEADER_ROLES.includes(role)) return true;
+    return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
+  });
 
   const occurrences = [];
   let applicableCount = 0;

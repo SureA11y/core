@@ -143,3 +143,19 @@ test(`empty-table-header: respects contextSelector scoping (regression -- used t
     maxOccurrences: 0
   });
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo columnheader" is a header, <th role="foo"> keeps its header role (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="grid"><div role="row"><div role="foo columnheader"></div><div role="gridcell">x</div></div></div><table><tr><th role="foo"></th></tr><tr><td>1</td></tr></table></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="COLUMNHEADER" is a header (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><div role="grid"><div role="row"><div role="COLUMNHEADER"></div><div role="gridcell">x</div></div></div></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});

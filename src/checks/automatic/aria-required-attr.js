@@ -112,6 +112,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -156,16 +157,17 @@ function runInPage(ctx) {
   ]);
 
   function isNativeCheckable(el) {
-    if (String(el.localName || '').toLowerCase() !== 'input') return false;
-    if (el.namespaceURI && el.namespaceURI !== 'http://www.w3.org/1999/xhtml') return false;
-    const type = String(el.getAttribute('type') || '')
+    if (String(dom.localName(el) || '').toLowerCase() !== 'input') return false;
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return false;
+    const type = String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
     return type === 'checkbox' || type === 'radio';
   }
 
   function isMarkedBusy(el) {
-    const v = el.getAttribute('aria-busy');
+    const v = dom.getAttribute(el, 'aria-busy');
     return v != null && String(v).trim().toLowerCase() === 'true';
   }
 
@@ -178,7 +180,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const role = ariaHelpers.getExplicitRole(el);
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
@@ -201,7 +203,10 @@ function runInPage(ctx) {
 
     // combobox's aria-controls is required only once the popup is actually
     // displayed (aria-expanded="true") -- see this file's header comment.
-    if (role === 'combobox' && String(el.getAttribute('aria-expanded') || '').trim() === 'true') {
+    if (
+      role === 'combobox' &&
+      String(dom.getAttribute(el, 'aria-expanded') || '').trim() === 'true'
+    ) {
       required.push('aria-controls');
     }
 
@@ -220,7 +225,7 @@ function runInPage(ctx) {
 
     const missing = [];
     for (const attr of required) {
-      const v = el.getAttribute(attr);
+      const v = dom.getAttribute(el, attr);
       if (attr === 'aria-checked' && nativeChecked) continue;
       if (v == null || String(v).trim() === '') missing.push(attr);
     }

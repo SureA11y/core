@@ -118,8 +118,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
   const SPACING_PROPS = Object.keys(MIN_RATIO);
@@ -154,7 +155,7 @@ function runInPage(ctx) {
     if (unit === 'em') return n;
     if (unit === 'rem') {
       const root = px(
-        styleOf(document.documentElement) && styleOf(document.documentElement).fontSize
+        styleOf(dom.documentElement(document)) && styleOf(dom.documentElement(document)).fontSize
       );
       return (n * (root || 16)) / fontSize;
     }
@@ -165,7 +166,7 @@ function runInPage(ctx) {
     return Math.round(n * 10) / 10;
   }
   function textOf(el) {
-    return String(el.textContent || '')
+    return String(dom.textContent(el) || '')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 60);
@@ -223,7 +224,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of document.styleSheets || []) {
+      for (const sheet of dom.styleSheets(document) || []) {
         let rules = null;
         try {
           rules = sheet.cssRules;
@@ -238,11 +239,11 @@ function runInPage(ctx) {
   // ---- Lines of text, before and after the spacing ----
 
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof document.createRange !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!view || !probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(document, 'createRange') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -261,7 +262,7 @@ function runInPage(ctx) {
   // Clipping boxes already reported as a finding.
   const reportedClip = new Set();
 
-  if (hasLayout() && document.body) {
+  if (hasLayout() && dom.body(document)) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
 
     // The text this scan judges: inside the scope (contextSelector), not
@@ -272,12 +273,12 @@ function runInPage(ctx) {
     // inert, and the scan judges the dialog.
     const roots = (Array.isArray(ctx.root) ? ctx.root : [ctx.root]).filter(Boolean);
     const wholeDocument =
-      !roots.length || roots.some((r) => r === document || r === document.documentElement);
+      !roots.length || roots.some((r) => r === document || r === dom.documentElement(document));
     function inScope(el) {
       if (wholeDocument) return true;
       return roots.some((r) => {
         try {
-          return r === el || (typeof r.contains === 'function' && r.contains(el));
+          return r === el || (typeof dom.get(r, 'contains') === 'function' && dom.contains(r, el));
         } catch {
           return false;
         }
@@ -313,17 +314,21 @@ function runInPage(ctx) {
 
     const nodes = [];
     const judged = new Set();
-    const walker = document.createTreeWalker(document.body, 4);
+    const walker = dom.createTreeWalker(document, dom.body(document), 4);
     for (let n = walker.nextNode(); n && nodes.length < MAX_TEXT_NODES; n = walker.nextNode()) {
-      if (!/\S/.test(n.nodeValue || '')) continue;
-      const parent = n.parentElement;
-      if (!parent || SKIP.has(String(parent.localName))) continue;
+      if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+      const parent = dom.parentElement(n);
+      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
       if (isBehindModal(parent)) continue;
       // Text the page does not render (display:none, a closed <details>,
       // content-visibility:hidden) is never judged, so it does not take a
       // place in the budget either.
       try {
-        if (typeof parent.checkVisibility === 'function' && !parent.checkVisibility()) continue;
+        if (
+          typeof dom.get(parent, 'checkVisibility') === 'function' &&
+          !dom.checkVisibility(parent)
+        )
+          continue;
       } catch {}
       nodes.push(n);
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
@@ -338,10 +343,11 @@ function runInPage(ctx) {
       const out = [];
       let scrollX = false;
       let scrollY = false;
+      // Bounded as a safety net only: a walk up a real tree always ends.
       for (
-        let a = el;
-        a && a.nodeType === 1 && a !== document.documentElement;
-        a = a.parentElement
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
+        a = dom.parentElement(a), i++
       ) {
         const cs = styleOf(a);
         if (!cs) continue;
@@ -358,8 +364,8 @@ function runInPage(ctx) {
 
     function shown(el) {
       try {
-        return typeof el.checkVisibility === 'function'
-          ? el.checkVisibility({ opacityProperty: true, visibilityProperty: true })
+        return typeof dom.get(el, 'checkVisibility') === 'function'
+          ? dom.checkVisibility(el, { opacityProperty: true, visibilityProperty: true })
           : true;
       } catch {
         return true;
@@ -369,13 +375,13 @@ function runInPage(ctx) {
     const sx = () => view.scrollX || 0;
     const sy = () => view.scrollY || 0;
     function linesOf(node) {
-      const range = document.createRange();
+      const range = dom.createRange(document);
       try {
         range.selectNodeContents(node);
         const out = [];
         const ox = sx();
         const oy = sy();
-        for (const r of range.getClientRects()) {
+        for (const r of dom.getClientRects(range)) {
           if (r.width < 1 || r.height < 1) continue;
           out.push({
             left: r.left + ox,
@@ -394,7 +400,7 @@ function runInPage(ctx) {
       }
     }
     function boxOf(el) {
-      const r = el.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(el);
       const cs = styleOf(el);
       const bl = px(cs && cs.borderLeftWidth) || 0;
       const bt = px(cs && cs.borderTopWidth) || 0;
@@ -403,8 +409,8 @@ function runInPage(ctx) {
       return {
         left: r.left + ox + bl,
         top: r.top + oy + bt,
-        right: r.left + ox + bl + el.clientWidth,
-        bottom: r.top + oy + bt + el.clientHeight
+        right: r.left + ox + bl + dom.get(el, 'clientWidth'),
+        bottom: r.top + oy + bt + dom.get(el, 'clientHeight')
       };
     }
 
@@ -413,7 +419,7 @@ function runInPage(ctx) {
       const boxes = new Map();
       for (const n of nodes) {
         lines.set(n, linesOf(n));
-        for (const c of clippersOf(n.parentElement)) {
+        for (const c of clippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -424,7 +430,7 @@ function runInPage(ctx) {
     const before = measure();
     const fontSizes = new Map();
     for (const n of nodes) {
-      const cs = styleOf(n.parentElement);
+      const cs = styleOf(dom.parentElement(n));
       fontSizes.set(n, px(cs && cs.fontSize) || 16);
     }
 
@@ -435,8 +441,8 @@ function runInPage(ctx) {
     const visibleBefore = new Set();
     for (const n of nodes) {
       const lines = before.lines.get(n) || [];
-      if (!lines.length || !shown(n.parentElement)) continue;
-      const inside = clippersOf(n.parentElement).every((c) => {
+      if (!lines.length || !shown(dom.parentElement(n))) continue;
+      const inside = clippersOf(dom.parentElement(n)).every((c) => {
         const b0 = before.boxes.get(c.el);
         return (
           !!b0 &&
@@ -449,8 +455,8 @@ function runInPage(ctx) {
       if (inside) visibleBefore.add(n);
     }
 
-    const sheet = document.createElement('style');
-    sheet.setAttribute('data-surea11y', LAYER);
+    const sheet = dom.createElement(document, 'style');
+    dom.setAttribute(sheet, 'data-surea11y', LAYER);
     sheet.textContent =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
@@ -458,11 +464,11 @@ function runInPage(ctx) {
       '}';
     let after;
     try {
-      const head = document.head || document.documentElement;
-      head.insertBefore(sheet, head.firstChild);
+      const head = dom.head(document) || dom.documentElement(document);
+      dom.insertBefore(head, sheet, dom.firstChild(head));
       after = measure();
     } finally {
-      if (sheet.parentNode) sheet.parentNode.removeChild(sheet);
+      if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       try {
         view.scrollTo(scroll[0], scroll[1]);
       } catch {}
@@ -487,7 +493,10 @@ function runInPage(ctx) {
       movedForEver = new Set();
       let animations;
       try {
-        animations = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+        animations =
+          typeof dom.get(document, 'getAnimations') === 'function'
+            ? dom.getAnimations(document)
+            : [];
       } catch {
         animations = [];
       }
@@ -506,7 +515,8 @@ function runInPage(ctx) {
     function isMovedForEver(from, stop) {
       const targets = movedForEverTargets();
       if (!targets.size) return false;
-      for (let el = from; el && el !== stop; el = el.parentElement) {
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let el = from, i = 0; el && el !== stop && i < 100000; el = dom.parentElement(el), i++) {
         if (targets.has(el)) return true;
       }
       return false;
@@ -576,7 +586,7 @@ function runInPage(ctx) {
       if (!linesAfter.length || !visibleBefore.has(n) || !judged.has(n)) continue;
       textCount += 1;
       const fontSize = fontSizes.get(n);
-      for (const c of clippersOf(n.parentElement)) {
+      for (const c of clippersOf(dom.parentElement(n))) {
         if (reportedClip.has(c.el)) continue;
         const b1 = after.boxes.get(c.el);
         if (!b1) continue;
@@ -600,13 +610,13 @@ function runInPage(ctx) {
             if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
           }
         }
-        const moved = isMovedForEver(n.parentElement, c.el);
+        const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
           const list = moved ? moving : worst.lost ? clipped : partly;
           list.push({
             el: c.el,
-            text: textOf(n.parentElement),
+            text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
               thresholdPx: round1(worst.thresholdPx),
@@ -628,7 +638,7 @@ function runInPage(ctx) {
           b1,
           c,
           fontSize,
-          n.parentElement,
+          dom.parentElement(n),
           before.boxes.get(c.el)
         );
         if (approach) {
@@ -636,7 +646,7 @@ function runInPage(ctx) {
             el: c.el,
             value: approach.value,
             threshold: approach.threshold,
-            context: { axis: approach.axis, text: textOf(n.parentElement) }
+            context: { axis: approach.axis, text: textOf(dom.parentElement(n)) }
           });
         }
       }
@@ -653,7 +663,7 @@ function runInPage(ctx) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of clippersOf(n.parentElement)) {
+          for (const c of clippersOf(dom.parentElement(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
@@ -696,9 +706,9 @@ function runInPage(ctx) {
             // be anywhere on the page.
             const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
             if (!judged.has(a.n)) continue;
-            const pa = a.n.parentElement;
-            const pb = b.n.parentElement;
-            if (pa === pb || pa.contains(pb) || pb.contains(pa)) continue;
+            const pa = dom.parentElement(a.n);
+            const pb = dom.parentElement(b.n);
+            if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
             if (reported.has(pa) || reported.has(pb)) continue;
             if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
             reported.add(pa);

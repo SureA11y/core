@@ -81,6 +81,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -109,8 +110,8 @@ function runInPage(ctx) {
       // fall through
     }
     try {
-      if (safeRoot && typeof safeRoot.querySelectorAll === 'function')
-        return Array.from(safeRoot.querySelectorAll(sel));
+      if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
+        return Array.from(dom.querySelectorAll(safeRoot, sel));
     } catch {
       // fall through
     }
@@ -120,8 +121,8 @@ function runInPage(ctx) {
   function getComputedStyleSafe(el) {
     try {
       const w =
-        document && document.defaultView
-          ? document.defaultView
+        document && dom.defaultView(document)
+          ? dom.defaultView(document)
           : typeof window !== 'undefined'
             ? window
             : null;
@@ -323,7 +324,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of document.styleSheets || []) {
+      for (const sheet of dom.styleSheets(document) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -340,7 +341,7 @@ function runInPage(ctx) {
 
   function matchesSafe(el, selector) {
     try {
-      return typeof el.matches === 'function' && el.matches(selector);
+      return typeof dom.get(el, 'matches') === 'function' && dom.matches(el, selector);
     } catch {
       return false;
     }
@@ -351,7 +352,7 @@ function runInPage(ctx) {
   function focusedVisibilityHints(el) {
     const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
     if (!rules.length) return null;
-    const inline = el.style || null;
+    const inline = dom.get(el, 'style') || null;
     const inlineHas = (p) => {
       try {
         return !!(inline && trim(inline.getPropertyValue(p)));
@@ -395,22 +396,22 @@ function runInPage(ctx) {
   }
 
   function getDeepActiveElement(docRef) {
-    let cur = docRef && docRef.activeElement ? docRef.activeElement : null;
+    let cur = docRef && dom.activeElement(docRef) ? dom.activeElement(docRef) : null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   function focusElementSafe(el) {
-    if (!el || typeof el.focus !== 'function') return false;
+    if (!el || typeof dom.get(el, 'focus') !== 'function') return false;
     try {
-      el.focus({ preventScroll: true });
+      dom.focus(el, { preventScroll: true });
       return true;
     } catch {
       try {
-        el.focus();
+        dom.focus(el);
         return true;
       } catch {
         return false;
@@ -420,8 +421,8 @@ function runInPage(ctx) {
 
   function runFocusObservationWindow(docRef, fn) {
     const w =
-      docRef && docRef.defaultView
-        ? docRef.defaultView
+      docRef && dom.defaultView(docRef)
+        ? dom.defaultView(docRef)
         : typeof window !== 'undefined'
           ? window
           : null;
@@ -509,22 +510,23 @@ function runInPage(ctx) {
   function restoreFocus(before) {
     const now = getDeepActiveElement(document);
     if (now === before) return;
-    const hadFocus = before && before !== document.body && before !== document.documentElement;
+    const hadFocus =
+      before && before !== dom.body(document) && before !== dom.documentElement(document);
     if (hadFocus && focusElementSafe(before) && getDeepActiveElement(document) === before) return;
     try {
-      if (now && typeof now.blur === 'function') now.blur();
+      if (now && typeof dom.get(now, 'blur') === 'function') dom.blur(now);
     } catch {}
   }
 
   function probeImmediateFocusRedirect(candidate) {
-    if (!candidate || typeof candidate.addEventListener !== 'function') return null;
+    if (!candidate || typeof dom.get(candidate, 'addEventListener') !== 'function') return null;
 
     let focusedByEvent = false;
     const onFocusCapture = () => {
       focusedByEvent = true;
     };
     try {
-      candidate.addEventListener('focus', onFocusCapture, true);
+      dom.addEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
 
     const before = getDeepActiveElement(document);
@@ -534,7 +536,7 @@ function runInPage(ctx) {
     });
 
     try {
-      candidate.removeEventListener('focus', onFocusCapture, true);
+      dom.removeEventListener(candidate, 'focus', onFocusCapture, true);
     } catch {}
     if (!focused || !focusedByEvent) return null;
 
@@ -544,14 +546,14 @@ function runInPage(ctx) {
     if (!after || after === candidate) return null;
     const redirectedTag = (() => {
       try {
-        return lower(after.tagName || '');
+        return lower(dom.tagName(after) || '');
       } catch {
         return '';
       }
     })();
     const redirectedId = (() => {
       try {
-        return trim(after.getAttribute && after.getAttribute('id'));
+        return trim(dom.get(after, 'getAttribute') && dom.getAttribute(after, 'id'));
       } catch {
         return '';
       }
@@ -599,7 +601,7 @@ function runInPage(ctx) {
   let runtimeProbeCount = 0;
 
   for (const el of candidates) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const finfo = getFocusableInfoSafe(el);
     if (!isTabbable(el, finfo)) continue;
@@ -616,7 +618,7 @@ function runInPage(ctx) {
 
     const tagName = (() => {
       try {
-        return lower(el.tagName || '');
+        return lower(dom.tagName(el) || '');
       } catch {
         return '';
       }

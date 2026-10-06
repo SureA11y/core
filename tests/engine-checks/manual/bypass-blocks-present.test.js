@@ -31,6 +31,22 @@ test(`${RULE_ID}: pass when role="main" is present`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a main or heading role in a fallback list or upper case counts (role="foo main", role="HEADING")`, () => {
+  for (const body of [
+    '<nav>Nav</nav><div role="foo main">Content</div>',
+    '<nav>Nav</nav><div role="MAIN">Content</div>',
+    '<nav>Nav</nav><div role="foo heading" aria-level="1">Title</div>',
+    '<nav>Nav</nav><div role="HEADING" aria-level="1">Title</div>'
+  ]) {
+    const html = `<!doctype html><html><body>${body}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  // A main token after a real role is not the element's role.
+  const regionFirst = `<!doctype html><html><body><nav>Nav</nav><div role="region main" aria-label="x">Content</div></body></html>`;
+  assertRule(runa11yCoreOnHtml(regionFirst, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+});
+
 test(`${RULE_ID}: pass when a working skip link is present`, () => {
   const html = `<!doctype html><html><body><a href="#content">Skip to content</a><nav>Nav</nav><div id="content">Content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

@@ -2,6 +2,8 @@
 
 'use strict';
 
+const { createSafeDom } = require('./safe-dom');
+
 /**
  * postMessage-based RPC used to reach into cooperating child frames (same-
  * or cross-origin, treated identically). Used by frame-scan.js.
@@ -38,10 +40,11 @@ function getFrameRpcRegistry(win) {
 }
 
 function installFrameRpcListener(win, channel) {
+  const dom = createSafeDom();
   const registry = getFrameRpcRegistry(win);
   if (registry.listening) return registry;
 
-  win.addEventListener('message', function a11yCoreFrameRpcListener(event) {
+  dom.addEventListener(win, 'message', function a11yCoreFrameRpcListener(event) {
     const data = event && event.data;
     if (!data || data.__a11ycore !== true || data.channel !== channel) return;
 

@@ -9,8 +9,10 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to elements with a heading role: native <h1>-<h6>, or any
- *   element with explicit role="heading" (unless overridden by another
- *   explicit role).
+ *   element whose role attribute resolves to heading (the first token
+ *   naming a known role, matched case-insensitively, so role="foo heading"
+ *   counts). A native heading keeps its role when no token is a known
+ *   role, and loses it to any other resolved role.
  * @expectation
  *   The heading has a non-empty accessible name: aria-label,
  *   aria-labelledby, visible text content not hidden from assistive
@@ -60,7 +62,8 @@ const meta = {
 };
 
 function runInPage(ctx) {
-  const { document, helpers, rule } = ctx;
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
 
   function normalizeWs(s) {
     return String(s || '')
@@ -68,10 +71,11 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, case-insensitively, and none means no explicit role at all
+  // (the element keeps its native heading role, if any).
   function getExplicitRoleToken(el) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute('role'));
-    if (!raw) return '';
-    return raw.split(/\s+/)[0].toLowerCase();
+    return helpers.aria.getExplicitRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
@@ -110,13 +114,13 @@ function runInPage(ctx) {
 
   function hasGlobalAriaAttr(el) {
     for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (el.getAttribute && el.getAttribute(attr) != null) return true;
+      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
     }
     return false;
   }
 
   function isHeading(el) {
-    const tag = el.tagName ? el.tagName.toLowerCase() : '';
+    const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
 
     const explicit = getExplicitRoleToken(el);
@@ -129,16 +133,16 @@ function runInPage(ctx) {
   }
 
   function getAccessibleNameText(el) {
-    const al = normalizeWs(el.getAttribute && el.getAttribute('aria-label'));
+    const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
-    const alb = normalizeWs(el.getAttribute && el.getAttribute('aria-labelledby'));
+    const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
     if (alb) {
       const parts = [];
       for (const refId of alb.split(/\s+/).filter(Boolean)) {
         try {
-          const ref = document.getElementById(refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) {
-            const t = normalizeWs(ref.textContent);
+            const t = normalizeWs(dom.textContent(ref));
             if (t) parts.push(t);
           }
         } catch {}
@@ -159,7 +163,7 @@ function runInPage(ctx) {
         if (info && info.present && info.value) return info.value;
       } catch {}
     }
-    return normalizeWs(el.getAttribute && el.getAttribute('title'));
+    return normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'title'));
   }
 
   const nodes = helpers.queryAllSmart

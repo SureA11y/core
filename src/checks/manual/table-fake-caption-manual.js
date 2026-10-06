@@ -12,7 +12,8 @@
  *   `<table>` elements with no `<caption>` child, at least two rows, and
  *   a first row containing exactly one non-empty-text cell while at
  *   least one other row has more than one cell. Left out: a table whose
- *   role (first token) is anything but table, grid or treegrid, such as a
+ *   role (the first token of its role attribute that names a real role, in
+ *   any case) is anything but table, grid or treegrid, such as a
  *   layout table with role="presentation", which needs no caption; and a
  *   table already named by a non-empty aria-label, an aria-labelledby that
  *   resolves to text, or a non-empty title, which WCAG accepts as the
@@ -65,6 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function trim(v) {
@@ -89,15 +91,17 @@ function runInPage(ctx) {
 
   const TABLE_ROLES = ['table', 'grid', 'treegrid'];
 
+  // The role attribute is a fallback list: the first token naming a real
+  // role wins, in any case, and none leaves the native table role.
   function hasOtherRole(table) {
-    const role = trim(table.getAttribute('role')).toLowerCase().split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(table);
     return !!role && !TABLE_ROLES.includes(role);
   }
 
   // A name from aria-labelledby, aria-label or title already gives the table
   // a title that assistive technology announces.
   function isNamed(table) {
-    if (trim(table.getAttribute('title'))) return true;
+    if (trim(dom.getAttribute(table, 'title'))) return true;
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(table, ctx);
@@ -106,7 +110,7 @@ function runInPage(ctx) {
         return false;
       }
     }
-    return !!trim(table.getAttribute('aria-label'));
+    return !!trim(dom.getAttribute(table, 'aria-label'));
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
@@ -117,7 +121,7 @@ function runInPage(ctx) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(table.querySelector && table.querySelector('caption'));
+    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
@@ -135,7 +139,7 @@ function runInPage(ctx) {
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
-    const candidateText = trim(candidateCell.textContent || '');
+    const candidateText = trim(dom.textContent(candidateCell) || '');
     if (!candidateText) continue;
 
     const hasMultiCellRow = rows
@@ -146,7 +150,7 @@ function runInPage(ctx) {
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(table)
-      : table.outerHTML || '';
+      : dom.outerHTML(table) || '';
 
     const baseOccurrence = {
       selector: stableSelector,

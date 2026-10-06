@@ -46,6 +46,12 @@ const {
   rollupCompositeResults,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
+const {
+  createSafeDom,
+  SAFE_DOM_GETTERS,
+  SAFE_DOM_METHODS,
+  SAFE_DOM_OTHER_NAMES
+} = require('../src/core/safe-dom');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
@@ -1709,6 +1715,13 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
   };
 }
 
+// Inlined from src/core/safe-dom.js -- DOM reads a page's named form
+// controls and images can't redirect.
+const SAFE_DOM_GETTERS = ${jsStringify(SAFE_DOM_GETTERS)};
+const SAFE_DOM_METHODS = ${jsStringify(SAFE_DOM_METHODS)};
+const SAFE_DOM_OTHER_NAMES = ${jsStringify(SAFE_DOM_OTHER_NAMES)};
+${inlineConstFunction('createSafeDom', createSafeDom)}
+
 // Inlined from src/core/contrast-helpers.js
 ${inlineConstFunction('createContrastHelpers', createContrastHelpers)}
 
@@ -1824,6 +1837,10 @@ ${implEntriesInPage.join(',\n')}
   const crossFrameRunnerSource = `
 const __a11yCoreCrossFrameApi = (function () {
   const FRAME_RPC_CHANNEL = ${jsStringify(FRAME_RPC_CHANNEL)};
+  const SAFE_DOM_GETTERS = ${jsStringify(SAFE_DOM_GETTERS)};
+  const SAFE_DOM_METHODS = ${jsStringify(SAFE_DOM_METHODS)};
+const SAFE_DOM_OTHER_NAMES = ${jsStringify(SAFE_DOM_OTHER_NAMES)};
+${inlineConstFunction('createSafeDom', createSafeDom)}
 ${inlineConstFunction('getFrameRpcRegistry', getFrameRpcRegistry)}
 ${inlineConstFunction('installFrameRpcListener', installFrameRpcListener)}
 ${inlineConstFunction('nextFrameRpcRequestId', nextFrameRpcRequestId)}

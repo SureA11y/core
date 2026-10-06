@@ -13,7 +13,8 @@
  *   button-like types), `select`, `textarea`, or an element with one of
  *   the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox,
  *   menuitemcheckbox, menuitemradio, radio, searchbox, slider,
- *   spinbutton, switch, textbox) that carry a visible programmatic
+ *   spinbutton, switch, textbox; the first real role token of the role
+ *   attribute, in any case) that carry a visible programmatic
  *   label: a `<label>` association, or the elements `aria-labelledby`
  *   points at. A field named only by `aria-label`/`title` has no visible
  *   label to judge and is out of scope here (its labelling mechanism is
@@ -102,6 +103,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Declared inside runInPage; see scripts/build-core.js header
@@ -201,25 +203,72 @@ function runInPage(ctx) {
     ])
   };
 
+  // ARIA widget roles that make an element a field. The role attribute is a
+  // fallback list matched in any case: role~= finds the token anywhere in
+  // it, and hasResolvedRole below keeps only elements whose first real role
+  // token is one of these (role="foo textbox" yes, role="button textbox" no).
+  const FIELD_ROLES = [
+    'checkbox',
+    'combobox',
+    'listbox',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'radio',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'textbox'
+  ];
+  const NATIVE_FIELD_SELECTOR =
+    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea';
   const FIELD_SELECTOR = [
-    'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"])',
-    'select',
-    'textarea',
-    '[role="checkbox"]',
-    '[role="combobox"]',
-    '[role="listbox"]',
-    '[role="menuitemcheckbox"]',
-    '[role="menuitemradio"]',
-    '[role="radio"]',
-    '[role="searchbox"]',
-    '[role="slider"]',
-    '[role="spinbutton"]',
-    '[role="switch"]',
-    '[role="textbox"]'
+    NATIVE_FIELD_SELECTOR,
+    ...FIELD_ROLES.map((r) => `[role~="${r}" i]`)
   ].join(', ');
 
-  const ROW_SELECTOR = 'tr, [role="row"], li, [role="listitem"]';
-  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  const ROW_TAGS = ['tr', 'li'];
+  const ROW_ROLES = ['row', 'listitem'];
+  const ROW_SELECTOR = 'tr, [role~="row" i], li, [role~="listitem" i]';
+  const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+  const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
+
+  // Whether the element's role attribute resolves to one of `roles`.
+  function hasResolvedRole(el, roles) {
+    try {
+      return roles.includes(helpers.aria.getExplicitRole(el));
+    } catch {
+      return false;
+    }
+  }
+
+  function isTagOrRole(el, tags, roles) {
+    if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
+    return hasResolvedRole(el, roles);
+  }
+
+  function isField(el) {
+    try {
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, NATIVE_FIELD_SELECTOR))
+        return true;
+    } catch {
+      // fall through to the role check
+    }
+    return hasResolvedRole(el, FIELD_ROLES);
+  }
+
+  // Nearest table row or list item ancestor (or self): a native tr/li, or an
+  // element whose resolved role is row/listitem.
+  function closestRow(el) {
+    let cur = el;
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      const hit = dom.get(cur, 'closest') ? dom.closest(cur, ROW_SELECTOR) : null;
+      if (!hit) return null;
+      if (isTagOrRole(hit, ROW_TAGS, ROW_ROLES)) return hit;
+      cur = dom.parentElement(hit);
+    }
+    return null;
+  }
 
   function normalizeWs(s) {
     return String(s || '')
@@ -241,12 +290,13 @@ function runInPage(ctx) {
   // in French) is not flagged when it is a real name in another.
   function primaryLangOf(node) {
     let n = node;
-    while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -297,13 +347,13 @@ function runInPage(ctx) {
     return true;
   }
 
-  function resolveIdRefs(el, attr) {
-    const raw = normalizeWs(el.getAttribute && el.getAttribute(attr));
+  function getReferencedElements(el, attr) {
+    const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, attr));
     if (!raw) return [];
     const out = [];
     for (const refId of raw.split(/\s+/).filter(Boolean)) {
       try {
-        const ref = document.getElementById(refId);
+        const ref = helpers.getElementByIdInTree(el, refId);
         if (ref) out.push(ref);
       } catch {
         // ignore an unusable reference
@@ -313,18 +363,27 @@ function runInPage(ctx) {
   }
 
   // Index of `<label for="...">` elements by their `for` value, built once
-  // (not the native `el.labels`, deliberately -- see getNativeLabels).
-  const labelsByForId = new Map();
-  try {
-    for (const label of document.querySelectorAll('label[for]')) {
-      const forVal = normalizeWs(label.getAttribute('for'));
-      if (!forVal) continue;
-      const bucket = labelsByForId.get(forVal);
-      if (bucket) bucket.push(label);
-      else labelsByForId.set(forVal, [label]);
+  // per tree (not the native `el.labels`, deliberately -- see
+  // getNativeLabels). A label labels a control in its own tree only: the
+  // document, or the shadow root both are in.
+  const labelsByForIdByTree = new Map();
+  function labelsByForIdIn(tree) {
+    let labelsByForId = labelsByForIdByTree.get(tree);
+    if (labelsByForId) return labelsByForId;
+    labelsByForId = new Map();
+    labelsByForIdByTree.set(tree, labelsByForId);
+    try {
+      for (const label of dom.querySelectorAll(tree, 'label[for]')) {
+        const forVal = normalizeWs(dom.getAttribute(label, 'for'));
+        if (!forVal) continue;
+        const bucket = labelsByForId.get(forVal);
+        if (bucket) bucket.push(label);
+        else labelsByForId.set(forVal, [label]);
+      }
+    } catch {
+      // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
     }
-  } catch {
-    // labelsByForId stays empty; getNativeLabels still has the wrapping-label check
+    return labelsByForId;
   }
 
   // Per HTML's label-control algorithm, a wrapping <label> with no `for`
@@ -350,20 +409,33 @@ function runInPage(ctx) {
   // per field instead.
   function getNativeLabels(el) {
     const labels = [];
-    const idVal = normalizeWs(el.getAttribute && el.getAttribute('id'));
+    const idVal = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
     if (idVal) {
-      const forLabels = labelsByForId.get(idVal);
+      let tree = document;
+      try {
+        const root = dom.getRootNode(el);
+        if (root && typeof dom.get(root, 'getElementById') === 'function') tree = root;
+      } catch {
+        // keep the document
+      }
+      const forLabels = labelsByForIdIn(tree).get(idVal);
       if (forLabels) {
         for (const label of forLabels) labels.push(label);
       }
     }
     try {
-      const wrapping = el.closest ? el.closest('label') : null;
-      const hasForAttr = !!(wrapping && wrapping.hasAttribute && wrapping.hasAttribute('for'));
+      const wrapping = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
+      const hasForAttr = !!(
+        wrapping &&
+        dom.get(wrapping, 'hasAttribute') &&
+        dom.hasAttribute(wrapping, 'for')
+      );
       if (wrapping && !hasForAttr && labels.indexOf(wrapping) === -1) {
         let firstControl = null;
         try {
-          firstControl = wrapping.querySelector ? wrapping.querySelector(LABELABLE_SELECTOR) : null;
+          firstControl = dom.get(wrapping, 'querySelector')
+            ? dom.querySelector(wrapping, LABELABLE_SELECTOR)
+            : null;
         } catch {
           firstControl = null;
         }
@@ -379,12 +451,12 @@ function runInPage(ctx) {
   // present, otherwise the <label> elements associated with it. aria-label is
   // left out on purpose; see the header comment.
   function getVisibleLabelText(el) {
-    const referenced = resolveIdRefs(el, 'aria-labelledby');
+    const referenced = getReferencedElements(el, 'aria-labelledby');
     const labels = referenced.length ? referenced : getNativeLabels(el);
     const parts = [];
     let hiddenParts = 0;
     for (const label of labels) {
-      const text = normalizeWs(label.textContent);
+      const text = normalizeWs(dom.textContent(label));
       if (!text) continue;
       if (isVisible(label)) parts.push(text);
       else hiddenParts += 1;
@@ -394,7 +466,9 @@ function runInPage(ctx) {
 
   const headings = (() => {
     try {
-      return Array.prototype.slice.call(document.querySelectorAll(HEADING_SELECTOR));
+      return Array.prototype.slice
+        .call(dom.querySelectorAll(document, HEADING_SELECTOR))
+        .filter((h) => isTagOrRole(h, HEADING_TAGS, ['heading']));
     } catch {
       return [];
     }
@@ -403,7 +477,7 @@ function runInPage(ctx) {
   function precedes(a, b) {
     try {
       // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
-      return !!(b.compareDocumentPosition(a) & 2);
+      return !!(dom.compareDocumentPosition(b, a) & 2);
     } catch {
       return false;
     }
@@ -425,23 +499,26 @@ function runInPage(ctx) {
   function fieldsetLegendText(el) {
     let fieldset;
     try {
-      fieldset = el.closest ? el.closest('fieldset') : null;
+      fieldset = dom.get(el, 'closest') ? dom.closest(el, 'fieldset') : null;
     } catch {
       fieldset = null;
     }
-    while (fieldset) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; fieldset && steps < 100000; steps++) {
       let legend;
       try {
-        legend = fieldset.querySelector('legend');
+        legend = dom.querySelector(fieldset, 'legend');
       } catch {
         legend = null;
       }
       if (legend && isVisible(legend)) {
-        const text = normalizeWs(legend.textContent);
+        const text = normalizeWs(dom.textContent(legend));
         if (text) return text;
       }
       try {
-        fieldset = fieldset.parentElement ? fieldset.parentElement.closest('fieldset') : null;
+        fieldset = dom.parentElement(fieldset)
+          ? dom.closest(dom.parentElement(fieldset), 'fieldset')
+          : null;
       } catch {
         fieldset = null;
       }
@@ -457,14 +534,14 @@ function runInPage(ctx) {
   function rowContextText(el, labelText) {
     let row;
     try {
-      row = el.closest ? el.closest(ROW_SELECTOR) : null;
+      row = closestRow(el);
     } catch {
       row = null;
     }
     if (!row || !isVisible(row)) return '';
     let text = rowTextCache.get(row);
     if (text === undefined) {
-      text = normalizeWs(row.textContent);
+      text = normalizeWs(dom.textContent(row));
       rowTextCache.set(row, text);
     }
     if (!text) return '';
@@ -482,7 +559,8 @@ function runInPage(ctx) {
 
   const fields = [];
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    if (!isField(el)) continue;
     if (!isVisible(el)) continue;
 
     const label = getVisibleLabelText(el);
@@ -527,7 +605,8 @@ function runInPage(ctx) {
       let sameRoot;
       try {
         sameRoot =
-          typeof field.el.getRootNode !== 'function' || field.el.getRootNode() === document;
+          typeof dom.get(field.el, 'getRootNode') !== 'function' ||
+          dom.getRootNode(field.el) === document;
       } catch {
         sameRoot = true;
       }
@@ -541,7 +620,7 @@ function runInPage(ctx) {
 
     orderedFields.sort((a, b) => {
       try {
-        const bits = a.el.compareDocumentPosition(b.el);
+        const bits = dom.compareDocumentPosition(a.el, b.el);
         if (bits & 4) return -1; // b follows a
         if (bits & 2) return 1; // b precedes a
       } catch {
@@ -557,7 +636,7 @@ function runInPage(ctx) {
         const heading = headings[hIdx];
         hIdx += 1;
         if (!isVisible(heading)) continue;
-        const text = normalizeWs(heading.textContent);
+        const text = normalizeWs(dom.textContent(heading));
         if (text) current = text;
       }
       nearestVisibleHeadingByField.set(field.el, current);

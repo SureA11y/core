@@ -57,6 +57,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const ariaHelpers = helpers && helpers.aria ? helpers.aria : null;
@@ -87,14 +88,14 @@ function runInPage(ctx) {
       const up =
         typeof helpers.composedParent === 'function'
           ? helpers.composedParent
-          : (n) => n.parentElement;
+          : (n) => dom.parentElement(n);
 
       // A shadow root has no getAttribute, so skip past it rather than
       // stopping: the host one step further up is the node that matters.
       for (let n = el; n; n = up(n)) {
-        if (!n.getAttribute) continue;
-        if (String(n.getAttribute('aria-hidden') || '').toLowerCase() === 'true') return true;
-        if (n.hasAttribute && n.hasAttribute('inert')) return true;
+        if (!dom.get(n, 'getAttribute')) continue;
+        if (String(dom.getAttribute(n, 'aria-hidden') || '').toLowerCase() === 'true') return true;
+        if (dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')) return true;
       }
     } catch {
       return false;
@@ -103,7 +104,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // ACT 674b10 is not applicable to a programmatically hidden element.
     if (isHidden(el)) continue;

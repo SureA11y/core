@@ -55,6 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
 
@@ -65,8 +66,8 @@ function runInPage(ctx) {
       ? helpers.queryAll
       : (sel) => {
           try {
-            return safeRoot && safeRoot.querySelectorAll
-              ? Array.from(safeRoot.querySelectorAll(sel))
+            return safeRoot && dom.get(safeRoot, 'querySelectorAll')
+              ? Array.from(dom.querySelectorAll(safeRoot, sel))
               : [];
           } catch {
             return [];
@@ -86,11 +87,11 @@ function runInPage(ctx) {
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
   function isRolePresentationExcluded(el) {
+    // The role attribute is a fallback list: the first token naming a real
+    // role wins, in any case (role="foo none" and role="NONE" both apply).
     const role = (() => {
       try {
-        return String(el.getAttribute('role') || '')
-          .trim()
-          .toLowerCase();
+        return helpers.aria.getExplicitRole(el);
       } catch {
         return '';
       }
@@ -109,7 +110,7 @@ function runInPage(ctx) {
       })();
       focusable = !!(fi && fi.focusable);
     } else {
-      const tabindex = el.getAttribute('tabindex');
+      const tabindex = dom.getAttribute(el, 'tabindex');
       focusable =
         tabindex != null &&
         String(tabindex).trim() !== '' &&
@@ -131,7 +132,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      const title = el.getAttribute('title');
+      const title = dom.getAttribute(el, 'title');
       return title != null && String(title).trim() !== '';
     } catch {
       return false;
@@ -157,7 +158,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of els) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     if (isAccTreeEligible) {
       const elig = (() => {
@@ -173,7 +174,8 @@ function runInPage(ctx) {
     if (isRolePresentationExcluded(el)) continue;
 
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
-    if (!(el.getAttribute('alt') != null && String(el.getAttribute('alt')).trim() === '')) continue;
+    if (!(dom.getAttribute(el, 'alt') != null && String(dom.getAttribute(el, 'alt')).trim() === ''))
+      continue;
     if (!hasNameFromOtherSource(el)) continue;
 
     applicableCount += 1;

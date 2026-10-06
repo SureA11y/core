@@ -206,3 +206,19 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     'Checks that <object> elements provide a text alternative via fallback content or an accessible name.'
   );
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list: role="foo presentation" is excluded when not focusable (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><object data="x.svg" role="foo presentation"></object></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an upper-case role resolves too: role="NONE" is excluded when not focusable (#91)`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><object data="x.svg" role="NONE"></object></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});

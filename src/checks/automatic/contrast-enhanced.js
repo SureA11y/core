@@ -81,13 +81,14 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   function toElement(node) {
     try {
       if (!node) return null;
-      if (node.nodeType === 1) return node; // ELEMENT_NODE
-      if (node.nodeType === 3) return node.parentElement || null; // TEXT_NODE
+      if (dom.nodeType(node) === 1) return node; // ELEMENT_NODE
+      if (dom.nodeType(node) === 3) return dom.parentElement(node) || null; // TEXT_NODE
       return null;
     } catch {
       return null;
@@ -117,7 +118,7 @@ function runInPage(ctx) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
+      if (!el || dom.nodeType(el) !== 1) return null;
 
       // Prefer engine helper (matches checks/engine behavior + may be cached)
       if (helpers && typeof helpers.computedStyle === 'function') {
@@ -126,7 +127,9 @@ function runInPage(ctx) {
       }
 
       const view =
-        el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView : null;
+        dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el))
+          ? dom.defaultView(dom.ownerDocument(el))
+          : null;
 
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {}
@@ -135,7 +138,7 @@ function runInPage(ctx) {
 
   function getFontInfo(el) {
     try {
-      if (!el || el.nodeType !== 1) {
+      if (!el || dom.nodeType(el) !== 1) {
         return {
           fontSizePx: 0,
           fontSizePt: '',
@@ -279,12 +282,14 @@ function runInPage(ctx) {
       let nodeSelector = '';
       try {
         const elementId =
-          el && typeof el.getAttribute === 'function' ? el.getAttribute('id') || '' : '';
+          el && typeof dom.get(el, 'getAttribute') === 'function'
+            ? dom.getAttribute(el, 'id') || ''
+            : '';
         if (elementId) nodeSelector = `#${elementId}`;
       } catch {
         // no-throw
       }
-      const tagName = el && el.tagName ? String(el.tagName).toLowerCase() : 'element';
+      const tagName = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
 
       let occ = { ...occBase };
 

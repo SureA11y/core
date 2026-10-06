@@ -115,6 +115,16 @@ test(`${RULE_ID}: role="none" excludes the same way role="presentation" does`, (
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a fallback list or upper-case role (role="foo none", role="PRESENTATION") excludes the same way`, () => {
+  for (const role of ['foo none', 'PRESENTATION']) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><embed id="embed1" src="x.swf" type="application/x-shockwave-flash" role="${role}" aria-label="Player"></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
 test(`${RULE_ID}: a focusable role="presentation" embed is still reviewed`, () => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body><embed id="embed1" src="x.swf" type="application/x-shockwave-flash" role="presentation" tabindex="0" aria-label="Player"></body></html>`,

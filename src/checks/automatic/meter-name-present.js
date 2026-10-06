@@ -9,9 +9,10 @@
  * @standard WCAG 2.2
  * @sc 1.1.1
  * @applicability
- *   Applies to elements carrying role="meter" (the attribute must name that
- *   role alone, not a fallback list) that are included in the accessibility
- *   tree. An element with the matching implicit role but no role attribute
+ *   Applies to elements whose role attribute resolves to meter (the first
+ *   token naming a known role, matched case-insensitively, so
+ *   role="foo meter" and role="METER" count) that are included in the
+ *   accessibility tree. An element with the matching implicit role but no role attribute
  *   is out of scope.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
@@ -50,6 +51,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -62,8 +64,8 @@ function runInPage(ctx) {
 
   function getAttr(el, name) {
     try {
-      if (!el || !el.getAttribute) return '';
-      return normalizeWs(el.getAttribute(name));
+      if (!el || !dom.get(el, 'getAttribute')) return '';
+      return normalizeWs(dom.getAttribute(el, name));
     } catch {
       return '';
     }
@@ -79,7 +81,7 @@ function runInPage(ctx) {
     // which name-from-content alone can never see).
     if (helpers.getTextFromIdRefs) {
       try {
-        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 });
+        const r = helpers.getTextFromIdRefs(raw, ctx, { maxRefs: maxRefs || 8 }, el);
         return normalizeWs(r && r.text);
       } catch {}
     }
@@ -109,7 +111,9 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  const selector = '[role="meter"]';
+  // Token match, case-insensitive; the resolved-role filter in the loop
+  // drops fallback lists whose first known token is some other role.
+  const selector = '[role~="meter" i]';
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
@@ -135,8 +139,9 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    const role = getAttr(el, 'role').toLowerCase();
-    if (role !== 'meter') continue;
+    // The role attribute is a fallback list: the first token naming a known
+    // role wins, case-insensitively (role="foo meter" is a meter).
+    if (helpers.aria.getExplicitRole(el) !== 'meter') continue;
 
     applicableCount += 1;
 

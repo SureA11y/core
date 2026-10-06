@@ -242,3 +242,22 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     'Checks that <img> elements provide an alt attribute to support a text alternative mechanism.'
   );
 });
+
+test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#91)`, () => {
+  // role="foo presentation" and role="NONE" exclude a non-focusable image;
+  // role="img presentation" is img, so a missing alt still fails.
+  const excluded = `<!doctype html><html><body>
+    <img src="x.png" role="foo presentation"><img src="y.png" role="NONE">
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(excluded, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+
+  const kept = `<!doctype html><html><body><img id="ip" src="x.png" role="img presentation"></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(kept, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'ip'));
+});

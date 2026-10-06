@@ -8,8 +8,10 @@
  * @summary An element given the region or form role must have an accessible name
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to elements whose role attribute's first token is region or
- *   form, and that are included in the accessibility tree.
+ *   Applies to elements whose role attribute resolves to region or form
+ *   (its first known, non-abstract token, in any case: role="foo region"
+ *   counts, role="search region" is a search landmark), and that are
+ *   included in the accessibility tree.
  * @expectation
  *   The element has a non-empty accessible name from aria-labelledby,
  *   aria-label or title. WAI-ARIA requires one ("Authors MUST give each
@@ -66,10 +68,9 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of helpers.queryAllSmart('[role]')) {
-    const role = String(el.getAttribute('role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    // The role the attribute resolves to: its first known, non-abstract
+    // token, in any case (role="foo REGION" is a region).
+    const role = helpers.aria.getExplicitRole(el);
     if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
 
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;

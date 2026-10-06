@@ -593,3 +593,17 @@ test("aria-role-name-present: the generated role set is exactly ARIA's name-requ
     assert.equal(listed.includes(role), false, `${role} must not be in the name-required set`);
   }
 });
+
+test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`, () => {
+  // role="foo tree" and role="METER" need a name; role="link tree" is a link.
+  const html = `<!doctype html><html><body>
+    <div role="foo tree" id="fallback"></div>
+    <div role="METER" aria-valuenow="1" id="upper"></div>
+    <a href="#" role="link tree" id="link">x</a>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'fallback'));
+  assert.ok(hasOccurrenceForId(rule, 'upper'));
+  assert.ok(!hasOccurrenceForId(rule, 'link'));
+});

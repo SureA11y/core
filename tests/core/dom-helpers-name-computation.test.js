@@ -1245,3 +1245,36 @@ test('getAccessibleNameInfo (via native <label>): a label whose content-walk thr
   const r = helpers.getLabelMethod(byId(document, 'x'), {});
   assert.equal(r.method, 'label');
 });
+
+// ===== getContentNameInfo: spaces between pieces of text (#93) =====
+//
+// Pieces of text in inline elements join as written, so <b>Down</b>load is
+// "Download", as browsers name it; an element that isn't display:inline, and
+// a piece that is a name of its own (alt, aria-label, an SVG title), is set
+// apart by spaces, as in Chromium.
+for (const [markup, want] of [
+  ['<b>Down</b>load', 'Download'],
+  ['<span>S</span>ubmit', 'Submit'],
+  ['<b>Down</b> load', 'Down load'],
+  ['Go<span hidden>x</span>to', 'Goto'],
+  ['<span title="T">Down</span>load', 'Download'],
+  ['<div>Down</div>load', 'Down load'],
+  ['<span style="display:inline-block">Down</span>load', 'Down load'],
+  ['<span style="position:absolute">Down</span>load', 'Down load'],
+  ['Down<br>load', 'Down load'],
+  ['<img alt="Down">load', 'Down load'],
+  ['<img alt="">load<img alt="">more', 'loadmore'],
+  ['<span aria-label="X">Down</span>load', 'X load']
+]) {
+  test(`getContentNameInfo: ${markup} is named "${want}"`, () => {
+    const { helpers, document } = helpersFor(`<button id="b">${markup}</button>`);
+    assert.equal(helpers.getContentNameInfo(byId(document, 'b'), { helpers }).value, want);
+  });
+}
+
+test('getContentNameInfo: the children of a flex container are set apart', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b" style="display:flex"><span>Down</span><span>load</span></button>'
+  );
+  assert.equal(helpers.getContentNameInfo(byId(document, 'b'), { helpers }).value, 'Down load');
+});
