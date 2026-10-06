@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches.
+Sorted by severity, then by how many pages it touches. Next to fix: NM-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [RB-1](#rb-1) | A form field named `parentNode` or `parentElement` makes the scan hang | Bug | **High** | Round 2 |
 | [NM-1](#nm-1) | A role with a fallback (`role="foo button"`) is read as no role | Bug | **High** | Round 2 |
 | [NM-2](#nm-2) | ID references inside a shadow root aren't resolved; one from a shadow root to the page is | Bug | **High** | Round 2 (and round 1 §6) |
 | [NM-3](#nm-3) | label-in-name reads `<b>Down</b>load` as "Down load" | Bug | **High** | Round 2 |
@@ -49,7 +48,6 @@ Sorted by severity, then by how many pages it touches.
 | [ST-1](#st-1) | Definition lists don't read the flat tree | Inconsistency | Medium | Round 2 |
 | [ST-2](#st-2) | td-has-header misreads `rowspan="0"` | Bug | Medium | Round 2 |
 | [ST-3](#st-3) | iframe-focusable-content counts elements that can't take focus | Bug | Medium | Round 2 |
-| [RB-2](#rb-2) | Named images and forms override properties the engine reads | Bug | Medium | Round 2 |
 | [RB-3](#rb-3) | image-redundant-alt is quadratic | Bug (perf) | Medium | Round 2 |
 | [R-18](#r-18) | jsdom scans of CSS-heavy pages are very slow | Bug (perf) | Medium | Round 1 (§5.4 of the outcomes log) |
 | [S-6](#s-6) | Wrong option types, including a non-string `contextSelector`, are accepted silently | Bug | Medium | Round 1, round 2 (OP-4) |
@@ -109,13 +107,6 @@ Sorted by severity, then by how many pages it touches.
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
-
-<a id="rb-1"></a>**RB-1. A form field named `parentNode` or `parentElement` makes the scan hang** — Bug, High · [details](./2026-10-stress-test-2.md#rb-1)
-- *In plain words:* one form field with that name freezes the scan for good in a real browser; nothing comes back, and CI waits until it times out.
-- Example: `<form><input name="parentNode"><label>Ok<input></label></form>`: no result after 20 s in Chromium; with `name="zparentNode"`, 54 ms.
-- Basis: HTML declares `HTMLFormElement` `[LegacyOverrideBuiltIns]`, so a named control replaces `form.parentNode`, and an unbounded parent walk loops forever. jsdom doesn't do this, so the test suite can't see it.
-- Others: Engines A and B both finish and pass the labelled field.
-- Where: parent walks in `form-control-label-quality-manual.js:242`, `heading-quality-manual.js:250`, `link-name-quality-manual.js:250`, `dom-helpers.js:3747,5136`, `target-size-minimum.js:359`, `text-spacing-content-loss.js:319,344,509`.
 
 <a id="nm-1"></a>**NM-1. A role with a fallback is read as no role** — Bug, High · [details](./2026-10-stress-test-2.md#nm-1)
 - *In plain words:* `role="switch checkbox"` means "switch, or checkbox where switch is unknown". The engine reads only the first word, so well-formed fallbacks are reported as errors, and the real role is never checked.
@@ -252,12 +243,6 @@ Sorted by severity, then by how many pages it touches.
 <a id="st-3"></a>**ST-3. iframe-focusable-content counts elements that can't take focus** — Bug, Medium · [details](./2026-10-stress-test-2.md#st-3)
 - Examples inside `<iframe tabindex="-1">`: a button in `<fieldset disabled>`, `<div tabindex="abc">`, an `<area>` of an unused map: each `fail`.
 - Where: the selector at `iframe-focusable-content.js:238`.
-
-<a id="rb-2"></a>**RB-2. Named images and forms override properties the engine reads** — Bug, Medium · [details](./2026-10-stress-test-2.md#rb-2)
-- *In plain words:* HTML lets `<img name="X">` replace `document.X` and `<input name="X">` replace `form.X`. Some names hide failures, invent them, or break rules.
-- Examples: `<img name="documentElement">` turns a page's failures into passes; `<form name="title">` breaks page-title-present; `<form><input name="getAttribute"><button></button></form>` loses the button's failure.
-- Others: Engine B gets every case right; Engine A has the same weakness, missing the button under `documentElement` and throwing on the whole scan under `querySelectorAll` and `getAttribute`.
-- Where: `document.documentElement` (`dom-helpers.js:82`), `document.querySelectorAll` (`:1745`), `document.getElementById` (`:813`), `e.title` (`page-title-present.js:83`), `el.getAttribute` calls. Fix with RB-1: take these from the prototypes once.
 
 <a id="rb-3"></a>**RB-3. image-redundant-alt is quadratic** — Bug (perf), Medium · [details](./2026-10-stress-test-2.md#rb-3)
 - Example: N images side by side in Chromium: 1,000 → 0.53 s, 2,000 → 1.76 s, 4,000 → 7.19 s.
@@ -438,6 +423,20 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Fixed after the second audit (not yet merged into `main`)
+
+Fixes on branch `fix/audit-2026-10-findings` (from `main` at `cfefc02`), awaiting a pull request.
+
+<a id="rb-1"></a><a id="rb-2"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| RB-1 | A form field named `parentNode` or `parentElement` made the scan hang | Fix fully, together with RB-2: the engine and every rule read the DOM through accessors that look properties up on the prototypes of a form, a document or a window (`src/core/safe-dom.js`), rewritten by a committed script and enforced by a lint rule; a step limit on every ancestor walk as a safety net. A scan checks once whether any element is named after something the engine reads, and uses plain reads when none is, so ordinary pages are unaffected. | `04b9003`, docs `3cf988a` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
+| RB-2 | Named images and forms overrode `document` and form properties the engine reads | Same change as RB-1. | `04b9003` | [#90](https://github.com/SureA11y/core/issues/90) | 2026-10-06 |
+
+How it was checked: a harness that wraps each of the 130 fixture pages in a form with a field named after every property of every HTML and SVG element type, and adds images named after every `document` property, gives the same results as the same page with harmless names (0 changes, 0 hangs, 0 errors; 3,691 changes and 49 errors before), with forms only, `document` only and both. The new Chromium test fails on `main` and passes on the branch; the full suite passes (the one failure needs Playwright's default browser build, and fails on `main` too). Cost: about the same on a large page, about 2 ms a scan on small pages for the page check.
+
+### Fixed by the first audit's follow-up (in 1.10.0)
 
 Each fix was re-checked on `cfefc02` by re-running the original repro. Commits are on `main`; PR numbers are as recorded in the outcomes log. All shipped in **1.10.0** (`6b057bb`, released 2026-10-06).
 
