@@ -282,7 +282,7 @@ speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` 
 `aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
-Real `<label>` element(s) associated with `el` — a `<label for="id">` pointing at it,
+Real `<label>` element(s) associated with `el` — a `<label for="id">` in its own tree (§4) pointing at it,
 plus a wrapping `<label>` whose first labelable descendant it is. **Does not call the
 native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 `.labels` is an expensive whole-document walk per element (`.control` resolution is
@@ -325,17 +325,29 @@ Back-compat convenience: `!!getAccessibleNameInfo(el).value`.
 Backs `aria-labelledby`/`aria-describedby` and any other space-separated ID-reference
 attribute.
 
-### `resolveIdRefs(idrefString, ctx, opts)` → `{ refs: Element[], missing: string[], flags[] }`
-Splits and resolves a space-separated ID list to elements (deduped, cached per scope).
+An ID reference resolves in the referring element's own tree: the shadow root it is in,
+or the document. IDs are scoped to their tree (HTML's labeled control is "an element in
+the tree" with that ID), so a reference never crosses a shadow boundary, either way.
+Each helper below takes the element carrying the reference as its last argument, `from`;
+without it, the IDs resolve in the document, which is right only for an element in the
+document itself.
+
+### `getElementByIdInTree(from, id)` → `Element | null`
+The first element with that id in `from`'s own tree. Use it instead of
+`dom.getElementById(document, id)` for any single ID reference (`headers`, one
+`aria-owns` token, an `aria-labelledby` target read by hand).
+
+### `resolveIdRefs(idrefString, ctx, opts, from)` → `{ refs: Element[], missing: string[], flags[] }`
+Splits and resolves a space-separated ID list to elements (deduped, cached per tree).
 `opts.maxRefs` truncates deterministically (adds `'truncated'` to `flags`).
 
-### `getTextFromIdRefs(idrefString, ctx, opts)` → `{ text, refsCount, missing[], flags[] }`
+### `getTextFromIdRefs(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], flags[] }`
 Resolves refs, then computes **each target's own text alternative** recursively
 (accname-aligned — a referenced element's name is recomputed, not read as raw
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
-### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts)` → `{ text, refsCount, missing[], excluded[], flags[] }`
+### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], excluded[], flags[] }`
 Same, but under IDREF eligibility rules specifically: hidden/`aria-hidden`/collapsed
 targets are still included (IDREF targets aren't scoped by visibility the way rendered
 content is — see the `root` note in the source), only `inert` targets are excluded.
