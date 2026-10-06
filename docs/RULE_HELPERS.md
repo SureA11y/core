@@ -179,6 +179,17 @@ compute), or at most 1×1 px with its overflow hidden. Those are the screen-read
 patterns; the result holds for the whole subtree. For "is this text on screen?", as
 `label-in-name` asks of a control's visible label (#93).
 
+### `readViewportContent(content)` → `{ values, userScalable, maximumScale }`
+A `<meta name="viewport">` `content` attribute, read as browsers read it (CSS Viewport's
+parsing algorithm, as Chromium implements it): whitespace separates settings as `,` and
+`;` do, spaces around `=` are allowed, a name with no value takes the empty value, a later
+setting replaces an earlier one, and case doesn't matter. `values` maps each name to its
+lowercase value. `userScalable` is `false` when zoom is blocked (`no`, an unparsable or
+empty value, a number between -1 and 1), `true` otherwise, `undefined` when absent.
+`maximumScale` is the cap as a number (`yes` is 1; `no`, unparsable and empty values are
+0; `device-width` and `device-height` are 10), `null` for a negative value, which browsers
+ignore, and `undefined` when absent. The two viewport rules share it so they agree.
+
 ### `getTextBoundaryKind(el)` → `'inline' | 'inline-box' | 'block'`
 How an element breaks the text around it, from its computed `display`: `'inline'` breaks
 nothing (`<b>Down</b>load` reads "Download"); `'inline-box'` (`inline-block`,

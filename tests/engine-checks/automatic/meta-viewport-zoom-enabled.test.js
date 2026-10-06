@@ -140,3 +140,31 @@ test(`${RULE_ID}: boundary values`, () => {
     );
   }
 });
+
+// The content attribute is read as browsers read it (#102): whitespace
+// separates settings as ',' and ';' do. Each expected outcome matches the
+// zoom Chromium allows on a phone.
+test(`${RULE_ID}: settings separated by spaces, a name with no value, and case`, () => {
+  const cases = [
+    ['width=device-width user-scalable=no', 'fail'],
+    ['width=device-width initial-scale=1 user-scalable=no', 'fail'],
+    ['user-scalable=yes maximum-scale=5', 'pass'],
+    ['width=device-width user-scalable = no', 'fail'],
+    ['width=device-width maximum-scale', 'fail'],
+    ['WIDTH=DEVICE-WIDTH, USER-SCALABLE=NO', 'fail'],
+    ['user-scalable=no, user-scalable=yes', 'pass'],
+    ['maximum-scale=1.5abc', 'fail'],
+    ['maximum-scale=3abc', 'pass'],
+    ['user-scalable=-2', 'pass']
+  ];
+  for (const [content, expected] of cases) {
+    const html = `<!doctype html><html><head><meta name="viewport" content="${content}"></head><body><p>x</p></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(
+      result,
+      RULE_ID,
+      expected,
+      expected === 'pass' ? { maxOccurrences: 0 } : { minOccurrences: 1 }
+    );
+  }
+});
