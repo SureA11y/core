@@ -231,9 +231,9 @@ function renderSarifReport(result, options = {}) {
     if (check.outcome !== 'fail' && check.outcome !== 'cantTell') {
       // A rule with nothing to judge may still say why, which is the
       // difference between "checked, nothing to flag" and "could not check".
-      // That is not an alert, so it cannot be a result; carrying it as an
-      // execution notice keeps a SARIF-only pipeline from reading silence as
-      // a clean bill of health.
+      // That is not an alert, so it cannot be a result; carrying it as a
+      // tool execution notification keeps a SARIF-only pipeline from reading
+      // silence as a clean bill of health.
       for (const occurrence of check.occurrences) {
         const text = occurrence && typeof occurrence.summary === 'string' ? occurrence.summary : '';
         if (!text) continue;
@@ -287,7 +287,7 @@ function renderSarifReport(result, options = {}) {
         ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
-          ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }
+          ? { invocations: [{ executionSuccessful: true, toolExecutionNotifications: notices }] }
           : {})
       }
     ]
