@@ -16299,6 +16299,7 @@ const SAFE_DOM_METHODS = [
   "getElementsByClassName",
   "getElementsByTagName",
   "getRootNode",
+  "getScreenCTM",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -16692,6 +16693,10 @@ const createSafeDom = (function createSafeDom() {
         : o.getElementsByTagName(a, b, c, d),
     getRootNode: (o, a, b, c, d) =>
       protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    getScreenCTM: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getScreenCTM', a, b, c, d)
+        : o.getScreenCTM(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
@@ -18295,6 +18300,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
+    // SVG text: the <rect>s painted behind it, above every ancestor's
+    // background, topmost first (see __svgBackdropOf).
+    const svgBackdrop = __svgBackdropOf(el);
+    if (svgBackdrop && !svgBackdrop.blocked) {
+      for (let i = svgBackdrop.layers.length - 1; i >= 0; i--) {
+        const layer = svgBackdrop.layers[i];
+        if (collectStack) {
+          stack.push({
+            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, layer.rgba);
+      }
+    }
     let cur = el;
     let guard = 0;
     // A background color this parser can't read, met while what is in front
@@ -18857,6 +18878,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __OVERLAP_CELL = 256;
   const __OVERLAP_MAX_PAINTERS = 20000;
   const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  const __SVG_SHAPE_TAGS = new Set([
+    'rect',
+    'circle',
+    'ellipse',
+    'line',
+    'polyline',
+    'polygon',
+    'path'
+  ]);
   let __overlapIndex;
 
   // Called for every element on the page, and most paint nothing: a
@@ -18873,6 +18903,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __paintCandidate(node, cs) {
     const tag = String(dom.localName(node) || '').toLowerCase();
+    // SVG shapes paint with fill and stroke, not a CSS background (#96). A
+    // <line> has no inside to fill.
+    if (__SVG_SHAPE_TAGS.has(tag) && dom.namespaceURI(node) === __SVG_NS) {
+      const fill = trim(cs.fill);
+      if (tag !== 'line' && fill && fill !== 'none')
+        return { property: 'fill', value: truncateCssValue(fill, 80) };
+      const stroke = trim(cs.stroke);
+      if (stroke && stroke !== 'none')
+        return { property: 'stroke', value: truncateCssValue(stroke, 80) };
+      return null;
+    }
+    if ((tag === 'image' || tag === 'use') && dom.namespaceURI(node) === __SVG_NS) {
+      return { property: 'element', value: tag };
+    }
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -19218,6 +19262,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
       };
 
+      // The <rect>s SVG text is measured against are its background, not
+      // paint in the way of measuring it (see __svgBackdropOf).
+      const backdrop = __svgBackdropOf(el);
+      const backdropEls =
+        backdrop && !backdrop.blocked ? new Set(backdrop.layers.map((l) => l.el)) : null;
+
       const seen = new Set();
       for (const tr of rects) {
         const x0 = Math.floor(tr.left / __OVERLAP_CELL);
@@ -19231,6 +19281,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               seen.add(i);
               const p = index.painters[i];
               if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
               // ancestors.
@@ -19279,6 +19330,136 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+  }
+
+  // -------- SVG shapes behind SVG text (#96) --------
+  //
+  // SVG paints in document order, so a shape earlier than a text element and
+  // under it is the text's background, which no CSS background shows. The
+  // simple case is measured: a <rect> with a solid fill, painted before the
+  // text, not rotated, covering all of the text clear of its rounded corners
+  // and stroke, with nothing between it and the text that groups it (opacity,
+  // a filter, a mask or a clip). Several such rects stack. Any other shape
+  // under or over the text is left to the paint-overlap check, which reports
+  // it. Needs a layout; without one nothing is found and nothing changes.
+  const __svgBackdropCache = new WeakMap();
+
+  function __svgBackdropOf(el) {
+    if (!__isSvgTextElement(el)) return null;
+    if (__svgBackdropCache.has(el)) return __svgBackdropCache.get(el);
+    let out;
+    try {
+      out = __computeSvgBackdrop(el);
+    } catch {
+      out = null;
+    }
+    __svgBackdropCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgBackdrop(el) {
+    const index = __getOverlapIndex();
+    if (!index) return null;
+    let svg = composedParent(el);
+    let guard = 0;
+    while (
+      svg &&
+      guard++ < 1000 &&
+      !(dom.namespaceURI(svg) === __SVG_NS && String(dom.localName(svg)) === 'svg')
+    ) {
+      svg = composedParent(svg);
+    }
+    if (!svg) return null;
+    const rects = __ownTextRects(el);
+    if (!rects.length) return null;
+    const layers = [];
+    const seen = new Set();
+    for (const tr of rects) {
+      const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+      const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+      const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+      const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const i of index.cells.get(cx + ',' + cy) || []) {
+            if (seen.has(i)) continue;
+            seen.add(i);
+            const p = index.painters[i];
+            if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
+            if (!__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            const rgba = __svgRectLayer(p.el, p.rect, el, rects);
+            if (!rgba) return { layers: [], blocked: true };
+            if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
+          }
+        }
+      }
+    }
+    // Bottom first, as painted.
+    layers.sort((a, b) => (dom.compareDocumentPosition(a.el, b.el) & 4 ? -1 : 1));
+    return { layers, blocked: false };
+  }
+
+  // The color a <rect> paints behind all of el's text, or null when it isn't
+  // that simple case.
+  function __svgRectLayer(shape, box, el, textRects) {
+    if (String(dom.localName(shape)) !== 'rect') return null;
+    // Painted before el: el follows it in document order.
+    if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
+    const cs = __contrastComputedStyle(shape);
+    const fill = parseCssColorToRgba(cs && cs.fill);
+    if (!fill) return null;
+    const grouped = (node, ncs) =>
+      __hasBlendModeEl(node, ncs) ||
+      __hasFilterEl(node, ncs) ||
+      (trim(ncs && ncs.clipPath) && trim(ncs.clipPath) !== 'none') ||
+      (trim(ncs && ncs.maskImage) && trim(ncs.maskImage) !== 'none');
+    if (grouped(shape, cs)) return null;
+    // Up to the first ancestor el shares, whose effects apply to both.
+    for (
+      let cur = composedParent(shape), guard = 0;
+      cur && guard < 1000 && !__isComposedInside(el, cur);
+      cur = composedParent(cur), guard++
+    ) {
+      const ccs = __contrastComputedStyle(cur);
+      if (grouped(cur, ccs)) return null;
+      if (clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1)
+        return null;
+    }
+    let ctm;
+    try {
+      ctm = dom.getScreenCTM(shape);
+    } catch {
+      ctm = null;
+    }
+    if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6 || !(ctm.a > 0) || !(ctm.d > 0))
+      return null;
+    // Rounded corners and the inner half of a stroke don't paint the fill.
+    const len = (v) => {
+      const n = parsePx(v);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    let rx = len(cs.rx);
+    let ry = len(cs.ry);
+    if (!rx) rx = ry;
+    if (!ry) ry = rx;
+    const stroke = trim(cs.stroke);
+    const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
+    const ix = Math.max(rx, halfStroke) * ctm.a;
+    const iy = Math.max(ry, halfStroke) * ctm.d;
+    const inside = (r) =>
+      r.left >= box.left + ix - 0.5 &&
+      r.right <= box.right - ix + 0.5 &&
+      r.top >= box.top + iy - 0.5 &&
+      r.bottom <= box.bottom - iy + 0.5;
+    if (!textRects.every(inside)) return null;
+    const fillOpacity = Number.parseFloat(cs.fillOpacity);
+    const opacity = Number.parseFloat(cs.opacity);
+    const a = clamp01(
+      fill.a *
+        (Number.isFinite(fillOpacity) ? clamp01(fillOpacity) : 1) *
+        (Number.isFinite(opacity) ? clamp01(opacity) : 1)
+    );
+    return { r: fill.r, g: fill.g, b: fill.b, a };
   }
 
   return {
@@ -72595,6 +72776,7 @@ const SAFE_DOM_METHODS = [
   "getElementsByClassName",
   "getElementsByTagName",
   "getRootNode",
+  "getScreenCTM",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -72988,6 +73170,10 @@ const createSafeDom = (function createSafeDom() {
         : o.getElementsByTagName(a, b, c, d),
     getRootNode: (o, a, b, c, d) =>
       protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    getScreenCTM: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getScreenCTM', a, b, c, d)
+        : o.getScreenCTM(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
@@ -74591,6 +74777,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const stack = collectStack ? [] : null;
 
     let acc = { r: 0, g: 0, b: 0, a: 0 };
+    // SVG text: the <rect>s painted behind it, above every ancestor's
+    // background, topmost first (see __svgBackdropOf).
+    const svgBackdrop = __svgBackdropOf(el);
+    if (svgBackdrop && !svgBackdrop.blocked) {
+      for (let i = svgBackdrop.layers.length - 1; i >= 0; i--) {
+        const layer = svgBackdrop.layers[i];
+        if (collectStack) {
+          stack.push({
+            selector: __getSimpleSelectorCached(layer.el, 'rect'),
+            bg: { r: layer.rgba.r, g: layer.rgba.g, b: layer.rgba.b, a: layer.rgba.a },
+            opacity: 1
+          });
+        }
+        acc = compositeRgba(acc, layer.rgba);
+      }
+    }
     let cur = el;
     let guard = 0;
     // A background color this parser can't read, met while what is in front
@@ -75153,6 +75355,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __OVERLAP_CELL = 256;
   const __OVERLAP_MAX_PAINTERS = 20000;
   const __REPLACED_PAINT = new Set(['img', 'video', 'canvas', 'iframe', 'object', 'embed', 'svg']);
+  const __SVG_SHAPE_TAGS = new Set([
+    'rect',
+    'circle',
+    'ellipse',
+    'line',
+    'polyline',
+    'polygon',
+    'path'
+  ]);
   let __overlapIndex;
 
   // Called for every element on the page, and most paint nothing: a
@@ -75169,6 +75380,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   function __paintCandidate(node, cs) {
     const tag = String(dom.localName(node) || '').toLowerCase();
+    // SVG shapes paint with fill and stroke, not a CSS background (#96). A
+    // <line> has no inside to fill.
+    if (__SVG_SHAPE_TAGS.has(tag) && dom.namespaceURI(node) === __SVG_NS) {
+      const fill = trim(cs.fill);
+      if (tag !== 'line' && fill && fill !== 'none')
+        return { property: 'fill', value: truncateCssValue(fill, 80) };
+      const stroke = trim(cs.stroke);
+      if (stroke && stroke !== 'none')
+        return { property: 'stroke', value: truncateCssValue(stroke, 80) };
+      return null;
+    }
+    if ((tag === 'image' || tag === 'use') && dom.namespaceURI(node) === __SVG_NS) {
+      return { property: 'element', value: tag };
+    }
     if (__REPLACED_PAINT.has(tag) && !(tag === 'svg' && node.ownerSVGElement)) {
       return { property: 'element', value: tag };
     }
@@ -75514,6 +75739,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return !!c && c.a >= 1 && c.r === measured.r && c.g === measured.g && c.b === measured.b;
       };
 
+      // The <rect>s SVG text is measured against are its background, not
+      // paint in the way of measuring it (see __svgBackdropOf).
+      const backdrop = __svgBackdropOf(el);
+      const backdropEls =
+        backdrop && !backdrop.blocked ? new Set(backdrop.layers.map((l) => l.el)) : null;
+
       const seen = new Set();
       for (const tr of rects) {
         const x0 = Math.floor(tr.left / __OVERLAP_CELL);
@@ -75527,6 +75758,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               seen.add(i);
               const p = index.painters[i];
               if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
               // ancestors.
@@ -75575,6 +75807,136 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return null;
     }
+  }
+
+  // -------- SVG shapes behind SVG text (#96) --------
+  //
+  // SVG paints in document order, so a shape earlier than a text element and
+  // under it is the text's background, which no CSS background shows. The
+  // simple case is measured: a <rect> with a solid fill, painted before the
+  // text, not rotated, covering all of the text clear of its rounded corners
+  // and stroke, with nothing between it and the text that groups it (opacity,
+  // a filter, a mask or a clip). Several such rects stack. Any other shape
+  // under or over the text is left to the paint-overlap check, which reports
+  // it. Needs a layout; without one nothing is found and nothing changes.
+  const __svgBackdropCache = new WeakMap();
+
+  function __svgBackdropOf(el) {
+    if (!__isSvgTextElement(el)) return null;
+    if (__svgBackdropCache.has(el)) return __svgBackdropCache.get(el);
+    let out;
+    try {
+      out = __computeSvgBackdrop(el);
+    } catch {
+      out = null;
+    }
+    __svgBackdropCache.set(el, out);
+    return out;
+  }
+
+  function __computeSvgBackdrop(el) {
+    const index = __getOverlapIndex();
+    if (!index) return null;
+    let svg = composedParent(el);
+    let guard = 0;
+    while (
+      svg &&
+      guard++ < 1000 &&
+      !(dom.namespaceURI(svg) === __SVG_NS && String(dom.localName(svg)) === 'svg')
+    ) {
+      svg = composedParent(svg);
+    }
+    if (!svg) return null;
+    const rects = __ownTextRects(el);
+    if (!rects.length) return null;
+    const layers = [];
+    const seen = new Set();
+    for (const tr of rects) {
+      const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+      const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+      const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+      const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const i of index.cells.get(cx + ',' + cy) || []) {
+            if (seen.has(i)) continue;
+            seen.add(i);
+            const p = index.painters[i];
+            if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
+            if (!__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            const rgba = __svgRectLayer(p.el, p.rect, el, rects);
+            if (!rgba) return { layers: [], blocked: true };
+            if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
+          }
+        }
+      }
+    }
+    // Bottom first, as painted.
+    layers.sort((a, b) => (dom.compareDocumentPosition(a.el, b.el) & 4 ? -1 : 1));
+    return { layers, blocked: false };
+  }
+
+  // The color a <rect> paints behind all of el's text, or null when it isn't
+  // that simple case.
+  function __svgRectLayer(shape, box, el, textRects) {
+    if (String(dom.localName(shape)) !== 'rect') return null;
+    // Painted before el: el follows it in document order.
+    if (!(dom.compareDocumentPosition(shape, el) & 4)) return null;
+    const cs = __contrastComputedStyle(shape);
+    const fill = parseCssColorToRgba(cs && cs.fill);
+    if (!fill) return null;
+    const grouped = (node, ncs) =>
+      __hasBlendModeEl(node, ncs) ||
+      __hasFilterEl(node, ncs) ||
+      (trim(ncs && ncs.clipPath) && trim(ncs.clipPath) !== 'none') ||
+      (trim(ncs && ncs.maskImage) && trim(ncs.maskImage) !== 'none');
+    if (grouped(shape, cs)) return null;
+    // Up to the first ancestor el shares, whose effects apply to both.
+    for (
+      let cur = composedParent(shape), guard = 0;
+      cur && guard < 1000 && !__isComposedInside(el, cur);
+      cur = composedParent(cur), guard++
+    ) {
+      const ccs = __contrastComputedStyle(cur);
+      if (grouped(cur, ccs)) return null;
+      if (clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1)
+        return null;
+    }
+    let ctm;
+    try {
+      ctm = dom.getScreenCTM(shape);
+    } catch {
+      ctm = null;
+    }
+    if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6 || !(ctm.a > 0) || !(ctm.d > 0))
+      return null;
+    // Rounded corners and the inner half of a stroke don't paint the fill.
+    const len = (v) => {
+      const n = parsePx(v);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    let rx = len(cs.rx);
+    let ry = len(cs.ry);
+    if (!rx) rx = ry;
+    if (!ry) ry = rx;
+    const stroke = trim(cs.stroke);
+    const halfStroke = stroke && stroke !== 'none' ? len(cs.strokeWidth) / 2 : 0;
+    const ix = Math.max(rx, halfStroke) * ctm.a;
+    const iy = Math.max(ry, halfStroke) * ctm.d;
+    const inside = (r) =>
+      r.left >= box.left + ix - 0.5 &&
+      r.right <= box.right - ix + 0.5 &&
+      r.top >= box.top + iy - 0.5 &&
+      r.bottom <= box.bottom - iy + 0.5;
+    if (!textRects.every(inside)) return null;
+    const fillOpacity = Number.parseFloat(cs.fillOpacity);
+    const opacity = Number.parseFloat(cs.opacity);
+    const a = clamp01(
+      fill.a *
+        (Number.isFinite(fillOpacity) ? clamp01(fillOpacity) : 1) *
+        (Number.isFinite(opacity) ? clamp01(opacity) : 1)
+    );
+    return { r: fill.r, g: fill.g, b: fill.b, a };
   }
 
   return {
@@ -84779,6 +85141,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "getElementsByClassName",
   "getElementsByTagName",
   "getRootNode",
+  "getScreenCTM",
   "hasAttribute",
   "hasChildNodes",
   "insertBefore",
@@ -85172,6 +85535,10 @@ const createSafeDom = (function createSafeDom() {
         : o.getElementsByTagName(a, b, c, d),
     getRootNode: (o, a, b, c, d) =>
       protect && guard(o) ? protectedCall(o, 'getRootNode', a, b, c, d) : o.getRootNode(a, b, c, d),
+    getScreenCTM: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'getScreenCTM', a, b, c, d)
+        : o.getScreenCTM(a, b, c, d),
     hasAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'hasAttribute', a, b, c, d)
