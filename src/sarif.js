@@ -287,7 +287,7 @@ function renderSarifReport(result, options = {}) {
         ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(result) ? { properties: runProperties(result) } : {}),
         ...(notices.length
-          ? { invocations: [{ executionSuccessful: true, toolExecutionNotices: notices }] }
+          ? { invocations: [{ executionSuccessful: true, toolExecutionNotifications: notices }] }
           : {})
       }
     ]
