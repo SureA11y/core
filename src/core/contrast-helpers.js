@@ -1592,6 +1592,21 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
+    // Paint that isn't an ancestor's, under the text and part of its
+    // background in the paint order (#101).
+    try {
+      const ordered = __paintBackdropOf(el);
+      if (ordered && ordered.rgba) {
+        return {
+          ok: true,
+          rgba: { r: ordered.rgba.r, g: ordered.rgba.g, b: ordered.rgba.b, a: 1 },
+          alpha: 1,
+          stack: [],
+          reasonCode: null
+        };
+      }
+    } catch {}
+
     const __bgKey = __bgCacheKey(opts2);
     const __collectStack = !!(opts2 && opts2.collectStack);
 
@@ -2553,7 +2568,7 @@ function createContrastHelpers(opts, shared) {
           for (let cy = y0; cy <= y1; cy++) {
             for (const i of index.cells.get(cx + ',' + cy) || []) {
               const p = index.painters[i];
-              if (!ancestors.has(p.el) && __intersects(p.rect, r) && !__isPinned(p.el)) return true;
+              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
             }
           }
         }
@@ -2564,7 +2579,14 @@ function createContrastHelpers(opts, shared) {
         box = dom.getBoundingClientRect(el);
       } catch {}
       const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
-      if (box && !pseudoCandidates && !near(box)) return null;
+      // The paint order decides about paint that isn't an ancestor's, and
+      // about ancestors' paint that isn't under the text (__paintBackdropOf):
+      // measured against, in the way, or irrelevant. Where it can't be
+      // worked out, the search below looks for it.
+      const ordered = __paintBackdropOf(el);
+      if (ordered && ordered.blocked) return ordered.blocked;
+      const paintOrdered = ordered === null || !!(ordered && ordered.rgba);
+      if (box && !pseudoCandidates && (paintOrdered || !near(box))) return null;
       const rects = __ownTextRects(el);
       if (!rects.length) return null;
       // Solid paint the same color as the background the text is measured
@@ -2586,7 +2608,7 @@ function createContrastHelpers(opts, shared) {
         backdrop && !backdrop.blocked ? new Set(backdrop.layers.map((l) => l.el)) : null;
 
       const seen = new Set();
-      for (const tr of rects) {
+      for (const tr of paintOrdered ? [] : rects) {
         const x0 = Math.floor(tr.left / __OVERLAP_CELL);
         const x1 = Math.floor(tr.right / __OVERLAP_CELL);
         const y0 = Math.floor(tr.top / __OVERLAP_CELL);
@@ -2777,6 +2799,431 @@ function createContrastHelpers(opts, shared) {
         (Number.isFinite(opacity) ? clamp01(opacity) : 1)
     );
     return { r: fill.r, g: fill.g, b: fill.b, a };
+  }
+
+  // -------- Paint order: what lies under a piece of text (#101) --------
+  //
+  // The background walk sees only el's ancestors. Other boxes can paint
+  // under the text (a positioned panel, a fixed backdrop) or over it, and
+  // which one it is follows CSS's painting order (CSS 2.1 Appendix E):
+  // stacking contexts, then within one, negative z-index, block
+  // backgrounds, floats, inline content (text), positioned boxes and
+  // z-index 0, positive z-index, each in document order. This orders el's
+  // text, its ancestors' backgrounds and the boxes overlapping it, and
+  // composites what lies under the text from the top down. Solid colors
+  // covering all of the text are measured against; anything else under or
+  // over the text (an image, a gradient, partial cover, a group effect) is
+  // reported. A fixed or sticky box over the text is not: it covers it at
+  // the scroll position the scan was taken at only.
+  //
+  // __paintBackdropOf returns null when no such box takes part (the
+  // ancestors decide, as before), { rgba } for the color under the text,
+  // { blocked } for paint in the way, or { fallback: true } where the order
+  // isn't worked out here (SVG text, a group effect on an ancestor, another
+  // tree), which leaves the overlap search to the older check.
+  const __paintBackdropCache = new WeakMap();
+  const __paintKeyCache = new WeakMap();
+  // Boxes of the ancestors that paint, shared by the texts inside them.
+  const __paintBoxCache = new WeakMap();
+  const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
+
+  function __isStackingContext(node, cs) {
+    if (!cs) return false;
+    if (__lname(node) === 'html') return true;
+    const pos = cs.position;
+    if (pos === 'fixed' || pos === 'sticky') return true;
+    if ((pos === 'absolute' || pos === 'relative') && cs.zIndex !== 'auto') return true;
+    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1) return true;
+    const set = (v) => !!v && v !== 'none';
+    if (
+      set(cs.transform) ||
+      set(cs.filter) ||
+      set(cs.backdropFilter) ||
+      set(cs.perspective) ||
+      set(cs.clipPath) ||
+      set(cs.maskImage) ||
+      set(cs.webkitMaskImage)
+    )
+      return true;
+    if (cs.mixBlendMode && cs.mixBlendMode !== 'normal') return true;
+    if (cs.isolation === 'isolate') return true;
+    if (/\b(paint|layout|strict|content)\b/.test(String(cs.contain || ''))) return true;
+    if (
+      /\b(transform|opacity|filter|perspective|clip-path|mask)\b/.test(String(cs.willChange || ''))
+    )
+      return true;
+    if (cs.zIndex && cs.zIndex !== 'auto') {
+      const parent = composedParent(node);
+      const pcs = parent && dom.nodeType(parent) === 1 ? __contrastComputedStyle(parent) : null;
+      if (pcs && /(^|-)(flex|grid)$/.test(String(pcs.display || ''))) return true;
+    }
+    return false;
+  }
+
+  // How a box paints as one unit in its stacking context: its phase and
+  // z-index there. null for a box painted with its context's own phases.
+  const __paintGroupCache = new WeakMap();
+  function __paintGroup(node) {
+    if (__paintGroupCache.has(node)) return __paintGroupCache.get(node);
+    const g = __computePaintGroup(node);
+    __paintGroupCache.set(node, g);
+    return g;
+  }
+  function __computePaintGroup(node) {
+    const cs = __contrastComputedStyle(node);
+    if (!cs) return null;
+    if (__isStackingContext(node, cs)) {
+      const z = Number.parseInt(cs.zIndex, 10) || 0;
+      return { kind: 'context', phase: z < 0 ? 1 : z === 0 ? 5 : 6, z };
+    }
+    if (cs.position && cs.position !== 'static') return { kind: 'positioned', phase: 5, z: 0 };
+    const float = cs.cssFloat || cs.float;
+    if (float && float !== 'none') return { kind: 'float', phase: 3, z: 0 };
+    if (/^inline-(block|flex|grid|table)$/.test(String(cs.display || '')))
+      return { kind: 'inline-block', phase: 4, z: 0 };
+    return null;
+  }
+
+  // The box node paints in: the nearest stacking context, or for content
+  // that isn't positioned, the nearest box painted as a unit.
+  function __paintContextOf(node) {
+    const g = __paintGroup(node);
+    const hoisted = !!g && (g.kind === 'context' || g.kind === 'positioned');
+    for (
+      let cur = composedParent(node), guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      if (__lname(cur) === 'html') return cur;
+      const cg = __paintGroup(cur);
+      if (!cg) continue;
+      if (cg.kind === 'context' || !hoisted) return cur;
+    }
+    return null;
+  }
+
+  function __participantKey(node) {
+    if (__paintKeyCache.has(node)) return __paintKeyCache.get(node);
+    let key;
+    if (__lname(node) === 'html') key = [];
+    else {
+      const ctx = __paintContextOf(node);
+      const g = __paintGroup(node);
+      const base = ctx && g ? __participantKey(ctx) : null;
+      key = base ? base.concat([[g.phase, g.z, node]]) : null;
+    }
+    __paintKeyCache.set(node, key);
+    return key;
+  }
+
+  // When node's background ('bg') or its own text and replaced content
+  // ('content') is painted, as a key ordered by __cmpPaintKeys.
+  function __paintKey(node, part) {
+    const isRoot = __lname(node) === 'html';
+    if (isRoot || __paintGroup(node)) {
+      const base = __participantKey(node);
+      return base ? base.concat([[part === 'bg' ? 0 : 4, 0, node]]) : null;
+    }
+    const ctx = __paintContextOf(node);
+    const base = ctx ? __participantKey(ctx) : null;
+    if (!base) return null;
+    const cs = __contrastComputedStyle(node);
+    const inline = /^inline/.test(String((cs && cs.display) || ''));
+    const phase = part === 'bg' && !inline ? 2 : 4;
+    return base.concat([[phase, 0, node]]);
+  }
+
+  // Negative when a is painted before b; NaN when they are in different
+  // trees and can't be ordered here.
+  function __cmpPaintKeys(a, b) {
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+      const x = a[i];
+      const y = b[i];
+      if (x[0] !== y[0]) return x[0] - y[0];
+      if (x[1] !== y[1]) return x[1] - y[1];
+      if (x[2] !== y[2]) {
+        const pos = dom.compareDocumentPosition(x[2], y[2]);
+        if (pos & 1) return Number.NaN;
+        return pos & 4 ? -1 : 1;
+      }
+    }
+    return a.length - b.length;
+  }
+
+  function __paintBackdropOf(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__paintBackdropCache.has(el)) return __paintBackdropCache.get(el);
+    let out;
+    try {
+      out = __computePaintBackdrop(el);
+    } catch {
+      out = { fallback: true };
+    }
+    __paintBackdropCache.set(el, out);
+    return out;
+  }
+
+  function __computePaintBackdrop(el) {
+    const FALLBACK = { fallback: true };
+    if (__isSvgTextElement(el)) return FALLBACK;
+    const index = __getOverlapIndex();
+    if (!index) return FALLBACK;
+    const chain = [];
+    for (
+      let cur = el, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      chain.push(cur);
+    }
+    const inChain = new Set(chain);
+    const outerSvg = (node) => {
+      let found = null;
+      for (let cur = node, guard = 0; cur && guard < 1000; cur = composedParent(cur), guard++) {
+        if (__lname(cur) === 'svg' && dom.namespaceURI(cur) === __SVG_NS) found = cur;
+      }
+      return found;
+    };
+    const blocked = (p) => ({
+      blocked: {
+        selector: __getSimpleSelectorCached(p.el, __lname(p.el)),
+        property: p.paint.property,
+        value: p.paint.value
+      }
+    });
+
+    // Painters near el's box at all, before measuring its text.
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      box = null;
+    }
+    if (!box) return FALLBACK;
+    let near = false;
+    const bx0 = Math.floor(box.left / __OVERLAP_CELL);
+    const bx1 = Math.floor(box.right / __OVERLAP_CELL);
+    const by0 = Math.floor(box.top / __OVERLAP_CELL);
+    const by1 = Math.floor(box.bottom / __OVERLAP_CELL);
+    for (let cx = bx0; cx <= bx1 && !near; cx++) {
+      for (let cy = by0; cy <= by1 && !near; cy++) {
+        for (const i of index.cells.get(cx + ',' + cy) || []) {
+          const p = index.painters[i];
+          if (!inChain.has(p.el) && __intersects(p.rect, box) && !__isComposedInside(p.el, el)) {
+            near = true;
+            break;
+          }
+        }
+      }
+    }
+    // The canvas (the root, or the body when the root paints nothing)
+    // covers the page; any other ancestor's background lies under the text
+    // only where its box does.
+    const root = chain[chain.length - 1];
+    const rootCs = __contrastComputedStyle(root);
+    const rootBg = parseCssColorToRgba(rootCs && rootCs.backgroundColor);
+    const rootPaints =
+      (rootBg && rootBg.a > 0) || (rootCs && __hasBackgroundImageOrGradientEl(root, rootCs));
+    const isCanvas = (a) => a === root || (__lname(a) === 'body' && !rootPaints);
+    const paints = (a, cs) => {
+      if (!cs) return false;
+      const bg = parseCssColorToRgba(cs.backgroundColor);
+      return (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs);
+    };
+    const boxOf = (a) => {
+      if (__paintBoxCache.has(a)) return __paintBoxCache.get(a);
+      let r;
+      try {
+        r = dom.getBoundingClientRect(a);
+      } catch {
+        r = null;
+      }
+      __paintBoxCache.set(a, r);
+      return r;
+    };
+    const contains = (r, t) =>
+      !!r &&
+      t.left >= r.left - 0.5 &&
+      t.right <= r.right + 0.5 &&
+      t.top >= r.top - 0.5 &&
+      t.bottom <= r.bottom + 0.5;
+    const outside = chain.some(
+      (a) => !isCanvas(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
+    );
+    // Text in a stacking context with a negative z-index can be painted
+    // under its own ancestors' backgrounds.
+    const sunk = chain.some((a) => {
+      const g = __paintGroup(a);
+      return !!g && g.kind === 'context' && g.z < 0;
+    });
+    if (!near && !outside && !sunk) return null;
+    const rects = __ownTextRects(el);
+    if (!rects.length) return null;
+    const textKey = __paintKey(el, 'content');
+    if (!textKey) return FALLBACK;
+
+    // The boxes that meet the text, in front of it or behind. Candidates
+    // come from every line's cells first, so a box is tested against every
+    // line, not only the first one whose cells hold it.
+    const candidates = new Set();
+    for (const tr of rects) {
+      const x0 = Math.floor(tr.left / __OVERLAP_CELL);
+      const x1 = Math.floor(tr.right / __OVERLAP_CELL);
+      const y0 = Math.floor(tr.top / __OVERLAP_CELL);
+      const y1 = Math.floor(tr.bottom / __OVERLAP_CELL);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          for (const i of index.cells.get(cx + ',' + cy) || []) candidates.add(i);
+        }
+      }
+    }
+    const behind = [];
+    for (const i of candidates) {
+      const p = index.painters[i];
+      if (inChain.has(p.el) || !rects.some((tr) => __coversLine(p.rect, tr))) continue;
+      if (__isComposedInside(p.el, el)) continue;
+      // Shapes inside an <svg> paint with it.
+      const orderEl = outerSvg(p.el) || p.el;
+      if (inChain.has(orderEl)) continue;
+      const key = __paintKey(orderEl, p.paint.property === 'element' ? 'content' : 'bg');
+      const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (Number.isNaN(c)) return FALLBACK;
+      if (c > 0) {
+        if (__isPinned(p.el)) continue;
+        return blocked(p);
+      }
+      behind.push({ p, key, svg: orderEl !== p.el });
+    }
+    if (!behind.length && !outside && !sunk) return null;
+
+    // el's ancestors' backgrounds where they lie under the text, with what
+    // else lies behind it.
+    const layers = [];
+    let changed = null;
+    for (const a of chain) {
+      const cs = __contrastComputedStyle(a);
+      if (!cs) continue;
+      // A group effect on an ancestor applies to the foreign paint too only
+      // when it groups both; that is left to the older checks.
+      if (
+        clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
+        __hasBlendModeEl(a, cs) ||
+        __hasFilterEl(a, cs)
+      )
+        return FALLBACK;
+      const image = __hasBackgroundImageOrGradientEl(a, cs);
+      const bg = parseCssColorToRgba(cs.backgroundColor);
+      if (!image && (!bg || bg.a === 0)) continue;
+      const own = {
+        el: a,
+        paint: { property: 'background-color', value: trim(cs.backgroundColor) }
+      };
+      let color = image ? null : bg;
+      let partial = null;
+      if (!isCanvas(a)) {
+        const r = boxOf(a);
+        const under = rects.filter((t) => contains(r, t)).length;
+        // Text that overflows the box isn't over its background.
+        if (!under && !rects.some((t) => !!r && __intersects(r, t))) {
+          changed = changed || own;
+          continue;
+        }
+        if (under < rects.length) {
+          color = null;
+          partial = own;
+        }
+      }
+      // Without a background of its own, the root takes the body's: it
+      // paints the canvas, under everything.
+      const key = __lname(a) === 'body' && !rootPaints ? [[-1, 0, a]] : __paintKey(a, 'bg');
+      if (!key) return FALLBACK;
+      // Text with a negative z-index is painted under an ancestor's
+      // background, which then covers it.
+      const order = __cmpPaintKeys(key, textKey);
+      if (Number.isNaN(order)) return FALLBACK;
+      if (order > 0) return blocked(own);
+      layers.push({ el: a, key, color, foreign: null, partial });
+    }
+    for (const b of behind) {
+      const cs = __contrastComputedStyle(b.p.el);
+      let color =
+        !b.svg && b.p.paint.property === 'background-color'
+          ? parseCssColorToRgba(b.p.paint.value)
+          : null;
+      // Grouped with something el isn't in: its own opacity, a filter.
+      for (
+        let cur = b.p.el, guard = 0;
+        color && cur && dom.nodeType(cur) === 1 && guard < 1000 && !__isComposedInside(el, cur);
+        cur = composedParent(cur), guard++
+      ) {
+        const ccs = __contrastComputedStyle(cur);
+        if (
+          clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
+          __hasBlendModeEl(cur, ccs) ||
+          __hasFilterEl(cur, ccs)
+        )
+          color = null;
+      }
+      // All of the text, clear of rounded corners.
+      if (color) {
+        const radius = Math.max(
+          0,
+          ...[
+            'borderTopLeftRadius',
+            'borderTopRightRadius',
+            'borderBottomLeftRadius',
+            'borderBottomRightRadius'
+          ].map((k) => {
+            const v = parsePx(cs && cs[k]);
+            return Number.isFinite(v) ? v : 0;
+          })
+        );
+        const r = b.p.rect;
+        const inside = (t) =>
+          t.left >= r.left + radius - 0.5 &&
+          t.right <= r.right - radius + 0.5 &&
+          t.top >= r.top + radius - 0.5 &&
+          t.bottom <= r.bottom - radius + 0.5;
+        if (!rects.every(inside)) color = null;
+      }
+      layers.push({ el: b.p.el, key: b.key, color, foreign: b.p });
+    }
+
+    let unordered = false;
+    layers.sort((x, y) => {
+      const c = __cmpPaintKeys(y.key, x.key);
+      if (Number.isNaN(c)) {
+        unordered = true;
+        return 0;
+      }
+      return c;
+    });
+    if (unordered) return FALLBACK;
+
+    // Topmost first, down to the first opaque layer.
+    let acc = { r: 0, g: 0, b: 0, a: 0 };
+    let usedForeign = null;
+    for (const layer of layers) {
+      if (!layer.color) {
+        if (layer.foreign) return blocked(layer.foreign);
+        if (layer.partial) return blocked(layer.partial);
+        // An ancestor's image or gradient: the older checks report it, or
+        // the foreign paint under it if they don't.
+        return usedForeign ? blocked(usedForeign) : FALLBACK;
+      }
+      acc = compositeRgba(acc, {
+        r: layer.color.r,
+        g: layer.color.g,
+        b: layer.color.b,
+        a: clamp01(layer.color.a)
+      });
+      if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
+      if (acc.a >= 1) break;
+    }
+    if (!usedForeign && !changed) return null;
+    if (acc.a < 1) return blocked(usedForeign || changed);
+    return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }
 
   return {
