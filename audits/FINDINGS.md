@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: OP-2.
+Sorted by severity, then by how many pages it touches. Next to fix: OP-3.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [OP-2](#op-2) | Contrast rules ignore `excludeSelectors` on a shadow host | Bug | Medium | Round 2 |
 | [OP-3](#op-3) | `region` ignores `excludeSelectors` | Bug | Medium | Round 2 |
 | [OP-5](#op-5) | Cross-frame scans enter iframes in excluded subtrees | Bug | Medium | Round 2 |
 | [C-9](#c-9) | A `fail` with no occurrences: accepted by the engine, then shown as a pass by JUnit, SARIF and baselines | Bug | Medium | Round 1, round 2 (RP-2) |
@@ -80,9 +79,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: OP-2.
 ### High
 
 ### Medium
-
-<a id="op-2"></a>**OP-2. Contrast rules ignore `excludeSelectors` on a shadow host** — Bug, Medium · [details](./2026-10-stress-test-2.md#op-2)
-- Where: `isExcluded` (`dom-helpers.js:1134`) never steps from a shadow root to its host.
 
 <a id="op-3"></a>**OP-3. `region` ignores `excludeSelectors`** — Bug, Medium · [details](./2026-10-stress-test-2.md#op-3)
 - *In plain words:* the docs' own example, excluding a cookie banner, doesn't work for this rule.
@@ -244,6 +240,13 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ### Fixed, not yet in `main`
 
 Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushed, no pull request yet.
+
+<a id="op-2"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| OP-2 | Contrast rules ignore `excludeSelectors` on a shadow host | Taken without a separate decision round (the user asked for the recommended option on the Medium findings): `isExcluded` walks shadow-including ancestors (DOM), going on from a shadow root to its host, so an excluded host's whole shadow tree is excluded for every rule, global and rule-scoped. | `7519d88`, changelog `9c0ff8f` | [#129](https://github.com/SureA11y/core/issues/129) | 2026-10-07 |
+
+How OP-2 was checked: low-contrast text, a nameless button and an image without alt in Chromium, in the shadow root of `#widget`, two shadow roots deep, and in a host inside an excluded `<section id="widget">`, with `excludeSelectors: ['#widget']` and with the same exclude rule-scoped. Before, contrast-minimum and contrast-enhanced failed on the text in all three shapes while button-name-present and img-alt-present were excluded; after, every rule leaves it out, as Engine A's `exclude` does. Text slotted from an excluded host's light DOM was already excluded. jsdom tests of `isExcluded` and of the contrast rules and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, seventh batch (in `main`)
 
