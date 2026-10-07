@@ -58,6 +58,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Which of the four label-in-name tests this file checks. The four rule
@@ -100,11 +101,11 @@ function runInPage(ctx) {
   };
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function explicitRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     return String(raw || '')
       .trim()
       .toLowerCase()
@@ -112,7 +113,7 @@ function runInPage(ctx) {
   }
 
   function inputType(el) {
-    return String(el.getAttribute('type') || '')
+    return String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
   }
@@ -120,7 +121,7 @@ function runInPage(ctx) {
   // The RGAA test an element belongs to: its explicit role decides first,
   // then its tag. '' for anything none of the four tests covers.
   function classify(el) {
-    if (el.namespaceURI === SVG_NS) return '';
+    if (dom.namespaceURI(el) === SVG_NS) return '';
     const role = explicitRole(el);
     if (role) {
       if (role === 'link') return 'link';
@@ -130,7 +131,7 @@ function runInPage(ctx) {
       return '';
     }
     const tag = tagOf(el);
-    if (tag === 'a') return el.hasAttribute('href') ? 'link' : '';
+    if (tag === 'a') return dom.hasAttribute(el, 'href') ? 'link' : '';
     if (tag === 'button') return 'button';
     if (tag === 'input') {
       const type = inputType(el);
@@ -143,13 +144,15 @@ function runInPage(ctx) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // RGAA 11.9 covers the buttons « présents au sein d'un formulaire »: a
   // <form> or role="form" ancestor (glossary "Formulaire").
   function insideForm(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return true;
       if (explicitRole(p) === 'form') return true;
     }
@@ -200,7 +203,7 @@ function runInPage(ctx) {
     if (visibleOnly && !isDomVisible(container)) return { text: '', elements: [] };
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -209,14 +212,14 @@ function runInPage(ctx) {
     const elements = [];
     let n;
     while ((n = walker.nextNode())) {
-      const t = String(n.nodeValue || '')
+      const t = String(dom.nodeValue(n) || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!t) continue;
-      const p = n.parentElement;
+      const p = dom.parentElement(n);
       if (!p) continue;
       let skip = false;
-      for (let a = p; a && a !== container; a = a.parentElement) {
+      for (let a = p; a && a !== container; a = dom.parentElement(a)) {
         const tag = tagOf(a);
         if (isNonRenderedTag(tag) || isControlTag(tag)) {
           skip = true;
@@ -241,7 +244,7 @@ function runInPage(ctx) {
   }
 
   function labelledbyRefs(el) {
-    const idrefs = el.getAttribute('aria-labelledby');
+    const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
       const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
@@ -272,7 +275,7 @@ function runInPage(ctx) {
     const role = explicitRole(el);
     if (family === 'button' && tag === 'input') {
       if (inputType(el) === 'image') return { text: '', origin: '', elements: [] };
-      const value = String(el.getAttribute('value') || '')
+      const value = String(dom.getAttribute(el, 'value') || '')
         .replace(/\s+/g, ' ')
         .trim();
       return { text: value, origin: 'value', elements: [el] };
@@ -322,13 +325,13 @@ function runInPage(ctx) {
       }
     }
     if (byRef) out.push({ source: 'aria-labelledby', text: byRef });
-    const ariaLabel = clean(el.getAttribute('aria-label'));
+    const ariaLabel = clean(dom.getAttribute(el, 'aria-label'));
     if (ariaLabel) out.push({ source: 'aria-label', text: ariaLabel });
     if (family === 'field') {
       const labelText = labelSourceText(el);
       if (labelText) out.push({ source: '<label>', text: labelText });
     }
-    const title = clean(el.getAttribute('title'));
+    const title = clean(dom.getAttribute(el, 'title'));
     if (title) out.push({ source: 'title', text: title });
     return out;
   }
@@ -402,7 +405,7 @@ function runInPage(ctx) {
   function isIconFontElement(node) {
     let cs = null;
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') cs = view.getComputedStyle(node);
     } catch {
       cs = null;
@@ -535,7 +538,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (classify(el) !== family) continue;
     if (family === 'button' && !insideForm(el)) continue;
     if (!isDomVisible(el)) continue;

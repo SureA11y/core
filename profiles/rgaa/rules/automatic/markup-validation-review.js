@@ -71,11 +71,12 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const roots = Array.isArray(ctx.root) ? ctx.root : ctx.root ? [ctx.root] : [];
   const scanRoot =
-    roots.find((r) => r && r.nodeType === 1) || (document && document.documentElement);
+    roots.find((r) => r && dom.nodeType(r) === 1) || (document && dom.documentElement(document));
   if (!scanRoot) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -85,7 +86,7 @@ function runInPage(ctx) {
 
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -107,7 +108,7 @@ function runInPage(ctx) {
     Array.isArray(report.messages) &&
     (!report.url || pageUrl(report.url) === pageUrl(document.URL));
 
-  const html = document.documentElement || scanRoot;
+  const html = dom.documentElement(document) || scanRoot;
   const text = (v) =>
     String(v == null ? '' : v)
       .replace(/\s+/g, ' ')

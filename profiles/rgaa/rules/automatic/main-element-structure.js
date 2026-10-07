@@ -66,6 +66,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'none' };
@@ -79,11 +80,12 @@ function runInPage(ctx) {
 
   // hidden on an ancestor, or a closed <details>/<dialog> around it.
   function hiddenByAncestor(el) {
-    const parentOf = (n) => (helpers.composedParent ? helpers.composedParent(n) : n.parentNode);
-    for (let n = parentOf(el); n && n.nodeType === 1; n = parentOf(n)) {
-      if (n.hasAttribute('hidden')) return true;
-      const tag = String(n.localName || '').toLowerCase();
-      if ((tag === 'details' || tag === 'dialog') && !n.hasAttribute('open')) return true;
+    const parentOf = (n) =>
+      helpers.composedParent ? helpers.composedParent(n) : dom.parentNode(n);
+    for (let n = parentOf(el); n && dom.nodeType(n) === 1; n = parentOf(n)) {
+      if (dom.hasAttribute(n, 'hidden')) return true;
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if ((tag === 'details' || tag === 'dialog') && !dom.hasAttribute(n, 'open')) return true;
     }
     return false;
   }
@@ -148,7 +150,7 @@ function runInPage(ctx) {
 
   if (!mains.length) {
     const roleMain = query('[role]').find((el) => {
-      const tokens = String(el.getAttribute('role') || '')
+      const tokens = String(dom.getAttribute(el, 'role') || '')
         .trim()
         .toLowerCase()
         .split(/\s+/);
@@ -156,11 +158,11 @@ function runInPage(ctx) {
     });
     if (roleMain) return result('fail', [occurrence(roleMain, 'roleMainOnly', 'fail')]);
     return result('cantTell', [
-      occurrence(document.body || document.documentElement, 'noMain', 'cantTell')
+      occurrence(dom.body(document) || dom.documentElement(document), 'noMain', 'cantTell')
     ]);
   }
 
-  const withoutOwnHidden = mains.filter((el) => !el.hasAttribute('hidden'));
+  const withoutOwnHidden = mains.filter((el) => !dom.hasAttribute(el, 'hidden'));
   const shown = withoutOwnHidden.filter((el) => !hiddenByAncestor(el));
 
   if (shown.length > 1) {

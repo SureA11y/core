@@ -48,6 +48,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const hasText = (s) => !!String(s || '').trim();
@@ -60,32 +61,35 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const svg of nodes) {
-    if (!svg || !svg.getAttribute) continue;
-    if (String(svg.getAttribute('aria-hidden')).trim().toLowerCase() !== 'true') continue;
-    const outer = svg.parentElement ? svg.parentElement.closest('svg') : null;
+    if (!svg || !dom.get(svg, 'getAttribute')) continue;
+    if (String(dom.getAttribute(svg, 'aria-hidden')).trim().toLowerCase() !== 'true') continue;
+    const outer = dom.parentElement(svg) ? dom.closest(dom.parentElement(svg), 'svg') : null;
     if (outer) continue;
     applicableCount += 1;
 
-    const all = [svg].concat(Array.from(svg.querySelectorAll('*')));
+    const all = [svg].concat(Array.from(dom.querySelectorAll(svg, '*')));
     const referenced = [];
     // Follow same-document <use> references (see @expectation above).
     const visited = new Set(all);
     for (let i = 0; i < all.length; i += 1) {
       const el = all[i];
-      if (String(el.localName || el.tagName).toLowerCase() !== 'use') continue;
-      const ref = String(el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim();
+      if (String(dom.localName(el) || dom.tagName(el)).toLowerCase() !== 'use') continue;
+      const ref = String(
+        dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || ''
+      ).trim();
       if (ref.length < 2 || ref[0] !== '#') continue;
       let target;
       try {
-        const rootNode = el.getRootNode ? el.getRootNode() : null;
-        const scope = rootNode && rootNode.getElementById ? rootNode : svg.ownerDocument;
-        target = scope ? scope.getElementById(decodeURIComponent(ref.slice(1))) : null;
+        const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+        const scope =
+          rootNode && dom.get(rootNode, 'getElementById') ? rootNode : dom.ownerDocument(svg);
+        target = scope ? dom.getElementById(scope, decodeURIComponent(ref.slice(1))) : null;
       } catch {
         target = null;
       }
       if (!target || visited.has(target)) continue;
       referenced.push(ref);
-      for (const node of [target].concat(Array.from(target.querySelectorAll('*')))) {
+      for (const node of [target].concat(Array.from(dom.querySelectorAll(target, '*')))) {
         if (visited.has(node)) continue;
         visited.add(node);
         all.push(node);
@@ -93,11 +97,13 @@ function runInPage(ctx) {
     }
     const found = [];
     for (const attr of ['aria-label', 'aria-labelledby', 'title']) {
-      if (all.some((el) => hasText(el.getAttribute(attr)))) found.push(attr);
+      if (all.some((el) => hasText(dom.getAttribute(el, attr)))) found.push(attr);
     }
     for (const tag of ['title', 'desc']) {
       const withText = all.some(
-        (el) => String(el.localName || el.tagName).toLowerCase() === tag && hasText(el.textContent)
+        (el) =>
+          String(dom.localName(el) || dom.tagName(el)).toLowerCase() === tag &&
+          hasText(dom.textContent(el))
       );
       if (withText) found.push(`<${tag}>`);
     }

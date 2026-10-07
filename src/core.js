@@ -58027,8 +58027,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "area-alt-source": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
-  const doc = document || (root && root.ownerDocument) || null;
+  const doc = document || (root && dom.ownerDocument(root)) || null;
 
   const trim = (v) =>
     String(v == null ? '' : v)
@@ -58036,7 +58037,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -58044,7 +58045,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const usedMaps = new Map();
   try {
-    for (const img of Array.from(doc ? doc.querySelectorAll('img[usemap]') : [])) {
+    for (const img of Array.from(doc ? dom.querySelectorAll(doc, 'img[usemap]') : [])) {
       const raw = trim(attr(img, 'usemap'));
       const name = (raw[0] === '#' ? raw.slice(1) : raw).toLowerCase();
       if (name && !usedMaps.has(name)) usedMaps.set(name, img);
@@ -58052,7 +58053,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   } catch {}
 
   function referencingImg(area) {
-    const map = area.closest ? area.closest('map') : null;
+    const map = dom.get(area, 'closest') ? dom.closest(area, 'map') : null;
     if (!map) return null;
     const name = trim(attr(map, 'name') || attr(map, 'id')).toLowerCase();
     return name ? usedMaps.get(name) || null : null;
@@ -58090,7 +58091,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of areas) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!trim(attr(el, 'href'))) continue;
     if (trim(attr(el, 'aria-hidden')).toLowerCase() === 'true') continue;
     const img = referencingImg(el);
@@ -59099,6 +59100,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-attribute-conformance": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -59525,20 +59527,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function localName(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   }
 
   function parentEl(el) {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   function firstRole(el) {
@@ -59551,14 +59553,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function idExists(el, idValue) {
     let root;
     try {
-      root = el.getRootNode ? el.getRootNode() : el.ownerDocument;
+      root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : dom.ownerDocument(el);
     } catch {
-      root = el.ownerDocument;
+      root = dom.ownerDocument(el);
     }
     try {
-      if (root && typeof root.getElementById === 'function') return !!root.getElementById(idValue);
-      const doc = el.ownerDocument;
-      return !!(doc && doc.getElementById(idValue));
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        return !!dom.getElementById(root, idValue);
+      const doc = dom.ownerDocument(el);
+      return !!(doc && dom.getElementById(doc, idValue));
     } catch {
       return true;
     }
@@ -59607,20 +59610,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function nearestTable(el) {
     for (let n = parentEl(el); n; n = parentEl(n)) {
-      if (localName(n) === 'table' && (n.namespaceURI || HTML_NS) === HTML_NS) return n;
+      if (localName(n) === 'table' && (dom.namespaceURI(n) || HTML_NS) === HTML_NS) return n;
     }
     return null;
   }
 
   function inNativeTable(el) {
     const table = nearestTable(el);
-    return !!table && !table.hasAttribute('role');
+    return !!table && !dom.hasAttribute(table, 'role');
   }
 
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.querySelectorAll(':scope > *')) {
+    for (const c of dom.querySelectorAll(p, ':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
@@ -59635,8 +59638,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The key of NATIVE for an element with no role, or '' when not judged.
   function nativeKey(el, name) {
-    if (name === 'a') return el.hasAttribute('href') ? 'a[href]' : 'generic';
-    if (name === 'area') return el.hasAttribute('href') ? 'area[href]' : 'area';
+    if (name === 'a') return dom.hasAttribute(el, 'href') ? 'a[href]' : 'generic';
+    if (name === 'area') return dom.hasAttribute(el, 'href') ? 'area[href]' : 'area';
     if (name === 'img') {
       const alt = attr(el, 'alt');
       return alt == null ? '' : 'landmark';
@@ -59647,7 +59650,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (name === 'li') {
       const p = parentEl(el);
-      if (!p || p.hasAttribute('role')) return '';
+      if (!p || dom.hasAttribute(p, 'role')) return '';
       const pn = localName(p);
       if (pn === 'ul' || pn === 'ol') return 'li(list)';
       if (pn === 'menu') return 'li(menu)';
@@ -59669,7 +59672,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     // A role attribute with no recognised token: the validator then checks
     // the attributes against neither a role nor the element.
-    if (el.hasAttribute('role')) return null;
+    if (dom.hasAttribute(el, 'role')) return null;
     let key = '';
     if (ns === SVG_NS) key = name === 'svg' ? 'named' : '';
     else if (ns === HTML_NS) key = nativeKey(el, name);
@@ -59714,8 +59717,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1 || !el.attributes) continue;
-    const ns = el.namespaceURI || HTML_NS;
+    if (!el || dom.nodeType(el) !== 1 || !dom.attributes(el)) continue;
+    const ns = dom.namespaceURI(el) || HTML_NS;
     const name = localName(el);
     if (ns !== HTML_NS && ns !== SVG_NS) continue;
     // Custom elements, and <embed>, which takes any attribute: the validator
@@ -59723,8 +59726,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (ns === HTML_NS && (name.indexOf('-') !== -1 || name === 'embed')) continue;
 
     const ariaNames = [];
-    for (let i = 0; i < el.attributes.length; i++) {
-      const n = String(el.attributes[i].name || '').toLowerCase();
+    for (let i = 0; i < dom.attributes(el).length; i++) {
+      const n = String(dom.attributes(el)[i].name || '').toLowerCase();
       if (n.slice(0, 5) === 'aria-') ariaNames.push(n);
     }
     const role = firstRole(el);
@@ -59776,14 +59779,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else if (
         a === 'aria-placeholder' &&
         (name === 'input' || name === 'textarea') &&
-        el.hasAttribute('placeholder')
+        dom.hasAttribute(el, 'placeholder')
       ) {
         report(el, R, { element, attr: a, value }, R + 'Placeholder');
       } else {
         for (const pair of NATIVE_PAIRS) {
           if (a !== pair.aria || value === 'true') continue;
           if (pair.tags !== '*' && words(pair.tags).indexOf(name) === -1) continue;
-          if (!el.hasAttribute(pair.native)) continue;
+          if (!dom.hasAttribute(el, pair.native)) continue;
           report(el, R, { element, attr: a, value, native: pair.native });
         }
       }
@@ -59791,12 +59794,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (required) {
       const need = REQUIRED[role];
-      if (el.hasAttribute(need)) continue;
+      if (dom.hasAttribute(el, need)) continue;
       // The native checked state stands in for aria-checked, and an input
       // with a list attribute is a combobox natively.
       if (name === 'input' && need === 'aria-checked' && (type === 'checkbox' || type === 'radio'))
         continue;
-      if (name === 'input' && role === 'combobox' && el.hasAttribute('list')) continue;
+      if (name === 'input' && role === 'combobox' && dom.hasAttribute(el, 'list')) continue;
       report(el, 'missingRequired', { element, role, attr: need });
     }
   }
@@ -61168,10 +61171,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "aria-list-item-roles": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -61185,13 +61189,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
     if (firstRole(el) !== 'list') continue;
-    const tag = String(el.tagName).toLowerCase();
+    const tag = String(dom.tagName(el)).toLowerCase();
     if (tag === 'ul' || tag === 'ol') continue;
 
-    const items = Array.from(el.querySelectorAll(':scope > *')).filter((c) => {
-      const t = String(c.tagName).toLowerCase();
+    const items = Array.from(dom.querySelectorAll(el, ':scope > *')).filter((c) => {
+      const t = String(dom.tagName(c)).toLowerCase();
       return t !== 'script' && t !== 'template';
     });
     if (!items.length) continue;
@@ -61201,7 +61205,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!others.length) continue;
 
     const liOnly = others.every(
-      (c) => String(c.tagName).toLowerCase() === 'li' && !c.hasAttribute('role')
+      (c) => String(dom.tagName(c)).toLowerCase() === 'li' && !dom.hasAttribute(c, 'role')
     );
     const reasonCode = liOnly ? 'liWithoutListitemRole' : 'childWithoutListitemRole';
 
@@ -62503,6 +62507,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-role-conformance": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -62670,12 +62675,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ASCII_WS = /[\t\n\f\r ]+/;
 
   function localName(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -62688,8 +62693,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function parentEl(el) {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   function firstRole(el) {
@@ -62701,7 +62706,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function nearestTable(el) {
     for (let n = parentEl(el); n; n = parentEl(n)) {
-      if (localName(n) === 'table' && (n.namespaceURI || HTML_NS) === HTML_NS) return n;
+      if (localName(n) === 'table' && (dom.namespaceURI(n) || HTML_NS) === HTML_NS) return n;
     }
     return null;
   }
@@ -62709,14 +62714,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.querySelectorAll(':scope > *')) {
+    for (const c of dom.querySelectorAll(p, ':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
   }
 
   function selectIsListbox(el) {
-    if (el.hasAttribute('multiple')) return true;
+    if (dom.hasAttribute(el, 'multiple')) return true;
     const size = attr(el, 'size');
     if (size == null) return false;
     const n = /^\s*(\d+)/.exec(size);
@@ -62740,7 +62745,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const p = parentEl(el);
       if (!p) return null;
       const pn = localName(p);
-      if ((pn === 'ul' || pn === 'ol' || pn === 'menu') && !p.hasAttribute('role')) {
+      if ((pn === 'ul' || pn === 'ol' || pn === 'menu') && !dom.hasAttribute(p, 'role')) {
         return { list: ['listitem'] };
       }
       if (firstRole(p) === 'list') return { list: ['listitem'] };
@@ -62749,7 +62754,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (name === 'td' || name === 'th' || name === 'tr') {
       const table = nearestTable(el);
       if (!table) return null;
-      if (!table.hasAttribute('role')) return { list: [] };
+      if (!dom.hasAttribute(table, 'role')) return { list: [] };
       const r = firstRole(table);
       if (r === 'table' || r === 'grid' || r === 'treegrid') return { list: [] };
       return null;
@@ -62800,8 +62805,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
-    const ns = el.namespaceURI || HTML_NS;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    const ns = dom.namespaceURI(el) || HTML_NS;
     const name = localName(el);
     if (ns === HTML_NS && name.indexOf('-') !== -1) continue; // custom element
     if (ns !== HTML_NS && ns !== SVG_NS && !(ns === MATHML_NS && name === 'math')) continue;
@@ -62826,7 +62831,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (ns === HTML_NS && name === 'img') {
       const alt = attr(el, 'alt');
-      const named = el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
+      const named = dom.hasAttribute(el, 'aria-label') || dom.hasAttribute(el, 'aria-labelledby');
       const emptyAlt = alt === '';
       const noName = alt == null && !named;
       if (emptyAlt || noName) {
@@ -64771,6 +64776,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "canvas-decorative-aria-hidden": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -64779,17 +64785,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
 
   function hasCaption(el) {
-    const figure = el.closest ? el.closest('figure') : null;
+    const figure = dom.get(el, 'closest') ? dom.closest(el, 'figure') : null;
     if (!figure) return false;
-    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(dom.querySelectorAll(figure, ':scope > *')).some(
+      (c) => tagOf(c) === 'figcaption'
+    );
   }
 
   // The alternatives 1.2.5 forbids, on the canvas and its children.
@@ -64798,12 +64806,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const name of ['aria-labelledby', 'aria-label', 'title']) {
       if (trim(attr(el, name))) found.push(name);
     }
-    const children = Array.from(el.querySelectorAll('*'));
+    const children = Array.from(dom.querySelectorAll(el, '*'));
     const childAlt = children.some((c) =>
       ['alt', 'aria-label', 'aria-labelledby', 'title'].some((n) => trim(attr(c, n)))
     );
     if (childAlt) found.push('childAlternative');
-    if (trim(el.textContent)) found.push('fallbackContent');
+    if (trim(dom.textContent(el))) found.push('fallbackContent');
     return found;
   }
 
@@ -64824,7 +64832,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const ariaHidden = trim(attr(el, 'aria-hidden')).toLowerCase() === 'true';
     const role = trim(attr(el, 'role')).toLowerCase().split(' ')[0];
     const presentational = role === 'none' || role === 'presentation';
@@ -64898,6 +64906,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...tiered };
 }), applicability: null },
     "canvas-role-img": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -64906,17 +64915,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
   const firstRole = (el) => trim(attr(el, 'role')).toLowerCase().split(' ')[0];
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -64933,8 +64942,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasFallback(el) {
-    if (trim(el.textContent)) return true;
-    for (const d of Array.from(el.querySelectorAll('[alt], [aria-label]'))) {
+    if (trim(dom.textContent(el))) return true;
+    for (const d of Array.from(dom.querySelectorAll(el, '[alt], [aria-label]'))) {
       if (trim(attr(d, 'alt')) || trim(attr(d, 'aria-label'))) return true;
     }
     return false;
@@ -64944,20 +64953,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
 
   function isBlank(n) {
-    return !!n && ((n.nodeType === 3 && !trim(n.nodeValue)) || n.nodeType === 8);
+    return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
   }
 
   function followingLinkOrButton(el) {
-    let node = el.nextSibling;
-    while (isBlank(node)) node = node.nextSibling;
-    while (node && node.nodeType === 1) {
+    let node = dom.nextSibling(el);
+    while (isBlank(node)) node = dom.nextSibling(node);
+    while (node && dom.nodeType(node) === 1) {
       try {
-        if (node.matches(LINK_OR_BUTTON)) return node;
+        if (dom.matches(node, LINK_OR_BUTTON)) return node;
       } catch {
         return null;
       }
-      let child = node.firstChild;
-      while (isBlank(child)) child = child.nextSibling;
+      let child = dom.firstChild(node);
+      while (isBlank(child)) child = dom.nextSibling(child);
       node = child;
     }
     return null;
@@ -64994,7 +65003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (insideAriaHidden(el)) continue;
     const role = firstRole(el);
     if (role === 'none' || role === 'presentation') continue;
@@ -65660,12 +65669,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "complex-table-summary": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // The HTML5 doctype: name html, no public id, no system id or
   // about:legacy-compat. Same test as presentational-elements-absent.
   const isHtml5 = (() => {
-    const doctype = document && document.doctype;
+    const doctype = document && dom.doctype(document);
     return (
       !!doctype &&
       String(doctype.name || '').toLowerCase() === 'html' &&
@@ -65679,7 +65689,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -65689,11 +65699,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -65703,28 +65713,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The table an ARIA row or native row belongs to: the nearest ancestor
   // that is a <table> or has a table role.
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   // Rows as arrays of cells, with the attribute names that carry spans.
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -65754,12 +65764,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (isHeader(cell)) {
           if (r > 0 && c > 0) outside = true;
           placed.push({ r, c, cols, rows: rowsSpanned });
-          const scope = String(cell.getAttribute('scope') || '')
+          const scope = String(dom.getAttribute(cell, 'scope') || '')
             .trim()
             .toLowerCase();
           if (scope === 'rowgroup' || scope === 'colgroup') groupScope = true;
         }
-        if (hasText(cell.getAttribute('headers'))) headersAttr = true;
+        if (hasText(dom.getAttribute(cell, 'headers'))) headersAttr = true;
         c += cols;
       }
     });
@@ -65781,19 +65791,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     const reasons = complexity(table);
     if (!reasons.length) continue;
     applicableCount += 1;
-    if (hasText(table.getAttribute('aria-describedby'))) continue;
+    if (hasText(dom.getAttribute(table, 'aria-describedby'))) continue;
     // summary is a résumé only on a <table> before HTML5 (5.1.1 step 2).
-    const hasSummaryAttr = isNative && hasText(table.getAttribute('summary'));
+    const hasSummaryAttr = isNative && hasText(dom.getAttribute(table, 'summary'));
     if (hasSummaryAttr && !isHtml5) continue;
 
-    const caption = isNative && table.caption ? String(table.caption.textContent || '').trim() : '';
+    const caption =
+      isNative && table.caption ? String(dom.textContent(table.caption) || '').trim() : '';
     occurrences.push(
       helpers.reportOccurrence(table, {
         summary:
@@ -65831,6 +65842,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "complex-table-summary-quality": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const doctypeKind = helpers.getDoctypeInfo ? helpers.getDoctypeInfo().kind : 'html5';
@@ -65841,7 +65853,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -65851,11 +65863,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -65863,27 +65875,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ARIA_CELL_ROLES = ['cell', 'gridcell', 'columnheader', 'rowheader'];
 
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -65910,12 +65922,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (isHeader(cell)) {
           if (r > 0 && c > 0) complex = true;
           placed.push({ r, c, cols, rows: rowsSpanned });
-          const scope = String(cell.getAttribute('scope') || '')
+          const scope = String(dom.getAttribute(cell, 'scope') || '')
             .trim()
             .toLowerCase();
           if (scope === 'rowgroup' || scope === 'colgroup') complex = true;
         }
-        if (hasText(cell.getAttribute('headers'))) complex = true;
+        if (hasText(dom.getAttribute(cell, 'headers'))) complex = true;
         c += cols;
       }
     });
@@ -65929,13 +65941,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-describedby counts when one of its ids names an element with text,
   // in the table's own tree (document or shadow root).
   function describedByText(table) {
-    const raw = String(table.getAttribute('aria-describedby') || '').trim();
+    const raw = String(dom.getAttribute(table, 'aria-describedby') || '').trim();
     if (!raw) return false;
-    const rootNode = table.getRootNode ? table.getRootNode() : document;
-    const scope = rootNode && rootNode.getElementById ? rootNode : document;
+    const rootNode = dom.get(table, 'getRootNode') ? dom.getRootNode(table) : document;
+    const scope = rootNode && dom.get(rootNode, 'getElementById') ? rootNode : document;
     return raw.split(/\s+/).some((ref) => {
-      const target = scope.getElementById(ref);
-      return !!target && hasText(target.textContent);
+      const target = dom.getElementById(scope, ref);
+      return !!target && hasText(dom.textContent(target));
     });
   }
 
@@ -65946,16 +65958,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     if (!isComplex(table)) continue;
 
     const sources = [];
-    if (isNative && table.caption && hasText(table.caption.textContent)) sources.push('caption');
+    if (isNative && table.caption && hasText(dom.textContent(table.caption)))
+      sources.push('caption');
     if (describedByText(table)) sources.push('aria-describedby');
-    if (isNative && !isHtml5 && hasText(table.getAttribute('summary'))) sources.push('summary');
+    if (isNative && !isHtml5 && hasText(dom.getAttribute(table, 'summary')))
+      sources.push('summary');
     if (!sources.length) continue;
 
     occurrences.push(
@@ -69609,6 +69623,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "data-table-headers-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function hasText(v) {
@@ -69616,7 +69631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -69626,11 +69641,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -69638,27 +69653,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const ARIA_CELL_ROLES = ['cell', 'gridcell', 'columnheader', 'rowheader'];
 
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -69675,7 +69690,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let c = 0;
       for (const cell of grid.rows[r]) {
         if (isHeader(cell)) return null;
-        if (hasText(cell.textContent)) withText = true;
+        if (hasText(dom.textContent(cell))) withText = true;
         taken[r] = taken[r] || [];
         while (taken[r][c]) c += 1;
         const colSpan = span(cell, grid.colspan);
@@ -69698,9 +69713,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
 
     const size = sizeWithoutHeaders(table);
@@ -70088,6 +70103,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "dir-attribute-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[dir]') : helpers.queryAll('[dir]');
@@ -70117,17 +70133,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function ownText(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') {
-      return String(el.value || el.getAttribute('value') || '');
+      return String(el.value || dom.getAttribute(el, 'value') || '');
     }
-    return String(el.textContent || '');
+    return String(dom.textContent(el) || '');
   }
 
   function inheritedDir(el) {
-    for (let p = el.parentElement; p; p = p.parentElement) {
-      if (!p.hasAttribute || !p.hasAttribute('dir')) continue;
-      const v = String(p.getAttribute('dir')).toLowerCase();
+    for (let p = dom.parentElement(el); p; p = dom.parentElement(p)) {
+      if (!dom.get(p, 'hasAttribute') || !dom.hasAttribute(p, 'dir')) continue;
+      const v = String(dom.getAttribute(p, 'dir')).toLowerCase();
       if (v === 'ltr' || v === 'rtl') return v;
       if (v === 'auto') return firstStrong(ownText(p)) || 'ltr';
     }
@@ -70135,8 +70151,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('dir'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'dir'));
     const value = raw.toLowerCase();
 
     const isAuto = value === 'auto';
@@ -70247,9 +70263,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "doctype-position": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  if (document.doctype) {
+  if (dom.doctype(document)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
@@ -70263,7 +70280,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -70299,7 +70316,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function report(reasonCode) {
     const msg = MESSAGES[reasonCode];
-    const occ = helpers.reportOccurrence(document.documentElement, {
+    const occ = helpers.reportOccurrence(dom.documentElement(document), {
       selector: 'html',
       html: '<html>',
       summary: msg.summary,
@@ -70352,9 +70369,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "doctype-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  if (document.doctype) {
+  if (dom.doctype(document)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
@@ -70370,7 +70388,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -70391,7 +70409,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A doctype is not an element, so the finding is reported on <html>.
-  const occurrence = helpers.reportOccurrence(document.documentElement, {
+  const occurrence = helpers.reportOccurrence(dom.documentElement(document), {
     selector: 'html',
     html: '<!DOCTYPE>(missing)',
     summary: 'The page has no doctype.',
@@ -70417,6 +70435,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "doctype-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const RECOMMENDED_PUBLIC_IDS = [
@@ -70438,7 +70457,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     '-//W3C//DTD HTML 4.01+RDFA 1.1//EN'
   ];
 
-  const doctype = document.doctype;
+  const doctype = dom.doctype(document);
   if (!doctype) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -70462,7 +70481,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A doctype is not an element, so the finding is reported on <html>, with
   // the declared doctype as its snippet.
-  const occurrence = helpers.reportOccurrence(document.documentElement, {
+  const occurrence = helpers.reportOccurrence(dom.documentElement(document), {
     selector: 'html',
     html: declared,
     summary: 'The page declares a doctype that is neither HTML5 nor a W3C recommended one.',
@@ -70714,6 +70733,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "embed-image-role-img": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -70722,17 +70742,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
   const firstRole = (el) => trim(attr(el, 'role')).toLowerCase().split(' ')[0];
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -70754,20 +70774,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
 
   function isBlank(n) {
-    return !!n && ((n.nodeType === 3 && !trim(n.nodeValue)) || n.nodeType === 8);
+    return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
   }
 
   function followingLinkOrButton(el) {
-    let node = el.nextSibling;
-    while (isBlank(node)) node = node.nextSibling;
-    while (node && node.nodeType === 1) {
+    let node = dom.nextSibling(el);
+    while (isBlank(node)) node = dom.nextSibling(node);
+    while (node && dom.nodeType(node) === 1) {
       try {
-        if (node.matches(LINK_OR_BUTTON)) return node;
+        if (dom.matches(node, LINK_OR_BUTTON)) return node;
       } catch {
         return null;
       }
-      let child = node.firstChild;
-      while (isBlank(child)) child = child.nextSibling;
+      let child = dom.firstChild(node);
+      while (isBlank(child)) child = dom.nextSibling(child);
       node = child;
     }
     return null;
@@ -70784,7 +70804,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const type = trim(attr(el, 'type')).toLowerCase();
     if (!type.startsWith('image/')) continue;
     if (insideAriaHidden(el)) continue;
@@ -71221,6 +71241,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "embedded-refresh-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Every match in scope, hidden or not: a hidden element can still reload.
@@ -71237,7 +71258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const STILL_IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?)(?:[?#]|$)/i;
 
   function attr(el, name) {
-    return String(el.getAttribute(name) || '').trim();
+    return String(dom.getAttribute(el, name) || '').trim();
   }
 
   function isStillImage(el, urlAttr) {
@@ -71250,7 +71271,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'object') return !isStillImage(el, 'data');
     if (tag === 'embed') return !isStillImage(el, 'src');
     if (tag === 'canvas') return true;
-    if (tag === 'svg') return !!el.querySelector('script');
+    if (tag === 'svg') return !!dom.querySelector(el, 'script');
     return false;
   }
 
@@ -71258,9 +71279,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const askedObjects = [];
 
   for (const el of queryAllUnfiltered('object, embed, canvas, svg')) {
-    if (!el || !el.getAttribute) continue;
-    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (askedObjects.some((o) => o !== el && dom.contains(o, el))) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     if (!applies(el, tag)) continue;
     if (tag === 'object') askedObjects.push(el);
 
@@ -71624,6 +71645,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "fake-list": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const BULLETS = '•·‣◦▪▫■□●○◆◇►▸▶–—-*+✓✔→';
@@ -71664,17 +71686,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function linesOf(el) {
     const lines = [''];
-    for (const node of Array.from(el.childNodes)) {
-      if (node.nodeType === 1 && String(node.tagName).toLowerCase() === 'br') lines.push('');
-      else lines[lines.length - 1] += ' ' + (node.textContent || '');
+    for (const node of Array.from(dom.childNodes(el))) {
+      if (dom.nodeType(node) === 1 && String(dom.tagName(node)).toLowerCase() === 'br')
+        lines.push('');
+      else lines[lines.length - 1] += ' ' + (dom.textContent(node) || '');
     }
     return lines.map(collapse).filter(Boolean);
   }
 
   function isParagraph(el) {
-    const tag = String(el.tagName).toLowerCase();
+    const tag = String(dom.tagName(el)).toLowerCase();
     if (tag === 'p') return true;
-    return tag === 'div' && !el.querySelector(BLOCKS);
+    return tag === 'div' && !dom.querySelector(el, BLOCKS);
   }
 
   const found = [];
@@ -71713,10 +71736,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Lines split by <br> inside one element.
   for (const el of candidates) {
-    if (!el || !el.querySelector || el.closest(SKIP)) continue;
+    if (!el || !dom.get(el, 'querySelector') || dom.closest(el, SKIP)) continue;
     if (
-      !Array.from(el.querySelectorAll(':scope > *')).some(
-        (c) => String(c.tagName).toLowerCase() === 'br'
+      !Array.from(dom.querySelectorAll(el, ':scope > *')).some(
+        (c) => String(dom.tagName(c)).toLowerCase() === 'br'
       )
     )
       continue;
@@ -71728,12 +71751,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Runs of consecutive sibling paragraphs.
   const seen = new Set();
   for (const el of candidates) {
-    if (!el || seen.has(el) || !isParagraph(el) || el.closest(SKIP)) continue;
+    if (!el || seen.has(el) || !isParagraph(el) || dom.closest(el, SKIP)) continue;
     const run = [el];
-    let next = el.nextElementSibling;
+    let next = dom.nextElementSibling(el);
     while (next && isParagraph(next)) {
       run.push(next);
-      next = next.nextElementSibling;
+      next = dom.nextElementSibling(next);
     }
     run.forEach((p) => seen.add(p));
     // Within a run, keep the longest stretch that reads as one list.
@@ -71743,14 +71766,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (let end = run.length; end >= start + MIN_ITEMS; end -= 1) {
         const slice = run.slice(start, end);
         if (slice.some((p) => reported.has(p))) continue;
-        if (listKind(slice.map((p) => collapse(p.textContent)))) {
+        if (listKind(slice.map((p) => collapse(dom.textContent(p))))) {
           best = end;
           break;
         }
       }
       if (best) {
         const slice = run.slice(start, best);
-        report(slice[0], listKind(slice.map((p) => collapse(p.textContent))), slice.length);
+        report(slice[0], listKind(slice.map((p) => collapse(dom.textContent(p)))), slice.length);
         start = best;
       } else {
         start += 1;
@@ -71760,7 +71783,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Both passes report in document order; merge them.
   const occurrences = found
-    .sort((a, b) => (a.el.compareDocumentPosition(b.el) & 2 ? 1 : -1))
+    .sort((a, b) => (dom.compareDocumentPosition(a.el, b.el) & 2 ? 1 : -1))
     .map((f) => f.occurrence);
 
   if (!occurrences.length) {
@@ -71774,6 +71797,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "field-group-legend": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const FIELDS =
@@ -71784,28 +71808,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
   }
 
   function labelledbyText(el) {
-    const ids = String(el.getAttribute('aria-labelledby') || '')
+    const ids = String(dom.getAttribute(el, 'aria-labelledby') || '')
       .trim()
       .split(/\s+/)
       .filter(Boolean);
-    const root = el.getRootNode ? el.getRootNode() : el.ownerDocument;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : dom.ownerDocument(el);
     return ids
       .map((i) => {
-        const target = root && root.getElementById ? root.getElementById(i) : null;
-        return target ? target.textContent : '';
+        const target = root && dom.get(root, 'getElementById') ? dom.getElementById(root, i) : null;
+        return target ? dom.textContent(target) : '';
       })
       .join(' ');
   }
 
   function hasAriaName(el) {
-    return hasText(el.getAttribute('aria-label')) || hasText(labelledbyText(el));
+    return hasText(dom.getAttribute(el, 'aria-label')) || hasText(labelledbyText(el));
   }
 
   // Filtered below by the first role token.
@@ -71817,23 +71841,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const group of groups) {
-    if (!group || !group.getAttribute) continue;
-    const isFieldset = String(group.tagName).toLowerCase() === 'fieldset';
+    if (!group || !dom.get(group, 'getAttribute')) continue;
+    const isFieldset = String(dom.tagName(group)).toLowerCase() === 'fieldset';
     const role = firstRole(group);
     const isAriaGroup = role === 'group' || role === 'radiogroup';
     // A fieldset given another role (say role="presentation") is not a group.
     if (isFieldset ? role && !isAriaGroup : !isAriaGroup) continue;
-    if (!group.querySelector(FIELDS)) continue;
+    if (!dom.querySelector(group, FIELDS)) continue;
     applicableCount += 1;
 
     // RGAA 11.6.1 step 2: a legend for a fieldset, aria-label or
     // aria-labelledby for role="group"/"radiogroup".
     if (isAriaGroup && hasAriaName(group)) continue;
     if (isFieldset) {
-      const legend = Array.from(group.querySelectorAll(':scope > *')).find(
-        (c) => String(c.tagName).toLowerCase() === 'legend'
+      const legend = Array.from(dom.querySelectorAll(group, ':scope > *')).find(
+        (c) => String(dom.tagName(c)).toLowerCase() === 'legend'
       );
-      if (legend && hasText(legend.textContent)) continue;
+      if (legend && hasText(dom.textContent(legend))) continue;
     }
 
     const element = isFieldset ? 'fieldset' : `role="${role}"`;
@@ -71872,6 +71896,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "field-label-in-name-sources": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Which of the four label-in-name tests this file checks. The four rule
@@ -71914,11 +71939,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function explicitRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     return String(raw || '')
       .trim()
       .toLowerCase()
@@ -71926,7 +71951,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function inputType(el) {
-    return String(el.getAttribute('type') || '')
+    return String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
   }
@@ -71934,7 +71959,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The RGAA test an element belongs to: its explicit role decides first,
   // then its tag. '' for anything none of the four tests covers.
   function classify(el) {
-    if (el.namespaceURI === SVG_NS) return '';
+    if (dom.namespaceURI(el) === SVG_NS) return '';
     const role = explicitRole(el);
     if (role) {
       if (role === 'link') return 'link';
@@ -71944,7 +71969,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
     const tag = tagOf(el);
-    if (tag === 'a') return el.hasAttribute('href') ? 'link' : '';
+    if (tag === 'a') return dom.hasAttribute(el, 'href') ? 'link' : '';
     if (tag === 'button') return 'button';
     if (tag === 'input') {
       const type = inputType(el);
@@ -71957,13 +71982,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // RGAA 11.9 covers the buttons « présents au sein d'un formulaire »: a
   // <form> or role="form" ancestor (glossary "Formulaire").
   function insideForm(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return true;
       if (explicitRole(p) === 'form') return true;
     }
@@ -72014,7 +72041,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (visibleOnly && !isDomVisible(container)) return { text: '', elements: [] };
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -72023,14 +72050,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const elements = [];
     let n;
     while ((n = walker.nextNode())) {
-      const t = String(n.nodeValue || '')
+      const t = String(dom.nodeValue(n) || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!t) continue;
-      const p = n.parentElement;
+      const p = dom.parentElement(n);
       if (!p) continue;
       let skip = false;
-      for (let a = p; a && a !== container; a = a.parentElement) {
+      for (let a = p; a && a !== container; a = dom.parentElement(a)) {
         const tag = tagOf(a);
         if (isNonRenderedTag(tag) || isControlTag(tag)) {
           skip = true;
@@ -72055,7 +72082,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function labelledbyRefs(el) {
-    const idrefs = el.getAttribute('aria-labelledby');
+    const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
       const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
@@ -72086,7 +72113,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = explicitRole(el);
     if (family === 'button' && tag === 'input') {
       if (inputType(el) === 'image') return { text: '', origin: '', elements: [] };
-      const value = String(el.getAttribute('value') || '')
+      const value = String(dom.getAttribute(el, 'value') || '')
         .replace(/\s+/g, ' ')
         .trim();
       return { text: value, origin: 'value', elements: [el] };
@@ -72136,13 +72163,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     if (byRef) out.push({ source: 'aria-labelledby', text: byRef });
-    const ariaLabel = clean(el.getAttribute('aria-label'));
+    const ariaLabel = clean(dom.getAttribute(el, 'aria-label'));
     if (ariaLabel) out.push({ source: 'aria-label', text: ariaLabel });
     if (family === 'field') {
       const labelText = labelSourceText(el);
       if (labelText) out.push({ source: '<label>', text: labelText });
     }
-    const title = clean(el.getAttribute('title'));
+    const title = clean(dom.getAttribute(el, 'title'));
     if (title) out.push({ source: 'title', text: title });
     return out;
   }
@@ -72216,7 +72243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isIconFontElement(node) {
     let cs = null;
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') cs = view.getComputedStyle(node);
     } catch {
       cs = null;
@@ -72348,7 +72375,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (classify(el) !== family) continue;
     if (family === 'button' && !insideForm(el)) continue;
     if (!isDomVisible(el)) continue;
@@ -72451,6 +72478,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "field-label-listed-source": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const FIELD_ROLES = [
@@ -72477,11 +72505,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function firstRoleToken(el) {
-    return norm(el.getAttribute('role')).toLowerCase().split(' ')[0] || '';
+    return norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0] || '';
   }
 
   // The field kind, or '' when the element is not an RGAA form field.
@@ -72490,7 +72518,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = firstRoleToken(el);
     if (role === 'button') return '';
     if (tag === 'input') {
-      const type = norm(el.getAttribute('type')).toLowerCase();
+      const type = norm(dom.getAttribute(el, 'type')).toLowerCase();
       if (NOT_FIELD_INPUT_TYPES.includes(type)) return '';
       return 'input';
     }
@@ -72503,7 +72531,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = tagOf(el);
     if (!LABELABLE.includes(tag)) return false;
     if (tag === 'input') {
-      return norm(el.getAttribute('type')).toLowerCase() !== 'hidden';
+      return norm(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
     }
     return true;
   }
@@ -72535,18 +72563,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // apart.
   function labelsFor(el) {
     const shared = associatedLabels(el);
-    if (shared) return shared.filter((label) => label.hasAttribute('for'));
-    const idValue = el.getAttribute('id');
+    if (shared) return shared.filter((label) => dom.hasAttribute(label, 'for'));
+    const idValue = dom.getAttribute(el, 'id');
     if (!idValue) return [];
-    const root = el.getRootNode ? el.getRootNode() : null;
-    if (!root || !root.querySelectorAll) return [];
-    const target = root.getElementById
-      ? root.getElementById(idValue)
-      : root.querySelector('[id="' + idValue.replace(/["\\]/g, '\\$&') + '"]');
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+    if (!root || !dom.get(root, 'querySelectorAll')) return [];
+    const target = dom.get(root, 'getElementById')
+      ? dom.getElementById(root, idValue)
+      : dom.querySelector(root, '[id="' + idValue.replace(/["\\]/g, '\\$&') + '"]');
     if (target !== el) return [];
     const out = [];
-    for (const label of root.querySelectorAll('label[for]')) {
-      if (label.getAttribute('for') === idValue) out.push(label);
+    for (const label of dom.querySelectorAll(root, 'label[for]')) {
+      if (dom.getAttribute(label, 'for') === idValue) out.push(label);
     }
     return out;
   }
@@ -72556,10 +72584,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function wrappingLabel(el) {
     if (!isLabelable(el)) return null;
     const shared = associatedLabels(el);
-    if (shared) return shared.find((label) => !label.hasAttribute('for')) || null;
-    const wrap = el.closest ? el.closest('label') : null;
-    if (!wrap || wrap.hasAttribute('for')) return null;
-    for (const candidate of wrap.querySelectorAll(LABELABLE.join(', '))) {
+    if (shared) return shared.find((label) => !dom.hasAttribute(label, 'for')) || null;
+    const wrap = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
+    if (!wrap || dom.hasAttribute(wrap, 'for')) return null;
+    for (const candidate of dom.querySelectorAll(wrap, LABELABLE.join(', '))) {
       if (isLabelable(candidate)) return candidate === el ? wrap : null;
     }
     return null;
@@ -72569,7 +72597,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.labelContributesAccessibleName) {
       return !!helpers.labelContributesAccessibleName(label);
     }
-    return !!norm(label.textContent);
+    return !!norm(dom.textContent(label));
   }
 
   // Which 11.1.1 sources the field has: 'met', 'empty' (present, no text)
@@ -72577,7 +72605,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function sources(el) {
     const found = { met: [], empty: [] };
 
-    const labelledby = norm(el.getAttribute('aria-labelledby'));
+    const labelledby = norm(dom.getAttribute(el, 'aria-labelledby'));
     if (labelledby) {
       const info = helpers.getAriaLabelledByInfo
         ? helpers.getAriaLabelledByInfo(el, ctx)
@@ -72586,8 +72614,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       else if (info && info.refsCount > 0) found.empty.push('aria-labelledby');
     }
 
-    if (el.hasAttribute('aria-label')) {
-      if (norm(el.getAttribute('aria-label'))) found.met.push('aria-label');
+    if (dom.hasAttribute(el, 'aria-label')) {
+      if (norm(dom.getAttribute(el, 'aria-label'))) found.met.push('aria-label');
       else found.empty.push('aria-label');
     }
 
@@ -72598,8 +72626,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       else found.empty.push('label-for');
     }
 
-    if (el.hasAttribute('title')) {
-      if (norm(el.getAttribute('title'))) found.met.push('title');
+    if (dom.hasAttribute(el, 'title')) {
+      if (norm(dom.getAttribute(el, 'title'))) found.met.push('title');
       else found.empty.push('title');
     }
 
@@ -72614,7 +72642,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getContentNameInfo(el, ctx);
       return !!(info && info.present && norm(info.value));
     }
-    return !!norm(el.textContent);
+    return !!norm(dom.textContent(el));
   }
 
   const MESSAGES = {
@@ -72672,7 +72700,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(SELECTOR);
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const kind = fieldKind(el);
     if (!kind) continue;
     if (!inAccTree(el)) continue;
@@ -72690,7 +72718,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       source = found.empty[0];
     } else if (wrappingLabel(el)) {
       reasonCode = 'wrappingLabel';
-    } else if (norm(el.getAttribute('placeholder'))) {
+    } else if (norm(dom.getAttribute(el, 'placeholder'))) {
       reasonCode = 'placeholderOnly';
     } else if (hasOwnContent(el, kind)) {
       reasonCode = 'contentOnly';
@@ -72737,6 +72765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "figure-caption-structure": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const collapse = (s) =>
@@ -72752,22 +72781,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const figure of figures) {
-    if (!figure || !figure.getAttribute) continue;
-    const caption = Array.from(figure.querySelectorAll(':scope > *')).find(
-      (c) => String(c.tagName).toLowerCase() === 'figcaption'
+    if (!figure || !dom.get(figure, 'getAttribute')) continue;
+    const caption = Array.from(dom.querySelectorAll(figure, ':scope > *')).find(
+      (c) => String(dom.tagName(c)).toLowerCase() === 'figcaption'
     );
-    const captionText = caption ? collapse(caption.textContent) : '';
+    const captionText = caption ? collapse(dom.textContent(caption)) : '';
     const image = Array.from(
-      figure.querySelectorAll('img, input[type="image" i], [role="img"]')
-    ).find((el) => el.closest('figure') === figure);
+      dom.querySelectorAll(figure, 'img, input[type="image" i], [role="img"]')
+    ).find((el) => dom.closest(el, 'figure') === figure);
     if (!captionText || !image) continue;
     applicableCount += 1;
 
-    const role = String(figure.getAttribute('role') || '')
+    const role = String(dom.getAttribute(figure, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
-    const label = collapse(figure.getAttribute('aria-label'));
+    const label = collapse(dom.getAttribute(figure, 'aria-label'));
 
     const reasons = [];
     if (role !== 'figure' && role !== 'group') reasons.push('missingRole');
@@ -72822,6 +72851,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "focus-indicator-contrast": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule, engineOptions } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -72941,7 +72971,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!t) return false;
     if (t === 'currentcolor' || t === 'transparent') return true;
     try {
-      if (!colorProbe) colorProbe = document.createElement('span').style;
+      if (!colorProbe) colorProbe = dom.createElement(document, 'span').style;
       colorProbe.color = '';
       colorProbe.color = t;
       return !!colorProbe.color;
@@ -73134,20 +73164,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   function matchesSafe(el, selector) {
     try {
-      return !!(el && typeof el.matches === 'function' && selector && el.matches(selector));
+      return !!(
+        el &&
+        typeof dom.get(el, 'matches') === 'function' &&
+        selector &&
+        dom.matches(el, selector)
+      );
     } catch {
       return false;
     }
   }
   function closestSafe(el, selector) {
     try {
-      return !!(el && typeof el.closest === 'function' && selector && el.closest(selector));
+      return !!(
+        el &&
+        typeof dom.get(el, 'closest') === 'function' &&
+        selector &&
+        dom.closest(el, selector)
+      );
     } catch {
       return false;
     }
   }
 
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   const CSS_SUPPORTS_RULE = 12;
 
   // 'yes', 'no', or 'unknown' when the condition cannot be evaluated here
@@ -73163,7 +73203,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!text || text === 'all' || text === 'screen') return 'yes';
       if (!view || typeof view.matchMedia !== 'function') return 'unknown';
       try {
-        return view.matchMedia(text).matches ? 'yes' : 'no';
+        return dom.get(view.matchMedia(text), 'matches') ? 'yes' : 'no';
       } catch {
         return 'unknown';
       }
@@ -73266,7 +73306,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   try {
-    for (const sheet of document.styleSheets || []) {
+    for (const sheet of dom.styleSheets(document) || []) {
       const applies = sheet ? conditionApplies(sheet, true) : 'yes';
       if (applies === 'no') continue;
       let rules;
@@ -73305,7 +73345,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (cmp > 0 || (cmp === 0 && cand.d.order > best.d.order)) best = cand;
     }
-    return best ? { value: best.value, fromFocus: best.d.focus } : null;
+    return best ? { value: best.value, fromFocus: dom.get(best.d, 'focus') } : null;
   }
 
   function inlineDecl(el) {
@@ -73333,15 +73373,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function parentOf(el) {
-    return helpers.composedParent ? helpers.composedParent(el) : el.parentElement;
+    return helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el);
   }
 
   // The color of the background painted at `el` (its own and what shows
   // through), or null when an image or gradient, or a translucent root in
   // strict mode, makes it unknown.
   function backgroundAt(el) {
-    if (!el || el.nodeType !== 1) return null;
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       const cs = computedStyleOf(n);
       if (cs && helpers.contrast.hasBackgroundImageOrGradient(cs)) return null;
       const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
@@ -73509,10 +73549,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     else if (shadow && shadow.fromFocus) {
       for (const layer of parseShadows(shadow.value)) {
         if (layer.color === 'transparent') continue;
-        if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
-        if (layer.spread < 0 && !layer.blur) continue;
+        if (!layer.spread && !dom.get(layer, 'blur') && !layer.x && !layer.y) continue;
+        if (layer.spread < 0 && !dom.get(layer, 'blur')) continue;
         const rgba = toRgba(layer.color, currentColor);
-        const blurred = layer.blur > 0 && layer.spread <= 0;
+        const blurred = dom.get(layer, 'blur') > 0 && layer.spread <= 0;
         if (layer.inset) add('box-shadow (inset)', rgba, inner, [inner], blurred);
         else add('box-shadow', rgba, outer, [outer, inner], blurred);
       }
@@ -73522,10 +73562,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // that styles a pseudo-element or another element, or an inline focus
     // handler that may paint one from script.
     const otherStyle =
-      own.some((d) => d.focus && d.other) ||
+      own.some((d) => dom.get(d, 'focus') && d.other) ||
       indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
-      el.hasAttribute('onfocus') ||
-      el.hasAttribute('onfocusin');
+      dom.hasAttribute(el, 'onfocus') ||
+      dom.hasAttribute(el, 'onfocusin');
 
     return decide(indicators, unmeasured, unsettled, otherStyle);
   }
@@ -73585,11 +73625,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // from what is painted there. jsdom has no layout and keeps the stylesheet
   // reading above.
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof document.elementsFromPoint !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(document, 'elementsFromPoint') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -73648,10 +73688,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function deepActiveElement() {
-    let cur = document.activeElement || null;
+    let cur = dom.activeElement(document) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
@@ -73662,30 +73702,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // could not be focused.
   function whileFocused(el, fn) {
     const previous = deepActiveElement();
-    const hadStyle = el.hasAttribute('style');
-    const styleAttr = el.getAttribute('style');
+    const hadStyle = dom.hasAttribute(el, 'style');
+    const styleAttr = dom.getAttribute(el, 'style');
     try {
       el.style.setProperty('transition', 'none', 'important');
-      if (previous === el) el.blur();
+      if (previous === el) dom.blur(el);
       const before = snapshot(el);
-      el.focus({ preventScroll: true, focusVisible: true });
+      dom.focus(el, { preventScroll: true, focusVisible: true });
       if (deepActiveElement() !== el) return undefined;
       return fn(before, snapshot(el));
     } catch {
       return undefined;
     } finally {
       try {
-        if (previous && previous !== document.body && typeof previous.focus === 'function') {
-          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        if (
+          previous &&
+          previous !== dom.body(document) &&
+          typeof dom.get(previous, 'focus') === 'function'
+        ) {
+          if (deepActiveElement() !== previous) dom.focus(previous, { preventScroll: true });
         } else if (deepActiveElement() === el) {
-          el.blur();
+          dom.blur(el);
         }
       } catch {}
       // Reading the attribute first makes Chromium write the inline style
       // back to it; removed before that, it comes back as style="".
-      el.getAttribute('style');
-      if (hadStyle) el.setAttribute('style', styleAttr);
-      else el.removeAttribute('style');
+      dom.getAttribute(el, 'style');
+      if (hadStyle) dom.setAttribute(el, 'style', styleAttr);
+      else dom.removeAttribute(el, 'style');
     }
   }
 
@@ -73703,23 +73747,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!(x >= 0 && y >= 0 && x < w && y < h)) return undefined;
     let stack;
     try {
-      stack = document.elementsFromPoint(x, y) || [];
+      stack = dom.elementsFromPoint(document, x, y) || [];
     } catch {
       return undefined;
     }
-    const top = stack.find((n) => n !== el && !el.contains(n));
-    return top && top !== document.documentElement ? backgroundAt(top) : canvasColor();
+    const top = stack.find((n) => n !== el && !dom.contains(el, n));
+    return top && top !== dom.documentElement(document) ? backgroundAt(top) : canvasColor();
   }
 
   // The canvas: the root's background, or the body's when the root has none,
   // which is what the browser paints there.
   function canvasColor() {
-    const root = document.documentElement;
+    const root = dom.documentElement(document);
     const cs = root ? computedStyleOf(root) : null;
     const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
     const rootPainted =
       (bg && bg.a > 0) || (cs && helpers.contrast.hasBackgroundImageOrGradient(cs));
-    return backgroundAt(!rootPainted && document.body ? document.body : root);
+    return backgroundAt(!rootPainted && dom.body(document) ? dom.body(document) : root);
   }
 
   // The colors next to the element on the given sides, `dist` pixels
@@ -73792,7 +73836,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return c && c.a > 0 ? c : null;
       };
 
-      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+      if (typeof dom.get(el, 'getAnimations') === 'function' && dom.getAnimations(el).length) {
         return {
           verdict: 'cantTell',
           reasonCode: 'notComputable',
@@ -73800,7 +73844,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
 
-      const rect = el.getBoundingClientRect();
+      const rect = dom.getBoundingClientRect(el);
       const inner = focusedBackground(el, rect);
       const indicators = [];
       let unmeasured = null;
@@ -73839,15 +73883,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         for (const layer of parseShadows(after['box-shadow'])) {
           const color = visibleColor(layer.color);
           if (!color) continue;
-          if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
-          if (layer.spread < 0 && !layer.blur) continue;
-          const blurred = layer.blur > 0 && layer.spread <= 0;
+          if (!layer.spread && !dom.get(layer, 'blur') && !layer.x && !layer.y) continue;
+          if (layer.spread < 0 && !dom.get(layer, 'blur')) continue;
+          const blurred = dom.get(layer, 'blur') > 0 && layer.spread <= 0;
           if (layer.inset) {
             const m = inner ? measure(color, inner, [inner]) : null;
             if (m) indicators.push({ property: 'box-shadow (inset)', m, blurred });
             else if (!unmeasured) unmeasured = 'background';
           } else {
-            const dist = Math.max(1, Math.max(layer.spread, layer.blur) / 2);
+            const dist = Math.max(1, Math.max(layer.spread, dom.get(layer, 'blur')) / 2);
             add('box-shadow', color, colorsAround(el, rect, dist, SIDES), false, blurred);
           }
         }
@@ -73857,8 +73901,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         changed(RENDERED_OTHER) ||
         changed(['::before', '::after']) ||
         indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
-        el.hasAttribute('onfocus') ||
-        el.hasAttribute('onfocusin');
+        dom.hasAttribute(el, 'onfocus') ||
+        dom.hasAttribute(el, 'onfocusin');
 
       return decide(indicators, unmeasured, false, otherStyle);
     });
@@ -73902,7 +73946,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let judgedCount = 0;
 
   for (const el of candidates) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isTabbable(el) || !isRendered(el)) continue;
     let res;
     try {
@@ -74087,6 +74131,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "form-button-label-in-name-sources": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Which of the four label-in-name tests this file checks. The four rule
@@ -74129,11 +74174,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function explicitRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     return String(raw || '')
       .trim()
       .toLowerCase()
@@ -74141,7 +74186,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function inputType(el) {
-    return String(el.getAttribute('type') || '')
+    return String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
   }
@@ -74149,7 +74194,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The RGAA test an element belongs to: its explicit role decides first,
   // then its tag. '' for anything none of the four tests covers.
   function classify(el) {
-    if (el.namespaceURI === SVG_NS) return '';
+    if (dom.namespaceURI(el) === SVG_NS) return '';
     const role = explicitRole(el);
     if (role) {
       if (role === 'link') return 'link';
@@ -74159,7 +74204,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
     const tag = tagOf(el);
-    if (tag === 'a') return el.hasAttribute('href') ? 'link' : '';
+    if (tag === 'a') return dom.hasAttribute(el, 'href') ? 'link' : '';
     if (tag === 'button') return 'button';
     if (tag === 'input') {
       const type = inputType(el);
@@ -74172,13 +74217,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // RGAA 11.9 covers the buttons « présents au sein d'un formulaire »: a
   // <form> or role="form" ancestor (glossary "Formulaire").
   function insideForm(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return true;
       if (explicitRole(p) === 'form') return true;
     }
@@ -74229,7 +74276,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (visibleOnly && !isDomVisible(container)) return { text: '', elements: [] };
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -74238,14 +74285,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const elements = [];
     let n;
     while ((n = walker.nextNode())) {
-      const t = String(n.nodeValue || '')
+      const t = String(dom.nodeValue(n) || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!t) continue;
-      const p = n.parentElement;
+      const p = dom.parentElement(n);
       if (!p) continue;
       let skip = false;
-      for (let a = p; a && a !== container; a = a.parentElement) {
+      for (let a = p; a && a !== container; a = dom.parentElement(a)) {
         const tag = tagOf(a);
         if (isNonRenderedTag(tag) || isControlTag(tag)) {
           skip = true;
@@ -74270,7 +74317,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function labelledbyRefs(el) {
-    const idrefs = el.getAttribute('aria-labelledby');
+    const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
       const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
@@ -74301,7 +74348,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = explicitRole(el);
     if (family === 'button' && tag === 'input') {
       if (inputType(el) === 'image') return { text: '', origin: '', elements: [] };
-      const value = String(el.getAttribute('value') || '')
+      const value = String(dom.getAttribute(el, 'value') || '')
         .replace(/\s+/g, ' ')
         .trim();
       return { text: value, origin: 'value', elements: [el] };
@@ -74351,13 +74398,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     if (byRef) out.push({ source: 'aria-labelledby', text: byRef });
-    const ariaLabel = clean(el.getAttribute('aria-label'));
+    const ariaLabel = clean(dom.getAttribute(el, 'aria-label'));
     if (ariaLabel) out.push({ source: 'aria-label', text: ariaLabel });
     if (family === 'field') {
       const labelText = labelSourceText(el);
       if (labelText) out.push({ source: '<label>', text: labelText });
     }
-    const title = clean(el.getAttribute('title'));
+    const title = clean(dom.getAttribute(el, 'title'));
     if (title) out.push({ source: 'title', text: title });
     return out;
   }
@@ -74431,7 +74478,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isIconFontElement(node) {
     let cs = null;
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') cs = view.getComputedStyle(node);
     } catch {
       cs = null;
@@ -74564,7 +74611,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (classify(el) !== family) continue;
     if (family === 'button' && !insideForm(el)) continue;
     if (!isDomVisible(el)) continue;
@@ -74667,6 +74714,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "form-button-name-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function norm(s) {
@@ -74676,7 +74724,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function inAccTree(el) {
@@ -74690,14 +74738,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // The nearest <form> or role="form" ancestor, across shadow roots.
   function formAncestor(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return p;
-      const role = norm(p.getAttribute('role')).toLowerCase().split(' ')[0];
+      const role = norm(dom.getAttribute(p, 'role')).toLowerCase().split(' ')[0];
       if (role === 'form') return p;
     }
     return null;
@@ -74705,20 +74755,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A form the button joins through its form attribute.
   function formByAttribute(el) {
-    const formId = el.getAttribute('form');
+    const formId = dom.getAttribute(el, 'form');
     if (!formId) return null;
-    const root = el.getRootNode ? el.getRootNode() : null;
-    const target = root && root.getElementById ? root.getElementById(formId) : null;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+    const target =
+      root && dom.get(root, 'getElementById') ? dom.getElementById(root, formId) : null;
     return target && tagOf(target) === 'form' ? target : null;
   }
 
   function inputType(el) {
-    return norm(el.getAttribute('type')).toLowerCase();
+    return norm(dom.getAttribute(el, 'type')).toLowerCase();
   }
 
   function isButton(el) {
     const tag = tagOf(el);
-    const role = norm(el.getAttribute('role')).toLowerCase().split(' ')[0];
+    const role = norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
     if (role === 'button') return true;
     if (role) return false;
     if (tag === 'button') return true;
@@ -74737,11 +74788,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (tag === 'input') {
       const type = inputType(el);
       if (type === 'image') {
-        const alt = norm(el.getAttribute('alt'));
+        const alt = norm(dom.getAttribute(el, 'alt'));
         if (alt) return { label: alt, source: 'alt' };
         return { label: '', source: '', defaulted: true };
       }
-      const value = norm(el.getAttribute('value'));
+      const value = norm(dom.getAttribute(el, 'value'));
       if (value) return { label: value, source: 'value' };
       if (type === 'submit') return { label: 'Submit', source: 'default' };
       if (type === 'reset') return { label: 'Reset', source: 'default' };
@@ -74752,8 +74803,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const content = helpers.getContentNameInfo(el, ctx);
       const text = norm(content && content.present ? content.value : '');
       if (text) return { label: text, source: 'content' };
-    } else if (norm(el.textContent)) {
-      return { label: norm(el.textContent), source: 'content' };
+    } else if (norm(dom.textContent(el))) {
+      return { label: norm(dom.textContent(el)), source: 'content' };
     }
     return { label: '', source: '' };
   }
@@ -74797,7 +74848,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isButton(el)) continue;
     const inside = formAncestor(el);
     const joined = inside ? null : formByAttribute(el);
@@ -76198,6 +76249,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "frame-title-attribute-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -76206,9 +76258,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // aria-hidden="true" on the frame or on an ancestor, across shadow roots.
   function isAriaHidden(el) {
-    for (let n = el; n; n = helpers.composedParent ? helpers.composedParent(n) : n.parentNode) {
-      if (!n.getAttribute) continue;
-      const v = n.getAttribute('aria-hidden');
+    for (
+      let n = el;
+      n;
+      n = helpers.composedParent ? helpers.composedParent(n) : dom.parentNode(n)
+    ) {
+      if (!dom.get(n, 'getAttribute')) continue;
+      const v = dom.getAttribute(n, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') return true;
     }
     return false;
@@ -76218,12 +76274,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
     if (isAriaHidden(el)) continue;
     applicableCount += 1;
-    if (el.hasAttribute('title')) continue;
+    if (dom.hasAttribute(el, 'title')) continue;
 
-    const element = String(el.tagName).toLowerCase();
+    const element = String(dom.tagName(el)).toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This <${element}> has no title attribute.`,
@@ -76255,6 +76311,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "frame-title-not-empty": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -76263,9 +76320,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // aria-hidden="true" on the frame or on an ancestor, across shadow roots.
   function isAriaHidden(el) {
-    for (let n = el; n; n = helpers.composedParent ? helpers.composedParent(n) : n.parentNode) {
-      if (!n.getAttribute) continue;
-      const v = n.getAttribute('aria-hidden');
+    for (
+      let n = el;
+      n;
+      n = helpers.composedParent ? helpers.composedParent(n) : dom.parentNode(n)
+    ) {
+      if (!dom.get(n, 'getAttribute')) continue;
+      const v = dom.getAttribute(n, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') return true;
     }
     return false;
@@ -76275,12 +76336,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
     if (isAriaHidden(el)) continue;
     applicableCount += 1;
-    if (/[^ \t\n\f\r]/.test(String(el.getAttribute('title') || ''))) continue;
+    if (/[^ \t\n\f\r]/.test(String(dom.getAttribute(el, 'title') || ''))) continue;
 
-    const element = String(el.tagName).toLowerCase();
+    const element = String(dom.tagName(el)).toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This <${element}> has an empty title attribute.`,
@@ -76312,8 +76373,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-content-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, window, helpers, rule } = ctx;
-  const win = window || (document && document.defaultView) || null;
+  const win = window || (document && dom.defaultView(document)) || null;
 
   function norm(s) {
     return String(s == null ? '' : s)
@@ -76323,7 +76385,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -76355,7 +76417,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isNotRendered(el) {
-    if (el.hasAttribute && el.hasAttribute('hidden')) return true;
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden')) return true;
     const cs = styleOf(el);
     return !!(cs && cs.display === 'none');
   }
@@ -76368,10 +76430,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Pseudo-element styles are read only where the page has a layout: jsdom
   // does not compute them, and reports each attempt as not implemented.
   function hasLayout() {
-    const probe = document.documentElement || document.body || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -76391,7 +76453,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function idRefText(el, value) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
@@ -76399,12 +76461,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let target = null;
       try {
         target =
-          root && typeof root.getElementById === 'function'
-            ? root.getElementById(ref)
-            : document.getElementById(ref);
-        if (!target) target = document.getElementById(ref);
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? dom.getElementById(root, ref)
+            : dom.getElementById(document, ref);
+        if (!target) target = dom.getElementById(document, ref);
       } catch {}
-      if (target) parts.push(norm(target.textContent));
+      if (target) parts.push(norm(dom.textContent(target)));
     }
     return norm(parts.join(' '));
   }
@@ -76419,7 +76481,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function isImage(el) {
@@ -76440,11 +76502,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-        if (tagOf(child) === 'title') parts.push(norm(child.textContent));
+      for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+        if (tagOf(child) === 'title') parts.push(norm(dom.textContent(child)));
       }
-      for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {
-        parts.push(norm(t.textContent));
+      for (const t of Array.from(
+        dom.get(el, 'querySelectorAll') ? dom.querySelectorAll(el, 'text') : []
+      )) {
+        parts.push(norm(dom.textContent(t)));
       }
       return norm(parts.join(' '));
     }
@@ -76480,20 +76544,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     function walk(node, atHidden, depth) {
       if (depth > 200) return;
-      for (const child of Array.from(node.childNodes || [])) {
-        if (child.nodeType === 3) {
+      for (const child of Array.from(dom.childNodes(node) || [])) {
+        if (dom.nodeType(child) === 3) {
           if (!norm(child.data)) continue;
-          if (isVisibilityHidden(child.parentElement)) continue;
+          if (isVisibilityHidden(dom.parentElement(child))) continue;
           if (atHidden) found.hiddenText = true;
           else found.text = true;
           continue;
         }
-        if (child.nodeType !== 1) continue;
+        if (dom.nodeType(child) !== 1) continue;
         const tag = tagOf(child);
         if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'desc') continue;
         if (tag === 'title') {
           // An SVG <title> names its parent; its text is content only there.
-          const text = norm(child.textContent);
+          const text = norm(dom.textContent(child));
           if (text) {
             if (atHidden) found.hiddenText = true;
             else found.text = true;
@@ -76540,7 +76604,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = tagOf(el);
     const role = firstKnownRole(el);
     if (/^h[1-6]$/.test(tag)) return !role || role === 'heading';
-    return role === 'heading' && el.hasAttribute && el.hasAttribute('aria-level');
+    return role === 'heading' && dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'aria-level');
   }
 
   function isIncluded(el) {
@@ -77179,10 +77243,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "heading-role-level-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function roleOf(el) {
-    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
+    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)
@@ -77220,15 +77285,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     if (/^h[1-6]$/.test(tag)) continue;
     if (roleOf(el) !== 'heading') continue;
     if (!isIncluded(el)) continue;
 
     applicableCount += 1;
 
-    const raw = el.getAttribute('aria-level');
+    const raw = dom.getAttribute(el, 'aria-level');
     if (raw != null && /^\s*[+-]?\d+(\.\d+)?\s*$/.test(raw)) continue;
 
     const missing = raw == null;
@@ -77274,15 +77339,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "html-elements-attributes-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const query = (sel) =>
     (helpers.queryAllSource ? helpers.queryAllSource(sel) : helpers.queryAll(sel)).filter(
-      (el) => el && el.namespaceURI === HTML_NS
+      (el) => el && dom.namespaceURI(el) === HTML_NS
     );
-  const tagOf = (el) => String(el.localName || '').toLowerCase();
-  const attr = (el, name) => el.getAttribute(name);
+  const tagOf = (el) => String(dom.localName(el) || '').toLowerCase();
+  const attr = (el, name) => dom.getAttribute(el, name);
 
   const OBSOLETE = new Set([
     'acronym',
@@ -77554,7 +77620,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'html5' };
   if (doctype.kind !== 'html5' && doctype.kind !== 'none') {
-    report(document.documentElement, 'otherDoctype', {}, 'cantTell');
+    report(dom.documentElement(document), 'otherDoctype', {}, 'cantTell');
     return {
       ruleId: rule.ruleId,
       outcome: 'cantTell',
@@ -77564,8 +77630,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function nearestTable(el) {
-    for (let n = el.parentNode; n && n.nodeType === 1; n = n.parentNode) {
-      if (n.namespaceURI === HTML_NS && tagOf(n) === 'table') return n;
+    for (let n = dom.parentNode(el); n && dom.nodeType(n) === 1; n = dom.parentNode(n)) {
+      if (dom.namespaceURI(n) === HTML_NS && tagOf(n) === 'table') return n;
     }
     return null;
   }
@@ -77580,32 +77646,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!custom) report(el, 'unknownElement', { element: tag });
     }
 
-    if (el.hasAttribute('dir')) {
+    if (dom.hasAttribute(el, 'dir')) {
       const value = attr(el, 'dir');
       const v = value.toLowerCase();
       const ok = tag === 'bdo' ? v === 'ltr' || v === 'rtl' : ['ltr', 'rtl', 'auto'].includes(v);
       if (!ok) report(el, 'dirValue', { value, element: tag });
     }
 
-    if (el.hasAttribute('id')) {
+    if (dom.hasAttribute(el, 'id')) {
       const value = attr(el, 'id');
       if (value === '' || /[\t\n\f\r ]/.test(value)) report(el, 'idValue', { value });
     }
 
-    if (el.hasAttribute('lang')) {
+    if (dom.hasAttribute(el, 'lang')) {
       const value = attr(el, 'lang');
       if (value !== '' && !LANGTAG.test(value)) report(el, 'langValue', { value });
     }
 
-    if (el.hasAttribute('xml:lang')) {
+    if (dom.hasAttribute(el, 'xml:lang')) {
       const xmlLang = attr(el, 'xml:lang');
-      const lang = el.hasAttribute('lang') ? attr(el, 'lang') : null;
+      const lang = dom.hasAttribute(el, 'lang') ? attr(el, 'lang') : null;
       if (lang === null || lang.toLowerCase() !== xmlLang.toLowerCase()) {
         report(el, 'xmlLangMismatch', { xmlLang, lang: lang === null ? '' : lang, element: tag });
       }
     }
 
-    if (el.hasAttribute('scope')) {
+    if (dom.hasAttribute(el, 'scope')) {
       const value = attr(el, 'scope');
       if (tag === 'th') {
         if (!['row', 'col', 'rowgroup', 'colgroup'].includes(value.toLowerCase())) {
@@ -77616,7 +77682,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
-    if ((tag === 'td' || tag === 'th') && el.hasAttribute('headers')) {
+    if ((tag === 'td' || tag === 'th') && dom.hasAttribute(el, 'headers')) {
       const tokens = attr(el, 'headers')
         .split(/[\t\n\f\r ]+/)
         .filter(Boolean);
@@ -77625,16 +77691,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else {
         const table = nearestTable(el);
         const ths = table
-          ? Array.from(table.querySelectorAll('th[id]')).filter((th) => nearestTable(th) === table)
+          ? Array.from(dom.querySelectorAll(table, 'th[id]')).filter(
+              (th) => nearestTable(th) === table
+            )
           : [];
-        const ids = new Set(ths.map((th) => th.getAttribute('id')));
+        const ids = new Set(ths.map((th) => dom.getAttribute(th, 'id')));
         const missing = tokens.find((t) => !ids.has(t));
         if (missing !== undefined) report(el, 'headersTarget', { target: missing });
       }
     }
 
-    if (tag === 'optgroup' && !el.hasAttribute('label')) {
-      const legend = Array.from(el.querySelectorAll(':scope > *')).some(
+    if (tag === 'optgroup' && !dom.hasAttribute(el, 'label')) {
+      const legend = Array.from(dom.querySelectorAll(el, ':scope > *')).some(
         (c) => tagOf(c) === 'legend'
       );
       if (!legend) report(el, 'optgroupLabel', {});
@@ -77648,10 +77716,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : '';
 
     if (tag === 'input' && inputType === 'image') {
-      if (!el.hasAttribute('alt') || attr(el, 'alt') === '') report(el, 'inputImageAlt', {});
+      if (!dom.hasAttribute(el, 'alt') || attr(el, 'alt') === '') report(el, 'inputImageAlt', {});
     }
 
-    if (el.hasAttribute('autocomplete')) {
+    if (dom.hasAttribute(el, 'autocomplete')) {
       const value = attr(el, 'autocomplete');
       if (tag === 'form') {
         if (!['on', 'off'].includes(value.toLowerCase())) {
@@ -77795,6 +77863,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "html-lang-code-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -77824,17 +77893,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return helpers.isRegisteredLanguageSubtag ? helpers.isRegisteredLanguageSubtag(c) : true;
   }
 
-  const html = document && document.documentElement;
-  if (!html || String(html.tagName || '').toLowerCase() !== 'html') {
+  const html = document && dom.documentElement(document);
+  if (!html || String(dom.tagName(html) || '').toLowerCase() !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const xmlLang =
     html.getAttributeNS && html.getAttributeNS(XML_NS, 'lang') != null
       ? html.getAttributeNS(XML_NS, 'lang')
-      : html.getAttribute('xml:lang');
+      : dom.getAttribute(html, 'xml:lang');
   const declared = [
-    ['lang', html.getAttribute('lang')],
+    ['lang', dom.getAttribute(html, 'lang')],
     ['xml:lang', xmlLang]
   ]
     .map(([attribute, value]) => [attribute, String(value == null ? '' : value).trim()])
@@ -77878,21 +77947,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "html-nesting-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const query = (sel) =>
     (helpers.queryAllSource ? helpers.queryAllSource(sel) : helpers.queryAll(sel)).filter(
-      (el) => el && el.namespaceURI === HTML_NS
+      (el) => el && dom.namespaceURI(el) === HTML_NS
     );
-  const tagOf = (el) => String(el.localName || '').toLowerCase();
-  const isHtml = (el) => !!el && el.nodeType === 1 && el.namespaceURI === HTML_NS;
+  const tagOf = (el) => String(dom.localName(el) || '').toLowerCase();
+  const isHtml = (el) => !!el && dom.nodeType(el) === 1 && dom.namespaceURI(el) === HTML_NS;
   const parentElementOf = (el) => {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   };
   const hasText = (el) =>
-    Array.from(el.childNodes || []).some((n) => n.nodeType === 3 && /\S/.test(n.nodeValue || ''));
+    Array.from(dom.childNodes(el) || []).some(
+      (n) => dom.nodeType(n) === 3 && /\S/.test(dom.nodeValue(n) || '')
+    );
 
   const TEXTS = {
     listChild: [
@@ -78010,7 +78082,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'html5' };
   if (doctype.kind !== 'html5' && doctype.kind !== 'none') {
-    report(document.documentElement, 'otherDoctype', {}, 'cantTell');
+    report(dom.documentElement(document), 'otherDoctype', {}, 'cantTell');
     return result('cantTell');
   }
 
@@ -78019,7 +78091,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ul, ol, menu: li, script and template children only.
   for (const list of lists) {
     const parent = tagOf(list);
-    for (const child of Array.from(list.querySelectorAll(':scope > *'))) {
+    for (const child of Array.from(dom.querySelectorAll(list, ':scope > *'))) {
       const tag = tagOf(child);
       if (!isHtml(child)) {
         report(child, 'listChild', { element: tag, parent });
@@ -78051,7 +78123,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   for (const dl of dls) {
-    const kids = Array.from(dl.querySelectorAll(':scope > *')).filter(
+    const kids = Array.from(dom.querySelectorAll(dl, ':scope > *')).filter(
       (c) => !(isHtml(c) && SCRIPT_SUPPORTING.has(tagOf(c)))
     );
     if (hasText(dl)) report(dl, 'dlText', { element: 'dl' });
@@ -78074,7 +78146,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const div of divs) {
       if (hasText(div)) report(div, 'dlText', { element: 'div' });
       const groupTags = [];
-      for (const c of Array.from(div.querySelectorAll(':scope > *'))) {
+      for (const c of Array.from(dom.querySelectorAll(div, ':scope > *'))) {
         const tag = tagOf(c);
         if (isHtml(c) && SCRIPT_SUPPORTING.has(tag)) continue;
         if (isHtml(c) && (tag === 'dt' || tag === 'dd')) groupTags.push(tag);
@@ -78112,22 +78184,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       case 'textarea':
         return true;
       case 'input':
-        return String(el.getAttribute('type') || '').toLowerCase() !== 'hidden';
+        return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
       case 'img':
-        return el.hasAttribute('usemap');
+        return dom.hasAttribute(el, 'usemap');
       case 'audio':
       case 'video':
-        return el.hasAttribute('controls');
+        return dom.hasAttribute(el, 'controls');
       default:
         return false;
     }
   }
   const seen = new Set();
   for (const container of containers) {
-    for (const d of Array.from(container.querySelectorAll('*'))) {
+    for (const d of Array.from(dom.querySelectorAll(container, '*'))) {
       if (!isHtml(d) || seen.has(d)) continue;
       const interactive = isInteractive(d);
-      const tabindex = d.hasAttribute('tabindex');
+      const tabindex = dom.hasAttribute(d, 'tabindex');
       if (!interactive && !tabindex) continue;
       let anc = parentElementOf(d);
       while (anc && !(isHtml(anc) && (tagOf(anc) === 'a' || tagOf(anc) === 'button'))) {
@@ -78145,7 +78217,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // img[ismap]: needs an a[href] ancestor.
   for (const img of ismaps) {
     let anc = parentElementOf(img);
-    while (anc && !(isHtml(anc) && tagOf(anc) === 'a' && anc.hasAttribute('href'))) {
+    while (anc && !(isHtml(anc) && tagOf(anc) === 'a' && dom.hasAttribute(anc, 'href'))) {
       anc = parentElementOf(anc);
     }
     if (!anc) report(img, 'ismapOutsideLink', {});
@@ -78153,7 +78225,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // main: at most one in the document without its own hidden attribute.
   const shownMains = mains.filter(
-    (el) => !el.hasAttribute('hidden') && (el.getRootNode ? el.getRootNode() === document : true)
+    (el) =>
+      !dom.hasAttribute(el, 'hidden') &&
+      (dom.get(el, 'getRootNode') ? dom.getRootNode(el) === document : true)
   );
   for (const el of shownMains.slice(1)) report(el, 'extraMain', {});
 
@@ -79095,6 +79169,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "image-alt-long": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MAX_LENGTH = 80;
@@ -79112,7 +79187,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRole(el) {
-    return collapse(el.getAttribute('role')).toLowerCase().split(' ')[0];
+    return collapse(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
   }
 
   // Each non-empty text-alternative source, with its collapsed text.
@@ -79122,9 +79197,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const text = collapse(value);
       if (text) out.push({ source, text });
     };
-    if (ALT_TAGS.includes(tag)) add('alt', el.getAttribute('alt'));
-    add('aria-label', el.getAttribute('aria-label'));
-    if (collapse(el.getAttribute('aria-labelledby')) && getAriaNameInfo) {
+    if (ALT_TAGS.includes(tag)) add('alt', dom.getAttribute(el, 'alt'));
+    add('aria-label', dom.getAttribute(el, 'aria-label'));
+    if (collapse(dom.getAttribute(el, 'aria-labelledby')) && getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(el, ctx);
         if (aria && aria.present && aria.mechanism === 'aria-labelledby') {
@@ -79132,12 +79207,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       } catch {}
     }
-    add('title', el.getAttribute('title'));
+    add('title', dom.getAttribute(el, 'title'));
     if (tag === 'svg') {
-      const titleChild = Array.from(el.querySelectorAll(':scope > *')).find(
-        (c) => String(c.localName || c.tagName).toLowerCase() === 'title'
+      const titleChild = Array.from(dom.querySelectorAll(el, ':scope > *')).find(
+        (c) => String(dom.localName(c) || dom.tagName(c)).toLowerCase() === 'title'
       );
-      if (titleChild) add('<title>', titleChild.textContent);
+      if (titleChild) add('<title>', dom.textContent(titleChild));
     }
     return out;
   }
@@ -79150,11 +79225,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || el.tagName).toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el)).toLowerCase();
     const isImage =
       tag === 'input'
-        ? collapse(el.getAttribute('type')).toLowerCase() === 'image'
+        ? collapse(dom.getAttribute(el, 'type')).toLowerCase() === 'image'
         : IMAGE_TAGS.includes(tag) || firstRole(el) === 'img';
     if (!isImage) continue;
     const found = alternatives(el, tag);
@@ -79998,6 +80073,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "img-decorative-no-alternative": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -80006,17 +80082,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
 
   function hasCaption(el) {
-    const figure = el.closest ? el.closest('figure') : null;
+    const figure = dom.get(el, 'closest') ? dom.closest(el, 'figure') : null;
     if (!figure) return false;
-    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(dom.querySelectorAll(figure, ':scope > *')).some(
+      (c) => tagOf(c) === 'figcaption'
+    );
   }
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
@@ -80027,7 +80105,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const ariaHidden = trim(attr(el, 'aria-hidden')).toLowerCase() === 'true';
     const role = trim(attr(el, 'role')).toLowerCase().split(' ')[0];
     const presentational = role === 'none' || role === 'presentation';
@@ -80646,6 +80724,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "keyboard-only-event-handlers": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
@@ -80665,13 +80744,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isNativeInteractive(el) {
-    const tag = String(el.localName || '').toLowerCase();
+    const tag = String(dom.localName(el) || '').toLowerCase();
     switch (tag) {
       case 'a':
       case 'area':
-        return el.hasAttribute('href');
+        return dom.hasAttribute(el, 'href');
       case 'input':
-        return trim(el.getAttribute('type')).toLowerCase() !== 'hidden';
+        return trim(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
       case 'button':
       case 'select':
       case 'textarea':
@@ -80684,13 +80763,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return true;
       case 'audio':
       case 'video':
-        return el.hasAttribute('controls');
+        return dom.hasAttribute(el, 'controls');
       case 'img':
-        return el.hasAttribute('usemap');
+        return dom.hasAttribute(el, 'usemap');
       default:
         break;
     }
-    const editable = el.getAttribute('contenteditable');
+    const editable = dom.getAttribute(el, 'contenteditable');
     return editable != null && trim(editable).toLowerCase() !== 'false';
   }
 
@@ -80701,13 +80780,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const keyAttrs = KEY_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const keyAttrs = KEY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (!keyAttrs.length) continue;
     if (isNativeInteractive(el)) continue;
-    if (POINTER_ATTRS.some((a) => trim(el.getAttribute(a)))) continue;
+    if (POINTER_ATTRS.some((a) => trim(dom.getAttribute(el, a)))) continue;
 
-    const element = String(el.localName || el.tagName || '').toLowerCase();
+    const element = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const attrs = keyAttrs.join(', ');
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -80737,6 +80816,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "label-for-target-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, window, helpers, rule } = ctx;
 
   const LABELABLE = ['button', 'meter', 'output', 'progress', 'select', 'textarea'];
@@ -80756,7 +80836,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
 
   function hasFieldRole(el) {
-    const role = String(el.getAttribute('role') || '')
+    const role = String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -80764,9 +80844,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isLabelable(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (LABELABLE.includes(tag)) return true;
-    if (tag === 'input') return String(el.getAttribute('type') || '').toLowerCase() !== 'hidden';
+    if (tag === 'input')
+      return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
     if (tag.includes('-')) {
       try {
         const definition = window && window.customElements && window.customElements.get(tag);
@@ -80781,12 +80862,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function targetOf(label, value) {
     let root = document;
     try {
-      const r = label.getRootNode();
-      if (r && typeof r.getElementById === 'function') root = r;
+      const r = dom.getRootNode(label);
+      if (r && typeof dom.get(r, 'getElementById') === 'function') root = r;
     } catch {
       // keep the document
     }
-    return root.getElementById(value);
+    return dom.getElementById(root, value);
   }
 
   const nodes = helpers.queryAllSmart
@@ -80797,10 +80878,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const label of nodes) {
-    if (!label || !label.getAttribute) continue;
+    if (!label || !dom.get(label, 'getAttribute')) continue;
     applicableCount += 1;
 
-    const value = String(label.getAttribute('for'));
+    const value = String(dom.getAttribute(label, 'for'));
     let reasonCode = null;
     let target = null;
     if (!value) {
@@ -80812,7 +80893,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (!reasonCode) continue;
 
-    const element = target ? String(target.tagName).toLowerCase() : '';
+    const element = target ? String(dom.tagName(target)).toLowerCase() : '';
     const summaries = {
       emptyFor: {
         text: 'This label has an empty for attribute, so it labels no field.',
@@ -82283,6 +82364,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "layout-table-no-data-markup": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MARKUP = [
@@ -82299,7 +82381,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
 
   function isLayout(table) {
-    const first = String(table.getAttribute('role') || '')
+    const first = String(dom.getAttribute(table, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -82307,12 +82389,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isHeaderCell(cell) {
-    const role = String(cell.getAttribute('role') || '')
+    const role = String(dom.getAttribute(cell, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
     if (role === 'columnheader' || role === 'rowheader') return true;
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   // A full header row or column over a real grid of data suggests the
@@ -82336,14 +82418,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const table of tables) {
-    if (!table || !table.getAttribute || !isLayout(table)) continue;
+    if (!table || !dom.get(table, 'getAttribute') || !isLayout(table)) continue;
     applicableCount += 1;
 
     const found = [];
-    if (String(table.getAttribute('summary') || '').trim()) found.push('summary');
+    if (String(dom.getAttribute(table, 'summary') || '').trim()) found.push('summary');
     for (const [selector, label] of MARKUP) {
-      const own = Array.from(table.querySelectorAll(selector)).some(
-        (el) => el.closest('table') === table
+      const own = Array.from(dom.querySelectorAll(table, selector)).some(
+        (el) => dom.closest(el, 'table') === table
       );
       if (own) found.push(label);
     }
@@ -82404,6 +82486,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "letters-spaced-with-spaces": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SKIP = 'pre, code, kbd, samp, textarea, script, style, template';
@@ -82439,16 +82522,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
 
   function isInline(el) {
-    return INLINE.has(String(el.tagName || '').toLowerCase());
+    return INLINE.has(String(dom.tagName(el) || '').toLowerCase());
   }
 
   // The element's text nodes joined with the text of its inline children, in
   // order. Any other child (a block, <br>, <img>) separates the text.
   function inlineText(el, depth) {
     let out = '';
-    for (const n of Array.from(el.childNodes)) {
-      if (n.nodeType === 3) out += n.nodeValue;
-      else if (n.nodeType === 1 && depth < 20 && isInline(n) && !n.matches(SKIP)) {
+    for (const n of Array.from(dom.childNodes(el))) {
+      if (dom.nodeType(n) === 3) out += dom.nodeValue(n);
+      else if (dom.nodeType(n) === 1 && depth < 20 && isInline(n) && !dom.matches(n, SKIP)) {
         out += inlineText(n, depth + 1);
       } else out += ' ';
     }
@@ -82476,10 +82559,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const inScope = new Set(nodes);
 
   for (const el of nodes) {
-    if (!el || !el.childNodes || el.closest(SKIP)) continue;
+    if (!el || !dom.childNodes(el) || dom.closest(el, SKIP)) continue;
     // An inline element is read with its parent's text, when the parent is
     // read at all.
-    if (isInline(el) && inScope.has(el.parentElement)) continue;
+    if (isInline(el) && inScope.has(dom.parentElement(el))) continue;
     const text = findRun(inlineText(el, 0));
     if (!text) continue;
     occurrences.push(
@@ -82510,8 +82593,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "link-content-label-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, window, helpers, rule } = ctx;
-  const win = window || (document && document.defaultView) || null;
+  const win = window || (document && dom.defaultView(document)) || null;
 
   function norm(s) {
     return String(s == null ? '' : s)
@@ -82521,7 +82605,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -82553,7 +82637,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isNotRendered(el) {
-    if (el.hasAttribute && el.hasAttribute('hidden')) return true;
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden')) return true;
     const cs = styleOf(el);
     return !!(cs && cs.display === 'none');
   }
@@ -82566,10 +82650,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Pseudo-element styles are read only where the page has a layout: jsdom
   // does not compute them, and reports each attempt as not implemented.
   function hasLayout() {
-    const probe = document.documentElement || document.body || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -82589,7 +82673,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function idRefText(el, value) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
@@ -82597,18 +82681,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let target = null;
       try {
         target =
-          root && typeof root.getElementById === 'function'
-            ? root.getElementById(ref)
-            : document.getElementById(ref);
-        if (!target) target = document.getElementById(ref);
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? dom.getElementById(root, ref)
+            : dom.getElementById(document, ref);
+        if (!target) target = dom.getElementById(document, ref);
       } catch {}
-      if (target) parts.push(norm(target.textContent));
+      if (target) parts.push(norm(dom.textContent(target)));
     }
     return norm(parts.join(' '));
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function isImage(el) {
@@ -82629,11 +82713,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-        if (tagOf(child) === 'title') parts.push(norm(child.textContent));
+      for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+        if (tagOf(child) === 'title') parts.push(norm(dom.textContent(child)));
       }
-      for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {
-        parts.push(norm(t.textContent));
+      for (const t of Array.from(
+        dom.get(el, 'querySelectorAll') ? dom.querySelectorAll(el, 'text') : []
+      )) {
+        parts.push(norm(dom.textContent(t)));
       }
       return norm(parts.join(' '));
     }
@@ -82669,20 +82755,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     function walk(node, atHidden, depth) {
       if (depth > 200) return;
-      for (const child of Array.from(node.childNodes || [])) {
-        if (child.nodeType === 3) {
+      for (const child of Array.from(dom.childNodes(node) || [])) {
+        if (dom.nodeType(child) === 3) {
           if (!norm(child.data)) continue;
-          if (isVisibilityHidden(child.parentElement)) continue;
+          if (isVisibilityHidden(dom.parentElement(child))) continue;
           if (atHidden) found.hiddenText = true;
           else found.text = true;
           continue;
         }
-        if (child.nodeType !== 1) continue;
+        if (dom.nodeType(child) !== 1) continue;
         const tag = tagOf(child);
         if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'desc') continue;
         if (tag === 'title') {
           // The <title> child of an SVG link is part of its label.
-          const text = norm(child.textContent);
+          const text = norm(dom.textContent(child));
           if (text) {
             if (atHidden) found.hiddenText = true;
             else found.text = true;
@@ -82728,7 +82814,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isLink(el) {
     const tag = tagOf(el);
     const role = firstKnownRole(el);
-    if (tag === 'a' && (el.hasAttribute('href') || el.hasAttribute('xlink:href'))) {
+    if (tag === 'a' && (dom.hasAttribute(el, 'href') || dom.hasAttribute(el, 'xlink:href'))) {
       // A focusable link keeps its role under none/presentation.
       return !role || role === 'link' || role === 'none' || role === 'presentation';
     }
@@ -82755,7 +82841,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const seen = new Set();
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || seen.has(el)) continue;
+    if (!el || !dom.get(el, 'getAttribute') || seen.has(el)) continue;
     seen.add(el);
     if (!isLink(el) || !isIncluded(el)) continue;
     applicableCount += 1;
@@ -82843,6 +82929,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "link-context-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const GENERIC_LINK_TEXT = {
@@ -83000,11 +83087,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function primaryLangOf(node) {
     let n = node;
     while (n) {
-      if (n.nodeType === 1 && n.getAttribute) {
-        const v = n.getAttribute('lang');
+      if (dom.nodeType(n) === 1 && dom.get(n, 'getAttribute')) {
+        const v = dom.getAttribute(n, 'lang');
         if (v != null) return v.trim().split('-')[0].toLowerCase();
       }
-      n = n.parentNode || n.host || null;
+      n = dom.parentNode(n) || dom.host(n) || null;
     }
     return '';
   }
@@ -83021,10 +83108,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function ownDirectText(el) {
     let out = '';
-    const kids = el.childNodes || [];
+    const kids = dom.childNodes(el) || [];
     for (let i = 0; i < kids.length; i++) {
       const n = kids[i];
-      if (n.nodeType === 3) out += n.nodeValue || '';
+      if (dom.nodeType(n) === 3) out += dom.nodeValue(n) || '';
     }
     return out.replace(/\s+/g, ' ').trim();
   }
@@ -83038,17 +83125,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // table cell, <dd>, <dt>, <blockquote> or <figcaption> directly around
   // the link.
   function nearestBlockContext(el) {
-    let node = el.parentElement;
+    let node = dom.parentElement(el);
     let liHops = 0;
     while (node) {
-      const tag = (node.tagName || '').toLowerCase();
+      const tag = (dom.tagName(node) || '').toLowerCase();
       if (tag === 'li') {
         const text = ownDirectText(node);
         if (text) return { tag, text };
         liHops += 1;
         if (liHops >= 4) return { tag: '', text: '' };
-        const list = node.parentElement;
-        node = list ? list.parentElement : null;
+        const list = dom.parentElement(node);
+        node = list ? dom.parentElement(list) : null;
         continue;
       }
       if (RGAA_CONTEXT_TAGS.has(tag) || OTHER_CONTEXT_TAGS.has(tag)) {
@@ -83060,7 +83147,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function describedByText(el) {
-    const describedBy = el.getAttribute ? el.getAttribute('aria-describedby') : null;
+    const describedBy = dom.get(el, 'getAttribute')
+      ? dom.getAttribute(el, 'aria-describedby')
+      : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
       const info = helpers.getTextFromIdRefs(describedBy, ctx);
@@ -83071,17 +83160,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function firstRowHeaderText(el) {
-    const cell = el.closest ? el.closest('td, th') : null;
+    const cell = dom.get(el, 'closest') ? dom.closest(el, 'td, th') : null;
     if (!cell) return '';
-    const table = cell.closest ? cell.closest('table') : null;
+    const table = dom.get(cell, 'closest') ? dom.closest(cell, 'table') : null;
     if (!table || !table.rows || !table.rows.length) return '';
     const headerRow = table.rows[0];
-    const cellRow = cell.closest ? cell.closest('tr') : null;
+    const cellRow = dom.get(cell, 'closest') ? dom.closest(cell, 'tr') : null;
     if (!cellRow || headerRow === cellRow) return '';
-    const ths = headerRow.querySelectorAll ? headerRow.querySelectorAll('th') : [];
+    const ths = dom.get(headerRow, 'querySelectorAll') ? dom.querySelectorAll(headerRow, 'th') : [];
     if (!ths.length) return '';
     return Array.prototype.map
-      .call(ths, (th) => th.textContent || '')
+      .call(ths, (th) => dom.textContent(th) || '')
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
@@ -83095,7 +83184,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
@@ -84109,6 +84198,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-label-in-name-sources": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Which of the four label-in-name tests this file checks. The four rule
@@ -84151,11 +84241,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function explicitRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     return String(raw || '')
       .trim()
       .toLowerCase()
@@ -84163,7 +84253,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function inputType(el) {
-    return String(el.getAttribute('type') || '')
+    return String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
   }
@@ -84171,7 +84261,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The RGAA test an element belongs to: its explicit role decides first,
   // then its tag. '' for anything none of the four tests covers.
   function classify(el) {
-    if (el.namespaceURI === SVG_NS) return '';
+    if (dom.namespaceURI(el) === SVG_NS) return '';
     const role = explicitRole(el);
     if (role) {
       if (role === 'link') return 'link';
@@ -84181,7 +84271,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
     const tag = tagOf(el);
-    if (tag === 'a') return el.hasAttribute('href') ? 'link' : '';
+    if (tag === 'a') return dom.hasAttribute(el, 'href') ? 'link' : '';
     if (tag === 'button') return 'button';
     if (tag === 'input') {
       const type = inputType(el);
@@ -84194,13 +84284,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // RGAA 11.9 covers the buttons « présents au sein d'un formulaire »: a
   // <form> or role="form" ancestor (glossary "Formulaire").
   function insideForm(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return true;
       if (explicitRole(p) === 'form') return true;
     }
@@ -84251,7 +84343,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (visibleOnly && !isDomVisible(container)) return { text: '', elements: [] };
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -84260,14 +84352,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const elements = [];
     let n;
     while ((n = walker.nextNode())) {
-      const t = String(n.nodeValue || '')
+      const t = String(dom.nodeValue(n) || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!t) continue;
-      const p = n.parentElement;
+      const p = dom.parentElement(n);
       if (!p) continue;
       let skip = false;
-      for (let a = p; a && a !== container; a = a.parentElement) {
+      for (let a = p; a && a !== container; a = dom.parentElement(a)) {
         const tag = tagOf(a);
         if (isNonRenderedTag(tag) || isControlTag(tag)) {
           skip = true;
@@ -84292,7 +84384,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function labelledbyRefs(el) {
-    const idrefs = el.getAttribute('aria-labelledby');
+    const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
       const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
@@ -84323,7 +84415,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = explicitRole(el);
     if (family === 'button' && tag === 'input') {
       if (inputType(el) === 'image') return { text: '', origin: '', elements: [] };
-      const value = String(el.getAttribute('value') || '')
+      const value = String(dom.getAttribute(el, 'value') || '')
         .replace(/\s+/g, ' ')
         .trim();
       return { text: value, origin: 'value', elements: [el] };
@@ -84373,13 +84465,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     if (byRef) out.push({ source: 'aria-labelledby', text: byRef });
-    const ariaLabel = clean(el.getAttribute('aria-label'));
+    const ariaLabel = clean(dom.getAttribute(el, 'aria-label'));
     if (ariaLabel) out.push({ source: 'aria-label', text: ariaLabel });
     if (family === 'field') {
       const labelText = labelSourceText(el);
       if (labelText) out.push({ source: '<label>', text: labelText });
     }
-    const title = clean(el.getAttribute('title'));
+    const title = clean(dom.getAttribute(el, 'title'));
     if (title) out.push({ source: 'title', text: title });
     return out;
   }
@@ -84453,7 +84545,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isIconFontElement(node) {
     let cs = null;
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') cs = view.getComputedStyle(node);
     } catch {
       cs = null;
@@ -84585,7 +84677,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (classify(el) !== family) continue;
     if (family === 'button' && !insideForm(el)) continue;
     if (!isDomVisible(el)) continue;
@@ -85225,6 +85317,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "link-state-colors-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -85235,8 +85328,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {
       // no computed style available
@@ -85294,7 +85387,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      for (const sheet of (doc && doc.styleSheets) || []) {
+      for (const sheet of (doc && dom.styleSheets(doc)) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -85312,7 +85405,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function matches(el, selector) {
     try {
-      return el.matches(selector);
+      return dom.matches(el, selector);
     } catch {
       return false;
     }
@@ -85329,9 +85422,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function uaUnderlines(el) {
     return (
-      String(el.localName || '').toLowerCase() === 'a' &&
-      typeof el.hasAttribute === 'function' &&
-      el.hasAttribute('href')
+      String(dom.localName(el) || '').toLowerCase() === 'a' &&
+      typeof dom.get(el, 'hasAttribute') === 'function' &&
+      dom.hasAttribute(el, 'href')
     );
   }
 
@@ -85361,7 +85454,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // trusted (a DOM emulator does not cascade text-decoration). Returns
   // true, false, or null when it cannot be resolved.
   function underlineFromCssom(el) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     let best = null;
     for (const cssRule of getStyleRules(doc)) {
       let value = '';
@@ -85420,14 +85513,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasImageChild(el) {
     try {
-      return !!el.querySelector('img, svg, picture, canvas, [role="img"]');
+      return !!dom.querySelector(el, 'img, svg, picture, canvas, [role="img"]');
     } catch {
       return false;
     }
   }
 
   function hasPseudoContent(el) {
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       const content = declared(cssRule.style, 'content');
       if (!content || ['none', 'normal', '""', "''"].includes(content)) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
@@ -85439,11 +85532,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasSurroundingText(el, parent) {
-    if (!parent || !parent.childNodes) return false;
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const n = parent.childNodes[i];
+    if (!parent || !dom.childNodes(parent)) return false;
+    for (let i = 0; i < dom.childNodes(parent).length; i++) {
+      const n = dom.childNodes(parent)[i];
       if (n === el) continue;
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) return true;
+      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0)
+        return true;
     }
     return false;
   }
@@ -85520,7 +85614,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // States whose author rule changes only the link's color.
   function colorOnlyStates(el) {
     const states = [];
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       if (!declared(cssRule.style, 'color')) continue;
       if (addsNonColorMark(cssRule.style)) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
@@ -85542,7 +85636,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // applies to its visited state too.
   function authorSetsRestingColor(el) {
     if (declared(el.style, 'color')) return true;
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       if (!declared(cssRule.style, 'color')) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
         if (/::[a-z-]+/i.test(part) || ALL_STATES_RE.test(part)) continue;
@@ -85591,10 +85685,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ---- States put on the link, where the page has a layout ----
 
   function hasLayout(doc) {
-    const probe = doc && doc.documentElement;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = doc && dom.documentElement(doc);
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -85650,54 +85744,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function deepActiveElement(doc) {
-    let cur = doc.activeElement || null;
+    let cur = dom.activeElement(doc) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   // Runs fn with the link in one state, then takes the state off.
   function inState(el, state, fn) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     if (state === 'focus') {
-      if (typeof el.focus !== 'function') return null;
+      if (typeof dom.get(el, 'focus') !== 'function') return null;
       const previous = deepActiveElement(doc);
       try {
-        el.focus({ preventScroll: true, focusVisible: true });
+        dom.focus(el, { preventScroll: true, focusVisible: true });
         if (deepActiveElement(doc) !== el) return null;
         return fn();
       } catch {
         return null;
       } finally {
         try {
-          if (previous && previous !== doc.body && typeof previous.focus === 'function') {
-            if (deepActiveElement(doc) !== previous) previous.focus({ preventScroll: true });
+          if (
+            previous &&
+            previous !== dom.body(doc) &&
+            typeof dom.get(previous, 'focus') === 'function'
+          ) {
+            if (deepActiveElement(doc) !== previous) dom.focus(previous, { preventScroll: true });
           } else if (deepActiveElement(doc) === el) {
-            el.blur();
+            dom.blur(el);
           }
         } catch {}
       }
     }
     const targets = [el];
     if (state === 'hover' || state === 'active') {
-      for (let n = el.parentElement; n; n = n.parentElement) targets.push(n);
+      for (let n = dom.parentElement(el); n; n = dom.parentElement(n)) targets.push(n);
     }
     const saved = targets.map((t) =>
-      t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null
+      dom.hasAttribute(t, STATE_ATTR) ? dom.getAttribute(t, STATE_ATTR) : null
     );
     try {
       targets.forEach((t, i) =>
-        t.setAttribute(STATE_ATTR, ((saved[i] || '') + ' ' + state).trim())
+        dom.setAttribute(t, STATE_ATTR, ((saved[i] || '') + ' ' + state).trim())
       );
       return fn();
     } catch {
       return null;
     } finally {
       targets.forEach((t, i) => {
-        if (saved[i] == null) t.removeAttribute(STATE_ATTR);
-        else t.setAttribute(STATE_ATTR, saved[i]);
+        if (saved[i] == null) dom.removeAttribute(t, STATE_ATTR);
+        else dom.setAttribute(t, STATE_ATTR, saved[i]);
       });
     }
   }
@@ -85780,23 +85878,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const [el] of list) {
       targets.add(el);
       if (state === 'hover' || state === 'active') {
-        for (let n = el.parentElement; n; n = n.parentElement) targets.add(n);
+        for (let n = dom.parentElement(el); n; n = dom.parentElement(n)) targets.add(n);
       }
     }
     const saved = new Map();
     try {
       for (const t of targets) {
-        const before = t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null;
+        const before = dom.hasAttribute(t, STATE_ATTR) ? dom.getAttribute(t, STATE_ATTR) : null;
         saved.set(t, before);
-        t.setAttribute(STATE_ATTR, ((before || '') + ' ' + state).trim());
+        dom.setAttribute(t, STATE_ATTR, ((before || '') + ' ' + state).trim());
       }
       for (const [el, parent, rest] of list) looks.set(el, lookOf(el, parent, rest));
     } catch {
       // the states left unread are not judged
     } finally {
       for (const [t, before] of saved) {
-        if (before == null) t.removeAttribute(STATE_ATTR);
-        else t.setAttribute(STATE_ATTR, before);
+        if (before == null) dom.removeAttribute(t, STATE_ATTR);
+        else dom.setAttribute(t, STATE_ATTR, before);
       }
     }
     return looks;
@@ -85845,7 +85943,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let passCount = 0;
 
-  const doc = ctx.document || (nodes[0] && nodes[0].ownerDocument) || null;
+  const doc = ctx.document || (nodes[0] && dom.ownerDocument(nodes[0])) || null;
   const contrastOpts =
     ctx.engineOptions &&
     typeof ctx.engineOptions.contrast === 'object' &&
@@ -85866,13 +85964,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const inScope = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!hasSurroundingText(el, parent)) continue;
     if (markedByMoreThanColor(el, parent)) continue;
     inScope.push([el, parent]);
@@ -85886,17 +85984,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function freezeTransitions(doc) {
     let sheet = null;
     try {
-      sheet = doc.createElement('style');
+      sheet = dom.createElement(doc, 'style');
       sheet.textContent =
         '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
-      const host = doc.head || doc.documentElement;
-      host.insertBefore(sheet, host.firstChild);
+      const host = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(host, sheet, dom.firstChild(host));
     } catch {
       sheet = null;
     }
     return () => {
       try {
-        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+        if (sheet && dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       } catch {}
     };
   }
@@ -86322,10 +86420,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "listbox-option-groups-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -86339,12 +86438,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
     if (firstRole(el) !== 'listbox') continue;
-    if (String(el.tagName).toLowerCase() === 'select') continue;
+    if (String(dom.tagName(el)).toLowerCase() === 'select') continue;
     applicableCount += 1;
 
-    const groups = Array.from(el.querySelectorAll('[role]')).filter(
+    const groups = Array.from(dom.querySelectorAll(el, '[role]')).filter(
       (d) => firstRole(d) === 'group'
     );
     if (!groups.length) continue;
@@ -86474,6 +86573,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "main-element-structure": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'none' };
@@ -86487,11 +86587,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // hidden on an ancestor, or a closed <details>/<dialog> around it.
   function hiddenByAncestor(el) {
-    const parentOf = (n) => (helpers.composedParent ? helpers.composedParent(n) : n.parentNode);
-    for (let n = parentOf(el); n && n.nodeType === 1; n = parentOf(n)) {
-      if (n.hasAttribute('hidden')) return true;
-      const tag = String(n.localName || '').toLowerCase();
-      if ((tag === 'details' || tag === 'dialog') && !n.hasAttribute('open')) return true;
+    const parentOf = (n) =>
+      helpers.composedParent ? helpers.composedParent(n) : dom.parentNode(n);
+    for (let n = parentOf(el); n && dom.nodeType(n) === 1; n = parentOf(n)) {
+      if (dom.hasAttribute(n, 'hidden')) return true;
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if ((tag === 'details' || tag === 'dialog') && !dom.hasAttribute(n, 'open')) return true;
     }
     return false;
   }
@@ -86556,7 +86657,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (!mains.length) {
     const roleMain = query('[role]').find((el) => {
-      const tokens = String(el.getAttribute('role') || '')
+      const tokens = String(dom.getAttribute(el, 'role') || '')
         .trim()
         .toLowerCase()
         .split(/\s+/);
@@ -86564,11 +86665,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
     if (roleMain) return result('fail', [occurrence(roleMain, 'roleMainOnly', 'fail')]);
     return result('cantTell', [
-      occurrence(document.body || document.documentElement, 'noMain', 'cantTell')
+      occurrence(dom.body(document) || dom.documentElement(document), 'noMain', 'cantTell')
     ]);
   }
 
-  const withoutOwnHidden = mains.filter((el) => !el.hasAttribute('hidden'));
+  const withoutOwnHidden = mains.filter((el) => !dom.hasAttribute(el, 'hidden'));
   const shown = withoutOwnHidden.filter((el) => !hiddenByAncestor(el));
 
   if (shown.length > 1) {
@@ -86648,11 +86749,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "markup-validation-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const roots = Array.isArray(ctx.root) ? ctx.root : ctx.root ? [ctx.root] : [];
   const scanRoot =
-    roots.find((r) => r && r.nodeType === 1) || (document && document.documentElement);
+    roots.find((r) => r && dom.nodeType(r) === 1) || (document && dom.documentElement(document));
   if (!scanRoot) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -86662,7 +86764,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -86684,7 +86786,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     Array.isArray(report.messages) &&
     (!report.url || pageUrl(report.url) === pageUrl(document.URL));
 
-  const html = document.documentElement || scanRoot;
+  const html = dom.documentElement(document) || scanRoot;
   const text = (v) =>
     String(v == null ? '' : v)
       .replace(/\s+/g, ' ')
@@ -87228,6 +87330,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "media-transcript-adjacent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The same words as media-alternative-transcript-evidence.
@@ -87263,7 +87366,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const eligCache = new WeakMap();
   function getEligibility(node) {
-    if (!node || node.nodeType !== 1) {
+    if (!node || dom.nodeType(node) !== 1) {
       return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
     }
     if (eligCache.has(node)) return eligCache.get(node);
@@ -87297,18 +87400,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function getMediaEligibility(el) {
     const isHiddenByBrowser =
-      String(el.localName || '').toLowerCase() === 'audio' && !el.hasAttribute('controls');
+      String(dom.localName(el) || '').toLowerCase() === 'audio' &&
+      !dom.hasAttribute(el, 'controls');
     if (!isHiddenByBrowser) return getEligibility(el);
-    if (el.hasAttribute('hidden')) {
+    if (dom.hasAttribute(el, 'hidden')) {
       return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
     }
-    if (normText(el.getAttribute('aria-hidden')) === 'true') {
+    if (normText(dom.getAttribute(el, 'aria-hidden')) === 'true') {
       return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
     }
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     if (!parent) {
-      const rootNode = el.getRootNode ? el.getRootNode() : null;
-      parent = rootNode && rootNode.host ? rootNode.host : null;
+      const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      parent = rootNode && dom.host(rootNode) ? dom.host(rootNode) : null;
     }
     return parent ? getEligibility(parent) : getEligibility(el);
   }
@@ -87316,18 +87420,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The node right before or after the media, skipping whitespace, comments
   // and elements that render nothing.
   function neighbour(el, forward) {
-    let n = forward ? el.nextSibling : el.previousSibling;
+    let n = forward ? dom.nextSibling(el) : dom.previousSibling(el);
     while (n) {
-      if (n.nodeType === 8) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (dom.nodeType(n) === 8) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
-      if (n.nodeType === 3 && !normText(n.nodeValue)) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (dom.nodeType(n) === 3 && !normText(dom.nodeValue(n))) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
-      if (n.nodeType === 1 && SKIPPED_TAGS.includes(String(n.localName || '').toLowerCase())) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (
+        dom.nodeType(n) === 1 &&
+        SKIPPED_TAGS.includes(String(dom.localName(n) || '').toLowerCase())
+      ) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
       return n;
@@ -87336,13 +87443,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isLinkOrButton(el) {
-    const tag = String(el.localName || '').toLowerCase();
-    const role = normText(el.getAttribute('role'));
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const role = normText(dom.getAttribute(el, 'role'));
     if (role === 'link' || role === 'button') return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'button') return true;
     if (tag === 'input') {
-      return ['button', 'submit'].includes(normText(el.getAttribute('type')));
+      return ['button', 'submit'].includes(normText(dom.getAttribute(el, 'type')));
     }
     return false;
   }
@@ -87352,32 +87459,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const info = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
       if (info && info.value) return info.value;
     } catch {}
-    return el.textContent || el.getAttribute('value') || '';
+    return dom.textContent(el) || dom.getAttribute(el, 'value') || '';
   }
 
   // 'adjacentLink', 'adjacentTranscript' or null.
   function adjacentEvidence(node) {
-    if (!node || node.nodeType !== 1) return null;
+    if (!node || dom.nodeType(node) !== 1) return null;
     if (!getEligibility(node).eligible) return null;
     if (isLinkOrButton(node)) return mentionsTranscript(nameOf(node)) ? 'adjacentLink' : null;
-    return mentionsTranscript(node.textContent) ? 'adjacentTranscript' : null;
+    return mentionsTranscript(dom.textContent(node)) ? 'adjacentTranscript' : null;
   }
 
   function describedTranscript(el) {
-    const ids = normText(el.getAttribute('aria-describedby')).split(' ').filter(Boolean);
+    const ids = normText(dom.getAttribute(el, 'aria-describedby')).split(' ').filter(Boolean);
     if (!ids.length) return false;
-    const doc = el.ownerDocument;
-    const rootNode = el.getRootNode ? el.getRootNode() : doc;
+    const doc = dom.ownerDocument(el);
+    const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : doc;
     return ids.some((idRef) => {
       let target;
       try {
         target =
-          (rootNode && rootNode.getElementById ? rootNode.getElementById(idRef) : null) ||
-          (doc ? doc.getElementById(idRef) : null);
+          (rootNode && dom.get(rootNode, 'getElementById')
+            ? dom.getElementById(rootNode, idRef)
+            : null) || (doc ? dom.getElementById(doc, idRef) : null);
       } catch {
         target = null;
       }
-      return !!target && mentionsTranscript(target.textContent);
+      return !!target && mentionsTranscript(dom.textContent(target));
     });
   }
 
@@ -87385,7 +87493,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of queryAllUnfiltered('audio, video')) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const eligInfo = getMediaEligibility(el);
     if (!eligInfo || !eligInfo.eligible) continue;
     applicableCount += 1;
@@ -87394,7 +87502,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       adjacentEvidence(neighbour(el, false)) || adjacentEvidence(neighbour(el, true));
     if (evidence) continue;
 
-    const element = String(el.localName || '').toLowerCase();
+    const element = String(dom.localName(el) || '').toLowerCase();
     const described = describedTranscript(el);
     const reasonCode = described ? 'describedTranscriptNotAdjacent' : 'noAdjacentTranscript';
     occurrences.push(
@@ -87593,6 +87701,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "meta-redirect-immediate": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // HTML's shared declarative refresh steps. Returns { delay, url } for a
@@ -87628,21 +87737,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isOwnAddress(url) {
     if (!url) return true;
     try {
-      return new URL(url, document.baseURI).href === new URL(document.URL).href;
+      return new URL(url, dom.baseURI(document)).href === new URL(document.URL).href;
     } catch {
       return false;
     }
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   let first = null;
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue;
-    const parsed = parseRefresh(el.getAttribute('content'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue;
+    const parsed = parseRefresh(dom.getAttribute(el, 'content'));
     if (!parsed) continue;
     first = { el, delay: parsed.delay, url: parsed.url };
     break;
@@ -87773,6 +87882,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "meta-refresh-no-url-timing": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const TWENTY_HOURS = 20 * 60 * 60;
@@ -87810,21 +87920,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isOwnAddress(url) {
     if (!url) return true;
     try {
-      return new URL(url, document.baseURI).href === new URL(document.URL).href;
+      return new URL(url, dom.baseURI(document)).href === new URL(document.URL).href;
     } catch {
       return false;
     }
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   let first = null;
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue;
-    const parsed = parseRefresh(el.getAttribute('content'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue;
+    const parsed = parseRefresh(dom.getAttribute(el, 'content'));
     if (!parsed) continue;
     first = { el, delay: parsed.delay, url: parsed.url };
     break;
@@ -88769,6 +88879,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "object-image-role-img": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -88777,18 +88888,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   const firstRole = (el) => trim(attr(el, 'role')).toLowerCase().split(' ')[0];
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -88810,28 +88921,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
 
   function isBlank(n) {
-    return !!n && ((n.nodeType === 3 && !trim(n.nodeValue)) || n.nodeType === 8);
+    return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
   }
 
   function followingLinkOrButton(el) {
-    let node = el.nextSibling;
-    while (isBlank(node)) node = node.nextSibling;
-    while (node && node.nodeType === 1) {
+    let node = dom.nextSibling(el);
+    while (isBlank(node)) node = dom.nextSibling(node);
+    while (node && dom.nodeType(node) === 1) {
       try {
-        if (node.matches(LINK_OR_BUTTON)) return node;
+        if (dom.matches(node, LINK_OR_BUTTON)) return node;
       } catch {
         return null;
       }
-      let child = node.firstChild;
-      while (isBlank(child)) child = child.nextSibling;
+      let child = dom.firstChild(node);
+      while (isBlank(child)) child = dom.nextSibling(child);
       node = child;
     }
     return null;
   }
 
   function hasFallback(el) {
-    if (trim(el.textContent)) return true;
-    return Array.from(el.querySelectorAll(':scope > *')).some((c) => tagOf(c) !== 'param');
+    if (trim(dom.textContent(el))) return true;
+    return Array.from(dom.querySelectorAll(el, ':scope > *')).some((c) => tagOf(c) !== 'param');
   }
 
   const nodes = helpers.queryAllSmart
@@ -88845,7 +88956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const type = trim(attr(el, 'type')).toLowerCase();
     if (!type.startsWith('image/')) continue;
     if (insideAriaHidden(el)) continue;
@@ -89305,6 +89416,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
     "office-document-link": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const EXTENSIONS =
@@ -89376,9 +89488,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('a[href], area[href]');
 
   for (const link of links) {
-    if (!link || !link.getAttribute) continue;
+    if (!link || !dom.get(link, 'getAttribute')) continue;
     const extension =
-      extensionOfName(link.getAttribute('download')) || extensionOfUrl(link.getAttribute('href'));
+      extensionOfName(dom.getAttribute(link, 'download')) ||
+      extensionOfUrl(dom.getAttribute(link, 'href'));
     if (extension) flag(link, extension, 'link');
   }
 
@@ -89388,18 +89501,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('form[action], ' + SUBMITTERS);
 
   for (const el of forms) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (tag !== 'form') {
       // formaction only applies to a submit button.
-      const type = String(el.getAttribute('type') || '')
+      const type = String(dom.getAttribute(el, 'type') || '')
         .trim()
         .toLowerCase();
       const isSubmit =
         tag === 'button' ? type === '' || type === 'submit' : type === 'submit' || type === 'image';
       if (!isSubmit) continue;
     }
-    const extension = extensionOfUrl(el.getAttribute(tag === 'form' ? 'action' : 'formaction'));
+    const extension = extensionOfUrl(
+      dom.getAttribute(el, tag === 'form' ? 'action' : 'formaction')
+    );
     if (extension) flag(el, extension, 'form');
   }
 
@@ -89414,6 +89529,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "optgroup-label-not-empty": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -89424,9 +89540,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     applicableCount += 1;
-    if (/[^ \t\n\f\r]/.test(String(el.getAttribute('label') || ''))) continue;
+    if (/[^ \t\n\f\r]/.test(String(dom.getAttribute(el, 'label') || ''))) continue;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -89459,6 +89575,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "optgroup-label-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -89469,10 +89586,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     applicableCount += 1;
 
-    if (el.hasAttribute('label')) continue;
+    if (dom.hasAttribute(el, 'label')) continue;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -89657,6 +89774,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "orientation-content-parity": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -89730,7 +89848,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   try {
-    for (const sheet of document.styleSheets || []) {
+    for (const sheet of dom.styleSheets(document) || []) {
       let rules = null;
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -89747,13 +89865,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // ---- Portrait and landscape, where the page has a layout ----
 
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof probe.checkVisibility !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!view || !probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(probe, 'checkVisibility') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -89767,7 +89885,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function shown(el) {
     try {
-      return el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      return dom.checkVisibility(el, { opacityProperty: true, visibilityProperty: true });
     } catch {
       return true;
     }
@@ -89783,24 +89901,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function contentItems() {
     const SKIP = new Set(['script', 'style', 'noscript', 'template']);
     const items = [];
-    if (!document.body) return items;
-    const walker = document.createTreeWalker(document.body, 4);
+    if (!dom.body(document)) return items;
+    const walker = dom.createTreeWalker(document, dom.body(document), 4);
     for (let n = walker.nextNode(); n && items.length < 3000; n = walker.nextNode()) {
-      const text = norm(n.nodeValue);
+      const text = norm(dom.nodeValue(n));
       if (!/[\p{L}\p{N}]/u.test(text)) continue;
-      const parent = n.parentElement;
-      if (!parent || SKIP.has(String(parent.localName))) continue;
+      const parent = dom.parentElement(n);
+      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
       items.push({
         node: n,
         el: parent,
         text,
-        display: String(n.nodeValue).replace(/\s+/g, ' ').trim()
+        display: String(dom.nodeValue(n)).replace(/\s+/g, ' ').trim()
       });
     }
-    for (const img of document.body.querySelectorAll('img[alt]')) {
-      const text = norm(img.getAttribute('alt'));
+    for (const img of dom.querySelectorAll(dom.body(document), 'img[alt]')) {
+      const text = norm(dom.getAttribute(img, 'alt'));
       if (text) {
-        const display = String(img.getAttribute('alt')).replace(/\s+/g, ' ').trim();
+        const display = String(dom.getAttribute(img, 'alt')).replace(/\s+/g, ' ').trim();
         items.push({ node: img, el: img, text, display });
       }
     }
@@ -89810,12 +89928,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isShownItem(item) {
     if (!shown(item.el)) return false;
     try {
-      if (item.node.nodeType === 3) {
-        const range = document.createRange();
+      if (dom.nodeType(item.node) === 3) {
+        const range = dom.createRange(document);
         range.selectNodeContents(item.node);
-        return Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0);
+        return Array.from(dom.getClientRects(range)).some((r) => r.width > 0 && r.height > 0);
       }
-      const r = item.node.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(item.node);
       return r.width > 0 && r.height > 0;
     } catch {
       return true;
@@ -89825,7 +89943,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The outermost element, below <body>, that is not shown.
   function hiddenRoot(el) {
     let root = el;
-    for (let a = el; a && a !== document.body && a.nodeType === 1; a = a.parentElement) {
+    for (
+      let a = el;
+      a && a !== dom.body(document) && dom.nodeType(a) === 1;
+      a = dom.parentElement(a)
+    ) {
       if (!shown(a)) root = a;
     }
     return root;
@@ -89862,17 +89984,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function freezeTransitions(doc) {
     let sheet = null;
     try {
-      sheet = doc.createElement('style');
+      sheet = dom.createElement(doc, 'style');
       sheet.textContent =
         '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
-      const host = doc.head || doc.documentElement;
-      host.insertBefore(sheet, host.firstChild);
+      const host = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(host, sheet, dom.firstChild(host));
     } catch {
       sheet = null;
     }
     return () => {
       try {
-        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+        if (sheet && dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       } catch {}
     };
   }
@@ -89936,7 +90058,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       });
     }
 
-    const holdsMain = (root) => !!(main && (root === main || root.contains(main)));
+    const holdsMain = (root) => !!(main && (root === main || dom.contains(root, main)));
     // An orientation that hides the main content is a lock, asked about
     // once. What only that orientation shows (a "rotate your device"
     // message) is part of the lock, not content missing from the other one.
@@ -89946,7 +90068,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (const [root, m] of missing) {
       if (!holdsMain(root) && locked.has(other(m.orientation))) continue;
-      const element = String(root.localName || '').toLowerCase();
+      const element = String(dom.localName(root) || '').toLowerCase();
       const text = m.texts.join(' ').slice(0, 80);
       if (holdsMain(root)) {
         questions.push(
@@ -89996,13 +90118,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       matched = []; // a selector the engine cannot parse is skipped, not guessed at
     }
     for (const el of matched) {
-      if (!el || el.nodeType !== 1 || seen.has(el)) continue;
+      if (!el || dom.nodeType(el) !== 1 || seen.has(el)) continue;
       seen.add(el);
       // The comparison settled what this element shows.
-      if (decided && (judged.has(el) || norm(el.textContent) || el.querySelector('img[alt]'))) {
+      if (
+        decided &&
+        (judged.has(el) || norm(dom.textContent(el)) || dom.querySelector(el, 'img[alt]'))
+      ) {
         continue;
       }
-      const element = String(el.localName || el.tagName || '').toLowerCase();
+      const element = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
       questions.push(
         helpers.reportOccurrence(el, {
           summary: `A "${h.mediaText}" media query hides this <${element}> ("${h.selectorText}").`,
@@ -90303,13 +90428,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "page-language-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const XML_NS = 'http://www.w3.org/XML/1998/namespace';
   const SKIP = new Set(['script', 'style', 'template', 'noscript']);
 
-  const html = document && document.documentElement;
-  if (!html || String(html.tagName || '').toLowerCase() !== 'html') {
+  const html = document && dom.documentElement(document);
+  if (!html || String(dom.tagName(html) || '').toLowerCase() !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -90321,11 +90447,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const xmlLangSuffices = isXmlDocument || doctype.kind === 'xhtml11';
 
   function languageOf(el) {
-    const hasLang = el.hasAttribute('lang');
+    const hasLang = dom.hasAttribute(el, 'lang');
     let xml = el.getAttributeNS ? el.getAttributeNS(XML_NS, 'lang') : null;
-    if (xml == null) xml = el.getAttribute('xml:lang');
+    if (xml == null) xml = dom.getAttribute(el, 'xml:lang');
     if (!hasLang && xml == null) return null;
-    const lang = String(el.getAttribute('lang') || '').trim();
+    const lang = String(dom.getAttribute(el, 'lang') || '').trim();
     const xmlLang = String(xml || '').trim();
     if (lang) return { source: 'lang', value: lang };
     if (xmlLang) return { source: 'xml:lang', value: xmlLang };
@@ -90396,12 +90522,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Second condition: the language is given on each text or on a parent.
-  const root = document.body || html;
+  const root = dom.body(document) || html;
   const cache = new Map();
   function nearest(el) {
     const path = [];
     let found = null;
-    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = dom.parentElement(n)) {
       if (cache.has(n)) {
         found = cache.get(n);
         break;
@@ -90432,14 +90558,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let anyLanguage = !!(own && own.value);
   let xmlOnly = false;
   let uncovered = null;
-  const walker = document.createTreeWalker(root, 4 /* NodeFilter.SHOW_TEXT */);
+  const walker = dom.createTreeWalker(document, root, 4);
   for (let t = walker.nextNode(); t; t = walker.nextNode()) {
     if (!/\S/.test(t.data || '')) continue;
-    const parent = t.parentElement;
+    const parent = dom.parentElement(t);
     if (!parent) continue;
     let skipped = false;
-    for (let n = parent; n; n = n.parentElement) {
-      if (SKIP.has(String(n.localName || '').toLowerCase())) {
+    for (let n = parent; n; n = dom.parentElement(n)) {
+      if (SKIP.has(String(dom.localName(n) || '').toLowerCase())) {
         skipped = true;
         break;
       }
@@ -90456,14 +90582,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (!anyLanguage && !uncovered) {
     // Look for a language anywhere, for the reason code only.
-    const any = document.querySelectorAll('[lang]');
+    const any = dom.querySelectorAll(document, '[lang]');
     for (const el of any) {
-      if (String(el.getAttribute('lang') || '').trim()) anyLanguage = true;
+      if (String(dom.getAttribute(el, 'lang') || '').trim()) anyLanguage = true;
     }
   }
 
   if (uncovered) {
-    const element = String(uncovered.localName || '').toLowerCase();
+    const element = String(dom.localName(uncovered) || '').toLowerCase();
     return result('fail', [
       occurrence(anyLanguage ? 'uncoveredText' : 'missingLanguage', { element })
     ]);
@@ -90878,6 +91004,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "page-title-unique": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function norm(t) {
@@ -90888,7 +91015,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // { key: origin + path without a trailing slash, full: key + query }
   function urlParts(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       const path = url.pathname.replace(/\/+$/, '') || '/';
       const key = url.origin + path;
       return { key, full: key + url.search };
@@ -90900,8 +91027,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
@@ -90938,7 +91065,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const samePath = same.filter((p) => p.parts.key === here.key);
 
   const selector =
-    titleEl.parentElement && titleEl.parentElement.localName === 'head'
+    dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
       ? 'head > title'
       : undefined;
   function report(reasonCode, key, summary, hint, pages, uncertainty) {
@@ -91020,6 +91147,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "page-zones-reachable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
@@ -91029,7 +91157,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -91108,9 +91236,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SEARCH_FIELD =
     'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role="searchbox"]';
   for (const el of query('body *')) {
-    if (!el || el.nodeType !== 1 || !isEligible(el)) continue;
+    if (!el || dom.nodeType(el) !== 1 || !isEligible(el)) continue;
     if (landmarkOf(el)) continue;
-    const tag = String(el.localName || '').toLowerCase();
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (['script', 'style', 'a', 'button', 'input', 'span', 'li', 'img', 'svg'].includes(tag))
       continue;
     let found = null;
@@ -91125,7 +91253,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (!found && tag === 'form') {
       try {
-        if (el.querySelector(SEARCH_FIELD)) {
+        if (dom.querySelector(el, SEARCH_FIELD)) {
           found = ZONES[4];
           hint = 'form';
         }
@@ -91133,11 +91261,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (!found) continue;
     const same = landmarks[found.landmark];
-    if (same.some((l) => l.contains(el) || el.contains(l))) continue;
+    if (same.some((l) => dom.contains(l, el) || dom.contains(el, l))) continue;
     // The outermost element carrying the name stands for the area.
-    if (candidates.some((c) => c.zone === found.zone && c.el.contains(el))) continue;
+    if (candidates.some((c) => c.zone === found.zone && dom.contains(c.el, el))) continue;
     for (let i = candidates.length - 1; i >= 0; i--) {
-      if (candidates[i].zone === found.zone && el.contains(candidates[i].el))
+      if (candidates[i].zone === found.zone && dom.contains(el, candidates[i].el))
         candidates.splice(i, 1);
     }
     candidates.push({ el, zone: found.zone, hint });
@@ -91153,7 +91281,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       frag = decodeURIComponent(frag);
     } catch {}
     try {
-      return document.getElementById(frag);
+      return dom.getElementById(document, frag);
     } catch {
       return null;
     }
@@ -91162,13 +91290,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function headingOpens(el) {
     try {
-      const h = el.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
+      const h = dom.querySelector(el, 'h1, h2, h3, h4, h5, h6, [role="heading"]');
       if (!h || !isEligible(h)) return false;
       // The heading comes before any other text of the area.
-      const walker = document.createTreeWalker(el, 4);
+      const walker = dom.createTreeWalker(document, el, 4);
       for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-        if (!/\S/.test(n.nodeValue || '')) continue;
-        return h.contains(n);
+        if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+        return dom.contains(h, n);
       }
     } catch {}
     return false;
@@ -91193,10 +91321,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
     let prev = null;
     for (const f of all) {
-      if (el.contains(f)) break;
+      if (dom.contains(el, f)) break;
       let before = false;
       try {
-        before = !!(f.compareDocumentPosition(el) & FOLLOWING);
+        before = !!(dom.compareDocumentPosition(f, el) & FOLLOWING);
       } catch {}
       if (!before) break;
       if (inTabOrder(f)) prev = f;
@@ -91206,11 +91334,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function skipLinkBefore(el) {
     const prev = previousFocusable(el);
-    if (!prev || String(prev.localName) !== 'a') return false;
+    if (!prev || String(dom.localName(prev)) !== 'a') return false;
     const target = sameDocumentTarget(prev);
-    if (!target || el.contains(target)) return false;
+    if (!target || dom.contains(el, target)) return false;
     try {
-      return !!(el.compareDocumentPosition(target) & FOLLOWING);
+      return !!(dom.compareDocumentPosition(el, target) & FOLLOWING);
     } catch {
       return false;
     }
@@ -91219,7 +91347,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function toggleBefore(el) {
     const prev = previousFocusable(el);
     if (!prev) return false;
-    const isButton = String(prev.localName) === 'button' || attr(prev, 'role') === 'button';
+    const isButton = String(dom.localName(prev)) === 'button' || attr(prev, 'role') === 'button';
     if (!isButton) return false;
     const controls = String(attr(prev, 'aria-controls') || '').split(/\s+/);
     const idv = attr(el, 'id');
@@ -91228,9 +91356,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function quickLinkTo(el) {
     return links.some((l) => {
-      if (el.contains(l)) return false;
+      if (dom.contains(el, l)) return false;
       const t = sameDocumentTarget(l);
-      return !!t && (t === el || el.contains(t));
+      return !!t && (t === el || dom.contains(el, t));
     });
   }
 
@@ -91314,7 +91442,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ask(reasonCode, c.el, c.hint, c.zone);
   }
   if (!landmarks.main.length && !candidates.some((c) => c.zone === 'main')) {
-    ask('MAIN_NOT_FOUND', document.body || document.documentElement, '', 'main');
+    ask('MAIN_NOT_FOUND', dom.body(document) || dom.documentElement(document), '', 'main');
   }
 
   if (questions.length) {
@@ -91670,6 +91798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentational-attributes-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -91709,15 +91838,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
-    if (el.namespaceURI && el.namespaceURI !== HTML_NS) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== HTML_NS) continue;
 
-    const element = String(el.tagName).toLowerCase();
-    const found = ALWAYS.filter((a) => el.hasAttribute(a));
-    if (el.hasAttribute('size') && !SIZE_ALLOWED_ON.includes(element)) found.push('size');
+    const element = String(dom.tagName(el)).toLowerCase();
+    const found = ALWAYS.filter((a) => dom.hasAttribute(el, a));
+    if (dom.hasAttribute(el, 'size') && !SIZE_ALLOWED_ON.includes(element)) found.push('size');
     if (!DIMENSIONS_ALLOWED_ON.includes(element)) {
-      if (el.hasAttribute('width')) found.push('width');
-      if (el.hasAttribute('height')) found.push('height');
+      if (dom.hasAttribute(el, 'width')) found.push('width');
+      if (dom.hasAttribute(el, 'height')) found.push('height');
     }
     if (!found.length) continue;
 
@@ -91987,11 +92116,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "presentational-elements-absent": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const ELEMENTS = ['basefont', 'big', 'blink', 'center', 'font', 'marquee', 's', 'strike', 'tt'];
 
-  const doctype = document.doctype;
+  const doctype = dom.doctype(document);
   const isHtml5 =
     !!doctype &&
     String(doctype.name || '').toLowerCase() === 'html' &&
@@ -92005,8 +92135,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
-    const element = String(el.tagName).toLowerCase();
+    if (!el || !dom.tagName(el)) continue;
+    const element = String(dom.tagName(el)).toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `The presentational element <${element}> is used.`,
@@ -92197,6 +92327,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "radio-group-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const GROUP = 'fieldset, [role="group"], [role="radiogroup"]';
@@ -92209,8 +92340,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const sets = new Map();
   const formKeys = new Map();
   for (const radio of radios) {
-    if (!radio || !radio.getAttribute) continue;
-    const name = String(radio.getAttribute('name'));
+    if (!radio || !dom.get(radio, 'getAttribute')) continue;
+    const name = String(dom.getAttribute(radio, 'name'));
     if (!name) continue;
     const form = radio.form || null;
     if (!formKeys.has(form)) formKeys.set(form, formKeys.size);
@@ -92222,9 +92353,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // True when some grouping ancestor of the first radio contains every radio
   // of the set.
   function hasCommonGroup(set) {
-    const parentGroup = (el) => (el.parentElement ? el.parentElement.closest(GROUP) : null);
+    const parentGroup = (el) =>
+      dom.parentElement(el) ? dom.closest(dom.parentElement(el), GROUP) : null;
     for (let g = parentGroup(set[0]); g; g = parentGroup(g)) {
-      if (set.every((r) => g.contains(r))) return true;
+      if (set.every((r) => dom.contains(g, r))) return true;
     }
     return false;
   }
@@ -92237,7 +92369,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
     if (hasCommonGroup(set)) continue;
 
-    const name = String(set[0].getAttribute('name'));
+    const name = String(dom.getAttribute(set[0], 'name'));
     occurrences.push(
       helpers.reportOccurrence(set[0], {
         summary: `The ${set.length} radio buttons named "${name}" are not grouped in one fieldset or group.`,
@@ -92534,6 +92666,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "role-img-aria-name": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -92543,17 +92676,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -92561,8 +92694,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isOuterSvg(el) {
     if (tagOf(el) !== 'svg') return false;
-    const p = el.parentElement;
-    return !(p && p.closest && p.closest('svg'));
+    const p = dom.parentElement(el);
+    return !(p && dom.get(p, 'closest') && dom.closest(p, 'svg'));
   }
 
   function ariaName(el) {
@@ -92577,9 +92710,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function svgTitleChildText(el) {
-    if (el.namespaceURI !== SVG_NS) return '';
-    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-      if (tagOf(child) === 'title') return trim(child.textContent);
+    if (dom.namespaceURI(el) !== SVG_NS) return '';
+    for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+      if (tagOf(child) === 'title') return trim(dom.textContent(child));
     }
     return '';
   }
@@ -92593,7 +92726,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (trim(attr(el, 'role')).toLowerCase().split(' ')[0] !== 'img') continue;
     if (tagOf(el) === 'img' || isOuterSvg(el)) continue;
     if (insideAriaHidden(el)) continue;
@@ -92963,6 +93096,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "scripted-components-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const JS_TYPES = new Set([
@@ -93070,12 +93204,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function localNameOf(el) {
-    return lower(el.localName || el.tagName || '');
+    return lower(dom.localName(el) || dom.tagName(el) || '');
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -93093,11 +93227,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     let head;
     try {
-      const first = el.firstChild;
+      const first = dom.firstChild(el);
       head =
-        first && first.nodeType === 3 && typeof first.data === 'string'
+        first && dom.nodeType(first) === 3 && typeof first.data === 'string'
           ? first.data.slice(0, 600)
-          : String(el.textContent || '').slice(0, 600);
+          : String(dom.textContent(el) || '').slice(0, 600);
     } catch {
       head = '';
     }
@@ -93148,14 +93282,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (let i = 0; i < scopes.length; i++) {
       let els;
       try {
-        els = scopes[i].querySelectorAll('*');
+        els = dom.querySelectorAll(scopes[i], '*');
       } catch {
         els = [];
       }
       for (const el of els) {
-        if (!el || el.nodeType !== 1) continue;
+        if (!el || dom.nodeType(el) !== 1) continue;
         try {
-          if (el.shadowRoot) scopes.push(el.shadowRoot);
+          if (dom.shadowRoot(el)) scopes.push(dom.shadowRoot(el));
         } catch {}
 
         const name = localNameOf(el);
@@ -93165,7 +93299,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (name.indexOf('-') !== -1) return 'customElement';
 
-        const attrs = el.attributes || [];
+        const attrs = dom.attributes(el) || [];
         for (let a = 0; a < attrs.length; a++) {
           const attrName = lower(attrs[a].name);
           if (isEventHandlerAttr(el, attrName)) return 'inlineHandler';
@@ -93188,7 +93322,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ---------------------------------------------------------------------
 
   const roots = Array.isArray(ctx.root) ? ctx.root : ctx.root ? [ctx.root] : [];
-  const scanRoot = roots.find((r) => r && r.nodeType === 1) || document.documentElement;
+  const scanRoot = roots.find((r) => r && dom.nodeType(r) === 1) || dom.documentElement(document);
 
   const visibilityFilter = { targetSet: 'dom', accEligible: null, reasons: [] };
 
@@ -93306,7 +93440,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const name = localNameOf(el);
     if (name === 'html' || name === 'body' || name === 'head') return true;
     try {
-      return !!(el.closest && el.closest('head'));
+      return !!(dom.get(el, 'closest') && dom.closest(el, 'head'));
     } catch {
       return false;
     }
@@ -93403,7 +93537,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const seen = new Set();
   for (const el of elements) {
-    if (!el || el.nodeType !== 1 || seen.has(el)) continue;
+    if (!el || dom.nodeType(el) !== 1 || seen.has(el)) continue;
     seen.add(el);
     const c = candidate(el);
     if (!c) continue;
@@ -94071,12 +94205,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "skip-link-placement": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
   const CONTAINED_BY = 16; // Node.DOCUMENT_POSITION_CONTAINED_BY
   const MAX_SHIFT = 24; // CSS pixels between two pages before the place differs
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   function norm(s) {
     return String(s == null ? '' : s)
@@ -94086,7 +94221,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -94104,7 +94239,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function linkName(el) {
     const al = norm(attr(el, 'aria-label'));
     if (al) return al;
-    return norm(el.textContent) || norm(attr(el, 'title'));
+    return norm(dom.textContent(el)) || norm(attr(el, 'title'));
   }
 
   // ---- The skip link, found as skip-link-present finds one ----
@@ -94116,7 +94251,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fragment = href.slice(1);
     } else if (href.indexOf('#') !== -1) {
       try {
-        const url = new URL(href, document.baseURI);
+        const url = new URL(href, dom.baseURI(document));
         const here = new URL(document.URL);
         url.hash = '';
         here.hash = '';
@@ -94133,33 +94268,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function resolveTarget(el, fragment) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     let target = null;
     try {
-      if (root && typeof root.getElementById === 'function') target = root.getElementById(fragment);
-      if (!target) target = document.getElementById(fragment);
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        target = dom.getElementById(root, fragment);
+      if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
       try {
-        target = document.querySelector('a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]');
+        target = dom.querySelector(
+          document,
+          'a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]'
+        );
       } catch {}
     }
     return target;
   }
 
   function isNavigation(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
 
   function isFocusable(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const tabindex = attr(el, 'tabindex');
     if (tabindex != null && /^\s*-/.test(tabindex)) return false;
     if (tabindex != null && /^\s*\d/.test(tabindex)) return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'input') return String(attr(el, 'type') || '').toLowerCase() !== 'hidden';
     if (['button', 'select', 'textarea', 'iframe', 'summary'].includes(tag)) return true;
     const ce = attr(el, 'contenteditable');
@@ -94167,7 +94306,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function scan(from, to, found) {
-    const walker = document.createTreeWalker(document, 1);
+    const walker = dom.createTreeWalker(document, document, 1);
     walker.currentNode = from;
     let count = 0;
     for (let n = walker.nextNode(); n && n !== to; n = walker.nextNode()) {
@@ -94175,7 +94314,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         found.navigation = true;
         break;
       }
-      if (n.contains(to)) continue;
+      if (dom.contains(n, to)) continue;
       if (!isEligible(n)) continue;
       if (isNavigation(n)) found.navigation = true;
       else if (isFocusable(n)) found.focusable = true;
@@ -94188,12 +94327,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (target === main) return found;
     let inside = false;
     try {
-      inside = main.contains(target);
+      inside = dom.contains(main, target);
     } catch {}
     if (inside) return scan(main, target, found);
     let pos = 0;
     try {
-      pos = target.compareDocumentPosition(main);
+      pos = dom.compareDocumentPosition(target, main);
     } catch {}
     if (!(pos & FOLLOWING) && !(pos & CONTAINED_BY)) return null;
     return scan(target, main, found);
@@ -94205,7 +94344,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let skipLink = null;
   if (main) {
     for (const el of query('a[href]')) {
-      if (main.contains(el)) continue;
+      if (dom.contains(main, el)) continue;
       const fragment = sameDocumentFragment(el);
       if (fragment == null) continue;
       const target = resolveTarget(el, fragment);
@@ -94220,7 +94359,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -94271,10 +94410,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // ---- Visibility, where the page has a layout ----
 
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -94292,7 +94431,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // 'visible', 'hidden' (certainly not visible) or 'unknown' (something may
   // cover it), with its rect in page coordinates.
   function visibility(el) {
-    const r = el.getBoundingClientRect();
+    const r = dom.getBoundingClientRect(el);
     const sx = view.scrollX || 0;
     const sy = view.scrollY || 0;
     const rect = {
@@ -94309,7 +94448,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Outside the page: left of or above its origin.
     if (r.right + sx <= 0 || r.bottom + sy <= 0) return { state: 'hidden', rect };
     let visible = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = dom.parentElement(n)) {
       const s = styleOf(n);
       if (!s) continue;
       if (parseFloat(s.opacity) === 0) return { state: 'hidden', rect };
@@ -94320,7 +94459,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const clipPath = String(s.clipPath || '');
       if (/inset\(\s*50%/.test(clipPath)) return { state: 'hidden', rect };
       if (n !== el && (s.overflowX !== 'visible' || s.overflowY !== 'visible')) {
-        const b = n.getBoundingClientRect();
+        const b = dom.getBoundingClientRect(n);
         visible = {
           left: Math.max(visible.left, s.overflowX !== 'visible' ? b.left : -Infinity),
           top: Math.max(visible.top, s.overflowY !== 'visible' ? b.top : -Infinity),
@@ -94337,8 +94476,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const cy = (visible.top + visible.bottom) / 2;
     if (cx >= 0 && cy >= 0 && cx < view.innerWidth && cy < view.innerHeight) {
       try {
-        const top = document.elementFromPoint(cx, cy);
-        if (top && top !== el && !el.contains(top) && !top.contains(el)) {
+        const top = dom.elementFromPoint(document, cx, cy);
+        if (top && top !== el && !dom.contains(el, top) && !dom.contains(top, el)) {
           return { state: 'unknown', rect };
         }
       } catch {}
@@ -94347,10 +94486,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function deepActiveElement() {
-    let cur = document.activeElement || null;
+    let cur = dom.activeElement(document) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
@@ -94358,13 +94497,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The link focused as by the keyboard, transitions off, then put back.
   function visibilityOnFocus(el) {
     const previous = deepActiveElement();
-    const hadStyle = el.hasAttribute('style');
-    const styleAttr = el.getAttribute('style');
+    const hadStyle = dom.hasAttribute(el, 'style');
+    const styleAttr = dom.getAttribute(el, 'style');
     try {
       el.style.setProperty('transition', 'none', 'important');
-      el.focus({ preventScroll: true, focusVisible: true });
+      dom.focus(el, { preventScroll: true, focusVisible: true });
       if (deepActiveElement() !== el) return null;
-      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+      if (typeof dom.get(el, 'getAnimations') === 'function' && dom.getAnimations(el).length) {
         return { state: 'unknown', rect: null, animated: true };
       }
       return visibility(el);
@@ -94372,17 +94511,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     } finally {
       try {
-        if (previous && previous !== document.body && typeof previous.focus === 'function') {
-          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        if (
+          previous &&
+          previous !== dom.body(document) &&
+          typeof dom.get(previous, 'focus') === 'function'
+        ) {
+          if (deepActiveElement() !== previous) dom.focus(previous, { preventScroll: true });
         } else if (deepActiveElement() === el) {
-          el.blur();
+          dom.blur(el);
         }
       } catch {}
       // Reading the attribute first makes Chromium write the inline style
       // back to it; removed before that, it comes back as style="".
-      el.getAttribute('style');
-      if (hadStyle) el.setAttribute('style', styleAttr);
-      else el.removeAttribute('style');
+      dom.getAttribute(el, 'style');
+      if (hadStyle) dom.setAttribute(el, 'style', styleAttr);
+      else dom.removeAttribute(el, 'style');
     }
   }
 
@@ -94559,6 +94702,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
     "skip-link-present": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
@@ -94572,7 +94716,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -94589,7 +94733,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function precedes(a, b) {
     try {
-      return !!(a.compareDocumentPosition(b) & FOLLOWING);
+      return !!(dom.compareDocumentPosition(a, b) & FOLLOWING);
     } catch {
       return false;
     }
@@ -94607,14 +94751,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/)) {
         try {
-          const ref = document.getElementById(refId);
-          if (ref) parts.push(norm(ref.textContent));
+          const ref = dom.getElementById(document, refId);
+          if (ref) parts.push(norm(dom.textContent(ref)));
         } catch {}
       }
       const joined = norm(parts.join(' '));
       if (joined) return joined;
     }
-    return norm(el.textContent) || norm(attr(el, 'title'));
+    return norm(dom.textContent(el)) || norm(attr(el, 'title'));
   }
 
   // The fragment of a link to this same page, or null.
@@ -94625,7 +94769,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fragment = href.slice(1);
     } else if (href.indexOf('#') !== -1) {
       try {
-        const url = new URL(href, document.baseURI);
+        const url = new URL(href, dom.baseURI(document));
         const here = new URL(document.URL);
         url.hash = '';
         here.hash = '';
@@ -94642,33 +94786,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function resolveTarget(el, fragment) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     let target = null;
     try {
-      if (root && typeof root.getElementById === 'function') target = root.getElementById(fragment);
-      if (!target) target = document.getElementById(fragment);
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        target = dom.getElementById(root, fragment);
+      if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
       try {
-        target = document.querySelector('a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]');
+        target = dom.querySelector(
+          document,
+          'a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]'
+        );
       } catch {}
     }
     return target;
   }
 
   function isNavigation(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
 
   function isFocusable(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const tabindex = attr(el, 'tabindex');
     if (tabindex != null && /^\s*-/.test(tabindex)) return false;
     if (tabindex != null && /^\s*\d/.test(tabindex)) return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'input') return String(attr(el, 'type') || '').toLowerCase() !== 'hidden';
     if (['button', 'select', 'textarea', 'iframe', 'summary'].includes(tag)) return true;
     const ce = attr(el, 'contenteditable');
@@ -94676,7 +94824,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function scan(from, to, stopAtTo, found) {
-    const walker = document.createTreeWalker(document, 1);
+    const walker = dom.createTreeWalker(document, document, 1);
     walker.currentNode = from;
     let count = 0;
     for (let n = walker.nextNode(); n && n !== to; n = walker.nextNode()) {
@@ -94684,7 +94832,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         found.navigation = true;
         break;
       }
-      if (stopAtTo && n.contains(to)) continue;
+      if (stopAtTo && dom.contains(n, to)) continue;
       if (!isEligible(n)) continue;
       if (isNavigation(n)) found.navigation = true;
       else if (isFocusable(n)) found.focusable = true;
@@ -94700,12 +94848,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (target === main) return found;
     let inside = false;
     try {
-      inside = main.contains(target);
+      inside = dom.contains(main, target);
     } catch {}
     if (inside) return scan(main, target, true, found);
     let pos = 0;
     try {
-      pos = target.compareDocumentPosition(main);
+      pos = dom.compareDocumentPosition(target, main);
     } catch {}
     if (!(pos & FOLLOWING) && !(pos & CONTAINED_BY)) return null;
     return scan(target, main, true, found);
@@ -94722,7 +94870,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!links.length && !navigations.length) {
       return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
     }
-    const target = document.body || document.documentElement;
+    const target = dom.body(document) || dom.documentElement(document);
     return {
       ruleId: rule.ruleId,
       ...helpers.resolveTieredOutcome(
@@ -94755,7 +94903,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const navBefore = navigations.filter(
-    (n) => !main.contains(n) && !n.contains(main) && precedes(n, main)
+    (n) => !dom.contains(main, n) && !dom.contains(n, main) && precedes(n, main)
   );
 
   const positional = links.length && precedes(links[0], main) ? links[0] : null;
@@ -94766,7 +94914,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of links) {
     // A link inside the main content does not lead to it.
-    if (main.contains(el)) continue;
+    if (dom.contains(main, el)) continue;
     const fragment = sameDocumentFragment(el);
     if (fragment == null) continue;
     const target = resolveTarget(el, fragment);
@@ -94800,7 +94948,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // navigation between it and the main content is another quick-access
     // link, not one to the main content.
     const inNavigation = (() => {
-      for (let p = target; p && p.nodeType === 1; p = p.parentElement) {
+      for (let p = target; p && dom.nodeType(p) === 1; p = dom.parentElement(p)) {
         if (isNavigation(p)) return true;
       }
       return false;
@@ -95487,6 +95635,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "svg-hidden-no-alternative": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const hasText = (s) => !!String(s || '').trim();
@@ -95499,32 +95648,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const svg of nodes) {
-    if (!svg || !svg.getAttribute) continue;
-    if (String(svg.getAttribute('aria-hidden')).trim().toLowerCase() !== 'true') continue;
-    const outer = svg.parentElement ? svg.parentElement.closest('svg') : null;
+    if (!svg || !dom.get(svg, 'getAttribute')) continue;
+    if (String(dom.getAttribute(svg, 'aria-hidden')).trim().toLowerCase() !== 'true') continue;
+    const outer = dom.parentElement(svg) ? dom.closest(dom.parentElement(svg), 'svg') : null;
     if (outer) continue;
     applicableCount += 1;
 
-    const all = [svg].concat(Array.from(svg.querySelectorAll('*')));
+    const all = [svg].concat(Array.from(dom.querySelectorAll(svg, '*')));
     const referenced = [];
     // Follow same-document <use> references (see @expectation above).
     const visited = new Set(all);
     for (let i = 0; i < all.length; i += 1) {
       const el = all[i];
-      if (String(el.localName || el.tagName).toLowerCase() !== 'use') continue;
-      const ref = String(el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim();
+      if (String(dom.localName(el) || dom.tagName(el)).toLowerCase() !== 'use') continue;
+      const ref = String(
+        dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || ''
+      ).trim();
       if (ref.length < 2 || ref[0] !== '#') continue;
       let target;
       try {
-        const rootNode = el.getRootNode ? el.getRootNode() : null;
-        const scope = rootNode && rootNode.getElementById ? rootNode : svg.ownerDocument;
-        target = scope ? scope.getElementById(decodeURIComponent(ref.slice(1))) : null;
+        const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+        const scope =
+          rootNode && dom.get(rootNode, 'getElementById') ? rootNode : dom.ownerDocument(svg);
+        target = scope ? dom.getElementById(scope, decodeURIComponent(ref.slice(1))) : null;
       } catch {
         target = null;
       }
       if (!target || visited.has(target)) continue;
       referenced.push(ref);
-      for (const node of [target].concat(Array.from(target.querySelectorAll('*')))) {
+      for (const node of [target].concat(Array.from(dom.querySelectorAll(target, '*')))) {
         if (visited.has(node)) continue;
         visited.add(node);
         all.push(node);
@@ -95532,11 +95684,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const found = [];
     for (const attr of ['aria-label', 'aria-labelledby', 'title']) {
-      if (all.some((el) => hasText(el.getAttribute(attr)))) found.push(attr);
+      if (all.some((el) => hasText(dom.getAttribute(el, attr)))) found.push(attr);
     }
     for (const tag of ['title', 'desc']) {
       const withText = all.some(
-        (el) => String(el.localName || el.tagName).toLowerCase() === tag && hasText(el.textContent)
+        (el) =>
+          String(dom.localName(el) || dom.tagName(el)).toLowerCase() === tag &&
+          hasText(dom.textContent(el))
       );
       if (withText) found.push(`<${tag}>`);
     }
@@ -95801,6 +95955,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "svg-role-img": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -95809,17 +95964,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -95836,8 +95991,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function titleChildText(el) {
-    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-      if (tagOf(child) === 'title') return trim(child.textContent);
+    for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+      if (tagOf(child) === 'title') return trim(dom.textContent(child));
     }
     return '';
   }
@@ -95849,9 +96004,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const svg of nodes) {
-    if (!svg || !svg.getAttribute) continue;
-    const p = svg.parentElement;
-    if (p && p.closest && p.closest('svg')) continue;
+    if (!svg || !dom.get(svg, 'getAttribute')) continue;
+    const p = dom.parentElement(svg);
+    if (p && dom.get(p, 'closest') && dom.closest(p, 'svg')) continue;
     if (insideAriaHidden(svg)) continue;
 
     const mechanism = ariaName(svg);
@@ -99974,10 +100129,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "th-scope-row-col": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -99990,12 +100146,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const scope = String(el.getAttribute('scope') || '')
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const scope = String(dom.getAttribute(el, 'scope') || '')
       .trim()
       .toLowerCase();
     if (scope !== 'rowgroup' && scope !== 'colgroup') continue;
-    const table = el.closest ? el.closest('table') : null;
+    const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
     if (table) {
       const role = firstRole(table);
       if (role === 'presentation' || role === 'none') continue;
@@ -100034,6 +100190,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "title-placeholder-identical": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function clean(s) {
@@ -100043,7 +100200,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   // Input types that show a placeholder (HTML: text, search, url, tel,
@@ -100078,13 +100235,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (tagOf(el) === 'input') {
-      const type = clean(el.getAttribute('type')).toLowerCase();
+      const type = clean(dom.getAttribute(el, 'type')).toLowerCase();
       if (NO_PLACEHOLDER_TYPES.has(type)) continue;
     }
-    const title = clean(el.getAttribute('title'));
-    const placeholder = clean(el.getAttribute('placeholder'));
+    const title = clean(dom.getAttribute(el, 'title'));
+    const placeholder = clean(dom.getAttribute(el, 'placeholder'));
     if (!title || !placeholder) continue;
     applicableCount += 1;
     if (title === placeholder) continue;
@@ -100673,6 +100830,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "video-captions-track-kind": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const videos = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
@@ -100691,8 +100849,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The language of the video's content: its nearest lang attribute.
   function videoLanguage(video) {
     try {
-      const host = video.closest ? video.closest('[lang]') : null;
-      return host ? primarySubtag(host.getAttribute('lang')) : '';
+      const host = dom.get(video, 'closest') ? dom.closest(video, '[lang]') : null;
+      return host ? primarySubtag(dom.getAttribute(host, 'lang')) : '';
     } catch {
       return '';
     }
@@ -100700,15 +100858,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const video of videos) {
     if (!video) continue;
-    const tracks = Array.from(video.querySelectorAll(':scope > *'))
-      .filter((c) => String(c.tagName).toLowerCase() === 'track')
-      .filter((t) => String(t.getAttribute('src') || '').trim())
+    const tracks = Array.from(dom.querySelectorAll(video, ':scope > *'))
+      .filter((c) => String(dom.tagName(c)).toLowerCase() === 'track')
+      .filter((t) => String(dom.getAttribute(t, 'src') || '').trim())
       .map((t) => ({
         kind:
-          String(t.getAttribute('kind') || 'subtitles')
+          String(dom.getAttribute(t, 'kind') || 'subtitles')
             .trim()
             .toLowerCase() || 'subtitles',
-        srclang: primarySubtag(t.getAttribute('srclang'))
+        srclang: primarySubtag(dom.getAttribute(t, 'srclang'))
       }))
       .filter((t) => t.kind === 'subtitles' || t.kind === 'captions');
     if (!tracks.length) continue;
@@ -101008,6 +101166,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "viewport-zoom-review": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function parseContent(raw) {
@@ -101056,14 +101215,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return reasons;
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[name="viewport" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
     const reasons = restrictions(parseContent(raw));
     if (!reasons.length) continue;
@@ -101098,6 +101257,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
     "widget-label-in-name": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // Which of the four label-in-name tests this file checks. The four rule
@@ -101140,11 +101300,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function explicitRole(el) {
-    const raw = el.getAttribute ? el.getAttribute('role') : null;
+    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
     return String(raw || '')
       .trim()
       .toLowerCase()
@@ -101152,7 +101312,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function inputType(el) {
-    return String(el.getAttribute('type') || '')
+    return String(dom.getAttribute(el, 'type') || '')
       .trim()
       .toLowerCase();
   }
@@ -101160,7 +101320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The RGAA test an element belongs to: its explicit role decides first,
   // then its tag. '' for anything none of the four tests covers.
   function classify(el) {
-    if (el.namespaceURI === SVG_NS) return '';
+    if (dom.namespaceURI(el) === SVG_NS) return '';
     const role = explicitRole(el);
     if (role) {
       if (role === 'link') return 'link';
@@ -101170,7 +101330,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return '';
     }
     const tag = tagOf(el);
-    if (tag === 'a') return el.hasAttribute('href') ? 'link' : '';
+    if (tag === 'a') return dom.hasAttribute(el, 'href') ? 'link' : '';
     if (tag === 'button') return 'button';
     if (tag === 'input') {
       const type = inputType(el);
@@ -101183,13 +101343,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // RGAA 11.9 covers the buttons « présents au sein d'un formulaire »: a
   // <form> or role="form" ancestor (glossary "Formulaire").
   function insideForm(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return true;
       if (explicitRole(p) === 'form') return true;
     }
@@ -101240,7 +101402,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (visibleOnly && !isDomVisible(container)) return { text: '', elements: [] };
     let walker;
     try {
-      walker = document.createTreeWalker(container, SHOW_TEXT, null);
+      walker = dom.createTreeWalker(document, container, SHOW_TEXT, null);
     } catch {
       walker = null;
     }
@@ -101249,14 +101411,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const elements = [];
     let n;
     while ((n = walker.nextNode())) {
-      const t = String(n.nodeValue || '')
+      const t = String(dom.nodeValue(n) || '')
         .replace(/\s+/g, ' ')
         .trim();
       if (!t) continue;
-      const p = n.parentElement;
+      const p = dom.parentElement(n);
       if (!p) continue;
       let skip = false;
-      for (let a = p; a && a !== container; a = a.parentElement) {
+      for (let a = p; a && a !== container; a = dom.parentElement(a)) {
         const tag = tagOf(a);
         if (isNonRenderedTag(tag) || isControlTag(tag)) {
           skip = true;
@@ -101281,7 +101443,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function labelledbyRefs(el) {
-    const idrefs = el.getAttribute('aria-labelledby');
+    const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
       const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
@@ -101312,7 +101474,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = explicitRole(el);
     if (family === 'button' && tag === 'input') {
       if (inputType(el) === 'image') return { text: '', origin: '', elements: [] };
-      const value = String(el.getAttribute('value') || '')
+      const value = String(dom.getAttribute(el, 'value') || '')
         .replace(/\s+/g, ' ')
         .trim();
       return { text: value, origin: 'value', elements: [el] };
@@ -101362,13 +101524,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     if (byRef) out.push({ source: 'aria-labelledby', text: byRef });
-    const ariaLabel = clean(el.getAttribute('aria-label'));
+    const ariaLabel = clean(dom.getAttribute(el, 'aria-label'));
     if (ariaLabel) out.push({ source: 'aria-label', text: ariaLabel });
     if (family === 'field') {
       const labelText = labelSourceText(el);
       if (labelText) out.push({ source: '<label>', text: labelText });
     }
-    const title = clean(el.getAttribute('title'));
+    const title = clean(dom.getAttribute(el, 'title'));
     if (title) out.push({ source: 'title', text: title });
     return out;
   }
@@ -101442,7 +101604,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isIconFontElement(node) {
     let cs = null;
     try {
-      const view = node.ownerDocument && node.ownerDocument.defaultView;
+      const view = dom.ownerDocument(node) && dom.defaultView(dom.ownerDocument(node));
       if (view && typeof view.getComputedStyle === 'function') cs = view.getComputedStyle(node);
     } catch {
       cs = null;
@@ -101566,7 +101728,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (classify(el) !== family) continue;
     if (family === 'button' && !insideForm(el)) continue;
     if (!isDomVisible(el)) continue;

@@ -95,6 +95,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -105,8 +106,8 @@ function runInPage(ctx) {
 
   function safeComputedStyle(el) {
     try {
-      if (!el || el.nodeType !== 1) return null;
-      const view = el.ownerDocument && el.ownerDocument.defaultView;
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const view = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
       if (view && typeof view.getComputedStyle === 'function') return view.getComputedStyle(el);
     } catch {
       // no computed style available
@@ -164,7 +165,7 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of (doc && doc.styleSheets) || []) {
+      for (const sheet of (doc && dom.styleSheets(doc)) || []) {
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -182,7 +183,7 @@ function runInPage(ctx) {
 
   function matches(el, selector) {
     try {
-      return el.matches(selector);
+      return dom.matches(el, selector);
     } catch {
       return false;
     }
@@ -199,9 +200,9 @@ function runInPage(ctx) {
 
   function uaUnderlines(el) {
     return (
-      String(el.localName || '').toLowerCase() === 'a' &&
-      typeof el.hasAttribute === 'function' &&
-      el.hasAttribute('href')
+      String(dom.localName(el) || '').toLowerCase() === 'a' &&
+      typeof dom.get(el, 'hasAttribute') === 'function' &&
+      dom.hasAttribute(el, 'href')
     );
   }
 
@@ -231,7 +232,7 @@ function runInPage(ctx) {
   // trusted (a DOM emulator does not cascade text-decoration). Returns
   // true, false, or null when it cannot be resolved.
   function underlineFromCssom(el) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     let best = null;
     for (const cssRule of getStyleRules(doc)) {
       let value = '';
@@ -290,14 +291,14 @@ function runInPage(ctx) {
 
   function hasImageChild(el) {
     try {
-      return !!el.querySelector('img, svg, picture, canvas, [role="img"]');
+      return !!dom.querySelector(el, 'img, svg, picture, canvas, [role="img"]');
     } catch {
       return false;
     }
   }
 
   function hasPseudoContent(el) {
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       const content = declared(cssRule.style, 'content');
       if (!content || ['none', 'normal', '""', "''"].includes(content)) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
@@ -309,11 +310,12 @@ function runInPage(ctx) {
   }
 
   function hasSurroundingText(el, parent) {
-    if (!parent || !parent.childNodes) return false;
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const n = parent.childNodes[i];
+    if (!parent || !dom.childNodes(parent)) return false;
+    for (let i = 0; i < dom.childNodes(parent).length; i++) {
+      const n = dom.childNodes(parent)[i];
       if (n === el) continue;
-      if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim().length > 0) return true;
+      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0)
+        return true;
     }
     return false;
   }
@@ -390,7 +392,7 @@ function runInPage(ctx) {
   // States whose author rule changes only the link's color.
   function colorOnlyStates(el) {
     const states = [];
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       if (!declared(cssRule.style, 'color')) continue;
       if (addsNonColorMark(cssRule.style)) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
@@ -412,7 +414,7 @@ function runInPage(ctx) {
   // applies to its visited state too.
   function authorSetsRestingColor(el) {
     if (declared(el.style, 'color')) return true;
-    for (const cssRule of getStyleRules(el.ownerDocument)) {
+    for (const cssRule of getStyleRules(dom.ownerDocument(el))) {
       if (!declared(cssRule.style, 'color')) continue;
       for (const part of splitSelectorList(cssRule.selectorText)) {
         if (/::[a-z-]+/i.test(part) || ALL_STATES_RE.test(part)) continue;
@@ -461,10 +463,10 @@ function runInPage(ctx) {
   // ---- States put on the link, where the page has a layout ----
 
   function hasLayout(doc) {
-    const probe = doc && doc.documentElement;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = doc && dom.documentElement(doc);
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -520,54 +522,58 @@ function runInPage(ctx) {
   }
 
   function deepActiveElement(doc) {
-    let cur = doc.activeElement || null;
+    let cur = dom.activeElement(doc) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
 
   // Runs fn with the link in one state, then takes the state off.
   function inState(el, state, fn) {
-    const doc = el.ownerDocument;
+    const doc = dom.ownerDocument(el);
     if (state === 'focus') {
-      if (typeof el.focus !== 'function') return null;
+      if (typeof dom.get(el, 'focus') !== 'function') return null;
       const previous = deepActiveElement(doc);
       try {
-        el.focus({ preventScroll: true, focusVisible: true });
+        dom.focus(el, { preventScroll: true, focusVisible: true });
         if (deepActiveElement(doc) !== el) return null;
         return fn();
       } catch {
         return null;
       } finally {
         try {
-          if (previous && previous !== doc.body && typeof previous.focus === 'function') {
-            if (deepActiveElement(doc) !== previous) previous.focus({ preventScroll: true });
+          if (
+            previous &&
+            previous !== dom.body(doc) &&
+            typeof dom.get(previous, 'focus') === 'function'
+          ) {
+            if (deepActiveElement(doc) !== previous) dom.focus(previous, { preventScroll: true });
           } else if (deepActiveElement(doc) === el) {
-            el.blur();
+            dom.blur(el);
           }
         } catch {}
       }
     }
     const targets = [el];
     if (state === 'hover' || state === 'active') {
-      for (let n = el.parentElement; n; n = n.parentElement) targets.push(n);
+      for (let n = dom.parentElement(el); n; n = dom.parentElement(n)) targets.push(n);
     }
     const saved = targets.map((t) =>
-      t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null
+      dom.hasAttribute(t, STATE_ATTR) ? dom.getAttribute(t, STATE_ATTR) : null
     );
     try {
       targets.forEach((t, i) =>
-        t.setAttribute(STATE_ATTR, ((saved[i] || '') + ' ' + state).trim())
+        dom.setAttribute(t, STATE_ATTR, ((saved[i] || '') + ' ' + state).trim())
       );
       return fn();
     } catch {
       return null;
     } finally {
       targets.forEach((t, i) => {
-        if (saved[i] == null) t.removeAttribute(STATE_ATTR);
-        else t.setAttribute(STATE_ATTR, saved[i]);
+        if (saved[i] == null) dom.removeAttribute(t, STATE_ATTR);
+        else dom.setAttribute(t, STATE_ATTR, saved[i]);
       });
     }
   }
@@ -650,23 +656,23 @@ function runInPage(ctx) {
     for (const [el] of list) {
       targets.add(el);
       if (state === 'hover' || state === 'active') {
-        for (let n = el.parentElement; n; n = n.parentElement) targets.add(n);
+        for (let n = dom.parentElement(el); n; n = dom.parentElement(n)) targets.add(n);
       }
     }
     const saved = new Map();
     try {
       for (const t of targets) {
-        const before = t.hasAttribute(STATE_ATTR) ? t.getAttribute(STATE_ATTR) : null;
+        const before = dom.hasAttribute(t, STATE_ATTR) ? dom.getAttribute(t, STATE_ATTR) : null;
         saved.set(t, before);
-        t.setAttribute(STATE_ATTR, ((before || '') + ' ' + state).trim());
+        dom.setAttribute(t, STATE_ATTR, ((before || '') + ' ' + state).trim());
       }
       for (const [el, parent, rest] of list) looks.set(el, lookOf(el, parent, rest));
     } catch {
       // the states left unread are not judged
     } finally {
       for (const [t, before] of saved) {
-        if (before == null) t.removeAttribute(STATE_ATTR);
-        else t.setAttribute(STATE_ATTR, before);
+        if (before == null) dom.removeAttribute(t, STATE_ATTR);
+        else dom.setAttribute(t, STATE_ATTR, before);
       }
     }
     return looks;
@@ -715,7 +721,7 @@ function runInPage(ctx) {
   const occurrences = [];
   let passCount = 0;
 
-  const doc = ctx.document || (nodes[0] && nodes[0].ownerDocument) || null;
+  const doc = ctx.document || (nodes[0] && dom.ownerDocument(nodes[0])) || null;
   const contrastOpts =
     ctx.engineOptions &&
     typeof ctx.engineOptions.contrast === 'object' &&
@@ -736,13 +742,13 @@ function runInPage(ctx) {
 
   const inScope = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const parent = el.parentElement;
+    const parent = dom.parentElement(el);
     if (!hasSurroundingText(el, parent)) continue;
     if (markedByMoreThanColor(el, parent)) continue;
     inScope.push([el, parent]);
@@ -756,17 +762,17 @@ function runInPage(ctx) {
   function freezeTransitions(doc) {
     let sheet = null;
     try {
-      sheet = doc.createElement('style');
+      sheet = dom.createElement(doc, 'style');
       sheet.textContent =
         '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
-      const host = doc.head || doc.documentElement;
-      host.insertBefore(sheet, host.firstChild);
+      const host = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(host, sheet, dom.firstChild(host));
     } catch {
       sheet = null;
     }
     return () => {
       try {
-        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+        if (sheet && dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       } catch {}
     };
   }

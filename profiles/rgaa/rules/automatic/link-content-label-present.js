@@ -63,8 +63,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, window, helpers, rule } = ctx;
-  const win = window || (document && document.defaultView) || null;
+  const win = window || (document && dom.defaultView(document)) || null;
 
   function norm(s) {
     return String(s == null ? '' : s)
@@ -74,7 +75,7 @@ function runInPage(ctx) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -106,7 +107,7 @@ function runInPage(ctx) {
   }
 
   function isNotRendered(el) {
-    if (el.hasAttribute && el.hasAttribute('hidden')) return true;
+    if (dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden')) return true;
     const cs = styleOf(el);
     return !!(cs && cs.display === 'none');
   }
@@ -119,10 +120,10 @@ function runInPage(ctx) {
   // Pseudo-element styles are read only where the page has a layout: jsdom
   // does not compute them, and reports each attempt as not implemented.
   function hasLayout() {
-    const probe = document.documentElement || document.body || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -142,7 +143,7 @@ function runInPage(ctx) {
   }
 
   function idRefText(el, value) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
@@ -150,18 +151,18 @@ function runInPage(ctx) {
       let target = null;
       try {
         target =
-          root && typeof root.getElementById === 'function'
-            ? root.getElementById(ref)
-            : document.getElementById(ref);
-        if (!target) target = document.getElementById(ref);
+          root && typeof dom.get(root, 'getElementById') === 'function'
+            ? dom.getElementById(root, ref)
+            : dom.getElementById(document, ref);
+        if (!target) target = dom.getElementById(document, ref);
       } catch {}
-      if (target) parts.push(norm(target.textContent));
+      if (target) parts.push(norm(dom.textContent(target)));
     }
     return norm(parts.join(' '));
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function isImage(el) {
@@ -182,11 +183,13 @@ function runInPage(ctx) {
     }
     if (tag === 'svg') {
       const parts = [];
-      for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-        if (tagOf(child) === 'title') parts.push(norm(child.textContent));
+      for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+        if (tagOf(child) === 'title') parts.push(norm(dom.textContent(child)));
       }
-      for (const t of Array.from(el.querySelectorAll ? el.querySelectorAll('text') : [])) {
-        parts.push(norm(t.textContent));
+      for (const t of Array.from(
+        dom.get(el, 'querySelectorAll') ? dom.querySelectorAll(el, 'text') : []
+      )) {
+        parts.push(norm(dom.textContent(t)));
       }
       return norm(parts.join(' '));
     }
@@ -222,20 +225,20 @@ function runInPage(ctx) {
 
     function walk(node, atHidden, depth) {
       if (depth > 200) return;
-      for (const child of Array.from(node.childNodes || [])) {
-        if (child.nodeType === 3) {
+      for (const child of Array.from(dom.childNodes(node) || [])) {
+        if (dom.nodeType(child) === 3) {
           if (!norm(child.data)) continue;
-          if (isVisibilityHidden(child.parentElement)) continue;
+          if (isVisibilityHidden(dom.parentElement(child))) continue;
           if (atHidden) found.hiddenText = true;
           else found.text = true;
           continue;
         }
-        if (child.nodeType !== 1) continue;
+        if (dom.nodeType(child) !== 1) continue;
         const tag = tagOf(child);
         if (tag === 'script' || tag === 'style' || tag === 'template' || tag === 'desc') continue;
         if (tag === 'title') {
           // The <title> child of an SVG link is part of its label.
-          const text = norm(child.textContent);
+          const text = norm(dom.textContent(child));
           if (text) {
             if (atHidden) found.hiddenText = true;
             else found.text = true;
@@ -281,7 +284,7 @@ function runInPage(ctx) {
   function isLink(el) {
     const tag = tagOf(el);
     const role = firstKnownRole(el);
-    if (tag === 'a' && (el.hasAttribute('href') || el.hasAttribute('xlink:href'))) {
+    if (tag === 'a' && (dom.hasAttribute(el, 'href') || dom.hasAttribute(el, 'xlink:href'))) {
       // A focusable link keeps its role under none/presentation.
       return !role || role === 'link' || role === 'none' || role === 'presentation';
     }
@@ -308,7 +311,7 @@ function runInPage(ctx) {
   const seen = new Set();
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || seen.has(el)) continue;
+    if (!el || !dom.get(el, 'getAttribute') || seen.has(el)) continue;
     seen.add(el);
     if (!isLink(el) || !isIncluded(el)) continue;
     applicableCount += 1;

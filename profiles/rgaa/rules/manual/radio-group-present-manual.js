@@ -51,6 +51,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const GROUP = 'fieldset, [role="group"], [role="radiogroup"]';
@@ -63,8 +64,8 @@ function runInPage(ctx) {
   const sets = new Map();
   const formKeys = new Map();
   for (const radio of radios) {
-    if (!radio || !radio.getAttribute) continue;
-    const name = String(radio.getAttribute('name'));
+    if (!radio || !dom.get(radio, 'getAttribute')) continue;
+    const name = String(dom.getAttribute(radio, 'name'));
     if (!name) continue;
     const form = radio.form || null;
     if (!formKeys.has(form)) formKeys.set(form, formKeys.size);
@@ -76,9 +77,10 @@ function runInPage(ctx) {
   // True when some grouping ancestor of the first radio contains every radio
   // of the set.
   function hasCommonGroup(set) {
-    const parentGroup = (el) => (el.parentElement ? el.parentElement.closest(GROUP) : null);
+    const parentGroup = (el) =>
+      dom.parentElement(el) ? dom.closest(dom.parentElement(el), GROUP) : null;
     for (let g = parentGroup(set[0]); g; g = parentGroup(g)) {
-      if (set.every((r) => g.contains(r))) return true;
+      if (set.every((r) => dom.contains(g, r))) return true;
     }
     return false;
   }
@@ -91,7 +93,7 @@ function runInPage(ctx) {
     applicableCount += 1;
     if (hasCommonGroup(set)) continue;
 
-    const name = String(set[0].getAttribute('name'));
+    const name = String(dom.getAttribute(set[0], 'name'));
     occurrences.push(
       helpers.reportOccurrence(set[0], {
         summary: `The ${set.length} radio buttons named "${name}" are not grouped in one fieldset or group.`,

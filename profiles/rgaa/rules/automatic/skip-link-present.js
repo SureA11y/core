@@ -82,6 +82,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
@@ -95,7 +96,7 @@ function runInPage(ctx) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -112,7 +113,7 @@ function runInPage(ctx) {
 
   function precedes(a, b) {
     try {
-      return !!(a.compareDocumentPosition(b) & FOLLOWING);
+      return !!(dom.compareDocumentPosition(a, b) & FOLLOWING);
     } catch {
       return false;
     }
@@ -130,14 +131,14 @@ function runInPage(ctx) {
       const parts = [];
       for (const refId of alb.split(/\s+/)) {
         try {
-          const ref = document.getElementById(refId);
-          if (ref) parts.push(norm(ref.textContent));
+          const ref = dom.getElementById(document, refId);
+          if (ref) parts.push(norm(dom.textContent(ref)));
         } catch {}
       }
       const joined = norm(parts.join(' '));
       if (joined) return joined;
     }
-    return norm(el.textContent) || norm(attr(el, 'title'));
+    return norm(dom.textContent(el)) || norm(attr(el, 'title'));
   }
 
   // The fragment of a link to this same page, or null.
@@ -148,7 +149,7 @@ function runInPage(ctx) {
       fragment = href.slice(1);
     } else if (href.indexOf('#') !== -1) {
       try {
-        const url = new URL(href, document.baseURI);
+        const url = new URL(href, dom.baseURI(document));
         const here = new URL(document.URL);
         url.hash = '';
         here.hash = '';
@@ -165,33 +166,37 @@ function runInPage(ctx) {
   }
 
   function resolveTarget(el, fragment) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     let target = null;
     try {
-      if (root && typeof root.getElementById === 'function') target = root.getElementById(fragment);
-      if (!target) target = document.getElementById(fragment);
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        target = dom.getElementById(root, fragment);
+      if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
       try {
-        target = document.querySelector('a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]');
+        target = dom.querySelector(
+          document,
+          'a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]'
+        );
       } catch {}
     }
     return target;
   }
 
   function isNavigation(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
 
   function isFocusable(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const tabindex = attr(el, 'tabindex');
     if (tabindex != null && /^\s*-/.test(tabindex)) return false;
     if (tabindex != null && /^\s*\d/.test(tabindex)) return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'input') return String(attr(el, 'type') || '').toLowerCase() !== 'hidden';
     if (['button', 'select', 'textarea', 'iframe', 'summary'].includes(tag)) return true;
     const ce = attr(el, 'contenteditable');
@@ -199,7 +204,7 @@ function runInPage(ctx) {
   }
 
   function scan(from, to, stopAtTo, found) {
-    const walker = document.createTreeWalker(document, 1);
+    const walker = dom.createTreeWalker(document, document, 1);
     walker.currentNode = from;
     let count = 0;
     for (let n = walker.nextNode(); n && n !== to; n = walker.nextNode()) {
@@ -207,7 +212,7 @@ function runInPage(ctx) {
         found.navigation = true;
         break;
       }
-      if (stopAtTo && n.contains(to)) continue;
+      if (stopAtTo && dom.contains(n, to)) continue;
       if (!isEligible(n)) continue;
       if (isNavigation(n)) found.navigation = true;
       else if (isFocusable(n)) found.focusable = true;
@@ -223,12 +228,12 @@ function runInPage(ctx) {
     if (target === main) return found;
     let inside = false;
     try {
-      inside = main.contains(target);
+      inside = dom.contains(main, target);
     } catch {}
     if (inside) return scan(main, target, true, found);
     let pos = 0;
     try {
-      pos = target.compareDocumentPosition(main);
+      pos = dom.compareDocumentPosition(target, main);
     } catch {}
     if (!(pos & FOLLOWING) && !(pos & CONTAINED_BY)) return null;
     return scan(target, main, true, found);
@@ -245,7 +250,7 @@ function runInPage(ctx) {
     if (!links.length && !navigations.length) {
       return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
     }
-    const target = document.body || document.documentElement;
+    const target = dom.body(document) || dom.documentElement(document);
     return {
       ruleId: rule.ruleId,
       ...helpers.resolveTieredOutcome(
@@ -278,7 +283,7 @@ function runInPage(ctx) {
   }
 
   const navBefore = navigations.filter(
-    (n) => !main.contains(n) && !n.contains(main) && precedes(n, main)
+    (n) => !dom.contains(main, n) && !dom.contains(n, main) && precedes(n, main)
   );
 
   const positional = links.length && precedes(links[0], main) ? links[0] : null;
@@ -289,7 +294,7 @@ function runInPage(ctx) {
 
   for (const el of links) {
     // A link inside the main content does not lead to it.
-    if (main.contains(el)) continue;
+    if (dom.contains(main, el)) continue;
     const fragment = sameDocumentFragment(el);
     if (fragment == null) continue;
     const target = resolveTarget(el, fragment);
@@ -323,7 +328,7 @@ function runInPage(ctx) {
     // navigation between it and the main content is another quick-access
     // link, not one to the main content.
     const inNavigation = (() => {
-      for (let p = target; p && p.nodeType === 1; p = p.parentElement) {
+      for (let p = target; p && dom.nodeType(p) === 1; p = dom.parentElement(p)) {
         if (isNavigation(p)) return true;
       }
       return false;

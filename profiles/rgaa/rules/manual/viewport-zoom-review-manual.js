@@ -59,6 +59,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function parseContent(raw) {
@@ -107,14 +108,14 @@ function runInPage(ctx) {
     return reasons;
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[name="viewport" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[name="viewport" i]')
     : [];
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('content') || '').trim();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'content') || '').trim();
     if (!raw) continue;
     const reasons = restrictions(parseContent(raw));
     if (!reasons.length) continue;

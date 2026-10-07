@@ -54,6 +54,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function hasText(v) {
@@ -61,7 +62,7 @@ function runInPage(ctx) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -71,11 +72,11 @@ function runInPage(ctx) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -83,27 +84,27 @@ function runInPage(ctx) {
   const ARIA_CELL_ROLES = ['cell', 'gridcell', 'columnheader', 'rowheader'];
 
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -120,7 +121,7 @@ function runInPage(ctx) {
       let c = 0;
       for (const cell of grid.rows[r]) {
         if (isHeader(cell)) return null;
-        if (hasText(cell.textContent)) withText = true;
+        if (hasText(dom.textContent(cell))) withText = true;
         taken[r] = taken[r] || [];
         while (taken[r][c]) c += 1;
         const colSpan = span(cell, grid.colspan);
@@ -143,9 +144,9 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
 
     const size = sizeWithoutHeaders(table);

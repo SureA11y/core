@@ -63,6 +63,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   function norm(t) {
@@ -73,7 +74,7 @@ function runInPage(ctx) {
   // { key: origin + path without a trailing slash, full: key + query }
   function urlParts(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       const path = url.pathname.replace(/\/+$/, '') || '/';
       const key = url.origin + path;
       return { key, full: key + url.search };
@@ -85,8 +86,8 @@ function runInPage(ctx) {
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(document.getElementsByTagName('title'))) {
-    if (!t.namespaceURI || t.namespaceURI === HTML_NS) {
+  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+    if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
     }
@@ -123,7 +124,7 @@ function runInPage(ctx) {
   const samePath = same.filter((p) => p.parts.key === here.key);
 
   const selector =
-    titleEl.parentElement && titleEl.parentElement.localName === 'head'
+    dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
       ? 'head > title'
       : undefined;
   function report(reasonCode, key, summary, hint, pages, uncertainty) {

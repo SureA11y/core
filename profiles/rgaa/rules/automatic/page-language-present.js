@@ -68,13 +68,14 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const XML_NS = 'http://www.w3.org/XML/1998/namespace';
   const SKIP = new Set(['script', 'style', 'template', 'noscript']);
 
-  const html = document && document.documentElement;
-  if (!html || String(html.tagName || '').toLowerCase() !== 'html') {
+  const html = document && dom.documentElement(document);
+  if (!html || String(dom.tagName(html) || '').toLowerCase() !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -86,11 +87,11 @@ function runInPage(ctx) {
   const xmlLangSuffices = isXmlDocument || doctype.kind === 'xhtml11';
 
   function languageOf(el) {
-    const hasLang = el.hasAttribute('lang');
+    const hasLang = dom.hasAttribute(el, 'lang');
     let xml = el.getAttributeNS ? el.getAttributeNS(XML_NS, 'lang') : null;
-    if (xml == null) xml = el.getAttribute('xml:lang');
+    if (xml == null) xml = dom.getAttribute(el, 'xml:lang');
     if (!hasLang && xml == null) return null;
-    const lang = String(el.getAttribute('lang') || '').trim();
+    const lang = String(dom.getAttribute(el, 'lang') || '').trim();
     const xmlLang = String(xml || '').trim();
     if (lang) return { source: 'lang', value: lang };
     if (xmlLang) return { source: 'xml:lang', value: xmlLang };
@@ -161,12 +162,12 @@ function runInPage(ctx) {
   }
 
   // Second condition: the language is given on each text or on a parent.
-  const root = document.body || html;
+  const root = dom.body(document) || html;
   const cache = new Map();
   function nearest(el) {
     const path = [];
     let found = null;
-    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = dom.parentElement(n)) {
       if (cache.has(n)) {
         found = cache.get(n);
         break;
@@ -197,14 +198,14 @@ function runInPage(ctx) {
   let anyLanguage = !!(own && own.value);
   let xmlOnly = false;
   let uncovered = null;
-  const walker = document.createTreeWalker(root, 4 /* NodeFilter.SHOW_TEXT */);
+  const walker = dom.createTreeWalker(document, root, 4);
   for (let t = walker.nextNode(); t; t = walker.nextNode()) {
     if (!/\S/.test(t.data || '')) continue;
-    const parent = t.parentElement;
+    const parent = dom.parentElement(t);
     if (!parent) continue;
     let skipped = false;
-    for (let n = parent; n; n = n.parentElement) {
-      if (SKIP.has(String(n.localName || '').toLowerCase())) {
+    for (let n = parent; n; n = dom.parentElement(n)) {
+      if (SKIP.has(String(dom.localName(n) || '').toLowerCase())) {
         skipped = true;
         break;
       }
@@ -221,14 +222,14 @@ function runInPage(ctx) {
 
   if (!anyLanguage && !uncovered) {
     // Look for a language anywhere, for the reason code only.
-    const any = document.querySelectorAll('[lang]');
+    const any = dom.querySelectorAll(document, '[lang]');
     for (const el of any) {
-      if (String(el.getAttribute('lang') || '').trim()) anyLanguage = true;
+      if (String(dom.getAttribute(el, 'lang') || '').trim()) anyLanguage = true;
     }
   }
 
   if (uncovered) {
-    const element = String(uncovered.localName || '').toLowerCase();
+    const element = String(dom.localName(uncovered) || '').toLowerCase();
     return result('fail', [
       occurrence(anyLanguage ? 'uncoveredText' : 'missingLanguage', { element })
     ]);

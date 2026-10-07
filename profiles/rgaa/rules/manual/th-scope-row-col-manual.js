@@ -53,10 +53,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -69,12 +70,12 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const scope = String(el.getAttribute('scope') || '')
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const scope = String(dom.getAttribute(el, 'scope') || '')
       .trim()
       .toLowerCase();
     if (scope !== 'rowgroup' && scope !== 'colgroup') continue;
-    const table = el.closest ? el.closest('table') : null;
+    const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
     if (table) {
       const role = firstRole(table);
       if (role === 'presentation' || role === 'none') continue;

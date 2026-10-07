@@ -57,6 +57,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const RECOMMENDED_PUBLIC_IDS = [
@@ -78,7 +79,7 @@ function runInPage(ctx) {
     '-//W3C//DTD HTML 4.01+RDFA 1.1//EN'
   ];
 
-  const doctype = document.doctype;
+  const doctype = dom.doctype(document);
   if (!doctype) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
@@ -102,7 +103,7 @@ function runInPage(ctx) {
 
   // A doctype is not an element, so the finding is reported on <html>, with
   // the declared doctype as its snippet.
-  const occurrence = helpers.reportOccurrence(document.documentElement, {
+  const occurrence = helpers.reportOccurrence(dom.documentElement(document), {
     selector: 'html',
     html: declared,
     summary: 'The page declares a doctype that is neither HTML5 nor a W3C recommended one.',

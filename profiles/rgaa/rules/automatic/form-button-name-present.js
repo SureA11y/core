@@ -61,6 +61,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function norm(s) {
@@ -70,7 +71,7 @@ function runInPage(ctx) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function inAccTree(el) {
@@ -84,14 +85,16 @@ function runInPage(ctx) {
 
   function parentOf(node) {
     if (helpers.composedParent) return helpers.composedParent(node);
-    return node.parentNode && node.parentNode.host ? node.parentNode.host : node.parentNode;
+    return dom.parentNode(node) && dom.host(dom.parentNode(node))
+      ? dom.host(dom.parentNode(node))
+      : dom.parentNode(node);
   }
 
   // The nearest <form> or role="form" ancestor, across shadow roots.
   function formAncestor(el) {
-    for (let p = parentOf(el); p && p.nodeType === 1; p = parentOf(p)) {
+    for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return p;
-      const role = norm(p.getAttribute('role')).toLowerCase().split(' ')[0];
+      const role = norm(dom.getAttribute(p, 'role')).toLowerCase().split(' ')[0];
       if (role === 'form') return p;
     }
     return null;
@@ -99,20 +102,21 @@ function runInPage(ctx) {
 
   // A form the button joins through its form attribute.
   function formByAttribute(el) {
-    const formId = el.getAttribute('form');
+    const formId = dom.getAttribute(el, 'form');
     if (!formId) return null;
-    const root = el.getRootNode ? el.getRootNode() : null;
-    const target = root && root.getElementById ? root.getElementById(formId) : null;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+    const target =
+      root && dom.get(root, 'getElementById') ? dom.getElementById(root, formId) : null;
     return target && tagOf(target) === 'form' ? target : null;
   }
 
   function inputType(el) {
-    return norm(el.getAttribute('type')).toLowerCase();
+    return norm(dom.getAttribute(el, 'type')).toLowerCase();
   }
 
   function isButton(el) {
     const tag = tagOf(el);
-    const role = norm(el.getAttribute('role')).toLowerCase().split(' ')[0];
+    const role = norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
     if (role === 'button') return true;
     if (role) return false;
     if (tag === 'button') return true;
@@ -131,11 +135,11 @@ function runInPage(ctx) {
     if (tag === 'input') {
       const type = inputType(el);
       if (type === 'image') {
-        const alt = norm(el.getAttribute('alt'));
+        const alt = norm(dom.getAttribute(el, 'alt'));
         if (alt) return { label: alt, source: 'alt' };
         return { label: '', source: '', defaulted: true };
       }
-      const value = norm(el.getAttribute('value'));
+      const value = norm(dom.getAttribute(el, 'value'));
       if (value) return { label: value, source: 'value' };
       if (type === 'submit') return { label: 'Submit', source: 'default' };
       if (type === 'reset') return { label: 'Reset', source: 'default' };
@@ -146,8 +150,8 @@ function runInPage(ctx) {
       const content = helpers.getContentNameInfo(el, ctx);
       const text = norm(content && content.present ? content.value : '');
       if (text) return { label: text, source: 'content' };
-    } else if (norm(el.textContent)) {
-      return { label: norm(el.textContent), source: 'content' };
+    } else if (norm(dom.textContent(el))) {
+      return { label: norm(dom.textContent(el)), source: 'content' };
     }
     return { label: '', source: '' };
   }
@@ -191,7 +195,7 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isButton(el)) continue;
     const inside = formAncestor(el);
     const joined = inside ? null : formByAttribute(el);

@@ -50,6 +50,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -58,9 +59,13 @@ function runInPage(ctx) {
 
   // aria-hidden="true" on the frame or on an ancestor, across shadow roots.
   function isAriaHidden(el) {
-    for (let n = el; n; n = helpers.composedParent ? helpers.composedParent(n) : n.parentNode) {
-      if (!n.getAttribute) continue;
-      const v = n.getAttribute('aria-hidden');
+    for (
+      let n = el;
+      n;
+      n = helpers.composedParent ? helpers.composedParent(n) : dom.parentNode(n)
+    ) {
+      if (!dom.get(n, 'getAttribute')) continue;
+      const v = dom.getAttribute(n, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') return true;
     }
     return false;
@@ -70,12 +75,12 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
+    if (!el || !dom.tagName(el)) continue;
     if (isAriaHidden(el)) continue;
     applicableCount += 1;
-    if (/[^ \t\n\f\r]/.test(String(el.getAttribute('title') || ''))) continue;
+    if (/[^ \t\n\f\r]/.test(String(dom.getAttribute(el, 'title') || ''))) continue;
 
-    const element = String(el.tagName).toLowerCase();
+    const element = String(dom.tagName(el)).toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This <${element}> has an empty title attribute.`,

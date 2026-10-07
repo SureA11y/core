@@ -51,10 +51,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function roleOf(el) {
-    const tokens = String((el.getAttribute && el.getAttribute('role')) || '')
+    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)
@@ -92,15 +93,15 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     if (/^h[1-6]$/.test(tag)) continue;
     if (roleOf(el) !== 'heading') continue;
     if (!isIncluded(el)) continue;
 
     applicableCount += 1;
 
-    const raw = el.getAttribute('aria-level');
+    const raw = dom.getAttribute(el, 'aria-level');
     if (raw != null && /^\s*[+-]?\d+(\.\d+)?\s*$/.test(raw)) continue;
 
     const missing = raw == null;

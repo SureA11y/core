@@ -55,6 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const videos = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
@@ -73,8 +74,8 @@ function runInPage(ctx) {
   // The language of the video's content: its nearest lang attribute.
   function videoLanguage(video) {
     try {
-      const host = video.closest ? video.closest('[lang]') : null;
-      return host ? primarySubtag(host.getAttribute('lang')) : '';
+      const host = dom.get(video, 'closest') ? dom.closest(video, '[lang]') : null;
+      return host ? primarySubtag(dom.getAttribute(host, 'lang')) : '';
     } catch {
       return '';
     }
@@ -82,15 +83,15 @@ function runInPage(ctx) {
 
   for (const video of videos) {
     if (!video) continue;
-    const tracks = Array.from(video.querySelectorAll(':scope > *'))
-      .filter((c) => String(c.tagName).toLowerCase() === 'track')
-      .filter((t) => String(t.getAttribute('src') || '').trim())
+    const tracks = Array.from(dom.querySelectorAll(video, ':scope > *'))
+      .filter((c) => String(dom.tagName(c)).toLowerCase() === 'track')
+      .filter((t) => String(dom.getAttribute(t, 'src') || '').trim())
       .map((t) => ({
         kind:
-          String(t.getAttribute('kind') || 'subtitles')
+          String(dom.getAttribute(t, 'kind') || 'subtitles')
             .trim()
             .toLowerCase() || 'subtitles',
-        srclang: primarySubtag(t.getAttribute('srclang'))
+        srclang: primarySubtag(dom.getAttribute(t, 'srclang'))
       }))
       .filter((t) => t.kind === 'subtitles' || t.kind === 'captions');
     if (!tracks.length) continue;

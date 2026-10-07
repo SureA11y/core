@@ -55,10 +55,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -72,12 +73,12 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
     if (firstRole(el) !== 'listbox') continue;
-    if (String(el.tagName).toLowerCase() === 'select') continue;
+    if (String(dom.tagName(el)).toLowerCase() === 'select') continue;
     applicableCount += 1;
 
-    const groups = Array.from(el.querySelectorAll('[role]')).filter(
+    const groups = Array.from(dom.querySelectorAll(el, '[role]')).filter(
       (d) => firstRole(d) === 'group'
     );
     if (!groups.length) continue;

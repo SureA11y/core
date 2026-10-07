@@ -49,6 +49,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const BULLETS = '•·‣◦▪▫■□●○◆◇►▸▶–—-*+✓✔→';
@@ -89,17 +90,18 @@ function runInPage(ctx) {
 
   function linesOf(el) {
     const lines = [''];
-    for (const node of Array.from(el.childNodes)) {
-      if (node.nodeType === 1 && String(node.tagName).toLowerCase() === 'br') lines.push('');
-      else lines[lines.length - 1] += ' ' + (node.textContent || '');
+    for (const node of Array.from(dom.childNodes(el))) {
+      if (dom.nodeType(node) === 1 && String(dom.tagName(node)).toLowerCase() === 'br')
+        lines.push('');
+      else lines[lines.length - 1] += ' ' + (dom.textContent(node) || '');
     }
     return lines.map(collapse).filter(Boolean);
   }
 
   function isParagraph(el) {
-    const tag = String(el.tagName).toLowerCase();
+    const tag = String(dom.tagName(el)).toLowerCase();
     if (tag === 'p') return true;
-    return tag === 'div' && !el.querySelector(BLOCKS);
+    return tag === 'div' && !dom.querySelector(el, BLOCKS);
   }
 
   const found = [];
@@ -138,10 +140,10 @@ function runInPage(ctx) {
 
   // Lines split by <br> inside one element.
   for (const el of candidates) {
-    if (!el || !el.querySelector || el.closest(SKIP)) continue;
+    if (!el || !dom.get(el, 'querySelector') || dom.closest(el, SKIP)) continue;
     if (
-      !Array.from(el.querySelectorAll(':scope > *')).some(
-        (c) => String(c.tagName).toLowerCase() === 'br'
+      !Array.from(dom.querySelectorAll(el, ':scope > *')).some(
+        (c) => String(dom.tagName(c)).toLowerCase() === 'br'
       )
     )
       continue;
@@ -153,12 +155,12 @@ function runInPage(ctx) {
   // Runs of consecutive sibling paragraphs.
   const seen = new Set();
   for (const el of candidates) {
-    if (!el || seen.has(el) || !isParagraph(el) || el.closest(SKIP)) continue;
+    if (!el || seen.has(el) || !isParagraph(el) || dom.closest(el, SKIP)) continue;
     const run = [el];
-    let next = el.nextElementSibling;
+    let next = dom.nextElementSibling(el);
     while (next && isParagraph(next)) {
       run.push(next);
-      next = next.nextElementSibling;
+      next = dom.nextElementSibling(next);
     }
     run.forEach((p) => seen.add(p));
     // Within a run, keep the longest stretch that reads as one list.
@@ -168,14 +170,14 @@ function runInPage(ctx) {
       for (let end = run.length; end >= start + MIN_ITEMS; end -= 1) {
         const slice = run.slice(start, end);
         if (slice.some((p) => reported.has(p))) continue;
-        if (listKind(slice.map((p) => collapse(p.textContent)))) {
+        if (listKind(slice.map((p) => collapse(dom.textContent(p))))) {
           best = end;
           break;
         }
       }
       if (best) {
         const slice = run.slice(start, best);
-        report(slice[0], listKind(slice.map((p) => collapse(p.textContent))), slice.length);
+        report(slice[0], listKind(slice.map((p) => collapse(dom.textContent(p)))), slice.length);
         start = best;
       } else {
         start += 1;
@@ -185,7 +187,7 @@ function runInPage(ctx) {
 
   // Both passes report in document order; merge them.
   const occurrences = found
-    .sort((a, b) => (a.el.compareDocumentPosition(b.el) & 2 ? 1 : -1))
+    .sort((a, b) => (dom.compareDocumentPosition(a.el, b.el) & 2 ? 1 : -1))
     .map((f) => f.occurrence);
 
   if (!occurrences.length) {

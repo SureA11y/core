@@ -65,6 +65,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -73,17 +74,17 @@ function runInPage(ctx) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
   const firstRole = (el) => trim(attr(el, 'role')).toLowerCase().split(' ')[0];
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -105,20 +106,20 @@ function runInPage(ctx) {
     'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
 
   function isBlank(n) {
-    return !!n && ((n.nodeType === 3 && !trim(n.nodeValue)) || n.nodeType === 8);
+    return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
   }
 
   function followingLinkOrButton(el) {
-    let node = el.nextSibling;
-    while (isBlank(node)) node = node.nextSibling;
-    while (node && node.nodeType === 1) {
+    let node = dom.nextSibling(el);
+    while (isBlank(node)) node = dom.nextSibling(node);
+    while (node && dom.nodeType(node) === 1) {
       try {
-        if (node.matches(LINK_OR_BUTTON)) return node;
+        if (dom.matches(node, LINK_OR_BUTTON)) return node;
       } catch {
         return null;
       }
-      let child = node.firstChild;
-      while (isBlank(child)) child = child.nextSibling;
+      let child = dom.firstChild(node);
+      while (isBlank(child)) child = dom.nextSibling(child);
       node = child;
     }
     return null;
@@ -135,7 +136,7 @@ function runInPage(ctx) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const type = trim(attr(el, 'type')).toLowerCase();
     if (!type.startsWith('image/')) continue;
     if (insideAriaHidden(el)) continue;

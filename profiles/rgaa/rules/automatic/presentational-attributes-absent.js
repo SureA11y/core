@@ -53,6 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -92,15 +93,15 @@ function runInPage(ctx) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
-    if (el.namespaceURI && el.namespaceURI !== HTML_NS) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== HTML_NS) continue;
 
-    const element = String(el.tagName).toLowerCase();
-    const found = ALWAYS.filter((a) => el.hasAttribute(a));
-    if (el.hasAttribute('size') && !SIZE_ALLOWED_ON.includes(element)) found.push('size');
+    const element = String(dom.tagName(el)).toLowerCase();
+    const found = ALWAYS.filter((a) => dom.hasAttribute(el, a));
+    if (dom.hasAttribute(el, 'size') && !SIZE_ALLOWED_ON.includes(element)) found.push('size');
     if (!DIMENSIONS_ALLOWED_ON.includes(element)) {
-      if (el.hasAttribute('width')) found.push('width');
-      if (el.hasAttribute('height')) found.push('height');
+      if (dom.hasAttribute(el, 'width')) found.push('width');
+      if (dom.hasAttribute(el, 'height')) found.push('height');
     }
     if (!found.length) continue;
 

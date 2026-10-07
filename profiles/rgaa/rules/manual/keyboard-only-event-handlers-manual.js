@@ -59,6 +59,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
@@ -78,13 +79,13 @@ function runInPage(ctx) {
   }
 
   function isNativeInteractive(el) {
-    const tag = String(el.localName || '').toLowerCase();
+    const tag = String(dom.localName(el) || '').toLowerCase();
     switch (tag) {
       case 'a':
       case 'area':
-        return el.hasAttribute('href');
+        return dom.hasAttribute(el, 'href');
       case 'input':
-        return trim(el.getAttribute('type')).toLowerCase() !== 'hidden';
+        return trim(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
       case 'button':
       case 'select':
       case 'textarea':
@@ -97,13 +98,13 @@ function runInPage(ctx) {
         return true;
       case 'audio':
       case 'video':
-        return el.hasAttribute('controls');
+        return dom.hasAttribute(el, 'controls');
       case 'img':
-        return el.hasAttribute('usemap');
+        return dom.hasAttribute(el, 'usemap');
       default:
         break;
     }
-    const editable = el.getAttribute('contenteditable');
+    const editable = dom.getAttribute(el, 'contenteditable');
     return editable != null && trim(editable).toLowerCase() !== 'false';
   }
 
@@ -114,13 +115,13 @@ function runInPage(ctx) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const keyAttrs = KEY_ATTRS.filter((a) => trim(el.getAttribute(a)));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const keyAttrs = KEY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
     if (!keyAttrs.length) continue;
     if (isNativeInteractive(el)) continue;
-    if (POINTER_ATTRS.some((a) => trim(el.getAttribute(a)))) continue;
+    if (POINTER_ATTRS.some((a) => trim(dom.getAttribute(el, a)))) continue;
 
-    const element = String(el.localName || el.tagName || '').toLowerCase();
+    const element = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const attrs = keyAttrs.join(', ');
     occurrences.push(
       helpers.reportOccurrence(el, {

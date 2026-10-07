@@ -51,6 +51,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MAX_LENGTH = 80;
@@ -68,7 +69,7 @@ function runInPage(ctx) {
   }
 
   function firstRole(el) {
-    return collapse(el.getAttribute('role')).toLowerCase().split(' ')[0];
+    return collapse(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
   }
 
   // Each non-empty text-alternative source, with its collapsed text.
@@ -78,9 +79,9 @@ function runInPage(ctx) {
       const text = collapse(value);
       if (text) out.push({ source, text });
     };
-    if (ALT_TAGS.includes(tag)) add('alt', el.getAttribute('alt'));
-    add('aria-label', el.getAttribute('aria-label'));
-    if (collapse(el.getAttribute('aria-labelledby')) && getAriaNameInfo) {
+    if (ALT_TAGS.includes(tag)) add('alt', dom.getAttribute(el, 'alt'));
+    add('aria-label', dom.getAttribute(el, 'aria-label'));
+    if (collapse(dom.getAttribute(el, 'aria-labelledby')) && getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(el, ctx);
         if (aria && aria.present && aria.mechanism === 'aria-labelledby') {
@@ -88,12 +89,12 @@ function runInPage(ctx) {
         }
       } catch {}
     }
-    add('title', el.getAttribute('title'));
+    add('title', dom.getAttribute(el, 'title'));
     if (tag === 'svg') {
-      const titleChild = Array.from(el.querySelectorAll(':scope > *')).find(
-        (c) => String(c.localName || c.tagName).toLowerCase() === 'title'
+      const titleChild = Array.from(dom.querySelectorAll(el, ':scope > *')).find(
+        (c) => String(dom.localName(c) || dom.tagName(c)).toLowerCase() === 'title'
       );
-      if (titleChild) add('<title>', titleChild.textContent);
+      if (titleChild) add('<title>', dom.textContent(titleChild));
     }
     return out;
   }
@@ -106,11 +107,11 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || el.tagName).toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el)).toLowerCase();
     const isImage =
       tag === 'input'
-        ? collapse(el.getAttribute('type')).toLowerCase() === 'image'
+        ? collapse(dom.getAttribute(el, 'type')).toLowerCase() === 'image'
         : IMAGE_TAGS.includes(tag) || firstRole(el) === 'img';
     if (!isImage) continue;
     const found = alternatives(el, tag);

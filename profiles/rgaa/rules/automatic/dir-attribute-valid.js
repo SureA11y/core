@@ -53,6 +53,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('[dir]') : helpers.queryAll('[dir]');
@@ -82,17 +83,17 @@ function runInPage(ctx) {
   }
 
   function ownText(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') {
-      return String(el.value || el.getAttribute('value') || '');
+      return String(el.value || dom.getAttribute(el, 'value') || '');
     }
-    return String(el.textContent || '');
+    return String(dom.textContent(el) || '');
   }
 
   function inheritedDir(el) {
-    for (let p = el.parentElement; p; p = p.parentElement) {
-      if (!p.hasAttribute || !p.hasAttribute('dir')) continue;
-      const v = String(p.getAttribute('dir')).toLowerCase();
+    for (let p = dom.parentElement(el); p; p = dom.parentElement(p)) {
+      if (!dom.get(p, 'hasAttribute') || !dom.hasAttribute(p, 'dir')) continue;
+      const v = String(dom.getAttribute(p, 'dir')).toLowerCase();
       if (v === 'ltr' || v === 'rtl') return v;
       if (v === 'auto') return firstStrong(ownText(p)) || 'ltr';
     }
@@ -100,8 +101,8 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    const raw = String(el.getAttribute('dir'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const raw = String(dom.getAttribute(el, 'dir'));
     const value = raw.toLowerCase();
 
     const isAuto = value === 'auto';

@@ -66,6 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const doctypeKind = helpers.getDoctypeInfo ? helpers.getDoctypeInfo().kind : 'html5';
@@ -76,7 +77,7 @@ function runInPage(ctx) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -86,11 +87,11 @@ function runInPage(ctx) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -98,27 +99,27 @@ function runInPage(ctx) {
   const ARIA_CELL_ROLES = ['cell', 'gridcell', 'columnheader', 'rowheader'];
 
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -145,12 +146,12 @@ function runInPage(ctx) {
         if (isHeader(cell)) {
           if (r > 0 && c > 0) complex = true;
           placed.push({ r, c, cols, rows: rowsSpanned });
-          const scope = String(cell.getAttribute('scope') || '')
+          const scope = String(dom.getAttribute(cell, 'scope') || '')
             .trim()
             .toLowerCase();
           if (scope === 'rowgroup' || scope === 'colgroup') complex = true;
         }
-        if (hasText(cell.getAttribute('headers'))) complex = true;
+        if (hasText(dom.getAttribute(cell, 'headers'))) complex = true;
         c += cols;
       }
     });
@@ -164,13 +165,13 @@ function runInPage(ctx) {
   // aria-describedby counts when one of its ids names an element with text,
   // in the table's own tree (document or shadow root).
   function describedByText(table) {
-    const raw = String(table.getAttribute('aria-describedby') || '').trim();
+    const raw = String(dom.getAttribute(table, 'aria-describedby') || '').trim();
     if (!raw) return false;
-    const rootNode = table.getRootNode ? table.getRootNode() : document;
-    const scope = rootNode && rootNode.getElementById ? rootNode : document;
+    const rootNode = dom.get(table, 'getRootNode') ? dom.getRootNode(table) : document;
+    const scope = rootNode && dom.get(rootNode, 'getElementById') ? rootNode : document;
     return raw.split(/\s+/).some((ref) => {
-      const target = scope.getElementById(ref);
-      return !!target && hasText(target.textContent);
+      const target = dom.getElementById(scope, ref);
+      return !!target && hasText(dom.textContent(target));
     });
   }
 
@@ -181,16 +182,18 @@ function runInPage(ctx) {
   const occurrences = [];
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     if (!isComplex(table)) continue;
 
     const sources = [];
-    if (isNative && table.caption && hasText(table.caption.textContent)) sources.push('caption');
+    if (isNative && table.caption && hasText(dom.textContent(table.caption)))
+      sources.push('caption');
     if (describedByText(table)) sources.push('aria-describedby');
-    if (isNative && !isHtml5 && hasText(table.getAttribute('summary'))) sources.push('summary');
+    if (isNative && !isHtml5 && hasText(dom.getAttribute(table, 'summary')))
+      sources.push('summary');
     if (!sources.length) continue;
 
     occurrences.push(

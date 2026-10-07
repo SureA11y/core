@@ -59,6 +59,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -67,17 +68,19 @@ function runInPage(ctx) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
 
   function hasCaption(el) {
-    const figure = el.closest ? el.closest('figure') : null;
+    const figure = dom.get(el, 'closest') ? dom.closest(el, 'figure') : null;
     if (!figure) return false;
-    return Array.from(figure.querySelectorAll(':scope > *')).some((c) => tagOf(c) === 'figcaption');
+    return Array.from(dom.querySelectorAll(figure, ':scope > *')).some(
+      (c) => tagOf(c) === 'figcaption'
+    );
   }
 
   // The alternatives 1.2.5 forbids, on the canvas and its children.
@@ -86,12 +89,12 @@ function runInPage(ctx) {
     for (const name of ['aria-labelledby', 'aria-label', 'title']) {
       if (trim(attr(el, name))) found.push(name);
     }
-    const children = Array.from(el.querySelectorAll('*'));
+    const children = Array.from(dom.querySelectorAll(el, '*'));
     const childAlt = children.some((c) =>
       ['alt', 'aria-label', 'aria-labelledby', 'title'].some((n) => trim(attr(c, n)))
     );
     if (childAlt) found.push('childAlternative');
-    if (trim(el.textContent)) found.push('fallbackContent');
+    if (trim(dom.textContent(el))) found.push('fallbackContent');
     return found;
   }
 
@@ -112,7 +115,7 @@ function runInPage(ctx) {
   const VF = { targetSet: 'dom', accEligible: null, reasons: [] };
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const ariaHidden = trim(attr(el, 'aria-hidden')).toLowerCase() === 'true';
     const role = trim(attr(el, 'role')).toLowerCase().split(' ')[0];
     const presentational = role === 'none' || role === 'presentation';

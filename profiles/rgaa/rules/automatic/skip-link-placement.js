@@ -87,12 +87,13 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
   const CONTAINED_BY = 16; // Node.DOCUMENT_POSITION_CONTAINED_BY
   const MAX_SHIFT = 24; // CSS pixels between two pages before the place differs
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
 
   function norm(s) {
     return String(s == null ? '' : s)
@@ -102,7 +103,7 @@ function runInPage(ctx) {
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -120,7 +121,7 @@ function runInPage(ctx) {
   function linkName(el) {
     const al = norm(attr(el, 'aria-label'));
     if (al) return al;
-    return norm(el.textContent) || norm(attr(el, 'title'));
+    return norm(dom.textContent(el)) || norm(attr(el, 'title'));
   }
 
   // ---- The skip link, found as skip-link-present finds one ----
@@ -132,7 +133,7 @@ function runInPage(ctx) {
       fragment = href.slice(1);
     } else if (href.indexOf('#') !== -1) {
       try {
-        const url = new URL(href, document.baseURI);
+        const url = new URL(href, dom.baseURI(document));
         const here = new URL(document.URL);
         url.hash = '';
         here.hash = '';
@@ -149,33 +150,37 @@ function runInPage(ctx) {
   }
 
   function resolveTarget(el, fragment) {
-    const root = el.getRootNode ? el.getRootNode() : document;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     let target = null;
     try {
-      if (root && typeof root.getElementById === 'function') target = root.getElementById(fragment);
-      if (!target) target = document.getElementById(fragment);
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        target = dom.getElementById(root, fragment);
+      if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
       try {
-        target = document.querySelector('a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]');
+        target = dom.querySelector(
+          document,
+          'a[name="' + fragment.replace(/(["\\])/g, '\\$1') + '"]'
+        );
       } catch {}
     }
     return target;
   }
 
   function isNavigation(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
 
   function isFocusable(el) {
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     const tabindex = attr(el, 'tabindex');
     if (tabindex != null && /^\s*-/.test(tabindex)) return false;
     if (tabindex != null && /^\s*\d/.test(tabindex)) return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'input') return String(attr(el, 'type') || '').toLowerCase() !== 'hidden';
     if (['button', 'select', 'textarea', 'iframe', 'summary'].includes(tag)) return true;
     const ce = attr(el, 'contenteditable');
@@ -183,7 +188,7 @@ function runInPage(ctx) {
   }
 
   function scan(from, to, found) {
-    const walker = document.createTreeWalker(document, 1);
+    const walker = dom.createTreeWalker(document, document, 1);
     walker.currentNode = from;
     let count = 0;
     for (let n = walker.nextNode(); n && n !== to; n = walker.nextNode()) {
@@ -191,7 +196,7 @@ function runInPage(ctx) {
         found.navigation = true;
         break;
       }
-      if (n.contains(to)) continue;
+      if (dom.contains(n, to)) continue;
       if (!isEligible(n)) continue;
       if (isNavigation(n)) found.navigation = true;
       else if (isFocusable(n)) found.focusable = true;
@@ -204,12 +209,12 @@ function runInPage(ctx) {
     if (target === main) return found;
     let inside = false;
     try {
-      inside = main.contains(target);
+      inside = dom.contains(main, target);
     } catch {}
     if (inside) return scan(main, target, found);
     let pos = 0;
     try {
-      pos = target.compareDocumentPosition(main);
+      pos = dom.compareDocumentPosition(target, main);
     } catch {}
     if (!(pos & FOLLOWING) && !(pos & CONTAINED_BY)) return null;
     return scan(target, main, found);
@@ -221,7 +226,7 @@ function runInPage(ctx) {
   let skipLink = null;
   if (main) {
     for (const el of query('a[href]')) {
-      if (main.contains(el)) continue;
+      if (dom.contains(main, el)) continue;
       const fragment = sameDocumentFragment(el);
       if (fragment == null) continue;
       const target = resolveTarget(el, fragment);
@@ -236,7 +241,7 @@ function runInPage(ctx) {
 
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -287,10 +292,10 @@ function runInPage(ctx) {
   // ---- Visibility, where the page has a layout ----
 
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -308,7 +313,7 @@ function runInPage(ctx) {
   // 'visible', 'hidden' (certainly not visible) or 'unknown' (something may
   // cover it), with its rect in page coordinates.
   function visibility(el) {
-    const r = el.getBoundingClientRect();
+    const r = dom.getBoundingClientRect(el);
     const sx = view.scrollX || 0;
     const sy = view.scrollY || 0;
     const rect = {
@@ -325,7 +330,7 @@ function runInPage(ctx) {
     // Outside the page: left of or above its origin.
     if (r.right + sx <= 0 || r.bottom + sy <= 0) return { state: 'hidden', rect };
     let visible = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = dom.parentElement(n)) {
       const s = styleOf(n);
       if (!s) continue;
       if (parseFloat(s.opacity) === 0) return { state: 'hidden', rect };
@@ -336,7 +341,7 @@ function runInPage(ctx) {
       const clipPath = String(s.clipPath || '');
       if (/inset\(\s*50%/.test(clipPath)) return { state: 'hidden', rect };
       if (n !== el && (s.overflowX !== 'visible' || s.overflowY !== 'visible')) {
-        const b = n.getBoundingClientRect();
+        const b = dom.getBoundingClientRect(n);
         visible = {
           left: Math.max(visible.left, s.overflowX !== 'visible' ? b.left : -Infinity),
           top: Math.max(visible.top, s.overflowY !== 'visible' ? b.top : -Infinity),
@@ -353,8 +358,8 @@ function runInPage(ctx) {
     const cy = (visible.top + visible.bottom) / 2;
     if (cx >= 0 && cy >= 0 && cx < view.innerWidth && cy < view.innerHeight) {
       try {
-        const top = document.elementFromPoint(cx, cy);
-        if (top && top !== el && !el.contains(top) && !top.contains(el)) {
+        const top = dom.elementFromPoint(document, cx, cy);
+        if (top && top !== el && !dom.contains(el, top) && !dom.contains(top, el)) {
           return { state: 'unknown', rect };
         }
       } catch {}
@@ -363,10 +368,10 @@ function runInPage(ctx) {
   }
 
   function deepActiveElement() {
-    let cur = document.activeElement || null;
+    let cur = dom.activeElement(document) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
@@ -374,13 +379,13 @@ function runInPage(ctx) {
   // The link focused as by the keyboard, transitions off, then put back.
   function visibilityOnFocus(el) {
     const previous = deepActiveElement();
-    const hadStyle = el.hasAttribute('style');
-    const styleAttr = el.getAttribute('style');
+    const hadStyle = dom.hasAttribute(el, 'style');
+    const styleAttr = dom.getAttribute(el, 'style');
     try {
       el.style.setProperty('transition', 'none', 'important');
-      el.focus({ preventScroll: true, focusVisible: true });
+      dom.focus(el, { preventScroll: true, focusVisible: true });
       if (deepActiveElement() !== el) return null;
-      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+      if (typeof dom.get(el, 'getAnimations') === 'function' && dom.getAnimations(el).length) {
         return { state: 'unknown', rect: null, animated: true };
       }
       return visibility(el);
@@ -388,17 +393,21 @@ function runInPage(ctx) {
       return null;
     } finally {
       try {
-        if (previous && previous !== document.body && typeof previous.focus === 'function') {
-          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        if (
+          previous &&
+          previous !== dom.body(document) &&
+          typeof dom.get(previous, 'focus') === 'function'
+        ) {
+          if (deepActiveElement() !== previous) dom.focus(previous, { preventScroll: true });
         } else if (deepActiveElement() === el) {
-          el.blur();
+          dom.blur(el);
         }
       } catch {}
       // Reading the attribute first makes Chromium write the inline style
       // back to it; removed before that, it comes back as style="".
-      el.getAttribute('style');
-      if (hadStyle) el.setAttribute('style', styleAttr);
-      else el.removeAttribute('style');
+      dom.getAttribute(el, 'style');
+      if (hadStyle) dom.setAttribute(el, 'style', styleAttr);
+      else dom.removeAttribute(el, 'style');
     }
   }
 

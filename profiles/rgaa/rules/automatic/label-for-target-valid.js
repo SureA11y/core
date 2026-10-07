@@ -55,6 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, window, helpers, rule } = ctx;
 
   const LABELABLE = ['button', 'meter', 'output', 'progress', 'select', 'textarea'];
@@ -74,7 +75,7 @@ function runInPage(ctx) {
   ];
 
   function hasFieldRole(el) {
-    const role = String(el.getAttribute('role') || '')
+    const role = String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -82,9 +83,10 @@ function runInPage(ctx) {
   }
 
   function isLabelable(el) {
-    const tag = String(el.tagName || '').toLowerCase();
+    const tag = String(dom.tagName(el) || '').toLowerCase();
     if (LABELABLE.includes(tag)) return true;
-    if (tag === 'input') return String(el.getAttribute('type') || '').toLowerCase() !== 'hidden';
+    if (tag === 'input')
+      return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
     if (tag.includes('-')) {
       try {
         const definition = window && window.customElements && window.customElements.get(tag);
@@ -99,12 +101,12 @@ function runInPage(ctx) {
   function targetOf(label, value) {
     let root = document;
     try {
-      const r = label.getRootNode();
-      if (r && typeof r.getElementById === 'function') root = r;
+      const r = dom.getRootNode(label);
+      if (r && typeof dom.get(r, 'getElementById') === 'function') root = r;
     } catch {
       // keep the document
     }
-    return root.getElementById(value);
+    return dom.getElementById(root, value);
   }
 
   const nodes = helpers.queryAllSmart
@@ -115,10 +117,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const label of nodes) {
-    if (!label || !label.getAttribute) continue;
+    if (!label || !dom.get(label, 'getAttribute')) continue;
     applicableCount += 1;
 
-    const value = String(label.getAttribute('for'));
+    const value = String(dom.getAttribute(label, 'for'));
     let reasonCode = null;
     let target = null;
     if (!value) {
@@ -130,7 +132,7 @@ function runInPage(ctx) {
     }
     if (!reasonCode) continue;
 
-    const element = target ? String(target.tagName).toLowerCase() : '';
+    const element = target ? String(dom.tagName(target)).toLowerCase() : '';
     const summaries = {
       emptyFor: {
         text: 'This label has an empty for attribute, so it labels no field.',

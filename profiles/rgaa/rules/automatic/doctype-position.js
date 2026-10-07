@@ -59,9 +59,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  if (document.doctype) {
+  if (dom.doctype(document)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
@@ -75,7 +76,7 @@ function runInPage(ctx) {
       : null;
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -111,7 +112,7 @@ function runInPage(ctx) {
 
   function report(reasonCode) {
     const msg = MESSAGES[reasonCode];
-    const occ = helpers.reportOccurrence(document.documentElement, {
+    const occ = helpers.reportOccurrence(dom.documentElement(document), {
       selector: 'html',
       html: '<html>',
       summary: msg.summary,

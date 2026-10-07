@@ -41,6 +41,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const nodes = helpers.queryAllSmart
@@ -51,10 +52,10 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     applicableCount += 1;
 
-    if (el.hasAttribute('label')) continue;
+    if (dom.hasAttribute(el, 'label')) continue;
 
     occurrences.push(
       helpers.reportOccurrence(el, {

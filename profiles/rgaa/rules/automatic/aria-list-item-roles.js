@@ -57,10 +57,11 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -74,13 +75,13 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute || !el.tagName) continue;
+    if (!el || !dom.get(el, 'getAttribute') || !dom.tagName(el)) continue;
     if (firstRole(el) !== 'list') continue;
-    const tag = String(el.tagName).toLowerCase();
+    const tag = String(dom.tagName(el)).toLowerCase();
     if (tag === 'ul' || tag === 'ol') continue;
 
-    const items = Array.from(el.querySelectorAll(':scope > *')).filter((c) => {
-      const t = String(c.tagName).toLowerCase();
+    const items = Array.from(dom.querySelectorAll(el, ':scope > *')).filter((c) => {
+      const t = String(dom.tagName(c)).toLowerCase();
       return t !== 'script' && t !== 'template';
     });
     if (!items.length) continue;
@@ -90,7 +91,7 @@ function runInPage(ctx) {
     if (!others.length) continue;
 
     const liOnly = others.every(
-      (c) => String(c.tagName).toLowerCase() === 'li' && !c.hasAttribute('role')
+      (c) => String(dom.tagName(c)).toLowerCase() === 'li' && !dom.hasAttribute(c, 'role')
     );
     const reasonCode = liOnly ? 'liWithoutListitemRole' : 'childWithoutListitemRole';
 

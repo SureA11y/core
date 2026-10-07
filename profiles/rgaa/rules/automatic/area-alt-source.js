@@ -52,8 +52,9 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
-  const doc = document || (root && root.ownerDocument) || null;
+  const doc = document || (root && dom.ownerDocument(root)) || null;
 
   const trim = (v) =>
     String(v == null ? '' : v)
@@ -61,7 +62,7 @@ function runInPage(ctx) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -69,7 +70,7 @@ function runInPage(ctx) {
 
   const usedMaps = new Map();
   try {
-    for (const img of Array.from(doc ? doc.querySelectorAll('img[usemap]') : [])) {
+    for (const img of Array.from(doc ? dom.querySelectorAll(doc, 'img[usemap]') : [])) {
       const raw = trim(attr(img, 'usemap'));
       const name = (raw[0] === '#' ? raw.slice(1) : raw).toLowerCase();
       if (name && !usedMaps.has(name)) usedMaps.set(name, img);
@@ -77,7 +78,7 @@ function runInPage(ctx) {
   } catch {}
 
   function referencingImg(area) {
-    const map = area.closest ? area.closest('map') : null;
+    const map = dom.get(area, 'closest') ? dom.closest(area, 'map') : null;
     if (!map) return null;
     const name = trim(attr(map, 'name') || attr(map, 'id')).toLowerCase();
     return name ? usedMaps.get(name) || null : null;
@@ -115,7 +116,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of areas) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!trim(attr(el, 'href'))) continue;
     if (trim(attr(el, 'aria-hidden')).toLowerCase() === 'true') continue;
     const img = referencingImg(el);

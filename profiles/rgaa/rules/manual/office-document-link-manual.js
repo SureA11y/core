@@ -56,6 +56,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const EXTENSIONS =
@@ -127,9 +128,10 @@ function runInPage(ctx) {
     : helpers.queryAll('a[href], area[href]');
 
   for (const link of links) {
-    if (!link || !link.getAttribute) continue;
+    if (!link || !dom.get(link, 'getAttribute')) continue;
     const extension =
-      extensionOfName(link.getAttribute('download')) || extensionOfUrl(link.getAttribute('href'));
+      extensionOfName(dom.getAttribute(link, 'download')) ||
+      extensionOfUrl(dom.getAttribute(link, 'href'));
     if (extension) flag(link, extension, 'link');
   }
 
@@ -139,18 +141,20 @@ function runInPage(ctx) {
     : helpers.queryAll('form[action], ' + SUBMITTERS);
 
   for (const el of forms) {
-    if (!el || !el.getAttribute) continue;
-    const tag = String(el.localName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (tag !== 'form') {
       // formaction only applies to a submit button.
-      const type = String(el.getAttribute('type') || '')
+      const type = String(dom.getAttribute(el, 'type') || '')
         .trim()
         .toLowerCase();
       const isSubmit =
         tag === 'button' ? type === '' || type === 'submit' : type === 'submit' || type === 'image';
       if (!isSubmit) continue;
     }
-    const extension = extensionOfUrl(el.getAttribute(tag === 'form' ? 'action' : 'formaction'));
+    const extension = extensionOfUrl(
+      dom.getAttribute(el, tag === 'form' ? 'action' : 'formaction')
+    );
     if (extension) flag(el, extension, 'form');
   }
 

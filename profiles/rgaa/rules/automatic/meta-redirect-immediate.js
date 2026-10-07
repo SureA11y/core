@@ -60,6 +60,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // HTML's shared declarative refresh steps. Returns { delay, url } for a
@@ -95,21 +96,21 @@ function runInPage(ctx) {
   function isOwnAddress(url) {
     if (!url) return true;
     try {
-      return new URL(url, document.baseURI).href === new URL(document.URL).href;
+      return new URL(url, dom.baseURI(document)).href === new URL(document.URL).href;
     } catch {
       return false;
     }
   }
 
-  const nodes = document.querySelectorAll
-    ? document.querySelectorAll('meta[http-equiv="refresh" i]')
+  const nodes = dom.get(document, 'querySelectorAll')
+    ? dom.querySelectorAll(document, 'meta[http-equiv="refresh" i]')
     : [];
 
   let first = null;
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
-    if (el.closest && el.closest('noscript')) continue;
-    const parsed = parseRefresh(el.getAttribute('content'));
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue;
+    const parsed = parseRefresh(dom.getAttribute(el, 'content'));
     if (!parsed) continue;
     first = { el, delay: parsed.delay, url: parsed.url };
     break;

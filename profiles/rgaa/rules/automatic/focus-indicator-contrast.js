@@ -97,6 +97,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule, engineOptions } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -216,7 +217,7 @@ function runInPage(ctx) {
     if (!t) return false;
     if (t === 'currentcolor' || t === 'transparent') return true;
     try {
-      if (!colorProbe) colorProbe = document.createElement('span').style;
+      if (!colorProbe) colorProbe = dom.createElement(document, 'span').style;
       colorProbe.color = '';
       colorProbe.color = t;
       return !!colorProbe.color;
@@ -409,20 +410,30 @@ function runInPage(ctx) {
   }
   function matchesSafe(el, selector) {
     try {
-      return !!(el && typeof el.matches === 'function' && selector && el.matches(selector));
+      return !!(
+        el &&
+        typeof dom.get(el, 'matches') === 'function' &&
+        selector &&
+        dom.matches(el, selector)
+      );
     } catch {
       return false;
     }
   }
   function closestSafe(el, selector) {
     try {
-      return !!(el && typeof el.closest === 'function' && selector && el.closest(selector));
+      return !!(
+        el &&
+        typeof dom.get(el, 'closest') === 'function' &&
+        selector &&
+        dom.closest(el, selector)
+      );
     } catch {
       return false;
     }
   }
 
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   const CSS_SUPPORTS_RULE = 12;
 
   // 'yes', 'no', or 'unknown' when the condition cannot be evaluated here
@@ -438,7 +449,7 @@ function runInPage(ctx) {
       if (!text || text === 'all' || text === 'screen') return 'yes';
       if (!view || typeof view.matchMedia !== 'function') return 'unknown';
       try {
-        return view.matchMedia(text).matches ? 'yes' : 'no';
+        return dom.get(view.matchMedia(text), 'matches') ? 'yes' : 'no';
       } catch {
         return 'unknown';
       }
@@ -541,7 +552,7 @@ function runInPage(ctx) {
   }
 
   try {
-    for (const sheet of document.styleSheets || []) {
+    for (const sheet of dom.styleSheets(document) || []) {
       const applies = sheet ? conditionApplies(sheet, true) : 'yes';
       if (applies === 'no') continue;
       let rules;
@@ -580,7 +591,7 @@ function runInPage(ctx) {
       }
       if (cmp > 0 || (cmp === 0 && cand.d.order > best.d.order)) best = cand;
     }
-    return best ? { value: best.value, fromFocus: best.d.focus } : null;
+    return best ? { value: best.value, fromFocus: dom.get(best.d, 'focus') } : null;
   }
 
   function inlineDecl(el) {
@@ -608,15 +619,15 @@ function runInPage(ctx) {
   }
 
   function parentOf(el) {
-    return helpers.composedParent ? helpers.composedParent(el) : el.parentElement;
+    return helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el);
   }
 
   // The color of the background painted at `el` (its own and what shows
   // through), or null when an image or gradient, or a translucent root in
   // strict mode, makes it unknown.
   function backgroundAt(el) {
-    if (!el || el.nodeType !== 1) return null;
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       const cs = computedStyleOf(n);
       if (cs && helpers.contrast.hasBackgroundImageOrGradient(cs)) return null;
       const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
@@ -784,10 +795,10 @@ function runInPage(ctx) {
     else if (shadow && shadow.fromFocus) {
       for (const layer of parseShadows(shadow.value)) {
         if (layer.color === 'transparent') continue;
-        if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
-        if (layer.spread < 0 && !layer.blur) continue;
+        if (!layer.spread && !dom.get(layer, 'blur') && !layer.x && !layer.y) continue;
+        if (layer.spread < 0 && !dom.get(layer, 'blur')) continue;
         const rgba = toRgba(layer.color, currentColor);
-        const blurred = layer.blur > 0 && layer.spread <= 0;
+        const blurred = dom.get(layer, 'blur') > 0 && layer.spread <= 0;
         if (layer.inset) add('box-shadow (inset)', rgba, inner, [inner], blurred);
         else add('box-shadow', rgba, outer, [outer, inner], blurred);
       }
@@ -797,10 +808,10 @@ function runInPage(ctx) {
     // that styles a pseudo-element or another element, or an inline focus
     // handler that may paint one from script.
     const otherStyle =
-      own.some((d) => d.focus && d.other) ||
+      own.some((d) => dom.get(d, 'focus') && d.other) ||
       indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
-      el.hasAttribute('onfocus') ||
-      el.hasAttribute('onfocusin');
+      dom.hasAttribute(el, 'onfocus') ||
+      dom.hasAttribute(el, 'onfocusin');
 
     return decide(indicators, unmeasured, unsettled, otherStyle);
   }
@@ -860,11 +871,11 @@ function runInPage(ctx) {
   // from what is painted there. jsdom has no layout and keeps the stylesheet
   // reading above.
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof document.elementsFromPoint !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(document, 'elementsFromPoint') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -923,10 +934,10 @@ function runInPage(ctx) {
   }
 
   function deepActiveElement() {
-    let cur = document.activeElement || null;
+    let cur = dom.activeElement(document) || null;
     let guard = 0;
-    while (cur && cur.shadowRoot && cur.shadowRoot.activeElement && guard++ < 20) {
-      cur = cur.shadowRoot.activeElement;
+    while (cur && dom.shadowRoot(cur) && dom.activeElement(dom.shadowRoot(cur)) && guard++ < 20) {
+      cur = dom.activeElement(dom.shadowRoot(cur));
     }
     return cur;
   }
@@ -937,30 +948,34 @@ function runInPage(ctx) {
   // could not be focused.
   function whileFocused(el, fn) {
     const previous = deepActiveElement();
-    const hadStyle = el.hasAttribute('style');
-    const styleAttr = el.getAttribute('style');
+    const hadStyle = dom.hasAttribute(el, 'style');
+    const styleAttr = dom.getAttribute(el, 'style');
     try {
       el.style.setProperty('transition', 'none', 'important');
-      if (previous === el) el.blur();
+      if (previous === el) dom.blur(el);
       const before = snapshot(el);
-      el.focus({ preventScroll: true, focusVisible: true });
+      dom.focus(el, { preventScroll: true, focusVisible: true });
       if (deepActiveElement() !== el) return undefined;
       return fn(before, snapshot(el));
     } catch {
       return undefined;
     } finally {
       try {
-        if (previous && previous !== document.body && typeof previous.focus === 'function') {
-          if (deepActiveElement() !== previous) previous.focus({ preventScroll: true });
+        if (
+          previous &&
+          previous !== dom.body(document) &&
+          typeof dom.get(previous, 'focus') === 'function'
+        ) {
+          if (deepActiveElement() !== previous) dom.focus(previous, { preventScroll: true });
         } else if (deepActiveElement() === el) {
-          el.blur();
+          dom.blur(el);
         }
       } catch {}
       // Reading the attribute first makes Chromium write the inline style
       // back to it; removed before that, it comes back as style="".
-      el.getAttribute('style');
-      if (hadStyle) el.setAttribute('style', styleAttr);
-      else el.removeAttribute('style');
+      dom.getAttribute(el, 'style');
+      if (hadStyle) dom.setAttribute(el, 'style', styleAttr);
+      else dom.removeAttribute(el, 'style');
     }
   }
 
@@ -978,23 +993,23 @@ function runInPage(ctx) {
     if (!(x >= 0 && y >= 0 && x < w && y < h)) return undefined;
     let stack;
     try {
-      stack = document.elementsFromPoint(x, y) || [];
+      stack = dom.elementsFromPoint(document, x, y) || [];
     } catch {
       return undefined;
     }
-    const top = stack.find((n) => n !== el && !el.contains(n));
-    return top && top !== document.documentElement ? backgroundAt(top) : canvasColor();
+    const top = stack.find((n) => n !== el && !dom.contains(el, n));
+    return top && top !== dom.documentElement(document) ? backgroundAt(top) : canvasColor();
   }
 
   // The canvas: the root's background, or the body's when the root has none,
   // which is what the browser paints there.
   function canvasColor() {
-    const root = document.documentElement;
+    const root = dom.documentElement(document);
     const cs = root ? computedStyleOf(root) : null;
     const bg = helpers.contrast.parseCssColorToRgba(cs && cs.backgroundColor);
     const rootPainted =
       (bg && bg.a > 0) || (cs && helpers.contrast.hasBackgroundImageOrGradient(cs));
-    return backgroundAt(!rootPainted && document.body ? document.body : root);
+    return backgroundAt(!rootPainted && dom.body(document) ? dom.body(document) : root);
   }
 
   // The colors next to the element on the given sides, `dist` pixels
@@ -1067,7 +1082,7 @@ function runInPage(ctx) {
         return c && c.a > 0 ? c : null;
       };
 
-      if (typeof el.getAnimations === 'function' && el.getAnimations().length) {
+      if (typeof dom.get(el, 'getAnimations') === 'function' && dom.getAnimations(el).length) {
         return {
           verdict: 'cantTell',
           reasonCode: 'notComputable',
@@ -1075,7 +1090,7 @@ function runInPage(ctx) {
         };
       }
 
-      const rect = el.getBoundingClientRect();
+      const rect = dom.getBoundingClientRect(el);
       const inner = focusedBackground(el, rect);
       const indicators = [];
       let unmeasured = null;
@@ -1114,15 +1129,15 @@ function runInPage(ctx) {
         for (const layer of parseShadows(after['box-shadow'])) {
           const color = visibleColor(layer.color);
           if (!color) continue;
-          if (!layer.spread && !layer.blur && !layer.x && !layer.y) continue;
-          if (layer.spread < 0 && !layer.blur) continue;
-          const blurred = layer.blur > 0 && layer.spread <= 0;
+          if (!layer.spread && !dom.get(layer, 'blur') && !layer.x && !layer.y) continue;
+          if (layer.spread < 0 && !dom.get(layer, 'blur')) continue;
+          const blurred = dom.get(layer, 'blur') > 0 && layer.spread <= 0;
           if (layer.inset) {
             const m = inner ? measure(color, inner, [inner]) : null;
             if (m) indicators.push({ property: 'box-shadow (inset)', m, blurred });
             else if (!unmeasured) unmeasured = 'background';
           } else {
-            const dist = Math.max(1, Math.max(layer.spread, layer.blur) / 2);
+            const dist = Math.max(1, Math.max(layer.spread, dom.get(layer, 'blur')) / 2);
             add('box-shadow', color, colorsAround(el, rect, dist, SIDES), false, blurred);
           }
         }
@@ -1132,8 +1147,8 @@ function runInPage(ctx) {
         changed(RENDERED_OTHER) ||
         changed(['::before', '::after']) ||
         indirect.some((p) => (p.subject ? matchesSafe(el, p.base) : closestSafe(el, p.base))) ||
-        el.hasAttribute('onfocus') ||
-        el.hasAttribute('onfocusin');
+        dom.hasAttribute(el, 'onfocus') ||
+        dom.hasAttribute(el, 'onfocusin');
 
       return decide(indicators, unmeasured, false, otherStyle);
     });
@@ -1177,7 +1192,7 @@ function runInPage(ctx) {
   let judgedCount = 0;
 
   for (const el of candidates) {
-    if (!el || el.nodeType !== 1) continue;
+    if (!el || dom.nodeType(el) !== 1) continue;
     if (!isTabbable(el) || !isRendered(el)) continue;
     let res;
     try {

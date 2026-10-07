@@ -48,6 +48,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const collapse = (s) =>
@@ -63,22 +64,22 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const figure of figures) {
-    if (!figure || !figure.getAttribute) continue;
-    const caption = Array.from(figure.querySelectorAll(':scope > *')).find(
-      (c) => String(c.tagName).toLowerCase() === 'figcaption'
+    if (!figure || !dom.get(figure, 'getAttribute')) continue;
+    const caption = Array.from(dom.querySelectorAll(figure, ':scope > *')).find(
+      (c) => String(dom.tagName(c)).toLowerCase() === 'figcaption'
     );
-    const captionText = caption ? collapse(caption.textContent) : '';
+    const captionText = caption ? collapse(dom.textContent(caption)) : '';
     const image = Array.from(
-      figure.querySelectorAll('img, input[type="image" i], [role="img"]')
-    ).find((el) => el.closest('figure') === figure);
+      dom.querySelectorAll(figure, 'img, input[type="image" i], [role="img"]')
+    ).find((el) => dom.closest(el, 'figure') === figure);
     if (!captionText || !image) continue;
     applicableCount += 1;
 
-    const role = String(figure.getAttribute('role') || '')
+    const role = String(dom.getAttribute(figure, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
-    const label = collapse(figure.getAttribute('aria-label'));
+    const label = collapse(dom.getAttribute(figure, 'aria-label'));
 
     const reasons = [];
     if (role !== 'figure' && role !== 'group') reasons.push('missingRole');

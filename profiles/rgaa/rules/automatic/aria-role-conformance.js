@@ -90,6 +90,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -257,12 +258,12 @@ function runInPage(ctx) {
   const ASCII_WS = /[\t\n\f\r ]+/;
 
   function localName(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -275,8 +276,8 @@ function runInPage(ctx) {
   }
 
   function parentEl(el) {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   function firstRole(el) {
@@ -288,7 +289,7 @@ function runInPage(ctx) {
 
   function nearestTable(el) {
     for (let n = parentEl(el); n; n = parentEl(n)) {
-      if (localName(n) === 'table' && (n.namespaceURI || HTML_NS) === HTML_NS) return n;
+      if (localName(n) === 'table' && (dom.namespaceURI(n) || HTML_NS) === HTML_NS) return n;
     }
     return null;
   }
@@ -296,14 +297,14 @@ function runInPage(ctx) {
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.querySelectorAll(':scope > *')) {
+    for (const c of dom.querySelectorAll(p, ':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
   }
 
   function selectIsListbox(el) {
-    if (el.hasAttribute('multiple')) return true;
+    if (dom.hasAttribute(el, 'multiple')) return true;
     const size = attr(el, 'size');
     if (size == null) return false;
     const n = /^\s*(\d+)/.exec(size);
@@ -327,7 +328,7 @@ function runInPage(ctx) {
       const p = parentEl(el);
       if (!p) return null;
       const pn = localName(p);
-      if ((pn === 'ul' || pn === 'ol' || pn === 'menu') && !p.hasAttribute('role')) {
+      if ((pn === 'ul' || pn === 'ol' || pn === 'menu') && !dom.hasAttribute(p, 'role')) {
         return { list: ['listitem'] };
       }
       if (firstRole(p) === 'list') return { list: ['listitem'] };
@@ -336,7 +337,7 @@ function runInPage(ctx) {
     if (name === 'td' || name === 'th' || name === 'tr') {
       const table = nearestTable(el);
       if (!table) return null;
-      if (!table.hasAttribute('role')) return { list: [] };
+      if (!dom.hasAttribute(table, 'role')) return { list: [] };
       const r = firstRole(table);
       if (r === 'table' || r === 'grid' || r === 'treegrid') return { list: [] };
       return null;
@@ -387,8 +388,8 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1) continue;
-    const ns = el.namespaceURI || HTML_NS;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    const ns = dom.namespaceURI(el) || HTML_NS;
     const name = localName(el);
     if (ns === HTML_NS && name.indexOf('-') !== -1) continue; // custom element
     if (ns !== HTML_NS && ns !== SVG_NS && !(ns === MATHML_NS && name === 'math')) continue;
@@ -413,7 +414,7 @@ function runInPage(ctx) {
 
     if (ns === HTML_NS && name === 'img') {
       const alt = attr(el, 'alt');
-      const named = el.hasAttribute('aria-label') || el.hasAttribute('aria-labelledby');
+      const named = dom.hasAttribute(el, 'aria-label') || dom.hasAttribute(el, 'aria-labelledby');
       const emptyAlt = alt === '';
       const noName = alt == null && !named;
       if (emptyAlt || noName) {

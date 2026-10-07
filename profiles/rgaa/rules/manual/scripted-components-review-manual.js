@@ -85,6 +85,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const JS_TYPES = new Set([
@@ -192,12 +193,12 @@ function runInPage(ctx) {
   }
 
   function localNameOf(el) {
-    return lower(el.localName || el.tagName || '');
+    return lower(dom.localName(el) || dom.tagName(el) || '');
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -215,11 +216,11 @@ function runInPage(ctx) {
     }
     let head;
     try {
-      const first = el.firstChild;
+      const first = dom.firstChild(el);
       head =
-        first && first.nodeType === 3 && typeof first.data === 'string'
+        first && dom.nodeType(first) === 3 && typeof first.data === 'string'
           ? first.data.slice(0, 600)
-          : String(el.textContent || '').slice(0, 600);
+          : String(dom.textContent(el) || '').slice(0, 600);
     } catch {
       head = '';
     }
@@ -270,14 +271,14 @@ function runInPage(ctx) {
     for (let i = 0; i < scopes.length; i++) {
       let els;
       try {
-        els = scopes[i].querySelectorAll('*');
+        els = dom.querySelectorAll(scopes[i], '*');
       } catch {
         els = [];
       }
       for (const el of els) {
-        if (!el || el.nodeType !== 1) continue;
+        if (!el || dom.nodeType(el) !== 1) continue;
         try {
-          if (el.shadowRoot) scopes.push(el.shadowRoot);
+          if (dom.shadowRoot(el)) scopes.push(dom.shadowRoot(el));
         } catch {}
 
         const name = localNameOf(el);
@@ -287,7 +288,7 @@ function runInPage(ctx) {
         }
         if (name.indexOf('-') !== -1) return 'customElement';
 
-        const attrs = el.attributes || [];
+        const attrs = dom.attributes(el) || [];
         for (let a = 0; a < attrs.length; a++) {
           const attrName = lower(attrs[a].name);
           if (isEventHandlerAttr(el, attrName)) return 'inlineHandler';
@@ -310,7 +311,7 @@ function runInPage(ctx) {
   // ---------------------------------------------------------------------
 
   const roots = Array.isArray(ctx.root) ? ctx.root : ctx.root ? [ctx.root] : [];
-  const scanRoot = roots.find((r) => r && r.nodeType === 1) || document.documentElement;
+  const scanRoot = roots.find((r) => r && dom.nodeType(r) === 1) || dom.documentElement(document);
 
   const visibilityFilter = { targetSet: 'dom', accEligible: null, reasons: [] };
 
@@ -428,7 +429,7 @@ function runInPage(ctx) {
     const name = localNameOf(el);
     if (name === 'html' || name === 'body' || name === 'head') return true;
     try {
-      return !!(el.closest && el.closest('head'));
+      return !!(dom.get(el, 'closest') && dom.closest(el, 'head'));
     } catch {
       return false;
     }
@@ -525,7 +526,7 @@ function runInPage(ctx) {
 
   const seen = new Set();
   for (const el of elements) {
-    if (!el || el.nodeType !== 1 || seen.has(el)) continue;
+    if (!el || dom.nodeType(el) !== 1 || seen.has(el)) continue;
     seen.add(el);
     const c = candidate(el);
     if (!c) continue;

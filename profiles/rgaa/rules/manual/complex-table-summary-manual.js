@@ -64,12 +64,13 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   // The HTML5 doctype: name html, no public id, no system id or
   // about:legacy-compat. Same test as presentational-elements-absent.
   const isHtml5 = (() => {
-    const doctype = document && document.doctype;
+    const doctype = document && dom.doctype(document);
     return (
       !!doctype &&
       String(doctype.name || '').toLowerCase() === 'html' &&
@@ -83,7 +84,7 @@ function runInPage(ctx) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -93,11 +94,11 @@ function runInPage(ctx) {
     const role = firstRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   function span(cell, attr) {
-    const n = Number.parseInt(cell.getAttribute(attr), 10);
+    const n = Number.parseInt(dom.getAttribute(cell, attr), 10);
     return Number.isFinite(n) && n > 1 ? Math.min(n, 1000) : 1;
   }
 
@@ -107,28 +108,28 @@ function runInPage(ctx) {
   // The table an ARIA row or native row belongs to: the nearest ancestor
   // that is a <table> or has a table role.
   function owningTable(el) {
-    let cur = el.parentElement;
+    let cur = dom.parentElement(el);
     while (cur) {
-      if (String(cur.tagName).toLowerCase() === 'table') return cur;
+      if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
       if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
-      cur = cur.parentElement;
+      cur = dom.parentElement(cur);
     }
     return null;
   }
 
   // Rows as arrays of cells, with the attribute names that carry spans.
   function gridOf(table) {
-    if (String(table.tagName).toLowerCase() === 'table') {
+    if (String(dom.tagName(table)).toLowerCase() === 'table') {
       return {
         rows: Array.from(table.rows || []).map((row) => Array.from(row.cells || [])),
         colspan: 'colspan',
         rowspan: 'rowspan'
       };
     }
-    const rows = Array.from(table.querySelectorAll('[role]'))
+    const rows = Array.from(dom.querySelectorAll(table, '[role]'))
       .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
-        Array.from(row.querySelectorAll(':scope > *')).filter((cell) =>
+        Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
           ARIA_CELL_ROLES.includes(firstRole(cell))
         )
       );
@@ -158,12 +159,12 @@ function runInPage(ctx) {
         if (isHeader(cell)) {
           if (r > 0 && c > 0) outside = true;
           placed.push({ r, c, cols, rows: rowsSpanned });
-          const scope = String(cell.getAttribute('scope') || '')
+          const scope = String(dom.getAttribute(cell, 'scope') || '')
             .trim()
             .toLowerCase();
           if (scope === 'rowgroup' || scope === 'colgroup') groupScope = true;
         }
-        if (hasText(cell.getAttribute('headers'))) headersAttr = true;
+        if (hasText(dom.getAttribute(cell, 'headers'))) headersAttr = true;
         c += cols;
       }
     });
@@ -185,19 +186,20 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const table of tables) {
-    if (!table || !table.getAttribute) continue;
+    if (!table || !dom.get(table, 'getAttribute')) continue;
     const role = firstRole(table);
-    const isNative = String(table.tagName).toLowerCase() === 'table';
+    const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     const reasons = complexity(table);
     if (!reasons.length) continue;
     applicableCount += 1;
-    if (hasText(table.getAttribute('aria-describedby'))) continue;
+    if (hasText(dom.getAttribute(table, 'aria-describedby'))) continue;
     // summary is a résumé only on a <table> before HTML5 (5.1.1 step 2).
-    const hasSummaryAttr = isNative && hasText(table.getAttribute('summary'));
+    const hasSummaryAttr = isNative && hasText(dom.getAttribute(table, 'summary'));
     if (hasSummaryAttr && !isHtml5) continue;
 
-    const caption = isNative && table.caption ? String(table.caption.textContent || '').trim() : '';
+    const caption =
+      isNative && table.caption ? String(dom.textContent(table.caption) || '').trim() : '';
     occurrences.push(
       helpers.reportOccurrence(table, {
         summary:

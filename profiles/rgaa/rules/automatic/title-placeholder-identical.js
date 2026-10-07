@@ -50,6 +50,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   function clean(s) {
@@ -59,7 +60,7 @@ function runInPage(ctx) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   // Input types that show a placeholder (HTML: text, search, url, tel,
@@ -94,13 +95,13 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (tagOf(el) === 'input') {
-      const type = clean(el.getAttribute('type')).toLowerCase();
+      const type = clean(dom.getAttribute(el, 'type')).toLowerCase();
       if (NO_PLACEHOLDER_TYPES.has(type)) continue;
     }
-    const title = clean(el.getAttribute('title'));
-    const placeholder = clean(el.getAttribute('placeholder'));
+    const title = clean(dom.getAttribute(el, 'title'));
+    const placeholder = clean(dom.getAttribute(el, 'placeholder'));
     if (!title || !placeholder) continue;
     applicableCount += 1;
     if (title === placeholder) continue;

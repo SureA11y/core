@@ -79,6 +79,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const CSS_STYLE_RULE = 1;
@@ -152,7 +153,7 @@ function runInPage(ctx) {
   }
 
   try {
-    for (const sheet of document.styleSheets || []) {
+    for (const sheet of dom.styleSheets(document) || []) {
       let rules = null;
       try {
         rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -169,13 +170,13 @@ function runInPage(ctx) {
 
   // ---- Portrait and landscape, where the page has a layout ----
 
-  const view = document.defaultView || null;
+  const view = dom.defaultView(document) || null;
   function hasLayout() {
-    const probe = document.documentElement || null;
-    if (!view || !probe || typeof probe.getClientRects !== 'function') return false;
-    if (typeof probe.checkVisibility !== 'function') return false;
+    const probe = dom.documentElement(document) || null;
+    if (!view || !probe || typeof dom.get(probe, 'getClientRects') !== 'function') return false;
+    if (typeof dom.get(probe, 'checkVisibility') !== 'function') return false;
     try {
-      const rects = probe.getClientRects();
+      const rects = dom.getClientRects(probe);
       return !!(rects && rects.length > 0);
     } catch {
       return false;
@@ -189,7 +190,7 @@ function runInPage(ctx) {
 
   function shown(el) {
     try {
-      return el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      return dom.checkVisibility(el, { opacityProperty: true, visibilityProperty: true });
     } catch {
       return true;
     }
@@ -205,24 +206,24 @@ function runInPage(ctx) {
   function contentItems() {
     const SKIP = new Set(['script', 'style', 'noscript', 'template']);
     const items = [];
-    if (!document.body) return items;
-    const walker = document.createTreeWalker(document.body, 4);
+    if (!dom.body(document)) return items;
+    const walker = dom.createTreeWalker(document, dom.body(document), 4);
     for (let n = walker.nextNode(); n && items.length < 3000; n = walker.nextNode()) {
-      const text = norm(n.nodeValue);
+      const text = norm(dom.nodeValue(n));
       if (!/[\p{L}\p{N}]/u.test(text)) continue;
-      const parent = n.parentElement;
-      if (!parent || SKIP.has(String(parent.localName))) continue;
+      const parent = dom.parentElement(n);
+      if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
       items.push({
         node: n,
         el: parent,
         text,
-        display: String(n.nodeValue).replace(/\s+/g, ' ').trim()
+        display: String(dom.nodeValue(n)).replace(/\s+/g, ' ').trim()
       });
     }
-    for (const img of document.body.querySelectorAll('img[alt]')) {
-      const text = norm(img.getAttribute('alt'));
+    for (const img of dom.querySelectorAll(dom.body(document), 'img[alt]')) {
+      const text = norm(dom.getAttribute(img, 'alt'));
       if (text) {
-        const display = String(img.getAttribute('alt')).replace(/\s+/g, ' ').trim();
+        const display = String(dom.getAttribute(img, 'alt')).replace(/\s+/g, ' ').trim();
         items.push({ node: img, el: img, text, display });
       }
     }
@@ -232,12 +233,12 @@ function runInPage(ctx) {
   function isShownItem(item) {
     if (!shown(item.el)) return false;
     try {
-      if (item.node.nodeType === 3) {
-        const range = document.createRange();
+      if (dom.nodeType(item.node) === 3) {
+        const range = dom.createRange(document);
         range.selectNodeContents(item.node);
-        return Array.from(range.getClientRects()).some((r) => r.width > 0 && r.height > 0);
+        return Array.from(dom.getClientRects(range)).some((r) => r.width > 0 && r.height > 0);
       }
-      const r = item.node.getBoundingClientRect();
+      const r = dom.getBoundingClientRect(item.node);
       return r.width > 0 && r.height > 0;
     } catch {
       return true;
@@ -247,7 +248,11 @@ function runInPage(ctx) {
   // The outermost element, below <body>, that is not shown.
   function hiddenRoot(el) {
     let root = el;
-    for (let a = el; a && a !== document.body && a.nodeType === 1; a = a.parentElement) {
+    for (
+      let a = el;
+      a && a !== dom.body(document) && dom.nodeType(a) === 1;
+      a = dom.parentElement(a)
+    ) {
       if (!shown(a)) root = a;
     }
     return root;
@@ -284,17 +289,17 @@ function runInPage(ctx) {
   function freezeTransitions(doc) {
     let sheet = null;
     try {
-      sheet = doc.createElement('style');
+      sheet = dom.createElement(doc, 'style');
       sheet.textContent =
         '@layer surea11y-no-transitions{*,*::before,*::after{transition:none!important}}';
-      const host = doc.head || doc.documentElement;
-      host.insertBefore(sheet, host.firstChild);
+      const host = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(host, sheet, dom.firstChild(host));
     } catch {
       sheet = null;
     }
     return () => {
       try {
-        if (sheet && sheet.parentNode) sheet.parentNode.removeChild(sheet);
+        if (sheet && dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
       } catch {}
     };
   }
@@ -358,7 +363,7 @@ function runInPage(ctx) {
       });
     }
 
-    const holdsMain = (root) => !!(main && (root === main || root.contains(main)));
+    const holdsMain = (root) => !!(main && (root === main || dom.contains(root, main)));
     // An orientation that hides the main content is a lock, asked about
     // once. What only that orientation shows (a "rotate your device"
     // message) is part of the lock, not content missing from the other one.
@@ -368,7 +373,7 @@ function runInPage(ctx) {
 
     for (const [root, m] of missing) {
       if (!holdsMain(root) && locked.has(other(m.orientation))) continue;
-      const element = String(root.localName || '').toLowerCase();
+      const element = String(dom.localName(root) || '').toLowerCase();
       const text = m.texts.join(' ').slice(0, 80);
       if (holdsMain(root)) {
         questions.push(
@@ -418,13 +423,16 @@ function runInPage(ctx) {
       matched = []; // a selector the engine cannot parse is skipped, not guessed at
     }
     for (const el of matched) {
-      if (!el || el.nodeType !== 1 || seen.has(el)) continue;
+      if (!el || dom.nodeType(el) !== 1 || seen.has(el)) continue;
       seen.add(el);
       // The comparison settled what this element shows.
-      if (decided && (judged.has(el) || norm(el.textContent) || el.querySelector('img[alt]'))) {
+      if (
+        decided &&
+        (judged.has(el) || norm(dom.textContent(el)) || dom.querySelector(el, 'img[alt]'))
+      ) {
         continue;
       }
-      const element = String(el.localName || el.tagName || '').toLowerCase();
+      const element = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
       questions.push(
         helpers.reportOccurrence(el, {
           summary: `A "${h.mediaText}" media query hides this <${element}> ("${h.selectorText}").`,

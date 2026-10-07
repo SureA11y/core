@@ -48,11 +48,12 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const ELEMENTS = ['basefont', 'big', 'blink', 'center', 'font', 'marquee', 's', 'strike', 'tt'];
 
-  const doctype = document.doctype;
+  const doctype = dom.doctype(document);
   const isHtml5 =
     !!doctype &&
     String(doctype.name || '').toLowerCase() === 'html' &&
@@ -66,8 +67,8 @@ function runInPage(ctx) {
 
   const occurrences = [];
   for (const el of nodes) {
-    if (!el || !el.tagName) continue;
-    const element = String(el.tagName).toLowerCase();
+    if (!el || !dom.tagName(el)) continue;
+    const element = String(dom.tagName(el)).toLowerCase();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `The presentational element <${element}> is used.`,

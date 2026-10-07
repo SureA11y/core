@@ -57,6 +57,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const trim = (v) =>
@@ -65,17 +66,17 @@ function runInPage(ctx) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -92,8 +93,8 @@ function runInPage(ctx) {
   }
 
   function titleChildText(el) {
-    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-      if (tagOf(child) === 'title') return trim(child.textContent);
+    for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+      if (tagOf(child) === 'title') return trim(dom.textContent(child));
     }
     return '';
   }
@@ -105,9 +106,9 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const svg of nodes) {
-    if (!svg || !svg.getAttribute) continue;
-    const p = svg.parentElement;
-    if (p && p.closest && p.closest('svg')) continue;
+    if (!svg || !dom.get(svg, 'getAttribute')) continue;
+    const p = dom.parentElement(svg);
+    if (p && dom.get(p, 'closest') && dom.closest(p, 'svg')) continue;
     if (insideAriaHidden(svg)) continue;
 
     const mechanism = ariaName(svg);

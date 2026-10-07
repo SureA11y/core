@@ -50,9 +50,10 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
-  if (document.doctype) {
+  if (dom.doctype(document)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
@@ -68,7 +69,7 @@ function runInPage(ctx) {
       : null;
   function pageUrl(u) {
     try {
-      const url = new URL(String(u), document.baseURI);
+      const url = new URL(String(u), dom.baseURI(document));
       url.hash = '';
       return url.href;
     } catch {
@@ -89,7 +90,7 @@ function runInPage(ctx) {
   }
 
   // A doctype is not an element, so the finding is reported on <html>.
-  const occurrence = helpers.reportOccurrence(document.documentElement, {
+  const occurrence = helpers.reportOccurrence(dom.documentElement(document), {
     selector: 'html',
     html: '<!DOCTYPE>(missing)',
     summary: 'The page has no doctype.',

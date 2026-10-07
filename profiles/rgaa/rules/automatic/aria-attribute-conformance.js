@@ -98,6 +98,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -524,20 +525,20 @@ function runInPage(ctx) {
   };
 
   function localName(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   }
 
   function parentEl(el) {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   }
 
   function firstRole(el) {
@@ -550,14 +551,15 @@ function runInPage(ctx) {
   function idExists(el, idValue) {
     let root;
     try {
-      root = el.getRootNode ? el.getRootNode() : el.ownerDocument;
+      root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : dom.ownerDocument(el);
     } catch {
-      root = el.ownerDocument;
+      root = dom.ownerDocument(el);
     }
     try {
-      if (root && typeof root.getElementById === 'function') return !!root.getElementById(idValue);
-      const doc = el.ownerDocument;
-      return !!(doc && doc.getElementById(idValue));
+      if (root && typeof dom.get(root, 'getElementById') === 'function')
+        return !!dom.getElementById(root, idValue);
+      const doc = dom.ownerDocument(el);
+      return !!(doc && dom.getElementById(doc, idValue));
     } catch {
       return true;
     }
@@ -606,20 +608,20 @@ function runInPage(ctx) {
 
   function nearestTable(el) {
     for (let n = parentEl(el); n; n = parentEl(n)) {
-      if (localName(n) === 'table' && (n.namespaceURI || HTML_NS) === HTML_NS) return n;
+      if (localName(n) === 'table' && (dom.namespaceURI(n) || HTML_NS) === HTML_NS) return n;
     }
     return null;
   }
 
   function inNativeTable(el) {
     const table = nearestTable(el);
-    return !!table && !table.hasAttribute('role');
+    return !!table && !dom.hasAttribute(table, 'role');
   }
 
   function isFirstSummaryOfDetails(el) {
     const p = parentEl(el);
     if (!p || localName(p) !== 'details') return false;
-    for (const c of p.querySelectorAll(':scope > *')) {
+    for (const c of dom.querySelectorAll(p, ':scope > *')) {
       if (localName(c) === 'summary') return c === el;
     }
     return false;
@@ -634,8 +636,8 @@ function runInPage(ctx) {
 
   // The key of NATIVE for an element with no role, or '' when not judged.
   function nativeKey(el, name) {
-    if (name === 'a') return el.hasAttribute('href') ? 'a[href]' : 'generic';
-    if (name === 'area') return el.hasAttribute('href') ? 'area[href]' : 'area';
+    if (name === 'a') return dom.hasAttribute(el, 'href') ? 'a[href]' : 'generic';
+    if (name === 'area') return dom.hasAttribute(el, 'href') ? 'area[href]' : 'area';
     if (name === 'img') {
       const alt = attr(el, 'alt');
       return alt == null ? '' : 'landmark';
@@ -646,7 +648,7 @@ function runInPage(ctx) {
     }
     if (name === 'li') {
       const p = parentEl(el);
-      if (!p || p.hasAttribute('role')) return '';
+      if (!p || dom.hasAttribute(p, 'role')) return '';
       const pn = localName(p);
       if (pn === 'ul' || pn === 'ol') return 'li(list)';
       if (pn === 'menu') return 'li(menu)';
@@ -668,7 +670,7 @@ function runInPage(ctx) {
     }
     // A role attribute with no recognised token: the validator then checks
     // the attributes against neither a role nor the element.
-    if (el.hasAttribute('role')) return null;
+    if (dom.hasAttribute(el, 'role')) return null;
     let key = '';
     if (ns === SVG_NS) key = name === 'svg' ? 'named' : '';
     else if (ns === HTML_NS) key = nativeKey(el, name);
@@ -713,8 +715,8 @@ function runInPage(ctx) {
   }
 
   for (const el of nodes) {
-    if (!el || el.nodeType !== 1 || !el.attributes) continue;
-    const ns = el.namespaceURI || HTML_NS;
+    if (!el || dom.nodeType(el) !== 1 || !dom.attributes(el)) continue;
+    const ns = dom.namespaceURI(el) || HTML_NS;
     const name = localName(el);
     if (ns !== HTML_NS && ns !== SVG_NS) continue;
     // Custom elements, and <embed>, which takes any attribute: the validator
@@ -722,8 +724,8 @@ function runInPage(ctx) {
     if (ns === HTML_NS && (name.indexOf('-') !== -1 || name === 'embed')) continue;
 
     const ariaNames = [];
-    for (let i = 0; i < el.attributes.length; i++) {
-      const n = String(el.attributes[i].name || '').toLowerCase();
+    for (let i = 0; i < dom.attributes(el).length; i++) {
+      const n = String(dom.attributes(el)[i].name || '').toLowerCase();
       if (n.slice(0, 5) === 'aria-') ariaNames.push(n);
     }
     const role = firstRole(el);
@@ -775,14 +777,14 @@ function runInPage(ctx) {
       } else if (
         a === 'aria-placeholder' &&
         (name === 'input' || name === 'textarea') &&
-        el.hasAttribute('placeholder')
+        dom.hasAttribute(el, 'placeholder')
       ) {
         report(el, R, { element, attr: a, value }, R + 'Placeholder');
       } else {
         for (const pair of NATIVE_PAIRS) {
           if (a !== pair.aria || value === 'true') continue;
           if (pair.tags !== '*' && words(pair.tags).indexOf(name) === -1) continue;
-          if (!el.hasAttribute(pair.native)) continue;
+          if (!dom.hasAttribute(el, pair.native)) continue;
           report(el, R, { element, attr: a, value, native: pair.native });
         }
       }
@@ -790,12 +792,12 @@ function runInPage(ctx) {
 
     if (required) {
       const need = REQUIRED[role];
-      if (el.hasAttribute(need)) continue;
+      if (dom.hasAttribute(el, need)) continue;
       // The native checked state stands in for aria-checked, and an input
       // with a list attribute is a combobox natively.
       if (name === 'input' && need === 'aria-checked' && (type === 'checkbox' || type === 'radio'))
         continue;
-      if (name === 'input' && role === 'combobox' && el.hasAttribute('list')) continue;
+      if (name === 'input' && role === 'combobox' && dom.hasAttribute(el, 'list')) continue;
       report(el, 'missingRequired', { element, role, attr: need });
     }
   }

@@ -65,6 +65,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const FIELD_ROLES = [
@@ -91,11 +92,11 @@ function runInPage(ctx) {
   }
 
   function tagOf(el) {
-    return String(el.localName || el.tagName || '').toLowerCase();
+    return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
   function firstRoleToken(el) {
-    return norm(el.getAttribute('role')).toLowerCase().split(' ')[0] || '';
+    return norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0] || '';
   }
 
   // The field kind, or '' when the element is not an RGAA form field.
@@ -104,7 +105,7 @@ function runInPage(ctx) {
     const role = firstRoleToken(el);
     if (role === 'button') return '';
     if (tag === 'input') {
-      const type = norm(el.getAttribute('type')).toLowerCase();
+      const type = norm(dom.getAttribute(el, 'type')).toLowerCase();
       if (NOT_FIELD_INPUT_TYPES.includes(type)) return '';
       return 'input';
     }
@@ -117,7 +118,7 @@ function runInPage(ctx) {
     const tag = tagOf(el);
     if (!LABELABLE.includes(tag)) return false;
     if (tag === 'input') {
-      return norm(el.getAttribute('type')).toLowerCase() !== 'hidden';
+      return norm(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
     }
     return true;
   }
@@ -149,18 +150,18 @@ function runInPage(ctx) {
   // apart.
   function labelsFor(el) {
     const shared = associatedLabels(el);
-    if (shared) return shared.filter((label) => label.hasAttribute('for'));
-    const idValue = el.getAttribute('id');
+    if (shared) return shared.filter((label) => dom.hasAttribute(label, 'for'));
+    const idValue = dom.getAttribute(el, 'id');
     if (!idValue) return [];
-    const root = el.getRootNode ? el.getRootNode() : null;
-    if (!root || !root.querySelectorAll) return [];
-    const target = root.getElementById
-      ? root.getElementById(idValue)
-      : root.querySelector('[id="' + idValue.replace(/["\\]/g, '\\$&') + '"]');
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+    if (!root || !dom.get(root, 'querySelectorAll')) return [];
+    const target = dom.get(root, 'getElementById')
+      ? dom.getElementById(root, idValue)
+      : dom.querySelector(root, '[id="' + idValue.replace(/["\\]/g, '\\$&') + '"]');
     if (target !== el) return [];
     const out = [];
-    for (const label of root.querySelectorAll('label[for]')) {
-      if (label.getAttribute('for') === idValue) out.push(label);
+    for (const label of dom.querySelectorAll(root, 'label[for]')) {
+      if (dom.getAttribute(label, 'for') === idValue) out.push(label);
     }
     return out;
   }
@@ -170,10 +171,10 @@ function runInPage(ctx) {
   function wrappingLabel(el) {
     if (!isLabelable(el)) return null;
     const shared = associatedLabels(el);
-    if (shared) return shared.find((label) => !label.hasAttribute('for')) || null;
-    const wrap = el.closest ? el.closest('label') : null;
-    if (!wrap || wrap.hasAttribute('for')) return null;
-    for (const candidate of wrap.querySelectorAll(LABELABLE.join(', '))) {
+    if (shared) return shared.find((label) => !dom.hasAttribute(label, 'for')) || null;
+    const wrap = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
+    if (!wrap || dom.hasAttribute(wrap, 'for')) return null;
+    for (const candidate of dom.querySelectorAll(wrap, LABELABLE.join(', '))) {
       if (isLabelable(candidate)) return candidate === el ? wrap : null;
     }
     return null;
@@ -183,7 +184,7 @@ function runInPage(ctx) {
     if (helpers.labelContributesAccessibleName) {
       return !!helpers.labelContributesAccessibleName(label);
     }
-    return !!norm(label.textContent);
+    return !!norm(dom.textContent(label));
   }
 
   // Which 11.1.1 sources the field has: 'met', 'empty' (present, no text)
@@ -191,7 +192,7 @@ function runInPage(ctx) {
   function sources(el) {
     const found = { met: [], empty: [] };
 
-    const labelledby = norm(el.getAttribute('aria-labelledby'));
+    const labelledby = norm(dom.getAttribute(el, 'aria-labelledby'));
     if (labelledby) {
       const info = helpers.getAriaLabelledByInfo
         ? helpers.getAriaLabelledByInfo(el, ctx)
@@ -200,8 +201,8 @@ function runInPage(ctx) {
       else if (info && info.refsCount > 0) found.empty.push('aria-labelledby');
     }
 
-    if (el.hasAttribute('aria-label')) {
-      if (norm(el.getAttribute('aria-label'))) found.met.push('aria-label');
+    if (dom.hasAttribute(el, 'aria-label')) {
+      if (norm(dom.getAttribute(el, 'aria-label'))) found.met.push('aria-label');
       else found.empty.push('aria-label');
     }
 
@@ -212,8 +213,8 @@ function runInPage(ctx) {
       else found.empty.push('label-for');
     }
 
-    if (el.hasAttribute('title')) {
-      if (norm(el.getAttribute('title'))) found.met.push('title');
+    if (dom.hasAttribute(el, 'title')) {
+      if (norm(dom.getAttribute(el, 'title'))) found.met.push('title');
       else found.empty.push('title');
     }
 
@@ -228,7 +229,7 @@ function runInPage(ctx) {
       const info = helpers.getContentNameInfo(el, ctx);
       return !!(info && info.present && norm(info.value));
     }
-    return !!norm(el.textContent);
+    return !!norm(dom.textContent(el));
   }
 
   const MESSAGES = {
@@ -286,7 +287,7 @@ function runInPage(ctx) {
     : helpers.queryAll(SELECTOR);
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const kind = fieldKind(el);
     if (!kind) continue;
     if (!inAccTree(el)) continue;
@@ -304,7 +305,7 @@ function runInPage(ctx) {
       source = found.empty[0];
     } else if (wrappingLabel(el)) {
       reasonCode = 'wrappingLabel';
-    } else if (norm(el.getAttribute('placeholder'))) {
+    } else if (norm(dom.getAttribute(el, 'placeholder'))) {
       reasonCode = 'placeholderOnly';
     } else if (hasOwnContent(el, kind)) {
       reasonCode = 'contentOnly';

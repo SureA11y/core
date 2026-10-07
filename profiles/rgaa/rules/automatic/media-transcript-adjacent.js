@@ -66,6 +66,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // The same words as media-alternative-transcript-evidence.
@@ -101,7 +102,7 @@ function runInPage(ctx) {
 
   const eligCache = new WeakMap();
   function getEligibility(node) {
-    if (!node || node.nodeType !== 1) {
+    if (!node || dom.nodeType(node) !== 1) {
       return { eligible: true, reasons: [], targetSet: 'acc', accEligible: null };
     }
     if (eligCache.has(node)) return eligCache.get(node);
@@ -135,18 +136,19 @@ function runInPage(ctx) {
 
   function getMediaEligibility(el) {
     const isHiddenByBrowser =
-      String(el.localName || '').toLowerCase() === 'audio' && !el.hasAttribute('controls');
+      String(dom.localName(el) || '').toLowerCase() === 'audio' &&
+      !dom.hasAttribute(el, 'controls');
     if (!isHiddenByBrowser) return getEligibility(el);
-    if (el.hasAttribute('hidden')) {
+    if (dom.hasAttribute(el, 'hidden')) {
       return { eligible: false, reasons: ['hiddenAttr'], targetSet: 'acc', accEligible: false };
     }
-    if (normText(el.getAttribute('aria-hidden')) === 'true') {
+    if (normText(dom.getAttribute(el, 'aria-hidden')) === 'true') {
       return { eligible: false, reasons: ['ariaHidden'], targetSet: 'acc', accEligible: false };
     }
-    let parent = el.parentElement;
+    let parent = dom.parentElement(el);
     if (!parent) {
-      const rootNode = el.getRootNode ? el.getRootNode() : null;
-      parent = rootNode && rootNode.host ? rootNode.host : null;
+      const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      parent = rootNode && dom.host(rootNode) ? dom.host(rootNode) : null;
     }
     return parent ? getEligibility(parent) : getEligibility(el);
   }
@@ -154,18 +156,21 @@ function runInPage(ctx) {
   // The node right before or after the media, skipping whitespace, comments
   // and elements that render nothing.
   function neighbour(el, forward) {
-    let n = forward ? el.nextSibling : el.previousSibling;
+    let n = forward ? dom.nextSibling(el) : dom.previousSibling(el);
     while (n) {
-      if (n.nodeType === 8) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (dom.nodeType(n) === 8) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
-      if (n.nodeType === 3 && !normText(n.nodeValue)) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (dom.nodeType(n) === 3 && !normText(dom.nodeValue(n))) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
-      if (n.nodeType === 1 && SKIPPED_TAGS.includes(String(n.localName || '').toLowerCase())) {
-        n = forward ? n.nextSibling : n.previousSibling;
+      if (
+        dom.nodeType(n) === 1 &&
+        SKIPPED_TAGS.includes(String(dom.localName(n) || '').toLowerCase())
+      ) {
+        n = forward ? dom.nextSibling(n) : dom.previousSibling(n);
         continue;
       }
       return n;
@@ -174,13 +179,13 @@ function runInPage(ctx) {
   }
 
   function isLinkOrButton(el) {
-    const tag = String(el.localName || '').toLowerCase();
-    const role = normText(el.getAttribute('role'));
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const role = normText(dom.getAttribute(el, 'role'));
     if (role === 'link' || role === 'button') return true;
-    if (tag === 'a' || tag === 'area') return el.hasAttribute('href');
+    if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'button') return true;
     if (tag === 'input') {
-      return ['button', 'submit'].includes(normText(el.getAttribute('type')));
+      return ['button', 'submit'].includes(normText(dom.getAttribute(el, 'type')));
     }
     return false;
   }
@@ -190,32 +195,33 @@ function runInPage(ctx) {
       const info = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
       if (info && info.value) return info.value;
     } catch {}
-    return el.textContent || el.getAttribute('value') || '';
+    return dom.textContent(el) || dom.getAttribute(el, 'value') || '';
   }
 
   // 'adjacentLink', 'adjacentTranscript' or null.
   function adjacentEvidence(node) {
-    if (!node || node.nodeType !== 1) return null;
+    if (!node || dom.nodeType(node) !== 1) return null;
     if (!getEligibility(node).eligible) return null;
     if (isLinkOrButton(node)) return mentionsTranscript(nameOf(node)) ? 'adjacentLink' : null;
-    return mentionsTranscript(node.textContent) ? 'adjacentTranscript' : null;
+    return mentionsTranscript(dom.textContent(node)) ? 'adjacentTranscript' : null;
   }
 
   function describedTranscript(el) {
-    const ids = normText(el.getAttribute('aria-describedby')).split(' ').filter(Boolean);
+    const ids = normText(dom.getAttribute(el, 'aria-describedby')).split(' ').filter(Boolean);
     if (!ids.length) return false;
-    const doc = el.ownerDocument;
-    const rootNode = el.getRootNode ? el.getRootNode() : doc;
+    const doc = dom.ownerDocument(el);
+    const rootNode = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : doc;
     return ids.some((idRef) => {
       let target;
       try {
         target =
-          (rootNode && rootNode.getElementById ? rootNode.getElementById(idRef) : null) ||
-          (doc ? doc.getElementById(idRef) : null);
+          (rootNode && dom.get(rootNode, 'getElementById')
+            ? dom.getElementById(rootNode, idRef)
+            : null) || (doc ? dom.getElementById(doc, idRef) : null);
       } catch {
         target = null;
       }
-      return !!target && mentionsTranscript(target.textContent);
+      return !!target && mentionsTranscript(dom.textContent(target));
     });
   }
 
@@ -223,7 +229,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of queryAllUnfiltered('audio, video')) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     const eligInfo = getMediaEligibility(el);
     if (!eligInfo || !eligInfo.eligible) continue;
     applicableCount += 1;
@@ -232,7 +238,7 @@ function runInPage(ctx) {
       adjacentEvidence(neighbour(el, false)) || adjacentEvidence(neighbour(el, true));
     if (evidence) continue;
 
-    const element = String(el.localName || '').toLowerCase();
+    const element = String(dom.localName(el) || '').toLowerCase();
     const described = describedTranscript(el);
     const reasonCode = described ? 'describedTranscriptNotAdjacent' : 'noAdjacentTranscript';
     occurrences.push(

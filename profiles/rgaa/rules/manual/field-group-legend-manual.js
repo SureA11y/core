@@ -59,6 +59,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const FIELDS =
@@ -69,28 +70,28 @@ function runInPage(ctx) {
   }
 
   function firstRole(el) {
-    return String(el.getAttribute('role') || '')
+    return String(dom.getAttribute(el, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
   }
 
   function labelledbyText(el) {
-    const ids = String(el.getAttribute('aria-labelledby') || '')
+    const ids = String(dom.getAttribute(el, 'aria-labelledby') || '')
       .trim()
       .split(/\s+/)
       .filter(Boolean);
-    const root = el.getRootNode ? el.getRootNode() : el.ownerDocument;
+    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : dom.ownerDocument(el);
     return ids
       .map((i) => {
-        const target = root && root.getElementById ? root.getElementById(i) : null;
-        return target ? target.textContent : '';
+        const target = root && dom.get(root, 'getElementById') ? dom.getElementById(root, i) : null;
+        return target ? dom.textContent(target) : '';
       })
       .join(' ');
   }
 
   function hasAriaName(el) {
-    return hasText(el.getAttribute('aria-label')) || hasText(labelledbyText(el));
+    return hasText(dom.getAttribute(el, 'aria-label')) || hasText(labelledbyText(el));
   }
 
   // Filtered below by the first role token.
@@ -102,23 +103,23 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const group of groups) {
-    if (!group || !group.getAttribute) continue;
-    const isFieldset = String(group.tagName).toLowerCase() === 'fieldset';
+    if (!group || !dom.get(group, 'getAttribute')) continue;
+    const isFieldset = String(dom.tagName(group)).toLowerCase() === 'fieldset';
     const role = firstRole(group);
     const isAriaGroup = role === 'group' || role === 'radiogroup';
     // A fieldset given another role (say role="presentation") is not a group.
     if (isFieldset ? role && !isAriaGroup : !isAriaGroup) continue;
-    if (!group.querySelector(FIELDS)) continue;
+    if (!dom.querySelector(group, FIELDS)) continue;
     applicableCount += 1;
 
     // RGAA 11.6.1 step 2: a legend for a fieldset, aria-label or
     // aria-labelledby for role="group"/"radiogroup".
     if (isAriaGroup && hasAriaName(group)) continue;
     if (isFieldset) {
-      const legend = Array.from(group.querySelectorAll(':scope > *')).find(
-        (c) => String(c.tagName).toLowerCase() === 'legend'
+      const legend = Array.from(dom.querySelectorAll(group, ':scope > *')).find(
+        (c) => String(dom.tagName(c)).toLowerCase() === 'legend'
       );
-      if (legend && hasText(legend.textContent)) continue;
+      if (legend && hasText(dom.textContent(legend))) continue;
     }
 
     const element = isFieldset ? 'fieldset' : `role="${role}"`;

@@ -55,6 +55,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SKIP = 'pre, code, kbd, samp, textarea, script, style, template';
@@ -90,16 +91,16 @@ function runInPage(ctx) {
   ]);
 
   function isInline(el) {
-    return INLINE.has(String(el.tagName || '').toLowerCase());
+    return INLINE.has(String(dom.tagName(el) || '').toLowerCase());
   }
 
   // The element's text nodes joined with the text of its inline children, in
   // order. Any other child (a block, <br>, <img>) separates the text.
   function inlineText(el, depth) {
     let out = '';
-    for (const n of Array.from(el.childNodes)) {
-      if (n.nodeType === 3) out += n.nodeValue;
-      else if (n.nodeType === 1 && depth < 20 && isInline(n) && !n.matches(SKIP)) {
+    for (const n of Array.from(dom.childNodes(el))) {
+      if (dom.nodeType(n) === 3) out += dom.nodeValue(n);
+      else if (dom.nodeType(n) === 1 && depth < 20 && isInline(n) && !dom.matches(n, SKIP)) {
         out += inlineText(n, depth + 1);
       } else out += ' ';
     }
@@ -127,10 +128,10 @@ function runInPage(ctx) {
   const inScope = new Set(nodes);
 
   for (const el of nodes) {
-    if (!el || !el.childNodes || el.closest(SKIP)) continue;
+    if (!el || !dom.childNodes(el) || dom.closest(el, SKIP)) continue;
     // An inline element is read with its parent's text, when the parent is
     // read at all.
-    if (isInline(el) && inScope.has(el.parentElement)) continue;
+    if (isInline(el) && inScope.has(dom.parentElement(el))) continue;
     const text = findRun(inlineText(el, 0));
     if (!text) continue;
     occurrences.push(

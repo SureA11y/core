@@ -56,6 +56,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const MARKUP = [
@@ -72,7 +73,7 @@ function runInPage(ctx) {
   ];
 
   function isLayout(table) {
-    const first = String(table.getAttribute('role') || '')
+    const first = String(dom.getAttribute(table, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
@@ -80,12 +81,12 @@ function runInPage(ctx) {
   }
 
   function isHeaderCell(cell) {
-    const role = String(cell.getAttribute('role') || '')
+    const role = String(dom.getAttribute(cell, 'role') || '')
       .trim()
       .toLowerCase()
       .split(/\s+/)[0];
     if (role === 'columnheader' || role === 'rowheader') return true;
-    return String(cell.tagName).toLowerCase() === 'th' && !role;
+    return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
 
   // A full header row or column over a real grid of data suggests the
@@ -109,14 +110,14 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const table of tables) {
-    if (!table || !table.getAttribute || !isLayout(table)) continue;
+    if (!table || !dom.get(table, 'getAttribute') || !isLayout(table)) continue;
     applicableCount += 1;
 
     const found = [];
-    if (String(table.getAttribute('summary') || '').trim()) found.push('summary');
+    if (String(dom.getAttribute(table, 'summary') || '').trim()) found.push('summary');
     for (const [selector, label] of MARKUP) {
-      const own = Array.from(table.querySelectorAll(selector)).some(
-        (el) => el.closest('table') === table
+      const own = Array.from(dom.querySelectorAll(table, selector)).some(
+        (el) => dom.closest(el, 'table') === table
       );
       if (own) found.push(label);
     }

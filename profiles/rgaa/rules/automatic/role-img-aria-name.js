@@ -58,6 +58,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -67,17 +68,17 @@ function runInPage(ctx) {
       .trim();
   const attr = (el, name) => {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
   };
-  const tagOf = (el) => String(el.localName || el.tagName || '').toLowerCase();
+  const tagOf = (el) => String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   const parentOf = (el) =>
-    helpers.composedParent ? helpers.composedParent(el) : el.parentElement || null;
+    helpers.composedParent ? helpers.composedParent(el) : dom.parentElement(el) || null;
 
   function insideAriaHidden(el) {
-    for (let n = el; n && n.nodeType === 1; n = parentOf(n)) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = parentOf(n)) {
       if (trim(attr(n, 'aria-hidden')).toLowerCase() === 'true') return true;
     }
     return false;
@@ -85,8 +86,8 @@ function runInPage(ctx) {
 
   function isOuterSvg(el) {
     if (tagOf(el) !== 'svg') return false;
-    const p = el.parentElement;
-    return !(p && p.closest && p.closest('svg'));
+    const p = dom.parentElement(el);
+    return !(p && dom.get(p, 'closest') && dom.closest(p, 'svg'));
   }
 
   function ariaName(el) {
@@ -101,9 +102,9 @@ function runInPage(ctx) {
   }
 
   function svgTitleChildText(el) {
-    if (el.namespaceURI !== SVG_NS) return '';
-    for (const child of Array.from(el.querySelectorAll(':scope > *'))) {
-      if (tagOf(child) === 'title') return trim(child.textContent);
+    if (dom.namespaceURI(el) !== SVG_NS) return '';
+    for (const child of Array.from(dom.querySelectorAll(el, ':scope > *'))) {
+      if (tagOf(child) === 'title') return trim(dom.textContent(child));
     }
     return '';
   }
@@ -117,7 +118,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   for (const el of nodes) {
-    if (!el || !el.getAttribute) continue;
+    if (!el || !dom.get(el, 'getAttribute')) continue;
     if (trim(attr(el, 'role')).toLowerCase().split(' ')[0] !== 'img') continue;
     if (tagOf(el) === 'img' || isOuterSvg(el)) continue;
     if (insideAriaHidden(el)) continue;

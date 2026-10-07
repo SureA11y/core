@@ -76,6 +76,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
@@ -85,7 +86,7 @@ function runInPage(ctx) {
   }
   function attr(el, name) {
     try {
-      return el.getAttribute(name);
+      return dom.getAttribute(el, name);
     } catch {
       return null;
     }
@@ -164,9 +165,9 @@ function runInPage(ctx) {
   const SEARCH_FIELD =
     'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role="searchbox"]';
   for (const el of query('body *')) {
-    if (!el || el.nodeType !== 1 || !isEligible(el)) continue;
+    if (!el || dom.nodeType(el) !== 1 || !isEligible(el)) continue;
     if (landmarkOf(el)) continue;
-    const tag = String(el.localName || '').toLowerCase();
+    const tag = String(dom.localName(el) || '').toLowerCase();
     if (['script', 'style', 'a', 'button', 'input', 'span', 'li', 'img', 'svg'].includes(tag))
       continue;
     let found = null;
@@ -181,7 +182,7 @@ function runInPage(ctx) {
     }
     if (!found && tag === 'form') {
       try {
-        if (el.querySelector(SEARCH_FIELD)) {
+        if (dom.querySelector(el, SEARCH_FIELD)) {
           found = ZONES[4];
           hint = 'form';
         }
@@ -189,11 +190,11 @@ function runInPage(ctx) {
     }
     if (!found) continue;
     const same = landmarks[found.landmark];
-    if (same.some((l) => l.contains(el) || el.contains(l))) continue;
+    if (same.some((l) => dom.contains(l, el) || dom.contains(el, l))) continue;
     // The outermost element carrying the name stands for the area.
-    if (candidates.some((c) => c.zone === found.zone && c.el.contains(el))) continue;
+    if (candidates.some((c) => c.zone === found.zone && dom.contains(c.el, el))) continue;
     for (let i = candidates.length - 1; i >= 0; i--) {
-      if (candidates[i].zone === found.zone && el.contains(candidates[i].el))
+      if (candidates[i].zone === found.zone && dom.contains(el, candidates[i].el))
         candidates.splice(i, 1);
     }
     candidates.push({ el, zone: found.zone, hint });
@@ -209,7 +210,7 @@ function runInPage(ctx) {
       frag = decodeURIComponent(frag);
     } catch {}
     try {
-      return document.getElementById(frag);
+      return dom.getElementById(document, frag);
     } catch {
       return null;
     }
@@ -218,13 +219,13 @@ function runInPage(ctx) {
 
   function headingOpens(el) {
     try {
-      const h = el.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
+      const h = dom.querySelector(el, 'h1, h2, h3, h4, h5, h6, [role="heading"]');
       if (!h || !isEligible(h)) return false;
       // The heading comes before any other text of the area.
-      const walker = document.createTreeWalker(el, 4);
+      const walker = dom.createTreeWalker(document, el, 4);
       for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-        if (!/\S/.test(n.nodeValue || '')) continue;
-        return h.contains(n);
+        if (!/\S/.test(dom.nodeValue(n) || '')) continue;
+        return dom.contains(h, n);
       }
     } catch {}
     return false;
@@ -249,10 +250,10 @@ function runInPage(ctx) {
     );
     let prev = null;
     for (const f of all) {
-      if (el.contains(f)) break;
+      if (dom.contains(el, f)) break;
       let before = false;
       try {
-        before = !!(f.compareDocumentPosition(el) & FOLLOWING);
+        before = !!(dom.compareDocumentPosition(f, el) & FOLLOWING);
       } catch {}
       if (!before) break;
       if (inTabOrder(f)) prev = f;
@@ -262,11 +263,11 @@ function runInPage(ctx) {
 
   function skipLinkBefore(el) {
     const prev = previousFocusable(el);
-    if (!prev || String(prev.localName) !== 'a') return false;
+    if (!prev || String(dom.localName(prev)) !== 'a') return false;
     const target = sameDocumentTarget(prev);
-    if (!target || el.contains(target)) return false;
+    if (!target || dom.contains(el, target)) return false;
     try {
-      return !!(el.compareDocumentPosition(target) & FOLLOWING);
+      return !!(dom.compareDocumentPosition(el, target) & FOLLOWING);
     } catch {
       return false;
     }
@@ -275,7 +276,7 @@ function runInPage(ctx) {
   function toggleBefore(el) {
     const prev = previousFocusable(el);
     if (!prev) return false;
-    const isButton = String(prev.localName) === 'button' || attr(prev, 'role') === 'button';
+    const isButton = String(dom.localName(prev)) === 'button' || attr(prev, 'role') === 'button';
     if (!isButton) return false;
     const controls = String(attr(prev, 'aria-controls') || '').split(/\s+/);
     const idv = attr(el, 'id');
@@ -284,9 +285,9 @@ function runInPage(ctx) {
 
   function quickLinkTo(el) {
     return links.some((l) => {
-      if (el.contains(l)) return false;
+      if (dom.contains(el, l)) return false;
       const t = sameDocumentTarget(l);
-      return !!t && (t === el || el.contains(t));
+      return !!t && (t === el || dom.contains(el, t));
     });
   }
 
@@ -370,7 +371,7 @@ function runInPage(ctx) {
     ask(reasonCode, c.el, c.hint, c.zone);
   }
   if (!landmarks.main.length && !candidates.some((c) => c.zone === 'main')) {
-    ask('MAIN_NOT_FOUND', document.body || document.documentElement, '', 'main');
+    ask('MAIN_NOT_FOUND', dom.body(document) || dom.documentElement(document), '', 'main');
   }
 
   if (questions.length) {

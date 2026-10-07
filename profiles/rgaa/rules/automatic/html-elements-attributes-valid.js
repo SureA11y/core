@@ -103,15 +103,16 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const query = (sel) =>
     (helpers.queryAllSource ? helpers.queryAllSource(sel) : helpers.queryAll(sel)).filter(
-      (el) => el && el.namespaceURI === HTML_NS
+      (el) => el && dom.namespaceURI(el) === HTML_NS
     );
-  const tagOf = (el) => String(el.localName || '').toLowerCase();
-  const attr = (el, name) => el.getAttribute(name);
+  const tagOf = (el) => String(dom.localName(el) || '').toLowerCase();
+  const attr = (el, name) => dom.getAttribute(el, name);
 
   const OBSOLETE = new Set([
     'acronym',
@@ -383,7 +384,7 @@ function runInPage(ctx) {
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'html5' };
   if (doctype.kind !== 'html5' && doctype.kind !== 'none') {
-    report(document.documentElement, 'otherDoctype', {}, 'cantTell');
+    report(dom.documentElement(document), 'otherDoctype', {}, 'cantTell');
     return {
       ruleId: rule.ruleId,
       outcome: 'cantTell',
@@ -393,8 +394,8 @@ function runInPage(ctx) {
   }
 
   function nearestTable(el) {
-    for (let n = el.parentNode; n && n.nodeType === 1; n = n.parentNode) {
-      if (n.namespaceURI === HTML_NS && tagOf(n) === 'table') return n;
+    for (let n = dom.parentNode(el); n && dom.nodeType(n) === 1; n = dom.parentNode(n)) {
+      if (dom.namespaceURI(n) === HTML_NS && tagOf(n) === 'table') return n;
     }
     return null;
   }
@@ -409,32 +410,32 @@ function runInPage(ctx) {
       if (!custom) report(el, 'unknownElement', { element: tag });
     }
 
-    if (el.hasAttribute('dir')) {
+    if (dom.hasAttribute(el, 'dir')) {
       const value = attr(el, 'dir');
       const v = value.toLowerCase();
       const ok = tag === 'bdo' ? v === 'ltr' || v === 'rtl' : ['ltr', 'rtl', 'auto'].includes(v);
       if (!ok) report(el, 'dirValue', { value, element: tag });
     }
 
-    if (el.hasAttribute('id')) {
+    if (dom.hasAttribute(el, 'id')) {
       const value = attr(el, 'id');
       if (value === '' || /[\t\n\f\r ]/.test(value)) report(el, 'idValue', { value });
     }
 
-    if (el.hasAttribute('lang')) {
+    if (dom.hasAttribute(el, 'lang')) {
       const value = attr(el, 'lang');
       if (value !== '' && !LANGTAG.test(value)) report(el, 'langValue', { value });
     }
 
-    if (el.hasAttribute('xml:lang')) {
+    if (dom.hasAttribute(el, 'xml:lang')) {
       const xmlLang = attr(el, 'xml:lang');
-      const lang = el.hasAttribute('lang') ? attr(el, 'lang') : null;
+      const lang = dom.hasAttribute(el, 'lang') ? attr(el, 'lang') : null;
       if (lang === null || lang.toLowerCase() !== xmlLang.toLowerCase()) {
         report(el, 'xmlLangMismatch', { xmlLang, lang: lang === null ? '' : lang, element: tag });
       }
     }
 
-    if (el.hasAttribute('scope')) {
+    if (dom.hasAttribute(el, 'scope')) {
       const value = attr(el, 'scope');
       if (tag === 'th') {
         if (!['row', 'col', 'rowgroup', 'colgroup'].includes(value.toLowerCase())) {
@@ -445,7 +446,7 @@ function runInPage(ctx) {
       }
     }
 
-    if ((tag === 'td' || tag === 'th') && el.hasAttribute('headers')) {
+    if ((tag === 'td' || tag === 'th') && dom.hasAttribute(el, 'headers')) {
       const tokens = attr(el, 'headers')
         .split(/[\t\n\f\r ]+/)
         .filter(Boolean);
@@ -454,16 +455,18 @@ function runInPage(ctx) {
       } else {
         const table = nearestTable(el);
         const ths = table
-          ? Array.from(table.querySelectorAll('th[id]')).filter((th) => nearestTable(th) === table)
+          ? Array.from(dom.querySelectorAll(table, 'th[id]')).filter(
+              (th) => nearestTable(th) === table
+            )
           : [];
-        const ids = new Set(ths.map((th) => th.getAttribute('id')));
+        const ids = new Set(ths.map((th) => dom.getAttribute(th, 'id')));
         const missing = tokens.find((t) => !ids.has(t));
         if (missing !== undefined) report(el, 'headersTarget', { target: missing });
       }
     }
 
-    if (tag === 'optgroup' && !el.hasAttribute('label')) {
-      const legend = Array.from(el.querySelectorAll(':scope > *')).some(
+    if (tag === 'optgroup' && !dom.hasAttribute(el, 'label')) {
+      const legend = Array.from(dom.querySelectorAll(el, ':scope > *')).some(
         (c) => tagOf(c) === 'legend'
       );
       if (!legend) report(el, 'optgroupLabel', {});
@@ -477,10 +480,10 @@ function runInPage(ctx) {
         : '';
 
     if (tag === 'input' && inputType === 'image') {
-      if (!el.hasAttribute('alt') || attr(el, 'alt') === '') report(el, 'inputImageAlt', {});
+      if (!dom.hasAttribute(el, 'alt') || attr(el, 'alt') === '') report(el, 'inputImageAlt', {});
     }
 
-    if (el.hasAttribute('autocomplete')) {
+    if (dom.hasAttribute(el, 'autocomplete')) {
       const value = attr(el, 'autocomplete');
       if (tag === 'form') {
         if (!['on', 'off'].includes(value.toLowerCase())) {

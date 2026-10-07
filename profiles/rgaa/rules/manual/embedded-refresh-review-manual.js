@@ -56,6 +56,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
   // Every match in scope, hidden or not: a hidden element can still reload.
@@ -72,7 +73,7 @@ function runInPage(ctx) {
   const STILL_IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?)(?:[?#]|$)/i;
 
   function attr(el, name) {
-    return String(el.getAttribute(name) || '').trim();
+    return String(dom.getAttribute(el, name) || '').trim();
   }
 
   function isStillImage(el, urlAttr) {
@@ -85,7 +86,7 @@ function runInPage(ctx) {
     if (tag === 'object') return !isStillImage(el, 'data');
     if (tag === 'embed') return !isStillImage(el, 'src');
     if (tag === 'canvas') return true;
-    if (tag === 'svg') return !!el.querySelector('script');
+    if (tag === 'svg') return !!dom.querySelector(el, 'script');
     return false;
   }
 
@@ -93,9 +94,9 @@ function runInPage(ctx) {
   const askedObjects = [];
 
   for (const el of queryAllUnfiltered('object, embed, canvas, svg')) {
-    if (!el || !el.getAttribute) continue;
-    if (askedObjects.some((o) => o !== el && o.contains(el))) continue;
-    const tag = String(el.localName || el.tagName || '').toLowerCase();
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (askedObjects.some((o) => o !== el && dom.contains(o, el))) continue;
+    const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
     if (!applies(el, tag)) continue;
     if (tag === 'object') askedObjects.push(el);
 

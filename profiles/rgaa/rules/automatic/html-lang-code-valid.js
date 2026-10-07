@@ -61,6 +61,7 @@ function applicability(ctx) {
 }
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -90,17 +91,17 @@ function runInPage(ctx) {
     return helpers.isRegisteredLanguageSubtag ? helpers.isRegisteredLanguageSubtag(c) : true;
   }
 
-  const html = document && document.documentElement;
-  if (!html || String(html.tagName || '').toLowerCase() !== 'html') {
+  const html = document && dom.documentElement(document);
+  if (!html || String(dom.tagName(html) || '').toLowerCase() !== 'html') {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const xmlLang =
     html.getAttributeNS && html.getAttributeNS(XML_NS, 'lang') != null
       ? html.getAttributeNS(XML_NS, 'lang')
-      : html.getAttribute('xml:lang');
+      : dom.getAttribute(html, 'xml:lang');
   const declared = [
-    ['lang', html.getAttribute('lang')],
+    ['lang', dom.getAttribute(html, 'lang')],
     ['xml:lang', xmlLang]
   ]
     .map(([attribute, value]) => [attribute, String(value == null ? '' : value).trim()])

@@ -89,21 +89,24 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   const query = (sel) =>
     (helpers.queryAllSource ? helpers.queryAllSource(sel) : helpers.queryAll(sel)).filter(
-      (el) => el && el.namespaceURI === HTML_NS
+      (el) => el && dom.namespaceURI(el) === HTML_NS
     );
-  const tagOf = (el) => String(el.localName || '').toLowerCase();
-  const isHtml = (el) => !!el && el.nodeType === 1 && el.namespaceURI === HTML_NS;
+  const tagOf = (el) => String(dom.localName(el) || '').toLowerCase();
+  const isHtml = (el) => !!el && dom.nodeType(el) === 1 && dom.namespaceURI(el) === HTML_NS;
   const parentElementOf = (el) => {
-    const p = el.parentNode;
-    return p && p.nodeType === 1 ? p : null;
+    const p = dom.parentNode(el);
+    return p && dom.nodeType(p) === 1 ? p : null;
   };
   const hasText = (el) =>
-    Array.from(el.childNodes || []).some((n) => n.nodeType === 3 && /\S/.test(n.nodeValue || ''));
+    Array.from(dom.childNodes(el) || []).some(
+      (n) => dom.nodeType(n) === 3 && /\S/.test(dom.nodeValue(n) || '')
+    );
 
   const TEXTS = {
     listChild: [
@@ -221,7 +224,7 @@ function runInPage(ctx) {
 
   const doctype = helpers.getDoctypeInfo ? helpers.getDoctypeInfo() : { kind: 'html5' };
   if (doctype.kind !== 'html5' && doctype.kind !== 'none') {
-    report(document.documentElement, 'otherDoctype', {}, 'cantTell');
+    report(dom.documentElement(document), 'otherDoctype', {}, 'cantTell');
     return result('cantTell');
   }
 
@@ -230,7 +233,7 @@ function runInPage(ctx) {
   // ul, ol, menu: li, script and template children only.
   for (const list of lists) {
     const parent = tagOf(list);
-    for (const child of Array.from(list.querySelectorAll(':scope > *'))) {
+    for (const child of Array.from(dom.querySelectorAll(list, ':scope > *'))) {
       const tag = tagOf(child);
       if (!isHtml(child)) {
         report(child, 'listChild', { element: tag, parent });
@@ -262,7 +265,7 @@ function runInPage(ctx) {
   }
 
   for (const dl of dls) {
-    const kids = Array.from(dl.querySelectorAll(':scope > *')).filter(
+    const kids = Array.from(dom.querySelectorAll(dl, ':scope > *')).filter(
       (c) => !(isHtml(c) && SCRIPT_SUPPORTING.has(tagOf(c)))
     );
     if (hasText(dl)) report(dl, 'dlText', { element: 'dl' });
@@ -285,7 +288,7 @@ function runInPage(ctx) {
     for (const div of divs) {
       if (hasText(div)) report(div, 'dlText', { element: 'div' });
       const groupTags = [];
-      for (const c of Array.from(div.querySelectorAll(':scope > *'))) {
+      for (const c of Array.from(dom.querySelectorAll(div, ':scope > *'))) {
         const tag = tagOf(c);
         if (isHtml(c) && SCRIPT_SUPPORTING.has(tag)) continue;
         if (isHtml(c) && (tag === 'dt' || tag === 'dd')) groupTags.push(tag);
@@ -323,22 +326,22 @@ function runInPage(ctx) {
       case 'textarea':
         return true;
       case 'input':
-        return String(el.getAttribute('type') || '').toLowerCase() !== 'hidden';
+        return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
       case 'img':
-        return el.hasAttribute('usemap');
+        return dom.hasAttribute(el, 'usemap');
       case 'audio':
       case 'video':
-        return el.hasAttribute('controls');
+        return dom.hasAttribute(el, 'controls');
       default:
         return false;
     }
   }
   const seen = new Set();
   for (const container of containers) {
-    for (const d of Array.from(container.querySelectorAll('*'))) {
+    for (const d of Array.from(dom.querySelectorAll(container, '*'))) {
       if (!isHtml(d) || seen.has(d)) continue;
       const interactive = isInteractive(d);
-      const tabindex = d.hasAttribute('tabindex');
+      const tabindex = dom.hasAttribute(d, 'tabindex');
       if (!interactive && !tabindex) continue;
       let anc = parentElementOf(d);
       while (anc && !(isHtml(anc) && (tagOf(anc) === 'a' || tagOf(anc) === 'button'))) {
@@ -356,7 +359,7 @@ function runInPage(ctx) {
   // img[ismap]: needs an a[href] ancestor.
   for (const img of ismaps) {
     let anc = parentElementOf(img);
-    while (anc && !(isHtml(anc) && tagOf(anc) === 'a' && anc.hasAttribute('href'))) {
+    while (anc && !(isHtml(anc) && tagOf(anc) === 'a' && dom.hasAttribute(anc, 'href'))) {
       anc = parentElementOf(anc);
     }
     if (!anc) report(img, 'ismapOutsideLink', {});
@@ -364,7 +367,9 @@ function runInPage(ctx) {
 
   // main: at most one in the document without its own hidden attribute.
   const shownMains = mains.filter(
-    (el) => !el.hasAttribute('hidden') && (el.getRootNode ? el.getRootNode() === document : true)
+    (el) =>
+      !dom.hasAttribute(el, 'hidden') &&
+      (dom.get(el, 'getRootNode') ? dom.getRootNode(el) === document : true)
   );
   for (const el of shownMains.slice(1)) report(el, 'extraMain', {});
 
