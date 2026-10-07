@@ -140,7 +140,7 @@ It changes only what a result names, never which rules run or their outcomes. Th
 
 The fields below select by the tags rules carry and by rule ids. Reach for them for what a WCAG target and `bestPractices` don't say: one criterion (`tags: ['wcag1412']`), a list of rules, an exclusion, or a tag set kept from another tool. They combine with `wcag` and `bestPractices`: what they include is added to what those select, and what they exclude is taken away after.
 
-There are **two independent ways** to give them — the 4th argument (`runOnly`), or `engineOptions.rules`/`.tags`/`.tests`/`.includeMode`. If `runOnly` contains any filter, it wins outright; otherwise the engine falls back to `engineOptions`. Don't mix them expecting both to apply — pick one.
+There are **two independent ways** to give them — the 4th argument (`runOnly`), or `engineOptions.rules`/`.tags`/`.tests`/`.includeMode`. If `runOnly` contains any filter, it wins outright; otherwise the engine falls back to `engineOptions`. Don't mix them expecting both to apply — pick one. `engineOptions.rules`, `.tags` and `.tests` take `{ include, exclude }`; a bare list or string is the include list.
 
 ### Via `runOnly` (4th argument)
 
@@ -181,7 +181,7 @@ The nine WCAG version/level tags, `wcag2a` to `wcag22aaa`, are always known, whe
 
 Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
 
-axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` is `{ tags: ['wcag2a', 'wcag2aa'] }`, and `{ type: 'rule', values: ['img-alt-present'] }` is `{ includeRuleIds: ['img-alt-present'] }` (`'tags'` and `'rules'` work too). Any other `type` throws `INVALID_RUN_ONLY`, and so does a `runOnly` that is a number or a boolean, or an object none of whose keys the engine reads (`{ includeRuleId: [...] }`): each used to run every rule. An empty array, string or object still means every rule.
+axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` is `{ tags: ['wcag2a', 'wcag2aa'] }`, and `{ type: 'rule', values: ['img-alt-present'] }` is `{ includeRuleIds: ['img-alt-present'] }` (`'tags'` and `'rules'` work too). `values` may be a comma-separated string, its names are checked like any rule ids or tags, and the other keys beside it (`excludeTags`, `excludeRuleIds`...) still apply. A `Set` of names is read as the list it holds. A key the object form doesn't read, beside ones it does, is ignored with a warning; `includeTestIds` and `excludeTestIds` are checked like `includeRuleIds`. A composite id may carry the engine's legacy `a11ycore-` prefix, as a rule id may. Any other `type` throws `INVALID_RUN_ONLY`, and so does a `runOnly` that is a number or a boolean, or an object none of whose keys the engine reads (`{ includeRuleId: [...] }`): each used to run every rule. An empty array, string or object still means every rule.
 
 ### Filtering by WCAG version (2.1 vs 2.2)
 
