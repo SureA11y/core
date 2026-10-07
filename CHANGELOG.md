@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- aria-hidden-focus applies to `aria-hidden="TRUE"`, `"True"` and `" true "`, as browsers do. A page whose only hidden content was written that way was `notApplicable`, so a focusable element in it was not reported. (#148)
 - valid-lang no longer calls a well-formed tag such as `lang="qaa"` or `lang="eng"` "not a syntactically valid language tag". It still fails, and the message now says the subtag names no known language: it isn't in the IANA Language Subtag Registry, or is reserved for private use. A malformed value keeps its message. (#147)
 - `@surea11y/core/browser` exports its API when a bundler or `require()` loads it as a module: `import a11ycore from '@surea11y/core/browser'`, a named import of `runa11yCoreInPage`, and `require()` all get it. The bundle only set `window.a11ycore`, so each of them got an empty object; the global is still defined. (#139)
 - A custom rule that overrides a built-in runs wherever the built-in would have, whatever tags it declares, and a custom rule the run's selection leaves out (under a profile or a WCAG target, one tagged `best-practice` or with no WCAG tag) is listed in `skippedCustomRules`, with a warning saying how to select it. Both were dropped without a trace, and the override took its built-in out of the run with it. (#138)
