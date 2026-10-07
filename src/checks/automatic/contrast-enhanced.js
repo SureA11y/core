@@ -29,7 +29,8 @@
  *     for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for
  *     large text).
  *   - `colors.foregroundHex`, `colors.backgroundHex` (a FAIL): the text and
- *     background colors the ratio was computed from, as hex. A
+ *     background colors the ratio was computed from, as hex (the text in the
+ *     -webkit-text-fill-color it is painted in, `color` unless set). A
  *     semi-transparent text color is first blended onto the background.
  *   - `colors.foregroundRgba`, `colors.backgroundRgba` (a FAIL): the same
  *     colors as `rgba()` strings.

@@ -29,7 +29,8 @@
  *     ratio against its background (4.5 for 4.5:1), against
  *     `metrics.threshold`, the ratio its size requires.
  *   - `colors.foregroundHex`, `colors.backgroundHex` (text below the
- *     threshold): the text color and the background color behind it, as
+ *     threshold): the text color (the -webkit-text-fill-color it is
+ *     painted in, `color` unless set) and the background color behind it, as
  *     hex, after any transparency is blended in.
  *     `colors.foregroundRgba` and `colors.backgroundRgba` give the same two
  *     colors in `rgba()` form.
