@@ -617,10 +617,23 @@ function settleAnimations(doc) {
  */
 function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
-  const impls = {};
+  // No prototype: a rule with the id "__proto__" is a rule like any other.
+  const impls = Object.create(null);
   const skipped = [];
   const overriddenBuiltinIds = [];
   const raw = Array.isArray(customRules) ? customRules : [];
+  // customRules is a list. One rule given on its own is not run, and says so
+  // rather than vanish.
+  if (customRules != null && !Array.isArray(customRules)) {
+    const id =
+      customRules && typeof customRules === 'object' && typeof customRules.id === 'string'
+        ? customRules.id.trim()
+        : '';
+    skipped.push({
+      id: id || null,
+      reason: 'customRules is not an array; give the rules as a list, such as [rule]'
+    });
+  }
 
   // Whether the last source string could not be evaluated at all because
   // the page's Content Security Policy forbids it (no 'unsafe-eval').

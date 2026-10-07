@@ -114,12 +114,12 @@ test('an invalid uncertainty code is left out with a note', () => {
 // the rule is skipped with a reason, as for runInPage, instead of applying
 // everywhere.
 test('a custom rule with an unusable applicability is skipped', () => {
-  const run = (applicability) => {
+  const run = (applicability, runOnly = ['acme-x']) => {
     const warn = console.warn;
     console.warn = () => {};
     try {
       return runa11yCoreOnHtml(PAGE, {
-        runOnly: ['acme-x'],
+        runOnly,
         engineOptions: {
           customRules: [
             {
@@ -141,7 +141,9 @@ test('a custom rule with an unusable applicability is skipped', () => {
     [5, 'applicability is not a function'],
     [{}, 'applicability is not a function']
   ]) {
-    const r = run(applicability);
+    // Selected by id, a skipped rule is a name runOnly can't use.
+    assert.throws(() => run(applicability), { code: 'INVALID_RUN_ONLY' });
+    const r = run(applicability, ['region']);
     assert.strictEqual(
       r.checksResults.find((c) => c.ruleId === 'acme-x'),
       undefined
@@ -152,4 +154,67 @@ test('a custom rule with an unusable applicability is skipped', () => {
     assert.strictEqual(run(applicability).checksResults[0].outcome, 'fail');
   }
   assert.strictEqual(run('(ctx) => false').checksResults[0].outcome, 'notApplicable');
+});
+
+// Custom rules that vanished without a trace: given as one object instead of
+// a list, with the id "__proto__", tags given as a string, and a runOnly
+// that names only a rule that was skipped.
+test('custom rules no longer vanish without a trace', () => {
+  const rule = (id, extra) =>
+    Object.assign(
+      {
+        id,
+        meta: { title: 'X', tags: ['best-practice'] },
+        runInPage: () => ({ outcome: 'fail', occurrences: [] })
+      },
+      extra || {}
+    );
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const single = runa11yCoreOnHtml(PAGE, {
+      engineOptions: { customRules: rule('acme-one') },
+      runOnly: ['region']
+    });
+    assert.deepStrictEqual(single.skippedCustomRules, [
+      {
+        id: 'acme-one',
+        reason: 'customRules is not an array; give the rules as a list, such as [rule]'
+      }
+    ]);
+
+    const proto = runa11yCoreOnHtml(PAGE, {
+      engineOptions: { customRules: [rule('__proto__')] },
+      runOnly: ['__proto__']
+    });
+    assert.deepStrictEqual(
+      proto.checksResults.map((c) => [c.ruleId, c.outcome]),
+      [['__proto__', 'fail']]
+    );
+
+    const tagged = runa11yCoreOnHtml(PAGE, {
+      engineOptions: {
+        customRules: [rule('acme-t', { meta: { title: 'X', tags: 'mytag, other' } })]
+      },
+      runOnly: { tags: ['mytag'] }
+    });
+    const t = tagged.checksResults.find((c) => c.ruleId === 'acme-t');
+    assert.strictEqual(t.outcome, 'fail');
+    assert.ok(t.meta.tags.includes('mytag') && t.meta.tags.includes('other'));
+
+    assert.throws(
+      () =>
+        runa11yCoreOnHtml(PAGE, {
+          engineOptions: { customRules: [rule('acme-bad', { runInPage: 5 })] },
+          runOnly: ['acme-bad']
+        }),
+      {
+        code: 'INVALID_RUN_ONLY',
+        message:
+          'runOnly: no rule or tag named "acme-bad" (a custom rule that was skipped: runInPage is not a function).'
+      }
+    );
+  } finally {
+    console.warn = warn;
+  }
 });
