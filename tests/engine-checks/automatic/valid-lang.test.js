@@ -52,6 +52,28 @@ test(`${RULE_ID}: a malformed later subtag passes; an unknown primary subtag fai
   }
 });
 
+// "qaa" (private use) and "eng" are well-formed tags that name no
+// language: they fail, but are not called malformed (#147).
+test(`${RULE_ID}: a well-formed tag naming no language is not called malformed`, () => {
+  const html = `<!doctype html><html lang="fr"><body><p id="q" lang="qaa">x</p><p id="e" lang="eng-GB">y</p><p id="m" lang="en_US">z</p></body></html>`;
+  for (const locale of ['en', 'de', 'es', 'fr', 'ja']) {
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale } });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+    const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+    for (const o of rule.occurrences)
+      assert.equal(o.data.details.reasonCode, 'ELEMENT_LANG_INVALID');
+    assert.match(byId('q').summary, /qaa/);
+    assert.match(byId('e').summary, /eng/);
+    if (locale === 'en') {
+      assert.match(byId('q').summary, /is well formed, but "qaa" names no known language/);
+      assert.doesNotMatch(byId('q').summary, /syntactically/);
+      assert.match(byId('e').summary, /"eng" names no known language/);
+      assert.match(byId('m').summary, /is not a syntactically valid language tag/);
+    }
+    assert.notEqual(byId('q').summary, byId('m').summary.replace('en_US', 'qaa'));
+  }
+});
+
 test(`${RULE_ID}: does not evaluate the root <html> element`, () => {
   const html = `<!doctype html><html lang="???"><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

@@ -699,6 +699,7 @@
   "validLang_title": "要素の lang 属性は構文上有効であること",
   "validLang_description": "ルートの <html> 以外で空でない lang 属性を持つ要素が、構文上有効な言語タグを使用しているかを確認します。",
   "validLang_summary_fail": "この lang 属性の値 (「{{value}}」) は、構文上有効な言語タグではありません。",
+  "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにないか、私的利用のために予約されています)。",
   "validLang_hint_fail": "有効な BCP47 言語タグを使用してください (例:「ja」「en-US」)。",
   "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
   "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、フォントの太さやスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",

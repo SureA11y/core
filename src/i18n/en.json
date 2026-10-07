@@ -699,6 +699,7 @@
   "validLang_title": "Element lang attribute must be syntactically valid",
   "validLang_description": "Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.",
   "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
+  "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).",
   "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
   "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
   "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",

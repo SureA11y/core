@@ -699,6 +699,7 @@
   "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
   "validLang_description": "Prüft, ob jedes Element (außer dem Wurzelelement <html>) mit einem nicht leeren lang-Attribut ein syntaktisch gültiges Sprach-Tag verwendet.",
   "validLang_summary_fail": "Dieser lang-Attributwert („{{value}}“) ist kein syntaktisch gültiges Sprach-Tag.",
+  "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry oder ist für die private Nutzung reserviert).",
   "validLang_hint_fail": "Verwenden Sie ein gültiges BCP-47-Sprach-Tag (z. B. „fr“, „es-MX“).",
   "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
   "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, Schriftgewicht oder -stil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist, und fragt nach Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben und daher auch bei Hover und Fokus ein Merkmal brauchen.",
