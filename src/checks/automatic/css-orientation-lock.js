@@ -20,7 +20,13 @@
  *   regardless of the device's actual orientation, which defeats WCAG
  *   1.3.4's requirement that content not restrict its view to a single
  *   display orientation unless that orientation is essential.
- *   Such a rotation fails.
+ *   Such a rotation is judged on the visible elements its selector matches
+ *   (ACT b33eff), visibility judged without the rotation itself: it fails
+ *   where one of them holds the page's content (as defined below for
+ *   hidden content), and any other element turned that way is asked about
+ *   (cantTell): an arrow pointing to a panel beside it in one orientation
+ *   and below it in the other locks nothing. A rule that turns no visible
+ *   element, or only a pseudo-element, has nothing to judge.
  *
  *   A second shape is asked about (cantTell): an orientation media block
  *   that hides the page's content with `display: none` or `visibility:
@@ -32,7 +38,9 @@
  *   essential, and whether the page stays usable, is left to a person.
  * @reports
  *   - `mediaText` (a rotation or hidden content): the media query that
- *     holds the rule, such as `(orientation: portrait)`.
+ *     holds the rule, such as `(orientation: portrait)`. A rotation of an
+ *     element that doesn't hold the page's content is reported against that
+ *     element (ORIENTATION_MEDIA_ROTATES_ELEMENT).
  *   - `selectorText` (a rotation or hidden content): the selector of the
  *     style rule that rotates or hides. Empty when it could not be read.
  *   - `unreadableSheetCount` (`STYLESHEETS_NOT_READABLE`): how many style
@@ -369,7 +377,53 @@ function runInPage(ctx) {
     return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
   }
 
-  const findings = [];
+  // Whether an element is drawn, judged without the rotation itself: a page
+  // turned out of view is still the page (#109). Without a layout (jsdom),
+  // by its styles alone.
+  let hasLayout = null;
+  function isVisible(el) {
+    try {
+      if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
+        return false;
+      const view = dom.defaultView(document);
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
+        const cs = view && view.getComputedStyle ? view.getComputedStyle(a) : null;
+        if (cs && cs.display === 'none') return false;
+        if (a === el && cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse'))
+          return false;
+      }
+      if (hasLayout === null) {
+        const root = dom.documentElement(document);
+        hasLayout = !!(root && dom.getClientRects(root).length);
+      }
+      if (!hasLayout) return true;
+      return Array.from(dom.getClientRects(el)).some((r) => r.width > 0 && r.height > 0);
+    } catch {
+      return true;
+    }
+  }
+  // The visible elements a style rule's selector matches. A selector naming
+  // a pseudo-element rotates no element of the page.
+  function visibleMatches(selectorText) {
+    if (
+      /::?(before|after|first-line|first-letter|marker|placeholder|backdrop)\b/i.test(selectorText)
+    )
+      return [];
+    let matched;
+    try {
+      matched = Array.from(dom.querySelectorAll(document, selectorText));
+    } catch {
+      return [];
+    }
+    return matched.filter(isVisible);
+  }
+
+  const rotations = [];
   const hidings = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
@@ -392,13 +446,62 @@ function runInPage(ctx) {
       // A <style media="..."> or <link media="..."> applies its whole sheet
       // under that condition.
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
-      walkRules(rules, sheetMedia, '', 0, findings, hidings);
+      walkRules(rules, sheetMedia, '', 0, rotations, hidings);
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
   }
 
   const scanTarget = dom.documentElement(document) || dom.body(document) || null;
+
+  // A rotation of about 90 degrees in an orientation block locks the page
+  // where the element it turns holds the page's content; another element
+  // turned that way (an arrow pointing beside a panel in one orientation
+  // and below it in the other) may lock nothing, which a person decides.
+  // A rule that turns no visible element has nothing to judge (ACT b33eff).
+  const findings = [];
+  const rotated = [];
+  const seenRotated = new Set();
+  for (const r of rotations) {
+    const visible = visibleMatches(r.selectorText);
+    if (!visible.length) continue;
+    if (visible.some(holdsPageContent)) {
+      findings.push(r);
+      continue;
+    }
+    const el = visible.find((v) => !seenRotated.has(v));
+    if (!el) continue;
+    seenRotated.add(el);
+    rotated.push({ el, mediaText: r.mediaText, selectorText: r.selectorText });
+  }
+  const rotatedOccurrences = rotated.map((f) =>
+    helpers.reportOccurrence(f.el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `A "${f.mediaText}" media query turns "${f.selectorText}" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.`,
+      hint: 'Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_rotatesElement',
+        hintKey: 'cssOrientationLock_hint_cantTell_rotatesElement',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      uncertainty: {
+        code: 'judgement-required',
+        needed: 'Whether turning this element restricts its content to one orientation.',
+        evidence: {
+          mediaText: f.mediaText,
+          selectorText: f.selectorText,
+          reasonCode: 'ORIENTATION_MEDIA_ROTATES_ELEMENT'
+        }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_ROTATES_ELEMENT',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
+      }
+    })
+  );
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
@@ -470,9 +573,11 @@ function runInPage(ctx) {
     })
   );
 
+  const questions = hiddenContentOccurrences.concat(rotatedOccurrences);
+
   // A lock found in a readable sheet is still a lock, so `fail` outranks the
   // uncertainty below.
-  if (!findings.length && hiddenContentOccurrences.length) {
+  if (!findings.length && questions.length) {
     const unreadable =
       unreadableSheetCount > 0 ? [unreadableSheetsOccurrence(unreadableSheetCount)] : [];
     return {
@@ -480,7 +585,7 @@ function runInPage(ctx) {
       outcome: 'cantTell',
       severity: rule.defaultSeverity || 'serious',
       confidence: 'low',
-      occurrences: hiddenContentOccurrences.concat(unreadable)
+      occurrences: questions.concat(unreadable)
     };
   }
 
@@ -524,16 +629,12 @@ function runInPage(ctx) {
     })
   );
 
-  if (hiddenContentOccurrences.length) {
-    // See helpers.resolveTieredOutcome: the lock fails, and the hidden-content
-    // questions are kept beside it.
+  if (questions.length) {
+    // See helpers.resolveTieredOutcome: the lock fails, and the questions
+    // are kept beside it.
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(
-        occurrences,
-        hiddenContentOccurrences,
-        rule.defaultSeverity || 'serious'
-      )
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'serious')
     };
   }
 

@@ -205,6 +205,41 @@ test(`${RULE_ID}: a rotation lock still fails, with the hidden-content question 
   );
 });
 
+test(`${RULE_ID}: a rotation that turns no visible element has nothing to judge (#109)`, () => {
+  const P = '@media (orientation: portrait)';
+  for (const html of [
+    `<style>${P} { .does-not-exist { transform: rotate(90deg); } }</style><main>Content</main>`,
+    `<style>${P} { .h { transform: rotate(90deg); } }</style><main>Content</main><div class="h" hidden>x</div>`,
+    `<style>${P} { .h { transform: rotate(90deg); } }</style><main>Content</main><div style="display:none"><span class="h">x</span></div>`,
+    `<style>${P} { main::before { content: "x"; transform: rotate(90deg); } }</style><main>Content</main>`
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><head>${html}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: turning an element that doesn't hold the page's content is asked about; turning main fails (#109)`, () => {
+  const P = '@media (orientation: portrait)';
+  const icon = runa11yCoreOnHtml(
+    `<!doctype html><html><head><style>${P} { .chevron { transform: rotate(90deg); } }</style></head><body><main><h1>Title</h1><p>Most of the page's text sits here.</p></main><span class="chevron">›</span></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(icon, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.reasonCode,
+    'ORIENTATION_MEDIA_ROTATES_ELEMENT'
+  );
+  assert.match(rule.occurrences[0].html, /chevron/);
+
+  const page = runa11yCoreOnHtml(
+    `<!doctype html><html><head><style>${P} { main, .chevron { transform: rotate(90deg); } }</style></head><body><main><p>Most of the page's text sits here.</p></main><span class="chevron">›</span></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(page, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>@media (orientation: landscape) { html { transform: rotate(90deg); } }</style></head><body></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

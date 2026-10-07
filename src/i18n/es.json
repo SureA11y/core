@@ -753,6 +753,8 @@
   "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
   "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
   "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
+  "cssOrientationLock_summary_cantTell_rotatesElement": "Una media query \"{{mediaText}}\" gira \"{{selectorText}}\" un cuarto de vuelta. No contiene el contenido principal de la página, así que puede no bloquear nada.",
+  "cssOrientationLock_hint_cantTell_rotatesElement": "Compruebe si el elemento girado deja su contenido legible y operable en ambas orientaciones, como una flecha que señala un panel a su lado o debajo. Si contiene contenido que debe leerse derecho, quite el giro.",
   "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
   "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
   "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
