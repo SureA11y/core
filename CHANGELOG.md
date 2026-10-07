@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Text with a visible `-webkit-text-stroke` is reported by contrast-computable as `cantTell` (reason `TEXT_STROKE`), as text with a `text-shadow` is. contrast-minimum measured only the fill colour, and failed outlined text whose glyphs are mostly the stroke's colour.
 - Cross-frame scans reach iframes inside open shadow roots, and an iframe that is itself the scanned scope; both were missed. A custom rule given as a function reaches child frames as its source, where it failed every frame with a `DataCloneError`.
 - `profileRules` no longer charges the shared style and eligibility caches to the first rule that walks the page (`aria-valid-attr` in a full scan, a rule that reads no styles). They are filled first and timed as `perfStats.warmUpMs`, so `ruleTimings` shows each rule's own time.
 - A custom element whose `shadowRoot` getter throws no longer puts about 77 rules into `cantTell` with its error. Its shadow tree is read as unreadable, as a closed one is, and the rest of the page is judged as usual.
