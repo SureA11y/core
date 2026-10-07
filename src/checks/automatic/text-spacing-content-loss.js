@@ -31,6 +31,9 @@
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
  *     sheet to the page cannot override it, though a user style sheet can.
+ *     A value relative to the font size is read as declared, and a computed
+ *     one meets the value within the rounding browsers report lengths with,
+ *     so a rule setting exactly the minimum is not asked about (#108).
  *   Without a layout and with no such rule, the rule is notApplicable, with
  *   `data.reason: 'noLayout'`.
  *   - Only text inside the scan's scope (contextSelector) and not excluded
@@ -162,6 +165,25 @@ function runInPage(ctx) {
     if (unit === '%') return prop === 'line-height' ? n / 100 : null;
     return prop === 'line-height' ? n : null;
   }
+  // A value relative to the font size is the ratio itself: em for any of
+  // the three, unitless or a percentage for line-height. Read as declared it
+  // is exact, where a computed one comes in px, rounded (#108).
+  function declaredRatio(prop, value) {
+    const m = /^(\d*\.?\d+)(em|%)?$/.exec(
+      String(value || '')
+        .trim()
+        .toLowerCase()
+    );
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (m[2] === 'em') return n;
+    if (prop !== 'line-height') return null;
+    return m[2] === '%' ? n / 100 : n;
+  }
+  // Browsers report computed lengths to six significant digits (11pt is
+  // 14.6667px), so a ratio of two of them can fall short of the minimum by
+  // a few millionths where the declared values meet it exactly.
+  const meetsMinimum = (prop, ratio) => ratio >= MIN_RATIO[prop] * (1 - 1e-5);
   function round1(n) {
     return Math.round(n * 10) / 10;
   }
@@ -202,9 +224,11 @@ function runInPage(ctx) {
           if (!el || seen.has(el) || !textOf(el)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
-          const ratio = ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
+          const declared = declaredRatio(prop, value);
+          const ratio =
+            declared !== null ? declared : ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
           // A value that already meets the metric leaves nothing to override.
-          if (ratio == null ? false : ratio >= MIN_RATIO[prop]) continue;
+          if (ratio == null ? false : meetsMinimum(prop, ratio)) continue;
           seen.add(el);
           importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
           break;
