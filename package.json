@@ -27,19 +27,71 @@
   ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "baseline": [
+        "src/baseline.d.ts"
+      ],
+      "report": [
+        "src/report.d.ts"
+      ],
+      "sarif": [
+        "src/sarif.d.ts"
+      ],
+      "junit": [
+        "src/junit.d.ts"
+      ],
+      "earl": [
+        "src/earl.d.ts"
+      ],
+      "en301549": [
+        "src/en301549.d.ts"
+      ],
+      "wcag": [
+        "src/wcag.d.ts"
+      ],
+      "browser": [
+        "surea11y.browser.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
       "default": "./src/index.js"
     },
-    "./baseline": "./src/baseline.js",
-    "./report": "./src/report.js",
-    "./sarif": "./src/sarif.js",
-    "./junit": "./src/junit.js",
-    "./earl": "./src/earl.js",
-    "./en301549": "./src/en301549.js",
-    "./wcag": "./src/wcag.js",
-    "./browser": "./surea11y.browser.js",
+    "./baseline": {
+      "types": "./src/baseline.d.ts",
+      "default": "./src/baseline.js"
+    },
+    "./report": {
+      "types": "./src/report.d.ts",
+      "default": "./src/report.js"
+    },
+    "./sarif": {
+      "types": "./src/sarif.d.ts",
+      "default": "./src/sarif.js"
+    },
+    "./junit": {
+      "types": "./src/junit.d.ts",
+      "default": "./src/junit.js"
+    },
+    "./earl": {
+      "types": "./src/earl.d.ts",
+      "default": "./src/earl.js"
+    },
+    "./en301549": {
+      "types": "./src/en301549.d.ts",
+      "default": "./src/en301549.js"
+    },
+    "./wcag": {
+      "types": "./src/wcag.d.ts",
+      "default": "./src/wcag.js"
+    },
+    "./browser": {
+      "types": "./surea11y.browser.d.ts",
+      "default": "./surea11y.browser.js"
+    },
     "./i18n/*": "./surea11y.i18n.*.js",
     "./package.json": "./package.json"
   },
@@ -62,6 +114,14 @@
   "files": [
     "src/index.js",
     "src/index.d.ts",
+    "src/baseline.d.ts",
+    "src/report.d.ts",
+    "src/sarif.d.ts",
+    "src/junit.d.ts",
+    "src/earl.d.ts",
+    "src/en301549.d.ts",
+    "src/wcag.d.ts",
+    "surea11y.browser.d.ts",
     "src/core.js",
     "src/baseline.js",
     "src/scan-result.js",

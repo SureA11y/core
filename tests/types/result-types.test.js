@@ -230,3 +230,69 @@ test(
     }
   }
 );
+
+// Types for every subpath (#143): only the package root had any, so
+// `@surea11y/core/sarif` and the rest were untyped imports.
+test(
+  'a TypeScript project finds the types of every subpath through the package name',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-types-subpaths-'));
+    fs.mkdirSync(path.join(dir, 'node_modules', '@surea11y'), { recursive: true });
+    fs.symlinkSync(
+      path.join(__dirname, '../..'),
+      path.join(dir, 'node_modules', '@surea11y', 'core'),
+      'dir'
+    );
+    const file = path.join(dir, 'use.ts');
+    fs.writeFileSync(
+      file,
+      [
+        "import { runDomRulesInPage } from '@surea11y/core';",
+        "import { renderSarifReport } from '@surea11y/core/sarif';",
+        "import { renderJunitReport } from '@surea11y/core/junit';",
+        "import { renderHtmlReport } from '@surea11y/core/report';",
+        "import { renderEarlReport, OUTCOME_TO_EARL } from '@surea11y/core/earl';",
+        "import { buildBaselineEntries, matchBaseline } from '@surea11y/core/baseline';",
+        "import { wcagCriteria, wcagCriterion, wcagTags, WCAG_CRITERIA } from '@surea11y/core/wcag';",
+        "import { EN301549_VERSIONS, en301549ClausesForSc } from '@surea11y/core/en301549';",
+        "import { runa11yCoreInPage as browserScan } from '@surea11y/core/browser';",
+        'const result = runDomRulesInPage();',
+        "const sarif: string = renderSarifReport(result, { category: 'a11y-1280/', toolVersion: '1.0.0' });",
+        "const junit: string = renderJunitReport(result, { cantTellAs: 'failure', name: 'home' });",
+        "const html: string = renderHtmlReport(result, { title: 'Home' });",
+        "const outcome: string = renderEarlReport([result], { assertor: null })['@graph'][0].assertions[0].result.outcome + OUTCOME_TO_EARL.fail;",
+        'const entries = buildBaselineEntries(result);',
+        'const fresh: number = matchBaseline(result, entries).newCount;',
+        "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",
+        "const tags: string[] = wcagTags('2.1', ['A', 'AA']).concat(WCAG_CRITERIA.map((c) => c.tag));",
+        "const count: number = wcagCriteria('2.2', { levels: 'AA' }).length;",
+        "const clause: string | undefined = en301549ClausesForSc('1.1.1')[0]?.clause + EN301549_VERSIONS[0].version;",
+        "const inPage: number = browserScan(null, null, {}, ['img-alt-present']).checksResults.length;",
+        '// @ts-expect-error cantTellAs is skipped or failure',
+        "renderJunitReport(result, { cantTellAs: 'warning' });",
+        '// @ts-expect-error no WCAG 3.0',
+        "wcagCriteria('3.0');",
+        'void [sarif, junit, html, outcome, fresh, level, tags, count, clause, inPage];',
+        ''
+      ].join('\n')
+    );
+    for (const [moduleResolution, module] of [
+      [ts.ModuleResolutionKind.Node10, ts.ModuleKind.CommonJS],
+      [ts.ModuleResolutionKind.Node16, ts.ModuleKind.Node16],
+      [ts.ModuleResolutionKind.Bundler, ts.ModuleKind.ESNext]
+    ]) {
+      const program = ts.createProgram([file], {
+        strict: true,
+        noEmit: true,
+        moduleResolution,
+        module,
+        types: []
+      });
+      const errors = ts
+        .getPreEmitDiagnostics(program)
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+      assert.deepEqual(errors, [], ts.ModuleResolutionKind[moduleResolution]);
+    }
+  }
+);
