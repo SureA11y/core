@@ -12,7 +12,9 @@
  *   `<table>` elements with at least 4 rows and at least 4 columns
  *   (a "large" table, where implicit row/column header association is
  *   useful; small tables are usually self-evident), and with
- *   NO `colspan`/`rowspan` anywhere in the table. A table whose role (the
+ *   NO `colspan`/`rowspan` anywhere in the table (a `rowspan` of 0, which
+ *   grows the cell to the end of its row group, is a span; a `colspan` of 0
+ *   is 1). A table whose role (the
  *   role attribute's first known, non-abstract token, in any case) is
  *   anything but table, grid or treegrid, such as a layout table with
  *   role="presentation", is left out: it has no data cells.
@@ -140,11 +142,15 @@ function runInPage(ctx) {
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
 
+    // A rowspan of 0 spans too: the cell grows down to the end of its row
+    // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
+    // the values as HTML's rules for parsing non-negative integers do:
+    // leading space and trailing junk allowed (" 0 ", "0x").
     const hasSpan = rowCells.some((cells) =>
       cells.some((c) => {
         const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
         const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
-        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
+        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && (rs > 1 || rs === 0));
       })
     );
     if (hasSpan) continue;

@@ -67386,11 +67386,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
 
+    // A rowspan of 0 spans too: the cell grows down to the end of its row
+    // group (HTML, forming a table). A colspan of 0 is 1. parseInt reads
+    // the values as HTML's rules for parsing non-negative integers do:
+    // leading space and trailing junk allowed (" 0 ", "0x").
     const hasSpan = rowCells.some((cells) =>
       cells.some((c) => {
         const cs = Number.parseInt(dom.getAttribute(c, 'colspan') || '1', 10);
         const rs = Number.parseInt(dom.getAttribute(c, 'rowspan') || '1', 10);
-        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && rs > 1);
+        return (Number.isFinite(cs) && cs > 1) || (Number.isFinite(rs) && (rs > 1 || rs === 0));
       })
     );
     if (hasSpan) continue;

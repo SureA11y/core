@@ -48,6 +48,32 @@ test(`${RULE_ID}: notApplicable when the table has a colspan/rowspan (skipped, n
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// rowspan="0" grows the cell to the end of its row group (HTML, forming a
+// table): a span like any other, so the table is left out (#120). A
+// colspan of 0 is 1, and a negative rowspan is invalid, so 1.
+const spanTable = (attr) =>
+  `<!doctype html><html><body><table><tr><th ${attr}>Group</th><td>a</td><td>b</td><td>c</td></tr><tr><td>d</td><td>e</td><td>f</td></tr><tr><td>g</td><td>h</td><td>i</td></tr><tr><td>j</td><td>k</td><td>l</td></tr></table></body></html>`;
+
+test(`${RULE_ID}: rowspan="0" is a span, so the table is left out`, () => {
+  for (const attr of ['rowspan="0"', 'rowspan=" 0 "', 'rowspan="00"', 'rowspan="0x"']) {
+    const result = runa11yCoreOnHtml(spanTable(attr), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: rowspan="1" or "-1" is no span, and the table is checked`, () => {
+  for (const attr of ['rowspan="1"', 'rowspan="-1"']) {
+    const result = runa11yCoreOnHtml(spanTable(attr), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  }
+});
+
+test(`${RULE_ID}: colspan="0" is no span`, () => {
+  const html = `<!doctype html><html><body><table><tr><th colspan="0">A</th><th>B</th><th>C</th><th>D</th></tr><tr><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><td>5</td><td>6</td><td>7</td><td>8</td></tr><tr><td>9</td><td>10</td><td>11</td><td>12</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: pass when every <td> in a large table has an implicit row/column header`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_WELL_HEADED}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
