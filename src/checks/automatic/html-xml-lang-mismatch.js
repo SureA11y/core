@@ -10,7 +10,9 @@
  * @sc 3.1.1
  * @applicability
  *   Applies when the <html> element has both a non-empty lang attribute
- *   and a non-empty xml:lang attribute.
+ *   whose primary language subtag is a known one (ACT 5b7ae0) and a
+ *   non-empty xml:lang attribute. A lang naming no known language is
+ *   html-lang-attr-present's failure, not this rule's.
  * @expectation
  *   The primary language subtag (the part before the first "-") of lang
  *   and xml:lang match, case-insensitively. When both attributes are
@@ -83,6 +85,16 @@ function runInPage(ctx) {
   }
 
   const primary = (s) => s.split('-')[0].toLowerCase();
+
+  // ACT 5b7ae0 applies only when lang has a known primary language subtag.
+  // An unknown one ("xx") is the language rule's failure, not a second one
+  // here.
+  if (
+    typeof helpers.isValidLanguageTag === 'function' &&
+    !helpers.isValidLanguageTag(primary(lang))
+  ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
 
   if (primary(lang) === primary(xmlLang)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

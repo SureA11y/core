@@ -73,3 +73,22 @@ test(`html-xml-lang-mismatch: notApplicable when engineOptions.fragment is true,
     maxOccurrences: 0
   });
 });
+
+// ACT 5b7ae0 applies only when lang has a known primary language subtag
+// (#158): lang="xx" is html-lang-attr-present's failure, not a second one.
+test('html-xml-lang-mismatch: notApplicable when lang names no known language', () => {
+  const page = (attrs) =>
+    `<!doctype html><html ${attrs}><head><title>t</title></head><body><main>x</main></body></html>`;
+  const outcomes = (attrs) =>
+    Object.fromEntries(
+      runa11yCoreOnHtml(page(attrs), {
+        runOnly: ['html-xml-lang-mismatch', 'html-lang-attr-present']
+      }).checksResults.map((r) => [r.ruleId, r.outcome])
+    );
+  assert.deepStrictEqual(outcomes('lang="xx" xml:lang="yy"'), {
+    'html-lang-attr-present': 'fail',
+    'html-xml-lang-mismatch': 'notApplicable'
+  });
+  assert.strictEqual(outcomes('lang="en" xml:lang="fr"')['html-xml-lang-mismatch'], 'fail');
+  assert.strictEqual(outcomes('lang="en" xml:lang="en-GB"')['html-xml-lang-mismatch'], 'pass');
+});
